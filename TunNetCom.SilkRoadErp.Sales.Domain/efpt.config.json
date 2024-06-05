@@ -1,0 +1,129 @@
+﻿{
+   "CodeGenerationMode": 4,
+   "ContextClassName": "SalesContext",
+   "ContextNamespace": null,
+   "DefaultDacpacSchema": null,
+   "FilterSchemas": false,
+   "IncludeConnectionString": false,
+   "ModelNamespace": null,
+   "OutputContextPath": null,
+   "OutputPath": "Entites",
+   "PreserveCasingWithRegex": true,
+   "ProjectRootNamespace": "TunNetCom.SilkRoadErp.Sales.Domain",
+   "Schemas": null,
+   "SelectedHandlebarsLanguage": 2,
+   "SelectedToBeGenerated": 0,
+   "T4TemplatePath": null,
+   "Tables": [
+      {
+         "Name": "[dbo].[AvoirFinancierFournisseurs]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[AvoirFournisseur]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Avoirs]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[BonDeLivraison]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[BonDeReception]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Client]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Commandes]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Devis]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[EcheanceDesFournisseurs]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Facture]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[FactureAvoirFournisseur]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[FactureFournisseur]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Fournisseur]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[LigneAvoirFournisseur]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[LigneAvoirs]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[LigneBL]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[LigneBonReception]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[LigneCommandes]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[LigneDevis]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Produit]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Systeme]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Transaction]",
+         "ObjectType": 0
+      }
+   ],
+   "UiHint": "laptop-ur7s8c4k\\sqldev2016.SteDataBaseWebAll.dbo",
+   "UncountableWords": null,
+   "UseBoolPropertiesWithoutDefaultSql": false,
+   "UseDatabaseNames": false,
+   "UseDateOnlyTimeOnly": true,
+   "UseDbContextSplitting": true,
+   "UseDecimalDataAnnotationForSprocResult": true,
+   "UseFluentApiOnly": true,
+   "UseHandleBars": false,
+   "UseHierarchyId": false,
+   "UseInflector": false,
+   "UseLegacyPluralizer": false,
+   "UseManyToManyEntity": false,
+   "UseNoDefaultConstructor": false,
+   "UseNoNavigations": false,
+   "UseNoObjectFilter": false,
+   "UseNodaTime": false,
+   "UseNullableReferences": true,
+   "UseSchemaFolders": false,
+   "UseSchemaNamespaces": false,
+   "UseSpatial": false,
+   "UseT4": false
+}
