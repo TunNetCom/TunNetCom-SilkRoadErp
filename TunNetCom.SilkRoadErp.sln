@@ -9,6 +9,10 @@ Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "TunNetCom.SilkRoadErp.Sales
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TunNetCom.SilkRoadErp.Sales.Domain", "TunNetCom.SilkRoadErp.Sales.Domain\TunNetCom.SilkRoadErp.Sales.Domain.csproj", "{2856D8C7-B3EB-432C-8B96-207E2609DE01}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{C3AF9A58-F96B-4044-9025-363AFE51391A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{5A07AFCE-8427-4F5A-9003-32EBCAA17175}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -32,6 +36,11 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{94A92B37-3A57-4B4C-B5F1-858C874A0DBD} = {C3AF9A58-F96B-4044-9025-363AFE51391A}
+		{2DEA6812-E221-47BF-B6B7-3D2789997A5A} = {C3AF9A58-F96B-4044-9025-363AFE51391A}
+		{2856D8C7-B3EB-432C-8B96-207E2609DE01} = {C3AF9A58-F96B-4044-9025-363AFE51391A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {43421668-53C5-4D00-AC8D-2D7150CE1FA2}
