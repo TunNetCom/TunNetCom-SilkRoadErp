@@ -6,16 +6,9 @@ public class GetClientByIdEndpoint : ICarterModule
     {
         app.MapGet("/clients/{id:int}", async (IMediator mediator, int id) =>
         {
-            try
-            {
-                var query = new GetClientByIdQuery(id);
-                var result = await mediator.Send(query);
-                return Results.Ok(result);
-            }
-            catch (KeyNotFoundException e)
-            {
-                return Results.NotFound(new { message = e.Message });
-            }
+            var query = new GetClientByIdQuery(id);
+            var result = await mediator.Send(query);
+            return Results.Ok(result);
         });
     }
 }

@@ -11,7 +11,7 @@ public class UpdateClientCommandHandler(SalesContext _context ,IValidator<Update
             throw new ValidationException(validationResult.Errors);
         }
             
-        if (client == null)
+        if (client is null)
         {
             
             throw new KeyNotFoundException($"Client with Id {request.Id} not found.");
