@@ -1,6 +1,6 @@
 ﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Clients.UpdateClient;
 
-public class UpdateClientValidator : AbstractValidator<UpdateClientRequest>
+public class UpdateClientValidator : AbstractValidator<UpdateClientCommand>
 {
     public UpdateClientValidator()
     {
