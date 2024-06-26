@@ -1,0 +1,207 @@
+﻿@page "/editclient/{id:int?}"
+@using TunNetCom.SilkRoadErp.Sales.Domain.Entites
+@using TunNetCom.SilkRoadErp.Sales.BlazorApp.Services
+@using Mapster
+@using TunNetCom.SilkRoadErp.Sales.Api.Contracts.Client
+@inject ClientService ClientService
+@inject NavigationManager NavigationManager
+
+<h3>@(client.Id == 0 ? "Add Client" : "Edit Client")</h3>
+
+<div class="form-container">
+    <EditForm Model="client" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div>
+            <label>Nom: </label>
+            <InputText @bind-Value="client.Nom" class="form-control" />
+            @if (!string.IsNullOrEmpty(nomError))
+            {
+                <span class="text-danger">@nomError</span>
+            }
+        </div>
+        <div>
+            <label>Tel: </label>
+            <InputText @bind-Value="client.Tel" class="form-control" />
+            @if (!string.IsNullOrEmpty(telError))
+            {
+                <span class="text-danger">@telError</span>
+            }
+        </div>
+        <div>
+            <label>Adresse: </label>
+            <InputText @bind-Value="client.Adresse" class="form-control" />
+            @if (!string.IsNullOrEmpty(adresseError))
+            {
+                <span class="text-danger">@adresseError</span>
+            }
+        </div>
+        <div>
+            <label>Matricule: </label>
+            <InputText @bind-Value="client.Matricule" class="form-control" />
+            @if (!string.IsNullOrEmpty(matriculeError))
+            {
+                <span class="text-danger">@matriculeError</span>
+            }
+        </div>
+        <div>
+            <label>Code: </label>
+            <InputText @bind-Value="client.Code" class="form-control" />
+            @if (!string.IsNullOrEmpty(codeError))
+            {
+                <span class="text-danger">@codeError</span>
+            }
+        </div>
+        <div>
+            <label>CodeCat: </label>
+            <InputText @bind-Value="client.CodeCat" class="form-control" />
+            @if (!string.IsNullOrEmpty(codeCatError))
+            {
+                <span class="text-danger">@codeCatError</span>
+            }
+        </div>
+        <div>
+            <label>EtbSec: </label>
+            <InputText @bind-Value="client.EtbSec" class="form-control" />
+            @if (!string.IsNullOrEmpty(etbSecError))
+            {
+                <span class="text-danger">@etbSecError</span>
+            }
+        </div>
+        <div>
+            <label>Mail: </label>
+            <InputText @bind-Value="client.Mail" class="form-control" />
+            @if (!string.IsNullOrEmpty(mailError))
+            {
+                <span class="text-danger">@mailError</span>
+            }
+        </div>
+
+        <button type="submit" class="button">Save</button>
+        <button type="button" class="button-secondary" @onclick="Cancel">Cancel</button>
+    </EditForm>
+    @if (errorMessages != null && errorMessages.Any())
+    {
+        <div class="alert alert-danger">
+            @foreach (var error in errorMessages)
+            {
+                <p>@error</p>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+    private Client client = new Client();
+    private List<string> errorMessages = new List<string>();
+
+    private string nomError;
+    private string telError;
+    private string adresseError;
+    private string matriculeError;
+    private string codeError;
+    private string codeCatError;
+    private string etbSecError;
+    private string mailError;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            if (Id.HasValue)
+            {
+                Console.WriteLine($"Fetching client with ID: {Id.Value}");
+                var existingClient = await ClientService.GetClientByIdAsync(Id.Value);
+                if (existingClient != null)
+                {
+                    client = existingClient.Adapt<Client>();
+                    Console.WriteLine($"Client data fetched: {client.Nom}, {client.Tel}, {client.Adresse}");
+                }
+                else
+                {
+                    Console.WriteLine("Client not found.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching client data: {ex.Message}");
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        ClearErrors();
+        try
+        {
+            if (client.Id == 0)
+            {
+                await ClientService.AddClientAsync(client.Adapt<CreateClientRequest>());
+            }
+            else
+            {
+                await ClientService.UpdateClientAsync(client.Id, client.Adapt<UpdateClientRequest>());
+            }
+            NavigationManager.NavigateTo("/clients");
+        }
+        catch (ClientServiceException ex)
+        {
+            Console.WriteLine($"Error content: {ex.ErrorContent}");
+            var validationErrors = ex.GetValidationErrors();
+            foreach (var error in validationErrors)
+            {
+                switch (error.Key)
+                {
+                    case "Nom":
+                        nomError = string.Join(", ", error.Value);
+                        break;
+                    case "Tel":
+                        telError = string.Join(", ", error.Value);
+                        break;
+                    case "Adresse":
+                        adresseError = string.Join(", ", error.Value);
+                        break;
+                    case "Matricule":
+                        matriculeError = string.Join(", ", error.Value);
+                        break;
+                    case "Code":
+                        codeError = string.Join(", ", error.Value);
+                        break;
+                    case "CodeCat":
+                        codeCatError = string.Join(", ", error.Value);
+                        break;
+                    case "EtbSec":
+                        etbSecError = string.Join(", ", error.Value);
+                        break;
+                    case "Mail":
+                        mailError = string.Join(", ", error.Value);
+                        break;
+                    default:
+                        errorMessages.Add($"{error.Key}: {string.Join(", ", error.Value)}");
+                        break;
+                }
+            }
+            StateHasChanged();
+        }
+    }
+
+    private void ClearErrors()
+    {
+        nomError = string.Empty;
+        telError = string.Empty;
+        adresseError = string.Empty;
+        matriculeError = string.Empty;
+        codeError = string.Empty;
+        codeCatError = string.Empty;
+        etbSecError = string.Empty;
+        mailError = string.Empty;
+        errorMessages.Clear();
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/clients");
+    }
+}

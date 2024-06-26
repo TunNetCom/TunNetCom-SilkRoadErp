@@ -1,0 +1,133 @@
+﻿@page "/clients"
+@using TunNetCom.SilkRoadErp.Sales.Api.Contracts.Client
+@using TunNetCom.SilkRoadErp.Sales.BlazorApp.Services
+@using TunNetCom.SilkRoadErp.Sales.Domain.Entites
+@inject ClientService ClientService
+@inject NavigationManager NavigationManager
+
+<h3>Clients</h3>
+
+<button class="button" @onclick="CreateClient">Add Client</button>
+
+@if (clients == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Nom</th>
+                <th>Tel</th>
+                <th>Adresse</th>
+                <th>Matricule</th>
+                <th>Code</th>
+                <th>CodeCat</th>
+                <th>EtbSec</th>
+                <th>Mail</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var client in clients)
+            {
+                <tr>
+                    <td>@client.Nom</td>
+                    <td>@client.Tel</td>
+                    <td>@client.Adresse</td>
+                    <td>@client.Matricule</td>
+                    <td>@client.Code</td>
+                    <td>@client.CodeCat</td>
+                    <td>@client.EtbSec</td>
+                    <td>@client.Mail</td>
+                    <td>
+                        <button class="button" @onclick="() => EditClient(client.Id)">Edit</button>
+                        <button class="button-secondary" @onclick="() => DeleteClient(client.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <div>
+        <button class="button" @onclick="PreviousPage" disabled="@(pageIndex == 1)">Previous</button>
+        <span>Page @pageIndex of @totalPages</span>
+        <input id="pageInput" type="number" min="1" max="@totalPages" @bind="inputPageIndex" @onkeypress="HandleKeyPress" />
+        <button class="button" @onclick="NextPage" disabled="@(pageIndex * pageSize >= totalClients)">Next</button>
+    </div>
+    
+}
+
+@code {
+    private List<ClientResponse>? clients;
+    private int pageIndex = 1;
+    private const int pageSize = 10;
+    private int totalClients;
+    private int totalPages;
+    private int inputPageIndex;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadClients();
+    }
+
+    private async Task LoadClients()
+    {
+        var result = await ClientService.GetClientsAsync(pageIndex, pageSize);
+        clients = result.Clients;
+        totalClients = result.TotalCount;
+        totalPages = (int)Math.Ceiling((double)totalClients / pageSize);
+        inputPageIndex = pageIndex;
+    }
+
+    private void CreateClient()
+    {
+        NavigationManager.NavigateTo("/editclient");
+    }
+
+    private void EditClient(int id)
+    {
+        NavigationManager.NavigateTo($"/editclient/{id}");
+    }
+
+    private async Task DeleteClient(int id)
+    {
+        await ClientService.DeleteClientAsync(id);
+        await LoadClients();
+    }
+
+    private async Task PreviousPage()
+    {
+        if (pageIndex > 1)
+        {
+            pageIndex--;
+            await LoadClients();
+        }
+    }
+
+    private async Task NextPage()
+    {
+        if (pageIndex * pageSize < totalClients)
+        {
+            pageIndex++;
+            await LoadClients();
+        }
+    }
+
+    private async Task GoToPage(int page)
+    {
+        if (page >= 1 && page <= totalPages)
+        {
+            pageIndex = page;
+            await LoadClients();
+        }
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter")
+        {
+            await GoToPage(inputPageIndex);
+        }
+    }
+}
