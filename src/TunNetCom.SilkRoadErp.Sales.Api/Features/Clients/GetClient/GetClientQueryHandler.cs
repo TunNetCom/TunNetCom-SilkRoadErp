@@ -19,8 +19,11 @@ public class GetClientsQueryHandler(SalesContext _context, ILogger<GetClientsQue
 
         return new PaginatedResponse<ClientResponse>
         {
+            PageIndex = request.PageIndex,
+            PageSize = request.PageSize,
             TotalCount = totalClients,
             Items = clientResponses
         };
     }
 }
+
