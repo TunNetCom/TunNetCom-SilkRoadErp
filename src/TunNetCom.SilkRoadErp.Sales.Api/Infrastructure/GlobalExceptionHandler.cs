@@ -1,30 +1,29 @@
 ﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure;
-public class GlobalExceptionHandler : IExceptionHandler
+
+public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IExceptionHandler
 {
-    private readonly ILogger<GlobalExceptionHandler> _logger;
-
-    public GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger)
-    {
-        _logger = logger;
-    }
-
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
-        _logger.LogError(exception, "Exception occurred: {Message}", exception.Message);
+        return await HandleExceptionAsync(httpContext, exception, cancellationToken);
+    }
+
+    public async Task<bool> HandleExceptionAsync(HttpContext context, Exception exception, CancellationToken cancellationToken = default)
+    {
+        logger.LogError(exception, "An unhandled exception has occurred while executing the request.");
 
         var problemDetails = new ProblemDetails
         {
             Status = (int)HttpStatusCode.InternalServerError,
             Title = "An error occurred while processing your request.",
-            Detail = exception.Message,
-            Instance = httpContext.Request.Path
+            Detail = exception?.Message,
+            Instance = context.Request.Path
         };
 
-        httpContext.Response.ContentType = "application/json";
-        httpContext.Response.StatusCode = problemDetails.Status.Value;
+        context.Response.ContentType = "application/json";
+        context.Response.StatusCode = problemDetails.Status.Value;
 
         var json = JsonSerializer.Serialize(problemDetails);
-        await httpContext.Response.WriteAsync(json, cancellationToken);
+        await context.Response.WriteAsync(json, cancellationToken);
 
         return true;
     }
