@@ -1,6 +1,8 @@
 
 
 
+using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Behaviors;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure Serilog
@@ -28,6 +30,9 @@ builder.Services.AddMediatR(config =>
 
 // FluentValidation
 builder.Services.AddValidatorsFromAssembly(assembly);
+
+// Register the validation behavior
+builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
