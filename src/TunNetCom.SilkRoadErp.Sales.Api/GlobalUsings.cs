@@ -1,9 +1,0 @@
-﻿global using FluentValidation;
-global using Carter;
-global using Microsoft.EntityFrameworkCore;
-global using MediatR;
-global using Mapster;
-global using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
-global using TunNetCom.SilkRoadErp.Sales.Api.Contracts.Client;
-global using Microsoft.AspNetCore.Mvc;
-global using FluentValidation.Results;
