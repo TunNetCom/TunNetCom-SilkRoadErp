@@ -1,29 +1,20 @@
 ﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Clients.GetClient;
 
 public class GetClientsQueryHandler(SalesContext _context, ILogger<GetClientsQueryHandler> logger)
-    : IRequestHandler<GetClientsQuery, PaginatedResponse<ClientResponse>>
+    : IRequestHandler<GetClientsQuery, PagedList<ClientResponse>>
 {
-    public async Task<PaginatedResponse<ClientResponse>> Handle(GetClientsQuery request, CancellationToken cancellationToken)
+    public async Task<PagedList<ClientResponse>> Handle(GetClientsQuery request, CancellationToken cancellationToken)
     {
         logger.LogInformation("Fetching clients with pageIndex: {PageIndex} and pageSize: {PageSize}", request.PageIndex, request.PageSize);
 
-        var totalClients = await _context.Client.CountAsync(cancellationToken);
-        var clients = await _context.Client
-                                    .Skip((request.PageIndex - 1) * request.PageSize)
-                                    .Take(request.PageSize)
-                                    .ToListAsync(cancellationToken);
+        var source = _context.Client.AsQueryable();
 
-        var clientResponses = clients.Adapt<List<ClientResponse>>();
+        var pagedClients = await PagedList<Client>.ToPagedListAsync(source, request.PageIndex, request.PageSize, cancellationToken);
+
+        var clientResponses = pagedClients.Select(c => c.Adapt<ClientResponse>()).ToList();
 
         logger.LogInformation("Fetched {Count} clients", clientResponses.Count);
 
-        return new PaginatedResponse<ClientResponse>
-        {
-            PageIndex = request.PageIndex,
-            PageSize = request.PageSize,
-            TotalCount = totalClients,
-            Items = clientResponses
-        };
+        return new PagedList<ClientResponse>(clientResponses, pagedClients.TotalCount, pagedClients.CurrentPage, pagedClients.PageSize);
     }
 }
-
