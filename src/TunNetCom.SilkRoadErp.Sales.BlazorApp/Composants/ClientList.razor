@@ -5,58 +5,59 @@
 @inject ClientService ClientService
 @inject NavigationManager NavigationManager
 
-<h3>Clients</h3>
+<div class="container mt-4">
+    <h3 class="mb-3">Clients</h3>
 
-<button class="button" @onclick="CreateClient">Add Client</button>
+    <button class="btn btn-primary mb-3" @onclick="CreateClient">Add Client</button>
 
-@if (clients == null)
-{
-    <p>Loading...</p>
-}
-else
-{
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Nom</th>
-                <th>Tel</th>
-                <th>Adresse</th>
-                <th>Matricule</th>
-                <th>Code</th>
-                <th>CodeCat</th>
-                <th>EtbSec</th>
-                <th>Mail</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var client in clients)
-            {
+    @if (clients == null)
+    {
+        <p>Loading...</p>
+    }
+    else
+    {
+        <table class="table table-striped">
+            <thead>
                 <tr>
-                    <td>@client.Nom</td>
-                    <td>@client.Tel</td>
-                    <td>@client.Adresse</td>
-                    <td>@client.Matricule</td>
-                    <td>@client.Code</td>
-                    <td>@client.CodeCat</td>
-                    <td>@client.EtbSec</td>
-                    <td>@client.Mail</td>
-                    <td>
-                        <button class="button" @onclick="() => EditClient(client.Id)">Edit</button>
-                        <button class="button-secondary" @onclick="() => DeleteClient(client.Id)">Delete</button>
-                    </td>
+                    <th>Nom</th>
+                    <th>Tel</th>
+                    <th>Adresse</th>
+                    <th>Matricule</th>
+                    <th>Code</th>
+                    <th>CodeCat</th>
+                    <th>EtbSec</th>
+                    <th>Mail</th>
+                    <th>Actions</th>
                 </tr>
-            }
-        </tbody>
-    </table>
-    <div>
-        <button class="button" @onclick="PreviousPage" disabled="@(pageIndex == 1)">Previous</button>
-        <span>Page @pageIndex of @totalPages</span>
-        <input id="pageInput" type="number" min="1" max="@totalPages" @bind="inputPageIndex" @onkeypress="HandleKeyPress" />
-        <button class="button" @onclick="NextPage" disabled="@(pageIndex * pageSize >= totalClients)">Next</button>
-    </div>
-    
-}
+            </thead>
+            <tbody>
+                @foreach (var client in clients)
+                {
+                    <tr>
+                        <td>@client.Nom</td>
+                        <td>@client.Tel</td>
+                        <td>@client.Adresse</td>
+                        <td>@client.Matricule</td>
+                        <td>@client.Code</td>
+                        <td>@client.CodeCat</td>
+                        <td>@client.EtbSec</td>
+                        <td>@client.Mail</td>
+                        <td>
+                            <button class="btn btn-warning btn-sm" @onclick="() => EditClient(client.Id)">Edit</button>
+                            <button class="btn btn-danger btn-sm" @onclick="() => DeleteClient(client.Id)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <div class="d-flex justify-content-between">
+            <button class="btn btn-primary" @onclick="PreviousPage" disabled="@(pageIndex == 1)">Previous</button>
+            <span>Page @pageIndex of @totalPages</span>
+            <input class="form-control w-auto d-inline-block" id="pageInput" type="number" min="1" max="@totalPages" @bind="inputPageIndex" @onkeypress="HandleKeyPress" />
+            <button class="btn btn-primary" @onclick="NextPage" disabled="@(pageIndex * pageSize >= totalClients)">Next</button>
+        </div>
+    }
+</div>
 
 @code {
     private List<ClientResponse>? clients;

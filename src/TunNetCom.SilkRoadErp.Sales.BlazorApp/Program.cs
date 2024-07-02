@@ -1,24 +1,10 @@
-using Serilog;
-using Serilog.Events;
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 using Microsoft.EntityFrameworkCore;
 using TunNetCom.SilkRoadErp.Sales.BlazorApp.Services;
 using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure Serilog
-Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Debug()
-    .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-    .Enrich.FromLogContext()
-    .WriteTo.Console()
-    .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day)
-    .CreateLogger();
 
-// Add Serilog to the host builder
-builder.Host.UseSerilog();
 
 // Ajouter les services à votre conteneur
 builder.Services.AddRazorPages();
@@ -60,16 +46,4 @@ app.UseAuthorization();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 
-try
-{
-    Log.Information("Starting web host");
-    app.Run();
-}
-catch (Exception ex)
-{
-    Log.Fatal(ex, "Host terminated unexpectedly");
-}
-finally
-{
-    Log.CloseAndFlush();
-}
+app.Run();

@@ -22,7 +22,7 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IE
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = problemDetails.Status.Value;
 
-        var json = JsonSerializer.Serialize(problemDetails);
+        var json = System.Text.Json.JsonSerializer.Serialize(problemDetails);
         await context.Response.WriteAsync(json, cancellationToken);
 
         return true;

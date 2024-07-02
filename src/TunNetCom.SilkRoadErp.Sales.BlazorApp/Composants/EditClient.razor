@@ -1,8 +1,6 @@
 ﻿@page "/editclient/{id:int?}"
-@using TunNetCom.SilkRoadErp.Sales.Domain.Entites
-@using TunNetCom.SilkRoadErp.Sales.BlazorApp.Services
-@using Mapster
 @using TunNetCom.SilkRoadErp.Sales.Api.Contracts.Client
+@using TunNetCom.SilkRoadErp.Sales.BlazorApp.Services
 @inject ClientService ClientService
 @inject NavigationManager NavigationManager
 
@@ -94,7 +92,7 @@
 
 @code {
     [Parameter] public int? Id { get; set; }
-    private Client client = new Client();
+    private ClientResponse client = new ClientResponse();
     private List<string> errorMessages = new List<string>();
 
     private string nomError;
@@ -116,7 +114,7 @@
                 var existingClient = await ClientService.GetClientByIdAsync(Id.Value);
                 if (existingClient != null)
                 {
-                    client = existingClient.Adapt<Client>();
+                    client = existingClient;
                     Console.WriteLine($"Client data fetched: {client.Nom}, {client.Tel}, {client.Adresse}");
                 }
                 else
@@ -138,11 +136,33 @@
         {
             if (client.Id == 0)
             {
-                await ClientService.AddClientAsync(client.Adapt<CreateClientRequest>());
+                var newClientRequest = new CreateClientRequest
+                    {
+                        Nom = client.Nom,
+                        Tel = client.Tel,
+                        Adresse = client.Adresse,
+                        Matricule = client.Matricule,
+                        Code = client.Code,
+                        CodeCat = client.CodeCat,
+                        EtbSec = client.EtbSec,
+                        Mail = client.Mail
+                    };
+                await ClientService.AddClientAsync(newClientRequest);
             }
             else
             {
-                await ClientService.UpdateClientAsync(client.Id, client.Adapt<UpdateClientRequest>());
+                var updateClientRequest = new UpdateClientRequest
+                    {
+                        Nom = client.Nom,
+                        Tel = client.Tel,
+                        Adresse = client.Adresse,
+                        Matricule = client.Matricule,
+                        Code = client.Code,
+                        CodeCat = client.CodeCat,
+                        EtbSec = client.EtbSec,
+                        Mail = client.Mail
+                    };
+                await ClientService.UpdateClientAsync(client.Id, updateClientRequest);
             }
             NavigationManager.NavigateTo("/clients");
         }

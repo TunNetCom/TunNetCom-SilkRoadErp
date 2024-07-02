@@ -27,6 +27,29 @@ public partial class Client
         this.Mail = mail;
     }
 
+    public static Client CreateClient(
+        string nom,
+        string? tel,
+        string? adresse,
+        string? matricule,
+        string? code,
+        string? codeCat,
+        string? etbSec,
+        string? mail)
+    {
+        return new Client
+        {
+            Nom = nom,
+            Tel = tel,
+            Adresse = adresse,
+            Matricule = matricule,
+            Code = code,
+            CodeCat = codeCat,
+            EtbSec = etbSec,
+            Mail = mail
+        };
+    }
+
     public int Id { get; private set ; }
 
     public string Nom { get; private set ; } = null!;

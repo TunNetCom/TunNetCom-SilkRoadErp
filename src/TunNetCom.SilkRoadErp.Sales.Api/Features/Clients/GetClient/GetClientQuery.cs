@@ -1,6 +1,6 @@
 ﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Clients.GetClient;
 
-public class GetClientsQuery : IRequest<PaginatedResponse<ClientResponse>>
+public class GetClientsQuery : IRequest<PagedList<ClientResponse>>
 {
     public int PageIndex { get; set; }
     public int PageSize { get; set; }
