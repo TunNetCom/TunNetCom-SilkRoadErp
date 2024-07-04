@@ -1,10 +1,13 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Clients.UpdateClient;
+﻿using Microsoft.AspNetCore.Http.HttpResults;
+
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Clients.UpdateClient;
 
 public class UpdateClientEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapPut("/clients/{id:int}", async (IMediator mediator, int id, UpdateClientRequest request) =>
+        app.MapPut("/clients/{id:int}",
+            async Task<Results<NoContent, BadRequest<List<IError>>>> (IMediator mediator, int id, UpdateClientRequest request) =>
         {
             var updateClientCommand = new UpdateClientCommand(
                 Id: id,
@@ -17,9 +20,15 @@ public class UpdateClientEndpoint : ICarterModule
                 EtbSec: request.EtbSec,
                 Mail: request.Mail);
 
-            await mediator.Send(updateClientCommand);
+            var result = await mediator.Send(updateClientCommand);
 
-            return Results.NoContent();
+            //TODO map result.Errors to Microsoft.AspNetCore.Mvc.ProblemDetails #20
+            if (result.IsFailed)
+            {
+                return TypedResults.BadRequest(result.Errors);
+            }
+
+            return TypedResults.NoContent();
         });
     }
 }

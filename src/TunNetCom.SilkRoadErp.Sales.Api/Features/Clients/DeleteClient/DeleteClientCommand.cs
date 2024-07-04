@@ -1,6 +1,6 @@
 ﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Clients.DeleteClient;
 
-public class DeleteClientCommand : IRequest<Unit>
+public class DeleteClientCommand : IRequest<Result>
 {
     public int Id { get; }
 

@@ -1,9 +1,9 @@
 ﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Clients.CreateClient;
 
 public class CreateClientCommandHandler(SalesContext _context, ILogger<CreateClientCommandHandler> logger)
-    : IRequestHandler<CreateClientCommand, ClientResponse>
+    : IRequestHandler<CreateClientCommand,Result<int>>
 {
-    public async Task<ClientResponse> Handle(CreateClientCommand createClientCommand, CancellationToken cancellationToken)
+    public async Task<Result<int>> Handle(CreateClientCommand createClientCommand, CancellationToken cancellationToken)
     {
         logger.LogInformation("Creating client with values: {@Model}", createClientCommand);
 
@@ -23,6 +23,7 @@ public class CreateClientCommandHandler(SalesContext _context, ILogger<CreateCli
         await _context.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation("Client created successfully with ID: {Id}", client.Id);
-        return client.Adapt<ClientResponse>();
+
+        return client.Id;
     }
 }

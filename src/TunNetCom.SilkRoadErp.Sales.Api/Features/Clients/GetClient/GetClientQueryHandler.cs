@@ -5,11 +5,21 @@ public class GetClientsQueryHandler(SalesContext _context, ILogger<GetClientsQue
 {
     public async Task<PagedList<ClientResponse>> Handle(GetClientsQuery request, CancellationToken cancellationToken)
     {
-        logger.LogInformation("Fetching clients with pageIndex: {PageIndex} and pageSize: {PageSize}", request.PageIndex, request.PageSize);
+        //TODO Back : High-performance logging with LoggerMessage #19
 
-        var source = _context.Client.AsQueryable();
+        logger.LogInformation(
+            "Fetching clients with pageIndex: {PageIndex} and pageSize: {PageSize}",
+            request.PageIndex,
+            request.PageSize);
 
-        var pagedClients = await PagedList<Client>.ToPagedListAsync(source, request.PageIndex, request.PageSize, cancellationToken);
+        var clientsQuery = _context.Client.AsQueryable();
+
+        clientsQuery = clientsQuery.Where(
+            c =>
+            c.Nom.Contains(request.SearchKeyword)
+            || c.Mail.Contains(request.SearchKeyword));
+
+        var pagedClients = await PagedList<Client>.ToPagedListAsync(clientsQuery, request.PageIndex, request.PageSize, cancellationToken);
 
         var clientResponses = pagedClients.Select(c => c.Adapt<ClientResponse>()).ToList();
 

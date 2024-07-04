@@ -1,25 +1,21 @@
 ﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Clients.UpdateClient;
 
-public class UpdateClientCommandHandler(SalesContext _context ,IValidator<UpdateClientCommand> validator, 
+public class UpdateClientCommandHandler(
+    SalesContext _context,
     ILogger<UpdateClientCommandHandler> logger)
-    : IRequestHandler<UpdateClientCommand>
+    : IRequestHandler<UpdateClientCommand, Result>
 {
-    public async Task Handle(UpdateClientCommand updateClientCommand, CancellationToken cancellationToken)
+    public async Task<Result> Handle(UpdateClientCommand updateClientCommand, CancellationToken cancellationToken)
     {
+        //TODO Back : High-performance logging with LoggerMessage #19
         logger.LogInformation("Attempting to update client with ID: {Id}", updateClientCommand.Id);
 
         var clientToUpdate = await _context.Client.FindAsync(updateClientCommand.Id);
-        ValidationResult validationResult = await validator.ValidateAsync(updateClientCommand, cancellationToken);
-        if (!validationResult.IsValid)
-        {
-            logger.LogWarning("Validation failed for client update: {@ValidationResult}", validationResult);
-            throw new ValidationException(validationResult.Errors);
-        }
             
         if (clientToUpdate is null)
         {
             logger.LogWarning("Client with ID: {Id} not found", updateClientCommand.Id);
-            throw new KeyNotFoundException($"Client with Id {updateClientCommand.Id} not found.");
+            return Result.Fail("Client not found.");
         }
 
         clientToUpdate.UpdateClient(
@@ -30,12 +26,12 @@ public class UpdateClientCommandHandler(SalesContext _context ,IValidator<Update
             code: updateClientCommand.Code,
             codeCat: updateClientCommand.CodeCat,
             etbSec: updateClientCommand.EtbSec,
-            mail: updateClientCommand.Mail
-            );
+            mail: updateClientCommand.Mail);
 
         await _context.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation("Client with ID: {Id} updated successfully", updateClientCommand.Id);
-        return;
+
+        return Result.Ok();
     }
 }

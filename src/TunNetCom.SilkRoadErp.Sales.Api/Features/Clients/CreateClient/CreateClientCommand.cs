@@ -9,4 +9,4 @@ public record CreateClientCommand(
     string? CodeCat,
     string? EtbSec,
     string? Mail
-) : IRequest<ClientResponse>;
+) : IRequest<Result<int>>;

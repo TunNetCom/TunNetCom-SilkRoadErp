@@ -1,17 +1,18 @@
 ﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Clients.GetClientById;
 
 public class GetClientByIdQueryHandler(SalesContext _context, ILogger<GetClientByIdQueryHandler> logger)
-    : IRequestHandler<GetClientByIdQuery, ClientResponse>
+    : IRequestHandler<GetClientByIdQuery, Result<ClientResponse>>
 {
-    public async Task<ClientResponse> Handle(GetClientByIdQuery request, CancellationToken cancellationToken)
+    public async Task<Result<ClientResponse>> Handle(GetClientByIdQuery request, CancellationToken cancellationToken)
     {
         logger.LogInformation("Fetching client with ID: {Id}", request.Id);
 
         var client = await _context.Client.FindAsync(request.Id);
-        if (client == null)
+        if (client is null)
         {
             logger.LogWarning("Client with ID: {Id} not found", request.Id);
-            throw new KeyNotFoundException($"Client with Id {request.Id} not found.");
+
+            return Result.Fail("client_not_found");
         }
 
         logger.LogInformation("Fetched client with ID: {Id}", request.Id);

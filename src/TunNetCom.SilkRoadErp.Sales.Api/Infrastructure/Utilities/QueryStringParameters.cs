@@ -1,10 +1,13 @@
 ﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Utilities;
 
-public abstract class QueryStringParameters
+public class QueryStringParameters
 {
     const int maxPageSize = 50;
+
     public int PageNumber { get; set; } = 1;
-    private int _pageSize = 10;
+
+    public string? SearchKeyword { get; set; }
+
     public int PageSize
     {
         get
@@ -16,4 +19,6 @@ public abstract class QueryStringParameters
             _pageSize = (value > maxPageSize) ? maxPageSize : value;
         }
     }
+
+    private int _pageSize = 10;
 }
