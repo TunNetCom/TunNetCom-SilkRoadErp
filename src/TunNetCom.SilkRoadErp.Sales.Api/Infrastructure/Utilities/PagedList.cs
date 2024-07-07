@@ -1,6 +1,6 @@
 ﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Utilities;
 
-public class PagedList<T> : List<T>
+public class PagedList<T> : List<T> 
 {
     public int CurrentPage { get; private set; }
     public int TotalPages { get; private set; }
@@ -8,6 +8,8 @@ public class PagedList<T> : List<T>
     public int TotalCount { get; private set; }
     public bool HasPrevious => CurrentPage > 1;
     public bool HasNext => CurrentPage < TotalPages;
+
+    public PagedList() { }
 
     public PagedList(List<T> items, int count, int pageNumber, int pageSize)
     {
