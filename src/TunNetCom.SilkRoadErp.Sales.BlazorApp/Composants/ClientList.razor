@@ -1,7 +1,6 @@
 ﻿@page "/clients"
 @using TunNetCom.SilkRoadErp.Sales.Api.Contracts.Client
 @using TunNetCom.SilkRoadErp.Sales.BlazorApp.Services
-@using TunNetCom.SilkRoadErp.Sales.Domain.Entites
 @inject ClientService ClientService
 @inject NavigationManager NavigationManager
 
@@ -9,6 +8,7 @@
     <h3 class="mb-3">Clients</h3>
 
     <button class="btn btn-primary mb-3" @onclick="CreateClient">Add Client</button>
+    <input class="form-control mb-3" placeholder="Search..." @bind="searchKeyword" @oninput="SearchClients" />
 
     @if (clients == null)
     {
@@ -50,22 +50,53 @@
                 }
             </tbody>
         </table>
-        <div class="d-flex justify-content-between">
-            <button class="btn btn-primary" @onclick="PreviousPage" disabled="@(pageIndex == 1)">Previous</button>
-            <span>Page @pageIndex of @totalPages</span>
-            <input class="form-control w-auto d-inline-block" id="pageInput" type="number" min="1" max="@totalPages" @bind="inputPageIndex" @onkeypress="HandleKeyPress" />
-            <button class="btn btn-primary" @onclick="NextPage" disabled="@(pageIndex * pageSize >= totalClients)">Next</button>
+        <div class="d-flex justify-content-center">
+            <button class="btn btn-primary me-2" @onclick="PreviousPage" disabled="@(pageNumber == 1)">Previous</button>
+            @if (totalPages <= 7)
+            {
+                @for (var i = 1; i <= totalPages; i++)
+                {
+                    <button class="btn @((i == pageNumber) ? "btn-warning" : "btn-secondary") me-2" @onclick="() => GoToPage(i)">@i</button>
+                }
+            }
+            else
+            {
+                @if (pageNumber > 1)
+                {
+                    <button class="btn @((pageNumber == 1) ? "btn-warning" : "btn-secondary") me-2" @onclick="() => GoToPage(1)">1</button>
+                }
+                @if (pageNumber > 4)
+                {
+                    <span class="me-2">...</span>
+                }
+                @for (var i = Math.Max(1, pageNumber - 2); i <= Math.Min(totalPages, pageNumber + 2); i++)
+                {
+                    if (i != 1 && i != totalPages)
+                    {
+                        <button class="btn @((i == pageNumber) ? "btn-warning" : "btn-secondary") me-2" @onclick="() => GoToPage(i)">@i</button>
+                    }
+                }
+                @if (pageNumber < totalPages - 3)
+                {
+                    <span class="me-2">...</span>
+                }
+                @if (pageNumber < totalPages)
+                {
+                    <button class="btn @((pageNumber == totalPages) ? "btn-warning" : "btn-secondary") me-2" @onclick="() => GoToPage(totalPages)">@totalPages</button>
+                }
+            }
+            <button class="btn btn-primary ms-2" @onclick="NextPage" disabled="@(pageNumber >= totalPages)">Next</button>
         </div>
     }
 </div>
 
 @code {
     private List<ClientResponse>? clients;
-    private int pageIndex = 1;
+    private int pageNumber = 1;
     private const int pageSize = 10;
     private int totalClients;
     private int totalPages;
-    private int inputPageIndex;
+    private string searchKeyword = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -74,11 +105,10 @@
 
     private async Task LoadClients()
     {
-        var result = await ClientService.GetClientsAsync(pageIndex, pageSize);
+        var result = await ClientService.GetClientsAsync(pageNumber, pageSize, searchKeyword);
         clients = result.Clients;
         totalClients = result.TotalCount;
-        totalPages = (int)Math.Ceiling((double)totalClients / pageSize);
-        inputPageIndex = pageIndex;
+        totalPages = result.TotalPages;
     }
 
     private void CreateClient()
@@ -99,18 +129,18 @@
 
     private async Task PreviousPage()
     {
-        if (pageIndex > 1)
+        if (pageNumber > 1)
         {
-            pageIndex--;
+            pageNumber--;
             await LoadClients();
         }
     }
 
     private async Task NextPage()
     {
-        if (pageIndex * pageSize < totalClients)
+        if (pageNumber < totalPages)
         {
-            pageIndex++;
+            pageNumber++;
             await LoadClients();
         }
     }
@@ -119,16 +149,15 @@
     {
         if (page >= 1 && page <= totalPages)
         {
-            pageIndex = page;
+            pageNumber = page;
             await LoadClients();
         }
     }
 
-    private async Task HandleKeyPress(KeyboardEventArgs args)
+    private async Task SearchClients(ChangeEventArgs args)
     {
-        if (args.Key == "Enter")
-        {
-            await GoToPage(inputPageIndex);
-        }
+        pageNumber = 1;
+        searchKeyword = args.Value?.ToString() ?? "";
+        await LoadClients();
     }
 }

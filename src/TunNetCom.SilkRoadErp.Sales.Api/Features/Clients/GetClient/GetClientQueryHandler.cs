@@ -9,17 +9,25 @@ public class GetClientsQueryHandler(SalesContext _context, ILogger<GetClientsQue
 
         logger.LogInformation(
             "Fetching clients with pageIndex: {PageIndex} and pageSize: {PageSize}",
-            request.PageIndex,
+            request.PageNumber,
             request.PageSize);
 
         var clientsQuery = _context.Client.AsQueryable();
 
-        clientsQuery = clientsQuery.Where(
-            c =>
-            c.Nom.Contains(request.SearchKeyword)
-            || c.Mail.Contains(request.SearchKeyword));
+        if (!string.IsNullOrEmpty(request.SearchKeyword))
+        {
+            clientsQuery = clientsQuery.Where(
+                c => c.Nom.Contains(request.SearchKeyword) || 
+                c.Tel.Contains(request.SearchKeyword) ||
+                c.Adresse.Contains(request.SearchKeyword) ||
+                c.Matricule.Contains(request.SearchKeyword) ||
+                c.Code.Contains(request.SearchKeyword) ||
+                c.CodeCat.Contains(request.SearchKeyword) ||
+                c.EtbSec.Contains(request.SearchKeyword) ||
+                c.Mail.Contains(request.SearchKeyword)) ;
+        }
 
-        var pagedClients = await PagedList<Client>.ToPagedListAsync(clientsQuery, request.PageIndex, request.PageSize, cancellationToken);
+        var pagedClients = await PagedList<Client>.ToPagedListAsync(clientsQuery, request.PageNumber, request.PageSize, cancellationToken);
 
         var clientResponses = pagedClients.Select(c => c.Adapt<ClientResponse>()).ToList();
 

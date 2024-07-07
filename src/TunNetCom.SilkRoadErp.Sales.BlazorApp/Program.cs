@@ -1,15 +1,18 @@
 using Microsoft.EntityFrameworkCore;
 using TunNetCom.SilkRoadErp.Sales.BlazorApp.Services;
 using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
+// Lire les secrets utilisateur
+builder.Configuration.AddUserSecrets<Program>();
 
 // Ajouter les services à votre conteneur
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews()
+                .AddNewtonsoftJson();
 
 // Register your DbContext
 builder.Services.AddDbContext<SalesContext>(options =>
