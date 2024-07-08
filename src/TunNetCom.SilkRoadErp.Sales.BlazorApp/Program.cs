@@ -5,18 +5,11 @@ using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Lire les secrets utilisateur
-builder.Configuration.AddUserSecrets<Program>();
-
 // Ajouter les services à votre conteneur
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddControllersWithViews()
                 .AddNewtonsoftJson();
-
-// Register your DbContext
-builder.Services.AddDbContext<SalesContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Register your services
 builder.Services.AddScoped<ClientService>();
