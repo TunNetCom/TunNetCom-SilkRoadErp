@@ -2,19 +2,24 @@
 
 public class UpdateClientCommandHandler(
     SalesContext _context,
-    ILogger<UpdateClientCommandHandler> logger)
+    ILogger<UpdateClientCommandHandler> _logger)
     : IRequestHandler<UpdateClientCommand, Result>
 {
     public async Task<Result> Handle(UpdateClientCommand updateClientCommand, CancellationToken cancellationToken)
     {
         //TODO Back : High-performance logging with LoggerMessage #19
-        logger.LogInformation("Attempting to update client with ID: {Id}", updateClientCommand.Id);
+        Log.UpdatingClient(
+            _logger,
+            updateClientCommand.Id);
 
         var clientToUpdate = await _context.Client.FindAsync(updateClientCommand.Id);
             
         if (clientToUpdate is null)
         {
-            logger.LogWarning("Client with ID: {Id} not found", updateClientCommand.Id);
+            Log.ClientNotFound(
+                _logger,
+                updateClientCommand.Id);
+
             return Result.Fail("Client not found.");
         }
 
@@ -30,7 +35,9 @@ public class UpdateClientCommandHandler(
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        logger.LogInformation("Client with ID: {Id} updated successfully", updateClientCommand.Id);
+        Log.ClientUpdated(
+            _logger,
+            updateClientCommand.Id);
 
         return Result.Ok();
     }
