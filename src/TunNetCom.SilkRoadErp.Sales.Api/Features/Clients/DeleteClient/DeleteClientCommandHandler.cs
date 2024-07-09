@@ -1,20 +1,20 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Clients.DeleteClient;
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure;
+
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Clients.DeleteClient;
 
 public class DeleteClientCommandHandler(SalesContext _context, 
     ILogger<DeleteClientCommandHandler> _logger) : IRequestHandler<DeleteClientCommand, Result>
 {
     public async Task<Result> Handle(DeleteClientCommand deleteClientCommand, CancellationToken cancellationToken)
     {
-        Log.DeletingClient(
-            _logger,
+        _logger.LogClientDeletionAttempt(
             deleteClientCommand.Id);
 
         var client = await _context.Client.FindAsync(deleteClientCommand.Id);
 
         if (client is null)
         {
-            Log.ClientNotFound(
-                _logger,
+            _logger.LogClientNotFound(
                 deleteClientCommand.Id);
 
             return Result.Fail("client_not_found");
@@ -23,8 +23,7 @@ public class DeleteClientCommandHandler(SalesContext _context,
         _context.Client.Remove(client);
         await _context.SaveChangesAsync(cancellationToken);
 
-        Log.ClientDeleted(
-            _logger,
+        _logger.LogClientDeleted(
             deleteClientCommand.Id);
 
         return Result.Ok();

@@ -1,24 +1,26 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Clients.GetClientById;
+﻿using Azure.Core;
+
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Clients.GetClientById;
 
 public class GetClientByIdQueryHandler(SalesContext _context, ILogger<GetClientByIdQueryHandler> _logger)
     : IRequestHandler<GetClientByIdQuery, Result<ClientResponse>>
 {
     public async Task<Result<ClientResponse>> Handle(GetClientByIdQuery getClientByIdQuery, CancellationToken cancellationToken)
     {
-        Log.FetchingClientById(
-            _logger,
+        _logger.LogFetchingClientById(
             getClientByIdQuery.Id);
 
         var client = await _context.Client.FindAsync(getClientByIdQuery.Id);
         if (client is null)
         {
-            Log.ClientNotFound(
-                _logger,
+            _logger.LogClientNotFound(
                 getClientByIdQuery.Id);
 
             return Result.Fail("client_not_found");
         }
 
+        _logger.LogClientFetchedById(
+            getClientByIdQuery.Id);
         return client.Adapt<ClientResponse>();
     }
 }

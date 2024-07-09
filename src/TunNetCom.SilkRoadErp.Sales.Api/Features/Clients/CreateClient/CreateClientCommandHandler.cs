@@ -5,8 +5,8 @@ public class CreateClientCommandHandler(SalesContext _context, ILogger<CreateCli
 {
     public async Task<Result<int>> Handle(CreateClientCommand createClientCommand, CancellationToken cancellationToken)
     {
-        Log.CreatingClient(
-            _logger);
+        _logger.LogClientCreated(
+            createClientCommand);
 
         var client = Client.CreateClient
         (
@@ -23,8 +23,7 @@ public class CreateClientCommandHandler(SalesContext _context, ILogger<CreateCli
         _context.Client.Add(client);
         await _context.SaveChangesAsync(cancellationToken);
 
-        Log.ClientCreated(
-            _logger,
+        _logger.LogClientCreatedSuccessfully(
             client.Id);
 
         return client.Id;

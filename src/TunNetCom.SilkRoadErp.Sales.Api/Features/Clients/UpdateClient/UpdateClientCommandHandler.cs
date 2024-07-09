@@ -8,16 +8,14 @@ public class UpdateClientCommandHandler(
     public async Task<Result> Handle(UpdateClientCommand updateClientCommand, CancellationToken cancellationToken)
     {
         //TODO Back : High-performance logging with LoggerMessage #19
-        Log.UpdatingClient(
-            _logger,
+        _logger.LogClientUpdateAttempt(
             updateClientCommand.Id);
 
         var clientToUpdate = await _context.Client.FindAsync(updateClientCommand.Id);
             
         if (clientToUpdate is null)
         {
-            Log.ClientNotFound(
-                _logger,
+            _logger.LogClientNotFound(
                 updateClientCommand.Id);
 
             return Result.Fail("Client not found.");
@@ -35,8 +33,7 @@ public class UpdateClientCommandHandler(
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        Log.ClientUpdated(
-            _logger,
+        _logger.LogClientUpdated(
             updateClientCommand.Id);
 
         return Result.Ok();

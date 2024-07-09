@@ -1,8 +1,3 @@
-
-
-
-
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure Serilog

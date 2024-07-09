@@ -1,4 +1,6 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Clients.GetClient;
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure;
+
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Clients.GetClient;
 
 public class GetClientsQueryHandler(SalesContext _context, ILogger<GetClientsQueryHandler> _logger)
     : IRequestHandler<GetClientsQuery, PagedList<ClientResponse>>
@@ -7,12 +9,10 @@ public class GetClientsQueryHandler(SalesContext _context, ILogger<GetClientsQue
     {
         //TODO Back : High-performance logging with LoggerMessage #19
 
-       Log.FetchingClients(
-           _logger,
-           getClientsQuery.PageNumber,
-           getClientsQuery.PageSize);
+        _logger.LogPaginationRequest(
+            getClientsQuery.PageNumber, getClientsQuery.PageSize);
 
-        var clientsQuery = _context.Client.AsQueryable();
+         var clientsQuery = _context.Client.AsQueryable();
 
         if (!string.IsNullOrEmpty(getClientsQuery.SearchKeyword))
         {
@@ -31,8 +31,7 @@ public class GetClientsQueryHandler(SalesContext _context, ILogger<GetClientsQue
 
         var clientResponses = pagedClients.Select(c => c.Adapt<ClientResponse>()).ToList();
 
-        Log.FetchedClients(
-            _logger,
+        _logger.LogClientsFetched(
             clientResponses.Count);
 
         return new PagedList<ClientResponse>(clientResponses, pagedClients.TotalCount, pagedClients.CurrentPage, pagedClients.PageSize);
