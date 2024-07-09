@@ -19,3 +19,5 @@ global using Newtonsoft.Json;
 global using Microsoft.AspNetCore.Http;
 global using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Behaviors;
 global using FluentResults;
+global using ILogger = Microsoft.Extensions.Logging.ILogger;
+

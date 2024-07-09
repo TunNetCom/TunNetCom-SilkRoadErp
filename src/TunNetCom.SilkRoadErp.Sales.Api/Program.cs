@@ -1,12 +1,7 @@
-
-
-
-
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure Serilog
-Log.Logger = new LoggerConfiguration()
+Serilog.Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
     .Enrich.FromLogContext()
@@ -60,14 +55,14 @@ app.MapCarter();
 
 try
 {
-    Log.Information("Starting web host");
+    Serilog.Log.Information("Starting web host");
     app.Run();
 }
 catch (Exception ex)
 {
-    Log.Fatal(ex, "Host terminated unexpectedly");
+    Serilog.Log.Fatal(ex, "Host terminated unexpectedly");
 }
 finally
 {
-    Log.CloseAndFlush();
+    Serilog.Log.CloseAndFlush();
 }
