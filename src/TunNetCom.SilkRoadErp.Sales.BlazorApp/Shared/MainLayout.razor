@@ -1,5 +1,14 @@
 ﻿@inherits LayoutComponentBase
 
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.BlazorApp.Composants
+@using TunNetCom.SilkRoadErp.Sales.BlazorApp.Locales
+
+@inject NavigationManager Navigation
+@inject IStringLocalizer<SharedResource> Localizer
+
 <PageTitle>Silk Road Erp</PageTitle>
 
 <div class="page">
@@ -9,7 +18,7 @@
 
     <main>
         <div class="top-row px-4">
-            
+            <LanguageSelector />
         </div>
 
         <article class="content px-4">

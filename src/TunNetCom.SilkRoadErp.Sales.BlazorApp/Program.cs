@@ -2,6 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using TunNetCom.SilkRoadErp.Sales.BlazorApp.Services;
 using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Localization;
+using System.Globalization;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +16,18 @@ builder.Services.AddControllersWithViews()
 
 // Register your services
 builder.Services.AddScoped<ClientService>();
+
+// Add Localization
+builder.Services.AddLocalization();
+builder.Services.AddControllers();
+
+// Configure supported cultures
+string[] supportedCultures = ["en", "fr"];
+var localizationOptions = new RequestLocalizationOptions()
+    .SetDefaultCulture(supportedCultures[0])
+    .AddSupportedCultures(supportedCultures)
+    .AddSupportedUICultures(supportedCultures);
+
 
 // Lire la configuration pour l'URL de base
 var baseUrl = builder.Configuration.GetValue<string>("BaseUrl");
@@ -39,6 +54,11 @@ app.UseRouting();
 
 app.UseAuthorization();
 
+
+// Use location configuration
+app.UseRequestLocalization(localizationOptions);
+
+app.MapControllers();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 
