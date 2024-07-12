@@ -1,4 +1,11 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@using TunNetCom.SilkRoadErp.Sales.BlazorApp.Locales
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.Extensions.Localization
+@inject NavigationManager Navigation
+@inject IStringLocalizer<SharedResource> Localizer
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">Silk Road Erp</a>
         <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
@@ -11,12 +18,12 @@
     <nav class="flex-column">
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="oi oi-home" aria-hidden="true"></span> Home
+                <span class="oi oi-home" aria-hidden="true"></span> @Localizer["Home"]
             </NavLink>
         </div>
         <div class="nav-item px-3">
             <a href="clients" class="nav-link">
-            <span class="oi oi-list-rich" aria-hidden="true"></span> Clients
+                <span class="oi oi-list-rich" aria-hidden="true"></span> @Localizer["Clients"]
             </a>
         </div>
     </nav>

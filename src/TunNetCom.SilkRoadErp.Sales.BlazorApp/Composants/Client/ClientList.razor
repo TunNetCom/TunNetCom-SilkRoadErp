@@ -1,33 +1,36 @@
 ﻿@page "/clients"
+@using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.Api.Contracts.Client
+@using TunNetCom.SilkRoadErp.Sales.BlazorApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.BlazorApp.Services
 @inject ClientService ClientService
 @inject NavigationManager NavigationManager
+@inject IStringLocalizer<SharedResource> Localizer
 
 <div class="container mt-4">
-    <h3 class="mb-3">Clients</h3>
+    <h3 class="mb-3">@Localizer["Clients"]</h3>
 
-    <button class="btn btn-primary mb-3" @onclick="CreateClient">Add Client</button>
-    <input class="form-control mb-3" placeholder="Search..." @bind="searchKeyword" @oninput="SearchClients" />
+    <button class="btn btn-primary mb-3" @onclick="CreateClient">@Localizer["AddClient"]</button>
+    <input class="form-control mb-3" placeholder="@Localizer["Search"]" @bind="searchKeyword" @oninput="SearchClients" />
 
     @if (clients == null)
     {
-        <p>Loading...</p>
+        <p>@Localizer["Loading"]</p>
     }
     else
     {
         <table class="table table-striped">
             <thead>
                 <tr>
-                    <th>Nom</th>
-                    <th>Tel</th>
-                    <th>Adresse</th>
-                    <th>Matricule</th>
-                    <th>Code</th>
-                    <th>CodeCat</th>
-                    <th>EtbSec</th>
-                    <th>Mail</th>
-                    <th>Actions</th>
+                    <th>@Localizer["Nom"]</th>
+                    <th>@Localizer["Tel"]</th>
+                    <th>@Localizer["Adresse"]</th>
+                    <th>@Localizer["Matricule"]</th>
+                    <th>@Localizer["Code"]</th>
+                    <th>@Localizer["CodeCat"]</th>
+                    <th>@Localizer["EtbSec"]</th>
+                    <th>@Localizer["Mail"]</th>
+                    <th>@Localizer["Actions"]</th>
                 </tr>
             </thead>
             <tbody>
@@ -43,15 +46,15 @@
                         <td>@client.EtbSec</td>
                         <td>@client.Mail</td>
                         <td>
-                            <button class="btn btn-warning btn-sm" @onclick="() => EditClient(client.Id)">Edit</button>
-                            <button class="btn btn-danger btn-sm" @onclick="() => DeleteClient(client.Id)">Delete</button>
+                            <button class="btn btn-warning btn-sm" @onclick="() => EditClient(client.Id)">@Localizer["Edit"]</button>
+                            <button class="btn btn-danger btn-sm" @onclick="() => DeleteClient(client.Id)">@Localizer["Delete"]</button>
                         </td>
                     </tr>
                 }
             </tbody>
         </table>
         <div class="d-flex justify-content-center">
-            <button class="btn btn-primary me-2" @onclick="PreviousPage" disabled="@(pageNumber == 1)">Previous</button>
+            <button class="btn btn-primary me-2" @onclick="PreviousPage" disabled="@(pageNumber == 1)">@Localizer["Previous"]</button>
             @if (totalPages <= 7)
             {
                 @for (var i = 1; i <= totalPages; i++)
@@ -85,7 +88,7 @@
                     <button class="btn @((pageNumber == totalPages) ? "btn-warning" : "btn-secondary") me-2" @onclick="() => GoToPage(totalPages)">@totalPages</button>
                 }
             }
-            <button class="btn btn-primary ms-2" @onclick="NextPage" disabled="@(pageNumber >= totalPages)">Next</button>
+            <button class="btn btn-primary ms-2" @onclick="NextPage" disabled="@(pageNumber >= totalPages)">@Localizer["Next"]</button>
         </div>
     }
 </div>

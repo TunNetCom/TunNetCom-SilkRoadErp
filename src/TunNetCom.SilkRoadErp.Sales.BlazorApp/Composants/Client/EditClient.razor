@@ -1,10 +1,14 @@
 ﻿@page "/editclient/{id:int?}"
+@using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.Api.Contracts.Client
 @using TunNetCom.SilkRoadErp.Sales.BlazorApp.Services
+@using TunNetCom.SilkRoadErp.Sales.BlazorApp.Locales;
+@using System.Globalization
 @inject ClientService ClientService
 @inject NavigationManager NavigationManager
+@inject IStringLocalizer<SharedResource> Localizer
 
-<h3>@(client.Id == 0 ? "Add Client" : "Edit Client")</h3>
+<h3>@(client.Id == 0 ? Localizer["AddClient"] : Localizer["EditClient"])</h3>
 
 <div class="form-container">
     <EditForm Model="client" OnValidSubmit="HandleValidSubmit">
@@ -12,72 +16,40 @@
         <ValidationSummary />
 
         <div>
-            <label>Nom: </label>
+            <label>@Localizer["Nom"]: </label>
             <InputText @bind-Value="client.Nom" class="form-control" />
-            @if (!string.IsNullOrEmpty(nomError))
-            {
-                <span class="text-danger">@nomError</span>
-            }
         </div>
         <div>
-            <label>Tel: </label>
+            <label>@Localizer["Tel"]: </label>
             <InputText @bind-Value="client.Tel" class="form-control" />
-            @if (!string.IsNullOrEmpty(telError))
-            {
-                <span class="text-danger">@telError</span>
-            }
         </div>
         <div>
-            <label>Adresse: </label>
+            <label>@Localizer["Adresse"]: </label>
             <InputText @bind-Value="client.Adresse" class="form-control" />
-            @if (!string.IsNullOrEmpty(adresseError))
-            {
-                <span class="text-danger">@adresseError</span>
-            }
         </div>
         <div>
-            <label>Matricule: </label>
+            <label>@Localizer["Matricule"]: </label>
             <InputText @bind-Value="client.Matricule" class="form-control" />
-            @if (!string.IsNullOrEmpty(matriculeError))
-            {
-                <span class="text-danger">@matriculeError</span>
-            }
         </div>
         <div>
-            <label>Code: </label>
+            <label>@Localizer["Code"]: </label>
             <InputText @bind-Value="client.Code" class="form-control" />
-            @if (!string.IsNullOrEmpty(codeError))
-            {
-                <span class="text-danger">@codeError</span>
-            }
         </div>
         <div>
-            <label>CodeCat: </label>
+            <label>@Localizer["CodeCat"]: </label>
             <InputText @bind-Value="client.CodeCat" class="form-control" />
-            @if (!string.IsNullOrEmpty(codeCatError))
-            {
-                <span class="text-danger">@codeCatError</span>
-            }
         </div>
         <div>
-            <label>EtbSec: </label>
+            <label>@Localizer["EtbSec"]: </label>
             <InputText @bind-Value="client.EtbSec" class="form-control" />
-            @if (!string.IsNullOrEmpty(etbSecError))
-            {
-                <span class="text-danger">@etbSecError</span>
-            }
         </div>
         <div>
-            <label>Mail: </label>
+            <label>@Localizer["Mail"]: </label>
             <InputText @bind-Value="client.Mail" class="form-control" />
-            @if (!string.IsNullOrEmpty(mailError))
-            {
-                <span class="text-danger">@mailError</span>
-            }
         </div>
 
-        <button type="submit" class="button">Save</button>
-        <button type="button" class="button-secondary" @onclick="Cancel">Cancel</button>
+        <button type="submit" class="button">@Localizer["Save"]</button>
+        <button type="button" class="button-secondary" @onclick="Cancel">@Localizer["Cancel"]</button>
     </EditForm>
     @if (errorMessages != null && errorMessages.Any())
     {
@@ -89,6 +61,7 @@
         </div>
     }
 </div>
+
 
 @code {
     [Parameter] public int? Id { get; set; }
