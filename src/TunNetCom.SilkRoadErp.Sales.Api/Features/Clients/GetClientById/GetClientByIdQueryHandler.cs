@@ -1,6 +1,4 @@
-﻿using Azure.Core;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Clients.GetClientById;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Clients.GetClientById;
 
 public class GetClientByIdQueryHandler(SalesContext _context, ILogger<GetClientByIdQueryHandler> _logger)
     : IRequestHandler<GetClientByIdQuery, Result<ClientResponse>>

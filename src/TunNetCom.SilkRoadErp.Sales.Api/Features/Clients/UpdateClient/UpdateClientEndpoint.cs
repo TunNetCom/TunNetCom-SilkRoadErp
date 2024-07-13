@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Clients.UpdateClient;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Clients.UpdateClient;
 
 public class UpdateClientEndpoint : ICarterModule
 {

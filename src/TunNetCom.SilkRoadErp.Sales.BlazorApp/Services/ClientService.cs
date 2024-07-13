@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using FluentResults;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using TunNetCom.SilkRoadErp.Sales.Api.Contracts.Client;
@@ -10,7 +11,8 @@ namespace TunNetCom.SilkRoadErp.Sales.BlazorApp.Services;
 
 public class ClientService(HttpClient _httpClient)
 {
-    public async Task<(List<ClientResponse> Clients, int TotalCount, int CurrentPage, int TotalPages)> GetClientsAsync(int pageNumber, int pageSize, string searchKeyword = "")
+    public async Task<(List<ClientResponse> Clients, int TotalCount, int CurrentPage, int TotalPages)> 
+        GetClientsAsync(int pageNumber, int pageSize, string searchKeyword = "")
     {
         var response = await _httpClient.GetAsync($"/clients?pageNumber={pageNumber}&pageSize={pageSize}&searchKeyword={searchKeyword}");
         response.EnsureSuccessStatusCode();
@@ -33,7 +35,8 @@ public class ClientService(HttpClient _httpClient)
         
     }
 
-    public async Task<ClientResponse> GetClientByIdAsync(int id)
+    public async Task<ClientResponse> 
+        GetClientByIdAsync(int id)
     {
         var response = await _httpClient.GetAsync($"/clients/{id}");
         response.EnsureSuccessStatusCode();
@@ -44,42 +47,67 @@ public class ClientService(HttpClient _httpClient)
         return client;
     }
 
-    public async Task AddClientAsync(CreateClientRequest client)
+    public async Task 
+        AddClientAsync(CreateClientRequest client)
     {
         var response = await _httpClient.PostAsJsonAsync("/clients", client);
         await HandleResponse(response);
     }
 
-    public async Task UpdateClientAsync(int id, UpdateClientRequest client)
+    public async Task 
+        UpdateClientAsync(int id, UpdateClientRequest client)
     {
         var response = await _httpClient.PutAsJsonAsync($"/clients/{id}", client);
         await HandleResponse(response);
     }
 
-    public async Task DeleteClientAsync(int id)
+    public async Task 
+        DeleteClientAsync(int id)
     {
         var response = await _httpClient.DeleteAsync($"/clients/{id}");
         await HandleResponse(response);
     }
 
-    private async Task HandleResponse(HttpResponseMessage response)
+    private async Task 
+        HandleResponse(HttpResponseMessage response)
     {
         if (!response.IsSuccessStatusCode)
         {
             var errorContent = await response.Content.ReadAsStringAsync();
 
-            if (response.StatusCode == HttpStatusCode.BadRequest && errorContent.Contains("errors"))
             {
-                var problemDetails = JsonConvert.DeserializeObject<ValidationProblemDetails>(errorContent);
-                throw new ClientServiceException(response.StatusCode, errorContent)
+                try
                 {
-                    Data = { ["ValidationErrors"] = problemDetails?.Errors }
-                };
+                    var validationErrors = JsonConvert.DeserializeObject<List<IError>>(errorContent);
+                    throw new ClientServiceException(response.StatusCode, errorContent)
+                    {
+                        Data = { ["ValidationErrors"] = validationErrors }
+                    };
+                }
+                catch (JsonException)
+                {
+                   
+                }
             }
 
             throw new ClientServiceException(response.StatusCode, errorContent);
         }
     }
+
+    public async Task<Dictionary<string, List<string>>> 
+        ValidateFieldAsync(string fieldName, ClientResponse client)
+    {
+        var response = await _httpClient.PostAsJsonAsync($"/clients/validate/{fieldName}", client);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new ClientServiceException(response.StatusCode, await response.Content.ReadAsStringAsync());
+        }
+
+        var validationErrors = await response.Content.ReadFromJsonAsync<Dictionary<string, List<string>>>();
+        return validationErrors ?? new Dictionary<string, List<string>>();
+    }
+
     public class PaginationMetadata
     {
         public int TotalCount { get; set; }

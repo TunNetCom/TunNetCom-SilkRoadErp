@@ -1,4 +1,5 @@
 ﻿@page "/clients"
+@using Blazored.Toast.Services
 @using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.Api.Contracts.Client
 @using TunNetCom.SilkRoadErp.Sales.BlazorApp.Locales
@@ -6,6 +7,7 @@
 @inject ClientService ClientService
 @inject NavigationManager NavigationManager
 @inject IStringLocalizer<SharedResource> Localizer
+@inject Blazored.Toast.Services.IToastService ToastService
 
 <div class="container mt-4">
     <h3 class="mb-3">@Localizer["Clients"]</h3>
@@ -128,6 +130,8 @@
     {
         await ClientService.DeleteClientAsync(id);
         await LoadClients();
+        ToastService.ShowSuccess("Client delete successfully!");
+
     }
 
     private async Task PreviousPage()
