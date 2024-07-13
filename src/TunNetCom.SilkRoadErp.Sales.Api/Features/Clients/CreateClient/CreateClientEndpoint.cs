@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Clients.CreateClient;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Clients.CreateClient;
 
 public class CreateClientEndpoint : ICarterModule
 {

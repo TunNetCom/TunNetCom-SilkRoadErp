@@ -1,6 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Clients.GetClient;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Clients.GetClient;
 
 public class GetClientsQueryHandler(SalesContext _context, ILogger<GetClientsQueryHandler> _logger)
     : IRequestHandler<GetClientsQuery, PagedList<ClientResponse>>

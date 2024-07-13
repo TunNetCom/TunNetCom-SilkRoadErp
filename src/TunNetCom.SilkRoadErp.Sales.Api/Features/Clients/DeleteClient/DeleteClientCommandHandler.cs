@@ -1,6 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Clients.DeleteClient;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Clients.DeleteClient;
 
 public class DeleteClientCommandHandler(SalesContext _context, 
     ILogger<DeleteClientCommandHandler> _logger) : IRequestHandler<DeleteClientCommand, Result>

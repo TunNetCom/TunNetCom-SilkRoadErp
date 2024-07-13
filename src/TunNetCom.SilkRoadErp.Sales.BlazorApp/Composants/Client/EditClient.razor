@@ -2,11 +2,12 @@
 @using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.Api.Contracts.Client
 @using TunNetCom.SilkRoadErp.Sales.BlazorApp.Services
-@using TunNetCom.SilkRoadErp.Sales.BlazorApp.Locales;
+@using TunNetCom.SilkRoadErp.Sales.BlazorApp.Locales
 @using System.Globalization
 @inject ClientService ClientService
 @inject NavigationManager NavigationManager
 @inject IStringLocalizer<SharedResource> Localizer
+@inject Blazored.Toast.Services.IToastService ToastService
 
 <h3>@(client.Id == 0 ? Localizer["AddClient"] : Localizer["EditClient"])</h3>
 
@@ -18,34 +19,66 @@
         <div>
             <label>@Localizer["Nom"]: </label>
             <InputText @bind-Value="client.Nom" class="form-control" />
+            @if (!string.IsNullOrEmpty(nomError))
+            {
+                <div class="text-danger">@nomError</div>
+            }
         </div>
         <div>
             <label>@Localizer["Tel"]: </label>
             <InputText @bind-Value="client.Tel" class="form-control" />
+            @if (!string.IsNullOrEmpty(telError))
+            {
+                <div class="text-danger">@telError</div>
+            }
         </div>
         <div>
             <label>@Localizer["Adresse"]: </label>
             <InputText @bind-Value="client.Adresse" class="form-control" />
+            @if (!string.IsNullOrEmpty(adresseError))
+            {
+                <div class="text-danger">@adresseError</div>
+            }
         </div>
         <div>
             <label>@Localizer["Matricule"]: </label>
             <InputText @bind-Value="client.Matricule" class="form-control" />
+            @if (!string.IsNullOrEmpty(matriculeError))
+            {
+                <div class="text-danger">@matriculeError</div>
+            }
         </div>
         <div>
             <label>@Localizer["Code"]: </label>
             <InputText @bind-Value="client.Code" class="form-control" />
+            @if (!string.IsNullOrEmpty(codeError))
+            {
+                <div class="text-danger">@codeError</div>
+            }
         </div>
         <div>
             <label>@Localizer["CodeCat"]: </label>
             <InputText @bind-Value="client.CodeCat" class="form-control" />
+            @if (!string.IsNullOrEmpty(codeCatError))
+            {
+                <div class="text-danger">@codeCatError</div>
+            }
         </div>
         <div>
             <label>@Localizer["EtbSec"]: </label>
             <InputText @bind-Value="client.EtbSec" class="form-control" />
+            @if (!string.IsNullOrEmpty(etbSecError))
+            {
+                <div class="text-danger">@etbSecError</div>
+            }
         </div>
         <div>
             <label>@Localizer["Mail"]: </label>
             <InputText @bind-Value="client.Mail" class="form-control" />
+            @if (!string.IsNullOrEmpty(mailError))
+            {
+                <div class="text-danger">@mailError</div>
+            }
         </div>
 
         <button type="submit" class="button">@Localizer["Save"]</button>
@@ -62,20 +95,19 @@
     }
 </div>
 
-
 @code {
     [Parameter] public int? Id { get; set; }
     private ClientResponse client = new ClientResponse();
     private List<string> errorMessages = new List<string>();
 
-    private string nomError;
-    private string telError;
-    private string adresseError;
-    private string matriculeError;
-    private string codeError;
-    private string codeCatError;
-    private string etbSecError;
-    private string mailError;
+    private string? nomError;
+    private string? telError;
+    private string? adresseError;
+    private string? matriculeError;
+    private string? codeError;
+    private string? codeCatError;
+    private string? etbSecError;
+    private string? mailError;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -83,33 +115,22 @@
         {
             if (Id.HasValue)
             {
-                Console.WriteLine($"Fetching client with ID: {Id.Value}");
-                var existingClient = await ClientService.GetClientByIdAsync(Id.Value);
-                if (existingClient != null)
-                {
-                    client = existingClient;
-                    Console.WriteLine($"Client data fetched: {client.Nom}, {client.Tel}, {client.Adresse}");
-                }
-                else
-                {
-                    Console.WriteLine("Client not found.");
-                }
+                client = await ClientService.GetClientByIdAsync(Id.Value);
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error fetching client data: {ex.Message}");
+            ToastService.ShowError($"Error loading client data: {ex.Message}");
         }
     }
 
     private async Task HandleValidSubmit()
     {
-        ClearErrors();
         try
         {
             if (client.Id == 0)
             {
-                var newClientRequest = new CreateClientRequest
+                await ClientService.AddClientAsync(new CreateClientRequest
                     {
                         Nom = client.Nom,
                         Tel = client.Tel,
@@ -119,12 +140,11 @@
                         CodeCat = client.CodeCat,
                         EtbSec = client.EtbSec,
                         Mail = client.Mail
-                    };
-                await ClientService.AddClientAsync(newClientRequest);
+                    });
             }
             else
             {
-                var updateClientRequest = new UpdateClientRequest
+                await ClientService.UpdateClientAsync(client.Id, new UpdateClientRequest
                     {
                         Nom = client.Nom,
                         Tel = client.Tel,
@@ -134,63 +154,104 @@
                         CodeCat = client.CodeCat,
                         EtbSec = client.EtbSec,
                         Mail = client.Mail
-                    };
-                await ClientService.UpdateClientAsync(client.Id, updateClientRequest);
+                    });
             }
+
+            ToastService.ShowSuccess(client.Id == 0 ? "Client added successfully" : "Client updated successfully");
             NavigationManager.NavigateTo("/clients");
         }
         catch (ClientServiceException ex)
         {
-            Console.WriteLine($"Error content: {ex.ErrorContent}");
             var validationErrors = ex.GetValidationErrors();
+            foreach (var error in validationErrors)
+            {
+                switch (error.PropertyName)
+                {
+                    case nameof(client.Nom):
+                        nomError = error.ErrorMessage;
+                        break;
+                    case nameof(client.Tel):
+                        telError = error.ErrorMessage;
+                        break;
+                    case nameof(client.Adresse):
+                        adresseError = error.ErrorMessage;
+                        break;
+                    case nameof(client.Matricule):
+                        matriculeError = error.ErrorMessage;
+                        break;
+                    case nameof(client.Code):
+                        codeError = error.ErrorMessage;
+                        break;
+                    case nameof(client.CodeCat):
+                        codeCatError = error.ErrorMessage;
+                        break;
+                    case nameof(client.EtbSec):
+                        etbSecError = error.ErrorMessage;
+                        break;
+                    case nameof(client.Mail):
+                        mailError = error.ErrorMessage;
+                        break;
+                    default:
+                        errorMessages.Add(error.ErrorMessage);
+                        break;
+                }
+            }
+            
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error saving client data: {ex.Message}");
+        }
+    }
+
+    private async Task ValidateField(string fieldName)
+    {
+        try
+        {
+            var validationErrors = await ClientService.ValidateFieldAsync(fieldName, client);
             foreach (var error in validationErrors)
             {
                 switch (error.Key)
                 {
-                    case "Nom":
+                    case nameof(client.Nom):
                         nomError = string.Join(", ", error.Value);
                         break;
-                    case "Tel":
+                    case nameof(client.Tel):
                         telError = string.Join(", ", error.Value);
                         break;
-                    case "Adresse":
+                    case nameof(client.Adresse):
                         adresseError = string.Join(", ", error.Value);
                         break;
-                    case "Matricule":
+                    case nameof(client.Matricule):
                         matriculeError = string.Join(", ", error.Value);
                         break;
-                    case "Code":
+                    case nameof(client.Code):
                         codeError = string.Join(", ", error.Value);
                         break;
-                    case "CodeCat":
+                    case nameof(client.CodeCat):
                         codeCatError = string.Join(", ", error.Value);
                         break;
-                    case "EtbSec":
+                    case nameof(client.EtbSec):
                         etbSecError = string.Join(", ", error.Value);
                         break;
-                    case "Mail":
+                    case nameof(client.Mail):
                         mailError = string.Join(", ", error.Value);
                         break;
                     default:
-                        errorMessages.Add($"{error.Key}: {string.Join(", ", error.Value)}");
+                        errorMessages.AddRange(error.Value);
                         break;
                 }
             }
+            if (validationErrors.Any())
+            {
+                ToastService.ShowError("Please correct the highlighted errors.");
+            }
             StateHasChanged();
         }
-    }
-
-    private void ClearErrors()
-    {
-        nomError = string.Empty;
-        telError = string.Empty;
-        adresseError = string.Empty;
-        matriculeError = string.Empty;
-        codeError = string.Empty;
-        codeCatError = string.Empty;
-        etbSecError = string.Empty;
-        mailError = string.Empty;
-        errorMessages.Clear();
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error validating field: {ex.Message}");
+        }
     }
 
     private void Cancel()
@@ -198,3 +259,4 @@
         NavigationManager.NavigateTo("/clients");
     }
 }
+

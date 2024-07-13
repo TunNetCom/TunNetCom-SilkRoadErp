@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Clients.GetClientById;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Clients.GetClientById;
 
 public class GetClientByIdEndpoint : ICarterModule
 {

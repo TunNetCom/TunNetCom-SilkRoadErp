@@ -1,6 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using FluentResults;
+using Newtonsoft.Json;
 using System.Net;
-using System.Text.Json;
+using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Behaviors;
 
 namespace TunNetCom.SilkRoadErp.Sales.BlazorApp.Services;
 public class ClientServiceException : Exception
@@ -15,15 +16,21 @@ public class ClientServiceException : Exception
         ErrorContent = errorContent;
     }
 
-    public IDictionary<string, string[]> GetValidationErrors()
+    public IList<ValidationError> GetValidationErrors()
     {
         if (StatusCode == HttpStatusCode.BadRequest && !string.IsNullOrWhiteSpace(ErrorContent))
         {
-            var problemDetails = JsonSerializer.Deserialize<ValidationProblemDetails>(ErrorContent);
-            return problemDetails?.Errors ?? new Dictionary<string, string[]>();
+            try
+            {
+                return JsonConvert.DeserializeObject<List<ValidationError>>(ErrorContent) ?? new List<ValidationError>();
+            }
+            catch (JsonException)
+            {
+                
+            }
         }
 
-        return new Dictionary<string, string[]>();
+        return new List<ValidationError>();
     }
 }
 

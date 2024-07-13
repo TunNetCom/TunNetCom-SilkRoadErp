@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Clients.DeleteClient;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Clients.DeleteClient;
 
 public class DeleteClientEndpoint : ICarterModule
 {
