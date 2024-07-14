@@ -50,6 +50,11 @@ public partial class Client
         };
     }
 
+    public void SetId(int id)
+    {
+        this.Id = id;
+    }
+
     public int Id { get; private set ; }
 
     public string Nom { get; private set ; } = null!;
