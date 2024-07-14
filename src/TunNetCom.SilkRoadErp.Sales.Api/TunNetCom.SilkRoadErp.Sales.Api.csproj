@@ -27,8 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\TunNetCom.SilkRoadErp.Sales.Contracts\TunNetCom.SilkRoadErp.Sales.Contracts.csproj" />
-    <ProjectReference Include="..\..\TunNetCom.SilkRoadErp.Sales.WebApp\TunNetCom.SilkRoadErp.Sales.WebApp.csproj" />
+    <ProjectReference Include="..\TunNetCom.SilkRoadErp.Sales.Contracts\TunNetCom.SilkRoadErp.Sales.Contracts.csproj" />
     <ProjectReference Include="..\TunNetCom.SilkRoadErp.Sales.Database\TunNetCom.SilkRoadErp.Sales.Database.sqlproj" />
     <ProjectReference Include="..\TunNetCom.SilkRoadErp.Sales.Domain\TunNetCom.SilkRoadErp.Sales.Domain.csproj" />
   </ItemGroup>

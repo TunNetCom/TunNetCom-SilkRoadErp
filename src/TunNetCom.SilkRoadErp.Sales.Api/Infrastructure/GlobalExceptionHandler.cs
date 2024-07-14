@@ -1,6 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.WebApp.Services;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure;
 
 public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IExceptionHandler
 {
