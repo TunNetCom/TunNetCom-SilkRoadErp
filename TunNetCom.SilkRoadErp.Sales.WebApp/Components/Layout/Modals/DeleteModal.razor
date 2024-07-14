@@ -1,0 +1,32 @@
+﻿@namespace TunNetCom.DeleteModal
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@inject IStringLocalizer<SharedResource> Localizer
+
+<div class="row">
+    <div class="col-5 col-md-3 text-end">@Localizer["delete_title"]</div>
+    <table>
+
+        <tr>
+            <td>
+                @Localizer["delete_message"]
+            </td>
+        </tr>
+
+    </table>
+
+    <Button class="mt-3" Color="ButtonColor.Success" Type="ButtonType.Button" @onclick="OnClickCallback">
+        Confirm
+    </Button>
+</div>
+
+@code {
+    @code {
+        [Parameter] public EventCallback<MouseEventArgs> OnClickCallback { get; set; }
+
+        protected override void OnInitialized()
+        {
+            base.OnInitialized();
+        }
+    }
+}

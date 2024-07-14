@@ -81,8 +81,8 @@
             }
         </div>
 
-        <button type="submit" class="button">@Localizer["Save"]</button>
-        <button type="button" class="button-secondary" @onclick="Cancel">@Localizer["Cancel"]</button>
+        <input type="submit" class="btn btn-primary">@Localizer["Save"]</input>
+        <input type="button" class="btn btn-close" @onclick="Cancel">@Localizer["Cancel"]</input>
     </EditForm>
     @if (errorMessages != null && errorMessages.Any())
     {

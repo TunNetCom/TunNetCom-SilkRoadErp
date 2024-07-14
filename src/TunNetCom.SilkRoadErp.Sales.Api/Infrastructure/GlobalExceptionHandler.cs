@@ -1,4 +1,6 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure;
+﻿using TunNetCom.SilkRoadErp.Sales.WebApp.Services;
+
+namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure;
 
 public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IExceptionHandler
 {
@@ -14,16 +16,19 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IE
         if (exception is ValidationException validationException)
         {
             var errors = validationException.Errors
-                .Select(e => new ValidationError { PropertyName = e.PropertyName, ErrorMessage = e.ErrorMessage })
-                .ToList();
+                .Select(e => e.ErrorMessage)
+                .ToArray();
 
-            var problemDetails = new ProblemDetails
+            var problemDetails = new ErrorsProblemDetails
             {
                 Status = (int)HttpStatusCode.BadRequest,
                 Title = "Validation Error",
                 Detail = "One or more validation errors occurred.",
                 Instance = context.Request.Path,
-                Extensions = { { "errors", errors } }
+                errors = new Dictionary<string, string[]>
+            {
+                { "errors" ,  errors  }
+            }
             };
 
             context.Response.ContentType = "application/json";
@@ -50,5 +55,10 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IE
         await context.Response.WriteAsync(genericJson, cancellationToken);
 
         return true;
+    }
+
+    public class ErrorsProblemDetails : ProblemDetails
+    {
+        public IDictionary<string, string[]> errors { get; set; }
     }
 }

@@ -1,0 +1,32 @@
+﻿@namespace TunNetCom.NotFoundModal
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@inject IStringLocalizer<SharedResource> Localizer
+
+<div class="row">
+    <div class="col-5 col-md-3 text-end">@Localizer["not_found_modal_title"]</div>
+    <table>
+      
+            <tr>
+                <td>
+                    @_notFoundMessage
+                </td>
+            </tr>
+        
+    </table>
+</div>
+
+@code {
+    @code {
+        private string _notFoundMessage = string.Empty;
+
+        [Parameter] public string NotFoundMessage { get; set; } = string.Empty;
+
+        protected override void OnInitialized()
+        {
+            _notFoundMessage = NotFoundMessage;
+
+            base.OnInitialized();
+        }
+    }
+}

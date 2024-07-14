@@ -5,7 +5,7 @@ using FluentResults;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using TunNetCom.SilkRoadErp.Sales.Api.Contracts.Client;
-using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Utilities;
+using TunNetCom.SilkRoadErp.Sales.Contracts.Contracts;
 
 namespace TunNetCom.SilkRoadErp.Sales.BlazorApp.Services;
 
