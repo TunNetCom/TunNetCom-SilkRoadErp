@@ -1,135 +1,134 @@
 using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers;
 using static TunNetCom.SilkRoadErp.Sales.WebApp.Services.CustomerService;
 
-namespace TunNetCom.SilkRoadErp.Sales.WebApp.Services.Customers
+namespace TunNetCom.SilkRoadErp.Sales.WebApp.Services.Customers;
+
+public class CustomersApiClient : ICustomersApiClient
 {
-    public class CustomersApiClient : ICustomersApiClient
+    private readonly HttpClient _httpClient;
+    private readonly ILogger<CustomersApiClient> _logger;
+    public CustomersApiClient(HttpClient httpClient, ILogger<CustomersApiClient> logger)
     {
-        private readonly HttpClient _httpClient;
-        private readonly ILogger<CustomersApiClient> _logger;
-        public CustomersApiClient(HttpClient httpClient, ILogger<CustomersApiClient> logger)
+        _httpClient = httpClient;
+        _logger = logger;
+    }
+
+    public async Task<OneOf<ResponseTypes, BadRequestResponse>> UpdateCustomer(
+        UpdateCustomerRequest request,
+        int id,
+        CancellationToken cancellationToken)
+    {
+        try
         {
-            _httpClient = httpClient;
-            _logger = logger;
-        }
-
-        public async Task<OneOf<ResponseTypes, BadRequestResponse>> UpdateCustomer(
-            UpdateCustomerRequest request,
-            int id,
-            CancellationToken cancellationToken)
-        {
-            try
+            var headers = new Dictionary<string, string>()
             {
-                var headers = new Dictionary<string, string>()
-                {
-                    { $"Accept", $"application/problem+json" }
-                };
+                { $"Accept", $"application/problem+json" }
+            };
 
-                var response = await _httpClient.PutAsJsonAsync($"{id}", request, headers, cancellationToken);
-                if (response.StatusCode == HttpStatusCode.NoContent)
-                {
-                    return ResponseTypes.Success;
-                }
-                if (response.StatusCode == HttpStatusCode.NotFound)
-                {
-                    return ResponseTypes.NotFound;
-                }
-                if (response.StatusCode == HttpStatusCode.BadRequest)
-                {
-                    return await response.ReadJsonAsync<BadRequestResponse>();
-                }
-                throw new Exception($"Customersid: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
+            var response = await _httpClient.PutAsJsonAsync($"{id}", request, headers, cancellationToken);
+            if (response.StatusCode == HttpStatusCode.NoContent)
+            {
+                return ResponseTypes.Success;
             }
-            catch (Exception ex)
+            if (response.StatusCode == HttpStatusCode.NotFound)
             {
-                _logger.LogError(ex.Message, ex);
-                throw;
-            }
-        }
-
-        public async Task<OneOf<CustomerResponse, bool>> GetCustomer(
-            int id,
-            CancellationToken cancellationToken)
-        {
-            try
-            {
-                var response = await _httpClient.GetAsync($"{id}", cancellationToken: cancellationToken);
-                if (response.StatusCode == HttpStatusCode.OK)
-                {
-                    return await response.ReadJsonAsync<CustomerResponse>();
-                }
-                if (response.StatusCode == HttpStatusCode.NotFound)
-                {
-                    return false;
-                }
-                throw new Exception($"Customersid: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message, ex);
-                throw;
-            }
-        }
-
-        public async Task<Stream> DeleteCustomer(
-            string id,
-            CancellationToken cancellationToken)
-        {
-            try
-            {
-                var response = await _httpClient.DeleteAsync($"{id}", cancellationToken: cancellationToken);
-                if (response.StatusCode is HttpStatusCode.NoContent or HttpStatusCode.NotFound)
-                {
-                    return await response.Content.ReadAsStreamAsync(cancellationToken);
-                }
-                throw new Exception($"Customersid: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message, ex);
-                throw;
-            }
-        }
-
-        public async Task<PagedList<CustomerResponse>> GetCustomers(
-            QueryStringParameters queryParameters,
-            CancellationToken cancellationToken)
-        {
-            var response = await _httpClient.GetAsync(
-                $"/customers?pageNumber={queryParameters.PageNumber}&pageSize={queryParameters.PageSize}&searchKeyword={queryParameters.SearchKeyword}",
-                cancellationToken: cancellationToken);
-
-            var responseContent = await response.Content.ReadAsStringAsync();
-            var pagedClients = JsonConvert.DeserializeObject<PagedList<CustomerResponse>>(responseContent);
-
-            if (response.Headers.TryGetValues("X-Pagination", out var headerValues))
-            {
-                var paginationMetadata = JsonConvert.DeserializeObject<PaginationMetadata>(headerValues.FirstOrDefault());
-
-                pagedClients.TotalCount = paginationMetadata.TotalCount;
-                pagedClients.PageSize = paginationMetadata.PageSize;
-                pagedClients.TotalPages = paginationMetadata.TotalPages;
-                pagedClients.CurrentPage = paginationMetadata.CurrentPage;
-
-                return pagedClients;
-            }
-            return pagedClients;
-        }
-
-        public async Task<OneOf<CreateCustomerRequest, BadRequestResponse>> CreateCustomer(
-            CreateCustomerRequest request,
-            CancellationToken cancellationToken)
-        {
-            var response = await _httpClient.PostAsJsonAsync($"", request, cancellationToken: cancellationToken);
-            if (response.StatusCode == HttpStatusCode.Created)
-            {
-                return await response.ReadJsonAsync<CreateCustomerRequest>();
+                return ResponseTypes.NotFound;
             }
             if (response.StatusCode == HttpStatusCode.BadRequest)
             {
                 return await response.ReadJsonAsync<BadRequestResponse>();
             }
-            throw new Exception($"Customers: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
+            throw new Exception($"Customersid: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message, ex);
+            throw;
+        }
+    }
+
+    public async Task<OneOf<CustomerResponse, bool>> GetCustomer(
+        int id,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync($"{id}", cancellationToken: cancellationToken);
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                return await response.ReadJsonAsync<CustomerResponse>();
+            }
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return false;
+            }
+            throw new Exception($"Customersid: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message, ex);
+            throw;
+        }
+    }
+
+    public async Task<Stream> DeleteCustomer(
+        string id,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var response = await _httpClient.DeleteAsync($"{id}", cancellationToken: cancellationToken);
+            if (response.StatusCode is HttpStatusCode.NoContent or HttpStatusCode.NotFound)
+            {
+                return await response.Content.ReadAsStreamAsync(cancellationToken);
+            }
+            throw new Exception($"Customersid: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message, ex);
+            throw;
+        }
+    }
+
+    public async Task<PagedList<CustomerResponse>> GetCustomers(
+        QueryStringParameters queryParameters,
+        CancellationToken cancellationToken)
+    {
+        var response = await _httpClient.GetAsync(
+            $"/customers?pageNumber={queryParameters.PageNumber}&pageSize={queryParameters.PageSize}&searchKeyword={queryParameters.SearchKeyword}",
+            cancellationToken: cancellationToken);
+
+        var responseContent = await response.Content.ReadAsStringAsync();
+        var pagedClients = JsonConvert.DeserializeObject<PagedList<CustomerResponse>>(responseContent);
+
+        if (response.Headers.TryGetValues("X-Pagination", out var headerValues))
+        {
+            var paginationMetadata = JsonConvert.DeserializeObject<PaginationMetadata>(headerValues.FirstOrDefault());
+
+            pagedClients.TotalCount = paginationMetadata.TotalCount;
+            pagedClients.PageSize = paginationMetadata.PageSize;
+            pagedClients.TotalPages = paginationMetadata.TotalPages;
+            pagedClients.CurrentPage = paginationMetadata.CurrentPage;
+
+            return pagedClients;
+        }
+        return pagedClients;
+    }
+
+    public async Task<OneOf<CreateCustomerRequest, BadRequestResponse>> CreateCustomer(
+        CreateCustomerRequest request,
+        CancellationToken cancellationToken)
+    {
+        var response = await _httpClient.PostAsJsonAsync($"", request, cancellationToken: cancellationToken);
+        if (response.StatusCode == HttpStatusCode.Created)
+        {
+            return await response.ReadJsonAsync<CreateCustomerRequest>();
+        }
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            return await response.ReadJsonAsync<BadRequestResponse>();
+        }
+        throw new Exception($"Customers: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
     }
 }

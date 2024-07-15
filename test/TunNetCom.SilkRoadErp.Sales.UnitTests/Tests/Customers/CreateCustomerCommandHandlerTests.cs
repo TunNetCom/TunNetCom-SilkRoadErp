@@ -3,12 +3,7 @@ using Microsoft.Extensions.Logging;
 using TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.CreateCustomer;
 using Microsoft.EntityFrameworkCore;
 using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
-using System.Linq.Expressions;
 using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure;
-using Xunit;
-using System.Threading;
-using System.Threading.Tasks;
-using FluentResults;
 
 namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers
 {
