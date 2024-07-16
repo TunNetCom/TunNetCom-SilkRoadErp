@@ -38,9 +38,62 @@ The Purchasing Module in SilkRoadErp includes:
 
 ## Technology Stack
 
-- **Backend**: .NET 8
+- **Backend**: .NET 6
 - **Frontend**: Blazor Server
 - **Database**: SQL Server
 - **Authentication**: ASP.NET Identity
 - **Logging**: Serilog with Grafana and Grafana Loki
 - **Monitoring**: Grafana
+
+## Installation
+
+1. **Clone the repository**:
+    ```sh
+    git clone https://github.com/yourusername/SilkRoadErp.git
+    cd SilkRoadErp
+    ```
+
+2. **Set up the database**:
+    - Update the connection string in `appsettings.json`.
+    - Run the migrations to set up the database schema:
+      ```sh
+      dotnet ef database update
+      ```
+
+3. **Run the application**:
+    ```sh
+    dotnet run
+    ```
+
+4. **Access the application**:
+    - Open your browser and navigate to `https://localhost:5001`.
+
+## Usage
+
+Once the application is running, you can:
+
+- Log in using your credentials.
+- Navigate to the Sales or Purchasing module via the sidebar.
+- Perform operations such as creating sales orders, managing customers, generating invoices, managing purchase orders, and more.
+
+## Contributing
+
+We welcome contributions from the community! To contribute:
+
+1. Fork the repository.
+2. Create a new branch for your feature or bug fix.
+3. Commit your changes.
+4. Push to the branch.
+5. Open a pull request.
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## Contact
+
+For questions or support, please contact us at [support@silkroaderp.com](mailto:support@silkroaderp.com).
+
+---
+
+Thank you for using SilkRoadErp!
