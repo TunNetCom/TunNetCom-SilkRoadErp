@@ -92,7 +92,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Contact
 
-For questions or support, please contact us at [support@silkroaderp.com](mailto:support@silkroaderp.com).
+For questions or support, please contact us at [nieze.benmansour@outlook.com](mailto:support@silkroaderp.com).
 
 ---
 
