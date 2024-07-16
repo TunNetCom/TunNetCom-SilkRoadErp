@@ -38,7 +38,7 @@ The Purchasing Module in SilkRoadErp includes:
 
 ## Technology Stack
 
-- **Backend**: .NET 6
+- **Backend**: .NET 8
 - **Frontend**: Blazor Server
 - **Database**: SQL Server
 - **Authentication**: ASP.NET Identity
