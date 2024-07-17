@@ -1,5 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure;
-using TunNetCom.SilkRoadErp.Sales.Contracts.Customers;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.Customers;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.GetCustomerById;
 

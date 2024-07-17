@@ -6,29 +6,29 @@ public class CreateCustomerValidator : AbstractValidator<CreateCustomerCommand>
     {
         RuleFor(x => x.Nom)
              .NotEmpty().WithMessage("Nom is required")
-             .MaximumLength(50).WithMessage("Nom must be less than 50 characters");
+             .MaximumLength(50).WithMessage("nom_must_be_less_than_50_characters");
 
         RuleFor(x => x.Tel)
             .NotEmpty().WithMessage("Tel is required")
-            .Matches(@"^\+?\d{10,15}$").WithMessage("Tel must be heigher than 10 and less than 15");
+            .Matches(@"^\+?\d{10,15}$").WithMessage("tel_must_be_heigher_than_10_and_less_than_15");
 
         RuleFor(x => x.Adresse)
-            .MaximumLength(50).WithMessage("Adresse must be less than 50 characters");
+            .MaximumLength(50).WithMessage("adresse_must_be_less_than_50_characters");
 
         RuleFor(x => x.Matricule)
-            .MaximumLength(50).WithMessage("Matricule must be less than 50 characters");
+            .MaximumLength(50).WithMessage("matricule_must_be_less_than_50_characters");
 
         RuleFor(x => x.Code)
-            .MaximumLength(50).WithMessage("Code must be less than 50 characters");
+            .MaximumLength(50).WithMessage("code_must_be_less_than_50_characters");
 
         RuleFor(x => x.CodeCat)
-            .MaximumLength(50).WithMessage("CodeCat must be less than 50 characters");
+            .MaximumLength(50).WithMessage("codeCat_must_be_less_than_50_characters");
 
         RuleFor(x => x.EtbSec)
-           .MaximumLength(50).WithMessage("EtbSec must be less than 50 characters");
+           .MaximumLength(50).WithMessage("etbSec_must_be_less_than_50_characters");
 
         RuleFor(x => x.Mail)
-                    .MaximumLength(50).WithMessage("Mail must be less than 50 characters")
-                    .EmailAddress().WithMessage("Mail must be a valid email address");
+                    .MaximumLength(50).WithMessage("mail_must_be_less_than_50_characters")
+                    .EmailAddress().WithMessage("mail_must_be_a_valid_email_address");
     }
 }
