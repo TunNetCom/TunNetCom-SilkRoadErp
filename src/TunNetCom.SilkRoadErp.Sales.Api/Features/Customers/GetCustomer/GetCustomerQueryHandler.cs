@@ -1,4 +1,5 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.Customers;
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure;
+using TunNetCom.SilkRoadErp.Sales.Contracts.Customers;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.GetCustomer;
 
@@ -9,7 +10,7 @@ public class GetCustomerQueryHandler(
 {
     public async Task<PagedList<CustomerResponse>> Handle(GetCustomerQuery getCustomerQuery, CancellationToken cancellationToken)
     {
-        _logger.LogPaginationRequest(getCustomerQuery.PageNumber, getCustomerQuery.PageSize);
+        _logger.LogPaginationRequest("Customer",getCustomerQuery.PageNumber, getCustomerQuery.PageSize);
 
         var clientsQuery = _context.Client.Select(t =>
             new CustomerResponse
@@ -46,7 +47,7 @@ public class GetCustomerQueryHandler(
             cancellationToken);
 
 
-        _logger.LogCustomersFetched(pagedCustomers.Count);
+        _logger.LogEntitiesFetched("Customer",pagedCustomers.Count);
 
         return pagedCustomers;
     }
