@@ -5,14 +5,15 @@ public class DeleteCustomerCommandHandler(SalesContext _context,
 {
     public async Task<Result> Handle(DeleteCustomerCommand deleteCustomerCommand, CancellationToken cancellationToken)
     {
-        _logger.LogCustomerDeletionAttempt(
+        _logger.LogEntityDeletionAttempt(
+            "Customer",
             deleteCustomerCommand.Id);
 
         var client = await _context.Client.FindAsync(deleteCustomerCommand.Id);
 
         if (client is null)
         {
-            _logger.LogCustomerNotFound(deleteCustomerCommand.Id);
+            _logger.LogEntityNotFound("Customer", deleteCustomerCommand.Id);
 
             return Result.Fail("client_not_found");
         }
@@ -20,7 +21,8 @@ public class DeleteCustomerCommandHandler(SalesContext _context,
         _context.Client.Remove(client);
         await _context.SaveChangesAsync(cancellationToken);
 
-        _logger.LogCustomerDeleted(
+        _logger.LogEntityDeleted(
+            "Customer",
             deleteCustomerCommand.Id);
 
         return Result.Ok();

@@ -1,6 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.UpdateCustomer;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.CreateCustomer;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.CreateCustomer;
 
 public class CreateCustomerCommandHandler(
     SalesContext _context,
@@ -9,7 +7,7 @@ public class CreateCustomerCommandHandler(
 {
     public async Task<Result<int>> Handle(CreateCustomerCommand createCustomerCommand, CancellationToken cancellationToken)
     {
-        _logger.LogCustomerCreated(createCustomerCommand);
+        _logger.LogEntityCreated("Customer",createCustomerCommand);
 
         var isCustomerNameExist = await _context.Client.AnyAsync(
             cus => cus.Nom == createCustomerCommand.Nom,
@@ -36,7 +34,7 @@ public class CreateCustomerCommandHandler(
         _context.Client.Add(client);
         await _context.SaveChangesAsync(cancellationToken);
 
-        _logger.LogCustomerCreatedSuccessfully(client.Id);
+        _logger.LogEntityCreatedSuccessfully("Customer",client.Id);
 
         return client.Id;
     }
