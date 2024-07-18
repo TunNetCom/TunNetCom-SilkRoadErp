@@ -1,12 +1,14 @@
 var builder = WebApplication.CreateBuilder(args);
 
+
+var seqServerUrl = builder.Configuration["Seq:ServerUrl"];
 // Configure Serilog
 Serilog.Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
     .Enrich.FromLogContext()
     .WriteTo.Console()
-    .WriteTo.Seq("http://localhost:5341")
+    .WriteTo.Seq(seqServerUrl)
     .CreateLogger();
 
 // Add Serilog to the host builder
