@@ -7,6 +7,59 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 public partial class Produit
 {
+
+    public static Produit CreateProduct(
+     string? refe,
+     string? nom,
+     int qte,
+     int qteLimite,
+     double remise,
+     double remiseAchat,
+     double tva,
+     decimal prix,
+     decimal prixAchat,
+     bool visibilite)
+    {
+        return new Produit
+        {
+            Refe = refe,
+            Nom = nom,
+            Qte = qte,
+            QteLimite = qteLimite,
+            Remise = remise,
+            RemiseAchat = remiseAchat,
+            Tva = tva,
+            Prix = prix,
+            PrixAchat = prixAchat,
+            Visibilite = visibilite
+        };
+
+    }
+    public void UpdateProduct(
+        string? refe,
+        string? nom,
+        int qte,
+        int qteLimite,
+        double remise,
+        double remiseAchat,
+        double tva,
+        decimal prix,
+        decimal prixAchat,
+        bool visibilite)
+    {
+
+        Refe = refe;
+        Nom = nom;
+        Qte = qte;
+        QteLimite = qteLimite;
+        Remise = remise;
+        RemiseAchat = remiseAchat;
+        Tva = tva;
+        Prix = prix;
+        PrixAchat = prixAchat;
+        Visibilite = visibilite;
+
+    }
     public string Refe { get; set; } = null!;
 
     public string Nom { get; set; } = null!;
