@@ -1,4 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Contracts.Providers;
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.UpdateCustomer;
 
@@ -9,13 +9,13 @@ public class UpdateCustomerCommandHandler(
 {
     public async Task<Result> Handle(UpdateCustomerCommand updateCustomerCommand, CancellationToken cancellationToken)
     {
-        _logger.LogCustomerUpdateAttempt(updateCustomerCommand.Id);
+        _logger.LogEntityUpdateAttempt("Customer",updateCustomerCommand.Id);
 
         var clientToUpdate = await _context.Client.FindAsync(updateCustomerCommand.Id);
 
         if (clientToUpdate is null)
         {
-            _logger.LogCustomerNotFound(updateCustomerCommand.Id);
+            _logger.LogEntityNotFound("Customer", updateCustomerCommand.Id);
 
             return Result.Fail(EntityNotFound.Error);
         }
@@ -42,7 +42,7 @@ public class UpdateCustomerCommandHandler(
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        _logger.LogCustomerUpdated(updateCustomerCommand.Id);
+        _logger.LogEntityUpdated("Customer",updateCustomerCommand.Id);
 
         return Result.Ok();
     }
