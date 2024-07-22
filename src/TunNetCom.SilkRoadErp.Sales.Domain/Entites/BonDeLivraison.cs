@@ -7,6 +7,45 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 public partial class BonDeLivraison
 {
+    public static BonDeLivraison CreateBonDeLivraison(
+        DateTime date,
+        decimal totHTva,
+        decimal totTva,
+        decimal netPayer,
+        TimeOnly tempBl,
+        int? numFacture,
+        int? clientId)
+    {
+        return new BonDeLivraison
+        {
+            Date = date,
+            TotHTva = totHTva,
+            TotTva = totTva,
+            NetPayer = netPayer,
+            TempBl = tempBl,
+            NumFacture = numFacture,
+            ClientId = clientId
+        };
+    }
+
+    public void UpdateBonDeLivraison(
+        DateTime date,
+        decimal totHTva,
+        decimal totTva,
+        decimal netPayer,
+        TimeOnly tempBl,
+        int? numFacture,
+        int? clientId) 
+    {
+        this.Date = date;
+        this.TotHTva = totHTva;
+        this.TotTva = totTva;
+        this.NetPayer = netPayer;
+        this.TempBl = tempBl;
+        this.NumFacture = numFacture;
+        this.ClientId = clientId;
+    }
+
     public int Num { get; set; }
 
     public DateTime Date { get; set; }
