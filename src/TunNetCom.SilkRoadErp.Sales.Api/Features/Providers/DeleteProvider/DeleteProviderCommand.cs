@@ -4,9 +4,6 @@ public class DeleteProviderCommand : IRequest<Result>
 {
     public int Id { get; }
     public DeleteProviderCommand(int id)
-    {
-    Id = id;
-    }
+    { Id = id; }
 
-    
 }

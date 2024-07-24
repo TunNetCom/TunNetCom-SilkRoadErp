@@ -33,5 +33,4 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.GetProvider;
             return Results.Ok(pagedProviders);
         });
     }
-
 }

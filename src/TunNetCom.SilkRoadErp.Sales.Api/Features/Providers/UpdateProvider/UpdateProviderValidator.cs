@@ -5,44 +5,40 @@ public class UpdateProviderValidator : AbstractValidator<UpdateProviderCommand>
     public UpdateProviderValidator()
     {
         RuleFor(x => x.Nom)
-             .NotEmpty().WithMessage("Name is required")
-             .MaximumLength(50).WithMessage("Name must be less than 50 characters");
+             .NotEmpty().WithMessage("Name_is_required")
+             .MaximumLength(50).WithMessage("Name_must_be_less_than_50_characters");
 
         RuleFor(x => x.Tel)
-            .NotEmpty().WithMessage("Mobile number is required")
-            .Matches(@"^\+?\d{10,15}$").WithMessage("Mobile number must be heigher than 10 and less than 15");
+            .NotEmpty().WithMessage("Mobile_number_is_required")
+            .Matches(@"^\+?\d{10,15}$").WithMessage("Mobile_number_must_be_heigher_than_10_and_less_than_15_numbers");
 
         RuleFor(x => x.Fax)
-            .NotEmpty().WithMessage("Fax is required")
-           .MaximumLength(50).WithMessage("Fax must be less than 50 characters");
+           .MaximumLength(50).WithMessage("Fax_must_be_less_than_50_characters");
 
         RuleFor(x => x.Matricule)
-            .MaximumLength(50).WithMessage("Matricule must be less than 50 characters");
+            .MaximumLength(50).WithMessage("Matricule_must_be_less_than_50_characters");
 
         RuleFor(x => x.Code)
-            .MaximumLength(50).WithMessage("Code must be less than 50 characters");
+            .MaximumLength(50).WithMessage("Code_must_be_less_than_50_characters");
 
         RuleFor(x => x.CodeCat)
-            .MaximumLength(50).WithMessage("CodeCat must be less than 50 characters");
+            .MaximumLength(50).WithMessage("CodeCat_must_be_less_than_50_characters");
 
         RuleFor(x => x.EtbSec)
-           .MaximumLength(50).WithMessage("EtbSec must be less than 50 characters");
+           .MaximumLength(50).WithMessage("EtbSec_must_be_less_than_50_characters");
 
         RuleFor(x => x.Mail)
-                   .MaximumLength(50).WithMessage("Mail must be less than 50 characters")
-                   .EmailAddress().WithMessage("Mail must be a valid email address");
+                   .MaximumLength(50).WithMessage("Mail_must_be_less_than_50_characters")
+                   .EmailAddress().WithMessage("Mail_must_be_a_valid_email_address");
 
         RuleFor(x => x.MailDeux)
-           .MaximumLength(50).WithMessage("Mail must be less than 50 characters")
-           .EmailAddress().WithMessage("Mail must be a valid email address");
+           .MaximumLength(50).WithMessage("Mail_must_be_less_than_50_characters")
+           .EmailAddress().WithMessage("Mail_must_be_a_valid_email_address");
 
         RuleFor(x => x.Constructeur)
-    .NotEmpty()
-    .WithMessage("constructor must be a valid boolean value (true or false).");
-
+           .NotEmpty().WithMessage("constructor_must_be_a_valid_boolean_value_true_or_false");
 
         RuleFor(x => x.Adresse)
-            .MaximumLength(50).WithMessage("Adress must be less than 50 characters");
-
+            .MaximumLength(50).WithMessage("Adress_must_be_less_than_50_characters");
     }
 }

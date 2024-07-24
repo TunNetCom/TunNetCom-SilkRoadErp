@@ -1,11 +1,18 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.CreateProvider;
-public class CreateProviderCommandHandler(SalesContext _context)
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.CreateProvider;
+public class CreateProviderCommandHandler(SalesContext _context, ILogger<CreateProviderCommandHandler> _logger)
 : IRequestHandler<CreateProviderCommand, Result<int>>
 {
     public async Task<Result<int>> Handle(CreateProviderCommand createProviderCommand, CancellationToken cancellationToken)
     {
+        _logger.LogEntityCreated("Provider", createProviderCommand);
+
+        var isProviderNameExist = await _context.Fournisseur.AnyAsync(provider => provider.Nom == createProviderCommand.Nom, cancellationToken);
+
+        if (isProviderNameExist)
+        {
+            return Result.Fail("Provider_name_exists");
+        }
+
         var provider = Fournisseur.CreateProvider(    
            createProviderCommand.Nom,
            createProviderCommand.Tel,
@@ -15,16 +22,16 @@ public class CreateProviderCommandHandler(SalesContext _context)
            createProviderCommand.CodeCat,
            createProviderCommand.EtbSec,
            createProviderCommand.Mail,
-            createProviderCommand.MailDeux,
-            createProviderCommand.Constructeur,
+           createProviderCommand.MailDeux,
+           createProviderCommand.Constructeur,
            createProviderCommand.Adresse
 
-            );
+         );
 
         _context.Fournisseur.Add(provider);
         await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogEntityCreatedSuccessfully("Provider", provider.Id);
         return provider.Id;
-
     }
-
 }

@@ -1,6 +1,6 @@
 ﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.UpdateProvider;
-    public record UpdateProviderCommand
-(int Id,
+    public record UpdateProviderCommand(
+    int Id,
     string Nom,
     string Tel,
     string? Fax,

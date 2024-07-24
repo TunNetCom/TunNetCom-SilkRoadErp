@@ -1,14 +1,13 @@
-﻿using Azure;
-using TunNetCom.SilkRoadErp.Sales.Api.Contracts.Providers;
-
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.Providers;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.GetProvider;
-public class GetProviderQueryHandler(SalesContext _context) : IRequestHandler<GetProviderQuery, PagedList<ProviderResponse>>
+public class GetProviderQueryHandler(SalesContext _context, ILogger<GetProviderQueryHandler> _logger) : IRequestHandler<GetProviderQuery, PagedList<ProviderResponse>>
 {
     public async Task<PagedList<ProviderResponse>> Handle(GetProviderQuery getProviderQuery, CancellationToken cancellationToken)
     {
-        var ProvidersQuery = _context.Fournisseur.Select(t =>
+        _logger.LogPaginationRequest("Provider", getProviderQuery.PageNumber, getProviderQuery.PageSize);
+
+        IQueryable<ProviderResponse> ProvidersQuery = _context.Fournisseur.Select(t =>
             new ProviderResponse
             {
                 Nom = t.Nom,
@@ -29,27 +28,26 @@ public class GetProviderQueryHandler(SalesContext _context) : IRequestHandler<Ge
         {
             ProvidersQuery = ProvidersQuery.Where(
                 p => p.Nom.Contains(getProviderQuery.SearchKeyword)
-                || p.Tel.Contains(getProviderQuery.SearchKeyword)
-                || p.Fax.Contains(getProviderQuery.SearchKeyword)
-                || p.Matricule.Contains(getProviderQuery.SearchKeyword)
-                || p.Code.Contains(getProviderQuery.SearchKeyword)
-                || p.CodeCat.Contains(getProviderQuery.SearchKeyword)
-                || p.EtbSec.Contains(getProviderQuery.SearchKeyword)
-                || p.Mail.Contains(getProviderQuery.SearchKeyword)
-                || p.MailDeux.Contains(getProviderQuery.SearchKeyword)
+                || p.Tel!.Contains(getProviderQuery.SearchKeyword)
+                || p.Fax!.Contains(getProviderQuery.SearchKeyword)
+                || p.Matricule!.Contains(getProviderQuery.SearchKeyword)
+                || p.Code!.Contains(getProviderQuery.SearchKeyword)
+                || p.CodeCat!.Contains(getProviderQuery.SearchKeyword)
+                || p.EtbSec!.Contains(getProviderQuery.SearchKeyword)
+                || p.Mail!.Contains(getProviderQuery.SearchKeyword)
+                || p.MailDeux!.Contains(getProviderQuery.SearchKeyword)
                 || p.Constructeur.Equals(getProviderQuery.SearchKeyword)
-                || p.Adresse.Contains(getProviderQuery.SearchKeyword));
-                }
+                || p.Adresse!.Contains(getProviderQuery.SearchKeyword));
+        }
 
-        var pagedProviders = await PagedList<ProviderResponse>.ToPagedListAsync(
+        PagedList<ProviderResponse> pagedProviders = await PagedList<ProviderResponse>.ToPagedListAsync(
             ProvidersQuery,
             getProviderQuery.PageNumber,
             getProviderQuery.PageSize,
             cancellationToken);
 
-
-
-        return pagedProviders ;
+        _logger.LogEntitiesFetched("Provider", pagedProviders.Count);
+        return pagedProviders;
     }
 }
 

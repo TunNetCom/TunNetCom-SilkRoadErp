@@ -1,24 +1,21 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System.Net.Mail;
-using System.Threading;
-using TunNetCom.SilkRoadErp.Sales.Api.Contracts.Providers;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.UpdateProvider;
-public class UpdateProviderCommandHandler(SalesContext _context)
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.UpdateProvider;
+public class UpdateProviderCommandHandler(SalesContext _context, ILogger<UpdateProviderCommandHandler> _logger)
 : IRequestHandler<UpdateProviderCommand, Result>
 { 
     public async Task<Result> Handle(UpdateProviderCommand updateProviderCommand, CancellationToken cancellationToken)
     {
-        var providerToUpdate = await _context.Fournisseur.FindAsync(updateProviderCommand.Id);
+        _logger.LogEntityUpdateAttempt("Provider", updateProviderCommand.Id);
+
+       var providerToUpdate = await _context.Fournisseur.FindAsync(updateProviderCommand.Id);
 
         if (providerToUpdate is null)
         {
+            _logger.LogEntityNotFound("Provider", updateProviderCommand.Id);
             return Result.Fail(EntityNotFound.Error);
         }
-        var isProviderNameExist = await _context.Fournisseur.AnyAsync(
-    provider => provider.Nom == updateProviderCommand.Nom
-    && provider.Id != updateProviderCommand.Id,
-    cancellationToken);
+
+       var isProviderNameExist = await _context.Fournisseur.AnyAsync(provider => 
+       (provider.Nom == updateProviderCommand.Nom) && (provider.Id != updateProviderCommand.Id), cancellationToken);
 
         if (isProviderNameExist)
         {
@@ -38,8 +35,9 @@ public class UpdateProviderCommandHandler(SalesContext _context)
             constructeur: updateProviderCommand.Constructeur,
             adresse: updateProviderCommand.Adresse);
 
-
         await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogEntityUpdated("Provider", updateProviderCommand.Id);
         return Result.Ok();
     }
 }

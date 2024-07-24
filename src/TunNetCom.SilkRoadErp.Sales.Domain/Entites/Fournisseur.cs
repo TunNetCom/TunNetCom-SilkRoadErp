@@ -9,16 +9,16 @@ public partial class Fournisseur
 {
     public void UpdateProvider(
          string nom,
-string tel,
-string? fax,
-string? matricule,
-string? code,
-string? codeCat,
-string? etbSec,
-string? mail,
-string? mailDeux,
-bool constructeur,
-string? adresse)
+         string tel,
+         string? fax,
+         string? matricule,
+         string? code,
+         string? codeCat,
+         string? etbSec,
+         string? mail,
+         string? mailDeux,
+         bool constructeur,
+         string? adresse)
     {
         this.Nom = nom;
         this.Tel = tel;
@@ -34,16 +34,16 @@ string? adresse)
               }
     public static Fournisseur CreateProvider(
      string nom,
-string tel,
-string? fax,
-string? matricule,
-string? code,
-string? codeCat,
-string? etbSec,
-string? mail,
-string? mailDeux,
-bool constructeur,
-string? adresse)
+     string tel,
+     string? fax,
+     string? matricule,
+     string? code,
+     string? codeCat,
+     string? etbSec,
+     string? mail,
+     string? mailDeux,
+     bool constructeur,
+     string? adresse)
     {
         return new Fournisseur
         {
