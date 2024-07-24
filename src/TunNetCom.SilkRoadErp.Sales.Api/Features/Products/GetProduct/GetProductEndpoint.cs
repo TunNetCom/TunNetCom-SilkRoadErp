@@ -1,5 +1,4 @@
 ﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Products.GetProduct;
-
 public class GetProductEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)

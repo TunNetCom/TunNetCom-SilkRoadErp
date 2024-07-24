@@ -4,3 +4,8 @@ global using TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.CreateCustomer;
 global using Microsoft.EntityFrameworkCore;
 global using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 global using TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.GetCustomer;
+global using TunNetCom.SilkRoadErp.Sales.Api.Features.Products.CreateProduct;
+global using TunNetCom.SilkRoadErp.Sales.Api.Features.Products.GetProductByRef;
+global using TunNetCom.SilkRoadErp.Sales.Api.Features.Products.GetProduct;
+global using TunNetCom.SilkRoadErp.Sales.Api.Features.Products.UpdateProduct;
+global using TunNetCom.SilkRoadErp.Sales.Api.Features.Products.DeleteProduct;

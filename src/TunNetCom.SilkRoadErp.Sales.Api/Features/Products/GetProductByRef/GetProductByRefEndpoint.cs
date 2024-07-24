@@ -1,26 +1,20 @@
-﻿
-using TunNetCom.SilkRoadErp.Sales.Contracts.Products;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Products.GetProductByRef
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Products.GetProductByRef;
+public class GetProductByRefEndpoint : ICarterModule
 {
-    public class GetProductByRefEndpoint : ICarterModule
+    public void AddRoutes(IEndpointRouteBuilder app)
     {
-        public void AddRoutes(IEndpointRouteBuilder app)
+        app.MapGet("/Products/{refe}", async Task<Results<Ok<ProductResponse>, NotFound>> (IMediator mediator, string refe,
+        int id,
+        CancellationToken cancellationToken) =>
         {
-            app.MapGet("/Products/{refe}", async Task<Results<Ok<ProductResponse>, NotFound>> (IMediator mediator, string refe) =>
+            var query = new GetProductByRefQuery(refe);
+            var result = await mediator.Send(query, cancellationToken);
+
+            if (result.IsFailed)
             {
-                var query = new GetProductByRefQuery(refe);
-
-                if (query is null)
-                {
-                    return TypedResults.NotFound();
-                }
-
-                var result = await mediator.Send(query);
-                return TypedResults.Ok(result.Value);
-
-
-            });
-        }
+                return TypedResults.NotFound();
+            }
+            return TypedResults.Ok(result.Value);
+        });
     }
 }

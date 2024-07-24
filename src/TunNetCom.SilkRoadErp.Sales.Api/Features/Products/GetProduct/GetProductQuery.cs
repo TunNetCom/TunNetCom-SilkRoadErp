@@ -1,8 +1,5 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.Products;
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Products.GetProduct;
-
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Products.GetProduct;
 public record GetProductQuery(
      int PageNumber,
      int PageSize,
      string? SearchKeyword) : IRequest<PagedList<ProductResponse>> ;
-

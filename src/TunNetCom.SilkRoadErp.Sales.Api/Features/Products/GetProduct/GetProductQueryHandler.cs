@@ -1,7 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.Products;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Products.GetProduct;
-
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Products.GetProduct;
 public class GetProductQueryHandler(
     SalesContext _context,
     ILogger<GetProductQueryHandler> _logger)

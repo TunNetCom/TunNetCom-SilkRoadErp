@@ -6,13 +6,13 @@ public class CreateProductCommandHandler(SalesContext _context, ILogger<CreatePr
     {
         _logger.LogEntityCreated("Product", createProductCommand);
 
-        var isProductNameExist = await _context.Produit.AnyAsync(
-            pro => pro.Nom == createProductCommand.Nom,
+        var isProductRefeOrNameExist = await _context.Produit.AnyAsync(
+            pro => pro.Refe == createProductCommand.Refe || pro.Nom == createProductCommand.Nom,
             cancellationToken);
 
-        if (isProductNameExist)
+        if (isProductRefeOrNameExist)
         {
-            return Result.Fail("product_name_exist");
+            return Result.Fail("product_refe_or_name_exist");
         }
         var product = Produit.CreateProduct(
             createProductCommand.Refe,
@@ -26,8 +26,6 @@ public class CreateProductCommandHandler(SalesContext _context, ILogger<CreatePr
             createProductCommand.PrixAchat,
             createProductCommand.Visibilite
         );
-      
-
         _context.Produit.Add(product);
         await _context.SaveChangesAsync(cancellationToken);
         _logger.LogEntityCreatedSuccessfully("Product", product.Refe);
