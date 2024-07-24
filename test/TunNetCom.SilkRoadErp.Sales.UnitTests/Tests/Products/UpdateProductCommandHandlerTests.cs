@@ -14,7 +14,7 @@ public class UpdateProductCommandHandlerTests
         _context = new SalesContext(options);
         _testLogger = new TestLogger<UpdateProductCommandHandler>();
         _updateProductCommandHandler = new UpdateProductCommandHandler(_context, _testLogger);
-    }
+    } 
 
     [Fact]
     public async Task Handle_ProductNotFound_ReturnsFailResult()
