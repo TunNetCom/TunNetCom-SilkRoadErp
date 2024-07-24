@@ -12,17 +12,26 @@
 @inject IStringLocalizer<SharedResource> Localizer
 
 <div class="container mt-4">
-    <h3 class="mb-3">@Localizer["customers"]</h3>
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-6 d-flex align-items-center">
+                <h3 class="mb-3">@Localizer["customers"]</h3>
+             </div>
+             <div class="col-md-6 d-flex justify-content-end align-items-center">
+                 <button class="btn btn-primary mb-3" @onclick="CreateCustomer">@Localizer["add_customer"]</button>
+            </div>
+         </div>
+    </div>
+    <input class="form-control mb-3" placeholder="@Localizer["Search"]" @bind="searchKeyword" @oninput="SearchClients" />
 
-    <button class="btn btn-primary mb-3" @onclick="CreateCustomer">@Localizer["add_customer"]</button>
 
     <Grid TItem="CustomerResponse"
           Class="table table-hover table-bordered table-striped"
           DataProvider="CustomersDataProvider"
-          AllowFiltering="true"
           AllowPaging="true"
           AllowSorting="true"
-          Responsive="true">
+          Responsive="true"
+          @ref="grid">
 
         <GridColumn TItem="CustomerResponse" HeaderText="@Localizer["customer_name"]" PropertyName="CustomerName" SortString="CustomerName" SortKeySelector="item => item.Nom" FilterTextboxWidth="80">
             @context.Nom
@@ -33,18 +42,15 @@
         <GridColumn TItem="CustomerResponse" HeaderText="@Localizer["customer_email"]" PropertyName="Email" SortString="Email" SortKeySelector="item => item.Mail" FilterTextboxWidth="120">
             @context.Mail
         </GridColumn>
-
         <GridColumn TItem="CustomerResponse" HeaderText="@Localizer["actions_label"]">
             <Button Color="ButtonColor.Primary" @onclick="((args) => OnClickEditButton(args, context.Id.ToString()))">
                 @Localizer["edit_button_label"]
             </Button>
-
             <Button Color="ButtonColor.Danger" @onclick="((args) => OnClickDeleteButton(args, context.Id.ToString()))">
                 @Localizer["delete_button_label"]
             </Button>
         </GridColumn>
     </Grid>
-
 </div>
 
 <Modal @ref="yesOrNoDeleteModal" />
@@ -55,6 +61,8 @@
     int currentCustomerIdToDelete = 0;
     private CancellationTokenSource cancellationTokenSource = new();
     private Modal yesOrNoDeleteModal = default!;
+    Grid<CustomerResponse> grid = default!;
+
 
     private async Task ProcessDelete(MouseEventArgs e)
     {
@@ -66,6 +74,13 @@
     protected void OnClickEditButton(EventArgs args, string id)
     {
         EditCustomer(int.Parse(id));
+    }
+
+    private async Task SearchClients(ChangeEventArgs e)
+    {
+        searchKeyword = e?.Value?.ToString() ?? string.Empty;
+
+        await grid.RefreshDataAsync();
     }
 
     protected async Task OnClickDeleteButton(EventArgs args, string id)
