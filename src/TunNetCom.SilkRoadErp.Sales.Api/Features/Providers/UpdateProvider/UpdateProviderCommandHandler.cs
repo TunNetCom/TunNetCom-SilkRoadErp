@@ -4,13 +4,13 @@ public class UpdateProviderCommandHandler(SalesContext _context, ILogger<UpdateP
 { 
     public async Task<Result> Handle(UpdateProviderCommand updateProviderCommand, CancellationToken cancellationToken)
     {
-        _logger.LogEntityUpdateAttempt("Provider", updateProviderCommand.Id);
+        _logger.LogEntityUpdateAttempt(nameof(Fournisseur), updateProviderCommand.Id);
 
        var providerToUpdate = await _context.Fournisseur.FindAsync(updateProviderCommand.Id);
 
         if (providerToUpdate is null)
         {
-            _logger.LogEntityNotFound("Provider", updateProviderCommand.Id);
+            _logger.LogEntityNotFound(nameof(Fournisseur), updateProviderCommand.Id);
             return Result.Fail(EntityNotFound.Error);
         }
 
@@ -19,7 +19,7 @@ public class UpdateProviderCommandHandler(SalesContext _context, ILogger<UpdateP
 
         if (isProviderNameExist)
         {
-            return Result.Fail("Provider_name_exist");
+            return Result.Fail("provider_name_exists");
         }
 
         providerToUpdate.UpdateProvider(
@@ -37,7 +37,7 @@ public class UpdateProviderCommandHandler(SalesContext _context, ILogger<UpdateP
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        _logger.LogEntityUpdated("Provider", updateProviderCommand.Id);
+        _logger.LogEntityUpdated(nameof(Fournisseur), updateProviderCommand.Id);
         return Result.Ok();
     }
 }

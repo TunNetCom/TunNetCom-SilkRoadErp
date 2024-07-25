@@ -6,16 +6,16 @@ public class GetProviderByIdQueryHandler(SalesContext _context, ILogger<GetProvi
 {
     public async Task<Result<ProviderResponse>> Handle(GetProviderByIdQuery getProviderByIdQuery, CancellationToken cancellationToken)
     {
-        _logger.LogFetchingEntityById("Provider", getProviderByIdQuery.Id);
+        _logger.LogFetchingEntityById(nameof(Fournisseur), getProviderByIdQuery.Id);
 
         var provider = await _context.Fournisseur.FindAsync(getProviderByIdQuery.Id);
         if (provider is null)
         {
-            _logger.LogEntityNotFound("Provider", getProviderByIdQuery.Id);
+            _logger.LogEntityNotFound(nameof(Fournisseur), getProviderByIdQuery.Id);
             return Result.Fail("provider_not_found");
         }
 
-        _logger.LogEntityFetchedById("Provider", getProviderByIdQuery.Id);
+        _logger.LogEntityFetchedById(nameof(Fournisseur), getProviderByIdQuery.Id);
         return provider.Adapt<ProviderResponse>();
     }
 }

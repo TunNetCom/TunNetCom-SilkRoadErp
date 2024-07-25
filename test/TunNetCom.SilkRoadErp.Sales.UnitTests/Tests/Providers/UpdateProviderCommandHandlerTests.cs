@@ -40,7 +40,7 @@ public class UpdateProviderCommandHandlerTests
         // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal("provider_not_found", result.Errors.First().Message);
-        Assert.Contains(_testLogger.Logs, log => log.Contains($"Provider with ID: {command} not found"));
+        Assert.Contains(_testLogger.Logs, log => log.Contains($"Fournisseur with ID: {command} not found"));
     }
 
     [Fact]
@@ -81,7 +81,7 @@ public class UpdateProviderCommandHandlerTests
 
         // Assert
         Assert.False(result.IsSuccess);
-        Assert.Equal("Provider_name_exists", result.Errors.First().Message);
+        Assert.Equal("provider_name_exists", result.Errors.First().Message);
     }
 
     [Fact]
@@ -122,6 +122,6 @@ public class UpdateProviderCommandHandlerTests
 
         // Assert
         Assert.False(result.IsSuccess);
-        Assert.Contains(_testLogger.Logs, log => log.Contains($"Provider updated with ID: {provider.Id} updated successfully"));
+        Assert.Contains(_testLogger.Logs, log => log.Contains($"Fournisseur updated with ID: {provider.Id} updated successfully"));
     }
 }

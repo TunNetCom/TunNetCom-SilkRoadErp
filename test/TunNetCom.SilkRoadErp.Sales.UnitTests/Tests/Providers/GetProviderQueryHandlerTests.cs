@@ -30,7 +30,7 @@ public class GetProviderQueryHandlerTests
         var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        Assert.Contains(_testLogger.Logs, log => log.Contains($"Fetching providers with pageIndex: {query.PageNumber} and pageSize: {query.PageSize}"));
+        Assert.Contains(_testLogger.Logs, log => log.Contains($"Fetching Fournisseur with pageIndex: {query.PageNumber} and pageSize: {query.PageSize}"));
         Assert.NotNull(result);
     }
 

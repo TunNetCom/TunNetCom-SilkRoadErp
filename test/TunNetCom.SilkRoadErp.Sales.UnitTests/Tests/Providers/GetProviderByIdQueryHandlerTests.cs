@@ -11,9 +11,9 @@ public class GetProviderByIdQueryHandlerTests
         var options = new DbContextOptionsBuilder<SalesContext>()
             .UseInMemoryDatabase(databaseName: "SalesContext")
             .Options;
-        _context = new SalesContext(options);
-        _testLogger = new TestLogger<GetProviderByIdQueryHandler>();
-        _handler = new GetProviderByIdQueryHandler(_context, _testLogger);
+            _context = new SalesContext(options);
+            _testLogger = new TestLogger<GetProviderByIdQueryHandler>();
+            _handler = new GetProviderByIdQueryHandler(_context, _testLogger);
     }
 
     [Fact]
@@ -71,6 +71,6 @@ public class GetProviderByIdQueryHandlerTests
         //Assert
         Assert.False(result.IsSuccess);
         Assert.Equal("provider_not_found", result.Errors.First().Message);
-        Assert.Contains(_testLogger.Logs, log => log.Contains($"Provider with ID: {query.Id} not found"));
+        Assert.Contains(_testLogger.Logs, log => log.Contains($"Fournisseur with ID: {query.Id} not found"));
     }
 }

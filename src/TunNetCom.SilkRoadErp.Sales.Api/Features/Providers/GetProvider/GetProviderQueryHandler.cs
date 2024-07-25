@@ -5,7 +5,7 @@ public class GetProviderQueryHandler(SalesContext _context, ILogger<GetProviderQ
 {
     public async Task<PagedList<ProviderResponse>> Handle(GetProviderQuery getProviderQuery, CancellationToken cancellationToken)
     {
-        _logger.LogPaginationRequest("Provider", getProviderQuery.PageNumber, getProviderQuery.PageSize);
+        _logger.LogPaginationRequest(nameof(Fournisseur), getProviderQuery.PageNumber, getProviderQuery.PageSize);
 
         IQueryable<ProviderResponse> ProvidersQuery = _context.Fournisseur.Select(t =>
             new ProviderResponse
@@ -46,7 +46,7 @@ public class GetProviderQueryHandler(SalesContext _context, ILogger<GetProviderQ
             getProviderQuery.PageSize,
             cancellationToken);
 
-        _logger.LogEntitiesFetched("Provider", pagedProviders.Count);
+        _logger.LogEntitiesFetched(nameof(Fournisseur), pagedProviders.Count);
         return pagedProviders;
     }
 }

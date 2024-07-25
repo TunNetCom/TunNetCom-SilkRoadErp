@@ -55,7 +55,7 @@
 
         // Assert
         Assert.False(result.IsSuccess);
-        Assert.Equal("Provider_name_exists", result.Errors.First().Message);
+        Assert.Equal("provider_name_exists", result.Errors.First().Message);
 
     }
 
@@ -106,7 +106,7 @@
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        Assert.Contains(_testLogger.Logs, log => log.Contains($"Creating Provider with values: {command}"));
+        Assert.Contains(_testLogger.Logs, log => log.Contains($"Creating Fournisseur with values: {command}"));
     }
 
     [Fact] 
@@ -145,7 +145,7 @@
 
         // Assert
         Assert.True(result.IsSuccess, "Expected operation to succeed");
-        Assert.Contains(_testLogger.Logs, log => log.Contains($"Provider created successfully with ID: {result.Value}"));
+        Assert.Contains(_testLogger.Logs, log => log.Contains($"Fournisseur created successfully with ID: {result.Value}"));
     }
 }
 

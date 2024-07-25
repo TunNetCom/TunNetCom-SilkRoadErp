@@ -25,7 +25,7 @@ public class CreateProviderEndPoint : ICarterModule
             {
                 return TypedResults.BadRequest(result.Errors);
             }
-            return TypedResults.Created($"/fournisseurs/{result.Value}", request);
+            return TypedResults.Created($"/Providers/{result.Value}", request);
 
         });
     }

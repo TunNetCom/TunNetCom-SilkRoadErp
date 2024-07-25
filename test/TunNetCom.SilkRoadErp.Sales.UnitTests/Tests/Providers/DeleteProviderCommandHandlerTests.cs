@@ -28,7 +28,7 @@ public class DeleteProviderCommandHandlerTests
         // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal("provider_not_found", result.Errors.First().Message);
-        Assert.Contains(_testLogger.Logs, log => log.Contains($"Provider with ID: {command} not found"));
+        Assert.Contains(_testLogger.Logs, log => log.Contains($"Fournisseur with ID: {command} not found"));
     }
 
     [Fact]
@@ -85,7 +85,7 @@ public class DeleteProviderCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         //Assert
-        Assert.Contains(_testLogger.Logs, log => log.Contains($"Delete Provider with values: {command}"));
+        Assert.Contains(_testLogger.Logs, log => log.Contains($"Delete Fournisseur with values: {command}"));
     }
 
 }
