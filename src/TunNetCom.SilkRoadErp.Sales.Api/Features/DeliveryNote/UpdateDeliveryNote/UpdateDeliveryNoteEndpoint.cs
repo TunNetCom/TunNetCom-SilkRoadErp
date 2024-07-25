@@ -18,7 +18,8 @@ public class UpdateDeliveryNoteEndpoint : ICarterModule
                 NetPayer: updateDeliveryNoteRequest.NetPayer,
                 TempBl: updateDeliveryNoteRequest.TempBl,
                 NumFacture: updateDeliveryNoteRequest.NumFacture,
-                ClientId: updateDeliveryNoteRequest.ClientId);
+                ClientId: updateDeliveryNoteRequest.ClientId,
+                Lignes: updateDeliveryNoteRequest.Lignes);
 
                 var updateDeliveryNoteResult = await mediator.Send(updateDeliveryNoteCommand, cancellationToken);
 
