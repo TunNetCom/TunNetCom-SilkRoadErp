@@ -1,7 +1,4 @@
-﻿using System.Reflection.Metadata;
-using TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.DeleteCustomer;
-
-namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers;
+﻿namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers;
 
 public class DeleteCustomerCommandHandlerTests
 {

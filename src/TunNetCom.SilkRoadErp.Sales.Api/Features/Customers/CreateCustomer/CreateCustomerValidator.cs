@@ -5,11 +5,11 @@ public class CreateCustomerValidator : AbstractValidator<CreateCustomerCommand>
     public CreateCustomerValidator()
     {
         RuleFor(x => x.Nom)
-             .NotEmpty().WithMessage("Nom is required")
+             .NotEmpty().WithMessage("nom_is_required")
              .MaximumLength(50).WithMessage("nom_must_be_less_than_50_characters");
 
         RuleFor(x => x.Tel)
-            .NotEmpty().WithMessage("Tel is required")
+            .NotEmpty().WithMessage("tel_is_required")
             .Matches(@"^\+?\d{10,15}$").WithMessage("tel_must_be_heigher_than_10_and_less_than_15");
 
         RuleFor(x => x.Adresse)
