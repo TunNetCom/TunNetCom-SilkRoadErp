@@ -10,10 +10,9 @@ public class DeleteProviderCommandHandlerTests
         var options = new DbContextOptionsBuilder<SalesContext>()
             .UseInMemoryDatabase(databaseName: "SalesContext")
             .Options;
-
-        _context = new SalesContext(options);
-        _testLogger = new TestLogger<DeleteProviderCommandHandler>();
-        _handler = new DeleteProviderCommandHandler(_context, _testLogger);
+            _context = new SalesContext(options);
+            _testLogger = new TestLogger<DeleteProviderCommandHandler>();
+            _handler = new DeleteProviderCommandHandler(_context, _testLogger);
     }
 
     [Fact]

@@ -10,10 +10,10 @@ public class GetProviderQueryHandlerTests
     {
         var options = new DbContextOptionsBuilder<SalesContext>()
             .UseInMemoryDatabase(databaseName: "SalesContext")
-            .Options;
-        _context = new SalesContext(options);
-        _testLogger = new TestLogger<GetProviderQueryHandler>();
-        _handler = new GetProviderQueryHandler(_context, _testLogger);
+            .Options; 
+            _context = new SalesContext(options);
+            _testLogger = new TestLogger<GetProviderQueryHandler>();
+            _handler = new GetProviderQueryHandler(_context, _testLogger);
     }
 
     [Fact]

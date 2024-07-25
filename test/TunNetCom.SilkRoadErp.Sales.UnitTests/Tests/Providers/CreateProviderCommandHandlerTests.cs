@@ -10,10 +10,9 @@
         var options = new DbContextOptionsBuilder<SalesContext>()
             .UseInMemoryDatabase(databaseName: "SalesContext")
             .Options;
-
-        _context = new SalesContext(options);
-        _testLogger = new TestLogger<CreateProviderCommandHandler>();
-        _handler = new CreateProviderCommandHandler(_context, _testLogger);
+            _context = new SalesContext(options);
+            _testLogger = new TestLogger<CreateProviderCommandHandler>();
+            _handler = new CreateProviderCommandHandler(_context, _testLogger);
     }
 
     [Fact]
