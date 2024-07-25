@@ -1,3 +1,5 @@
+using TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices;
+
 var builder = WebApplication.CreateBuilder(args);
 
 
@@ -31,11 +33,7 @@ builder.Services.AddValidatorsFromAssembly(assembly);
 // Register the validation behavior
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
-// AutoMapper
-builder.Services.AddAutoMapper(config =>
-{
-    config.AddProfile<MappingProfile>();
-}, assembly);
+builder.Services.AddScoped<IInvoiceCalculator, InvoiceCalculator>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

@@ -2,16 +2,35 @@
 
 public class GetInvoicesByClientQueryHandler(
     SalesContext _context,
-    AutoMapperIMapper _mapper)
+    IInvoiceCalculator _invoiceCalculator
+     )
     : IRequestHandler<GetInvoicesByClientQuery, Result<PagedList<InvoiceResponse>>>
 {
     public async Task<Result<PagedList<InvoiceResponse>>> Handle(GetInvoicesByClientQuery query, CancellationToken cancellationToken)
     {
         var invoicesQuery = _context.Facture
             .Where(f => f.IdClient == query.ClientId)
-            .ProjectTo<InvoiceResponse>(_mapper.ConfigurationProvider);
+            .Select(f => new InvoiceResponse
+            {
+                Num = f.Num,
+                Date = f.Date,
+                TotHTva = _invoiceCalculator.CalculateTotalHTva(f),
+                TotTva = _invoiceCalculator.CalculateTotalTva(f)
+            });
 
         var pagedInvoices = await PagedList<InvoiceResponse>.ToPagedListAsync(invoicesQuery, query.PageNumber, query.PageSize, cancellationToken);
+
+        foreach (var invoice in pagedInvoices)
+        {
+            var facture = await _context.Facture
+                .Include(f => f.BonDeLivraison)
+                .FirstOrDefaultAsync(f => f.Num == invoice.Num, cancellationToken);
+
+            if (facture != null)
+            {
+                invoice.TotTTC = await _invoiceCalculator.CalculateTotalTTC(facture);
+            }
+        }
 
         return Result.Ok(pagedInvoices);
     }

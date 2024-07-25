@@ -12,4 +12,10 @@ public class InvoiceResponse
 
     [JsonPropertyName("totTTC")]
     public decimal TotTTC { get; set; }
+
+    [JsonPropertyName("totHTva")]
+    public decimal TotHTva { get; set; }
+
+    [JsonPropertyName("totTva")]
+    public decimal TotTva { get; set; }
 }
