@@ -7,13 +7,13 @@ public class UpdateDeliveryNoteCommandHandler(
 {
     public async Task<Result> Handle(UpdateDeliveryNoteCommand updateDeliveryNoteCommand, CancellationToken cancellationToken)
     {
-        _logger.LogEntityUpdateAttempt("DeliveryNote", updateDeliveryNoteCommand.Num);
+        _logger.LogEntityUpdateAttempt(nameof(BonDeLivraison), updateDeliveryNoteCommand.Num);
 
         var deliveryNoteToUpdate = await _context.BonDeLivraison.FindAsync(updateDeliveryNoteCommand.Num);
 
         if (deliveryNoteToUpdate is null)
         {
-            _logger.LogEntityNotFound("DeliveryNote", updateDeliveryNoteCommand.Num);
+            _logger.LogEntityNotFound(nameof(BonDeLivraison), updateDeliveryNoteCommand.Num);
 
             return Result.Fail(EntityNotFound.Error);
         }
@@ -29,7 +29,7 @@ public class UpdateDeliveryNoteCommandHandler(
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        _logger.LogEntityUpdated("DeliveryNote", updateDeliveryNoteCommand.Num);
+        _logger.LogEntityUpdated(nameof(BonDeLivraison), updateDeliveryNoteCommand.Num);
 
         return Result.Ok();
     }

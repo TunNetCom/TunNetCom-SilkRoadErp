@@ -27,4 +27,7 @@ public class DeliveryNoteResponse
 
     [JsonPropertyName("clientId")]
     public int? ClientId { get; set; }
+
+    [JsonPropertyName("lignes")]
+    public List<LigneBlRequest> Lignes { get; set; }
 }

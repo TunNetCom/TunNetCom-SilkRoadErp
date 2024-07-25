@@ -9,18 +9,18 @@ public class GetDeliveryNoteByNumQueryHandler(
 {
     public async Task<Result<DeliveryNoteResponse>> Handle(GetDeliveryNoteByNumQuery getDeliveryNoteByNumQuery, CancellationToken cancellationToken)
     {
-        _logger.LogFetchingEntityById("DeliveryNote", getDeliveryNoteByNumQuery.Num);
+        _logger.LogFetchingEntityById(nameof(BonDeLivraison), getDeliveryNoteByNumQuery.Num);
 
         var deliveryNote = await _context.BonDeLivraison.FindAsync(getDeliveryNoteByNumQuery.Num, cancellationToken);
 
         if (deliveryNote is null)
         {
-            _logger.LogEntityNotFound("DeliveryNote", getDeliveryNoteByNumQuery.Num);
+            _logger.LogEntityNotFound(nameof(BonDeLivraison), getDeliveryNoteByNumQuery.Num);
 
             return Result.Fail("deliveryNote_not_found");
         }
 
-        _logger.LogEntityFetchedById("DeliveryNote", getDeliveryNoteByNumQuery.Num);
+        _logger.LogEntityFetchedById(nameof(BonDeLivraison), getDeliveryNoteByNumQuery.Num);
 
         return deliveryNote.Adapt<DeliveryNoteResponse>();
     }

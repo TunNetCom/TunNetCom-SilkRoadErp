@@ -6,14 +6,14 @@ public class DeleteDeliveryNoteCommandHandler(SalesContext _context,
     public async Task<Result> Handle(DeleteDeliveryNoteCommand deleteDeliveryNoteCommand, CancellationToken cancellationToken)
     {
         _logger.LogEntityDeletionAttempt(
-            "DeliveryNote",
+            nameof(BonDeLivraison),
             deleteDeliveryNoteCommand.Num);
 
         var deliveryNote = await _context.BonDeLivraison.FindAsync(deleteDeliveryNoteCommand.Num);
 
         if (deliveryNote is null)
         {
-            _logger.LogEntityNotFound("DeliveryNote", deleteDeliveryNoteCommand.Num);
+            _logger.LogEntityNotFound(nameof(BonDeLivraison), deleteDeliveryNoteCommand.Num);
 
             return Result.Fail("DeliveryNote_not_found");
         }
@@ -22,7 +22,7 @@ public class DeleteDeliveryNoteCommandHandler(SalesContext _context,
         await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogEntityDeleted(
-            "DeliveryNote",
+            nameof(BonDeLivraison),
             deleteDeliveryNoteCommand.Num);
 
         return Result.Ok();

@@ -7,7 +7,7 @@ public class CreateDeliveryNoteCommandHandler(
 {
     public async Task<Result<int>> Handle(CreateDeliveryNoteCommand createDeliveryNoteCommand, CancellationToken cancellationToken) 
     {
-        _logger.LogEntityCreated("DeliveryNote", createDeliveryNoteCommand);
+        _logger.LogEntityCreated(nameof(BonDeLivraison), createDeliveryNoteCommand);
 
         var deliveryNote = BonDeLivraison.CreateBonDeLivraison
             (
@@ -19,10 +19,28 @@ public class CreateDeliveryNoteCommandHandler(
                 createDeliveryNoteCommand.NumFacture,
                 createDeliveryNoteCommand.ClientId
             );
+
+        foreach(var ligne in createDeliveryNoteCommand.Lignes) 
+        {
+            var lignesBl = new LigneBl
+            {
+                RefProduit = ligne.RefProduit,
+                DesignationLi = ligne.DesignationLi,
+                QteLi = ligne.QteLi,
+                PrixHt = ligne.PrixHt,
+                Remise = ligne.Remise,
+                TotHt = ligne.TotHt,
+                Tva = ligne.Tva,
+                TotTtc = ligne.TotTtc,
+                NumBlNavigation = deliveryNote
+            };
+            deliveryNote.LigneBl.Add( lignesBl );
+        }
+
         _context.BonDeLivraison.Add(deliveryNote);
         await _context.SaveChangesAsync(cancellationToken);
 
-        _logger.LogEntityCreatedSuccessfully("DeliveryNote", deliveryNote.Num);
+        _logger.LogEntityCreatedSuccessfully(nameof(BonDeLivraison), deliveryNote.Num);
 
         return deliveryNote.Num;
     }

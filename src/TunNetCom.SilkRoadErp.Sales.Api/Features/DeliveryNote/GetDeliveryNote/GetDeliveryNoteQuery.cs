@@ -3,5 +3,6 @@
 public record GetDeliveryNoteQuery(
     int PageNumber,
     int PageSize,
-    string? SearchKeyword) : IRequest<PagedList<DeliveryNoteResponse>>;
+    string? SearchKeyword,
+    bool? IsFactured) : IRequest<PagedList<DeliveryNoteResponse>>;
 

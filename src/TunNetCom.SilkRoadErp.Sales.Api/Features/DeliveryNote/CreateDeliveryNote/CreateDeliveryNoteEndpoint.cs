@@ -19,7 +19,8 @@ public class CreateDeliveryNoteEndpoint : ICarterModule
                     NetPayer : createDeliveryNoteRequest.NetPayer,
                     TempBl: createDeliveryNoteRequest.TempBl,
                     NumFacture : createDeliveryNoteRequest.NumFacture,
-                    ClientId : createDeliveryNoteRequest.ClientId
+                    ClientId : createDeliveryNoteRequest.ClientId,
+                    Lignes : createDeliveryNoteRequest.Lignes
                 );
 
                 var result = await mediator.Send(createDeliveryNoteCommand, cancellationToken);

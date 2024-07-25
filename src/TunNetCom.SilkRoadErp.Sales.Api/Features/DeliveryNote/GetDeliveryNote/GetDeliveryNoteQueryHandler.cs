@@ -1,4 +1,6 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNote;
+﻿using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNote;
 
 public class GetDeliveryNoteQueryHandler(
     SalesContext _context,
@@ -7,9 +9,11 @@ public class GetDeliveryNoteQueryHandler(
 {
     public async Task<PagedList<DeliveryNoteResponse>> Handle(GetDeliveryNoteQuery getDeliveryNoteQuery, CancellationToken cancellationToken)
     {
-        _logger.LogPaginationRequest("DeliveryNote", getDeliveryNoteQuery.PageNumber, getDeliveryNoteQuery.PageSize);
+        _logger.LogPaginationRequest(nameof(BonDeLivraison), getDeliveryNoteQuery.PageNumber, getDeliveryNoteQuery.PageSize);
 
-        var deliveryNoteQuery = _context.BonDeLivraison.Select(t =>
+        var deliveryNoteQuery = _context.BonDeLivraison
+            .Where(d => getDeliveryNoteQuery.IsFactured.HasValue || d.NumFacture.HasValue == getDeliveryNoteQuery.IsFactured)
+            .Select(t =>
             new DeliveryNoteResponse
             {
                 Num = t.Num,
@@ -26,10 +30,10 @@ public class GetDeliveryNoteQueryHandler(
         if (!string.IsNullOrEmpty(getDeliveryNoteQuery.SearchKeyword))
         {
             deliveryNoteQuery = deliveryNoteQuery.Where(
-                c => c.Date.ToString().Contains(getDeliveryNoteQuery.SearchKeyword)
-                || c.NumFacture.ToString().Contains(getDeliveryNoteQuery.SearchKeyword)
-                || c.Num.ToString().Contains(getDeliveryNoteQuery.SearchKeyword)
-                || c.ClientId.ToString().Contains(getDeliveryNoteQuery.SearchKeyword));
+                d => d.Num.ToString().Contains(getDeliveryNoteQuery.SearchKeyword)
+                || d.Date.ToString().Contains(getDeliveryNoteQuery.SearchKeyword)
+                || d.ClientId.ToString().Contains(getDeliveryNoteQuery.SearchKeyword)
+                || d.NumFacture.ToString().Contains(getDeliveryNoteQuery.SearchKeyword));
         }
 
         var pagedDeliveryNote = await PagedList<DeliveryNoteResponse>.ToPagedListAsync(
@@ -39,7 +43,7 @@ public class GetDeliveryNoteQueryHandler(
             cancellationToken);
 
 
-        _logger.LogEntitiesFetched("DeliveryNote", pagedDeliveryNote.Count);
+        _logger.LogEntitiesFetched(nameof(BonDeLivraison), pagedDeliveryNote.Count);
 
         return pagedDeliveryNote;
     }

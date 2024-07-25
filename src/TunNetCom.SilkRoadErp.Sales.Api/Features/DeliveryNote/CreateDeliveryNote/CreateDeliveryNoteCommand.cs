@@ -7,5 +7,6 @@ public record CreateDeliveryNoteCommand(
     decimal NetPayer,
     TimeOnly TempBl,
     int? NumFacture,
-    int? ClientId
-) : IRequest<Result<int>>;
+    int? ClientId,
+    IEnumerable<LigneBlRequest> Lignes)
+    : IRequest<Result<int>>;

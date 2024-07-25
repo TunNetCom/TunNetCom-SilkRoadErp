@@ -6,6 +6,7 @@ public class GetDeliveryNoteEndpoint : ICarterModule
     {
         app.MapGet("/deliveryNote", async (
             [AsParameters] QueryStringParameters paginationQueryParams,
+            bool? isFactured,
             IMediator mediator,
             HttpContext httpContext,
             CancellationToken cancellationToken) =>
@@ -13,7 +14,8 @@ public class GetDeliveryNoteEndpoint : ICarterModule
             var query = new GetDeliveryNoteQuery(
                 paginationQueryParams.PageNumber,
                 paginationQueryParams.PageSize,
-                paginationQueryParams.SearchKeyword);
+                paginationQueryParams.SearchKeyword,
+                isFactured);
 
             var pagedDeliveryNote = await mediator.Send(query, cancellationToken);
 

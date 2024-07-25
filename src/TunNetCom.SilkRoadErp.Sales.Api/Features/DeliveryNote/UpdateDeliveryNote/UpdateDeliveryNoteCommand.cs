@@ -8,6 +8,8 @@ public record UpdateDeliveryNoteCommand(
     decimal NetPayer,
     TimeOnly TempBl,
     int? NumFacture,
-    int? ClientId
-    ) : IRequest<Result>;
+    int? ClientId,
+    IEnumerable<LigneBlRequest> Lignes)
+
+  : IRequest<Result>;
 

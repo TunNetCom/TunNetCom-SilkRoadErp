@@ -1,0 +1,112 @@
+﻿@page "/create-delivery-note"
+@using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services.DeliveryNote
+@inject DeliveryNoteService DeliveryNoteService
+
+<PageTitle>Create Delivery Note</PageTitle>
+
+<h3>Create Delivery Note</h3>
+
+<EditForm Model="deliveryNote" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div>
+        <label>Date:</label>
+        <InputDate @bind-Value="deliveryNote.Date" />
+    </div>
+    <div>
+        <label>TotHTva:</label>
+        <InputNumber @bind-Value="deliveryNote.TotHTva" />
+    </div>
+    <div>
+        <label>TotTva:</label>
+        <InputNumber @bind-Value="deliveryNote.TotTva" />
+    </div>
+    <div>
+        <label>NetPayer:</label>
+        <InputNumber @bind-Value="deliveryNote.NetPayer" />
+    </div>
+    <div>
+        <label>TempBl:</label>
+        <input type="text" @bind="tempBlString" placeholder="HH:mm" />
+    </div>
+    <div>
+        <label>NumFacture:</label>
+        <InputNumber @bind-Value="deliveryNote.NumFacture" />
+    </div>
+    <div>
+        <label>ClientId:</label>
+        <InputNumber @bind-Value="deliveryNote.ClientId" />
+    </div>
+
+    <h4>Lines</h4>
+    @foreach (var line in deliveryNote.Lignes)
+    {
+        <div>
+            <label>RefProduit:</label>
+            <InputText @bind-Value="line.RefProduit" />
+        </div>
+        <div>
+            <label>DesignationLi:</label>
+            <InputText @bind-Value="line.DesignationLi" />
+        </div>
+        <div>
+            <label>QteLi:</label>
+            <InputNumber @bind-Value="line.QteLi" />
+        </div>
+        <div>
+            <label>PrixHt:</label>
+            <InputNumber @bind-Value="line.PrixHt" />
+        </div>
+        <div>
+            <label>Remise:</label>
+            <InputNumber @bind-Value="line.Remise" />
+        </div>
+        <div>
+            <label>TotHt:</label>
+            <InputNumber @bind-Value="line.TotHt" />
+        </div>
+        <div>
+            <label>Tva:</label>
+            <InputNumber @bind-Value="line.Tva" />
+        </div>
+        <div>
+            <label>TotTtc:</label>
+            <InputNumber @bind-Value="line.TotTtc" />
+        </div>
+    }
+
+    <button type="button" @onclick="AddLine">Add Line</button>
+    <button type="submit">Create</button>
+</EditForm>
+
+@code {
+    private CreateDeliveryNoteRequest deliveryNote = new CreateDeliveryNoteRequest
+        {
+            Date = DateTime.Now,
+            Lignes = new List<LigneBlRequest>()
+        };
+
+    private string tempBlString;
+
+    private void AddLine()
+    {
+        deliveryNote.Lignes.Add(new LigneBlRequest());
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (TimeOnly.TryParse(tempBlString, out var tempBl))
+        {
+            deliveryNote.TempBl = tempBl;
+        }
+        else
+        {
+            // Handle invalid time format
+            // You can show an error message or take other appropriate action
+        }
+
+        await DeliveryNoteService.CreateDeliveryNote(deliveryNote);
+    }
+}

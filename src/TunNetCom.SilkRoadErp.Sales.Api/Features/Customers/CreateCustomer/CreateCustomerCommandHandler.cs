@@ -7,7 +7,7 @@ public class CreateCustomerCommandHandler(
 {
     public async Task<Result<int>> Handle(CreateCustomerCommand createCustomerCommand, CancellationToken cancellationToken)
     {
-        _logger.LogEntityCreated("Customer",createCustomerCommand);
+        _logger.LogEntityCreated(nameof(Client),createCustomerCommand);
 
         var isCustomerNameExist = await _context.Client.AnyAsync(
             cus => cus.Nom == createCustomerCommand.Nom,
@@ -34,7 +34,7 @@ public class CreateCustomerCommandHandler(
         _context.Client.Add(client);
         await _context.SaveChangesAsync(cancellationToken);
 
-        _logger.LogEntityCreatedSuccessfully("Customer",client.Id);
+        _logger.LogEntityCreatedSuccessfully(nameof(Client), client.Id);
 
         return client.Id;
     }
