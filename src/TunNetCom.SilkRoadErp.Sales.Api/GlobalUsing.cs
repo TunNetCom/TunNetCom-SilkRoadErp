@@ -22,3 +22,4 @@ global using TunNetCom.SilkRoadErp.Sales.Contracts;
 global using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.ResultExtensions;
 global using TunNetCom.SilkRoadErp.Sales.Contracts.Customers;
 global using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote;
+global using TunNetCom.SilkRoadErp.Sales.Contracts.Invoice;
