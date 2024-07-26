@@ -4,7 +4,7 @@ public class CreateProductCommandHandler(SalesContext _context, ILogger<CreatePr
 {
     public async Task<Result<string>> Handle(CreateProductCommand createProductCommand, CancellationToken cancellationToken)
     {
-        _logger.LogEntityCreated("Product", createProductCommand);
+        _logger.LogEntityCreated(nameof(Produit), createProductCommand);
 
         var isProductRefeOrNameExist = await _context.Produit.AnyAsync(
             pro => pro.Refe == createProductCommand.Refe || pro.Nom == createProductCommand.Nom,
@@ -28,7 +28,7 @@ public class CreateProductCommandHandler(SalesContext _context, ILogger<CreatePr
         );
         _context.Produit.Add(product);
         await _context.SaveChangesAsync(cancellationToken);
-        _logger.LogEntityCreatedSuccessfully("Product", product.Refe);
+        _logger.LogEntityCreatedSuccessfully(nameof(Produit), product.Refe);
         return product.Refe;
     }
 }

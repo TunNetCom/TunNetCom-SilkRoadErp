@@ -1,6 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.Products.GetProductByRef;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.GetCustomerById;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.GetCustomerById;
 
 public class GetCustomerByIdQueryHandler(
     SalesContext _context,
@@ -23,10 +21,5 @@ public class GetCustomerByIdQueryHandler(
         _logger.LogEntityFetchedById(nameof(Client), getClientByIdQuery.Id);
 
         return client.Adapt<CustomerResponse>();
-    }
-
-    public async Task Handle(GetProductByRefQuery query, CancellationToken none)
-    {
-        throw new NotImplementedException();
     }
 }

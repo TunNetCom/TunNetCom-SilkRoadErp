@@ -6,7 +6,7 @@ public class GetProductQueryHandler(
 {
     public async Task<PagedList<ProductResponse>> Handle(GetProductQuery getProductQuery, CancellationToken cancellationToken)
     {
-        _logger.LogPaginationRequest("Product", getProductQuery.PageNumber, getProductQuery.PageSize);
+        _logger.LogPaginationRequest(nameof(Produit), getProductQuery.PageNumber, getProductQuery.PageSize);
         var productsQuery = _context.Produit.Select(t =>
             new ProductResponse
             {
@@ -35,7 +35,7 @@ public class GetProductQueryHandler(
             getProductQuery.PageSize,
             cancellationToken);
 
-        _logger.LogEntitiesFetched("Product", pagedProducts.Count);
+        _logger.LogEntitiesFetched(nameof(Produit),, pagedProducts.Count);
 
         return pagedProducts;
 

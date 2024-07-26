@@ -3,12 +3,12 @@ public class UpdateProductCommandHandler(SalesContext _context ,ILogger<UpdatePr
 {
     public async Task<Result> Handle(UpdateProductCommand updateProductCommand, CancellationToken cancellationToken)
     {
-        _logger.LogEntityUpdateAttempt("Product", updateProductCommand.Refe);
+        _logger.LogEntityUpdateAttempt(nameof(Produit), updateProductCommand.Refe);
         var productToUpdate = await _context.Produit.FindAsync(updateProductCommand.Refe);
 
         if (productToUpdate is null)
         {
-            _logger.LogEntityNotFound("Product", updateProductCommand.Refe);
+            _logger.LogEntityNotFound(nameof(Produit), updateProductCommand.Refe);
             return Result.Fail("Product_not_found");
         }
         var isProductNameExist = await _context.Produit.AnyAsync(
@@ -33,7 +33,7 @@ public class UpdateProductCommandHandler(SalesContext _context ,ILogger<UpdatePr
             visibilite: updateProductCommand.Visibilite
             );
         await _context.SaveChangesAsync(cancellationToken);
-        _logger.LogEntityUpdated("Product", updateProductCommand.Refe);
+        _logger.LogEntityUpdated(nameof(Produit), updateProductCommand.Refe);
         return Result.Ok();
     }
 }

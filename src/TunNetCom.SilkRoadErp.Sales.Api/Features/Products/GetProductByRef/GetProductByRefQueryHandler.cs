@@ -3,14 +3,14 @@ public class GetProductByRefQueryHandler(SalesContext _context, ILogger<GetProdu
 {
     public async Task<Result<ProductResponse>> Handle(GetProductByRefQuery getProductByRefQuery, CancellationToken cancellationToken)
     {
-        _logger.LogFetchingEntityById("Product", getProductByRefQuery.Refe);
-        var product = await _context.Produit.FindAsync(getProductByRefQuery.Refe);
+        _logger.LogFetchingEntityById(nameof(Produit), getProductByRefQuery.Refe);
+        var product = await _context.Produit.FindAsync(getProductByRefQuery.Refe,cancellationToken);
         if (product == null)
         {
-            _logger.LogEntityNotFound("Product", getProductByRefQuery.Refe);
+            _logger.LogEntityNotFound(nameof(Produit), getProductByRefQuery.Refe);
             return Result.Fail("Product_not_found");
         }
-        _logger.LogEntityFetchedById("Product", getProductByRefQuery.Refe);
+        _logger.LogEntityFetchedById(nameof(Produit), getProductByRefQuery.Refe);
         return product.Adapt<ProductResponse>();
     }
 }
