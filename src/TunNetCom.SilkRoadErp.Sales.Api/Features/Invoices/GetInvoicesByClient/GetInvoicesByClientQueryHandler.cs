@@ -14,8 +14,6 @@ public class GetInvoicesByClientQueryHandler(
             {
                 Num = f.Num,
                 Date = f.Date,
-                TotHTva = _invoiceCalculator.CalculateTotalHTva(f),
-                TotTva = _invoiceCalculator.CalculateTotalTva(f)
             });
 
         var pagedInvoices = await PagedList<InvoiceResponse>.ToPagedListAsync(invoicesQuery, query.PageNumber, query.PageSize, cancellationToken);
