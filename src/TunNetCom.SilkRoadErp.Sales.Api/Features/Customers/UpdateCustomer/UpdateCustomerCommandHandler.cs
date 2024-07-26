@@ -9,13 +9,13 @@ public class UpdateCustomerCommandHandler(
 {
     public async Task<Result> Handle(UpdateCustomerCommand updateCustomerCommand, CancellationToken cancellationToken)
     {
-        _logger.LogEntityUpdateAttempt("Customer",updateCustomerCommand.Id);
+        _logger.LogEntityUpdateAttempt(nameof(Client), updateCustomerCommand.Id);
 
         var clientToUpdate = await _context.Client.FindAsync(updateCustomerCommand.Id);
 
         if (clientToUpdate is null)
         {
-            _logger.LogEntityNotFound("Customer", updateCustomerCommand.Id);
+            _logger.LogEntityNotFound(nameof(Client), updateCustomerCommand.Id);
 
             return Result.Fail(EntityNotFound.Error);
         }
@@ -42,7 +42,7 @@ public class UpdateCustomerCommandHandler(
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        _logger.LogEntityUpdated("Customer",updateCustomerCommand.Id);
+        _logger.LogEntityUpdated(nameof(Client), updateCustomerCommand.Id);
 
         return Result.Ok();
     }

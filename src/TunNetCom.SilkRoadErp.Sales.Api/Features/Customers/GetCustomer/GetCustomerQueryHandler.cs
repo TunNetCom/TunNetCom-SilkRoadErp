@@ -10,7 +10,7 @@ public class GetCustomerQueryHandler(
 {
     public async Task<PagedList<CustomerResponse>> Handle(GetCustomerQuery getCustomerQuery, CancellationToken cancellationToken)
     {
-        _logger.LogPaginationRequest("Customer",getCustomerQuery.PageNumber, getCustomerQuery.PageSize);
+        _logger.LogPaginationRequest(nameof(Client), getCustomerQuery.PageNumber, getCustomerQuery.PageSize);
 
         var clientsQuery = _context.Client.Select(t =>
             new CustomerResponse
@@ -47,7 +47,7 @@ public class GetCustomerQueryHandler(
             cancellationToken);
 
 
-        _logger.LogEntitiesFetched("Customer",pagedCustomers.Count);
+        _logger.LogEntitiesFetched(nameof(Client), pagedCustomers.Count);
 
         return pagedCustomers;
     }

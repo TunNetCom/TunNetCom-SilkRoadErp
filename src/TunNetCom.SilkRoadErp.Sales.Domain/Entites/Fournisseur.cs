@@ -7,6 +7,61 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 public partial class Fournisseur
 {
+    public void UpdateProvider(
+         string nom,
+         string tel,
+         string? fax,
+         string? matricule,
+         string? code,
+         string? codeCat,
+         string? etbSec,
+         string? mail,
+         string? mailDeux,
+         bool constructeur,
+         string? adresse)
+    {
+        this.Nom = nom;
+        this.Tel = tel;
+        this.Fax = fax;
+        this.Matricule = matricule;
+        this.Code = code;
+        this.CodeCat = codeCat;
+        this.EtbSec = etbSec;
+        this.Mail = mail;
+        this.MailDeux = mailDeux;
+        this.Constructeur = constructeur;
+        this.Adresse = adresse;
+              }
+    public static Fournisseur CreateProvider(
+     string nom,
+     string tel,
+     string? fax,
+     string? matricule,
+     string? code,
+     string? codeCat,
+     string? etbSec,
+     string? mail,
+     string? mailDeux,
+     bool constructeur,
+     string? adresse)
+    {
+        return new Fournisseur
+        {
+            Nom = nom,
+            Tel = tel,
+            Fax = fax,
+            Matricule = matricule,
+            Code = code,
+            CodeCat = codeCat,
+            EtbSec = etbSec,
+            Mail = mail,
+            MailDeux = mailDeux,
+            Constructeur = constructeur,
+            Adresse = adresse
+        };
+    }
+
+
     public int Id { get; set; }
 
     public string Nom { get; set; } = null!;

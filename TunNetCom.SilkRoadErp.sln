@@ -17,7 +17,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TunNetCom.SilkRoadErp.Sales
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TunNetCom.SilkRoadErp.Sales.Contracts", "src\TunNetCom.SilkRoadErp.Sales.Contracts\TunNetCom.SilkRoadErp.Sales.Contracts.csproj", "{9A62E0CA-E191-4D40-8F49-145FA13E6DDB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TunNetCom.SilkRoadErp.Sales.UnitTests", "test\TunNetCom.SilkRoadErp.Sales.UnitTests\TunNetCom.SilkRoadErp.Sales.UnitTests.csproj", "{1B179D22-49E5-4F17-A746-18C518313E39}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TunNetCom.SilkRoadErp.Sales.UnitTests", "test\TunNetCom.SilkRoadErp.Sales.UnitTests\TunNetCom.SilkRoadErp.Sales.UnitTests.csproj", "{1B179D22-49E5-4F17-A746-18C518313E39}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

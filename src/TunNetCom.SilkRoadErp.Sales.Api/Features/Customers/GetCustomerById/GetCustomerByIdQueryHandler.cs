@@ -9,18 +9,18 @@ public class GetCustomerByIdQueryHandler(
 {
     public async Task<Result<CustomerResponse>> Handle(GetCustomerByIdQuery getClientByIdQuery, CancellationToken cancellationToken)
     {
-        _logger.LogFetchingEntityById("Customer",getClientByIdQuery.Id);
+        _logger.LogFetchingEntityById(nameof(Client), getClientByIdQuery.Id);
 
         var client = await _context.Client.FindAsync(getClientByIdQuery.Id, cancellationToken);
 
         if (client is null)
         {
-            _logger.LogEntityNotFound("Customer",getClientByIdQuery.Id);
+            _logger.LogEntityNotFound(nameof(Client), getClientByIdQuery.Id);
 
             return Result.Fail("client_not_found");
         }
 
-        _logger.LogEntityFetchedById("Customer",getClientByIdQuery.Id);
+        _logger.LogEntityFetchedById(nameof(Client), getClientByIdQuery.Id);
 
         return client.Adapt<CustomerResponse>();
     }
