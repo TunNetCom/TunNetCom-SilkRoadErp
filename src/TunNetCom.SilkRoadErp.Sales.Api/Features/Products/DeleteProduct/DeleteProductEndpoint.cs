@@ -1,4 +1,5 @@
 ﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Products.DeleteProduct;
+
 public class DeleteProductEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
