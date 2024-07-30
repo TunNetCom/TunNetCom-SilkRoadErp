@@ -1,0 +1,77 @@
+﻿using static TunNetCom.SilkRoadErp.Sales.WebApp.Services.CustomerService;
+using TunNetCom.SilkRoadErp.Sales.Contracts.Invoice;
+using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers;
+
+namespace TunNetCom.SilkRoadErp.Sales.WebApp.Services.Invoice;
+
+public class InvoicesApiClient : IInvoicesApiClient
+{
+    private readonly HttpClient _httpClient;
+    private readonly ILogger<InvoicesApiClient> _logger;
+
+    public InvoicesApiClient(HttpClient httpClient, ILogger<InvoicesApiClient> logger)
+    {
+        _httpClient = httpClient;
+        _logger = logger;
+    }
+
+
+    public async Task<OneOf<InvoiceResponse, bool>> GetInvoice(int id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync($"{id}", cancellationToken: cancellationToken);
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                return await response.ReadJsonAsync<InvoiceResponse>();
+            }
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return false;
+            }
+            throw new Exception($"Invoices/{id}: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message, ex);
+            throw;
+        }
+    }
+
+    public async Task<PagedList<InvoiceResponse>> GetInvoices(QueryStringParameters queryParameters, CancellationToken cancellationToken)
+    {
+        var response = await _httpClient.GetAsync(
+            $"/invoices?pageNumber={queryParameters.PageNumber}&pageSize={queryParameters.PageSize}&searchKeyword={queryParameters.SearchKeyword}",
+            cancellationToken: cancellationToken);
+
+        var responseContent = await response.Content.ReadAsStringAsync();
+        var pagedInvoices = JsonConvert.DeserializeObject<PagedList<InvoiceResponse>>(responseContent);
+
+        if (response.Headers.TryGetValues("X-Pagination", out var headerValues))
+        {
+            var paginationMetadata = JsonConvert.DeserializeObject<PaginationMetadata>(headerValues.FirstOrDefault());
+
+            pagedInvoices.TotalCount = paginationMetadata.TotalCount;
+            pagedInvoices.PageSize = paginationMetadata.PageSize;
+            pagedInvoices.TotalPages = paginationMetadata.TotalPages;
+            pagedInvoices.CurrentPage = paginationMetadata.CurrentPage;
+
+            return pagedInvoices;
+        }
+        return pagedInvoices;
+    }
+
+    public async Task<OneOf<CreateInvoiceRequest, BadRequestResponse>> CreateInvoice(CreateInvoiceRequest request, CancellationToken cancellationToken)
+    {
+        var response = await _httpClient.PostAsJsonAsync($"", request, cancellationToken: cancellationToken);
+        if (response.StatusCode == HttpStatusCode.Created)
+        {
+            return await response.ReadJsonAsync<CreateInvoiceRequest>();
+        }
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            return await response.ReadJsonAsync<BadRequestResponse>();
+        }
+        throw new Exception($"Invoices: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
+    }
+}
