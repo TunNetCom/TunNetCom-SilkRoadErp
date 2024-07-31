@@ -1,8 +1,4 @@
-﻿using static TunNetCom.SilkRoadErp.Sales.WebApp.Services.CustomerService;
-using TunNetCom.SilkRoadErp.Sales.Contracts.Products;
-using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers;
-
-namespace TunNetCom.SilkRoadErp.Sales.WebApp.Services.Product;
+﻿namespace TunNetCom.SilkRoadErp.Sales.WebApp.Services.Product;
 
 public class ProductsApiClient : IProductsApiClient
 {

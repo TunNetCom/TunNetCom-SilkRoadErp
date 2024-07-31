@@ -1,8 +1,4 @@
-﻿using static TunNetCom.SilkRoadErp.Sales.WebApp.Services.CustomerService;
-using TunNetCom.SilkRoadErp.Sales.Contracts.Invoice;
-using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers;
-
-namespace TunNetCom.SilkRoadErp.Sales.WebApp.Services.Invoice;
+﻿namespace TunNetCom.SilkRoadErp.Sales.WebApp.Services.Invoice;
 
 public class InvoicesApiClient : IInvoicesApiClient
 {
