@@ -1,5 +1,4 @@
 using TunNetCom.SilkRoadErp.Sales.WebApp.Components;
-using TunNetCom.SilkRoadErp.Sales.WebApp.Services;
 using TunNetCom.SilkRoadErp.Sales.WebApp.Services.Customers;
 using TunNetCom.SilkRoadErp.Sales.WebApp.Services.DeliveryNote;
 using TunNetCom.SilkRoadErp.Sales.WebApp.Services.Invoice;
@@ -12,11 +11,6 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 var baseUrl = builder.Configuration.GetValue<string>("BaseUrl");
-
-builder.Services.AddHttpClient<CustomerService>(client =>
-{
-    client.BaseAddress = new Uri(baseUrl);
-});
 
 builder.Services.AddHttpClient<DeliveryNoteService>(deliveryNote =>
 {

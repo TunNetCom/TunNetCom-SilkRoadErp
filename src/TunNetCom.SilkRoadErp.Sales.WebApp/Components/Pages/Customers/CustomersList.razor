@@ -6,7 +6,6 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Services
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Services.Customers
 @using TunNetCom.DeleteModal
-@inject CustomerService clientService
 @inject ICustomersApiClient customerService
 @inject NavigationManager navigationManager
 @inject IStringLocalizer<SharedResource> Localizer
@@ -66,7 +65,7 @@
 
     private async Task ProcessDelete(MouseEventArgs e)
     {
-        await clientService.DeleteClientAsync(currentCustomerIdToDelete);
+        await customerService.DeleteAsync(currentCustomerIdToDelete, cancellationTokenSource.Token);
         toastService.Notify(new(ToastType.Warning, $"{Localizer["customer"]} {Localizer["deleted_with_success"]}"));
         await yesOrNoDeleteModal.HideAsync();
     }
@@ -109,7 +108,7 @@
                 SearchKeyword = searchKeyword
             };
 
-        var result = await customerService.GetCustomers(customersParameters, cancellationTokenSource.Token);
+        var result = await customerService.GetAsync(customersParameters, cancellationTokenSource.Token);
         return await Task.FromResult(new GridDataProviderResult<CustomerResponse> { Data = result, TotalCount = result.TotalCount });
     }
 
