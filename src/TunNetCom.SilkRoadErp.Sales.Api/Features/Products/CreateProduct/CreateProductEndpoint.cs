@@ -4,8 +4,8 @@ public class CreateProductEndpoint : ICarterModule
     public void AddRoutes(IEndpointRouteBuilder app)
     {
         app.MapPost(
-         "/Products",
-         async Task<Results<Created<CreateProductRequest>, BadRequest<List<IError>>>>
+         "/products",
+         async Task<Results<Created<CreateProductRequest>, ValidationProblem>>
          (IMediator mediator,
          CreateProductRequest request, CancellationToken cancellationToken) =>
          {
@@ -26,7 +26,7 @@ public class CreateProductEndpoint : ICarterModule
              var result = await mediator.Send(createProductCommand, cancellationToken);
              if (result.IsFailed)
              {
-                 return TypedResults.BadRequest(result.Errors);
+                 return result.ToValidationProblem();
              }
              return TypedResults.Created($"/products/{result.Value}", request);
          });

@@ -2,20 +2,24 @@
 
 public interface IProductsApiClient
 {
-    Task<OneOf<ProductResponse, bool>> GetProduct(
+    Task<OneOf<ProductResponse, bool>> GetAsync(
         string refe,
         CancellationToken cancellationToken);
-    Task<PagedList<ProductResponse>> GetProducts(
+
+    Task<PagedList<ProductResponse>> GetPagedAsync(
         QueryStringParameters queryParameters, 
         CancellationToken cancellationToken);
-    Task<OneOf<CreateProductRequest, BadRequestResponse>> CreateProduct(
+
+    Task<OneOf<CreateProductRequest, BadRequestResponse>> CreateAsync(
         CreateProductRequest request,
         CancellationToken cancellationToken);
-    Task<OneOf<ResponseTypes, BadRequestResponse>> UpdateProduct
+
+    Task<OneOf<ResponseTypes, BadRequestResponse>> UpdateAsync
         (UpdateProductRequest request,
         string refe,
         CancellationToken cancellationToken);
-    Task<Stream> DeleteProduct
-        (string refe, 
+
+    Task<OneOf<ResponseTypes, Stream>> DeleteAsync(
+        string refe, 
         CancellationToken cancellationToken);
 }

@@ -6,6 +6,7 @@
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Products
 @using BlazorBootstrap
 @using TunNetCom.DeleteModal
+@using TunNetCom.NotFoundModal
 @inject IProductsApiClient productService
 @inject NavigationManager navigationManager
 @inject IStringLocalizer<SharedResource> Localizer
@@ -44,24 +45,6 @@
         <GridColumn TItem="ProductResponse" HeaderText="@Localizer["product_qteLimite"]" PropertyName="QteLimite" SortString="QteLimite" SortKeySelector="item => item.QteLimite" FilterTextboxWidth="120">
             @context.QteLimite
         </GridColumn>
-        <GridColumn TItem="ProductResponse" HeaderText="@Localizer["product_remise"]" PropertyName="Remise" SortString="Remise" SortKeySelector="item => item.Remise" FilterTextboxWidth="120">
-            @context.Remise
-        </GridColumn>
-        <GridColumn TItem="ProductResponse" HeaderText="@Localizer["product_remiseAchat"]" PropertyName="RemiseAchat" SortString="RemiseAchat" SortKeySelector="item => item.RemiseAchat" FilterTextboxWidth="120">
-            @context.RemiseAchat
-        </GridColumn>
-        <GridColumn TItem="ProductResponse" HeaderText="@Localizer["product_tva"]" PropertyName="Tva" SortString="Tva" SortKeySelector="item => item.Tva" FilterTextboxWidth="120">
-            @context.Tva
-        </GridColumn>
-        <GridColumn TItem="ProductResponse" HeaderText="@Localizer["product_prix"]" PropertyName="Prix" SortString="Prix" SortKeySelector="item => item.Prix" FilterTextboxWidth="120">
-            @context.Prix
-        </GridColumn>
-        <GridColumn TItem="ProductResponse" HeaderText="@Localizer["product_prixAchat"]" PropertyName="PrixAchat" SortString="PrixAchat" SortKeySelector="item => item.PrixAchat" FilterTextboxWidth="120">
-            @context.PrixAchat
-        </GridColumn>
-        <GridColumn TItem="ProductResponse" HeaderText="@Localizer["product_visibilite"]" PropertyName="Visibilite" SortString="Visibilite" SortKeySelector="item => item.Visibilite" FilterTextboxWidth="120">
-            @context.Visibilite
-        </GridColumn>
         <GridColumn TItem="ProductResponse" HeaderText="@Localizer["actions_label"]">
             <Button Color="ButtonColor.Primary" @onclick="((args) => OnClickEditButton(args, context.Refe.ToString()))">
                 @Localizer["edit_button_label"]
@@ -74,6 +57,7 @@
 </div>
 
 <Modal @ref="yesOrNoDeleteModal" />
+<Modal @ref="notFoundModal" />
 
 @code {
     [Inject] protected ToastService toastService { get; set; } = default!;
@@ -82,13 +66,22 @@
     private CancellationTokenSource cancellationTokenSource = new();
     private Modal yesOrNoDeleteModal = default!;
     Grid<ProductResponse> grid = default!;
+    private Modal notFoundModal = default!;
 
 
     private async Task ProcessDelete(MouseEventArgs e)
     {
-        await productService.DeleteProduct(currentProductRefeToDelete, cancellationTokenSource.Token);
+        var result = await productService.DeleteAsync(currentProductRefeToDelete, cancellationTokenSource.Token);
+        if (result.IsT0 && result.AsT0 == ResponseTypes.NotFound)
+        {
+            var parameters = new Dictionary<string, object>();
+            parameters.Add("NotFoundMessage", "not_found_message");
+            await notFoundModal.ShowAsync<NotFoundModal>(title: Localizer["not_found_modal_title"], parameters: parameters);
+            return;
+        }
         toastService.Notify(new(ToastType.Warning, $"{Localizer["product"]} {Localizer["deleted_with_success"]}"));
         await yesOrNoDeleteModal.HideAsync();
+        await grid.RefreshDataAsync();
     }
 
     protected void OnClickEditButton(EventArgs args, string refe)
@@ -129,7 +122,7 @@
                 SearchKeyword = searchKeyword
             };
 
-        var result = await productService.GetProducts(productsParameters, cancellationTokenSource.Token);
+        var result = await productService.GetPagedAsync(productsParameters, cancellationTokenSource.Token);
         return await Task.FromResult(new GridDataProviderResult<ProductResponse> { Data = result, TotalCount = result.TotalCount });
     }
 
