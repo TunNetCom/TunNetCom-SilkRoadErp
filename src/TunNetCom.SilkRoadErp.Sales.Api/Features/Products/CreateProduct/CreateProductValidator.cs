@@ -1,14 +1,17 @@
 ﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Products.CreateProduct;
-public class CreateProductValidator : AbstractValidator<CreateProductRequest>
+public class CreateProductValidator : AbstractValidator<CreateProductCommand>
 {
     public CreateProductValidator()
     {
         RuleFor(x => x.Refe)
             .NotEmpty().WithMessage("reference_required")
+            .NotNull().WithMessage("reference_required")
             .MaximumLength(50).WithMessage("reference_must_be_less_than_50_characters");
+
         RuleFor(x => x.Nom)
             .NotEmpty().WithMessage("nom_required")
             .MaximumLength(50).WithMessage("nom_must_be_less_than_50_characters");
+
         RuleFor(x => x.Qte)
             .GreaterThanOrEqualTo(0).WithMessage("quantite_must_be_non_negative");
 

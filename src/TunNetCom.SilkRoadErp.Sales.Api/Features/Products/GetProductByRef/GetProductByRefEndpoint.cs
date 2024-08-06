@@ -3,9 +3,10 @@ public class GetProductByRefEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapGet("/Products/{refe}", async Task<Results<Ok<ProductResponse>, NotFound>> (IMediator mediator, string refe,
-        int id,
-        CancellationToken cancellationToken) =>
+        app.MapGet("/products/{refe}", async Task<Results<Ok<ProductResponse>, NotFound>> (
+            IMediator mediator, 
+            string refe,
+            CancellationToken cancellationToken) =>
         {
             var query = new GetProductByRefQuery(refe);
             var result = await mediator.Send(query, cancellationToken);

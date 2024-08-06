@@ -29,7 +29,7 @@ builder.Services.AddHttpClient<IInvoicesApiClient, InvoicesApiClient>(facture =>
 
 builder.Services.AddHttpClient<IProductsApiClient, ProductsApiClient>(product =>
 {
-    product.BaseAddress = new Uri($"{baseUrl}/Products");
+    product.BaseAddress = new Uri($"{baseUrl}/products/");
 });
 
 builder.Services.AddLocalization();

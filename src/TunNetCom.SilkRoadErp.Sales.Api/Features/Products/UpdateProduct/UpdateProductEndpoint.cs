@@ -3,7 +3,7 @@ public class UpdateProductEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapPut("/Products/{refe}", async Task<Results<NoContent, BadRequest<List<IError>>>> (
+        app.MapPut("/products/{refe}", async Task<Results<NoContent, BadRequest<List<IError>>>> (
             IMediator mediator, string refe, UpdateProductRequest updateProductRequest, CancellationToken cancellationToken) =>
         {
             var updateProductCommand = new UpdateProductCommand(

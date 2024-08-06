@@ -189,4 +189,22 @@
   <data name="delete_title" xml:space="preserve">
     <value>Delete</value>
   </data>
+  <data name="add_product" xml:space="preserve">
+    <value>Ajouter un article</value>
+  </data>
+  <data name="products" xml:space="preserve">
+    <value>Articles</value>
+  </data>
+  <data name="product_name" xml:space="preserve">
+    <value>Nom de l'article</value>
+  </data>
+  <data name="product_qte" xml:space="preserve">
+    <value>Qantité d'article</value>
+  </data>
+  <data name="product_qteLimite" xml:space="preserve">
+    <value>Qantité limité d'article</value>
+  </data>
+  <data name="product_refe" xml:space="preserve">
+    <value>Refernece de l'article</value>
+  </data>
 </root>
