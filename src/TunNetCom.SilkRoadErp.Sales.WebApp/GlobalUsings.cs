@@ -5,3 +5,6 @@ global using TunNetCom.SilkRoadErp.Sales.Contracts.Customers;
 global using TunNetCom.SilkRoadErp.Sales.Contracts.Providers;
 global using OneOf;
 global using System.Net;
+global using TunNetCom.SilkRoadErp.Sales.Contracts.Invoice;
+global using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers;
+global using TunNetCom.SilkRoadErp.Sales.Contracts.Products;

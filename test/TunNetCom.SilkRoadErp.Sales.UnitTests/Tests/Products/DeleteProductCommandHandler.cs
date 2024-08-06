@@ -21,7 +21,7 @@ public class DeleteProductCommandHandlerTests
     public async Task Handle_ProductNotFound_ReturnError()
     {
         // Arrange
-        var command = new DeleteProductCommand(refe: "test1");
+        var command = new DeleteProductCommand(Refe: "test1");
 
         // Act
         var result = await _deleteProductCommandHandler.Handle(command, CancellationToken.None);
@@ -51,7 +51,7 @@ public class DeleteProductCommandHandlerTests
         _context.Produit.Add(product);
         await _context.SaveChangesAsync();
 
-        var command = new DeleteProductCommand(refe: product.Refe);
+        var command = new DeleteProductCommand(Refe: product.Refe);
 
         // Act
         var result = await _deleteProductCommandHandler.Handle(command, CancellationToken.None);
@@ -80,7 +80,7 @@ public class DeleteProductCommandHandlerTests
         _context.Produit.Add(product);
         await _context.SaveChangesAsync();
 
-        var command = new DeleteProductCommand(refe: product.Refe);
+        var command = new DeleteProductCommand(Refe: product.Refe);
 
         // Act
         var result = await _deleteProductCommandHandler.Handle(command, CancellationToken.None);

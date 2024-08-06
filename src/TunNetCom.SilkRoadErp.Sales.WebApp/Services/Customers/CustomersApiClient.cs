@@ -1,6 +1,3 @@
-using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers;
-using static TunNetCom.SilkRoadErp.Sales.WebApp.Services.CustomerService;
-
 namespace TunNetCom.SilkRoadErp.Sales.WebApp.Services.Customers;
 
 public class CustomersApiClient : ICustomersApiClient
@@ -13,7 +10,7 @@ public class CustomersApiClient : ICustomersApiClient
         _logger = logger;
     }
 
-    public async Task<OneOf<ResponseTypes, BadRequestResponse>> UpdateCustomer(
+    public async Task<OneOf<ResponseTypes, BadRequestResponse>> UpdateAsync(
         UpdateCustomerRequest request,
         int id,
         CancellationToken cancellationToken)
@@ -47,7 +44,7 @@ public class CustomersApiClient : ICustomersApiClient
         }
     }
 
-    public async Task<OneOf<CustomerResponse, bool>> GetCustomer(
+    public async Task<OneOf<CustomerResponse, bool>> GetAsync(
         int id,
         CancellationToken cancellationToken)
     {
@@ -71,13 +68,13 @@ public class CustomersApiClient : ICustomersApiClient
         }
     }
 
-    public async Task<Stream> DeleteCustomer(
-        string id,
+    public async Task<Stream> DeleteAsync(
+        int id,
         CancellationToken cancellationToken)
     {
         try
         {
-            var response = await _httpClient.DeleteAsync($"{id}", cancellationToken: cancellationToken);
+            var response = await _httpClient.DeleteAsync($"{id.ToString()}", cancellationToken: cancellationToken);
             if (response.StatusCode is HttpStatusCode.NoContent or HttpStatusCode.NotFound)
             {
                 return await response.Content.ReadAsStreamAsync(cancellationToken);
@@ -91,7 +88,7 @@ public class CustomersApiClient : ICustomersApiClient
         }
     }
 
-    public async Task<PagedList<CustomerResponse>> GetCustomers(
+    public async Task<PagedList<CustomerResponse>> GetAsync(
         QueryStringParameters queryParameters,
         CancellationToken cancellationToken)
     {
@@ -116,7 +113,7 @@ public class CustomersApiClient : ICustomersApiClient
         return pagedClients;
     }
 
-    public async Task<OneOf<CreateCustomerRequest, BadRequestResponse>> CreateCustomer(
+    public async Task<OneOf<CreateCustomerRequest, BadRequestResponse>> CreateAsync(
         CreateCustomerRequest request,
         CancellationToken cancellationToken)
     {
