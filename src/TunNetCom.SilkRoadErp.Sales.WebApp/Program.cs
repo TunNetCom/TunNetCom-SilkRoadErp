@@ -1,6 +1,7 @@
 using TunNetCom.SilkRoadErp.Sales.WebApp.Components;
 using TunNetCom.SilkRoadErp.Sales.WebApp.Services;
 using TunNetCom.SilkRoadErp.Sales.WebApp.Services.Customers;
+using TunNetCom.SilkRoadErp.Sales.WebApp.Services.Providers;
 using TunNetCom.SilkRoadErp.Sales.WebApp.Services.DeliveryNote;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,6 +25,16 @@ builder.Services.AddHttpClient<DeliveryNoteService>(deliveryNote =>
 builder.Services.AddHttpClient<ICustomersApiClient, CustomersApiClient>(client =>
 {
     client.BaseAddress = new Uri($"{baseUrl}/customers/");
+});
+
+builder.Services.AddHttpClient<ProviderService>(provider =>
+{
+    provider.BaseAddress = new Uri(baseUrl);
+});
+
+builder.Services.AddHttpClient<IProvidersApiClient, ProvidersApiClient>(provider =>
+{
+    provider.BaseAddress = new Uri($"{baseUrl}/Providers/");
 });
 
 builder.Services.AddLocalization();

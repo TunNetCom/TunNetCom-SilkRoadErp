@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
-using TunNetCom.SilkRoadErp.Sales.Contracts.Providers;
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.GetProviderById;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.GetProviderById;
 
 public class GetProviderByIdEndpoint : ICarterModule
 {

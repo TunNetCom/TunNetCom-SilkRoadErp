@@ -1,6 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Contracts.Providers;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.UpdateProvider;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.UpdateProvider;
 
 public class UpdateProviderEndpoint : ICarterModule
 {

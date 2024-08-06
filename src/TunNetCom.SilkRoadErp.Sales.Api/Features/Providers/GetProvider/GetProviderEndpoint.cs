@@ -1,6 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.GetCustomer;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.GetProvider;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.GetProvider;
     public class GetProviderEndpoint : ICarterModule
     {
     public void AddRoutes(IEndpointRouteBuilder app)
