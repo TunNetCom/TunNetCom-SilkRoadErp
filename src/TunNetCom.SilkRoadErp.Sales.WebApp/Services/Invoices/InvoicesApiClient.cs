@@ -12,27 +12,33 @@ public class InvoicesApiClient : IInvoicesApiClient
     }
 
 
-    public async Task<OneOf<InvoiceResponse, bool>> GetInvoice(int id, CancellationToken cancellationToken)
+    public async Task<List<InvoiceResponse>> GetInvoicesByCustomerId(int customerId, QueryStringParameters queryParameters, CancellationToken cancellationToken)
     {
         try
         {
-            var response = await _httpClient.GetAsync($"{id}", cancellationToken: cancellationToken);
+            var response = await _httpClient.GetAsync(
+                $"/invoices/client/{customerId}?pageNumber={queryParameters.PageNumber}&pageSize={queryParameters.PageSize}",
+                cancellationToken: cancellationToken);
+
             if (response.StatusCode == HttpStatusCode.OK)
             {
-                return await response.ReadJsonAsync<InvoiceResponse>();
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var invoices = JsonConvert.DeserializeObject<List<InvoiceResponse>>(responseContent);
+                return invoices;
             }
-            if (response.StatusCode == HttpStatusCode.NotFound)
+            else
             {
-                return false;
+                _logger.LogWarning($"Failed to get invoices for customer {customerId}. Status Code: {response.StatusCode}");
+                return new List<InvoiceResponse>();
             }
-            throw new Exception($"Invoices/{id}: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex.Message, ex);
+            _logger.LogError(ex, $"Error getting invoices for customer {customerId}");
             throw;
         }
     }
+
 
     public async Task<PagedList<InvoiceResponse>> GetInvoices(QueryStringParameters queryParameters, CancellationToken cancellationToken)
     {
@@ -59,7 +65,7 @@ public class InvoicesApiClient : IInvoicesApiClient
 
     public async Task<OneOf<CreateInvoiceRequest, BadRequestResponse>> CreateInvoice(CreateInvoiceRequest request, CancellationToken cancellationToken)
     {
-        var response = await _httpClient.PostAsJsonAsync($"", request, cancellationToken: cancellationToken);
+        var response = await _httpClient.PostAsJsonAsync("invoices", request, cancellationToken: cancellationToken);
         if (response.StatusCode == HttpStatusCode.Created)
         {
             return await response.ReadJsonAsync<CreateInvoiceRequest>();

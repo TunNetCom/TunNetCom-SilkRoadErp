@@ -3,6 +3,8 @@ using TunNetCom.SilkRoadErp.Sales.WebApp.Services.Customers;
 using TunNetCom.SilkRoadErp.Sales.WebApp.Services.DeliveryNote;
 using TunNetCom.SilkRoadErp.Sales.WebApp.Services.Invoice;
 using TunNetCom.SilkRoadErp.Sales.WebApp.Services.Product;
+using TunNetCom.SilkRoadErp.Sales.WebApp.Services.Product;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,25 +13,27 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 var baseUrl = builder.Configuration.GetValue<string>("BaseUrl");
+builder.Services.AddHttpClient<CustomersApiClient>(client =>
+{
+    client.BaseAddress = new Uri(baseUrl);
+});
 
+builder.Services.AddHttpClient<DeliveryNoteApiClient>(deliverynote =>
 builder.Services.AddHttpClient<DeliveryNoteService>(deliveryNote =>
 {
-    deliveryNote.BaseAddress = new Uri(baseUrl);
+    deliverynote.BaseAddress = new Uri(baseUrl);
 });
 
-builder.Services.AddHttpClient<ICustomersApiClient, CustomersApiClient>(client =>
+builder.Services.AddHttpClient<InvoicesApiClient>(invoice =>
 {
-    client.BaseAddress = new Uri($"{baseUrl}/customers/");
+    invoice.BaseAddress = new Uri(baseUrl);
 });
 
-builder.Services.AddHttpClient<IInvoicesApiClient, InvoicesApiClient>(facture => 
+builder.Services.AddHttpClient<ProductsApiClient>(product =>
 {
-    facture.BaseAddress = new Uri($"{baseUrl}/invoices");
+    product.BaseAddress = new Uri(baseUrl);
 });
 
-builder.Services.AddHttpClient<IProductsApiClient, ProductsApiClient>(product =>
-{
-    product.BaseAddress = new Uri($"{baseUrl}/products/");
 });
 
 builder.Services.AddLocalization();
@@ -48,7 +52,6 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 

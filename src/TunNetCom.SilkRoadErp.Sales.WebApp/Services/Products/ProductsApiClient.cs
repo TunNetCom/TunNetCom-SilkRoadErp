@@ -122,4 +122,15 @@ public class ProductsApiClient : IProductsApiClient
             throw;
         }
     }
+
+
+    public async Task<PagedList<ProductResponse>> SearchProducts(QueryStringParameters queryParameters, CancellationToken cancellationToken)
+    {
+        var response = await _httpClient.GetAsync($"/products?searchKeyword={queryParameters.SearchKeyword}&pageNumber={queryParameters.PageNumber}&pageSize={queryParameters.PageSize}", cancellationToken);
+        var jsonResponse = await response.Content.ReadAsStringAsync();
+
+        var pagedProducts = JsonConvert.DeserializeObject<PagedList<ProductResponse>>(jsonResponse);
+        return pagedProducts;
+    }
+
 }

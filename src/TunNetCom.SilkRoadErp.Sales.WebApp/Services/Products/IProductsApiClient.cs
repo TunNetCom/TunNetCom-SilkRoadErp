@@ -1,4 +1,7 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.WebApp.Services.Product;
+﻿using System.Threading.Tasks;
+using System.Threading;
+
+namespace TunNetCom.SilkRoadErp.Sales.WebApp.Services.Product;
 
 public interface IProductsApiClient
 {
@@ -21,5 +24,9 @@ public interface IProductsApiClient
 
     Task<OneOf<ResponseTypes, Stream>> DeleteAsync(
         string refe, 
+        CancellationToken cancellationToken);
+
+    Task<PagedList<ProductResponse>> SearchProducts(
+        QueryStringParameters queryParameters,
         CancellationToken cancellationToken);
 }
