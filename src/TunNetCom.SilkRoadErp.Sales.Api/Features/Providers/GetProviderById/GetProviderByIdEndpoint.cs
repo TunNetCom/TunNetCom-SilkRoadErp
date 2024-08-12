@@ -1,12 +1,10 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
-using TunNetCom.SilkRoadErp.Sales.Contracts.Providers;
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.GetProviderById;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.GetProviderById;
 
 public class GetProviderByIdEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapGet("/Providers/{id:int}", async Task<Results<Ok<ProviderResponse>, NotFound>> (IMediator mediator, int id) =>
+        app.MapGet("/providers/{id:int}", async Task<Results<Ok<ProviderResponse>, NotFound>> (IMediator mediator, int id) =>
         {
             var query = new GetProviderByIdQuery(id);
 
