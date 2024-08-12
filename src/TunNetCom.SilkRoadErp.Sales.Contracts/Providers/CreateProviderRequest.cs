@@ -1,4 +1,4 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Contracts.Providers;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Contracts.Providers;
 public class CreateProviderRequest
 {
     public string Nom { get; set; } = null!;

@@ -10,6 +10,7 @@ public class GetProviderQueryHandler(SalesContext _context, ILogger<GetProviderQ
         IQueryable<ProviderResponse> ProvidersQuery = _context.Fournisseur.Select(t =>
             new ProviderResponse
             {
+                Id = t.Id,                          
                 Nom = t.Nom,
                 Tel = t.Tel,
                 Fax = t.Fax,

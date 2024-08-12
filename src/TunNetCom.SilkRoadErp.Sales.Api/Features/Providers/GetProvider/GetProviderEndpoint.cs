@@ -1,11 +1,9 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.GetCustomer;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.GetProvider;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.GetProvider;
     public class GetProviderEndpoint : ICarterModule
     {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapGet("/Providers", async (
+        app.MapGet("/providers", async (
             [AsParameters] QueryStringParameters paginationQueryParams,
             IMediator mediator,
             HttpContext httpContext,
