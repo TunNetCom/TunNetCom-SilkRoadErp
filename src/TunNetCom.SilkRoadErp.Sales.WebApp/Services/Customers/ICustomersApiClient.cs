@@ -1,5 +1,3 @@
-using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers;
-
 namespace TunNetCom.SilkRoadErp.Sales.WebApp.Services.Customers;
 
 public interface ICustomersApiClient
@@ -23,4 +21,11 @@ public interface ICustomersApiClient
         CreateCustomerRequest request,
         CancellationToken cancellationToken);
 
+    Task<PagedList<CustomerResponse>> SearchCustomers(
+        QueryStringParameters queryParameters,
+        CancellationToken cancellationToken);
+
+    Task<CustomerResponse?> GetCustomerById(
+        int id,
+        CancellationToken cancellationToken);
 }

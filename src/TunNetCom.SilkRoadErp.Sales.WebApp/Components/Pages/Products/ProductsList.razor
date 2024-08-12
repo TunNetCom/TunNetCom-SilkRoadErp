@@ -42,9 +42,6 @@
         <GridColumn TItem="ProductResponse" HeaderText="@Localizer["product_qte"]" PropertyName="Qte" SortString="Qte" SortKeySelector="item => item.Qte" FilterTextboxWidth="100">
             @context.Qte
         </GridColumn>
-        <GridColumn TItem="ProductResponse" HeaderText="@Localizer["product_qteLimite"]" PropertyName="QteLimite" SortString="QteLimite" SortKeySelector="item => item.QteLimite" FilterTextboxWidth="120">
-            @context.QteLimite
-        </GridColumn>
         <GridColumn TItem="ProductResponse" HeaderText="@Localizer["actions_label"]">
             <Button Color="ButtonColor.Primary" @onclick="((args) => OnClickEditButton(args, context.Refe.ToString()))">
                 @Localizer["edit_button_label"]

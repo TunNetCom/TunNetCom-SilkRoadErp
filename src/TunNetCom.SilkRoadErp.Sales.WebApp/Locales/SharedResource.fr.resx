@@ -195,8 +195,29 @@
   <data name="products" xml:space="preserve">
     <value>Articles</value>
   </data>
+  <data name="actions_label" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="cancel_label" xml:space="preserve">
+    <value>Annuler</value>
+  </data>
+  <data name="delete_button_label" xml:space="preserve">
+    <value>Supprimer</value>
+  </data>
+  <data name="edit_button_label" xml:space="preserve">
+    <value>Modifier</value>
+  </data>
+  <data name="edit_product" xml:space="preserve">
+    <value>Modifier article</value>
+  </data>
   <data name="product_name" xml:space="preserve">
     <value>Nom de l'article</value>
+  </data>
+  <data name="product_prix" xml:space="preserve">
+    <value>Prix article</value>
+  </data>
+  <data name="product_prixAchat" xml:space="preserve">
+    <value>Prix d'achat</value>
   </data>
   <data name="product_qte" xml:space="preserve">
     <value>Qantité d'article</value>
@@ -254,5 +275,20 @@
   </data>
   <data name="actions_label" xml:space="preserve">
     <value>Actions</value>
+  </data>
+  <data name="product_remise" xml:space="preserve">
+    <value>Remise article</value>
+  </data>
+  <data name="product_remiseAchat" xml:space="preserve">
+    <value>Remise d'achat </value>
+  </data>
+  <data name="product_tva" xml:space="preserve">
+    <value>TVA</value>
+  </data>
+  <data name="product_visibilite" xml:space="preserve">
+    <value>Visibilité</value>
+  </data>
+  <data name="save_label" xml:space="preserve">
+    <value>Sauvegarder</value>
   </data>
 </root>
