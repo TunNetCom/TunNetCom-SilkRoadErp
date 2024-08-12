@@ -1,11 +1,32 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.WebApp.Services.Product;
+﻿using System.Threading.Tasks;
+using System.Threading;
+
+namespace TunNetCom.SilkRoadErp.Sales.WebApp.Services.Product;
 
 public interface IProductsApiClient
 {
-    Task<OneOf<ProductResponse, bool>> GetProduct(string refe, CancellationToken cancellationToken);
-    Task<PagedList<ProductResponse>> GetProducts(QueryStringParameters queryParameters, CancellationToken cancellationToken);
-    Task<OneOf<CreateProductRequest, BadRequestResponse>> CreateProduct(CreateProductRequest request, CancellationToken cancellationToken);
-    Task<OneOf<ResponseTypes, BadRequestResponse>> UpdateProduct(UpdateProductRequest request, string refe, CancellationToken cancellationToken);
-    Task<Stream> DeleteProduct(string refe, CancellationToken cancellationToken);
-    Task<PagedList<ProductResponse>> SearchProducts(QueryStringParameters queryParameters, CancellationToken cancellationToken);
+    Task<OneOf<ProductResponse, bool>> GetAsync(
+        string refe,
+        CancellationToken cancellationToken);
+
+    Task<PagedList<ProductResponse>> GetPagedAsync(
+        QueryStringParameters queryParameters, 
+        CancellationToken cancellationToken);
+
+    Task<OneOf<CreateProductRequest, BadRequestResponse>> CreateAsync(
+        CreateProductRequest request,
+        CancellationToken cancellationToken);
+
+    Task<OneOf<ResponseTypes, BadRequestResponse>> UpdateAsync
+        (UpdateProductRequest request,
+        string refe,
+        CancellationToken cancellationToken);
+
+    Task<OneOf<ResponseTypes, Stream>> DeleteAsync(
+        string refe, 
+        CancellationToken cancellationToken);
+
+    Task<PagedList<ProductResponse>> SearchProducts(
+        QueryStringParameters queryParameters,
+        CancellationToken cancellationToken);
 }

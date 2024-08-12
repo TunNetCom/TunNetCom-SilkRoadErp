@@ -9,7 +9,6 @@
 @using TunNetCom.NotFoundModal
 @using System.Globalization
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Services.Customers
-@inject CustomerService clientService
 @inject ICustomersApiClient customerService
 @inject NavigationManager navigationManager
 @inject IStringLocalizer<SharedResource> localizer
@@ -72,7 +71,7 @@
     {
         if (Id.HasValue)
         {
-            var customerResult = await customerService.GetCustomer(Id.Value, cancellationTokenSource.Token);
+            var customerResult = await customerService.GetAsync(Id.Value, cancellationTokenSource.Token);
             if (customerResult.IsT0)
             {
                 customer = customerResult.AsT0;
@@ -87,7 +86,7 @@
     {
         if (customer.Id == 0)
         {
-            var createCustomerResult = await customerService.CreateCustomer(
+            var createCustomerResult = await customerService.CreateAsync(
                 new CreateCustomerRequest
                     {
                         Nom = customer.Nom,
@@ -112,7 +111,7 @@
             return;
         }
 
-        var updateCustomerResult = await customerService.UpdateCustomer(
+        var updateCustomerResult = await customerService.UpdateAsync(
             new UpdateCustomerRequest
                 {
                     Nom = customer.Nom,
