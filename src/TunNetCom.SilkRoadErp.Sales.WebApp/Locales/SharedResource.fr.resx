@@ -207,6 +207,9 @@
   <data name="edit_button_label" xml:space="preserve">
     <value>Modifier</value>
   </data>
+  <data name="edit_product" xml:space="preserve">
+    <value>Modifier article</value>
+  </data>
   <data name="product_name" xml:space="preserve">
     <value>Nom de l'article</value>
   </data>

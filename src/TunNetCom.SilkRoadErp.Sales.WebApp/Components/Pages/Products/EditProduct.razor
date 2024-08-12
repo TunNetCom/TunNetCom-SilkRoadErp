@@ -18,11 +18,11 @@
 <div class="container mt-4">
     <EditForm Model="product" OnValidSubmit="HandleValidSubmit" class="row g-3">
         <AntiforgeryToken />
-        <div class="col-md-6">
+        <div class="col-md-3">
             <label for="productRefe" class="form-label">@localizer["product_refe"]</label>
             <InputText id="productRefe" @bind-Value="product.Refe" class="form-control" />
         </div>
-        <div class="col-md-6">
+        <div class="col-md-9">
             <label for="productName" class="form-label">@localizer["product_name"]</label>
             <InputText id="productName" @bind-Value="product.Nom" class="form-control" />
         </div>
@@ -44,7 +44,7 @@
         </div>
         <div class="col-md-4">
             <label for="productTva" class="form-label">@localizer["product_tva"]</label>
-            <InputNumber id="productTva" @bind-Value="product.Tva" class="form-control" />
+            <InputNumber id="productTva" @bind-Value="product.Tva" class="form-control"  />
         </div>
         <div class="col-md-4">
             <label for="productPrix" class="form-label">@localizer["product_prix"]</label>
@@ -56,7 +56,7 @@
         </div>
         <div class="col-md-4">
             <label for="productVisibility" class="form-label">@localizer["product_visibilite"]</label>
-            <InputCheckbox id="productVisibility" ValueExpression="@(() => product.Visibilite)" class="form-check-input" />
+            <Switch id="productVisibility" ValueExpression="@(() => product.Visibilite)"  />
         </div>
         <div class="col-12">
             <input type="submit" class="btn btn-primary" value="@localizer["save_label"]" />
