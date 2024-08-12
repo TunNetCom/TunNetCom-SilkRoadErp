@@ -12,22 +12,23 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 var baseUrl = builder.Configuration.GetValue<string>("BaseUrl");
-builder.Services.AddHttpClient<CustomersApiClient>(client =>
+
+builder.Services.AddHttpClient<ICustomersApiClient, CustomersApiClient > (client =>
 {
     client.BaseAddress = new Uri(baseUrl);
 });
 
-builder.Services.AddHttpClient<DeliveryNoteApiClient>(deliverynote =>
+builder.Services.AddHttpClient<IDeliveryNoteApiClient,DeliveryNoteApiClient>(deliverynote =>
 {
     deliverynote.BaseAddress = new Uri(baseUrl);
 });
 
-builder.Services.AddHttpClient<InvoicesApiClient>(invoice =>
+builder.Services.AddHttpClient<IInvoicesApiClient, InvoicesApiClient>(invoice =>
 {
     invoice.BaseAddress = new Uri(baseUrl);
 });
 
-builder.Services.AddHttpClient<ProductsApiClient>(product =>
+builder.Services.AddHttpClient<IProductsApiClient, ProductsApiClient>(product =>
 {
     product.BaseAddress = new Uri(baseUrl);
 });
