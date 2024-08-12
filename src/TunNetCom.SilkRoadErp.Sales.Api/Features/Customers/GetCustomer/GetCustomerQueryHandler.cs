@@ -30,7 +30,8 @@ public class GetCustomerQueryHandler(
         if (!string.IsNullOrEmpty(getCustomerQuery.SearchKeyword))
         {
             clientsQuery = clientsQuery.Where(
-                c => c.Nom.Contains(getCustomerQuery.SearchKeyword)
+                c => c.Id.ToString().Contains(getCustomerQuery.SearchKeyword)
+                || c.Nom.Contains(getCustomerQuery.SearchKeyword)
                 || c.Tel.Contains(getCustomerQuery.SearchKeyword)
                 || c.Adresse.Contains(getCustomerQuery.SearchKeyword)
                 || c.Matricule.Contains(getCustomerQuery.SearchKeyword)

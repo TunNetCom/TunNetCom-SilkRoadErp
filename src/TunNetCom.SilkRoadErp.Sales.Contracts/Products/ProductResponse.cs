@@ -6,10 +6,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Contracts.Products;
 public class ProductResponse
 {
     [JsonPropertyName("refe")]
-    public string Refe { get; set; } = null!;
+    public string Refe { get; set; } = string.Empty;
 
     [JsonPropertyName("nom")]
-    public string Nom { get; set; } = null!;
+    public string Nom { get; set; } = string.Empty;
 
     [JsonPropertyName("qte")]
     public int Qte { get; set; }

@@ -11,11 +11,11 @@ public class ProductsApiClient : IProductsApiClient
         _logger = logger;
     }
 
-    public async Task<OneOf<ProductResponse, bool>> GetProduct(int id, CancellationToken cancellationToken)
+    public async Task<OneOf<ProductResponse, bool>> GetProduct(string refe, CancellationToken cancellationToken)
     {
         try
         {
-            var response = await _httpClient.GetAsync($"/products/{id}", cancellationToken: cancellationToken);
+            var response = await _httpClient.GetAsync($"/products/{refe}", cancellationToken: cancellationToken);
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 return await response.ReadJsonAsync<ProductResponse>();
@@ -24,7 +24,7 @@ public class ProductsApiClient : IProductsApiClient
             {
                 return false;
             }
-            throw new Exception($"Products/{id}: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
+            throw new Exception($"Products/{refe}: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
         }
         catch (Exception ex)
         {
@@ -70,7 +70,7 @@ public class ProductsApiClient : IProductsApiClient
         throw new Exception($"Products: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
     }
 
-    public async Task<OneOf<ResponseTypes, BadRequestResponse>> UpdateProduct(UpdateProductRequest request, int id, CancellationToken cancellationToken)
+    public async Task<OneOf<ResponseTypes, BadRequestResponse>> UpdateProduct(UpdateProductRequest request, string refe, CancellationToken cancellationToken)
     {
         try
         {
@@ -79,7 +79,7 @@ public class ProductsApiClient : IProductsApiClient
                     { "Accept", "application/problem+json" }
                 };
 
-            var response = await _httpClient.PutAsJsonAsync($"{id}", request, headers, cancellationToken);
+            var response = await _httpClient.PutAsJsonAsync($"{refe}", request, headers, cancellationToken);
             if (response.StatusCode == HttpStatusCode.NoContent)
             {
                 return ResponseTypes.Success;
@@ -92,7 +92,7 @@ public class ProductsApiClient : IProductsApiClient
             {
                 return await response.ReadJsonAsync<BadRequestResponse>();
             }
-            throw new Exception($"Products/{id}: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
+            throw new Exception($"Products/{refe}: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
         }
         catch (Exception ex)
         {
@@ -101,16 +101,16 @@ public class ProductsApiClient : IProductsApiClient
         }
     }
 
-    public async Task<Stream> DeleteProduct(int id, CancellationToken cancellationToken)
+    public async Task<Stream> DeleteProduct(string refe, CancellationToken cancellationToken)
     {
         try
         {
-            var response = await _httpClient.DeleteAsync($"{id}", cancellationToken: cancellationToken);
+            var response = await _httpClient.DeleteAsync($"{refe}", cancellationToken: cancellationToken);
             if (response.StatusCode is HttpStatusCode.NoContent or HttpStatusCode.NotFound)
             {
                 return await response.Content.ReadAsStreamAsync(cancellationToken);
             }
-            throw new Exception($"Products/{id}: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
+            throw new Exception($"Products/{refe}: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
         }
         catch (Exception ex)
         {
@@ -118,4 +118,15 @@ public class ProductsApiClient : IProductsApiClient
             throw;
         }
     }
+
+
+    public async Task<PagedList<ProductResponse>> SearchProducts(QueryStringParameters queryParameters, CancellationToken cancellationToken)
+    {
+        var response = await _httpClient.GetAsync($"/products?searchKeyword={queryParameters.SearchKeyword}&pageNumber={queryParameters.PageNumber}&pageSize={queryParameters.PageSize}", cancellationToken);
+        var jsonResponse = await response.Content.ReadAsStringAsync();
+
+        var pagedProducts = JsonConvert.DeserializeObject<PagedList<ProductResponse>>(jsonResponse);
+        return pagedProducts;
+    }
+
 }

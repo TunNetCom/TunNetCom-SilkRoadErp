@@ -1,6 +1,3 @@
-using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers;
-using static TunNetCom.SilkRoadErp.Sales.WebApp.Services.CustomerService;
-
 namespace TunNetCom.SilkRoadErp.Sales.WebApp.Services.Customers;
 
 public class CustomersApiClient : ICustomersApiClient
@@ -131,4 +128,38 @@ public class CustomersApiClient : ICustomersApiClient
         }
         throw new Exception($"Customers: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
     }
+
+    public async Task<PagedList<CustomerResponse>> SearchCustomers(QueryStringParameters queryParameters, CancellationToken cancellationToken)
+    {
+        var response = await _httpClient.GetAsync(
+             $"/customers?pageNumber={queryParameters.PageNumber}&pageSize={queryParameters.PageSize}&searchKeyword={queryParameters.SearchKeyword}",
+            cancellationToken);
+
+        var responseContent = await response.Content.ReadAsStringAsync();
+        var pagedCustomers = JsonConvert.DeserializeObject<PagedList<CustomerResponse>>(responseContent);
+        return pagedCustomers;
+    }
+
+    public async Task<CustomerResponse?> GetCustomerById(int id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync($"/customers/{id}", cancellationToken);
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<CustomerResponse>(cancellationToken: cancellationToken);
+            }
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return null;
+            }
+            throw new Exception($"Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message, ex);
+            throw;
+        }
+    }
+
 }

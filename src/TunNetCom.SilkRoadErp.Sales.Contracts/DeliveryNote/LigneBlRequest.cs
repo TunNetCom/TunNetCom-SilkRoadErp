@@ -5,10 +5,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote;
 public class LigneBlRequest
 {
     [JsonPropertyName("refProduit")]
-    public string RefProduit { get; set; } = null!;
+    public string RefProduit { get; set; } = string.Empty;
 
     [JsonPropertyName("designationLi")]
-    public string DesignationLi { get; set; } = null!;
+    public string DesignationLi { get; set; } = string.Empty;
 
     [JsonPropertyName("qteLi")]
     public int QteLi { get; set; }
