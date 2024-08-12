@@ -3,7 +3,7 @@
     {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapGet("/Providers", async (
+        app.MapGet("/providers", async (
             [AsParameters] QueryStringParameters paginationQueryParams,
             IMediator mediator,
             HttpContext httpContext,

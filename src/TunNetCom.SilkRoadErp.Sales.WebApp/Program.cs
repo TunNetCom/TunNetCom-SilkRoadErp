@@ -33,14 +33,9 @@ builder.Services.AddHttpClient<IProductsApiClient, ProductsApiClient>(product =>
     product.BaseAddress = new Uri($"{baseUrl}/products/");
 });
 
-builder.Services.AddHttpClient<ProviderService>(provider =>
-{
-    provider.BaseAddress = new Uri(baseUrl);
-});
-
 builder.Services.AddHttpClient<IProvidersApiClient, ProvidersApiClient>(provider =>
 {
-    provider.BaseAddress = new Uri($"{baseUrl}/Providers/");
+    provider.BaseAddress = new Uri($"{baseUrl}/providers/");
 });
 
 builder.Services.AddLocalization();
