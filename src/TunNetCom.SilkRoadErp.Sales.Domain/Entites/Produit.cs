@@ -7,47 +7,8 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 public partial class Produit
 {
-
-    public static Produit CreateProduct(
-     string? refe,
-     string? nom,
-     int qte,
-     int qteLimite,
-     double remise,
-     double remiseAchat,
-     double tva,
-     decimal prix,
-     decimal prixAchat,
-     bool visibilite)
+    public Produit(string refe, string nom, int qte, int qteLimite, double remise, double remiseAchat, double tva, decimal prix, decimal prixAchat, bool visibilite)
     {
-        return new Produit
-        {
-            Refe = refe,
-            Nom = nom,
-            Qte = qte,
-            QteLimite = qteLimite,
-            Remise = remise,
-            RemiseAchat = remiseAchat,
-            Tva = tva,
-            Prix = prix,
-            PrixAchat = prixAchat,
-            Visibilite = visibilite
-        };
-
-    }
-    public void UpdateProduct(
-        string? refe,
-        string? nom,
-        int qte,
-        int qteLimite,
-        double remise,
-        double remiseAchat,
-        double tva,
-        decimal prix,
-        decimal prixAchat,
-        bool visibilite)
-    {
-
         Refe = refe;
         Nom = nom;
         Qte = qte;
@@ -58,27 +19,27 @@ public partial class Produit
         Prix = prix;
         PrixAchat = prixAchat;
         Visibilite = visibilite;
-
     }
-    public string Refe { get; set; } = null!;
 
-    public string Nom { get; set; } = null!;
+    public string Refe { get; private set; } = null!;
 
-    public int Qte { get; set; }
+    public string Nom { get; private set; } = null!;
 
-    public int QteLimite { get; set; }
+    public int Qte { get; private set; }
 
-    public double Remise { get; set; }
+    public int QteLimite { get; private set; }
 
-    public double RemiseAchat { get; set; }
+    public double Remise { get; private set; }
 
-    public double Tva { get; set; }
+    public double RemiseAchat { get; private set; }
 
-    public decimal Prix { get; set; }
+    public double Tva { get; private set; }
 
-    public decimal PrixAchat { get; set; }
+    public decimal Prix { get; private set; }
 
-    public bool Visibilite { get; set; }
+    public decimal PrixAchat { get; private set; }
+
+    public bool Visibilite { get; private set; }
 
     public virtual ICollection<LigneAvoirFournisseur> LigneAvoirFournisseur { get; set; } = new List<LigneAvoirFournisseur>();
 

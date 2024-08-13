@@ -1,6 +1,9 @@
 ﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Products.CreateProduct;
 
-public class CreateProductCommandHandler(SalesContext _context, ILogger<CreateProductCommandHandler> _logger) : IRequestHandler<CreateProductCommand, Result<string>>
+public class CreateProductCommandHandler(
+    SalesContext _context,
+    ILogger<CreateProductCommandHandler> _logger)
+    : IRequestHandler<CreateProductCommand, Result<string>>
 {
     public async Task<Result<string>> Handle(CreateProductCommand createProductCommand, CancellationToken cancellationToken)
     {
@@ -26,6 +29,7 @@ public class CreateProductCommandHandler(SalesContext _context, ILogger<CreatePr
             createProductCommand.PrixAchat,
             createProductCommand.Visibilite
         );
+
         _context.Produit.Add(product);
         await _context.SaveChangesAsync(cancellationToken);
         _logger.LogEntityCreatedSuccessfully(nameof(Produit), product.Refe);
