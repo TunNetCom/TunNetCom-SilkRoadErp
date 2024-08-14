@@ -9,7 +9,6 @@ Welcome to SilkRoadErp, a comprehensive and efficient ERP solution designed to s
   - [Purchasing Module](#purchasing-module)
 - [Technology Stack](#technology-stack)
 - [Installation](#installation)
-- [Usage](#usage)
 - [Contributing](#contributing)
 - [License](#license)
 - [Contact](#contact)
