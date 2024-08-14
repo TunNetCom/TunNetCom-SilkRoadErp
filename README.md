@@ -68,14 +68,6 @@ The Purchasing Module in SilkRoadErp includes:
 4. **Access the application**:
     - Open your browser and navigate to `https://localhost:5001`.
 
-## Usage
-
-Once the application is running, you can:
-
-- Log in using your credentials.
-- Navigate to the Sales or Purchasing module via the sidebar.
-- Perform operations such as creating sales orders, managing customers, generating invoices, managing purchase orders, and more.
-
 ## Contributing
 
 We welcome contributions from the community! To contribute:
