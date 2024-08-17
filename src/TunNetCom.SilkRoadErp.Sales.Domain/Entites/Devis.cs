@@ -7,6 +7,46 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 public partial class Devis
 {
+    public void UpdateDevis(
+     int num ,
+     int idClient, 
+     DateTime date ,
+     decimal totHTva ,
+     decimal totTva ,
+     decimal totTtc )
+    {
+        this.Num = num;
+        this.IdClient = idClient;
+        this.Date = date;
+        this.TotHTva = totHTva;
+        this.TotTva = totTva;
+        this.TotTtc = totTtc;
+    }
+
+    public static Devis CreateDevis(
+         int num,
+         int idClient,
+         DateTime date,
+         decimal totHTva,
+         decimal totTva,
+         decimal totTtc)
+    {
+        return new Devis
+        {
+            Num = num,
+            IdClient = idClient,
+            Date = date,
+            TotHTva = totHTva,
+            TotTva = totTva,
+            TotTtc = totTtc,
+        };
+    }
+
+    public void SetNum(int num)
+    {
+        this.Num = num;
+    }
+
     public int Num { get; set; }
 
     public int IdClient { get; set; }
