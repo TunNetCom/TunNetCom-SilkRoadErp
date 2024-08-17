@@ -1,6 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.Customers;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.UpdateCustomer;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.UpdateCustomer;
 
 public class UpdateCustomerEndpoint : ICarterModule
 {
