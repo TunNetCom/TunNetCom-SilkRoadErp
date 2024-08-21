@@ -1,0 +1,360 @@
+﻿@page "/bon-de-livraison"
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products
+@inject IDeliveryNoteApiClient DeliveryNoteService
+@inject ICustomersApiClient CustomersApiClient
+@inject IInvoicesApiClient InvoicesApiClient
+@inject IProductsApiClient ProductsApiClient
+@inject ToastService toastService
+
+
+<h3 class="mb-4">Bon de Livraison</h3>
+
+<div class="mb-3">
+    <label for="customerId" class="form-label">ID Client:</label>
+    <input id="customerId" @bind="CustomerSearchKeyword" @oninput="OnCustomerSearchChanged" class="form-control" placeholder="Rechercher ID ou Nom" />
+    <select @bind="SelectedCustomerId" class="form-select mt-2">
+        @if (FilteredCustomers != null)
+        {
+            @foreach (var customer in FilteredCustomers)
+            {
+                <option value="@customer.Id">@customer.Nom</option>
+            }
+        }
+    </select>
+</div>
+
+<button @onclick="GetInvoices" class="btn btn-primary mb-4">Facture</button>
+
+@if (SelectedInvoiceId != 0)
+{
+    <div class="alert alert-info">
+        Facture Num: @SelectedInvoiceId
+    </div>
+}
+
+<!-- Modal -->
+<div class="modal fade @(showModal ? "show d-block" : "")" tabindex="-1" style="background-color: rgba(0, 0, 0, 0.5);">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Invoices</h5>
+                <button type="button" class="btn-close" aria-label="Close" @onclick="CloseModal"></button>
+            </div>
+            <div class="modal-body">
+                @if (Invoices != null && Invoices.Any())
+                {
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Num</th>
+                                <th>Date</th>
+                                <th>Total TTC</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var invoice in Invoices)
+                            {
+                                <tr @onclick="() => SelectInvoice(invoice.Num)" style="cursor: pointer;">
+                                    <td>@invoice.Num</td>
+                                    <td>@invoice.Date.ToShortDateString()</td>
+                                    <td>@invoice.TotTTC</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                <hr />
+                <h5>Ajouter une nouvelle facture</h5>
+                <div>
+                    <label for="newInvoiceDate" class="form-label">Date:</label>
+                    <input id="newInvoiceDate" type="date" @bind="NewInvoiceDate" class="form-control" />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" @onclick="CreateInvoice">Add Invoice</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="mt-3">
+    <button @onclick="AddNewItem" class="btn btn-success">Ajouter produit</button>
+    <button @onclick="SaveDeliveryNote" class="btn btn-primary">Enregistrer</button>
+    <div class="ml-3">
+        <table class="table table-info">
+            <tbody>
+                <tr>
+                    <td>Total H.T:</td>
+                    <td>@TotHT</td>
+                    <td>Total TVA:</td>
+                    <td>@TotTva</td>
+                    <td>Net à payer:</td>
+                    <td>@NetPayer</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>REF</th>
+            <th>Désignation</th>
+            <th>Qte</th>
+            <th>Prix H.T</th>
+            <th>Rem%</th>
+            <th>TOT H.T</th>
+            <th>TVA</th>
+            <th>TOT TTC</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (deliveryNoteItems != null)
+        {
+            @foreach (var item in deliveryNoteItems)
+            {
+                <tr>
+                    <td>
+                        <input @bind="item.RefProduit" @oninput="() => OnProductSearchChangedAsync(item)" class="form-control" placeholder="Rechercher REF" />
+                        <select @bind="item.RefProduit" @oninput="() => OnProductSelectedAsync(item)" class="form-select mt-2">
+                            @if (FilteredProducts != null)
+                            {
+                                @foreach (var product in FilteredProducts)
+                                {
+                                    <option value="@product.Refe">@product.Nom</option>
+                                }
+                            }
+                        </select>
+                    </td>
+                    <td>@item.DesignationLi</td>
+                    <td><input type="number" @bind="item.QteLi" class="form-control" /></td>
+                    <td><input type="number" @bind="item.PrixHt" class="form-control" readonly /></td>
+                    <td><input type="number" @bind="item.Remise" class="form-control" /></td>
+                    <td>@item.TotHt</td>
+                    <td>@item.Tva</td>
+                    <td>@item.TotTtc</td>
+                    <td>
+                        <button @onclick="() => RemoveItem(item)" class="btn btn-danger">Supprimer</button>
+                    </td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>
+
+
+
+@code {
+    private int SelectedCustomerId { get; set; }
+    private string CustomerSearchKeyword { get; set; } = string.Empty;
+    private List<CustomerResponse> FilteredCustomers { get; set; } = new List<CustomerResponse>();
+
+    private List<InvoiceResponse> Invoices { get; set; } = new List<InvoiceResponse>();
+    private int SelectedInvoiceId { get; set; }
+
+    private List<LigneBlRequest> deliveryNoteItems { get; set; } = new List<LigneBlRequest>();
+    private List<ProductResponse> FilteredProducts { get; set; } = new List<ProductResponse>();
+
+    private bool showModal = false;
+
+    private DateTime NewInvoiceDate { get; set; }
+    private decimal NewInvoiceTotal { get; set; }
+    private decimal TotHT { get; set; }
+    private decimal TotTva { get; set; }
+    private decimal NetPayer { get; set; }
+
+    private async Task OnCustomerSearchChanged(ChangeEventArgs e)
+    {
+        CustomerSearchKeyword = e.Value.ToString();
+        FilteredCustomers = await CustomersApiClient.SearchCustomers(new QueryStringParameters
+            {
+                SearchKeyword = CustomerSearchKeyword, PageNumber = 1,
+                PageSize = 1000
+            }, CancellationToken.None);
+        StateHasChanged();
+    }
+
+    private async Task GetInvoices()
+    {
+        if (SelectedCustomerId == 0)
+        {
+            Alert("No customer selected.", ToastType.Warning);
+            return;
+        }
+
+        try
+        {
+            var queryParameters = new QueryStringParameters
+                {
+                    PageNumber = 1,
+                    PageSize = 1000,
+                    SearchKeyword = ""
+                };
+
+            Invoices = await InvoicesApiClient.GetInvoicesByCustomerId(SelectedCustomerId, queryParameters, CancellationToken.None);
+
+            if (Invoices == null || !Invoices.Any())
+            {
+                Alert("No invoices found for the selected customer.", ToastType.Info);
+            }
+
+            // Show the modal
+            showModal = true;
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Alert($"Error fetching invoices: {ex.Message}", ToastType.Danger);
+        }
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+    }
+
+    private async Task CreateInvoice()
+    {
+        var newInvoice = new CreateInvoiceRequest
+            {
+                Date = NewInvoiceDate,
+                ClientId = SelectedCustomerId
+            };
+
+        var result = await InvoicesApiClient.CreateInvoice(newInvoice, CancellationToken.None);
+        if (result.IsT1)
+        {
+            Alert($"Error creating invoice: {result.AsT1.Detail}", ToastType.Danger);
+        }
+        else
+        {
+            await GetInvoices();
+        }
+    }
+
+    private void SelectInvoice(int invoiceId)
+    {
+        SelectedInvoiceId = invoiceId;
+        Alert($"Invoice {SelectedInvoiceId} selected.", ToastType.Info);
+        showModal = false;
+        StateHasChanged();
+    }
+
+    private void AddNewItem()
+    {
+        deliveryNoteItems.Add(new LigneBlRequest());
+    }
+
+    private void RemoveItem(LigneBlRequest item)
+    {
+        deliveryNoteItems.Remove(item);
+    }
+
+    private async Task OnProductSearchChangedAsync(LigneBlRequest item)
+    {
+        var queryParameters = new QueryStringParameters
+            {
+                SearchKeyword = item.RefProduit,
+                PageNumber = 1,
+                PageSize = 1000
+            };
+
+        var pagedProducts = await ProductsApiClient.SearchProducts(queryParameters, CancellationToken.None);
+        FilteredProducts = pagedProducts;
+
+        var product = FilteredProducts.FirstOrDefault(p => p.Refe == item.RefProduit);
+        if (product != null)
+        {
+            item.DesignationLi = product.Nom;
+            item.PrixHt = product.Prix;
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task OnProductSelectedAsync(LigneBlRequest item)
+    {
+        var product = FilteredProducts.FirstOrDefault(p => p.Refe == item.RefProduit);
+        if (product != null)
+        {
+            item.DesignationLi = product.Nom;
+            item.PrixHt = product.Prix;
+        }
+
+        StateHasChanged();
+    }
+
+    private void CalculateTotals()
+    {
+        TotHT = deliveryNoteItems.Sum(i => i.TotHt);
+        TotTva = deliveryNoteItems.Sum(i => (decimal)i.Tva);
+        NetPayer = deliveryNoteItems.Sum(i => i.TotTtc);
+    }
+
+    private void UpdateProductTotals(LigneBlRequest item)
+    {
+        item.TotHt = item.QteLi * item.PrixHt * (decimal)(1 - item.Remise / 100);
+        item.Tva = (double)item.TotHt * 0.19; // 19% TVA
+        item.TotTtc = item.TotHt + (decimal)item.Tva;
+
+        CalculateTotals();
+    }
+
+    private void OnQuantityOrDiscountChanged(LigneBlRequest item)
+    {
+        UpdateProductTotals(item);
+        StateHasChanged();
+    }
+
+    private async Task SaveDeliveryNote()
+    {
+        try
+        {
+            if (SelectedCustomerId == 0)
+            {
+                Alert("No customer selected.", ToastType.Warning);
+                return;
+            }
+
+            foreach (var item in deliveryNoteItems)
+            {
+                UpdateProductTotals(item);
+            }
+
+            var createDeliveryNoteRequest = new CreateDeliveryNoteRequest
+                {
+                    Date = DateTime.Now,
+                    TotHTva = TotHT,
+                    TotTva = TotTva,
+                    NetPayer = NetPayer,
+                    TempBl = TimeOnly.FromDateTime(DateTime.Now),
+                    NumFacture = SelectedInvoiceId,
+                    ClientId = SelectedCustomerId,
+                    Lignes = deliveryNoteItems
+                };
+
+            await DeliveryNoteService.CreateDeliveryNote(createDeliveryNoteRequest);
+
+            Alert("Delivery note saved successfully.", ToastType.Success);
+        }
+        catch (Exception ex)
+        {
+            Alert($"Error saving delivery note: {ex.Message}", ToastType.Danger);
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        CalculateTotals();
+    }
+
+    private void Alert(string message, ToastType toastType = ToastType.Info)
+    {
+        toastService.Notify(new ToastMessage(toastType, message));
+    }
+}

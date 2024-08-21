@@ -1,0 +1,157 @@
+﻿@page "/editcustomer/{id:int?}"
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Customers
+@using BlazorBootstrap
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.HttpClients
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.ErrorsModal
+@using TunNetCom.NotFoundModal
+@using System.Globalization
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services
+@inject ICustomersApiClient customerService
+@inject NavigationManager navigationManager
+@inject IStringLocalizer<SharedResource> localizer
+
+<h3>@(customer.Id == 0 ? localizer["add_client"] : localizer["edit_client"])</h3>
+
+<div class="form-container">
+    <EditForm Model="customer" OnValidSubmit="HandleValidSubmit">
+        <AntiforgeryToken />
+        <div>
+            <label>@localizer["customer_name"]: </label>
+            <InputText @bind-Value="customer.Nom" class="form-control" />
+        </div>
+        <div>
+            <label>@localizer["customer_phone"]: </label>
+            <InputText @bind-Value="customer.Tel" class="form-control" />
+        </div>
+        <div>
+            <label>@localizer["customer_adress"]: </label>
+            <InputText @bind-Value="customer.Adresse" class="form-control" />
+        </div>
+        <div>
+            <label>@localizer["customer_matricule"]: </label>
+            <InputText @bind-Value="customer.Matricule" class="form-control" />
+        </div>
+        <div>
+            <label>@localizer["customer_code"]: </label>
+            <InputText @bind-Value="customer.Code" class="form-control" />
+        </div>
+        <div>
+            <label>@localizer["customer_code_cat"]: </label>
+            <InputText @bind-Value="customer.CodeCat" class="form-control" />
+        </div>
+        <div>
+            <label>@localizer["customer_etb_sec"]: </label>
+            <InputText @bind-Value="customer.EtbSec" class="form-control" />
+        </div>
+        <div>
+            <label>@localizer["customer_email"]: </label>
+            <InputText @bind-Value="customer.Mail" class="form-control" />
+        </div>
+
+        <div style="margin-top:10px;">
+            <input type="submit" class="btn btn-primary" value="@localizer["save_label"]" />
+            <input type="button" class="btn btn-secondary" @onclick="Cancel" value="@localizer["cancel_label"]" />
+        </div>
+    </EditForm>
+</div>
+
+<Modal @ref="errorsModal" />
+
+@code {
+    [Parameter] public int? Id { get; set; }
+    [Inject] protected ToastService toastService { get; set; } = default!;
+    private CustomerResponse customer = new CustomerResponse();
+    private CancellationTokenSource cancellationTokenSource = new();
+    private Modal errorsModal = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id.HasValue)
+        {
+            var customerResult = await customerService.GetAsync(Id.Value, cancellationTokenSource.Token);
+            if (customerResult.IsT0)
+            {
+                customer = customerResult.AsT0;
+                return;
+            }
+
+            navigationManager.NavigateTo("/Error");
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (customer.Id == 0)
+        {
+            var createCustomerResult = await customerService.CreateAsync(
+                new CreateCustomerRequest
+                    {
+                        Nom = customer.Nom,
+                        Tel = customer.Tel,
+                        Adresse = customer.Adresse,
+                        Matricule = customer.Matricule,
+                        Code = customer.Code,
+                        CodeCat = customer.CodeCat,
+                        EtbSec = customer.EtbSec,
+                        Mail = customer.Mail
+                    },
+            cancellationTokenSource.Token);
+
+            if (createCustomerResult.IsT0)
+            {
+                toastService.Notify(new(ToastType.Success, $" {localizer["customer"]} {localizer["created_with_success"]}"));
+                navigationManager.NavigateTo("/customers_list");
+                return;
+            }
+
+            await ShowErrorsModal(createCustomerResult.AsT1.ToErrorsList());
+            return;
+        }
+
+        var updateCustomerResult = await customerService.UpdateAsync(
+            new UpdateCustomerRequest
+                {
+                    Nom = customer.Nom,
+                    Tel = customer.Tel,
+                    Adresse = customer.Adresse,
+                    Matricule = customer.Matricule,
+                    Code = customer.Code,
+                    CodeCat = customer.CodeCat,
+                    EtbSec = customer.EtbSec,
+                    Mail = customer.Mail
+                },
+            customer.Id,
+            cancellationTokenSource.Token);
+
+        if (updateCustomerResult.IsT0)
+        {
+            if (updateCustomerResult.AsT0 == ResponseTypes.Success)
+            {
+                toastService.Notify(new(ToastType.Success, $"{localizer["customer"]} {localizer["updated_with_success"]}"));
+                navigationManager.NavigateTo("/customers_list");
+                return;
+            }
+
+            navigationManager.NavigateTo("/Error");
+            return;
+        }
+
+        await ShowErrorsModal(updateCustomerResult.AsT1.ToErrorsList());
+    }
+
+    private void Cancel()
+    {
+        navigationManager.NavigateTo("/customers_list");
+    }
+
+    private async Task ShowErrorsModal(List<string> errorList)
+    {
+        var parameters = new Dictionary<string, object>();
+        parameters.Add(Consts.ValidationParams, errorList);
+        await errorsModal.ShowAsync<ErrorsModal>(title: Consts.ErrorModalTitle, parameters: parameters);
+    }
+}
