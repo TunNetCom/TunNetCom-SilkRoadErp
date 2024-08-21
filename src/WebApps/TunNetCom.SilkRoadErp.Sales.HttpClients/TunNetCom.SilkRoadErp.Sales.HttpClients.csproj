@@ -7,13 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="SailseAppParametr\**" />
-    <EmbeddedResource Remove="SailseAppParametr\**" />
-    <None Remove="SailseAppParametr\**" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="OneOf" Version="3.0.271" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.7" />
+    <ProjectReference Include="..\..\TunNetCom.SilkRoadErp.Sales.Contracts\TunNetCom.SilkRoadErp.Sales.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

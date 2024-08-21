@@ -1,0 +1,171 @@
+﻿@page "/editprovider/{Id:int?}"
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Providers
+@using BlazorBootstrap
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.ErrorsModal
+@using TunNetCom.NotFoundModal
+@using System.Globalization
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services
+@inject IProvidersApiClient providerService
+@inject NavigationManager navigationManager
+@inject IStringLocalizer<SharedResource> localizer
+
+<h3>@(provider.Id == 0 ? localizer["add_provider"] : localizer["edit_provider"])</h3>
+
+<div class="container mt-4">
+    <EditForm Model="provider" OnValidSubmit="HandleValidSubmit" class="row g-3">
+        <AntiforgeryToken />
+        <div class="col-md-12">
+            <label for="providerName" class="form-label">@localizer["provider_name"]: </label>
+            <InputText id="providerName" @bind-Value="provider.Nom" class="form-control" />
+        </div>
+        <div class="col-md-12">
+            <label for="providerPhone" class="form-label">@localizer["provider_phone"]: </label>
+            <InputText id="providerPhone" @bind-Value="provider.Tel" class="form-control" />
+        </div>
+        <div class="col-md-12">
+            <label for="providerFax" class="form-label">@localizer["provider_fax"]: </label>
+            <InputText @bind-Value="provider.Fax" class="form-control" />
+        </div>
+        <div class="col-md-12">
+            <label for="providerMatricule" class="form-label">@localizer["provider_matricule"]: </label>
+            <InputText id="providerMarticule" @bind-Value="provider.Matricule" class="form-control" />
+        </div>
+        <div class="col-md-12">
+            <label for="providerCode" class="form-label">@localizer["provider_code"]: </label>
+            <InputText id="providerCode" @bind-Value="provider.Code" class="form-control" />
+        </div>
+        <div class="col-md-12">
+            <label for="providerCodeCat" class="form-label">@localizer["provider_code_cat"]: </label>
+            <InputText id="providerCodeCat" @bind-Value="provider.CodeCat" class="form-control" />
+        </div>
+        <div class="col-md-12">
+            <label for="providerEtbSec" class="form-label">@localizer["provider_etb_sec"]: </label>
+            <InputText id="providerEtbSec" @bind-Value="provider.EtbSec" class="form-control" />
+        </div>
+        <div class="col-md-6">
+            <label for="providerMail" class="form-label">@localizer["provider_email"]: </label>
+            <InputText id="providerMail" @bind-Value="provider.Mail" class="form-control" />
+        </div>
+        <div class="col-md-6">
+            <label for="providerMailDeux" class="form-label">@localizer["provider_second_email"]: </label>
+            <InputText id="providerMailDeux" @bind-Value="provider.MailDeux" class="form-control" />
+        </div>
+        <div class="col-md-12">
+            <label for="pro" class="form-label">@localizer["provider_adress"]: </label>
+            <InputText @bind-Value="provider.Adresse" class="form-control" />
+        </div>
+        <div class="col-md-12">
+            <label class="form-label">@localizer["provider_constructor"]:</label>
+            <div class="btn-group" role="group" aria-label="Binary choice">
+                <button type="button" class="btn btn-primary" @onclick="() => provider.Constructeur = true">@localizer["True"]</button>
+                <button type="button" class="btn btn-secondary" @onclick="() => provider.Constructeur = false">@localizer["False"]</button>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <input type="submit" class="btn btn-primary" value="@localizer["save_label"]" />
+            <input type="button" class="btn btn-secondary" @onclick="Cancel" value="@localizer["cancel_label"]" />
+        </div>
+
+     </EditForm >
+</div>
+
+<Modal @ref="errorsModal" />
+
+@code {
+        [Parameter] public int? Id { get; set; }
+        [Inject] protected ToastService toastService { get; set; } = default!;
+        private ProviderResponse provider = new ProviderResponse();
+        private CancellationTokenSource cancellationTokenSource = new();
+        private Modal errorsModal = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id.HasValue)
+        {
+            var providerResult = await providerService.GetAsync(Id.Value, cancellationTokenSource.Token);
+            if (providerResult.IsT0)
+            {
+                provider = providerResult.AsT0;
+                return;
+            }
+
+            navigationManager.NavigateTo("/Error");
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (provider.Id == 0)
+        {
+            var createProviderResult = await providerService.CreateAsync(
+                new CreateProviderRequest
+                    {
+                        Nom = provider.Nom,
+                        Tel = provider.Tel,
+                        Fax = provider.Fax,
+                        Matricule = provider.Matricule,
+                        Code = provider.Code,
+                        CodeCat = provider.CodeCat,
+                        EtbSec = provider.EtbSec,
+                        Mail = provider.Mail,
+                        MailDeux = provider.MailDeux,
+                        Constructeur = provider.Constructeur,
+                        Adresse = provider.Adresse
+                    },
+                    cancellationTokenSource.Token);
+
+            if (createProviderResult.IsT0)
+            {
+                toastService.Notify(new(ToastType.Success, $"{localizer["provider"]} {localizer["created_with_success"]}"));
+                navigationManager.NavigateTo("/providers_list");
+                return;
+            }
+
+            await ShowErrorsModal(createProviderResult.AsT1.ToErrorsList());
+            return;
+        }
+        var updateProviderResult = await providerService.UpdateAsync(
+           new UpdateProviderRequest
+               {
+                   Nom = provider.Nom,
+                   Tel = provider.Tel,
+                   Fax = provider.Fax,
+                   Matricule = provider.Matricule,
+                   Code = provider.Code,
+                   CodeCat = provider.CodeCat,
+                   EtbSec = provider.EtbSec,
+                   Mail = provider.Mail,
+                   MailDeux = provider.MailDeux,
+                   Constructeur = provider.Constructeur,
+                   Adresse = provider.Adresse
+               }, provider.Id,
+           cancellationTokenSource.Token);
+
+        if (updateProviderResult.IsT0)
+        {
+            toastService.Notify(new(ToastType.Success, $"{localizer["provider"]} {localizer["updated_with_success"]}"));
+            navigationManager.NavigateTo("/providers_list");
+            return;
+        }
+
+        await ShowErrorsModal(updateProviderResult.AsT1.ToErrorsList());
+    }
+    private void Cancel()
+    {
+        navigationManager.NavigateTo("/providers_list");
+    }
+
+    private async Task ShowErrorsModal(List<string> errorList)
+    {
+        var parameters = new Dictionary<string, object>
+        {
+            { Consts.ValidationParams, errorList }
+        };
+        await errorsModal.ShowAsync<ErrorsModal>(title: Consts.ErrorModalTitle, parameters: parameters);
+    }
+}

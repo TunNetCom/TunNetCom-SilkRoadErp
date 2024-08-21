@@ -1,0 +1,141 @@
+﻿@page "/products_list"
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.HttpClients
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Products
+@using BlazorBootstrap
+@using TunNetCom.DeleteModal
+@using TunNetCom.NotFoundModal
+@inject IProductsApiClient productService
+@inject NavigationManager navigationManager
+@inject IStringLocalizer<SharedResource> Localizer
+
+<div class="container mt-4">
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-6 d-flex align-items-center">
+                <h3 class="mb-3">@Localizer["products"]</h3>
+            </div>
+            <div class="col-md-6 d-flex justify-content-end align-items-center">
+                <button class="btn btn-primary mb-3" @onclick="CreateProduct">@Localizer["add_product"]</button>
+            </div>
+        </div>
+    </div>
+    <input class="form-control mb-3" placeholder="@Localizer["Search"]" @bind="searchKeyword" @oninput="SearchClients" />
+
+
+    <Grid TItem="ProductResponse"
+          Class="table table-hover table-bordered table-striped"
+          DataProvider="ProductsDataProvider"
+          AllowPaging="true"
+          AllowSorting="true"
+          Responsive="true"
+          @ref="grid">
+
+        <GridColumn TItem="ProductResponse" HeaderText="@Localizer["product_refe"]" PropertyName="ProductRefe" SortString="ProductRefe" SortKeySelector="item => item.Refe" FilterTextboxWidth="80">
+            @context.Refe
+        </GridColumn>
+        <GridColumn TItem="ProductResponse" HeaderText="@Localizer["product_name"]" PropertyName="ProductName" SortString="ProductName" SortKeySelector="item => item.Nom" FilterTextboxWidth="80">
+            @context.Nom
+        </GridColumn>
+        <GridColumn TItem="ProductResponse" HeaderText="@Localizer["product_qte"]" PropertyName="Qte" SortString="Qte" SortKeySelector="item => item.Qte" FilterTextboxWidth="100">
+            @context.Qte
+        </GridColumn>
+        <GridColumn TItem="ProductResponse" HeaderText="@Localizer["actions_label"]">
+            <Button Color="ButtonColor.Primary" @onclick="((args) => OnClickEditButton(args, context.Refe.ToString()))">
+                @Localizer["edit_button_label"]
+            </Button>
+            <Button Color="ButtonColor.Danger" @onclick="((args) => OnClickDeleteButton(args, context.Refe.ToString()))">
+                @Localizer["delete_button_label"]
+            </Button>
+        </GridColumn>
+    </Grid>
+</div>
+
+<Modal @ref="yesOrNoDeleteModal" />
+<Modal @ref="notFoundModal" />
+
+@code {
+    [Inject] protected ToastService toastService { get; set; } = default!;
+    private string searchKeyword = string.Empty;
+    string currentProductRefeToDelete ;
+    private CancellationTokenSource cancellationTokenSource = new();
+    private Modal yesOrNoDeleteModal = default!;
+    Grid<ProductResponse> grid = default!;
+    private Modal notFoundModal = default!;
+
+
+    private async Task ProcessDelete(MouseEventArgs e)
+    {
+        var result = await productService.DeleteAsync(currentProductRefeToDelete, cancellationTokenSource.Token);
+        if (result.IsT0 && result.AsT0 == ResponseTypes.NotFound)
+        {
+            var parameters = new Dictionary<string, object>();
+            parameters.Add("NotFoundMessage", "not_found_message");
+            await notFoundModal.ShowAsync<NotFoundModal>(title: Localizer["not_found_modal_title"], parameters: parameters);
+            return;
+        }
+        toastService.Notify(new(ToastType.Warning, $"{Localizer["product"]} {Localizer["deleted_with_success"]}"));
+        await yesOrNoDeleteModal.HideAsync();
+        await grid.RefreshDataAsync();
+    }
+
+    protected void OnClickEditButton(EventArgs args, string refe)
+    {
+        EditProduct(refe);
+    }
+
+    private async Task SearchClients(ChangeEventArgs e)
+    {
+        searchKeyword = e?.Value?.ToString() ?? string.Empty;
+
+        await grid.RefreshDataAsync();
+    }
+
+    protected async Task OnClickDeleteButton(EventArgs args, string refe)
+    {
+        currentProductRefeToDelete = refe;
+        var parameters = new Dictionary<string, object>();
+        parameters.Add("OnclickCallback", EventCallback.Factory.Create<MouseEventArgs>(this, ProcessDelete));
+        await yesOrNoDeleteModal.ShowAsync<DeleteModal>(title: Localizer["delete_modal_title"], parameters: parameters);
+    }
+
+    private async Task<GridDataProviderResult<ProductResponse>> ProductsDataProvider(
+        GridDataProviderRequest<ProductResponse> request)
+    {
+        string sortString = string.Empty;
+        SortDirection sortDirection = SortDirection.None;
+
+        if (request.Sorting is not null && request.Sorting.Any())
+        {
+            sortString = request.Sorting.FirstOrDefault()!.SortString;
+            sortDirection = request.Sorting.FirstOrDefault()!.SortDirection;
+        }
+        var productsParameters = new QueryStringParameters
+            {
+                PageNumber = request.PageNumber,
+                PageSize = request.PageSize,
+                SearchKeyword = searchKeyword
+            };
+
+        var result = await productService.GetPagedAsync(productsParameters, cancellationTokenSource.Token);
+        return await Task.FromResult(new GridDataProviderResult<ProductResponse> { Data = result, TotalCount = result.TotalCount });
+    }
+
+    public void Dispose()
+    {
+        cancellationTokenSource.Cancel();
+        cancellationTokenSource.Dispose();
+    }
+
+    private void CreateProduct()
+    {
+        navigationManager.NavigateTo("/editproduct");
+    }
+
+    private void EditProduct(string refe)
+    {
+        navigationManager.NavigateTo($"/editproduct/{refe}");
+    }
+}

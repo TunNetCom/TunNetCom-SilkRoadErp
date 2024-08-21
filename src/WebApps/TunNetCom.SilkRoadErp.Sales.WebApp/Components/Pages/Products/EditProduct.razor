@@ -1,0 +1,162 @@
+﻿@page "/editproduct/{refe?}"
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Products
+@using BlazorBootstrap
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.ErrorsModal
+@using TunNetCom.NotFoundModal
+@using System.Globalization
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services
+@inject IProductsApiClient productService
+@inject NavigationManager navigationManager
+@inject IStringLocalizer<SharedResource> localizer
+
+<h3>@(string.IsNullOrEmpty(product.Refe) ? localizer["add_product"] : localizer["edit_product"])</h3>
+
+<div class="container mt-4">
+    <EditForm Model="product" OnValidSubmit="HandleValidSubmit" class="row g-3">
+        <AntiforgeryToken />
+        <div class="col-md-3">
+            <label for="productRefe" class="form-label">@localizer["product_refe"]</label>
+            <InputText id="productRefe" @bind-Value="product.Refe" class="form-control" />
+        </div>
+        <div class="col-md-9">
+            <label for="productName" class="form-label">@localizer["product_name"]</label>
+            <InputText id="productName" @bind-Value="product.Nom" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label for="productQte" class="form-label">@localizer["product_qte"]</label>
+            <InputNumber id="productQte" @bind-Value="product.Qte" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label for="productQteLimite" class="form-label">@localizer["product_qteLimite"]</label>
+            <InputNumber id="productQteLimite" @bind-Value="product.QteLimite" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label for="productRemise" class="form-label">@localizer["product_remise"]</label>
+            <InputNumber id="productRemise" @bind-Value="product.Remise" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label for="productRemiseAchat" class="form-label">@localizer["product_remiseAchat"]</label>
+            <InputNumber id="productRemiseAchat" @bind-Value="product.RemiseAchat" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label for="productTva" class="form-label">@localizer["product_tva"]</label>
+            <InputNumber id="productTva" @bind-Value="product.Tva" class="form-control"  />
+        </div>
+        <div class="col-md-4">
+            <label for="productPrix" class="form-label">@localizer["product_prix"]</label>
+            <InputNumber id="productPrix" @bind-Value="product.Prix" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label for="productPrixAchat" class="form-label">@localizer["product_prixAchat"]</label>
+            <InputNumber id="productPrixAchat" @bind-Value="product.PrixAchat" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label for="productVisibility" class="form-label">@localizer["product_visibilite"]</label>
+            <Switch id="productVisibility" ValueExpression="@(() => product.Visibilite)"  />
+        </div>
+        <div class="col-12">
+            <input type="submit" class="btn btn-primary" value="@localizer["save_label"]" />
+            <input type="button" class="btn btn-secondary" @onclick="Cancel" value="@localizer["cancel_label"]" />
+        </div>
+    </EditForm>
+</div>
+
+<Modal @ref="errorsModal" />
+
+@code {
+    [Parameter] public string? Refe { get; set; }
+    [Inject] protected ToastService toastService { get; set; } = default!;
+    private ProductResponse product = new ProductResponse();
+    private CancellationTokenSource cancellationTokenSource = new();
+    private Modal errorsModal = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrEmpty(Refe))
+        {
+            var productResult = await productService.GetAsync(Refe, cancellationTokenSource.Token);
+            if (productResult.IsT0)
+            {
+                product = productResult.AsT0;
+                return;
+            }
+
+            navigationManager.NavigateTo("/Error");
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (string.IsNullOrEmpty(Refe))
+        {
+            var createProductResult = await productService.CreateAsync(
+                new CreateProductRequest
+                    {
+                        Refe = product.Refe,
+                        Nom = product.Nom,
+                        Qte = product.Qte,
+                        QteLimite = product.QteLimite,
+                        Remise = product.Remise,
+                        RemiseAchat = product.RemiseAchat,
+                        Tva = product.Tva,
+                        Prix = product.Prix,
+                        PrixAchat = product.PrixAchat,
+                        Visibilite = product.Visibilite
+                    },
+                    cancellationTokenSource.Token);
+
+            if (createProductResult.IsT0)
+            {
+                toastService.Notify(new(ToastType.Success, $"{localizer["product"]} {localizer["created_with_success"]}"));
+                navigationManager.NavigateTo("/products_list");
+                return;
+            }
+
+            await ShowErrorsModal(createProductResult.AsT1.ToErrorsList());
+            return;
+        }
+
+        var updateProductResult = await productService.UpdateAsync(
+            new UpdateProductRequest
+                {
+                    Refe = product.Refe,
+                    Nom = product.Nom,
+                    Qte = product.Qte,
+                    QteLimite = product.QteLimite,
+                    Remise = product.Remise,
+                    RemiseAchat = product.RemiseAchat,
+                    Tva = product.Tva,
+                    Prix = product.Prix,
+                    PrixAchat = product.PrixAchat,
+                    Visibilite = product.Visibilite
+                }, product.Refe,
+            cancellationTokenSource.Token);
+
+        if (updateProductResult.IsT0)
+        {
+            toastService.Notify(new(ToastType.Success, $"{localizer["product"]} {localizer["updated_with_success"]}"));
+            navigationManager.NavigateTo("/products_list");
+            return;
+        }
+
+        await ShowErrorsModal(updateProductResult.AsT1.ToErrorsList());
+    }
+
+    private void Cancel()
+    {
+        navigationManager.NavigateTo("/products_list");
+    }
+
+    private async Task ShowErrorsModal(List<string> errorList)
+    {
+        var parameters = new Dictionary<string, object>
+        {
+            { Consts.ValidationParams, errorList }
+        };
+        await errorsModal.ShowAsync<ErrorsModal>(title: Consts.ErrorModalTitle, parameters: parameters);
+    }
+}
