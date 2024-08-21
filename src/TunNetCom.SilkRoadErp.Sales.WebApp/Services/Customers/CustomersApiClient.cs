@@ -22,7 +22,7 @@ public class CustomersApiClient : ICustomersApiClient
                 { $"Accept", $"application/problem+json" }
             };
 
-            var response = await _httpClient.PutAsJsonAsync($"{id}", request, headers, cancellationToken);
+            var response = await _httpClient.PutAsJsonAsync($"/customers/{id}", request, headers, cancellationToken);
             if (response.StatusCode == HttpStatusCode.NoContent)
             {
                 return ResponseTypes.Success;
@@ -50,7 +50,7 @@ public class CustomersApiClient : ICustomersApiClient
     {
         try
         {
-            var response = await _httpClient.GetAsync($"{id}", cancellationToken: cancellationToken);
+            var response = await _httpClient.GetAsync($"/customers/{id}", cancellationToken: cancellationToken);
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 return await response.ReadJsonAsync<CustomerResponse>();
@@ -117,7 +117,7 @@ public class CustomersApiClient : ICustomersApiClient
         CreateCustomerRequest request,
         CancellationToken cancellationToken)
     {
-        var response = await _httpClient.PostAsJsonAsync($"", request, cancellationToken: cancellationToken);
+        var response = await _httpClient.PostAsJsonAsync($"/customers", request, cancellationToken: cancellationToken);
         if (response.StatusCode == HttpStatusCode.Created)
         {
             return await response.ReadJsonAsync<CreateCustomerRequest>();
