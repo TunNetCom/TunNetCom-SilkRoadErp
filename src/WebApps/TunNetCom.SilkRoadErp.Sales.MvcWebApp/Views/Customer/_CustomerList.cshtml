@@ -26,3 +26,6 @@
         }
     </tbody>
 </table>
+
+@await Component.InvokeAsync("CustomerDeleteConfirmationViewComponent", new { customerId = Model.FirstOrDefault()?.Id })
+
