@@ -23,6 +23,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "WebApps", "WebApps", "{750E
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TunNetCom.SilkRoadErp.Sales.HttpClients", "src\WebApps\TunNetCom.SilkRoadErp.Sales.HttpClients\TunNetCom.SilkRoadErp.Sales.HttpClients.csproj", "{A06A883D-73EC-40DD-AA67-A202CAA5F9DF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TunNetCom.SilkRoadErp.Sales.MvcWebApp", "src\WebApps\TunNetCom.SilkRoadErp.Sales.MvcWebApp\TunNetCom.SilkRoadErp.Sales.MvcWebApp.csproj", "{228ABEAC-4BDE-48F6-80EC-AA78D6240A4B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -59,6 +61,10 @@ Global
 		{A06A883D-73EC-40DD-AA67-A202CAA5F9DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A06A883D-73EC-40DD-AA67-A202CAA5F9DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A06A883D-73EC-40DD-AA67-A202CAA5F9DF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{228ABEAC-4BDE-48F6-80EC-AA78D6240A4B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{228ABEAC-4BDE-48F6-80EC-AA78D6240A4B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{228ABEAC-4BDE-48F6-80EC-AA78D6240A4B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{228ABEAC-4BDE-48F6-80EC-AA78D6240A4B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -72,6 +78,7 @@ Global
 		{1B179D22-49E5-4F17-A746-18C518313E39} = {5A07AFCE-8427-4F5A-9003-32EBCAA17175}
 		{750EB057-7692-4776-8B56-5B4446AA0561} = {C3AF9A58-F96B-4044-9025-363AFE51391A}
 		{A06A883D-73EC-40DD-AA67-A202CAA5F9DF} = {750EB057-7692-4776-8B56-5B4446AA0561}
+		{228ABEAC-4BDE-48F6-80EC-AA78D6240A4B} = {750EB057-7692-4776-8B56-5B4446AA0561}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {43421668-53C5-4D00-AC8D-2D7150CE1FA2}
