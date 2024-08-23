@@ -7,7 +7,7 @@
         <div class="mb-3">
             <form id="searchForm" class="form-inline">
                 <div class="input-group">
-                    <input type="text" class="form-control" id="searchQuery" placeholder="Search customers..." />
+                    <input type="text" class="form-control" id="searchQuery" value="@ViewBag.SearchQuery" placeholder="Search customers..." />
                     <div class="input-group-append">
                         <button class="btn btn-outline-secondary" type="submit">Search</button>
                     </div>
@@ -118,11 +118,24 @@
             });
 
             $('#customerList').on('click', '.delete-button', function () {
-                var id = $(this).data('id');
-                $.post('@Url.Action("DeleteCustomer")', { id: id }, function () {
-                    loadPage(ViewBag.CurrentPage);
+                var customerId = $(this).data('id');
+                var url = '@Url.Action("GetDeleteConfirmationViewComponent", "Customer")';
+
+                $.ajax({
+                    type: "GET",
+                    url: url,
+                    data: { id: customerId },
+                    success: function (result) {
+                        $('#modalContainer').html(result); // Update modal container with the fetched HTML
+                        $('#deleteConfirmationModal').modal('show'); // Show the modal
+                    },
+                    error: function () {
+                        alert('An error occurred while loading the confirmation dialog.');
+                    }
                 });
             });
+
+
         });
     </script>
 }

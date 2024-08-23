@@ -76,7 +76,7 @@ public class CustomersApiClient : ICustomersApiClient
     {
         try
         {
-            var response = await _httpClient.DeleteAsync($"{id.ToString()}", cancellationToken: cancellationToken);
+            var response = await _httpClient.DeleteAsync($"/customers/{id.ToString()}", cancellationToken: cancellationToken);
             if (response.StatusCode is HttpStatusCode.NoContent or HttpStatusCode.NotFound)
             {
                 return await response.Content.ReadAsStreamAsync(cancellationToken);
