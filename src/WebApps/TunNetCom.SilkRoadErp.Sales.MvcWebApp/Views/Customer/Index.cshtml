@@ -86,6 +86,12 @@
             @Html.Partial("_CustomerForm", Model.CurrentCustomer)
         </div>
     </div>
+
+    <div class="col-md-4">
+        <div id="customerForm">
+            @await Component.InvokeAsync("CustomerForm", new { customer = Model.CurrentCustomer })
+        </div>
+    </div>
 </div>
 
 @section Scripts {
@@ -114,6 +120,7 @@
                 var id = $(this).data('id');
                 $.get('@Url.Action("EditCustomer")/' + id, function (data) {
                     $('#customerForm').html(data);
+                    $('#customerFormFromViewComponent').html(data);
                 });
             });
 

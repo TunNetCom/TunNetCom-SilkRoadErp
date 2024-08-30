@@ -1,14 +1,24 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.MvcWebApp.Controllers;
+﻿using Microsoft.Extensions.Caching.Memory;
+
+namespace TunNetCom.SilkRoadErp.Sales.MvcWebApp.Controllers;
 
 [Authorize]
-public class CustomerController(ICustomersApiClient _customersApiClient, ILogger<CustomerController> _logger) : Controller
+public class CustomerController : Controller
 {
+    private readonly ICustomersApiClient _customersApiClient;
+    private readonly ILogger<CustomerController> _logger;
+    private readonly IMemoryCache _memoryCache;
+    private static readonly List<string> _cacheKeys = new List<string>();
+
+    public CustomerController(ICustomersApiClient customersApiClient, ILogger<CustomerController> logger, IMemoryCache memoryCache)
+    {
+        _customersApiClient = customersApiClient;
+        _logger = logger;
+        _memoryCache = memoryCache;
+    }
+
     [HttpGet]
-    public async Task<IActionResult> Index(
-        string searchQuery = "",
-        int page = 1,
-        int pageSize = 10,
-        CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Index(string searchQuery = "", int page = 1, int pageSize = 10, CancellationToken cancellationToken = default)
     {
         HttpContext.Session.SetString("LastSearchQuery", searchQuery);
         var indexCustomerViewModel = await PopulateIndexVM(page, pageSize, searchQuery, cancellationToken);
@@ -17,34 +27,50 @@ public class CustomerController(ICustomersApiClient _customersApiClient, ILogger
             "Result from customer action: {ActionName}, ViewModel: {ViewModelName}: {@ViewModel}",
             nameof(Index),
             nameof(IndexCustomerViewModel),
-            @indexCustomerViewModel);
+            indexCustomerViewModel);
 
         return View(indexCustomerViewModel);
     }
 
-    private async Task<IndexCustomerViewModel> PopulateIndexVM(
-        int page,
-        int pageSize,
-        string searchQuery,
-        CancellationToken cancellationToken)
+    private async Task<IndexCustomerViewModel> PopulateIndexVM(int page, int pageSize, string searchQuery, CancellationToken cancellationToken)
     {
-        var queryParameters = new QueryStringParameters
+        var cacheKey = $"CustomerList_{page}_{pageSize}_{searchQuery}";
+        if (!_memoryCache.TryGetValue(cacheKey, out List<CustomerResponse> customerList))
         {
-            PageNumber = page,
-            PageSize = pageSize,
-            SearchKeyword = searchQuery
-        };
+            var queryParameters = new QueryStringParameters
+            {
+                PageNumber = page,
+                PageSize = pageSize,
+                SearchKeyword = searchQuery
+            };
 
-        var pagedList = await _customersApiClient.GetAsync(queryParameters, cancellationToken);
+            var pagedList = await _customersApiClient.GetAsync(queryParameters, cancellationToken);
+            customerList = pagedList.ToList();
+
+            // Cache aside implementation
+            var cacheEntryOptions = new MemoryCacheEntryOptions()
+                .SetSlidingExpiration(TimeSpan.FromMinutes(10)); // Adjust expiration as needed
+
+            _memoryCache.Set(cacheKey, customerList, cacheEntryOptions);
+
+            // Track the cache key
+            _cacheKeys.Add(cacheKey);
+
+            ViewBag.TotalItems = pagedList.TotalCount;
+        }
+        else
+        {
+            _logger.LogInformation("Customer list retrieved from cache.");
+            ViewBag.TotalItems = customerList.Count;
+        }
 
         ViewBag.CurrentPage = page;
         ViewBag.PageSize = pageSize;
-        ViewBag.TotalItems = pagedList.TotalCount;
         ViewBag.SearchQuery = searchQuery;
 
         var indexCustomerViewModel = new IndexCustomerViewModel
         {
-            CustomerList = pagedList,
+            CustomerList = customerList,
             CurrentCustomer = new CustomerViewModel()
         };
 
@@ -52,7 +78,7 @@ public class CustomerController(ICustomersApiClient _customersApiClient, ILogger
             "Result from customer action: {ActionName}, ViewModel: {ViewModelName}: {@ViewModel}",
             nameof(PopulateIndexVM),
             nameof(IndexCustomerViewModel),
-            @indexCustomerViewModel);
+            indexCustomerViewModel);
 
         return indexCustomerViewModel;
     }
@@ -74,6 +100,7 @@ public class CustomerController(ICustomersApiClient _customersApiClient, ILogger
         if (model.Id == 0)
         {
             await CreateCustomer(model, cancellationToken);
+            await RefreshCache();
 
             indexVM = await PopulateIndexVM(1, 10, searchQuery, cancellationToken);
 
@@ -87,6 +114,7 @@ public class CustomerController(ICustomersApiClient _customersApiClient, ILogger
 
         indexVM = await PopulateIndexVM(1, 10, searchQuery, cancellationToken);
         await UpdateCustomer(model, cancellationToken);
+        await RefreshCache();
 
         if (!ModelState.IsValid)
         {
@@ -116,9 +144,7 @@ public class CustomerController(ICustomersApiClient _customersApiClient, ILogger
 
         if (result.IsT1)
         {
-            ModelState.AddModelError(
-                string.Empty,
-                result.AsT1.errors.FirstOrDefault().Value.FirstOrDefault());
+            ModelState.AddModelError(string.Empty, result.AsT1.errors.FirstOrDefault().Value.FirstOrDefault());
         }
     }
 
@@ -140,18 +166,15 @@ public class CustomerController(ICustomersApiClient _customersApiClient, ILogger
 
         if (result.IsT1)
         {
-            ModelState.AddModelError(
-                string.Empty,
-                result.AsT1.errors.FirstOrDefault().Value.FirstOrDefault());
-
+            ModelState.AddModelError(string.Empty, result.AsT1.errors.FirstOrDefault().Value.FirstOrDefault());
         }
-
     }
 
     [HttpPost]
     public async Task<IActionResult> DeleteCustomer(int id, CancellationToken cancellationToken)
     {
         await _customersApiClient.DeleteAsync(id, cancellationToken);
+        await RefreshCache(); // Refresh the cache after deletion
         return RedirectToAction("Index");
     }
 
@@ -186,5 +209,19 @@ public class CustomerController(ICustomersApiClient _customersApiClient, ILogger
     public IActionResult GetDeleteConfirmationViewComponent(int id)
     {
         return ViewComponent("CustomerDeleteConfirmationViewComponent", new { customerId = id });
+    }
+
+    private Task RefreshCache()
+    {
+        // Invalidate the cache for all customer lists
+        foreach (var cacheKey in _cacheKeys)
+        {
+            _memoryCache.Remove(cacheKey);
+        }
+
+        // Clear the cache keys list
+        _cacheKeys.Clear();
+
+        return Task.CompletedTask;
     }
 }
