@@ -126,13 +126,17 @@
                     url: url,
                     data: { id: customerId },
                     success: function (result) {
-                        $('#modalContainer').html(result); // Update modal container with the fetched HTML
-                        $('#deleteConfirmationModal').modal('show'); // Show the modal
+                        $('#modalContainer').html(result);
+                        $('#deleteConfirmationModal').modal('show');
                     },
                     error: function () {
                         alert('An error occurred while loading the confirmation dialog.');
                     }
                 });
+            });
+
+            $('#customerList').on('click', '.close', function () {
+                $('#deleteConfirmationModal').modal('hide');     
             });
 
 

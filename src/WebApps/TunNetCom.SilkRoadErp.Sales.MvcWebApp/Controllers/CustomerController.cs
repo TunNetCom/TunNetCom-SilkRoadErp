@@ -1,31 +1,32 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using TunNetCom.SilkRoadErp.Sales.Contracts;
-using TunNetCom.SilkRoadErp.Sales.Contracts.Customers;
-using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers;
-using TunNetCom.SilkRoadErp.Sales.MvcWebApp.Models;
-
-namespace TunNetCom.SilkRoadErp.Sales.MvcWebApp.Controllers;
+﻿namespace TunNetCom.SilkRoadErp.Sales.MvcWebApp.Controllers;
 
 [Authorize]
-public class CustomerController : Controller
+public class CustomerController(ICustomersApiClient _customersApiClient, ILogger<CustomerController> _logger) : Controller
 {
-    private readonly ICustomersApiClient _customersApiClient;
-
-    public CustomerController(ICustomersApiClient customersApiClient)
-    {
-        _customersApiClient = customersApiClient;
-    }
-
     [HttpGet]
-    public async Task<IActionResult> Index(string searchQuery = "", int page = 1, int pageSize = 10, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Index(
+        string searchQuery = "",
+        int page = 1,
+        int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
         HttpContext.Session.SetString("LastSearchQuery", searchQuery);
-        var indexVM = await PopulateIndexVM(page, pageSize, searchQuery, cancellationToken);
-        return View(indexVM);
+        var indexCustomerViewModel = await PopulateIndexVM(page, pageSize, searchQuery, cancellationToken);
+
+        _logger.LogInformation(
+            "Result from customer action: {ActionName}, ViewModel: {ViewModelName}: {@ViewModel}",
+            nameof(Index),
+            nameof(IndexCustomerViewModel),
+            @indexCustomerViewModel);
+
+        return View(indexCustomerViewModel);
     }
 
-    private async Task<IndexCustomerViewModel> PopulateIndexVM(int page, int pageSize, string searchQuery, CancellationToken cancellationToken)
+    private async Task<IndexCustomerViewModel> PopulateIndexVM(
+        int page,
+        int pageSize,
+        string searchQuery,
+        CancellationToken cancellationToken)
     {
         var queryParameters = new QueryStringParameters
         {
@@ -41,19 +42,25 @@ public class CustomerController : Controller
         ViewBag.TotalItems = pagedList.TotalCount;
         ViewBag.SearchQuery = searchQuery;
 
-        var indexVM = new IndexCustomerViewModel
+        var indexCustomerViewModel = new IndexCustomerViewModel
         {
             CustomerList = pagedList,
             CurrentCustomer = new CustomerViewModel()
         };
 
-        return indexVM;
+        _logger.LogInformation(
+            "Result from customer action: {ActionName}, ViewModel: {ViewModelName}: {@ViewModel}",
+            nameof(PopulateIndexVM),
+            nameof(IndexCustomerViewModel),
+            @indexCustomerViewModel);
+
+        return indexCustomerViewModel;
     }
 
     [HttpPost]
     public async Task<IActionResult> Index(CustomerViewModel model, CancellationToken cancellationToken)
     {
-        var searchQuery = HttpContext.Session.GetString("LastSearchQuery") ?? "";
+        var searchQuery = HttpContext.Session.GetString("LastSearchQuery") ?? string.Empty;
         ViewBag.SearchQuery = searchQuery;
 
         var indexVM = await PopulateIndexVM(1, 10, searchQuery, cancellationToken);
@@ -83,6 +90,8 @@ public class CustomerController : Controller
 
         if (!ModelState.IsValid)
         {
+            _logger.LogWarning("Error in saving customer, Errors: {@Error}", indexVM);
+
             return View(indexVM);
         }
 
@@ -108,7 +117,7 @@ public class CustomerController : Controller
         if (result.IsT1)
         {
             ModelState.AddModelError(
-                "",
+                string.Empty,
                 result.AsT1.errors.FirstOrDefault().Value.FirstOrDefault());
         }
     }
@@ -132,7 +141,7 @@ public class CustomerController : Controller
         if (result.IsT1)
         {
             ModelState.AddModelError(
-                "",
+                string.Empty,
                 result.AsT1.errors.FirstOrDefault().Value.FirstOrDefault());
 
         }

@@ -16,7 +16,7 @@
             <div class="modal-footer">
                 <form method="post" action="@Url.Action("DeleteCustomer", "Customer")">
                     <input type="hidden" name="id" value="@Model.Id" />
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-secondary close" data-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-danger">Delete</button>
                 </form>
             </div>

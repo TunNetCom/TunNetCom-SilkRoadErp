@@ -13,7 +13,6 @@ Serilog.Log.Logger = new LoggerConfiguration()
     .WriteTo.Seq(seqServerUrl)
     .CreateLogger();
 
-// Add Serilog to the host builder
 builder.Host.UseSerilog();
 
 builder.Services.AddCarter();
@@ -23,14 +22,11 @@ builder.Services.AddDbContext<SalesContext>(options =>
 
 var assembly = typeof(Program).Assembly;
 
-// MediatR
 builder.Services.AddMediatR(config =>
     config.RegisterServicesFromAssemblies(assembly));
 
-// FluentValidation
 builder.Services.AddValidatorsFromAssembly(assembly);
 
-// Register the validation behavior
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
 builder.Services.AddScoped<IInvoiceCalculator, InvoiceCalculator>();
