@@ -1,0 +1,221 @@
+﻿@page "/gestion-bl"
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices
+@inject IDeliveryNoteApiClient DeliveryNoteService
+@inject ICustomersApiClient CustomersApiClient
+@inject IInvoicesApiClient InvoicesApiClient
+@inject ToastService toastService
+
+<h3 class="mb-4">Gestion BL</h3>
+
+<div class="row mb-3">
+    <div class="col-md-4">
+        <label for="dateFrom" class="form-label">Sélectionner une date</label>
+        <input type="date" id="dateFrom" @bind="DateFrom" class="form-control" />
+    </div>
+    <div class="col-md-4">
+        <label for="dateTo" class="form-label">à</label>
+        <input type="date" id="dateTo" @bind="DateTo" class="form-control" />
+    </div>
+    <div class="col-md-4">
+        <label for="client" class="form-label">Client</label>
+        <input id="client" @bind="CustomerSearchKeyword" class="form-control" placeholder="Rechercher ID ou Nom" />
+        <select @bind="SelectedCustomerId" class="form-select mt-2">
+            @if (FilteredCustomers != null)
+            {
+                @foreach (var customer in FilteredCustomers)
+                {
+                    <option value="@customer.Id">@customer.Nom</option>
+                }
+            }
+        </select>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-2">
+        <button @onclick="GetInvoices" class="btn btn-primary">Actualiser</button>
+    </div>
+    <div class="col-md-2">
+        <button @onclick="GetTodaysInvoices" class="btn btn-secondary">Journée</button>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <table class="table table-info">
+        <tbody>
+            <tr>
+                <td>Total H.T:</td>
+                <td>@TotHT</td>
+                <td>Total TVA:</td>
+                <td>@TotTva</td>
+                <td>Total:</td>
+                <td>@NetPayer</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Num</th>
+            <th>Date</th>
+            <th>Total net</th>
+            <th>Facture</th>
+            <th>Code</th>
+            <th>Client</th>
+            <th>Temp</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (DeliveryNotes != null)
+        {
+            @foreach (var note in DeliveryNotes)
+            {
+                <tr>
+                    <td>@note.Num</td>
+                    <td>@note.Date.ToShortDateString()</td>
+                    <td>@note.NetPayer</td>
+                    <td>@note.NumFacture</td>
+                    <td>@note.ClientId</td>
+                    <td>@GetClientName(note.ClientId)</td>
+                    <td>@note.TempBl</td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>
+
+@code {
+    private int SelectedCustomerId { get; set; }
+    private string _customerSearchKeyword;
+    private string CustomerSearchKeyword
+    {
+        get => _customerSearchKeyword;
+        set
+        {
+            if (_customerSearchKeyword != value)
+            {
+                _customerSearchKeyword = value;
+                OnCustomerSearchChanged();
+            }
+        }
+    }
+
+    private List<CustomerResponse> FilteredCustomers { get; set; } = new List<CustomerResponse>();
+    private DateTime? DateFrom { get; set; }
+    private DateTime? DateTo { get; set; }
+    private List<DeliveryNoteResponse> DeliveryNotes { get; set; } = new List<DeliveryNoteResponse>();
+    private decimal TotHT { get; set; }
+    private decimal TotTva { get; set; }
+    private decimal NetPayer { get; set; }
+    private Dictionary<int, string> Clients { get; set; } = new Dictionary<int, string>();
+
+    private async void OnCustomerSearchChanged()
+    {
+        if (!string.IsNullOrEmpty(CustomerSearchKeyword))
+        {
+            FilteredCustomers = await CustomersApiClient.SearchCustomers(new QueryStringParameters
+                {
+                    SearchKeyword = CustomerSearchKeyword,
+                  
+                }, CancellationToken.None);
+            StateHasChanged();
+        }
+    }
+
+    private async Task GetInvoices()
+    {
+        if (SelectedCustomerId == 0 && !DateFrom.HasValue && !DateTo.HasValue)
+        {
+            Alert("Veuillez sélectionner un client ou une période.", ToastType.Warning);
+            return;
+        }
+
+        if (SelectedCustomerId != 0)
+        {
+            // Appel à l'API pour récupérer les bons de livraison par ClientId
+            DeliveryNotes = await DeliveryNoteService.GetDeliveryNotesByClientId(SelectedCustomerId);
+        }
+        else
+        {
+            // Appel à l'API pour récupérer les bons de livraison avec des filtres standards
+            DeliveryNotes = await DeliveryNoteService.GetDeliveryNotes(
+                pageNumber: 1,
+                pageSize: 1000,
+                customerId: null,
+                searchKeyword: string.Empty,
+                isFactured: true
+              
+            );
+        }
+
+        if (DeliveryNotes != null && DeliveryNotes.Any())
+        {
+            // Charger les noms des clients manquants dans le dictionnaire
+            await LoadMissingClientNames(DeliveryNotes.Select(d => d.ClientId).Distinct());
+            CalculateTotals();
+        }
+        else
+        {
+            Alert("Aucun bon de livraison trouvé.", ToastType.Info);
+        }
+    }
+
+    private async Task LoadMissingClientNames(IEnumerable<int?> clientIds)
+    {
+        var missingClientIds = clientIds
+            .Where(id => id.HasValue && !Clients.ContainsKey(id.Value))
+            .Select(id => id.Value)
+            .ToList();
+
+        if (missingClientIds.Any())
+        {
+            var tasks = missingClientIds.Select(id => CustomersApiClient.GetCustomerById(id, CancellationToken.None)).ToList();
+            var customers = await Task.WhenAll(tasks);
+
+            foreach (var customer in customers)
+            {
+                if (customer != null)
+                {
+                    Clients[customer.Id] = customer.Nom;
+                }
+            }
+        }
+    }
+
+
+
+
+    private async Task GetTodaysInvoices()
+    {
+        DateFrom = DateTime.Today;
+        DateTo = DateTime.Today;
+        await GetInvoices();
+    }
+
+    private void CalculateTotals()
+    {
+        TotHT = DeliveryNotes.Sum(note => note.TotHTva);
+        TotTva = DeliveryNotes.Sum(note => note.TotTva);
+        NetPayer = DeliveryNotes.Sum(note => note.NetPayer);
+    }
+
+
+
+    private string GetClientName(int? clientId)
+    {
+        if (clientId.HasValue && Clients.TryGetValue(clientId.Value, out var name))
+        {
+            return name;
+        }
+        return "Client inconnu";
+    }
+
+    private void Alert(string message, ToastType toastType = ToastType.Info)
+    {
+        toastService.Notify(new ToastMessage(toastType, message));
+    }
+}

@@ -1,0 +1,65 @@
+﻿@model CustomerViewModel
+
+<div class="card" style="width: 18rem;">
+    <div class="card-body">
+        <h5 class="card-title">Add or edit a customer</h5>
+        <div>
+            @using (Html.BeginForm("Index", "Customer", FormMethod.Post, new { id = "customerFormFromViewComponent" }))
+            {
+                @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+                @Html.HiddenFor(m => m.Id)
+
+                <div class="form-group">
+                    @Html.LabelFor(m => m.Nom)
+                    @Html.TextBoxFor(m => m.Nom, new { @class = "form-control" })
+                    @Html.ValidationMessageFor(m => m.Nom, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(m => m.Tel)
+                    @Html.TextBoxFor(m => m.Tel, new { @class = "form-control" })
+                    @Html.ValidationMessageFor(m => m.Tel, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(m => m.Adresse)
+                    @Html.TextBoxFor(m => m.Adresse, new { @class = "form-control" })
+                    @Html.ValidationMessageFor(m => m.Adresse, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(m => m.Matricule)
+                    @Html.TextBoxFor(m => m.Matricule, new { @class = "form-control" })
+                    @Html.ValidationMessageFor(m => m.Matricule, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(m => m.Code)
+                    @Html.TextBoxFor(m => m.Code, new { @class = "form-control" })
+                    @Html.ValidationMessageFor(m => m.Code, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(m => m.CodeCat)
+                    @Html.TextBoxFor(m => m.CodeCat, new { @class = "form-control" })
+                    @Html.ValidationMessageFor(m => m.CodeCat, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(m => m.EtbSec)
+                    @Html.TextBoxFor(m => m.EtbSec, new { @class = "form-control" })
+                    @Html.ValidationMessageFor(m => m.EtbSec, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(m => m.Mail)
+                    @Html.TextBoxFor(m => m.Mail, new { @class = "form-control" })
+                    @Html.ValidationMessageFor(m => m.Mail, "", new { @class = "text-danger" })
+                </div>
+
+                <button type="submit" class="btn btn-primary">Save</button>
+            }
+        </div>
+    </div>
+</div>

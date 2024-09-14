@@ -9,6 +9,7 @@ public class CreateDeliveryNoteCommandHandler(
     {
         _logger.LogEntityCreated(nameof(BonDeLivraison), createDeliveryNoteCommand);
 
+        //TODO add checks
         var deliveryNote = BonDeLivraison.CreateBonDeLivraison
             (
                 createDeliveryNoteCommand.Date,
@@ -34,6 +35,7 @@ public class CreateDeliveryNoteCommandHandler(
                 TotTtc = ligne.TotTtc,
                 NumBlNavigation = deliveryNote
             };
+            //TODO make method to add lignesBl
             deliveryNote.LigneBl.Add( lignesBl );
         }
 

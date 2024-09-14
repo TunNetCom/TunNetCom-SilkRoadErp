@@ -1,0 +1,152 @@
+﻿@using TunNetCom.SilkRoadErp.Sales.Contracts.Customers
+
+@model IndexCustomerViewModel
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="mb-3">
+            <form id="searchForm" class="form-inline">
+                <div class="input-group">
+                    <input type="text" class="form-control" id="searchQuery" value="@ViewBag.SearchQuery" placeholder="Search customers..." />
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="submit">Search</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div id="customerList">
+            @Html.Partial("_CustomerList", Model.CustomerList)
+        </div>
+
+        <div id="paginationControls">
+            <ul class="pagination">
+                @{
+                    int totalPages = (int)Math.Ceiling((double)ViewBag.TotalItems / ViewBag.PageSize);
+                    int currentPage = ViewBag.CurrentPage;
+                    int maxPagesBeforeCurrentPage = 2;
+                    int maxPagesAfterCurrentPage = 2;
+
+                    if (totalPages > 0)
+                    {
+                        // First page
+                        <li class="page-item @(currentPage == 1 ? "active" : "")">
+                            <a class="page-link" href="#" data-page="1">1</a>
+                        </li>
+
+                        // Pages before the current page
+                        if (currentPage - maxPagesBeforeCurrentPage > 2)
+                        {
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        }
+
+                        for (int i = Math.Max(2, currentPage - maxPagesBeforeCurrentPage); i < currentPage; i++)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="#" data-page="@i">@i</a>
+                            </li>
+                        }
+
+                        // Current page
+                        if (currentPage > 1 && currentPage < totalPages)
+                        {
+                            <li class="page-item active">
+                                <span class="page-link">@currentPage</span>
+                            </li>
+                        }
+
+                        // Pages after the current page
+                        for (int i = currentPage + 1; i <= Math.Min(totalPages - 1, currentPage + maxPagesAfterCurrentPage); i++)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="#" data-page="@i">@i</a>
+                            </li>
+                        }
+
+                        if (currentPage + maxPagesAfterCurrentPage < totalPages - 1)
+                        {
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        }
+
+                        // Last page
+                        if (totalPages > 1)
+                        {
+                            <li class="page-item @(currentPage == totalPages ? "active" : "")">
+                                <a class="page-link" href="#" data-page="@totalPages">@totalPages</a>
+                            </li>
+                        }
+                    }
+                }
+            </ul>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div id="customerForm">
+            @Html.Partial("_CustomerForm", Model.CurrentCustomer)
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div id="customerForm">
+            @await Component.InvokeAsync("CustomerForm", new { customer = Model.CurrentCustomer })
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            function loadPage(page) {
+                var searchQuery = $('#searchQuery').val();
+                $.get('@Url.Action("Index")', { page: page, searchQuery: searchQuery }, function (data) {
+                    $('#customerList').html($(data).find('#customerList').html());
+                    $('#paginationControls').html($(data).find('#paginationControls').html());
+                });
+            }
+
+            $('#paginationControls').on('click', 'a.page-link', function (e) {
+                e.preventDefault();
+                var page = $(this).data('page');
+                loadPage(page);
+            });
+
+            $('#searchForm').on('submit', function (e) {
+                e.preventDefault();
+                loadPage(1); // Start from the first page when a search is performed
+            });
+
+            $('#customerList').on('click', '.edit-button', function () {
+                var id = $(this).data('id');
+                $.get('@Url.Action("EditCustomer")/' + id, function (data) {
+                    $('#customerForm').html(data);
+                    $('#customerFormFromViewComponent').html(data);
+                });
+            });
+
+            $('#customerList').on('click', '.delete-button', function () {
+                var customerId = $(this).data('id');
+                var url = '@Url.Action("GetDeleteConfirmationViewComponent", "Customer")';
+
+                $.ajax({
+                    type: "GET",
+                    url: url,
+                    data: { id: customerId },
+                    success: function (result) {
+                        $('#modalContainer').html(result);
+                        $('#deleteConfirmationModal').modal('show');
+                    },
+                    error: function () {
+                        alert('An error occurred while loading the confirmation dialog.');
+                    }
+                });
+            });
+
+            $('#customerList').on('click', '.close', function () {
+                $('#deleteConfirmationModal').modal('hide');     
+            });
+
+
+        });
+    </script>
+}

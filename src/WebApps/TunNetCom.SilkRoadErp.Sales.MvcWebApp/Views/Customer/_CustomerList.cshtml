@@ -1,0 +1,31 @@
+﻿@using TunNetCom.SilkRoadErp.Sales.Contracts.Customers
+
+@model List<CustomerResponse>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Nom</th>
+            <th>Tel</th>
+            <th>Adresse</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var customer in Model)
+        {
+            <tr>
+                <td>@customer.Nom</td>
+                <td>@customer.Tel</td>
+                <td>@customer.Adresse</td>
+                <td>
+                    <button class="btn btn-primary edit-button" data-id="@customer.Id">Edit</button>
+                    <button class="btn btn-danger delete-button" data-id="@customer.Id">Delete</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@await Component.InvokeAsync("CustomerDeleteConfirmationViewComponent", new { customerId = Model.FirstOrDefault()?.Id })
+
