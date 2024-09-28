@@ -1,3 +1,5 @@
+using Radzen;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -18,6 +20,7 @@ var localizationOptions = new RequestLocalizationOptions()
     .AddSupportedUICultures(supportedCultures);
 
 builder.Services.AddBlazorBootstrap();
+builder.Services.AddRadzenComponents();
 
 var app = builder.Build();
 
