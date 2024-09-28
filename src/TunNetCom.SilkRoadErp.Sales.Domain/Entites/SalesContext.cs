@@ -60,28 +60,7 @@ public partial class SalesContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.ApplyConfiguration(new Configurations.AvoirFinancierFournisseursConfiguration());
-        modelBuilder.ApplyConfiguration(new Configurations.AvoirFournisseurConfiguration());
-        modelBuilder.ApplyConfiguration(new Configurations.AvoirsConfiguration());
-        modelBuilder.ApplyConfiguration(new Configurations.BonDeLivraisonConfiguration());
-        modelBuilder.ApplyConfiguration(new Configurations.BonDeReceptionConfiguration());
-        modelBuilder.ApplyConfiguration(new Configurations.ClientConfiguration());
-        modelBuilder.ApplyConfiguration(new Configurations.CommandesConfiguration());
-        modelBuilder.ApplyConfiguration(new Configurations.DevisConfiguration());
-        modelBuilder.ApplyConfiguration(new Configurations.EcheanceDesFournisseursConfiguration());
-        modelBuilder.ApplyConfiguration(new Configurations.FactureConfiguration());
-        modelBuilder.ApplyConfiguration(new Configurations.FactureAvoirFournisseurConfiguration());
-        modelBuilder.ApplyConfiguration(new Configurations.FactureFournisseurConfiguration());
-        modelBuilder.ApplyConfiguration(new Configurations.FournisseurConfiguration());
-        modelBuilder.ApplyConfiguration(new Configurations.LigneAvoirFournisseurConfiguration());
-        modelBuilder.ApplyConfiguration(new Configurations.LigneAvoirsConfiguration());
-        modelBuilder.ApplyConfiguration(new Configurations.LigneBlConfiguration());
-        modelBuilder.ApplyConfiguration(new Configurations.LigneBonReceptionConfiguration());
-        modelBuilder.ApplyConfiguration(new Configurations.LigneCommandesConfiguration());
-        modelBuilder.ApplyConfiguration(new Configurations.LigneDevisConfiguration());
-        modelBuilder.ApplyConfiguration(new Configurations.ProduitConfiguration());
-        modelBuilder.ApplyConfiguration(new Configurations.SystemeConfiguration());
-        modelBuilder.ApplyConfiguration(new Configurations.TransactionConfiguration());
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(FactureConfiguration).Assembly);
 
         OnModelCreatingPartial(modelBuilder);
     }
