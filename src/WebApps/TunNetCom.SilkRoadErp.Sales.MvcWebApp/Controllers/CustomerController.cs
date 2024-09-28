@@ -10,6 +10,7 @@ public class CustomerController : Controller
     private readonly IMemoryCache _memoryCache;
     private static readonly List<string> _cacheKeys = new List<string>();
 
+    #region Actions
     public CustomerController(ICustomersApiClient customersApiClient, ILogger<CustomerController> logger, IMemoryCache memoryCache)
     {
         _customersApiClient = customersApiClient;
@@ -126,6 +127,49 @@ public class CustomerController : Controller
         return RedirectToAction("Index");
     }
 
+    [HttpPost]
+    public async Task<IActionResult> DeleteCustomer(int id, CancellationToken cancellationToken)
+    {
+        await _customersApiClient.DeleteAsync(id, cancellationToken);
+        await RefreshCache(); // Refresh the cache after deletion
+        return RedirectToAction("Index");
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> EditCustomer(int id, CancellationToken cancellationToken)
+    {
+        var customerResponse = await _customersApiClient.GetAsync(id, cancellationToken);
+
+        if (!customerResponse.IsT0)
+        {
+            return NotFound();
+        }
+
+        var customer = customerResponse.AsT0;
+
+        var model = new CustomerViewModel
+        {
+            Id = customer.Id,
+            Nom = customer.Nom,
+            Tel = customer.Tel,
+            Adresse = customer.Adresse,
+            Matricule = customer.Matricule,
+            Code = customer.Code,
+            CodeCat = customer.CodeCat,
+            EtbSec = customer.EtbSec,
+            Mail = customer.Mail
+        };
+
+        return PartialView("_CustomerForm", model);
+    }
+
+    public IActionResult GetDeleteConfirmationViewComponent(int id)
+    {
+        return ViewComponent("CustomerDeleteConfirmationViewComponent", new { customerId = id });
+    }
+    #endregion
+
+    #region Private methods
     private async Task UpdateCustomer(CustomerViewModel model, CancellationToken cancellationToken)
     {
         var updateRequest = new UpdateCustomerRequest
@@ -170,47 +214,6 @@ public class CustomerController : Controller
         }
     }
 
-    [HttpPost]
-    public async Task<IActionResult> DeleteCustomer(int id, CancellationToken cancellationToken)
-    {
-        await _customersApiClient.DeleteAsync(id, cancellationToken);
-        await RefreshCache(); // Refresh the cache after deletion
-        return RedirectToAction("Index");
-    }
-
-    [HttpGet]
-    public async Task<IActionResult> EditCustomer(int id, CancellationToken cancellationToken)
-    {
-        var customerResponse = await _customersApiClient.GetAsync(id, cancellationToken);
-
-        if (!customerResponse.IsT0)
-        {
-            return NotFound();
-        }
-
-        var customer = customerResponse.AsT0;
-
-        var model = new CustomerViewModel
-        {
-            Id = customer.Id,
-            Nom = customer.Nom,
-            Tel = customer.Tel,
-            Adresse = customer.Adresse,
-            Matricule = customer.Matricule,
-            Code = customer.Code,
-            CodeCat = customer.CodeCat,
-            EtbSec = customer.EtbSec,
-            Mail = customer.Mail
-        };
-
-        return PartialView("_CustomerForm", model);
-    }
-
-    public IActionResult GetDeleteConfirmationViewComponent(int id)
-    {
-        return ViewComponent("CustomerDeleteConfirmationViewComponent", new { customerId = id });
-    }
-
     private Task RefreshCache()
     {
         // Invalidate the cache for all customer lists
@@ -224,4 +227,5 @@ public class CustomerController : Controller
 
         return Task.CompletedTask;
     }
+    #endregion
 }
