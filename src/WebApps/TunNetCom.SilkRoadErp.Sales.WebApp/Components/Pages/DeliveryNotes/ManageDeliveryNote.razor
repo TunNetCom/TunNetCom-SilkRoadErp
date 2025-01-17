@@ -1,0 +1,250 @@
+﻿@* @page "/bon-de-livraison" *@
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
+
+<RadzenButton Click="@ButtonClicked" Text="+"></RadzenButton>
+<RadzenDataGrid @ref="@grid" TItem="LigneBlRequest" AllowAlternatingRows="false" AllowFiltering="false"
+                AllowPaging="true" PageSize="30" AllowSorting="false"
+                Data="@orders" RowUpdate="@OnUpdateRow" Sort="@(args => Reset())"
+                Page="@(args => Reset())" Filter="@(args => Reset())"
+                ColumnWidth="200px" CellClick="@OnCellClick">
+    <Columns>
+        <RadzenDataGridColumn Property="Id" Title="Id" Frozen="true" Visible="false" />
+        <RadzenDataGridColumn Width="600px" TItem="LigneBlRequest" Property="@nameof(LigneBlRequest.RefProduit)"
+            Title="Product" IsInEditMode="@IsEditing">
+            <Template Context="order">
+                <RadzenText Text="@(order.RefProduit)" />
+            </Template>
+            <EditTemplate Context="order">
+                <RadzenDropDownDataGrid Style="width: 100%; max-width: 600px;"
+                  AllowClear="true" @bind-Value="order.RefProduit"
+                  LoadData=@LoadData AllowFiltering="true"
+                  Data=@searchList Count=@count TextProperty="@nameof(LigneBlRequest.RefAndDisplay)"
+                  ValueProperty="@nameof(LigneBlRequest.RefProduit)" Name="DropDownDataGridFilteringLoadData" />
+
+                <RadzenRequiredValidator Text="RefProduit is required" Component="RefProduit" Popup="true" />
+            </EditTemplate>
+        </RadzenDataGridColumn>  
+    </Columns>
+</RadzenDataGrid>
+
+<style>
+    .table-cell-edited {
+        position: relative;
+    }
+
+        .table-cell-edited::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 0;
+            height: 0;
+            border-top: 10px solid red;
+            border-left: 10px solid transparent;
+        }
+</style>
+
+@code {
+    string columnEditing;
+    string refAuto;
+    int count;
+
+    RadzenDataGrid<LigneBlRequest> grid;
+
+    List<LigneBlRequest> orders;
+    List<LigneBlRequest> searchList;
+    List<LigneBlRequest> refProduits;
+
+    List<KeyValuePair<int, string>> editedFields = new List<KeyValuePair<int, string>>();
+    List<LigneBlRequest> ordersToUpdate = new List<LigneBlRequest>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        // customers = dbContext.Customers;
+        // employees = dbContext.Employees;
+        searchList = new List<LigneBlRequest>();
+        // orders = dbContext.Orders.Include("Customer").Include("Employee");
+        refProduits = new List<LigneBlRequest>
+{
+    new LigneBlRequest { Id = 1, RefProduit = "45B01L", DesignationLi = "Product 1L", QteLi = 10, PrixHt = 50.0m, Remise = 5.0, TotHt = 475.0m, Tva = 20.0, TotTtc = 570.0m },
+    new LigneBlRequest { Id = 2, RefProduit = "45B02L", DesignationLi = "Product 2L", QteLi = 5, PrixHt = 100.0m, Remise = 10.0, TotHt = 450.0m, Tva = 18.0, TotTtc = 531.0m },
+    new LigneBlRequest { Id = 3, RefProduit = "45B03L", DesignationLi = "Product 3L", QteLi = 20, PrixHt = 25.0m, Remise = 0.0, TotHt = 500.0m, Tva = 15.0, TotTtc = 575.0m },
+    new LigneBlRequest { Id = 4, RefProduit = "45B04L", DesignationLi = "Product 4L", QteLi = 15, PrixHt = 75.0m, Remise = 7.5, TotHt = 1046.25m, Tva = 10.0, TotTtc = 1150.88m },
+    new LigneBlRequest { Id = 5, RefProduit = "45B05L", DesignationLi = "Product 5L", QteLi = 12, PrixHt = 60.0m, Remise = 12.0, TotHt = 633.60m, Tva = 19.0, TotTtc = 753.98m },
+    new LigneBlRequest { Id = 1, RefProduit = "P001", DesignationLi = "Product 1", QteLi = 10, PrixHt = 50.0m, Remise = 5.0, TotHt = 475.0m, Tva = 20.0, TotTtc = 570.0m },
+    new LigneBlRequest { Id = 2, RefProduit = "P002", DesignationLi = "Product 2", QteLi = 5, PrixHt = 100.0m, Remise = 10.0, TotHt = 450.0m, Tva = 18.0, TotTtc = 531.0m },
+    new LigneBlRequest { Id = 3, RefProduit = "P003", DesignationLi = "Product 3", QteLi = 20, PrixHt = 25.0m, Remise = 0.0, TotHt = 500.0m, Tva = 15.0, TotTtc = 575.0m },
+    new LigneBlRequest { Id = 4, RefProduit = "P004", DesignationLi = "Product 4", QteLi = 15, PrixHt = 75.0m, Remise = 7.5, TotHt = 1046.25m, Tva = 10.0, TotTtc = 1150.88m },
+    new LigneBlRequest { Id = 5, RefProduit = "P005", DesignationLi = "Product 5", QteLi = 12, PrixHt = 60.0m, Remise = 12.0, TotHt = 633.60m, Tva = 19.0, TotTtc = 753.98m },
+    new LigneBlRequest { Id = 1, RefProduit = "P006", DesignationLi = "Product 6", QteLi = 10, PrixHt = 50.0m, Remise = 5.0, TotHt = 475.0m, Tva = 20.0, TotTtc = 570.0m },
+    new LigneBlRequest { Id = 2, RefProduit = "P007", DesignationLi = "Product 7", QteLi = 5, PrixHt = 100.0m, Remise = 10.0, TotHt = 450.0m, Tva = 18.0, TotTtc = 531.0m },
+    new LigneBlRequest { Id = 3, RefProduit = "P008", DesignationLi = "Product 8", QteLi = 20, PrixHt = 25.0m, Remise = 0.0, TotHt = 500.0m, Tva = 15.0, TotTtc = 575.0m },
+    new LigneBlRequest { Id = 4, RefProduit = "P009", DesignationLi = "Product 9", QteLi = 15, PrixHt = 75.0m, Remise = 7.5, TotHt = 1046.25m, Tva = 10.0, TotTtc = 1150.88m },
+    new LigneBlRequest { Id = 5, RefProduit = "P00100", DesignationLi = "Product 10", QteLi = 12, PrixHt = 60.0m, Remise = 12.0, TotHt = 633.60m, Tva = 19.0, TotTtc = 753.98m }
+};
+
+        orders = new List<LigneBlRequest>
+{
+    new LigneBlRequest { Id = 1, RefProduit = "P001", DesignationLi = "Product 1", QteLi = 10, PrixHt = 50.0m, Remise = 5.0, TotHt = 475.0m, Tva = 20.0, TotTtc = 570.0m },
+    new LigneBlRequest { Id = 2, RefProduit = "P002", DesignationLi = "Product 2", QteLi = 5, PrixHt = 100.0m, Remise = 10.0, TotHt = 450.0m, Tva = 18.0, TotTtc = 531.0m },
+    new LigneBlRequest { Id = 3, RefProduit = "P003", DesignationLi = "Product 3", QteLi = 20, PrixHt = 25.0m, Remise = 0.0, TotHt = 500.0m, Tva = 15.0, TotTtc = 575.0m },
+    new LigneBlRequest { Id = 4, RefProduit = "P004", DesignationLi = "Product 4", QteLi = 15, PrixHt = 75.0m, Remise = 7.5, TotHt = 1046.25m, Tva = 10.0, TotTtc = 1150.88m },
+    new LigneBlRequest { Id = 5, RefProduit = "P005", DesignationLi = "Product 5", QteLi = 12, PrixHt = 60.0m, Remise = 12.0, TotHt = 633.60m, Tva = 19.0, TotTtc = 753.98m }
+};
+
+    }
+
+    /// <summary>
+    /// Determines if the specified column is in edit mode for the specified order.
+    /// </summary>
+    /// <param name="columnName">The RadzenDataGridColumn.Property currently being rendered by the RadzenDataGrid.</param>
+    /// <param name="order">The Order currently being rendered by the RadzenDataGrid.</param>
+    /// <returns>True if the column should render the EditTemplate for the specified Order, otherwise false.</returns>
+    bool IsEditing(string columnName, LigneBlRequest order)
+    {
+        // Comparing strings is quicker than checking the contents of a List, so let the property check fail first.
+        return columnEditing == columnName && ordersToUpdate.Contains(order);
+    }
+
+    /// <summary>
+    /// Determines if the specified column needs a custom CSS class based on the <typeparamref name="TItem">TItem's</typeparamref> state.
+    /// </summary>
+    /// <param name="column">The RadzenDataGridColumn.Property currently being rendered by the RadzenDataGrid.</param>
+    /// <param name="order">The Order currently being rendered by the RadzenDataGrid.</param>
+    /// <returns>A string containing the CssClass to add, or <see cref="String.Empty">.</returns>
+    string IsEdited(RadzenDataGridColumn<LigneBlRequest> column, LigneBlRequest order)
+    {
+        // In a real scenario, you might use IRevertibleChangeTracking to check the current column
+        //  against a list of the object's edited fields.
+        return editedFields.Where(c => c.Key == order.Id && c.Value == column.Property).Any() ?
+            "table-cell-edited" :
+            string.Empty;
+    }
+
+    /// <summary>
+    /// Handles the CellClick event of the RadzenDataGrid.
+    /// </summary>
+    /// <param name="args"></param>
+    void OnCellClick(DataGridCellMouseEventArgs<LigneBlRequest> args)
+    {
+        // Record the previous edited field, if you're not using IRevertibleChangeTracking to track object changes
+        if (ordersToUpdate.Any())
+        {
+            editedFields.Add(new(ordersToUpdate.First().Id, columnEditing));
+        }
+
+        // This sets which column is currently being edited.
+        columnEditing = args.Column.Property;
+
+        // This triggers a save on the previous edit. This can be removed if you are going to batch edits through another method.
+        if (ordersToUpdate.Any())
+        {
+            OnUpdateRow(ordersToUpdate.First());
+        }
+
+        // This sets the Item to be edited.
+        EditRow(args.Data);
+    }
+
+    void Reset(LigneBlRequest order = null)
+    {
+        editorFocused = false;
+
+        if (order != null)
+        {
+            ordersToUpdate.Remove(order);
+        }
+        else
+        {
+            ordersToUpdate.Clear();
+        }
+    }
+
+    void Update()
+    {
+        editorFocused = false;
+
+        if (ordersToUpdate.Any())
+        {
+            OnUpdateRow(ordersToUpdate.First());
+        }
+
+        Reset();
+    }
+
+    void EditRow(LigneBlRequest order)
+    {
+        Reset();
+
+        ordersToUpdate.Add(order);
+    }
+
+    /// <summary>
+    /// Saves the changes from the Order to the database.
+    /// </summary>
+    /// <param name="order">The <see cref="Order" /> to save.</param>
+    /// <remarks>
+    /// Currently, this is called every time the Cell is changed. In a real in-cell edit scenario, you would likely either update
+    /// on RowDeselect, or batch the changes using a "Save Changes" button in the header.
+    /// </remarks>
+    void OnUpdateRow(LigneBlRequest order)
+    {
+        Reset(order);
+
+        // dbContext.Update(order);
+
+        // dbContext.SaveChanges();
+
+        // If you were doing row-level edits and handling RowDeselect, you could use the line below to
+        // clear edits for the current record.
+
+        //editedFields = editedFields.Where(c => c.Key != order.OrderID).ToList();
+    }
+
+    IRadzenFormComponent editor;
+    bool editorFocused;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+
+        if (!editorFocused && editor != null)
+        {
+            editorFocused = true;
+
+            try
+            {
+                await editor.FocusAsync();
+            }
+            catch
+            {
+            //
+            }
+        }
+    }
+
+    void LoadData(LoadDataArgs args)
+    {
+        searchList = refProduits.Where(t => t.RefProduit.Contains(args.Filter)).ToList();
+        InvokeAsync(StateHasChanged);
+    }
+
+    async Task ButtonClicked()
+    {
+
+        orders.AddRange( new List<LigneBlRequest>
+{
+    new LigneBlRequest { Id = 1, RefProduit = "P001", DesignationLi = "Product 1", QteLi = 10, PrixHt = 50.0m, Remise = 5.0, TotHt = 475.0m, Tva = 20.0, TotTtc = 570.0m },
+    new LigneBlRequest { Id = 2, RefProduit = "P002", DesignationLi = "Product 2", QteLi = 5, PrixHt = 100.0m, Remise = 10.0, TotHt = 450.0m, Tva = 18.0, TotTtc = 531.0m },
+    new LigneBlRequest { Id = 3, RefProduit = "P003", DesignationLi = "Product 3", QteLi = 20, PrixHt = 25.0m, Remise = 0.0, TotHt = 500.0m, Tva = 15.0, TotTtc = 575.0m },
+    new LigneBlRequest { Id = 4, RefProduit = "P004", DesignationLi = "Product 4", QteLi = 15, PrixHt = 75.0m, Remise = 7.5, TotHt = 1046.25m, Tva = 10.0, TotTtc = 1150.88m },
+    new LigneBlRequest { Id = 5, RefProduit = "P005", DesignationLi = "Product 5", QteLi = 12, PrixHt = 60.0m, Remise = 12.0, TotHt = 633.60m, Tva = 19.0, TotTtc = 753.98m }
+});
+
+        grid.Reset(true); 
+        await grid.FirstPage(true);
+    }
+}

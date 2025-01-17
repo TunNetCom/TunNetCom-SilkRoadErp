@@ -11,7 +11,10 @@ public class CustomerController : Controller
     private static readonly List<string> _cacheKeys = new List<string>();
 
     #region Actions
-    public CustomerController(ICustomersApiClient customersApiClient, ILogger<CustomerController> logger, IMemoryCache memoryCache)
+    public CustomerController(
+        ICustomersApiClient customersApiClient,
+        ILogger<CustomerController> logger,
+        IMemoryCache memoryCache)
     {
         _customersApiClient = customersApiClient;
         _logger = logger;
