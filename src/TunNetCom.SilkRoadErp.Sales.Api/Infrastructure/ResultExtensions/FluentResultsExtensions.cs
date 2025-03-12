@@ -9,3 +9,4 @@ public sealed class EntityNotFound : Error
 
     public static Error Error { get { return new EntityNotFound(); } }
 }
+ 
