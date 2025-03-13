@@ -1,8 +1,4 @@
-﻿using Azure.Core;
-using MediatR;
-using TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.AttachToInvoice;
-using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
-using Microsoft.EntityFrameworkCore;
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.AttachToInvoice;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.CreateDeliveryNote;
 

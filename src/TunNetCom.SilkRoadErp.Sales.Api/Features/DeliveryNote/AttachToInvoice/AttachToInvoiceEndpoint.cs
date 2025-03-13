@@ -23,9 +23,7 @@ public class AttachToInvoiceEndpoint : ICarterModule
                 {
                     return attachToInvoiceResult.ToValidationProblem();
                 }
-
                 return TypedResults.NoContent();
-            
             });
     }
 }
