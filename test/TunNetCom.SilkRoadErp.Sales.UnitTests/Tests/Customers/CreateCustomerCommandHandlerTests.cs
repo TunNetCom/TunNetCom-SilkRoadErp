@@ -1,4 +1,7 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers;
+﻿using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel.Client;
+
+namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers;
 
 public class CreateCustomerCommandHandlerTests
 {
@@ -8,11 +11,13 @@ public class CreateCustomerCommandHandlerTests
 
     public CreateCustomerCommandHandlerTests()
     {
+        //UseInMemoryDatabase for isolated, fast testing without hitting a real database.
         var options = new DbContextOptionsBuilder<SalesContext>()
             .UseInMemoryDatabase(databaseName: "SalesContext")
-            .Options;
+        .Options;
 
         _context = new SalesContext(options);
+        //Creates a TestLogger instance to mock logging behavior.
         _testLogger = new TestLogger<CreateCustomerCommandHandler>();
         _createCustomerCommandHandler = new CreateCustomerCommandHandler(_context, _testLogger);
     }
