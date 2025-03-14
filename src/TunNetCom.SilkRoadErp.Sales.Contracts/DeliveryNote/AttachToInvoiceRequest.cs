@@ -8,5 +8,5 @@ public class AttachToInvoiceRequest
     public int InvoiceId { get; set; }
 
     [JsonPropertyName("BonDeLivraisonId")]
-    public int DeliveryNoteId { get; set; }
+    public List<int> DeliveryNoteIds { get; set; }
 }
