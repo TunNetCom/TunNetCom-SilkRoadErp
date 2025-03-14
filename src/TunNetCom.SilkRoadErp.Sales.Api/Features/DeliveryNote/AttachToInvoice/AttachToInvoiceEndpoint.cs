@@ -11,7 +11,7 @@ public class AttachToInvoiceEndpoint : ICarterModule
                 [FromBody] AttachToInvoiceRequest attachToInvoiceRequest,
                 CancellationToken cancellationToken) =>
             {
-                var command = new AttachToInvoiceCommand(attachToInvoiceRequest.InvoiceId, attachToInvoiceRequest.DeliveryNoteId);
+                var command = new AttachToInvoiceCommand(attachToInvoiceRequest.InvoiceId, attachToInvoiceRequest.DeliveryNoteIds);
                 var attachToInvoiceResult = await mediator.Send(command);
 
                 if (attachToInvoiceResult.HasError<EntityNotFound>())
