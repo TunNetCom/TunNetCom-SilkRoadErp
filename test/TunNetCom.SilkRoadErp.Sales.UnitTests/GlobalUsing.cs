@@ -20,3 +20,6 @@ global using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNote
 global using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNoteById;
 global using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.UpdateReceiptNote;
 global using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.DeleteReceiptNote;
+global using TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.AttachToInvoice;
+global using TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.CreateDeliveryNote;
+global using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.ResultExtensions;
