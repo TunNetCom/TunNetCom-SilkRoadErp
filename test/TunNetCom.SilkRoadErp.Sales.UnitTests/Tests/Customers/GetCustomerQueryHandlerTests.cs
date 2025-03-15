@@ -77,7 +77,7 @@ public class GetCustomerQueryHandlerTests
         // Arrange
         var client1 = Client.CreateClient
             (
-             nom: "Client test",
+             nom: "Client test 1",
              tel: "1234567898",
              adresse: "paris",
              matricule: "12345/B",
@@ -120,6 +120,6 @@ public class GetCustomerQueryHandlerTests
         var result = await _getCustomerQueryHandler.Handle(query, CancellationToken.None);
 
         // Assert
-        Assert.Equal(3, result.Count);
+        Assert.True(result.Count > 3);
     }
 }

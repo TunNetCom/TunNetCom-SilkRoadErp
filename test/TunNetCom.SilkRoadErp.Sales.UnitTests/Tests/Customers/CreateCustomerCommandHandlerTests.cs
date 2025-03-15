@@ -59,7 +59,7 @@ public class CreateCustomerCommandHandlerTests
     {
         // Arrange
         var command = new CreateCustomerCommand(
-            Nom: "New Customer",
+            Nom: "New Customer 66",
             Tel: "123456",
             Adresse: "Address",
             Matricule: "Matricule",
@@ -80,7 +80,7 @@ public class CreateCustomerCommandHandlerTests
     {
         // Arrange
         var command = new CreateCustomerCommand(
-            Nom: "New Customer",
+            Nom: "New Customer 11",
             Tel: "123456",
             Adresse: "Address",
             Matricule: "Matricule",

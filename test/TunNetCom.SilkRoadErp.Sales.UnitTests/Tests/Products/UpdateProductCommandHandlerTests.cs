@@ -21,7 +21,7 @@ public class UpdateProductCommandHandlerTests
     {
         // Arrange
         var command = new UpdateProductCommand(
-            Refe: "Refe123",
+            Refe: "RefeNotFound",
             Nom: "Update Product",
             Qte: 23,
             QteLimite: 22,
@@ -39,7 +39,7 @@ public class UpdateProductCommandHandlerTests
         // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal("Product_not_found", result.Errors.First().Message);
-        Assert.Contains(_testLogger.Logs, log => log.Contains("Product with ID: Refe123 not found"));
+        Assert.Contains(_testLogger.Logs, log => log.Contains("Product with ID: RefeNotFound not found"));
     }
 
     [Fact]
