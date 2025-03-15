@@ -1,5 +1,4 @@
-﻿using System.Reflection.Metadata;
-using TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.UpdateCustomer;
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.UpdateCustomer;
 
 namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers;
 
@@ -39,8 +38,12 @@ public class UpdateCustomerCommandHandlerTests
 
         // Assert
         Assert.False(result.IsSuccess);
+
         Assert.Equal("not_found", result.Errors.First().Message);
-        Assert.Contains(_testLogger.Logs, log => log.Contains("Customer not found with ID: 1"));
+
+        Assert.Contains(
+            _testLogger.Logs,
+            log => log.Contains($"{nameof(Client)} with ID: {command.Id} not found"));
     }
 
     [Fact]
@@ -112,6 +115,8 @@ public class UpdateCustomerCommandHandlerTests
 
         // Assert
         Assert.True(result.IsSuccess);
-        Assert.Contains(_testLogger.Logs, log => log.Contains($"Customer updated with ID: {existingCustomer.Id} updated successfully"));
+        Assert.Contains(
+            _testLogger.Logs,
+            log => log.Contains($"{nameof(Client)} with ID: {existingCustomer.Id} updated successfully"));
     }
 }

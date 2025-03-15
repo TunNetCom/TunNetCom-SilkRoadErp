@@ -73,6 +73,6 @@ public class GetCustomerByidQueryHandlerTests
         var result = await _getCustomerByIdQueryHandler.Handle(query, CancellationToken.None);
 
         // Assert
-        Assert.Contains(_testLogger.Logs, log => log.Contains($"customer with ID: {query.Id} not found"));
+        Assert.Contains(_testLogger.Logs, log => log.Contains($"{nameof(Client)} with ID: {query.Id} not found"));
     }
 }

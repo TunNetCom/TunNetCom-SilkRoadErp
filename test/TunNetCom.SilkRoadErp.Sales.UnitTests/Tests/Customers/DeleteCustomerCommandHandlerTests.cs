@@ -27,8 +27,8 @@ public class DeleteCustomerCommandHandlerTests
 
         // Assert
         Assert.False(result.IsSuccess);
-        Assert.Equal("Customer_Not_Found", result.Errors.First().Message);
-        Assert.Contains(_testLogger.Logs, log => log.Contains($"Customer with ID: {command} not found"));
+        Assert.Equal("client_not_found", result.Errors.First().Message);
+        Assert.Contains(_testLogger.Logs, log => log.Contains($"{nameof(Client)} with ID: {command.Id} not found"));
 
     }
 
@@ -84,6 +84,8 @@ public class DeleteCustomerCommandHandlerTests
         var result = await _deleteCustomerCommandHandler.Handle(command, CancellationToken.None);
 
         // Assert
-        Assert.Contains(_testLogger.Logs, log => log.Contains($"Delete customer with values: {command}"));
+        Assert.Contains(
+            _testLogger.Logs,
+            log => log.Contains($"{nameof(Client)} with ID: {command.Id} deleted successfully"));
     }
 }
