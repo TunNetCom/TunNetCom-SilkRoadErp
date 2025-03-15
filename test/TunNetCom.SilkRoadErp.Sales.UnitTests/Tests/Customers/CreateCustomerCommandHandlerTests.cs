@@ -1,7 +1,4 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel.Client;
-
-namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers;
+﻿namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers;
 
 public class CreateCustomerCommandHandlerTests
 {
@@ -96,7 +93,7 @@ public class CreateCustomerCommandHandlerTests
         await _createCustomerCommandHandler.Handle(command, CancellationToken.None);
 
         // Assert
-        Assert.Contains(_testLogger.Logs, log => log.Contains($"Creating customer with values: {command}"));
+        Assert.Contains(_testLogger.Logs, log => log.Contains($"Creating {nameof(Client)} with values: {command}"));
     }
 
     [Fact]
@@ -129,6 +126,8 @@ public class CreateCustomerCommandHandlerTests
 
         // Assert
         Assert.True(result.IsSuccess, "Expected operation to succeed");
-        Assert.Contains(_testLogger.Logs, log => log.Contains($"Customer created successfully with ID: {result.Value}"));
+        Assert.Contains(
+            _testLogger.Logs,
+            log => log.Contains($"{nameof(Client)} created successfully with ID: {result.Value}"));
     }
 }

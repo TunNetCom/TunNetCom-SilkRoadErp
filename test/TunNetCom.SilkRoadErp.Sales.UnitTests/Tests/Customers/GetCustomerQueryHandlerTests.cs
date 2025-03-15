@@ -31,7 +31,11 @@ public class GetCustomerQueryHandlerTests
         var result = await _getCustomerQueryHandler.Handle(query, CancellationToken.None);
 
         // Assert
-        Assert.Contains(_testLogger.Logs, log => log.Contains($"Fetching customers with pageIndex: {query.PageNumber} and pageSize: {query.PageSize}"));
+        Assert.Contains(
+            _testLogger.Logs,
+            log => log.Contains(
+                $"Fetching {nameof(Client)} with pageIndex: {query.PageNumber} and pageSize: {query.PageSize}"));
+
         Assert.NotNull(result);
     }
 
@@ -41,13 +45,13 @@ public class GetCustomerQueryHandlerTests
         // Arrange
         var client = Client.CreateClient
             (
-             nom: "Client tojrab",
+             nom: "Client test",
              tel: "1234567898",
-             adresse: "houni much baid",
-             matricule: "Matricule",
-             code: "Code",
-             codeCat: "CodeCat",
-             etbSec: "EtbSec",
+             adresse: "paris",
+             matricule: "12345/B",
+             code: "A",
+             codeCat: "C",
+             etbSec: "000",
              mail: "email@example.com");
 
         _context.Client.Add(client);
@@ -56,7 +60,7 @@ public class GetCustomerQueryHandlerTests
         var query = new GetCustomerQuery(
            PageNumber: 1,
            PageSize: 10,
-           SearchKeyword: "Client tojrab"
+           SearchKeyword: "Client test"
        );
 
         // Act
@@ -64,7 +68,7 @@ public class GetCustomerQueryHandlerTests
 
         // Assert
         Assert.Single(result);
-        Assert.Equal("Client tojrab", result.First().Nom);
+        Assert.Equal("Client test", result.First().Nom);
     }
 
     [Fact]
@@ -73,37 +77,38 @@ public class GetCustomerQueryHandlerTests
         // Arrange
         var client1 = Client.CreateClient
             (
-             nom: "Client tojrab1",
+             nom: "Client test",
              tel: "1234567898",
-             adresse: "houni much baid",
-             matricule: "Matricule",
-             code: "Code",
-             codeCat: "CodeCat",
-             etbSec: "EtbSec",
+             adresse: "paris",
+             matricule: "12345/B",
+             code: "A",
+             codeCat: "C",
+             etbSec: "000",
              mail: "email@example.com");
 
         var client2 = Client.CreateClient
             (
-             nom: "Client tojrab2",
+             nom: "Client test 2",
              tel: "1234567898",
-             adresse: "houni much baid",
-             matricule: "Matricule",
-             code: "Code",
-             codeCat: "CodeCat",
-             etbSec: "EtbSec",
+             adresse: "paris",
+             matricule: "12345/B",
+             code: "A",
+             codeCat: "C",
+             etbSec: "000",
              mail: "email@example.com");
 
         var client3 = Client.CreateClient
             (
-             nom: "Client tojrab3",
+             nom: "Client test 3",
              tel: "1234567898",
-             adresse: "houni much baid",
-             matricule: "Matricule",
-             code: "Code",
-             codeCat: "CodeCat",
-             etbSec: "EtbSec",
+             adresse: "paris",
+             matricule: "12345/B",
+             code: "A",
+             codeCat: "C",
+             etbSec: "000",
              mail: "email@example.com");
-        _context.Client.AddRange(client1,client2,client3);
+
+        _context.Client.AddRange(client1, client2, client3);
         await _context.SaveChangesAsync();
         var query = new GetCustomerQuery(
             PageNumber: 1,
