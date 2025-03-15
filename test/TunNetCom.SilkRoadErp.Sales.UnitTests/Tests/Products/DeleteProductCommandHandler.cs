@@ -37,7 +37,7 @@ public class DeleteProductCommandHandlerTests
     {
         // Arrange
         var product = Produit.CreateProduct(
-           refe: "Refe123",
+           refe: "RefeToDelete",
             nom: "Existing Product",
             qte: 23,
             qteLimite: 22,
@@ -66,7 +66,7 @@ public class DeleteProductCommandHandlerTests
     {
         // Arrange
         var product = Produit.CreateProduct(
-             refe: "Refe123",
+             refe: "RefeToDeleteAndLog",
             nom: "Existing Product",
             qte: 23,
             qteLimite: 22,
@@ -86,7 +86,7 @@ public class DeleteProductCommandHandlerTests
         var result = await _deleteProductCommandHandler.Handle(command, CancellationToken.None);
 
         // Assert
-        Assert.Contains(_testLogger.Logs, log => log.Contains($"Product with ID: Refe123 deleted successfully"));
+        Assert.Contains(_testLogger.Logs, log => log.Contains($"Product with ID: RefeToDeleteAndLog deleted successfully"));
     
     }
 }

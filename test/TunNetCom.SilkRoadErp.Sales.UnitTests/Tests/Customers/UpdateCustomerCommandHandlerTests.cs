@@ -24,7 +24,7 @@ public class UpdateCustomerCommandHandlerTests
         // Arrange
         var command = new UpdateCustomerCommand(
             Id: 1,
-            Nom: "Updated Customer",
+            Nom: "Updated Customer not found",
             Tel: "1234567898",
             Adresse: "Updated Address",
             Matricule: "Updated Matricule",
