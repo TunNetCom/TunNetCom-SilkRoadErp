@@ -20,7 +20,7 @@ public class DeleteCustomerCommandHandlerTests
     public async Task Handle_CustomerNotFound_ReturnError()
     {
         // Arrange
-        var command = new DeleteCustomerCommand(id: 99);
+        var command = new DeleteCustomerCommand(Id: 99);
 
         // Act
         var result = await _deleteCustomerCommandHandler.Handle(command, CancellationToken.None);
@@ -50,7 +50,7 @@ public class DeleteCustomerCommandHandlerTests
         _context.Client.Add(client);
         await _context.SaveChangesAsync();
 
-        var command = new DeleteCustomerCommand(id: client.Id);
+        var command = new DeleteCustomerCommand(Id: client.Id);
 
         // Act
         var result = await _deleteCustomerCommandHandler.Handle(command, CancellationToken.None);
@@ -78,7 +78,7 @@ public class DeleteCustomerCommandHandlerTests
         _context.Client.Add(client);
         await _context.SaveChangesAsync();
 
-        var command = new DeleteCustomerCommand(id: client.Id);
+        var command = new DeleteCustomerCommand(Id: client.Id);
 
         // Act
         var result = await _deleteCustomerCommandHandler.Handle(command, CancellationToken.None);
