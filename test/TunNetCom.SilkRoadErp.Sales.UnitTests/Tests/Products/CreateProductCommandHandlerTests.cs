@@ -21,7 +21,7 @@ public class CreateProductCommandHandlerTests
     {
         // Arrange
         var command = new CreateProductCommand(
-            Refe: "Refe123",
+            Refe: "Refe123New",
             Nom: "Existing Product",
             Qte: 23,
             QteLimite: 22,
@@ -34,7 +34,7 @@ public class CreateProductCommandHandlerTests
            );
 
         var productDuplicated = Produit.CreateProduct(
-            refe: "Refe123",
+            refe: "Refe123New",
             nom: "Existing Product",
             qte: 23,
             qteLimite: 22,
@@ -108,7 +108,7 @@ public class CreateProductCommandHandlerTests
         // Arrange
         var command = new CreateProductCommand(
             Refe: "RefeXYZ",
-            Nom: "Existing Product",
+            Nom: "New Product XYZ 4450",
             Qte: 23,
             QteLimite: 22,
             Remise: 20,

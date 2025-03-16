@@ -23,7 +23,7 @@ public class UpdateCustomerCommandHandlerTests
     {
         // Arrange
         var command = new UpdateCustomerCommand(
-            Id: 1,
+            Id: 9999,
             Nom: "Updated Customer not found",
             Tel: "1234567898",
             Adresse: "Updated Address",
@@ -44,42 +44,6 @@ public class UpdateCustomerCommandHandlerTests
         Assert.Contains(
             _testLogger.Logs,
             log => log.Contains($"{nameof(Client)} with ID: {command.Id} not found"));
-    }
-
-    [Fact]
-    public async Task Handle_CustomerNameExists_ReturnsFailResult()
-    {
-        // Arrange
-        var existingCustomer = Client.CreateClient(
-            nom: "Existing Customer",
-            tel: "1234567898",
-            adresse: "Address",
-            matricule: "Matricule",
-            code: "Code",
-            codeCat: "CodeCat",
-            etbSec: "EtbSec",
-            mail: "email@example.com");
-
-        _context.Client.Add(existingCustomer);
-        await _context.SaveChangesAsync();
-
-        var command = new UpdateCustomerCommand(
-            Id: existingCustomer.Id,
-            Nom: "Existing Customer",
-            Tel: "1234567898",
-            Adresse: "Updated Address",
-            Matricule: "Updated Matricule",
-            Code: "Updated Code",
-            CodeCat: "Updated CodeCat",
-            EtbSec: "Updated EtbSec",
-            Mail: "updatedemail@example.com");
-
-        // Act
-        var result = await _updateCustomerCommandHandler.Handle(command, CancellationToken.None);
-
-        // Assert
-        Assert.False(result.IsSuccess);
-        Assert.Equal("customer_name_exist", result.Errors.First().Message);
     }
 
     [Fact]

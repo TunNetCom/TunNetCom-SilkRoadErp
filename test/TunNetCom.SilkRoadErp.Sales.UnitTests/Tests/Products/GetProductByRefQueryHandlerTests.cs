@@ -51,7 +51,7 @@ public class GetProductByRefQueryHandlerTests
     public async Task Handle_InvalidId_ReturnsNotFound()
     {
         // Arrange
-        var invalidRef = "test2";
+        var invalidRef = "RefNotInTheDatabase";
         var query = new GetProductByRefQuery(invalidRef);
 
         // Act
@@ -59,7 +59,7 @@ public class GetProductByRefQueryHandlerTests
 
         // Assert
         Assert.False(result.IsSuccess);
-        Assert.Equal("Product_not_found", result.Errors.First().Message);
+        Assert.Equal("product_not_found", result.Errors.First().Message);
     }
 
     [Fact]
@@ -73,6 +73,6 @@ public class GetProductByRefQueryHandlerTests
         var result = await _getProductByRefQueryHandler.Handle(query, CancellationToken.None);
 
         // Assert
-        Assert.Contains(_testLogger.Logs, log => log.Contains($"product with Refe: {query.Refe} not found"));
+        Assert.Contains(_testLogger.Logs, log => log.Contains($"{nameof(Produit)} with ID: {query.Refe} not found"));
     }
 }

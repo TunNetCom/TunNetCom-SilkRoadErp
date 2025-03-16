@@ -20,7 +20,7 @@ public class GetProviderByIdQueryHandlerTests
     public async Task Handle_ProviderNotFound_ReturnsFailResult()
     {
         // Arrange
-        var query = new GetProviderByIdQuery(1);
+        var query = new GetProviderByIdQuery(774411);
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -63,7 +63,7 @@ public class GetProviderByIdQueryHandlerTests
     public async Task Handle_LogsProviderNotFound()
     {
         // Arrange
-        var query = new GetProviderByIdQuery(1);
+        var query = new GetProviderByIdQuery(987458);
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -71,6 +71,6 @@ public class GetProviderByIdQueryHandlerTests
         //Assert
         Assert.False(result.IsSuccess);
         Assert.Equal("provider_not_found", result.Errors.First().Message);
-        Assert.Contains(_testLogger.Logs, log => log.Contains($"Fournisseur with ID: {query.Id} not found"));
+        Assert.Contains(_testLogger.Logs, log => log.Contains($"{nameof(Fournisseur)} with ID: {query.Id} not found"));
     }
 }

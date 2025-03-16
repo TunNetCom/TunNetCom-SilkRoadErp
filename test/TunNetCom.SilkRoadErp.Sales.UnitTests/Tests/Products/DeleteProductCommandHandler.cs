@@ -29,7 +29,7 @@ public class DeleteProductCommandHandlerTests
         // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal("product_not_found", result.Errors.First().Message);
-        Assert.Contains(_testLogger.Logs, log => log.Contains($"Product with ID: {command.Refe} not found"));
+        Assert.Contains(_testLogger.Logs, log => log.Contains($"{nameof(Produit)} with ID: {command.Refe} not found"));
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public class DeleteProductCommandHandlerTests
     {
         // Arrange
         var product = Produit.CreateProduct(
-             refe: "RefeToDeleteAndLog",
+            refe: "RefeToDeleteAndLog",
             nom: "Existing Product",
             qte: 23,
             qteLimite: 22,
@@ -86,7 +86,9 @@ public class DeleteProductCommandHandlerTests
         var result = await _deleteProductCommandHandler.Handle(command, CancellationToken.None);
 
         // Assert
-        Assert.Contains(_testLogger.Logs, log => log.Contains($"Product with ID: RefeToDeleteAndLog deleted successfully"));
+        Assert.Contains(
+            _testLogger.Logs,
+            log => log.Contains($"{nameof(Produit)} with ID: RefeToDeleteAndLog deleted successfully"));
     
     }
 }

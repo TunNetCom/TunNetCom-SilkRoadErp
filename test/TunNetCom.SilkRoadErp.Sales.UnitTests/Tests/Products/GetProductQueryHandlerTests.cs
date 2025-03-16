@@ -32,7 +32,9 @@ public class GetProductQueryHandlerTests
         var result = await _getProductQueryHandler.Handle(query, CancellationToken.None);
 
         // Assert
-        Assert.Contains(_testLogger.Logs, log => log.Contains($"Fetching Product with pageIndex: {query.PageNumber} and pageSize: {query.PageSize}"));
+        Assert.Contains(
+            _testLogger.Logs,
+            log => log.Contains($"Fetching {nameof(Produit)} with pageIndex: {query.PageNumber} and pageSize: {query.PageSize}"));
         Assert.NotNull(result);
     }
 

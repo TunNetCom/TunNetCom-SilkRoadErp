@@ -19,7 +19,7 @@ public class DeleteProviderCommandHandlerTests
     public async Task Handle_ProviderNotFound_ReturnError()
     {
         //Arrange
-        var command = new DeleteProviderCommand(id: 1);
+        var command = new DeleteProviderCommand(id: 999663);
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -27,7 +27,9 @@ public class DeleteProviderCommandHandlerTests
         // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal("provider_not_found", result.Errors.First().Message);
-        Assert.Contains(_testLogger.Logs, log => log.Contains($"Fournisseur with ID: {command} not found"));
+        Assert.Contains(
+            _testLogger.Logs,
+            log => log.Contains($"{nameof(Fournisseur)} with ID: {command.Id} not found"));
     }
 
     [Fact]
@@ -64,15 +66,15 @@ public class DeleteProviderCommandHandlerTests
     {
         //Arrange
         var provider = Fournisseur.CreateProvider(
-            nom: "Provider",
+            nom: "ProviderDelLog",
             tel: "123456789",
             fax: "Fax",
             matricule: "Matricule",
             code: "Code",
             codeCat: "CodeCat",
             etbSec: "etbsec",
-            mail: "email@example.com",
-            mailDeux: "email@example.com",
+            mail: "ProviderDelLog@example.com",
+            mailDeux: "ProviderDelLog2@example.com",
             constructeur: true,
             adresse: "adresse");
 
@@ -84,7 +86,9 @@ public class DeleteProviderCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         //Assert
-        Assert.Contains(_testLogger.Logs, log => log.Contains($"Delete Fournisseur with values: {command}"));
+        Assert.Contains(
+            _testLogger.Logs,
+            log => log.Contains($"{nameof(Fournisseur)} with ID: {provider.Id} deleted successfully"));
     }
 
 }

@@ -21,11 +21,11 @@ public class UpdateReceiptNoteCommandHandlerTests
     {
         //Arrange
         var command = new UpdateReceiptNoteCommand(
-            Num: 12345,
-            NumBonFournisseur: 12345,
-            DateLivraison: new DateTime(2020, 20, 20),
+            Num: 45895623,
+            NumBonFournisseur: 45895623,
+            DateLivraison: new DateTime(2020, 1, 20),
             IdFournisseur: 1021,
-            Date: new DateTime(2020, 20, 20),
+            Date: new DateTime(2020, 1, 20),
             NumFactureFournisseur: 12345
       );
         // Act
@@ -34,7 +34,7 @@ public class UpdateReceiptNoteCommandHandlerTests
         // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal("receiptnote_not_found", result.Errors.First().Message);
-        Assert.Contains(_testlogger.Logs, log => log.Contains($"BonDeReception with ID: {command} not found"));
+        Assert.Contains(_testlogger.Logs, log => log.Contains($"{nameof(BonDeReception)} with ID: {command.Num} not found"));
     }
 
 
@@ -42,13 +42,12 @@ public class UpdateReceiptNoteCommandHandlerTests
     public async Task Handle_ValidUpdate_ReturnsSuccessResult()
     {
         //Arrange
-
         var receiptnote = BonDeReception.CreateReceiptNote(
-            num: 12345,
-            numBonFournisseur: 12345,
-            dateLivraison: new DateTime(2020, 20, 20),
-            idFournisseur: 1021,
-            date: new DateTime(2020, 20, 20),
+            num: 458956233,
+            numBonFournisseur: 458956233,
+            dateLivraison: new DateTime(2020, 1, 20),
+            idFournisseur: 1,
+            date: new DateTime(2020, 1, 20),
             numFactureFournisseur: 12345);
 
         _context.BonDeReception.Add(receiptnote);
@@ -56,18 +55,19 @@ public class UpdateReceiptNoteCommandHandlerTests
 
         var command = new UpdateReceiptNoteCommand(
             receiptnote.Num,
-            NumBonFournisseur: 12345,
-            DateLivraison: new DateTime(2020, 20, 20),
-            IdFournisseur: 1021,
-            Date: new DateTime(2020, 20, 20),
-            NumFactureFournisseur: 12345);
+            NumBonFournisseur: 1,
+            DateLivraison: new DateTime(2020, 1, 20),
+            IdFournisseur: 1,
+            Date: new DateTime(2020, 1, 20),
+            NumFactureFournisseur: 88);
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        Assert.False(result.IsSuccess);
-        Assert.Contains(_testlogger.Logs, log => log.Contains($"BonDeReception updated with ID: {receiptnote.Num} updated successfully"));
+        Assert.True(result.IsSuccess);
+        Assert.Contains(
+            _testlogger.Logs,
+            log => log.Contains($"{nameof(BonDeReception)} with ID: {receiptnote.Num} updated successfully"));
     }
 }
-//ReceiptNote

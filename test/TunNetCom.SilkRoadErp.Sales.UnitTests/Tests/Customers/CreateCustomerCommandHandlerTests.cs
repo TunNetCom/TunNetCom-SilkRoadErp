@@ -24,7 +24,7 @@ public class CreateCustomerCommandHandlerTests
     {
         // Arrange
         var command = new CreateCustomerCommand(
-            Nom: "Existing Customer",
+            Nom: "Existing Customer in create",
             Tel: "123456",
             Adresse: "Address",
             Matricule: "Matricule",
@@ -34,7 +34,7 @@ public class CreateCustomerCommandHandlerTests
             Mail: "email@example.com");
 
         var clientDuplicated = Client.CreateClient(
-            nom: "Existing Customer",
+            nom: "Existing Customer in create",
             tel: "123456",
             adresse: "Address",
             matricule: "Matricule",

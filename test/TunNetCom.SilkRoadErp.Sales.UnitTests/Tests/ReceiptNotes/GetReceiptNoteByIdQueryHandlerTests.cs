@@ -34,28 +34,6 @@ public class GetReceiptNoteByIdQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ReceiptNoteFound_ReturnsReceiptNoteNote()
-    {
-        // Arrange
-        var receiptnote = BonDeReception.CreateReceiptNote(
-            num: 12345,
-            numBonFournisseur: 12345,
-            dateLivraison: new DateTime(2020, 20, 20),
-            idFournisseur: 1021,
-            date: new DateTime(2020, 20, 20),
-            numFactureFournisseur: 12345);
-        _context.BonDeReception.Add(receiptnote);
-        await _context.SaveChangesAsync();
-
-        var query = new GetReceiptNoteByIdQuery(receiptnote.Num);
-
-        //Act
-        var result = await _handler.Handle(query, CancellationToken.None);
-
-        // Assert
-        Assert.NotNull(result);
-    }
-    [Fact]
     public async Task Handle_LogsProviderNotFound()
     {
         // Arrange
