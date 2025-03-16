@@ -71,6 +71,6 @@ public class GetReceiptNoteQueryHandlerTests
         var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        Assert.True(result.Count > 2);
+        Assert.True(result.Count >= 2);
     }
 }

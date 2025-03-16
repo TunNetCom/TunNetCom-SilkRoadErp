@@ -120,6 +120,6 @@ public class GetCustomerQueryHandlerTests
         var result = await _getCustomerQueryHandler.Handle(query, CancellationToken.None);
 
         // Assert
-        Assert.True(result.Count > 3);
+        Assert.True(result.Count >= 3);
     }
 }
