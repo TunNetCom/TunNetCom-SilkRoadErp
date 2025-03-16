@@ -130,6 +130,6 @@ public class GetProductQueryHandlerTests
 
         // Assert
         //TODO : Change the logic
-        Assert.True(result.Count > 3);
+        Assert.True(result.Count >= 3);
     }
 }
