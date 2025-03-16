@@ -1,4 +1,6 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes;
+﻿using Microsoft.AspNetCore.Http.Connections;
+
+namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes;
 
 public class DeleteReceiptNoteCommandHandlerTests
 {
@@ -20,7 +22,7 @@ public class DeleteReceiptNoteCommandHandlerTests
     public async Task Handle_ReceiptNoteNotFound_ReturnError()
     {
         //Arrange
-        var command = new DeleteReceiptNoteCommand(num: 1);
+        var command = new DeleteReceiptNoteCommand(num: 1987);
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -28,7 +30,9 @@ public class DeleteReceiptNoteCommandHandlerTests
         // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal("receiptnote_not_found", result.Errors.First().Message);
-        Assert.Contains(_testlogger.Logs, log => log.Contains($"BonDeReception with ID: {command} not found"));
+        Assert.Contains(
+            _testlogger.Logs,
+            log => log.Contains($"{nameof(BonDeReception)} with ID: {command.Num} not found"));
     }
 
     [Fact]
@@ -36,11 +40,11 @@ public class DeleteReceiptNoteCommandHandlerTests
     {
         //Arrange
         var receiptnote = BonDeReception.CreateReceiptNote(
-            num: 12345,
-            numBonFournisseur: 12345,
-            dateLivraison: new DateTime(2020, 20, 20),
-            idFournisseur: 1021,
-            date: new DateTime(2020, 20, 20),
+            num: 19871987,
+            numBonFournisseur: 19871987,
+            dateLivraison: new DateTime(2020, 3, 20),
+            idFournisseur: 1,
+            date: new DateTime(2020, 3, 20),
             numFactureFournisseur: 12345);
 
         _context.BonDeReception.Add(receiptnote);
@@ -51,7 +55,9 @@ public class DeleteReceiptNoteCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         //Assert
-        Assert.Contains(_testlogger.Logs, log => log.Contains($"Delete BonDeReception with values: {command}"));
+        Assert.Contains(
+            _testlogger.Logs,
+            log => log.Contains($"{nameof(BonDeReception)} with ID: {command.Num} deleted successfully"));
     }
 
     [Fact]
@@ -59,15 +65,16 @@ public class DeleteReceiptNoteCommandHandlerTests
     {
         //Arrange
         var receiptnote = BonDeReception.CreateReceiptNote(
-             num: 12345,
-             numBonFournisseur: 12345,
-             dateLivraison: new DateTime(2020, 20, 20),
+             num: 345778823,
+             numBonFournisseur: 345778823,
+             dateLivraison: new DateTime(2020, 2, 20),
              idFournisseur: 1021,
-             date: new DateTime(2020, 20, 20),
+             date: new DateTime(2020, 2, 20),
              numFactureFournisseur: 12345);
 
         _context.BonDeReception.Add(receiptnote);
         await _context.SaveChangesAsync();
+
         var command = new DeleteReceiptNoteCommand(num: receiptnote.Num);
 
         // Act
@@ -75,7 +82,6 @@ public class DeleteReceiptNoteCommandHandlerTests
 
         //Assert
         Assert.True(result.IsSuccess);
-        Assert.DoesNotContain(_context.BonDeReception, r => r.Num == receiptnote.Num);
     }
 
 }

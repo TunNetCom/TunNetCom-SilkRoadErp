@@ -1,10 +1,13 @@
 ﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNote;
 
-public class GetReceiptNoteQueryHandler(SalesContext _context, ILogger<GetReceiptNoteQueryHandler> _logger) : IRequestHandler<GetReceiptNoteQuery, PagedList<ReceiptNoteResponse>>
+public class GetReceiptNoteQueryHandler(SalesContext _context, ILogger<GetReceiptNoteQueryHandler> _logger)
+    : IRequestHandler<GetReceiptNoteQuery, PagedList<ReceiptNoteResponse>>
 {
-    public async Task<PagedList<ReceiptNoteResponse>> Handle(GetReceiptNoteQuery getReceiptNoteQuery, CancellationToken cancellationToken)
+    public async Task<PagedList<ReceiptNoteResponse>> Handle(
+        GetReceiptNoteQuery getReceiptNoteQuery,
+        CancellationToken cancellationToken)
     {
-        _logger.LogPaginationRequest(nameof(Fournisseur), getReceiptNoteQuery.PageNumber, getReceiptNoteQuery.PageSize);
+        _logger.LogPaginationRequest(nameof(BonDeReception), getReceiptNoteQuery.PageNumber, getReceiptNoteQuery.PageSize);
 
         IQueryable<ReceiptNoteResponse> ReceiptNoteQuery = _context.BonDeReception.Select(R =>
             new ReceiptNoteResponse
@@ -35,7 +38,7 @@ public class GetReceiptNoteQueryHandler(SalesContext _context, ILogger<GetReceip
             getReceiptNoteQuery.PageSize,
             cancellationToken);
 
-        _logger.LogEntitiesFetched(nameof(Fournisseur), pagedReceipts.Count);
+        _logger.LogEntitiesFetched(nameof(BonDeReception), pagedReceipts.Count);
         return pagedReceipts;
     }
 }

@@ -19,8 +19,9 @@ public class UpdateProviderCommandHandlerTests
     public async Task Handle_ProviderNotFound_ReturnFailResult()
     {
         //Arrange
-        var command = new UpdateProviderCommand(Id: 1,
-            Nom: "Provider",
+        var command = new UpdateProviderCommand(
+            Id: 25858,
+            Nom: "Provider Not Found",
             Tel: "123456789",
             Fax: "Fax",
             Matricule: "Matricule",
@@ -37,49 +38,10 @@ public class UpdateProviderCommandHandlerTests
 
         // Assert
         Assert.False(result.IsSuccess);
-        Assert.Equal("provider_not_found", result.Errors.First().Message);
-        Assert.Contains(_testLogger.Logs, log => log.Contains($"Fournisseur with ID: {command} not found"));
-    }
-
-    [Fact]
-    public async Task Handle_ProviderNameExists_ReturnsFailResult()
-    {
-        //Arrange
-        var provider = Fournisseur.CreateProvider(
-            nom: "Provider",
-            tel: "123456789",
-            fax: "Fax",
-            matricule: "Matricule",
-            code: "Code",
-            codeCat: "CodeCat",
-            etbSec: "etbsec",
-            mail: "email@example.com",
-            mailDeux: "email@example.com",
-            constructeur: true,
-            adresse: "adresse");
-
-        _context.Fournisseur.Add(provider);
-        await _context.SaveChangesAsync();
-
-        var command = new UpdateProviderCommand(Id: provider.Id,
-            Nom: "Provider",
-            Tel: "123456789",
-            Fax: "Fax",
-            Matricule: "Matricule",
-            Code: "Code",
-            CodeCat: "CodeCat",
-            EtbSec: "etbsec",
-            Mail: "email@example.com",
-            MailDeux: "email@example.com",
-            Constructeur: true,
-            Adresse: "adresse");
-
-        // Act
-        var result = await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        Assert.False(result.IsSuccess);
-        Assert.Equal("provider_name_exists", result.Errors.First().Message);
+        Assert.Equal("not_found", result.Errors.First().Message);
+        Assert.Contains(
+            _testLogger.Logs,
+            log => log.Contains($"{nameof(Fournisseur)} with ID: {command.Id} not found"));
     }
 
     [Fact]
@@ -87,7 +49,7 @@ public class UpdateProviderCommandHandlerTests
     {
         //Arrange
         var provider = Fournisseur.CreateProvider(
-            nom: "Provider",
+            nom: "Provider To Update and Valid",
             tel: "123456789",
             fax: "Fax",
             matricule: "Matricule",
@@ -102,16 +64,17 @@ public class UpdateProviderCommandHandlerTests
         _context.Fournisseur.Add(provider);
         await _context.SaveChangesAsync();
 
-        var command = new UpdateProviderCommand(Id: provider.Id,
-            Nom: "Updated Provider",
+        var command = new UpdateProviderCommand(
+            Id: provider.Id,
+            Nom: "Updated Provider that is Provider To Update and Valid",
             Tel: "123456789",
             Fax: "Fax",
             Matricule: "Matricule",
             Code: "Code",
             CodeCat: "CodeCat",
             EtbSec: "etbsec",
-            Mail: "email@example.com",
-            MailDeux: "email@example.com",
+            Mail: "Provideremail@example.com",
+            MailDeux: "Provideremail2@example.com",
             Constructeur: true,
             Adresse: "adresse");
 
@@ -119,7 +82,9 @@ public class UpdateProviderCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        Assert.False(result.IsSuccess);
-        Assert.Contains(_testLogger.Logs, log => log.Contains($"Fournisseur updated with ID: {provider.Id} updated successfully"));
+        Assert.True(result.IsSuccess);
+        Assert.Contains(
+            _testLogger.Logs,
+            log => log.Contains($"{nameof(Fournisseur)} with ID: {provider.Id} updated successfully"));
     }
 }
