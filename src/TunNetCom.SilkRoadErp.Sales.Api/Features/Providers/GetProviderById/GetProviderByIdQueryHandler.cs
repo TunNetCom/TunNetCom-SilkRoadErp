@@ -1,5 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.Providers;
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.GetProviderById;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.GetProviderById;
 
 public class GetProviderByIdQueryHandler(SalesContext _context, ILogger<GetProviderByIdQueryHandler> _logger)
     : IRequestHandler<GetProviderByIdQuery, Result<ProviderResponse>>

@@ -1,6 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.Providers;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.GetProvider;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.GetProvider;
 public record GetProviderQuery (
     int PageNumber,
     int PageSize,

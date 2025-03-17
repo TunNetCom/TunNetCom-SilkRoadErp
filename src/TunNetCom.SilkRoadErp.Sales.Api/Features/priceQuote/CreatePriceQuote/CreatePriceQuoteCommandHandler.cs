@@ -1,7 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.CreateCustomer;
-using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.priceQuote.CreatePriceQuote;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.priceQuote.CreatePriceQuote;
 
 public class CreatePriceQuoteCommandHandler(
     SalesContext _context,

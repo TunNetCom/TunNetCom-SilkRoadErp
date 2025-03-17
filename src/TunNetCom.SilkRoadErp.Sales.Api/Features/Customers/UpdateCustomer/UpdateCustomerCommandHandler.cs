@@ -1,6 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.UpdateCustomer;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.UpdateCustomer;
 
 public class UpdateCustomerCommandHandler(
     SalesContext _context,

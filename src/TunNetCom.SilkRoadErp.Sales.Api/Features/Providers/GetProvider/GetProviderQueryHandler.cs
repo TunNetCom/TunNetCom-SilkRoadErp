@@ -1,6 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.Providers;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.GetProvider;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.GetProvider;
 public class GetProviderQueryHandler(SalesContext _context, ILogger<GetProviderQueryHandler> _logger) : IRequestHandler<GetProviderQuery, PagedList<ProviderResponse>>
 {
     public async Task<PagedList<ProviderResponse>> Handle(GetProviderQuery getProviderQuery, CancellationToken cancellationToken)

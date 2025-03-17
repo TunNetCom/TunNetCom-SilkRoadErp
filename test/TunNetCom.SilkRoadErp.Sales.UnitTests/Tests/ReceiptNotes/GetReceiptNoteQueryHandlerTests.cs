@@ -1,6 +1,4 @@
-﻿using Microsoft.VisualStudio.TestPlatform.ObjectModel.Client;
-
-namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes;
+﻿namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes;
 
 public class GetReceiptNoteQueryHandlerTests
 {
