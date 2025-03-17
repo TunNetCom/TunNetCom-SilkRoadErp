@@ -1,5 +1,9 @@
-global using Moq;
 global using Microsoft.Extensions.Logging;
+global using FluentAssertions;
+global using MediatR;
+global using Microsoft.AspNetCore.Http;
+global using Microsoft.AspNetCore.Routing;
+global using Moq;
 global using TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.CreateCustomer;
 global using Microsoft.EntityFrameworkCore;
 global using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
@@ -15,7 +19,6 @@ global using TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.DeleteProvider;
 global using TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.UpdateProvider;
 global using TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.GetProvider;
 global using TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.GetProviderById;
-global using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.CreateReceiptNote;
 global using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNote;
 global using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNoteById;
 global using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.UpdateReceiptNote;

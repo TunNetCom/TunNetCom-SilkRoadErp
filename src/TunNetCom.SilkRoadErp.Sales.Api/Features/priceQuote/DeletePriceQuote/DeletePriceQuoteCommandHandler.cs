@@ -1,6 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.DeleteCustomer;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.priceQuote.DeletePriceQuote;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.priceQuote.DeletePriceQuote;
 
 public class DeletePriceQuoteCommandHandler (SalesContext _context,
 ILogger<DeletePriceQuoteCommandHandler> _logger) : IRequestHandler<DeletePriceQuoteCommand, Result>

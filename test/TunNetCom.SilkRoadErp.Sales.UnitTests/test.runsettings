@@ -1,0 +1,15 @@
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="Code Coverage">
+        <Configuration>
+          <Exclude>
+            <Module>moq.dll</Module>
+            <Module>*.Test.dll</Module> <!-- Exclude test projects if needed -->
+            <Module>*.Tests.dll</Module> <!-- Exclude test projects if named like this -->
+          </Exclude>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

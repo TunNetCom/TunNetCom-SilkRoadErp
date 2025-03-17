@@ -1,18 +1,19 @@
 ﻿namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Providers;
-    public class CreateProviderCommandHandlerTests
-    {
+public class CreateProviderCommandHandlerTests
+{
     private readonly SalesContext _context;
     private readonly TestLogger<CreateProviderCommandHandler> _testLogger;
     private readonly CreateProviderCommandHandler _handler;
 
-    public CreateProviderCommandHandlerTests() {
+    public CreateProviderCommandHandlerTests()
+    {
 
         var options = new DbContextOptionsBuilder<SalesContext>()
             .UseInMemoryDatabase(databaseName: "SalesContext")
             .Options;
-            _context = new SalesContext(options);
-            _testLogger = new TestLogger<CreateProviderCommandHandler>();
-            _handler = new CreateProviderCommandHandler(_context, _testLogger);
+        _context = new SalesContext(options);
+        _testLogger = new TestLogger<CreateProviderCommandHandler>();
+        _handler = new CreateProviderCommandHandler(_context, _testLogger);
     }
 
     [Fact]
@@ -63,15 +64,15 @@
     {
         // Arrange
         var command = new CreateProviderCommand(
-            Nom: "Provider",
+            Nom: "Provider New",
             Tel: "123456789",
             Fax: "Fax",
-            Matricule: "Matricule",
-            Code: "Code",
-            CodeCat: "CodeCat",
-            EtbSec: "etbsec",
-            Mail: "email@example.com",
-            MailDeux: "email@example.com",
+            Matricule: "996633/B",
+            Code: "Z",
+            CodeCat: "C",
+            EtbSec: "000",
+            Mail: "ProviderNew@example.com",
+            MailDeux: "ProviderNew2Mail2@example.com",
             Constructeur: true,
             Adresse: "adresse"
             );
@@ -105,23 +106,23 @@
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        Assert.Contains(_testLogger.Logs, log => log.Contains($"Creating Fournisseur with values: {command}"));
+        Assert.Contains(_testLogger.Logs, log => log.Contains($"Creating {nameof(Fournisseur)} with values: {command}"));
     }
 
-    [Fact] 
+    [Fact]
     public async Task Handle_LogsCustomerCreatedSuccessfully()
     {
         // Arrange
         var command = new CreateProviderCommand(
-            Nom: "Provider",
+            Nom: "Provider For log New",
             Tel: "123456789",
             Fax: "Fax",
             Matricule: "Matricule",
             Code: "Code",
             CodeCat: "CodeCat",
             EtbSec: "etbsec",
-            Mail: "email@example.com",
-            MailDeux: "email@example.com",
+            Mail: "log@example.com",
+            MailDeux: "log2@example.com",
             Constructeur: true,
             Adresse: "adresse"
             );
@@ -144,7 +145,9 @@
 
         // Assert
         Assert.True(result.IsSuccess, "Expected operation to succeed");
-        Assert.Contains(_testLogger.Logs, log => log.Contains($"Fournisseur created successfully with ID: {result.Value}"));
+        Assert.Contains(
+            _testLogger.Logs,
+            log => log.Contains($"{nameof(Fournisseur)} created successfully with ID: {result.Value}"));
     }
 }
 

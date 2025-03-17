@@ -1,7 +1,4 @@
-﻿
-using TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.DeleteCustomer;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.priceQuote.DeletePriceQuote;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.priceQuote.DeletePriceQuote;
 
 public class DeletePriceQuoteEndpoint : ICarterModule
 {
