@@ -1,6 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.GetProvider;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNote;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNote;
 
 public class GetReceiptNoteEndpoint : ICarterModule
 { public void AddRoutes(IEndpointRouteBuilder app)

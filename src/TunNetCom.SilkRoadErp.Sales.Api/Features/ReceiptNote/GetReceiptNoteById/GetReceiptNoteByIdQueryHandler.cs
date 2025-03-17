@@ -1,9 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.GetCustomerById;
-using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.CreateReceiptNote;
-using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.DeleteReceiptNote;
-using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNoteById;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNoteById;
 
 public class GetReceiptNoteByIdQueryHandler(
     SalesContext _context,

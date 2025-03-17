@@ -1,8 +1,4 @@
-﻿
-using TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.CreateCustomer;
-using TunNetCom.SilkRoadErp.Sales.Contracts.Quotations;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.priceQuote.CreatePriceQuote;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.priceQuote.CreatePriceQuote;
 
 public class CreatePriceQuoteEnpoint : ICarterModule
 {

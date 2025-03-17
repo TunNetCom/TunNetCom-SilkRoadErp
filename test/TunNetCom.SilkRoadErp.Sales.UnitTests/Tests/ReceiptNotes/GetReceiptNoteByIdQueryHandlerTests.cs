@@ -1,7 +1,4 @@
-﻿using Microsoft.VisualStudio.TestPlatform.ObjectModel.Client;
-using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNoteById;
-
-namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes;
+﻿namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes;
 
 public class GetReceiptNoteByIdQueryHandlerTests
 {

@@ -1,7 +1,4 @@
-﻿
-using Microsoft.EntityFrameworkCore;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices;
 
 public class InvoiceCalculator(SalesContext _context) : IInvoiceCalculator
 {

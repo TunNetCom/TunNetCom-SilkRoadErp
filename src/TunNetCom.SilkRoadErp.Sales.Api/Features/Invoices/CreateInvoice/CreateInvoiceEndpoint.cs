@@ -1,6 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.Invoice;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.CreateInvoice;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.CreateInvoice;
 
 public class CreateInvoiceEndpoint : ICarterModule
 {

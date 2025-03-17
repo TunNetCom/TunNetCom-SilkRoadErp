@@ -1,7 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure;
-using TunNetCom.SilkRoadErp.Sales.Contracts.Customers;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.GetCustomer;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.GetCustomer;
 
 public class GetCustomerQueryHandler(
     SalesContext _context,

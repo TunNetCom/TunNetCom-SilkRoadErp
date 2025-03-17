@@ -1,6 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.Customers;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.GetCustomerById;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.GetCustomerById;
 
 public class GetCustomerByIdQuery : IRequest<Result<CustomerResponse>>
 {

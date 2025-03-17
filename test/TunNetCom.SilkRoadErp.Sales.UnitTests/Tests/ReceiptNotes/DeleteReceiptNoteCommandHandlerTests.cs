@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Http.Connections;
-
-namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes;
+﻿namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes;
 
 public class DeleteReceiptNoteCommandHandlerTests
 {
