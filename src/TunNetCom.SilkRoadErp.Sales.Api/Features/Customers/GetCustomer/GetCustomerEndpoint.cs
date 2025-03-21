@@ -30,6 +30,9 @@ public class GetCustomersEndpoint : ICarterModule
             httpContext.Response.Headers["X-Pagination"] = JsonConvert.SerializeObject(metadata);
 
             return Results.Ok(pagedCustomers);
-        });
+        })
+            .Produces<PagedList<CustomerResponse>>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest) 
+            .WithDescription("Retrieves a paginated list of customers.");
     }
 }
