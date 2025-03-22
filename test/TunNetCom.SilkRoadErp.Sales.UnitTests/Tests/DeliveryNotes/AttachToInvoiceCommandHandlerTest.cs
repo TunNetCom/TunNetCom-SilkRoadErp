@@ -21,7 +21,7 @@
 //    {
 //        // Arrange
 //        var command = new AttachToInvoiceCommand(
-//            InvoiceId: 202512,
+//            NumFacture: 202512,
 //            DeliveryNoteIds: new List<int> { 202501, 202502, 202503 } 
 //        );
 //        var invoice = new Facture { Num = 202512, IdClient = 100 };
@@ -45,14 +45,14 @@
 
 //        var deliveryNotes = new List<BonDeLivraison>
 //        {
-//            new BonDeLivraison { Num = 202501, ClientId = 100, NumFacture = 2 },
-//            new BonDeLivraison { Num = 202502, ClientId = 100, NumFacture = null }
+//            new BonDeLivraison { Num = 202501, NumFacture = 100, NumFacture = 2 },
+//            new BonDeLivraison { Num = 202502, NumFacture = 100, NumFacture = null }
 //        };
 //        _context.BonDeLivraison.AddRange(deliveryNotes);
 //        await _context.SaveChangesAsync();
 
 //        var command = new AttachToInvoiceCommand(
-//            InvoiceId: 202512,
+//            NumFacture: 202512,
 //            DeliveryNoteIds: new List<int> { 20251, 202502 }
 //        );
 
@@ -74,14 +74,14 @@
 
 //        var deliveryNotes = new List<BonDeLivraison>
 //        {
-//            new BonDeLivraison { Num = 202501, ClientId = 100, NumFacture = null },
-//            new BonDeLivraison { Num = 202502, ClientId = 100, NumFacture = null }
+//            new BonDeLivraison { Num = 202501, NumFacture = 100, NumFacture = null },
+//            new BonDeLivraison { Num = 202502, NumFacture = 100, NumFacture = null }
 //        };
 //        _context.BonDeLivraison.AddRange(deliveryNotes);
 //        await _context.SaveChangesAsync();
 
 //        var command = new AttachToInvoiceCommand(
-//            InvoiceId: 202512,
+//            NumFacture: 202512,
 //            DeliveryNoteIds: new List<int> { 202501, 202502 }
 //        );
 

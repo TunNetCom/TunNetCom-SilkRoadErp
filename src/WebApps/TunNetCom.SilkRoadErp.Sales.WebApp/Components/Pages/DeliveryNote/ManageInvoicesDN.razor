@@ -1,0 +1,365 @@
+﻿@page "/manage-invoice"
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Customers
+@using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Invoice
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices
+@using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote
+@using Radzen.Blazor
+@using BlazorBootstrap
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+
+@inject ICustomersApiClient customerService
+@inject IInvoicesApiClient invoicesService
+@inject IDeliveryNoteApiClient deliveryNoteService
+@inject NavigationManager navigationManager
+@inject IStringLocalizer<SharedResource> Localizer
+@inject ToastService toastService
+@inject NotificationService NotificationService
+
+<div class="container mt-4">
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal"
+    AlignItems="AlignItems.Center"
+    JustifyContent="JustifyContent.Center"
+    Gap="0.5rem"
+    Class="rz-p-12">
+        <RadzenLabel Text="@Localizer["select_customer"]" Component="SelectCustomerDropdown" />
+        <RadzenDropDownDataGrid @bind-Value="@SelectedCustomerId"
+        Data="@FilteredCustomers"
+        TextProperty="@nameof(CustomerResponse.Nom)"
+        ValueProperty="@nameof(CustomerResponse.Id)"
+        AllowColumnResize="true"
+        AllowFilteringByAllStringColumns="true"
+        Name="SelectCustomerDropdown">
+            <Columns>
+                <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Id)" Title="@Localizer["customer_id"]" Width="100px" />
+                <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Nom)" Title="@Localizer["company_name"]" Width="200px" />
+            </Columns>
+        </RadzenDropDownDataGrid>
+    </RadzenStack>
+
+    @if (CustomerInvoices == null)
+    {
+        <p><em>@Localizer["loading"]...</em></p>
+    }
+    else
+    {
+        <RadzenRow Gap="1rem">
+            <RadzenColumn Size="12" SizeMD="6">
+                <RadzenDataGrid ColumnWidth="200px"
+                AllowFiltering="true"
+                AllowPaging="true"
+                PageSize="5"
+                AllowSorting="true"
+                Data="@CustomerInvoices"
+                @bind-Value="@SelectedInvoice"
+                SelectionMode="DataGridSelectionMode.Single">
+                    <Columns>
+                        <RadzenDataGridColumn Property="Num" Title="@Localizer["invoice_number"]" Width="120px" />
+                        <RadzenDataGridColumn Property="Date" Title="@Localizer["date"]" FormatString="{0:d}" Width="140px" />
+                        <RadzenDataGridColumn Property="TotTva" Title="@Localizer["tax"]" Width="100px" />
+                        <RadzenDataGridColumn Property="TotHTva" Title="@Localizer["total_ex_tax"]" Width="100px" />
+                        <RadzenDataGridColumn Property="TotTTC" Title="@Localizer["total_incl_tax"]" Width="100px" />
+                    </Columns>
+                </RadzenDataGrid>
+            </RadzenColumn>
+
+            <RadzenColumn Size="12" SizeMD="6">
+                <RadzenCard Variant="Variant.Outlined" Style="height: 100%;">
+                    <RadzenStack Gap="1rem">
+                        <RadzenTabs>
+                            <Tabs>
+                                <RadzenTabsItem Text="@Localizer["delivery_notes_details"]">
+                                    <RadzenColumn>
+                <RadzenDataGrid @ref="grid"
+                                AllowRowSelectOnRowClick="true"
+                                AllowFiltering="true"
+                                FilterPopupRenderMode="PopupRenderMode.OnDemand"
+                                FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                AllowPaging="true"
+                                PageSize="4"
+                                AllowSorting="true"
+                                Data="@DeliveryNotes"
+                                ColumnWidth="200px"
+                                SelectionMode="DataGridSelectionMode.Multiple"
+                                @bind-Value="@SelectedDeliveryNotesToDetach">
+                    <Columns>
+                        <RadzenDataGridColumn Property="Num" Title="@Localizer["number"]" />
+                        <RadzenDataGridColumn Property="TotHTva" Title="@Localizer["total_ex_tax"]" />
+                        <RadzenDataGridColumn Property="NetPayer" Title="@Localizer["net_payer"]" />
+                    </Columns>
+
+                </RadzenDataGrid>
+                                    </RadzenColumn>
+                                </RadzenTabsItem>
+                            </Tabs>
+                        </RadzenTabs>
+                        <RadzenButton Text="@Localizer["detach_from_invoice"]"
+                                        Click="@DetachDeliveryNotesFromInvoice"
+                                      Disabled="@(SelectedInvoiceId == 0 || !SelectedDeliveryNotesToDetach.Any())" />
+
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+            <RadzenColumn>
+                <RadzenDataGrid @ref="grid"
+                                AllowRowSelectOnRowClick="true"
+                                AllowFiltering="true"
+                                FilterPopupRenderMode="PopupRenderMode.OnDemand"
+                                FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                AllowPaging="true"
+                                PageSize="4"
+                                AllowSorting="true"
+                                Data="@UninvoicedDeliveryNotes"
+                                ColumnWidth="200px"
+                                SelectionMode="DataGridSelectionMode.Multiple"
+                                @bind-Value="@SelectedDeliveryNotesToAttach">
+                    <Columns>
+                        <RadzenDataGridColumn Property="Num" Title="@Localizer["number"]" />
+                        <RadzenDataGridColumn Property="TotHTva" Title="@Localizer["total_ex_tax"]" />
+                        <RadzenDataGridColumn Property="NetPayer" Title="@Localizer["net_payer"]" />
+                    </Columns>
+
+                </RadzenDataGrid>
+                <RadzenButton Click=@(args => OnClick("Primary button")) Text="Attach" ButtonStyle="ButtonStyle.Primary" />
+            </RadzenColumn>
+        </RadzenRow>
+    }
+</div>
+
+@code {
+    #region Fields and Properties
+    private string _searchKeyword = string.Empty;
+    private int _selectedCustomerId;
+    private int SelectedCustomerId
+    {
+        get => _selectedCustomerId;
+        set
+        {
+            if (_selectedCustomerId != value)
+            {
+                _selectedCustomerId = value;
+                SelectedInvoiceId = 0;
+                SelectedInvoice = null;
+                SelectedDeliveryNotes = null;
+                DeliveryNotes = null;
+                _ = LoadInvoicesForCustomer();
+                _ = LoadUninvoicedDeliveryNotes(value);
+            }
+        }
+    }
+    private int _selectedInvoiceId;
+    private int SelectedInvoiceId {
+        get=>_selectedInvoiceId;
+        set
+        {
+			if (_selectedInvoiceId != value)
+			{
+				_selectedInvoiceId = value;
+                SelectedDeliveryNotes = null;
+				DeliveryNotes = null;
+				_ = LoadDeliveryNotes(value);
+			}
+        }
+    }
+    private IList<InvoiceResponse> _selectedInvoices = new List<InvoiceResponse>();
+    private IList<InvoiceResponse> SelectedInvoice
+    {
+        get => _selectedInvoices;
+        set
+        {
+            _selectedInvoices = value;
+            var selectedInvoice = _selectedInvoices?.FirstOrDefault();
+            _ = LoadDeliveryNotes(selectedInvoice?.Num ?? 0);
+        }
+    }
+
+    private List<CustomerResponse> FilteredCustomers { get; set; } = new();
+    private List<InvoiceResponse> CustomerInvoices { get; set; } = new();
+    private List<DeliveryNoteResponse> DeliveryNotes { get; set; } = new();
+    private IList<DeliveryNoteResponse> _selectedDeliveryNoteIdsToDetach = new List<DeliveryNoteResponse>();
+    private List<DeliveryNoteResponse> UninvoicedDeliveryNotes { get; set; } = new();
+    private IList<DeliveryNoteResponse> SelectedDeliveryNotes { get; set; }
+	private IList<DeliveryNoteResponse> SelectedDeliveryNotesToAttach { get; set; }
+    private CancellationTokenSource _cancellationTokenSource = new();
+    private RadzenDataGrid<DeliveryNoteResponse> grid;
+    private System.Timers.Timer _debounceTimer = new(300);
+    private IList<DeliveryNoteResponse> SelectedDeliveryNotesToDetach
+    {
+        get => _selectedDeliveryNoteIdsToDetach;
+        set => _selectedDeliveryNoteIdsToDetach = value;
+    }
+
+
+    #endregion
+
+    #region Lifecycle Methods
+    protected override async Task OnInitializedAsync()
+    {
+        _debounceTimer.Elapsed += async (s, e) => await SearchClients();
+        _debounceTimer.AutoReset = false;
+        await SearchClients();
+    }
+
+    public void Dispose()
+    {
+        _cancellationTokenSource.Cancel();
+        _cancellationTokenSource.Dispose();
+        _debounceTimer?.Dispose();
+    }
+    #endregion
+
+    #region Data Loading Methods
+    private async Task SearchClients()
+    {
+        var parameters = new QueryStringParameters
+            {
+                PageNumber = 1,
+                PageSize = 10,
+                SearchKeyword = _searchKeyword
+            };
+
+        FilteredCustomers = await customerService.GetAsync(parameters, _cancellationTokenSource.Token);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadInvoicesForCustomer()
+    {
+        var parameters = new QueryStringParameters
+            {
+                PageNumber = 1,
+                PageSize = 50,
+                SearchKeyword = null
+            };
+
+        CustomerInvoices = SelectedCustomerId > 0
+            ? await invoicesService.GetInvoicesByCustomerId(SelectedCustomerId, parameters, _cancellationTokenSource.Token)
+            : new List<InvoiceResponse>();
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadUninvoicedDeliveryNotes(int selectedCustomerId)
+    {
+        SelectedCustomerId = selectedCustomerId;
+
+        UninvoicedDeliveryNotes = SelectedCustomerId > 0
+			? await deliveryNoteService.GetUninvoicedDeliveryNotesAsync(SelectedCustomerId , default )
+            : new List<DeliveryNoteResponse>();
+
+        await InvokeAsync(StateHasChanged);
+    }
+    private async Task LoadDeliveryNotes(int invoiceNum)
+    {
+        SelectedInvoiceId = invoiceNum;
+        SelectedDeliveryNotes = null;
+
+        DeliveryNotes = SelectedInvoiceId > 0
+            ? await deliveryNoteService.GetDeliveryNotesByInvoiceId(SelectedInvoiceId)
+            : new List<DeliveryNoteResponse>();
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnClick(string text)
+    {
+        if (SelectedInvoiceId > 0 && SelectedDeliveryNotesToAttach?.Any() == true)
+        {
+            var deliveryNoteIds = SelectedDeliveryNotesToAttach.Select(dn => dn.Num).ToList();
+			var attachToInvoiceRequest = new AttachToInvoiceRequest
+				{
+					InvoiceId = SelectedInvoiceId,
+					DeliveryNoteIds = deliveryNoteIds
+				};
+            // Call the service method, which now returns AttachToInvoiceResult
+            var result = await deliveryNoteService.AttachToInvoiceAsync(attachToInvoiceRequest, default);
+
+            if (result)
+            {
+                NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = Localizer["success"],
+                        Detail = Localizer["delivery_notes_attached"]
+                    });
+                SelectedDeliveryNotesToAttach = null;
+                await LoadDeliveryNotes(SelectedInvoiceId);
+                await LoadUninvoicedDeliveryNotes(_selectedCustomerId);
+            }
+            else
+            {
+                // Handle different error scenarios based on ErrorType
+                // string errorDetail = result.ErrorType switch
+                // {
+                //     AttachErrorType.NotFound => Localizer["invoice_or_delivery_notes_not_found"],
+                //     AttachErrorType.Validation => Localizer["validation_errors"] + ": " +
+                //         string.Join("; ", result.ValidationErrors?.SelectMany(kvp => kvp.Value) ?? Array.Empty<string>()),
+                //     _ => Localizer["attach_failed"]
+                // };
+
+                NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = Localizer["error"]
+                    });
+            }
+        }
+        else
+        {
+            NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = Localizer["warning"],
+                    Detail = Localizer["select_invoice_and_delivery_notes"]
+                });
+        }
+    }
+
+    private async Task DetachDeliveryNotesFromInvoice()
+    {
+        try
+        {
+            var deliveryNoteIds = SelectedDeliveryNotesToDetach.Select(dn => dn.Num).ToList();
+            var request = new DetachFromInvoiceRequest
+                {
+                    InvoiceId = SelectedInvoiceId,
+                    DeliveryNoteIds = deliveryNoteIds
+                };
+
+            var result = await deliveryNoteService.DetachFromInvoiceAsync(request, _cancellationTokenSource.Token);
+
+            NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = Localizer["success"],
+                    Detail = Localizer["delivery_notes_detached"]
+                });
+
+            await LoadUninvoicedDeliveryNotes(SelectedCustomerId);
+            await LoadDeliveryNotes(SelectedInvoiceId);
+            SelectedDeliveryNotesToDetach = null;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = ex.Message
+                });
+            Console.WriteLine($"Error detaching delivery notes from invoice: {ex.Message}");
+        }
+    }
+
+    #endregion
+
+    #region Event Handlers
+    private void DebounceSearch()
+    {
+        _debounceTimer.Stop();
+        _debounceTimer.Start();
+    }
+    #endregion
+}

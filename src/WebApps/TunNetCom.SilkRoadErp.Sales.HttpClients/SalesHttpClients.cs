@@ -5,6 +5,10 @@ using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products;
 using Microsoft.Extensions.DependencyInjection;
 
+//setting up communication with api backend
+//this is a method extension  that adds HTTP clients to your app’s dependency injection (DI) system
+//It’s called in Program.cs of your WebApp project to configure how your Blazor app talks to the API.
+
 public static class SalesHttpClients
 {
     public static void AddSalesHttpClients(this IServiceCollection services, string baseUrl)

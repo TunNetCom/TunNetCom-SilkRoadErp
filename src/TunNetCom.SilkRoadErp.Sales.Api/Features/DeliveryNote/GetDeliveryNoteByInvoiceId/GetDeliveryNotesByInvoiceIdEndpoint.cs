@@ -1,0 +1,24 @@
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNoteByInvoiceId;
+
+public class GetDeliveryNotesByInvoiceIdEndpoint : ICarterModule
+{
+    public void AddRoutes(IEndpointRouteBuilder app)
+    {
+        app.MapGet("/deliveryNote/facture/{NumFacture:int}", async Task<Results<Ok<List<DeliveryNoteResponse>>, NotFound>> (
+            IMediator mediator,
+            int NumFacture,
+            CancellationToken cancellationToken) =>
+        {
+            var query = new GetDeliveryNotesByInvoiceIdQuery(NumFacture);
+
+            var result = await mediator.Send(query, cancellationToken);
+
+            if (result.IsFailed)
+            {
+                return TypedResults.NotFound();
+            }
+
+            return TypedResults.Ok(result.Value);
+        });
+    }
+}

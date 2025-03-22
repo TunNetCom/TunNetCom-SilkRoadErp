@@ -1,8 +1,8 @@
 ﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNoteByClientId;
 
-public class GetDeliveryNoteByClientIdQueryHandler(
+public class GetDeliveryUninvoicedNoteQueryHandler(
     SalesContext _context,
-    ILogger<GetDeliveryNoteByClientIdQueryHandler> _logger)
+    ILogger<GetDeliveryUninvoicedNoteQueryHandler> _logger)
     : IRequestHandler<GetDeliveryNoteByClientIdQuery, Result<List<DeliveryNoteResponse>>>
 {
     public async Task<Result<List<DeliveryNoteResponse>>> Handle(GetDeliveryNoteByClientIdQuery getDeliveryNoteByClientIdQuery, CancellationToken cancellationToken)

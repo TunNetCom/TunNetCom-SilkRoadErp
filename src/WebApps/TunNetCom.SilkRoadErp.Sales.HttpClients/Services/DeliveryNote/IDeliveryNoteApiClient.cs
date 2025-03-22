@@ -1,4 +1,5 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.Customers;
+using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote;
 
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote;
 
@@ -16,4 +17,17 @@ public interface IDeliveryNoteApiClient
 
     Task<List<DeliveryNoteResponse>> GetDeliveryNotesByClientId(
         int clientId);
+    Task<List<DeliveryNoteResponse>> GetDeliveryNotesByInvoiceId(
+        int invoiceId);
+
+    Task<bool> AttachToInvoiceAsync(AttachToInvoiceRequest request, CancellationToken cancellationToken);
+
+    Task<List<DeliveryNoteResponse>> GetUninvoicedDeliveryNotesAsync(
+        int clientId,
+        CancellationToken cancellationToken);
+
+    Task<OneOf<bool, BadRequestResponse>> DetachFromInvoiceAsync(
+DetachFromInvoiceRequest request,
+CancellationToken cancellationToken);
+
 }
