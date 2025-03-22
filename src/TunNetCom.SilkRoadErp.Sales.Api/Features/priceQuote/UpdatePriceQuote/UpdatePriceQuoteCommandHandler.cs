@@ -5,7 +5,9 @@ public class UpdatePriceQuoteCommandHandler(
     ILogger<UpdatePriceQuoteCommandHandler> _logger)
     : IRequestHandler<UpdatePriceQuoteCommand, Result>
 {
-    public async Task<Result> Handle(UpdatePriceQuoteCommand updatePriceQuoteCommand, CancellationToken cancellationToken)
+    public async Task<Result> Handle(
+        UpdatePriceQuoteCommand updatePriceQuoteCommand,
+        CancellationToken cancellationToken)
     {
         _logger.LogEntityUpdateAttempt(nameof(Devis), updatePriceQuoteCommand.Num);
 
@@ -15,7 +17,7 @@ public class UpdatePriceQuoteCommandHandler(
         {
             _logger.LogEntityNotFound(nameof(Devis), updatePriceQuoteCommand.Num);
 
-            return Result.Fail(EntityNotFound.Error);
+            return Result.Fail(EntityNotFound.Error());
         }
 
         var isQuotationNumExist = await _context.Devis.AnyAsync(

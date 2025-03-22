@@ -15,7 +15,7 @@ public class GetDeliveryNoteByNumQueryHandler(
         {
             _logger.LogEntityNotFound(nameof(BonDeLivraison), getDeliveryNoteByNumQuery.Num);
 
-            return Result.Fail("deliveryNote_not_found");
+            return Result.Fail(EntityNotFound.Error());
         }
 
         _logger.LogEntityFetchedById(nameof(BonDeLivraison), getDeliveryNoteByNumQuery.Num);

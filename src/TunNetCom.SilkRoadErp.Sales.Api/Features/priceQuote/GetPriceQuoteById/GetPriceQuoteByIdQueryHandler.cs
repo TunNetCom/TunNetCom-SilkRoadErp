@@ -15,7 +15,7 @@ public class GetPriceQuoteByIdQueryHandler(
         {
             _logger.LogEntityNotFound(nameof(Devis), getPriceQuoteByIdQuery.Num);
 
-            return Result.Fail("quotation_not_found");
+            return Result.Fail(EntityNotFound.Error());
         }
 
         _logger.LogEntityFetchedById(nameof(Devis), getPriceQuoteByIdQuery.Num);

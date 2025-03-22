@@ -17,11 +17,6 @@ public class GetInvoicesByClientEndpoint : ICarterModule
 
                     var result = await mediator.Send(query, cancellationToken);
 
-                    if (result.IsFailed)
-                    {
-                        return Results.NotFound();
-                    }
-
                     return Results.Ok(result.Value);
                 });
     }

@@ -2,11 +2,12 @@
 
 public class GetInvoicesByClientQueryHandler(
     SalesContext _context,
-    IInvoiceCalculator _invoiceCalculator
-     )
+    IInvoiceCalculator _invoiceCalculator)
     : IRequestHandler<GetInvoicesByClientQuery, Result<PagedList<InvoiceResponse>>>
 {
-    public async Task<Result<PagedList<InvoiceResponse>>> Handle(GetInvoicesByClientQuery query, CancellationToken cancellationToken)
+    public async Task<Result<PagedList<InvoiceResponse>>> Handle(
+        GetInvoicesByClientQuery query,
+        CancellationToken cancellationToken)
     {
         var invoicesQuery = _context.Facture
             .Where(f => f.IdClient == query.ClientId)
@@ -16,7 +17,8 @@ public class GetInvoicesByClientQueryHandler(
                 Date = f.Date,
             });
 
-        var pagedInvoices = await PagedList<InvoiceResponse>.ToPagedListAsync(invoicesQuery, query.PageNumber, query.PageSize, cancellationToken);
+        var pagedInvoices = await PagedList<InvoiceResponse>
+            .ToPagedListAsync(invoicesQuery, query.PageNumber, query.PageSize, cancellationToken);
 
         foreach (var invoice in pagedInvoices)
         {

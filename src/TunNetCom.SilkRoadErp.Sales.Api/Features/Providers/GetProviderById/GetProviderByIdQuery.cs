@@ -1,9 +1,3 @@
 ﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.GetProviderById;
-public class GetProviderByIdQuery : IRequest<Result<ProviderResponse>>
-{
-    public int Id { get; set; }
 
-    public GetProviderByIdQuery(int id)
-    { Id = id;}
-}
-
+public record GetProviderByIdQuery(int Id) : IRequest<Result<ProviderResponse>>;

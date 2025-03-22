@@ -4,7 +4,7 @@ public class DeleteCustomerEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapDelete("/customers/{id:int}", async Task<Results<NoContent, NotFound>> (
+        app.MapDelete("/customers/{id:int}", async Task<Results<NoContent, ValidationProblem, NotFound>> (
             IMediator mediator,
             int id,
             CancellationToken cancellationToken) =>
@@ -12,10 +12,14 @@ public class DeleteCustomerEndpoint : ICarterModule
             var deleteCustomerCommand = new DeleteCustomerCommand(id);
             var deleteResult = await mediator.Send(deleteCustomerCommand, cancellationToken);
 
-            //TODO conditions based on the result : business validations and not found case.
-            if (deleteResult.IsFailed)
+            if(deleteResult.IsEntityNotFound())
             {
                 return TypedResults.NotFound();
+            }
+
+            if (deleteResult.IsFailed)
+            {
+                return deleteResult.ToValidationProblem();
             }
 
             return TypedResults.NoContent();

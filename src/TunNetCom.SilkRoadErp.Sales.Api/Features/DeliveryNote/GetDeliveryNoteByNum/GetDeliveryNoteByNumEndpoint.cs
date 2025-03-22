@@ -13,7 +13,7 @@ public class GetDeliveryNoteByNumEndpoint : ICarterModule
 
             var result = await mediator.Send(query, cancellationToken);
 
-            if (result.IsFailed)
+            if (result.IsEntityNotFound())
             {
                 return TypedResults.NotFound();
             }

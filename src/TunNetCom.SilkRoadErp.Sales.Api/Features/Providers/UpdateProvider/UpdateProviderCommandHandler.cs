@@ -11,7 +11,7 @@ public class UpdateProviderCommandHandler(SalesContext _context, ILogger<UpdateP
         if (providerToUpdate is null)
         {
             _logger.LogEntityNotFound(nameof(Fournisseur), updateProviderCommand.Id);
-            return Result.Fail(EntityNotFound.Error);
+            return Result.Fail(EntityNotFound.Error());
         }
 
        var isProviderNameExist = await _context.Fournisseur.AnyAsync(provider => 

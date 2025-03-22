@@ -1,9 +1,12 @@
 ﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.DeleteCustomer;
 
 public class DeleteCustomerCommandHandler(SalesContext _context,
-    ILogger<DeleteCustomerCommandHandler> _logger) : IRequestHandler<DeleteCustomerCommand, Result>
+    ILogger<DeleteCustomerCommandHandler> _logger)
+    : IRequestHandler<DeleteCustomerCommand, Result>
 {
-    public async Task<Result> Handle(DeleteCustomerCommand deleteCustomerCommand, CancellationToken cancellationToken)
+    public async Task<Result> Handle(
+        DeleteCustomerCommand deleteCustomerCommand,
+        CancellationToken cancellationToken)
     {
         _logger.LogEntityDeletionAttempt(
             nameof(Client),
@@ -15,7 +18,7 @@ public class DeleteCustomerCommandHandler(SalesContext _context,
         {
             _logger.LogEntityNotFound(nameof(Client), deleteCustomerCommand.Id);
 
-            return Result.Fail("client_not_found");
+            return Result.Fail(EntityNotFound.Error());
         }
 
         _context.Client.Remove(client);
