@@ -11,7 +11,7 @@ public class GetProductByRefEndpoint : ICarterModule
             var query = new GetProductByRefQuery(refe);
             var result = await mediator.Send(query, cancellationToken);
 
-            if (result.IsFailed)
+            if (result.IsEntityNotFound())
             {
                 return TypedResults.NotFound();
             }

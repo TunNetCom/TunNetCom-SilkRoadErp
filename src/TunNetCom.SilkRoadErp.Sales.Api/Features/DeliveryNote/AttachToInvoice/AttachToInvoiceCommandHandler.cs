@@ -1,6 +1,6 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.AttachToInvoice;
+﻿using EntityNotFound = TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.ResultExtensions.EntityNotFound;
 
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.CreateDeliveryNote;
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.AttachToInvoice;
 
 public class AttachToInvoiceCommandHandler(
     SalesContext _context,
@@ -19,7 +19,7 @@ public class AttachToInvoiceCommandHandler(
         if (invoice is null)
         {
             _logger.LogEntityNotFound(nameof(Facture), attachToInvoiceCommand.InvoiceId);
-            return Result.Fail(EntityNotFound.Error);
+            return Result.Fail(EntityNotFound.Error());
         }
 
         var deliveryNotes = await _context.BonDeLivraison
@@ -34,7 +34,7 @@ public class AttachToInvoiceCommandHandler(
         if (missingDeliveryNotes.Any())
         {
             _logger.LogEntityNotFound(nameof(BonDeLivraison), string.Join(", ", missingDeliveryNotes));
-            return Result.Fail(EntityNotFound.Error);
+            return Result.Fail(EntityNotFound.Error());
         }
 
         // Check if any delivery notes are already attached to an invoice

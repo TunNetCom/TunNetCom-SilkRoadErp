@@ -1,10 +1,12 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNoteByClientId;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNotesByClientId;
 
-public class GetDeliveryNoteByClientIdEndpoint : ICarterModule
+public class GetDeliveryNotesByClientIdEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapGet("/deliveryNote/client/{clientId:int}", async Task<Results<Ok<List<DeliveryNoteResponse>>, NotFound>> (
+        app.MapGet(
+            "/deliveryNote/client/{clientId:int}",
+            async Task<Results<Ok<List<DeliveryNoteResponse>>, NotFound>> (
             IMediator mediator,
             int clientId,
             CancellationToken cancellationToken) =>
@@ -13,7 +15,7 @@ public class GetDeliveryNoteByClientIdEndpoint : ICarterModule
 
             var result = await mediator.Send(query, cancellationToken);
 
-            if (result.IsFailed)
+            if (result.IsEntityNotFound())
             {
                 return TypedResults.NotFound();
             }

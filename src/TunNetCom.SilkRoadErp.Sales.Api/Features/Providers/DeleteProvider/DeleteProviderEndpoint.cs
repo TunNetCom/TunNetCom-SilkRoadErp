@@ -9,7 +9,7 @@ public class DeleteProviderEndpoint : ICarterModule
             var deleteProviderCommand = new DeleteProviderCommand(id);
             var deleteResult = await mediator.Send(deleteProviderCommand, cancellationToken);
 
-            if (deleteResult.IsFailed)
+            if (deleteResult.IsEntityNotFound())
             {
                 return TypedResults.NotFound();
             }

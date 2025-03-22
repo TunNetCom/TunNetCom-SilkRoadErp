@@ -12,7 +12,7 @@ public class DeleteDeliveryNoteEndpoint : ICarterModule
             var deleteDeliveryNoteCommand = new DeleteDeliveryNoteCommand(num);
             var deleteResult = await mediator.Send(deleteDeliveryNoteCommand, cancellationToken);
 
-            if (deleteResult.IsFailed)
+            if (deleteResult.IsEntityNotFound())
             {
                 return TypedResults.NotFound();
             }

@@ -1,4 +1,6 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.GetCustomerById;
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.ResultExtensions;
+
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.GetCustomerById;
 
 public class GetCustomerByIdEndpoint : ICarterModule
 {
@@ -13,7 +15,7 @@ public class GetCustomerByIdEndpoint : ICarterModule
 
             var result = await mediator.Send(query, cancellationToken);
 
-            if (result.IsFailed)
+            if (result.IsEntityNotFound())
             {
                 return TypedResults.NotFound();
             }

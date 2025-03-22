@@ -11,23 +11,23 @@ public class UpdateReceiptNoteEndpoint : ICarterModule
                 CancellationToken cancellationToken) =>
             {
                 var updateReceiptNoteCommand = new UpdateReceiptNoteCommand(
-            Num: request.Num,
-            NumBonFournisseur: request.NumBonFournisseur,
-            DateLivraison: request.DateLivraison,
-            IdFournisseur: request.IdFournisseur,
-            Date: request.Date,
-            NumFactureFournisseur: request.NumFactureFournisseur
-            );
-                var Result = await mediator.Send(updateReceiptNoteCommand, cancellationToken);
+                    Num: request.Num,
+                    NumBonFournisseur: request.NumBonFournisseur,
+                    DateLivraison: request.DateLivraison,
+                    IdFournisseur: request.IdFournisseur,
+                    Date: request.Date,
+                    NumFactureFournisseur: request.NumFactureFournisseur);
 
-                if (Result.HasError<EntityNotFound>())
+                var updateResult = await mediator.Send(updateReceiptNoteCommand, cancellationToken);
+
+                if (updateResult.IsEntityNotFound())
                 {
                     return TypedResults.NotFound();
                 }
 
-                if (Result.IsFailed)
+                if (updateResult.IsFailed)
                 {
-                    return Result.ToValidationProblem();
+                    return updateResult.ToValidationProblem();
                 }
 
                 return TypedResults.NoContent();

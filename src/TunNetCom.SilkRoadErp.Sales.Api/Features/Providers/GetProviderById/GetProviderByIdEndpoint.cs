@@ -4,16 +4,20 @@ public class GetProviderByIdEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapGet("/providers/{id:int}", async Task<Results<Ok<ProviderResponse>, NotFound>> (IMediator mediator, int id) =>
+        app.MapGet(
+            "/providers/{id:int}",
+            async Task<Results<Ok<ProviderResponse>, NotFound>> (
+                IMediator mediator,
+                int id) =>
         {
             var query = new GetProviderByIdQuery(id);
 
-            if (query is null)
+            var result = await mediator.Send(query);
+
+            if (result.IsEntityNotFound())
             {
                 return TypedResults.NotFound();
             }
-
-            var result = await mediator.Send(query);
 
             return TypedResults.Ok(result.Value);
         });

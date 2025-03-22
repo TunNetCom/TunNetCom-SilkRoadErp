@@ -15,8 +15,9 @@ public class UpdateProductCommandHandler(
         if (productToUpdate is null)
         {
             _logger.LogEntityNotFound(nameof(Produit), updateProductCommand.Refe);
-            return Result.Fail("product_not_found");
+            return Result.Fail(EntityNotFound.Error());
         }
+
         var isProductNameExist = await _context.Produit.AnyAsync(
                     pro => pro.Nom == updateProductCommand.Nom
                     && pro.Refe != updateProductCommand.Refe,
@@ -26,6 +27,7 @@ public class UpdateProductCommandHandler(
         {
             return Result.Fail("product_name_exist");
         }
+
         productToUpdate.UpdateProduct(
             refe: updateProductCommand.Refe,
             nom: updateProductCommand.Nom,

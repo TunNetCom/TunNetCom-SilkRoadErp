@@ -13,7 +13,7 @@ public class GetReceiptNoteByIdQueryHandler(
         {
             _logger.LogEntityNotFound(nameof(BonDeReception), getReceiptNoteByIdQuery.Num);
 
-            return Result.Fail("receiptnote_not_found");
+            return Result.Fail(EntityNotFound.Error());
         }
         _logger.LogEntityFetchedById(nameof(BonDeReception), getReceiptNoteByIdQuery.Num);
         return receiptnote.Adapt<ReceiptNoteResponse>();

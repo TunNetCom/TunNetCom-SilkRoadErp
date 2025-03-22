@@ -15,7 +15,7 @@ public class DeleteDeliveryNoteCommandHandler(SalesContext _context,
         {
             _logger.LogEntityNotFound(nameof(BonDeLivraison), deleteDeliveryNoteCommand.Num);
 
-            return Result.Fail("DeliveryNote_not_found");
+            return Result.Fail(EntityNotFound.Error());
         }
 
         _context.BonDeLivraison.Remove(deliveryNote);
