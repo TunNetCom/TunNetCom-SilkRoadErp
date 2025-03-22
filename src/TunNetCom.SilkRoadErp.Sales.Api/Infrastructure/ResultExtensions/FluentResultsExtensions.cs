@@ -2,11 +2,11 @@
 
 public sealed class EntityNotFound : Error
 {
-    public EntityNotFound() : base()
+    private EntityNotFound(string message) : base()
     {
-        Message = "not_found";
+        Message = message;
     }
 
-    public static Error Error { get { return new EntityNotFound(); } }
+    public static EntityNotFound Error(string message = "not_found") => new EntityNotFound(message);
 }
  

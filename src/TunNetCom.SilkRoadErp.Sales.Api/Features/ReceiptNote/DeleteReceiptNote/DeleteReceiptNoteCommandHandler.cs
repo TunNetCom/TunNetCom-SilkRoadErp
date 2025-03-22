@@ -12,7 +12,7 @@ public class DeleteReceiptNoteCommandHandler(SalesContext _context, ILogger<Dele
         {
             _logger.LogEntityNotFound(nameof(BonDeReception), deleteReceiptNoteCommand.Num);
 
-            return Result.Fail("receiptnote_not_found");
+            return Result.Fail(EntityNotFound.Error());
         }
 
         _context.BonDeReception.Remove(receiptnote);

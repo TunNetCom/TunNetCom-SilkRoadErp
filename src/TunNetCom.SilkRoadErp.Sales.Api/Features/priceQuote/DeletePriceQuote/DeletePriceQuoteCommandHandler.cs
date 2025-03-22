@@ -15,7 +15,7 @@ ILogger<DeletePriceQuoteCommandHandler> _logger) : IRequestHandler<DeletePriceQu
         {
             _logger.LogEntityNotFound(nameof(Devis), deletePriceQuoteCommand.Num);
 
-            return Result.Fail("devis_not_found");
+            return Result.Fail(EntityNotFound.Error());
         }
 
         _context.Devis.Remove(devis);

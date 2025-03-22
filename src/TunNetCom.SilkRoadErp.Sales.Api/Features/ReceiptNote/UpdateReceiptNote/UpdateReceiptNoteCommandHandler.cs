@@ -13,7 +13,7 @@ public class UpdateReceiptNoteCommandHandler(
         {
             _logger.LogEntityNotFound(nameof(BonDeReception), updateReceiptNoteCommand.Num);
 
-            return Result.Fail("receiptnote_not_found");
+            return Result.Fail(EntityNotFound.Error());
         }
         receiptnote.UpdateReceiptNote(
             num: updateReceiptNoteCommand.Num,

@@ -15,7 +15,7 @@ public class GetProductByRefQueryHandler(
         if (product is null)
         {
             _logger.LogEntityNotFound(nameof(Produit), getProductByRefQuery.Refe);
-            return Result.Fail("product_not_found");
+            return Result.Fail(EntityNotFound.Error());
         }
         _logger.LogEntityFetchedById(nameof(Produit), getProductByRefQuery.Refe);
 

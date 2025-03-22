@@ -8,7 +8,8 @@ public class DeleteReceiptNoteEndpoint : ICarterModule
         {
             var deleteReceiptNoteCommand = new DeleteReceiptNoteCommand(num);
             var deleteResult = await mediator.Send(deleteReceiptNoteCommand, cancellationToken);
-            if (deleteResult.IsFailed)
+
+            if (deleteResult.IsEntityNotFound())
             {
                 return TypedResults.NotFound();
             }

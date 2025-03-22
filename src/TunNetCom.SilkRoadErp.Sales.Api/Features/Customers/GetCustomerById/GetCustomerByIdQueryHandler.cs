@@ -5,7 +5,9 @@ public class GetCustomerByIdQueryHandler(
     ILogger<GetCustomerByIdQueryHandler> _logger)
     : IRequestHandler<GetCustomerByIdQuery, Result<CustomerResponse>>
 {
-    public async Task<Result<CustomerResponse>> Handle(GetCustomerByIdQuery getClientByIdQuery, CancellationToken cancellationToken)
+    public async Task<Result<CustomerResponse>> Handle(
+        GetCustomerByIdQuery getClientByIdQuery,
+        CancellationToken cancellationToken)
     {
         _logger.LogFetchingEntityById(nameof(Client), getClientByIdQuery.Id);
 
@@ -15,7 +17,7 @@ public class GetCustomerByIdQueryHandler(
         {
             _logger.LogEntityNotFound(nameof(Client), getClientByIdQuery.Id);
 
-            return Result.Fail("client_not_found");
+            return Result.Fail(EntityNotFound.Error());
         }
 
         _logger.LogEntityFetchedById(nameof(Client), getClientByIdQuery.Id);

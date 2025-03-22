@@ -23,7 +23,7 @@ public class UpdateCustomerEndpoint : ICarterModule
 
             var updateCustomerResult = await mediator.Send(updateClientCommand, cancellationToken);
 
-            if (updateCustomerResult.HasError<EntityNotFound>())
+            if (updateCustomerResult.IsEntityNotFound())
             {
                 return TypedResults.NotFound();
             }

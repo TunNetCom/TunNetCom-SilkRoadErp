@@ -10,7 +10,7 @@ public class DeleteProviderCommandHandler(SalesContext _context, ILogger<DeleteP
         if (provider is null)
         {
             _logger.LogEntityNotFound(nameof(Fournisseur), deleteProviderCommand.Id);
-            return Result.Fail("provider_not_found");
+            return Result.Fail(EntityNotFound.Error());
         }
 
         _context.Fournisseur.Remove(provider);

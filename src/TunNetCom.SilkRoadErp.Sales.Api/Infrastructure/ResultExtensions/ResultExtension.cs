@@ -23,7 +23,6 @@ public static class ResultExtension
             });
     }
 
-
     public static ValidationProblem ToValidationProblem(this Result<int> result)
     {
         if (result.IsSuccess)
@@ -65,5 +64,16 @@ public static class ResultExtension
                 { "errors" ,  errors  }
             });
     }
+
+    public static bool IsEntityNotFound(this Result result)
+    {
+        return result.HasError<EntityNotFound>();
+    }
+
+    public static bool IsEntityNotFound<T>(this Result<T> result)
+    {
+        return result.HasError<EntityNotFound>();
+    }
+
 }
 

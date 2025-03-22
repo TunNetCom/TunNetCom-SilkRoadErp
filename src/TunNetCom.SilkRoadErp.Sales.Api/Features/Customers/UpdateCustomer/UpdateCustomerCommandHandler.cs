@@ -5,7 +5,9 @@ public class UpdateCustomerCommandHandler(
     ILogger<UpdateCustomerCommandHandler> _logger)
     : IRequestHandler<UpdateCustomerCommand, Result>
 {
-    public async Task<Result> Handle(UpdateCustomerCommand updateCustomerCommand, CancellationToken cancellationToken)
+    public async Task<Result> Handle(
+        UpdateCustomerCommand updateCustomerCommand,
+        CancellationToken cancellationToken)
     {
         _logger.LogEntityUpdateAttempt(nameof(Client), updateCustomerCommand.Id);
 
@@ -15,7 +17,7 @@ public class UpdateCustomerCommandHandler(
         {
             _logger.LogEntityNotFound(nameof(Client), updateCustomerCommand.Id);
 
-            return Result.Fail(EntityNotFound.Error);
+            return Result.Fail(EntityNotFound.Error());
         }
 
         var isCustomerNameExist = await _context.Client.AnyAsync(

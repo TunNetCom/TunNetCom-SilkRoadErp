@@ -11,7 +11,7 @@ public class GetProviderByIdQueryHandler(SalesContext _context, ILogger<GetProvi
         if (provider is null)
         {
             _logger.LogEntityNotFound(nameof(Fournisseur), getProviderByIdQuery.Id);
-            return Result.Fail("provider_not_found");
+            return Result.Fail(EntityNotFound.Error());
         }
 
         _logger.LogEntityFetchedById(nameof(Fournisseur), getProviderByIdQuery.Id);

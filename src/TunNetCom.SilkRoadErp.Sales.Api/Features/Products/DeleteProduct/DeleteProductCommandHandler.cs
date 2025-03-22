@@ -9,7 +9,7 @@ public class DeleteProductCommandHandler(SalesContext _context, ILogger<DeletePr
         if (product is null)
         {
             _logger.LogEntityNotFound(nameof(Produit), deleteProductCommand.Refe);
-            return Result.Fail("product_not_found");
+            return Result.Fail(EntityNotFound.Error());
         }
         _context.Remove(product);
         await _context.SaveChangesAsync(cancellationToken);
