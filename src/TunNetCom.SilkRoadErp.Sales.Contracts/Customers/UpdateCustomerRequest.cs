@@ -2,6 +2,30 @@
 
 public class UpdateCustomerRequest
 {
+    public UpdateCustomerRequest()
+    {
+        
+    }
+
+    public UpdateCustomerRequest(string nom,
+                                 string? tel,
+                                 string? adresse,
+                                 string? matricule,
+                                 string? code,
+                                 string? codeCat,
+                                 string? etbSec,
+                                 string? mail)
+    {
+        Nom = nom;
+        Tel = tel;
+        Adresse = adresse;
+        Matricule = matricule;
+        Code = code;
+        CodeCat = codeCat;
+        EtbSec = etbSec;
+        Mail = mail;
+    }
+
     public string Nom { get; set; } = null!;
 
     public string? Tel { get; set; }

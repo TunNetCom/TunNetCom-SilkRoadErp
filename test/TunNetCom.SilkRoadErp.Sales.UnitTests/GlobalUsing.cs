@@ -2,7 +2,6 @@ global using Microsoft.Extensions.Logging;
 global using FluentAssertions;
 global using MediatR;
 global using Microsoft.AspNetCore.Http;
-global using Microsoft.AspNetCore.Routing;
 global using Moq;
 global using TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.CreateCustomer;
 global using Microsoft.EntityFrameworkCore;
