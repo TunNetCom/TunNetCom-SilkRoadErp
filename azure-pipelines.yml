@@ -1,8 +1,3 @@
-# ASP.NET
-# Build and test ASP.NET projects.
-# Add steps that publish symbols, save build artifacts, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/apps/aspnet/build-aspnet-4
-
 trigger:
 - master
 
@@ -34,3 +29,32 @@ steps:
     configuration: '$(buildConfiguration)'
     codeCoverageEnabled: true
     runSettingsFile: 'test.runsettings'
+    resultsFolder: '$(System.DefaultWorkingDirectory)/TestResults'
+
+- task: PowerShell@2
+  displayName: 'Convert Coverage to Cobertura'
+  inputs:
+    targetType: 'inline'
+    script: |
+      # Install ReportGenerator
+      dotnet tool install -g dotnet-reportgenerator-globaltool
+      # Find the .coverage file
+      $coverageFile = Get-ChildItem -Path "$(System.DefaultWorkingDirectory)/TestResults" -Recurse -Include "*.coverage" | Select-Object -First 1
+      if ($coverageFile) {
+        # Convert .coverage to Cobertura and generate HTML report
+        reportgenerator -reports:$coverageFile.FullName -targetdir:"$(System.DefaultWorkingDirectory)/TestResults/CoverageReport" -reporttypes:"Cobertura;Html"
+        Write-Host "Coverage report generated at $(System.DefaultWorkingDirectory)/TestResults/CoverageReport"
+      } else {
+        Write-Error "No .coverage file found in TestResults."
+      }
+
+- task: PublishCodeCoverageResults@2
+  inputs:
+    summaryFileLocation: '$(System.DefaultWorkingDirectory)/TestResults/CoverageReport/Cobertura.xml'
+    failIfCoverageEmpty: false
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    pathToPublish: '$(System.DefaultWorkingDirectory)/TestResults/CoverageReport'
+    artifactName: 'CodeCoverageReport'
+    publishLocation: 'Container'
