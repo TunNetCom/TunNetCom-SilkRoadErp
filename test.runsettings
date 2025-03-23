@@ -5,6 +5,7 @@
         <Configuration>
           <Exclude>
             <Module>FluentValidation.dll</Module>
+            <Module>FluentValidation.*.dll</Module>
             <Module>Moq.dll</Module>
             <Module>*.Test.dll</Module> <!-- Exclude test projects if needed -->
             <Module>*.Tests.dll</Module> <!-- Exclude test projects if named like this -->
