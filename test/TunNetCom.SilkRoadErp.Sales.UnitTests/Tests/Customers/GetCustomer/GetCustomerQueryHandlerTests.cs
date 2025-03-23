@@ -1,4 +1,4 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers;
+﻿namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers.GetCustomer;
 
 public class GetCustomerQueryHandlerTests
 {

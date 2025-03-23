@@ -1,6 +1,6 @@
 ﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.GetCustomerById;
 
-namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers;
+namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers.GetCustomerById;
 
 public class GetCustomerByidQueryHandlerTests
 {
