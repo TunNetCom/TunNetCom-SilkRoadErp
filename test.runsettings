@@ -1,16 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
 <RunSettings>
   <DataCollectionRunSettings>
     <DataCollectors>
-      <DataCollector friendlyName="Code Coverage">
+      <DataCollector friendlyName="CodeCoverage" uri="datacollector://Microsoft/CodeCoverage/2.0" assemblyQualifiedName="Microsoft.VisualStudio.Coverage.DynamicCoverageDataCollector, Microsoft.VisualStudio.TraceCollector, Version=15.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
         <Configuration>
-          <Exclude>
-            <Module>Moq.dll</Module>
-            <Module>*.Test.dll</Module> <!-- Exclude test projects if needed -->
-            <Module>*.Tests.dll</Module> <!-- Exclude test projects if named like this -->
-            <Module>.*fluentvalidation.*</Module>
-            <Module>FluentValidation.dll</Module>
-            <Module>bin\**\FluentValidation.dll</Module>
-          </Exclude>
+          <CodeCoverage>
+            <ModulePaths>
+              <Include>
+                <ModulePath>.*\.dll$</ModulePath>
+              </Include>
+            </ModulePaths>
+            <!-- Ensure source files are included for line-level details -->
+            <Sources>
+              <Include>
+                <Source>.*\.cs$</Source>
+              </Include>
+            </Sources>
+          </CodeCoverage>
         </Configuration>
       </DataCollector>
     </DataCollectors>
