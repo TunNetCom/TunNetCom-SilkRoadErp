@@ -20,14 +20,14 @@ public class DeleteReceiptNoteCommandHandlerTests
     public async Task Handle_ReceiptNoteNotFound_ReturnError()
     {
         //Arrange
-        var command = new DeleteReceiptNoteCommand(num: 1987);
+        var command = new DeleteReceiptNoteCommand(Num: 1987);
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
         Assert.False(result.IsSuccess);
-        Assert.Equal("receiptnote_not_found", result.Errors.First().Message);
+        Assert.Equal("not_found", result.Errors.First().Message);
         Assert.Contains(
             _testlogger.Logs,
             log => log.Contains($"{nameof(BonDeReception)} with ID: {command.Num} not found"));
@@ -47,7 +47,7 @@ public class DeleteReceiptNoteCommandHandlerTests
 
         _context.BonDeReception.Add(receiptnote);
         await _context.SaveChangesAsync();
-        var command = new DeleteReceiptNoteCommand(num: receiptnote.Num);
+        var command = new DeleteReceiptNoteCommand(Num: receiptnote.Num);
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -73,7 +73,7 @@ public class DeleteReceiptNoteCommandHandlerTests
         _context.BonDeReception.Add(receiptnote);
         await _context.SaveChangesAsync();
 
-        var command = new DeleteReceiptNoteCommand(num: receiptnote.Num);
+        var command = new DeleteReceiptNoteCommand(Num: receiptnote.Num);
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);

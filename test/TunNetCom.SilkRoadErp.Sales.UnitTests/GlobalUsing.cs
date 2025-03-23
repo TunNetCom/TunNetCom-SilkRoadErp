@@ -23,3 +23,5 @@ global using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNote
 global using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNoteById;
 global using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.UpdateReceiptNote;
 global using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.DeleteReceiptNote;
+global using FluentResults;
+global using Microsoft.AspNetCore.Http.HttpResults;
