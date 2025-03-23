@@ -19,7 +19,7 @@ public class GetDeliveryNotesByClientIdQueryHandler(
         {
             _logger.LogEntityNotFound(nameof(BonDeLivraison), getDeliveryNoteByClientIdQuery.ClientId);
 
-            return Result.Fail(EntityNotFound.Error("deliveryNotes_not_found"));
+            return Result.Fail(EntityNotFound.Error("not_found"));
         }
 
         _logger.LogEntitiesFetched(nameof(BonDeLivraison), deliveryNotes.Count);
