@@ -59,7 +59,7 @@ public class GetProductByRefQueryHandlerTests
 
         // Assert
         Assert.False(result.IsSuccess);
-        Assert.Equal("product_not_found", result.Errors.First().Message);
+        Assert.Equal("not_found", result.Errors.First().Message);
     }
 
     [Fact]

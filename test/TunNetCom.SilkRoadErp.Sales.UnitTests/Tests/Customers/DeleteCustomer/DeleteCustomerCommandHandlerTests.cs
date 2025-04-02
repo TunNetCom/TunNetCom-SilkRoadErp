@@ -1,4 +1,4 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers;
+﻿namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers.DeleteCustomer;
 
 public class DeleteCustomerCommandHandlerTests
 {
@@ -27,7 +27,7 @@ public class DeleteCustomerCommandHandlerTests
 
         // Assert
         Assert.False(result.IsSuccess);
-        Assert.Equal("client_not_found", result.Errors.First().Message);
+        Assert.Equal("not_found", result.Errors.First().Message);
         Assert.Contains(_testLogger.Logs, log => log.Contains($"{nameof(Client)} with ID: {command.Id} not found"));
 
     }

@@ -26,7 +26,7 @@ public class DeleteProviderCommandHandlerTests
 
         // Assert
         Assert.False(result.IsSuccess);
-        Assert.Equal("provider_not_found", result.Errors.First().Message);
+        Assert.Equal("not_found", result.Errors.First().Message);
         Assert.Contains(
             _testLogger.Logs,
             log => log.Contains($"{nameof(Fournisseur)} with ID: {command.Id} not found"));

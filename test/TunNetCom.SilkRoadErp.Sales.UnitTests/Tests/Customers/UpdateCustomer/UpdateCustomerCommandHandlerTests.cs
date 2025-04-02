@@ -1,6 +1,6 @@
 ﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.UpdateCustomer;
 
-namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers;
+namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers.UpdateCustomer;
 
 public class UpdateCustomerCommandHandlerTests
 {

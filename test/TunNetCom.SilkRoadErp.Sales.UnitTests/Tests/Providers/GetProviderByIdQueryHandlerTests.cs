@@ -27,7 +27,7 @@ public class GetProviderByIdQueryHandlerTests
 
         //Assert
         Assert.False(result.IsSuccess);
-        Assert.Equal("provider_not_found", result.Errors.First().Message);
+        Assert.Equal("not_found", result.Errors.First().Message);
     }
 
     [Fact]
@@ -70,7 +70,7 @@ public class GetProviderByIdQueryHandlerTests
 
         //Assert
         Assert.False(result.IsSuccess);
-        Assert.Equal("provider_not_found", result.Errors.First().Message);
+        Assert.Equal("not_found", result.Errors.First().Message);
         Assert.Contains(_testLogger.Logs, log => log.Contains($"{nameof(Fournisseur)} with ID: {query.Id} not found"));
     }
 }

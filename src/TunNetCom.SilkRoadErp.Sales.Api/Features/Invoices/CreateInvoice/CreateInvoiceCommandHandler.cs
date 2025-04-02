@@ -12,7 +12,7 @@ public class CreateInvoiceCommandHandler(
         var clientExists = await _context.Client.AnyAsync(c => c.Id == command.ClientId, cancellationToken);
         if (!clientExists)
         {
-            return Result.Fail("client_not_found");
+            return Result.Fail("not_found");
         }
 
         var invoice = new Facture

@@ -28,7 +28,7 @@ public class DeleteProductCommandHandlerTests
 
         // Assert
         Assert.False(result.IsSuccess);
-        Assert.Equal("product_not_found", result.Errors.First().Message);
+        Assert.Equal("not_found", result.Errors.First().Message);
         Assert.Contains(_testLogger.Logs, log => log.Contains($"{nameof(Produit)} with ID: {command.Refe} not found"));
     }
 
