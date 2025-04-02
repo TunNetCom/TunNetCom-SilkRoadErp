@@ -1,4 +1,6 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNote;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
+
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNote;
 
 public class GetDeliveryNoteQueryHandler(
     SalesContext _context,
@@ -16,7 +18,7 @@ public class GetDeliveryNoteQueryHandler(
             {
                 Num = t.Num,
                 Date = t.Date,
-                TotHTva = t.TotHTva,
+                TotHT = t.TotHTva,
                 TotTva = t.TotTva,
                 NetPayer = t.NetPayer,
                 TempBl = t.TempBl,

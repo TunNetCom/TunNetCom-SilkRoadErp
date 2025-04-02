@@ -1,4 +1,5 @@
 ﻿@page "/gestion-bl"
+@using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices
@@ -198,7 +199,7 @@
 
     private void CalculateTotals()
     {
-        TotHT = DeliveryNotes.Sum(note => note.TotHTva);
+        TotHT = DeliveryNotes.Sum(note => note.TotHT);
         TotTva = DeliveryNotes.Sum(note => note.TotTva);
         NetPayer = DeliveryNotes.Sum(note => note.NetPayer);
     }

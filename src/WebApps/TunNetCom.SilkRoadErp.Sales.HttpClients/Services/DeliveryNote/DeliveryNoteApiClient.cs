@@ -3,7 +3,8 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using TunNetCom.SilkRoadErp.Sales.Contracts.Customers;
-using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote;
+using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
+using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote;
 
@@ -129,9 +130,9 @@ DetachFromInvoiceRequest request,
 CancellationToken cancellationToken)
     {
         var headers = new Dictionary<string, string>()
-    {
+        {
         { "Accept", "application/problem+json" }
-    };
+        };
 
         HttpResponseMessage response = await _httpClient.PutAsJsonAsync(
             "/deliveryNote/detachFromInvoice",
@@ -157,4 +158,63 @@ CancellationToken cancellationToken)
         throw new Exception($"Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
     }
 
+    public async Task<GetDeliveryNotesWithSummariesResponse> GetDeliveryNotesWithSummariesAsync(
+        int customerId,
+        int? invoiceId,
+        bool isInvoiced,
+        string? sortOrder,
+        string? sortProperty,
+        int pageNumber = 1,
+        int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        // Construct the query string with all parameters
+        var queryParams = new List<string>
+        {
+            $"customerId={customerId}",
+            $"isInvoiced={isInvoiced}",
+            $"pageNumber={pageNumber}",
+            $"pageSize={pageSize}",
+            $"sortOrder={sortOrder}",
+            $"sortProperty={sortProperty}"
+        };
+        var GetDeliveryNotesWithSummariesQueryParams = new GetDeliveryNotesQueryParams
+        {
+            CustomerId = customerId,
+            IsInvoiced = isInvoiced,
+            PageNumber = pageNumber,
+            PageSize = pageSize,
+            SortOrder = sortOrder,
+            SortProperty = sortProperty,
+            InvoiceId = invoiceId
+        };
+        if (invoiceId.HasValue)
+        {
+            queryParams.Add($"invoiceId={invoiceId.Value}");
+        }
+
+        var queryString = $"/deliverynotes/summaries?{string.Join("&", queryParams)}";
+
+        try
+        {
+            // Make the HTTP GET request
+            var response = await _httpClient.GetAsync(queryString, cancellationToken);
+            response.EnsureSuccessStatusCode();
+
+            // Deserialize the response into GetDeliveryNotesWithSummariesResponse
+            var summariesResponse = await response.Content.ReadFromJsonAsync<GetDeliveryNotesWithSummariesResponse>(cancellationToken: cancellationToken);
+
+            return summariesResponse ?? throw new InvalidOperationException("Failed to deserialize the response.");
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Error fetching delivery notes summaries: {ex.Message}");
+            throw;
+        }
+        catch (System.Text.Json.JsonException ex)
+        {
+            Console.WriteLine($"Error deserializing response: {ex.Message}");
+            throw;
+        }
+    }
 }

@@ -189,6 +189,57 @@
   <data name="delete_title" xml:space="preserve">
     <value>Delete</value>
   </data>
+  <data name="select_customer" xml:space="preserve">
+    <value>Selectionner un client</value>
+  </data>
+  <data name="customer_id" xml:space="preserve">
+    <value>Identifiant client</value>
+  </data>
+  <data name="company_name" xml:space="preserve">
+    <value>Nom de l'entreprise</value>
+  </data>
+  <data name="invoice_number" xml:space="preserve">
+    <value>Numéro de facture</value>
+  </data>
+  <data name="date" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="total_incl_tax" xml:space="preserve">
+    <value>Total TTC</value>
+  </data>
+  <data name="delivery_notes_details" xml:space="preserve">
+    <value>Détails bons de livraison</value>
+  </data>
+  <data name="number" xml:space="preserve">
+    <value>Numéro</value>
+  </data>
+  <data name="total_ex_tax" xml:space="preserve">
+    <value>Total HT</value>
+  </data>
+  <data name="net_payer" xml:space="preserve">
+    <value>Net à payer</value>
+  </data>
+  <data name="total_net" xml:space="preserve">
+    <value>Total Net</value>
+  </data>
+  <data name="total_gross" xml:space="preserve">
+    <value>Total Brut</value>
+  </data>
+  <data name="total_vat" xml:space="preserve">
+    <value>Total TVA</value>
+  </data>
+  <data name="detach_from_invoice" xml:space="preserve">
+    <value>Détacher de la facture</value>
+  </data>
+  <data name="manage_invoices" xml:space="preserve">
+    <value>Gérer factures</value>
+  </data>
+  <data name="customer_invoice_details" xml:space="preserve">
+    <value>Détails facture client</value>
+  </data>
+  <data name="uninvoiced_delivery_notes_details" xml:space="preserve">
+    <value>Détails bons de livraison non facturées</value>
+  </data>
   <data name="add_product" xml:space="preserve">
     <value>Ajouter un article</value>
   </data>
@@ -284,5 +335,8 @@
   </data>
   <data name="providers" xml:space="preserve">
     <value>Fournisseurs</value>
+  </data>
+  <data name="attach_delivery_note_to_invoice" xml:space="preserve">
+    <value>Joindre à la facture</value>
   </data>
 </root>

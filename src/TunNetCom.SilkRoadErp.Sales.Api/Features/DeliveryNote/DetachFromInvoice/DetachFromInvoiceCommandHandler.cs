@@ -19,7 +19,7 @@ public class DetachFromInvoiceCommandHandler(
         if (invoice == null)
         {
             logger.LogWarning("Invoice {InvoiceId} not found", request.InvoiceId);
-            return Result.Fail(new EntityNotFound());
+            return Result.Fail(EntityNotFound.Error());
         }
 
         // Fetch the delivery notes to detach
@@ -32,7 +32,7 @@ public class DetachFromInvoiceCommandHandler(
             var notFoundIds = request.DeliveryNoteIds.Except(deliveryNotes.Select(d => d.Num)).ToList();
             logger.LogWarning("Some delivery notes not found or not associated with invoice {InvoiceId}: {NotFoundIds}",
                 request.InvoiceId, string.Join(", ", notFoundIds));
-            return Result.Fail(new EntityNotFound());
+            return Result.Fail(EntityNotFound.Error());
         }
 
         // Detach the delivery notes by setting NumFacture to null

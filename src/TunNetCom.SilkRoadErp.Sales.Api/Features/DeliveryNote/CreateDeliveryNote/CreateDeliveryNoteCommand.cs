@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.CreateDeliveryNote;
 

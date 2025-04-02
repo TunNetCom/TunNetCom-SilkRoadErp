@@ -1,4 +1,6 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNoteByInvoiceId;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
+
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNoteByInvoiceId;
 
 public class GetDeliveryNotesByInvoiceIdEndpoint : ICarterModule
 {
@@ -13,12 +15,11 @@ public class GetDeliveryNotesByInvoiceIdEndpoint : ICarterModule
 
             var result = await mediator.Send(query, cancellationToken);
 
-            if (result.IsFailed)
+            if (result.IsEntityNotFound())
             {
                 return TypedResults.NotFound();
             }
-
-            return TypedResults.Ok(result.Value);
+            return TypedResults.Ok(result.Value ?? new List<DeliveryNoteResponse>());
         });
     }
 }

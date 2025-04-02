@@ -1,4 +1,6 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.DetachFromInvoice;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
+
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.DetachFromInvoice;
 
 public class DetachFromInvoiceEndpoint : ICarterModule
 {

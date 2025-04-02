@@ -1,4 +1,4 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 public class AttachToInvoiceResult
 {
     public bool IsSuccess { get; set; }

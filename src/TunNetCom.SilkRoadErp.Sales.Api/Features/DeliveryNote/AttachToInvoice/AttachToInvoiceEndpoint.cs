@@ -1,4 +1,6 @@
 ﻿
+using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
+
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.AttachToInvoice;
 
 public class AttachToInvoiceEndpoint : ICarterModule

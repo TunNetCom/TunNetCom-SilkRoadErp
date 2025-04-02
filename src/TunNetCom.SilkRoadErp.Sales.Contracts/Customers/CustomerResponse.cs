@@ -1,6 +1,4 @@
-﻿using System.Text.Json.Serialization;
-
-namespace TunNetCom.SilkRoadErp.Sales.Contracts.Customers;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Contracts.Customers;
 
 public class CustomerResponse
 {

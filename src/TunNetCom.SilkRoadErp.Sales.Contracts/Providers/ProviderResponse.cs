@@ -1,6 +1,4 @@
-﻿using System.Text.Json.Serialization;
-
-namespace TunNetCom.SilkRoadErp.Sales.Contracts.Providers;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Contracts.Providers;
 
 public class ProviderResponse
 {
