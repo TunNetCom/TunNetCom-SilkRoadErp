@@ -189,4 +189,58 @@
   <data name="delete_title" xml:space="preserve">
     <value>Suppression</value>
   </data>
+  <data name="select_customer" xml:space="preserve">
+    <value />
+  </data>
+  <data name="customer_id" xml:space="preserve">
+    <value />
+  </data>
+  <data name="company_name" xml:space="preserve">
+    <value />
+  </data>
+  <data name="invoice_number" xml:space="preserve">
+    <value />
+  </data>
+  <data name="date" xml:space="preserve">
+    <value />
+  </data>
+  <data name="total_incl_tax" xml:space="preserve">
+    <value />
+  </data>
+  <data name="delivery_notes_details" xml:space="preserve">
+    <value />
+  </data>
+  <data name="number" xml:space="preserve">
+    <value />
+  </data>
+  <data name="total_ex_tax" xml:space="preserve">
+    <value />
+  </data>
+  <data name="net_payer" xml:space="preserve">
+    <value />
+  </data>
+  <data name="total_net" xml:space="preserve">
+    <value />
+  </data>
+  <data name="total_gross" xml:space="preserve">
+    <value />
+  </data>
+  <data name="total_vat" xml:space="preserve">
+    <value />
+  </data>
+  <data name="detach_from_invoice" xml:space="preserve">
+    <value />
+  </data>
+  <data name="manage_invoices" xml:space="preserve">
+    <value />
+  </data>
+  <data name="customer_invoice_details" xml:space="preserve">
+    <value />
+  </data>
+  <data name="uninvoiced_delivery_notes_details" xml:space="preserve">
+    <value />
+  </data>
+  <data name="attach_delivery_note_to_invoice" xml:space="preserve">
+    <value />
+  </data>
 </root>

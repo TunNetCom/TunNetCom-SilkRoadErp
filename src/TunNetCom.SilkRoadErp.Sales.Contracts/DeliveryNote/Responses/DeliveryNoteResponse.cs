@@ -1,14 +1,17 @@
-﻿using System.Text.Json.Serialization;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
 
-namespace TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote;
+namespace TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 
-public class CreateDeliveryNoteRequest
+public class DeliveryNoteResponse
 {
+    [JsonPropertyName("num")]
+    public int Num { get; set; }
+
     [JsonPropertyName("date")]
     public DateTime Date { get; set; }
 
-    [JsonPropertyName("totHTva")]
-    public decimal TotHTva { get; set; }
+    [JsonPropertyName("totHT")]
+    public decimal TotHT { get; set; }
 
     [JsonPropertyName("totTva")]
     public decimal TotTva { get; set; }

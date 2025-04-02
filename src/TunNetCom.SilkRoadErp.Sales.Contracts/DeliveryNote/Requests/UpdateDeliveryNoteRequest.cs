@@ -1,12 +1,7 @@
-﻿using System.Text.Json.Serialization;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
 
-namespace TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote;
-
-public class DeliveryNoteResponse
+public class UpdateDeliveryNoteRequest
 {
-    [JsonPropertyName("num")]
-    public int Num { get; set; }
-
     [JsonPropertyName("date")]
     public DateTime Date { get; set; }
 

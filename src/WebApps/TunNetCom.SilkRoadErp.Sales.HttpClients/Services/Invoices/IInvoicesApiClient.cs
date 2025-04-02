@@ -1,8 +1,10 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices;
+﻿using OneOf.Types;
+
+namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices;
 
 public interface IInvoicesApiClient
 {
-    Task<List<InvoiceResponse>> GetInvoicesByCustomerId(
+    Task<OneOf<GetInvoiceListWithSummary, BadRequestResponse>> GetInvoicesByCustomerIdWithSummary(
         int customerId,
         QueryStringParameters queryParameters,
         CancellationToken cancellationToken);

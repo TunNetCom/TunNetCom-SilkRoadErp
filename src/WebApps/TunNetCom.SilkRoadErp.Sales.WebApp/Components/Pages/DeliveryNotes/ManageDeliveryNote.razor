@@ -1,6 +1,7 @@
 ﻿@* @page "/bon-de-livraison" *@
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.JSInterop
+@using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests
 @inject IJSRuntime JSRuntime
 
 <RadzenButton Click="@ButtonClicked" Text="+"></RadzenButton>
@@ -28,7 +29,6 @@
         </RadzenDataGridColumn>  
     </Columns>
 </RadzenDataGrid>
-
 <style>
     .table-cell-edited {
         position: relative;

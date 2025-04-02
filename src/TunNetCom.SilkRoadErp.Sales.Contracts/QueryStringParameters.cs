@@ -20,5 +20,9 @@ public class QueryStringParameters
         }
     }
 
+    public string? SortProprety { get; set; }
+
+    public string? SortOrder { get; set; }
+
     private int _pageSize = 10;
 }

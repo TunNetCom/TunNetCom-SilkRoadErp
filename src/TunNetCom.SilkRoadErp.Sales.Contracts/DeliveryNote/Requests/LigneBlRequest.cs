@@ -1,6 +1,4 @@
-﻿using System.Text.Json.Serialization;
-
-namespace TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
 
 public class LigneBlRequest
 {

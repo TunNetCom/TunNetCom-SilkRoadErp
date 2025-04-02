@@ -1,4 +1,6 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices;
+﻿using OneOf.Types;
+
+namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices;
 
 public class InvoicesApiClient : IInvoicesApiClient
 {
@@ -12,10 +14,11 @@ public class InvoicesApiClient : IInvoicesApiClient
     }
 
 
-    public async Task<List<InvoiceResponse>> GetInvoicesByCustomerId(int customerId, QueryStringParameters queryParameters, CancellationToken cancellationToken)
+    public async Task<OneOf<GetInvoiceListWithSummary, BadRequestResponse>> GetInvoicesByCustomerIdWithSummary(
+        int customerId,
+        QueryStringParameters queryParameters,
+        CancellationToken cancellationToken)
     {
-        try
-        {
             var response = await _httpClient.GetAsync(
                 $"/invoices/client/{customerId}?pageNumber={queryParameters.PageNumber}&pageSize={queryParameters.PageSize}",
                 cancellationToken: cancellationToken);
@@ -23,22 +26,15 @@ public class InvoicesApiClient : IInvoicesApiClient
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 var responseContent = await response.Content.ReadAsStringAsync();
-                var invoices = JsonConvert.DeserializeObject<List<InvoiceResponse>>(responseContent);
+                var invoices = JsonConvert.DeserializeObject<GetInvoiceListWithSummary>(responseContent);
                 return invoices;
             }
-            else
+            if(response.StatusCode == HttpStatusCode.BadRequest)
             {
-                _logger.LogWarning($"Failed to get invoices for customer {customerId}. Status Code: {response.StatusCode}");
-                return new List<InvoiceResponse>();
+                return await response.ReadJsonAsync<BadRequestResponse>();
             }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, $"Error getting invoices for customer {customerId}");
-            throw;
-        }
+            throw new Exception($"Invoices: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
     }
-
 
     public async Task<PagedList<InvoiceResponse>> GetInvoices(QueryStringParameters queryParameters, CancellationToken cancellationToken)
     {

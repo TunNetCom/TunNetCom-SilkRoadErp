@@ -1,4 +1,6 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNoteByNum;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
+
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNoteByNum;
 
 public class GetDeliveryNoteByNumQueryHandler(
     SalesContext _context,

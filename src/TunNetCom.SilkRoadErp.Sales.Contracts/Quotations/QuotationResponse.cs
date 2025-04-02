@@ -1,6 +1,4 @@
-﻿using System.Text.Json.Serialization;
-
-namespace TunNetCom.SilkRoadErp.Sales.Contracts.Quotations
+﻿namespace TunNetCom.SilkRoadErp.Sales.Contracts.Quotations
 {
     public class QuotationResponse
     {
