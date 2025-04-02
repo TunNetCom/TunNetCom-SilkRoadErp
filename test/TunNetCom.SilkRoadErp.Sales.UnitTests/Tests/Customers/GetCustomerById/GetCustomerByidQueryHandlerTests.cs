@@ -1,6 +1,6 @@
 ﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.GetCustomerById;
 
-namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers;
+namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers.GetCustomerById;
 
 public class GetCustomerByidQueryHandlerTests
 {
@@ -59,7 +59,7 @@ public class GetCustomerByidQueryHandlerTests
 
         // Assert
         Assert.False(result.IsSuccess);
-        Assert.Equal("client_not_found", result.Errors.First().Message);
+        Assert.Equal("not_found", result.Errors.First().Message);
     }
 
     [Fact]

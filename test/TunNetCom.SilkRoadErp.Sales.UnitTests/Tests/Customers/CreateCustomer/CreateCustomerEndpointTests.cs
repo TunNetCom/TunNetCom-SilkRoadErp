@@ -1,9 +1,6 @@
-﻿using FluentResults;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.SqlServer.Server;
-using TunNetCom.SilkRoadErp.Sales.Contracts.Customers;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.Customers;
 
-namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers.Endpoints;
+namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers.CreateCustomer;
 
 public class CreateCustomerEndpointTests
 {

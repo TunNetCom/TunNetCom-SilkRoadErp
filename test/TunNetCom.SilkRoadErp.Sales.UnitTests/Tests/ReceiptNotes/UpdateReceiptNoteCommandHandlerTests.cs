@@ -33,7 +33,7 @@ public class UpdateReceiptNoteCommandHandlerTests
 
         // Assert
         Assert.False(result.IsSuccess);
-        Assert.Equal("receiptnote_not_found", result.Errors.First().Message);
+        Assert.Equal("not_found", result.Errors.First().Message);
         Assert.Contains(_testlogger.Logs, log => log.Contains($"{nameof(BonDeReception)} with ID: {command.Num} not found"));
     }
 

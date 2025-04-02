@@ -4,25 +4,27 @@ public class DeleteCustomerEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapDelete("/customers/{id:int}", async Task<Results<NoContent, ValidationProblem, NotFound>> (
-            IMediator mediator,
-            int id,
-            CancellationToken cancellationToken) =>
+        app.MapDelete("/customers/{id:int}", HandleDeleteCustomerAsync);
+    }
+
+    public async Task<Results<NoContent, ValidationProblem, NotFound>> HandleDeleteCustomerAsync(
+        IMediator mediator,
+        int id,
+        CancellationToken cancellationToken)
+    {
+        var deleteCustomerCommand = new DeleteCustomerCommand(id);
+        var deleteResult = await mediator.Send(deleteCustomerCommand, cancellationToken);
+
+        if (deleteResult.IsEntityNotFound())
         {
-            var deleteCustomerCommand = new DeleteCustomerCommand(id);
-            var deleteResult = await mediator.Send(deleteCustomerCommand, cancellationToken);
+            return TypedResults.NotFound();
+        }
 
-            if(deleteResult.IsEntityNotFound())
-            {
-                return TypedResults.NotFound();
-            }
+        if (deleteResult.IsFailed)
+        {
+            return deleteResult.ToValidationProblem();
+        }
 
-            if (deleteResult.IsFailed)
-            {
-                return deleteResult.ToValidationProblem();
-            }
-
-            return TypedResults.NoContent();
-        });
+        return TypedResults.NoContent();
     }
 }

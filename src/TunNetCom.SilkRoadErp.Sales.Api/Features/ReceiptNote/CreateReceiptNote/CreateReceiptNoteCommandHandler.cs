@@ -12,7 +12,7 @@ public class CreateReceiptNoteCommandHandler(
         var providerExists = await _context.Fournisseur.AnyAsync(p => p.Id == createReceiptNoteCommand.IdFournisseur, cancellationToken);
         if (!providerExists)
         {
-            return Result.Fail("provider_not_found");
+            return Result.Fail("not_found");
         }
 
 

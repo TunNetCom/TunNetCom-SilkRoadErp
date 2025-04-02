@@ -27,7 +27,7 @@ public class GetReceiptNoteByIdQueryHandlerTests
 
         //Assert
         Assert.False(result.IsSuccess);
-        Assert.Equal("receiptnote_not_found", result.Errors.First().Message);
+        Assert.Equal("not_found", result.Errors.First().Message);
     }
 
     [Fact]
@@ -41,7 +41,7 @@ public class GetReceiptNoteByIdQueryHandlerTests
 
         //Assert
         Assert.False(result.IsSuccess);
-        Assert.Equal("receiptnote_not_found", result.Errors.First().Message);
+        Assert.Equal("not_found", result.Errors.First().Message);
         Assert.Contains(_testlogger.Logs, log => log.Contains($"BonDeReception with ID: {query.Num} not found"));
     }
 }
