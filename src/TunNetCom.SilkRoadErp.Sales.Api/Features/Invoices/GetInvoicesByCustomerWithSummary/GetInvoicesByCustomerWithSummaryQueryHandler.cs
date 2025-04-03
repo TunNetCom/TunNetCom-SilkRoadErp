@@ -5,12 +5,9 @@ public class GetInvoicesByCustomerWithSummaryQueryHandler(
     ILogger<GetInvoicesByCustomerWithSummaryQueryHandler> _logger)
     : IRequestHandler<GetInvoicesByCustomerWithSummaryQuery, Result<GetInvoiceListWithSummary>>
 {
-    public class SortProperties
-    {
-        public const string Num = "Num";
-        public const string NetAmount = "NetAmount";
-        public const string GrossAmount = "GrossAmount";
-    }
+    private const string _numColumName = "Num";
+    private const string _netAmountColumnName = "NetAmount";
+    private const string _grossAmountColumnName = "GrossAmount";
     public async Task<Result<GetInvoiceListWithSummary>> Handle(
         GetInvoicesByCustomerWithSummaryQuery query,
         CancellationToken cancellationToken)
@@ -69,15 +66,14 @@ public class GetInvoicesByCustomerWithSummaryQueryHandler(
         string property,
         string order)
     {
-        // TODO move magic strings to constants
         return (property, order) switch
         {
-            (SortProperties.Num, SortConstants.Ascending) => query.OrderBy(d => d.Num),
-            (SortProperties.Num, SortConstants.Descending) => query.OrderByDescending(d => d.Num),
-            (SortProperties.NetAmount, SortConstants.Ascending) => query.OrderBy(d => d.TotTTC),
-            (SortProperties.NetAmount, SortConstants.Descending) => query.OrderByDescending(d => d.TotTTC),
-            (SortProperties.GrossAmount, SortConstants.Ascending) => query.OrderBy(d => d.TotHTva),
-            (SortProperties.GrossAmount, SortConstants.Descending) => query.OrderByDescending(d => d.TotHTva),
+            (_numColumName, SortConstants.Ascending) => query.OrderBy(d => d.Num),
+            (_numColumName, SortConstants.Descending) => query.OrderByDescending(d => d.Num),
+            (_netAmountColumnName, SortConstants.Ascending) => query.OrderBy(d => d.TotTTC),
+            (_netAmountColumnName, SortConstants.Descending) => query.OrderByDescending(d => d.TotTTC),
+            (_grossAmountColumnName, SortConstants.Ascending) => query.OrderBy(d => d.TotHTva),
+            (_grossAmountColumnName, SortConstants.Descending) => query.OrderByDescending(d => d.TotHTva),
             _ => query
         };
     }
