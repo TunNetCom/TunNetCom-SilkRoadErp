@@ -35,7 +35,7 @@ public class GetProductQueryHandler(
             getProductQuery.PageSize,
             cancellationToken);
 
-        _logger.LogEntitiesFetched(nameof(Produit), pagedProducts.Count);
+        _logger.LogEntitiesFetched(nameof(Produit), pagedProducts.Items.Count);
 
         return pagedProducts;
 

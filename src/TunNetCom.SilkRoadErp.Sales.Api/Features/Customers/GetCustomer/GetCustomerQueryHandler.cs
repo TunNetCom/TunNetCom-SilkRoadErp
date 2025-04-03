@@ -45,7 +45,7 @@ public class GetCustomerQueryHandler(
             cancellationToken);
 
 
-        _logger.LogEntitiesFetched(nameof(Client), pagedCustomers.Count);
+        _logger.LogEntitiesFetched(nameof(Client), pagedCustomers.Items.Count);
 
         return pagedCustomers;
     }

@@ -41,7 +41,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.priceQuote.GetPriceQuote
                 getPriceQuoteQuery.PageSize,
                 cancellationToken);
 
-            _logger.LogEntitiesFetched(nameof(Devis), pagedQuotations.Count);
+            _logger.LogEntitiesFetched(nameof(Devis), pagedQuotations.Items.Count);
 
             return pagedQuotations;
         }

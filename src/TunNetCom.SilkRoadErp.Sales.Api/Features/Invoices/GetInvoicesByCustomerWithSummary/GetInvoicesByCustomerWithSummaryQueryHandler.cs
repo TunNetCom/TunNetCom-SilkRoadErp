@@ -1,4 +1,4 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetInvoicesByCustomer;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetInvoicesByCustomerWithSummary;
 
 public class GetInvoicesByCustomerWithSummaryQueryHandler(
     SalesContext _context)
@@ -22,8 +22,11 @@ public class GetInvoicesByCustomerWithSummaryQueryHandler(
                 TotTTC = f.BonDeLivraison.Sum(d => d.NetPayer) + 1000
             });
 
-        var pagedInvoices = await PagedList<InvoiceResponse>
-            .ToPagedListAsync(invoicesQuery, query.PageNumber, query.PageSize, cancellationToken);
+        var pagedInvoices = await PagedList<InvoiceResponse>.ToPagedListAsync(
+            source: invoicesQuery,
+            pageNumber: query.PageNumber,
+            pageSize: query.PageSize,
+            cancellationToken: cancellationToken);
 
         var totalGrossAmount = await invoicesQueryBase.SumAsync(d => d.BonDeLivraison.Sum(d => d.TotHTva));
         var totalVATAmount = await invoicesQueryBase.SumAsync(d => d.BonDeLivraison.Sum(d => d.TotTva));

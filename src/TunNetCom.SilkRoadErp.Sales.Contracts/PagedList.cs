@@ -2,12 +2,18 @@
 
 namespace TunNetCom.SilkRoadErp.Sales.Contracts;
 
-public class PagedList<T> : List<T>
+public class PagedList<T>
 {
     public int CurrentPage { get; set; }
     public int TotalPages { get; set; }
     public int PageSize { get; set; }
+
+    public List<T> Items { get; set; }
+
+
+    [JsonPropertyName("totalCount")]
     public int TotalCount { get; set; }
+
     public bool HasPrevious => CurrentPage > 1;
     public bool HasNext => CurrentPage < TotalPages;
 
@@ -19,7 +25,7 @@ public class PagedList<T> : List<T>
         PageSize = pageSize;
         CurrentPage = pageNumber;
         TotalPages = (int)Math.Ceiling(count / (double)pageSize);
-        AddRange(items);
+        Items = items;
     }
 
     public static async Task<PagedList<T>> ToPagedListAsync(

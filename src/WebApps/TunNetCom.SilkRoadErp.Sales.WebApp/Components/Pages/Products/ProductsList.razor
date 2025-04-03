@@ -120,7 +120,7 @@
             };
 
         var result = await productService.GetPagedAsync(productsParameters, cancellationTokenSource.Token);
-        return await Task.FromResult(new GridDataProviderResult<ProductResponse> { Data = result, TotalCount = result.TotalCount });
+        return await Task.FromResult(new GridDataProviderResult<ProductResponse> { Data = result.Items, TotalCount = result.TotalCount });
     }
 
     public void Dispose()

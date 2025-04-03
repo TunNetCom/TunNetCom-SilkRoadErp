@@ -1,6 +1,6 @@
-﻿using Microsoft.Data.SqlClient;
-using TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNote;
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNote;
 using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
+
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNotesBaseInfosWithSummaries;
 
 public class GetDeliveryNotesBaseInfosWithSummariesQueryHandler(
@@ -37,12 +37,15 @@ public class GetDeliveryNotesBaseInfosWithSummariesQueryHandler(
         {
             deliveryNoteQuery = deliveryNoteQuery.Where(d => d.NumFacture == null);
         }
+
         if(request.SortOrder != null && request.SortProperty != null)
         {
             _logger.LogInformation("sorting delivery notes column : {column} order : {order}", request.SortProperty, request.SortOrder);
             deliveryNoteQuery = ApplySorting(deliveryNoteQuery, request.SortProperty, request.SortOrder);
         }
+
         _logger.LogInformation("Getting Gross, Vat and Net amounts");
+
         var totalGrossAmount = await deliveryNoteQuery.SumAsync(d => d.GrossAmount, cancellationToken);
         var totalVATAmount = await deliveryNoteQuery.SumAsync(d => d.VatAmount, cancellationToken);
         var totalNetAmount = await deliveryNoteQuery.SumAsync(d => d.NetAmount, cancellationToken);
@@ -62,18 +65,25 @@ public class GetDeliveryNotesBaseInfosWithSummariesQueryHandler(
         };
 
 
-        _logger.LogEntitiesFetched(nameof(BonDeLivraison), pagedDeliveryNote.Count);
+        _logger.LogEntitiesFetched(nameof(BonDeLivraison), pagedDeliveryNote.Items.Count);
 
         return getDeliveryNotesWithSummariesResponse;
     }
 
-    private IQueryable<GetDeliveryNoteBaseInfos> ApplySorting(IQueryable<GetDeliveryNoteBaseInfos> deliveryNoteQuery, string sortProperty, string sortOrder)
+    private IQueryable<GetDeliveryNoteBaseInfos> ApplySorting(
+        IQueryable<GetDeliveryNoteBaseInfos> deliveryNoteQuery,
+        string sortProperty,
+        string sortOrder)
     {
         return SortQuery(deliveryNoteQuery, sortProperty, sortOrder.ToLower());
     }
 
-    private IQueryable<GetDeliveryNoteBaseInfos> SortQuery(IQueryable<GetDeliveryNoteBaseInfos> query, string property, string order)
+    private IQueryable<GetDeliveryNoteBaseInfos> SortQuery(
+        IQueryable<GetDeliveryNoteBaseInfos> query,
+        string property,
+        string order)
     {
+        // TODO move magic strings to constants
         return (property, order) switch
         {
             ("Num", "ascending") => query.OrderBy(d => d.Num),
