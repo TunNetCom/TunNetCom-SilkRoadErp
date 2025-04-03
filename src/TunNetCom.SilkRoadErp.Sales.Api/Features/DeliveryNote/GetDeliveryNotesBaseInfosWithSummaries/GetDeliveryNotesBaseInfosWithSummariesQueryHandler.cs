@@ -5,7 +5,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNotes
 
 public class GetDeliveryNotesBaseInfosWithSummariesQueryHandler(
     SalesContext _context,
-    ILogger<GetDeliveryNoteQueryHandler> _logger)
+    ILogger<GetDeliveryNotesBaseInfosWithSummariesQueryHandler> _logger)
     : IRequestHandler<GetDeliveryNotesBaseInfosWithSummariesQuery, GetDeliveryNotesWithSummariesResponse>
 {
     public async Task<GetDeliveryNotesWithSummariesResponse> Handle(
@@ -75,7 +75,7 @@ public class GetDeliveryNotesBaseInfosWithSummariesQueryHandler(
         string sortProperty,
         string sortOrder)
     {
-        return SortQuery(deliveryNoteQuery, sortProperty, sortOrder.ToLower());
+        return SortQuery(deliveryNoteQuery, sortProperty, sortOrder);
     }
 
     private IQueryable<GetDeliveryNoteBaseInfos> SortQuery(
@@ -86,12 +86,12 @@ public class GetDeliveryNotesBaseInfosWithSummariesQueryHandler(
         // TODO move magic strings to constants
         return (property, order) switch
         {
-            ("Num", "ascending") => query.OrderBy(d => d.Num),
-            ("Num", "descending") => query.OrderByDescending(d => d.Num),
-            ("NetAmount", "ascending") => query.OrderBy(d => d.NetAmount),
-            ("NetAmount", "descending") => query.OrderByDescending(d => d.NetAmount),
-            ("GrossAmount", "ascending") => query.OrderBy(d => d.GrossAmount),
-            ("GrossAmount", "descending") => query.OrderByDescending(d => d.GrossAmount),
+            ("Num", "ASC") => query.OrderBy(d => d.Num),
+            ("Num", "DESC") => query.OrderByDescending(d => d.Num),
+            ("NetAmount", "ASC") => query.OrderBy(d => d.NetAmount),
+            ("NetAmount", "DESC") => query.OrderByDescending(d => d.NetAmount),
+            ("GrossAmount", "ASC") => query.OrderBy(d => d.GrossAmount),
+            ("GrossAmount", "DESC") => query.OrderByDescending(d => d.GrossAmount),
             _ => query
         };
     }

@@ -3,5 +3,7 @@
 public record GetInvoicesByCustomerWithSummaryQuery(
         int ClientId,
         int PageNumber,
-        int PageSize
+        int PageSize,
+        string? SortProperty,
+        string? SortOrder
     ) : IRequest<Result<GetInvoiceListWithSummary>>;

@@ -20,7 +20,7 @@ public class InvoicesApiClient : IInvoicesApiClient
         CancellationToken cancellationToken)
     {
             var response = await _httpClient.GetAsync(
-                $"/invoices/client/{customerId}?pageNumber={queryParameters.PageNumber}&pageSize={queryParameters.PageSize}",
+                $"/invoices/client/{customerId}?pageNumber={queryParameters.PageNumber}&pageSize={queryParameters.PageSize}&sortOrder={queryParameters.SortOrder}&sortProprety={queryParameters.SortProprety}",
                 cancellationToken: cancellationToken);
 
             if (response.StatusCode == HttpStatusCode.OK)
