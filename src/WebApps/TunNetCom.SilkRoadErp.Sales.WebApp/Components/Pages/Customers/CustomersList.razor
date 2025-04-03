@@ -108,7 +108,7 @@
             };
 
         var result = await customerService.GetAsync(customersParameters, cancellationTokenSource.Token);
-        return await Task.FromResult(new GridDataProviderResult<CustomerResponse> { Data = result, TotalCount = result.TotalCount });
+        return await Task.FromResult(new GridDataProviderResult<CustomerResponse> { Data = result.Items, TotalCount = result.TotalCount });
     }
 
     public void Dispose()

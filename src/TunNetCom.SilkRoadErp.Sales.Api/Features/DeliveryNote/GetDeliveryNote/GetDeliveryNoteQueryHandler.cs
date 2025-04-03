@@ -43,7 +43,7 @@ public class GetDeliveryNoteQueryHandler(
             cancellationToken);
 
 
-        _logger.LogEntitiesFetched(nameof(BonDeLivraison), pagedDeliveryNote.Count);
+        _logger.LogEntitiesFetched(nameof(BonDeLivraison), pagedDeliveryNote.Items.Count);
 
         return pagedDeliveryNote;
     }

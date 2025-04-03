@@ -1,6 +1,6 @@
 ﻿using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNoteByInvoiceId;
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNotesByInvoiceId;
 
 public class GetDeliveryNotesByInvoiceIdQueryHandler(
     SalesContext _context,
@@ -16,7 +16,7 @@ public class GetDeliveryNotesByInvoiceIdQueryHandler(
             nameof(BonDeLivraison),
             getDeliveryNoteByInvoiceIdQuery.NumFacture);
 
-        var deliveryNotes = await _context.BonDeLivraison
+        List<BonDeLivraison> deliveryNotes = await _context.BonDeLivraison
             .Where(d => d.NumFacture == getDeliveryNoteByInvoiceIdQuery.NumFacture)
             .ToListAsync(cancellationToken);
 
