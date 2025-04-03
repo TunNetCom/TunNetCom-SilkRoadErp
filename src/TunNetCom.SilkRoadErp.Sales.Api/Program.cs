@@ -29,8 +29,6 @@ builder.Services.AddValidatorsFromAssembly(assembly);
 
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
-builder.Services.AddScoped<IInvoiceCalculator, InvoiceCalculator>();
-
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
