@@ -25,14 +25,11 @@
 @inject NotificationService NotificationService
 
 <div>
-
     <h3>@Localizer["manage_invoices"]</h3>
 
     <RadzenStack Orientation="Radzen.Orientation.Horizontal"
     AlignItems="AlignItems.Center"
-    JustifyContent="JustifyContent.Center"
-    Gap="0.5rem"
-    Class="rz-p-12">
+    JustifyContent="JustifyContent.Left">
         <RadzenLabel Text="@Localizer["select_customer"]" Component="DropDownDataGridFilteringLoadData" />
         <RadzenDropDownDataGrid AllowClear="true"
         @bind-Value="@SelectedCustomerId"
@@ -62,11 +59,14 @@
                 @ref="InvoiceGrid"
                 AllowFiltering="true"
                 AllowPaging="true"
-                PageSize="5"
+                Page="@OnPage"
+                PageSize="_defaultPageSize"
                 PagerHorizontalAlign="HorizontalAlign.Left"
                 ShowPagingSummary="true"
                 AllowSorting="true"
-                Data="@getInvoiceListWithSummary.Invoices"
+                Count="@getInvoiceListWithSummary.Invoices.TotalCount"
+                Data="@getInvoiceListWithSummary.Invoices.Items"
+                                LoadData="@LoadInvoiceData"
                 @bind-Value="@SelectedInvoice"
                 SelectionMode="DataGridSelectionMode.Single">
                     <HeaderTemplate>
@@ -112,13 +112,13 @@
                                         FilterPopupRenderMode="PopupRenderMode.OnDemand"
                                         FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
                                         AllowPaging="true"
-                                        PageSize="4"
+                                        PageSize="_defaultPageSize"
                                         PagerHorizontalAlign="HorizontalAlign.Left"
                                         ShowPagingSummary="true"
                                         AllowSorting="true"
-                                        Sort="@OnSort"
+                                        GotoFirstPageOnSort="true"
                                         TItem="GetDeliveryNoteBaseInfos"
-                                        Data="@_getDeliveryNotesWithSummariesResponse.GetDeliveryNoteBaseInfos"
+                                        Data="@_getDeliveryNotesWithSummariesResponse.GetDeliveryNoteBaseInfos.Items"
                                         ColumnWidth="200px"
                                         SelectionMode="DataGridSelectionMode.Multiple"
                                         @bind-Value="@SelectedDeliveryNotesToDetach">
@@ -169,9 +169,9 @@
                 AllowPaging="true"
                 PagerHorizontalAlign="HorizontalAlign.Left"
                 ShowPagingSummary="true"
-                PageSize="4"
+                PageSize="_defaultPageSize"
                 AllowSorting="true"
-                Data="@UninvoicedDeliveryNotesSummary.GetDeliveryNoteBaseInfos"
+                Data="@UninvoicedDeliveryNotesSummary.GetDeliveryNoteBaseInfos.Items"
                 ColumnWidth="200px"
                 SelectionMode="DataGridSelectionMode.Multiple"
                 @bind-Value="@SelectedDeliveryNotesToAttach">
@@ -216,6 +216,7 @@
 
 @code {
     #region Fields and Properties
+    private const int _defaultPageSize = 5;
     private int _selectedCustomerId;
     private int SelectedCustomerId
     {
@@ -309,7 +310,7 @@
         try
         {
             var pagedCustomers = await customerService.GetAsync(parameters, _cancellationTokenSource.Token);
-            FilteredCustomers = pagedCustomers;
+            FilteredCustomers = pagedCustomers.Items;
         }
 
         catch (Exception ex)
@@ -330,11 +331,11 @@
         var parameters = new QueryStringParameters
             {
                 PageNumber = 1,
-                PageSize = 10,
+                PageSize = _defaultPageSize,
                 SearchKeyword = null
             };
 
-        FilteredCustomers = await customerService.GetAsync(parameters, _cancellationTokenSource.Token);
+        FilteredCustomers = (await customerService.GetAsync(parameters, _cancellationTokenSource.Token)).Items;
         await InvokeAsync(StateHasChanged);
     }
 
@@ -348,7 +349,7 @@
                 sortOrder: null,
                 sortProperty: null,
                 pageNumber: 1,
-                pageSize: 50,
+                pageSize: _defaultPageSize,
                 cancellationToken: _cancellationTokenSource.Token
             );
         await InvokeAsync(StateHasChanged);
@@ -359,7 +360,7 @@
             {
             //TODO remove magic numbers
                 PageNumber = 1,
-                PageSize = 20,
+                PageSize = _defaultPageSize,
                 SearchKeyword = null
             };
 
@@ -398,9 +399,9 @@
                 invoiceId: null,
                 isInvoiced: false,
                 sortOrder: null,
-				sortProperty: null,
+                sortProperty: null,
                 pageNumber: 1,
-                pageSize: 50,
+                pageSize: _defaultPageSize,
                 cancellationToken: _cancellationTokenSource.Token
             );
         }
@@ -418,12 +419,11 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    void OnSort(DataGridColumnSortEventArgs<GetDeliveryNoteBaseInfos> args)
-      {
-
+    async Task OnSort(DataGridColumnSortEventArgs<GetDeliveryNoteBaseInfos> args)
+    {
         var columnName = args.Column.Property;
-		var sortOrder = args.SortOrder;
-        FetchSortedDeliveryNotesAsync(columnName, sortOrder.ToString());
+        var sortOrder = args.SortOrder;
+        await FetchSortedDeliveryNotesAsync(columnName, sortOrder.ToString());
     }
 
     private async Task FetchSortedDeliveryNotesAsync(string columnName, string sortOrder)
@@ -433,7 +433,7 @@
             invoiceId: SelectedInvoiceId,
             isInvoiced: true,
             pageNumber: 1,
-            pageSize: 50,
+            pageSize: _defaultPageSize,
             sortOrder: sortOrder,
             sortProperty: columnName,
             cancellationToken: _cancellationTokenSource.Token
@@ -521,6 +521,17 @@
                 });
             Console.WriteLine($"Error detaching delivery notes from invoice: {ex.Message}");
         }
+    }
+
+    void OnPage(PagerEventArgs args)
+    {
+        //
+    }
+
+    private async Task LoadInvoiceData(LoadDataArgs args)
+    {
+        // 
+        await Task.CompletedTask;
     }
 
     #endregion

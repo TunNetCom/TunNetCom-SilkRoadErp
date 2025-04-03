@@ -27,7 +27,7 @@ public class GetDeliveryNotesWithSummariesEndpoint : ICarterModule
 
             var response = await mediator.Send(query, cancellationToken);
 
-            if (!response.GetDeliveryNoteBaseInfos.Any())
+            if (!response.GetDeliveryNoteBaseInfos.Items.Any())
             {
                 // TODO: Add a localized message or check this logic
                 return TypedResults.NotFound(new ProblemDetails

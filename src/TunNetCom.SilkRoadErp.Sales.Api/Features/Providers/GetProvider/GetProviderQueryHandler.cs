@@ -45,7 +45,7 @@ public class GetProviderQueryHandler(SalesContext _context, ILogger<GetProviderQ
             getProviderQuery.PageSize,
             cancellationToken);
 
-        _logger.LogEntitiesFetched(nameof(Fournisseur), pagedProviders.Count);
+        _logger.LogEntitiesFetched(nameof(Fournisseur), pagedProviders.Items.Count);
         return pagedProviders;
     }
 }

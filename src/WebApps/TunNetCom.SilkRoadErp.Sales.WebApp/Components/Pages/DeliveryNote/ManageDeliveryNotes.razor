@@ -118,11 +118,11 @@
     {
         if (!string.IsNullOrEmpty(CustomerSearchKeyword))
         {
-            FilteredCustomers = await CustomersApiClient.SearchCustomers(new QueryStringParameters
+            FilteredCustomers = (await CustomersApiClient.SearchCustomers(new QueryStringParameters
                 {
                     SearchKeyword = CustomerSearchKeyword,
                   
-                }, CancellationToken.None);
+            }, CancellationToken.None)).Items;
             StateHasChanged();
         }
     }
@@ -143,14 +143,14 @@
         else
         {
             // Appel à l'API pour récupérer les bons de livraison avec des filtres standards
-            DeliveryNotes = await DeliveryNoteService.GetDeliveryNotes(
+            DeliveryNotes = (await DeliveryNoteService.GetDeliveryNotes(
                 pageNumber: 1,
                 pageSize: 1000,
                 customerId: null,
                 searchKeyword: string.Empty,
                 isFactured: true
               
-            );
+            )).Items;
         }
 
         if (DeliveryNotes != null && DeliveryNotes.Any())

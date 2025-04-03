@@ -12,5 +12,5 @@ public class GetInvoiceListWithSummary
     public decimal TotalNetAmount { get; set; }
 
     [JsonPropertyName("invoices")]
-    public List<InvoiceResponse> Invoices { get; set; } = new List<InvoiceResponse>();
+    public PagedList<InvoiceResponse> Invoices { get; set; } = new PagedList<InvoiceResponse>();
 }

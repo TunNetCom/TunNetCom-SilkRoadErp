@@ -38,7 +38,7 @@ public class GetReceiptNoteQueryHandler(SalesContext _context, ILogger<GetReceip
             getReceiptNoteQuery.PageSize,
             cancellationToken);
 
-        _logger.LogEntitiesFetched(nameof(BonDeReception), pagedReceipts.Count);
+        _logger.LogEntitiesFetched(nameof(BonDeReception), pagedReceipts.Items.Count);
         return pagedReceipts;
     }
 }

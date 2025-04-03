@@ -1,6 +1,6 @@
 ﻿using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNoteByInvoiceId;
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNotesByInvoiceId;
 
 public class GetDeliveryNotesByInvoiceIdQueryHandler(
     SalesContext _context,
