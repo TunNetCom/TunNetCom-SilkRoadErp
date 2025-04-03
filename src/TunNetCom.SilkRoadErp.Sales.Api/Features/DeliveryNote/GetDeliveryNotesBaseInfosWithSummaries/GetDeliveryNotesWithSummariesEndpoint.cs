@@ -1,5 +1,4 @@
-﻿using Microsoft.Data.SqlClient;
-using TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNotesBaseInfosWithSummaries;
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNotesBaseInfosWithSummaries;
 using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
 using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 
@@ -9,7 +8,9 @@ public class GetDeliveryNotesWithSummariesEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapGet("/deliverynotes/summaries", async Task<Results<Ok<GetDeliveryNotesWithSummariesResponse>, NotFound<ProblemDetails>, BadRequest<ProblemDetails>>> (
+        app.MapGet(
+            "/deliverynotes/summaries",
+            async Task<Results<Ok<GetDeliveryNotesWithSummariesResponse>, NotFound<ProblemDetails>, BadRequest<ProblemDetails>>> (
             IMediator mediator,
             [AsParameters] GetDeliveryNotesQueryParams queryParams,
             CancellationToken cancellationToken) =>
@@ -28,6 +29,7 @@ public class GetDeliveryNotesWithSummariesEndpoint : ICarterModule
 
             if (!response.GetDeliveryNoteBaseInfos.Any())
             {
+                // TODO: Add a localized message or check this logic
                 return TypedResults.NotFound(new ProblemDetails
                 {
                     Status = StatusCodes.Status404NotFound,

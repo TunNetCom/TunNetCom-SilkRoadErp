@@ -1,6 +1,6 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetInvoicesByClient;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetInvoicesByCustomer;
 
-public class GetInvoicesByClientWithSummaryEndpoint : ICarterModule
+public class GetInvoicesByCustomerWithSummaryEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
@@ -13,7 +13,7 @@ public class GetInvoicesByClientWithSummaryEndpoint : ICarterModule
                     [FromQuery] int pageSize,
                     CancellationToken cancellationToken) =>
                 {
-                    var query = new GetInvoicesByClientWithSummaryQuery(clientId, pageNumber, pageSize);
+                    var query = new GetInvoicesByCustomerWithSummaryQuery(clientId, pageNumber, pageSize);
 
                     var result = await mediator.Send(query, cancellationToken);
 
