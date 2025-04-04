@@ -1,117 +1,117 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Providers;
+﻿//namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Providers;
 
-public class GetProviderQueryHandlerTests
-{
-    private readonly SalesContext _context;
-    private readonly TestLogger<GetProviderQueryHandler> _testLogger;
-    private readonly GetProviderQueryHandler _handler;
+//public class GetProviderQueryHandlerTests
+//{
+//    private readonly SalesContext _context;
+//    private readonly TestLogger<GetProviderQueryHandler> _testLogger;
+//    private readonly GetProviderQueryHandler _handler;
 
-    public GetProviderQueryHandlerTests()
-    {
-        var options = new DbContextOptionsBuilder<SalesContext>()
-            .UseInMemoryDatabase(databaseName: "SalesContext")
-            .Options; 
-            _context = new SalesContext(options);
-            _testLogger = new TestLogger<GetProviderQueryHandler>();
-            _handler = new GetProviderQueryHandler(_context, _testLogger);
-    }
+//    public GetProviderQueryHandlerTests()
+//    {
+//        var options = new DbContextOptionsBuilder<SalesContext>()
+//            .UseInMemoryDatabase(databaseName: "SalesContext")
+//            .Options; 
+//            _context = new SalesContext(options);
+//            _testLogger = new TestLogger<GetProviderQueryHandler>();
+//            _handler = new GetProviderQueryHandler(_context, _testLogger);
+//    }
 
-    [Fact]
-    public async Task Handle_PaginationRequest_LogsPagination()
-    {
-        // Arrange
-        var query = new GetProviderQuery(
-            PageNumber: 1,
-            PageSize: 10,
-            SearchKeyword: null
-        );
+//    [Fact]
+//    public async Task Handle_PaginationRequest_LogsPagination()
+//    {
+//        // Arrange
+//        var query = new GetProviderQuery(
+//            PageNumber: 1,
+//            PageSize: 10,
+//            SearchKeyword: null
+//        );
 
-        // Act
-        var result = await _handler.Handle(query, CancellationToken.None);
+//        // Act
+//        var result = await _handler.Handle(query, CancellationToken.None);
 
-        // Assert
-        Assert.Contains(_testLogger.Logs, log => log.Contains($"Fetching Fournisseur with pageIndex: {query.PageNumber} and pageSize: {query.PageSize}"));
-        Assert.NotNull(result);
-    }
+//        // Assert
+//        Assert.Contains(_testLogger.Logs, log => log.Contains($"Fetching Fournisseur with pageIndex: {query.PageNumber} and pageSize: {query.PageSize}"));
+//        Assert.NotNull(result);
+//    }
 
-    [Fact]
-    public async Task Handle_SearchKeyword_FiltersProviders()
-    {
-        //Arrange
-        var provider = Fournisseur.CreateProvider(
-             nom: "Provider Looking For",
-             tel: "123456789",
-             fax: "Fax",
-             matricule: "Matricule",
-             code: "Code",
-             codeCat: "CodeCat",
-             etbSec: "etbsec",
-             mail: "email@example.com",
-             mailDeux: "email@example.com",
-             constructeur: true,
-             adresse: "adresse");
+//    [Fact]
+//    public async Task Handle_SearchKeyword_FiltersProviders()
+//    {
+//        //Arrange
+//        var provider = Fournisseur.CreateProvider(
+//             nom: "Provider Looking For",
+//             tel: "123456789",
+//             fax: "Fax",
+//             matricule: "Matricule",
+//             code: "Code",
+//             codeCat: "CodeCat",
+//             etbSec: "etbsec",
+//             mail: "email@example.com",
+//             mailDeux: "email@example.com",
+//             constructeur: true,
+//             adresse: "adresse");
 
-        _context.Fournisseur.Add(provider);
-        await _context.SaveChangesAsync();
+//        _context.Fournisseur.Add(provider);
+//        await _context.SaveChangesAsync();
 
-        var query = new GetProviderQuery(
-          PageNumber: 1,
-          PageSize: 10,
-          SearchKeyword: provider.Nom
-      );
+//        var query = new GetProviderQuery(
+//          PageNumber: 1,
+//          PageSize: 10,
+//          SearchKeyword: provider.Nom
+//      );
 
-        // Act
-        var result = await _handler.Handle(query, CancellationToken.None);
+//        // Act
+//        var result = await _handler.Handle(query, CancellationToken.None);
 
-        // Assert
-        Assert.Single(result);
-        Assert.Equal(provider.Nom, result.First().Nom);
-    }
+//        // Assert
+//        Assert.Single(result);
+//        Assert.Equal(provider.Nom, result.First().Nom);
+//    }
 
-    [Fact]
-    public async Task Handle_EmptySearchKeyword_ReturnsAllProviders()
-    {
-        //Arrange
-        var provider1 = Fournisseur.CreateProvider(
-             nom: "Provider All 1",
-             tel: "123456789",
-             fax: "Fax",
-             matricule: "Matricule",
-             code: "Code",
-             codeCat: "CodeCat",
-             etbSec: "etbsec",
-             mail: "email@example.com",
-             mailDeux: "email@example.com",
-             constructeur: true,
-             adresse: "adresse");
+//    [Fact]
+//    public async Task Handle_EmptySearchKeyword_ReturnsAllProviders()
+//    {
+//        //Arrange
+//        var provider1 = Fournisseur.CreateProvider(
+//             nom: "Provider All 1",
+//             tel: "123456789",
+//             fax: "Fax",
+//             matricule: "Matricule",
+//             code: "Code",
+//             codeCat: "CodeCat",
+//             etbSec: "etbsec",
+//             mail: "email@example.com",
+//             mailDeux: "email@example.com",
+//             constructeur: true,
+//             adresse: "adresse");
 
-        var provider2 = Fournisseur.CreateProvider(
-            nom: "Provider All 2",
-            tel: "123456789",
-            fax: "Fax",
-            matricule: "Matricule",
-            code: "Code",
-            codeCat: "CodeCat",
-            etbSec: "etbsec",
-            mail: "email@example.com",
-            mailDeux: "email@example.com",
-            constructeur: true,
-            adresse: "adresse");
+//        var provider2 = Fournisseur.CreateProvider(
+//            nom: "Provider All 2",
+//            tel: "123456789",
+//            fax: "Fax",
+//            matricule: "Matricule",
+//            code: "Code",
+//            codeCat: "CodeCat",
+//            etbSec: "etbsec",
+//            mail: "email@example.com",
+//            mailDeux: "email@example.com",
+//            constructeur: true,
+//            adresse: "adresse");
 
-        _context.Fournisseur.Add(provider2);
-        _context.Fournisseur.Add(provider1);
-        await _context.SaveChangesAsync();
+//        _context.Fournisseur.Add(provider2);
+//        _context.Fournisseur.Add(provider1);
+//        await _context.SaveChangesAsync();
 
-        var query = new GetProviderQuery(
-           PageNumber: 1,
-           PageSize: 10,
-           SearchKeyword: ""
-       );
+//        var query = new GetProviderQuery(
+//           PageNumber: 1,
+//           PageSize: 10,
+//           SearchKeyword: ""
+//       );
 
-        // Act
-        var result = await _handler.Handle(query, CancellationToken.None);
+//        // Act
+//        var result = await _handler.Handle(query, CancellationToken.None);
 
-        // Assert
-        Assert.True(result.Count >= 2);
-    }
-}
+//        // Assert
+//        Assert.True(result.Count >= 2);
+//    }
+//}

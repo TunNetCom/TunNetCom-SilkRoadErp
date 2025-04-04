@@ -49,7 +49,7 @@ public class CustomerController : Controller
             };
 
             var pagedList = await _customersApiClient.GetAsync(queryParameters, cancellationToken);
-            customerList = pagedList.ToList();
+            customerList = pagedList.Items;
 
             // Cache aside implementation
             var cacheEntryOptions = new MemoryCacheEntryOptions()

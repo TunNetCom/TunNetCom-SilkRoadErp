@@ -1,193 +1,128 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
-    <meta charset="utf-8"/>
-	<title>Invoice List Test</title>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificat de Retenue</title>
     <style>
-			.invoice-box {
-				max-width: 800px;
-				margin: auto;
-				padding: 30px;
-				border: 1px solid #eee;
-				box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
-				font-size: 16px;
-				line-height: 24px;
-				font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
-				color: #555;
-			}
-
-			.invoice-box table {
-				width: 100%;
-				line-height: inherit;
-				text-align: left;
-			}
-
-			.invoice-box table td {
-				padding: 5px;
-				vertical-align: top;
-			}
-
-			.invoice-box table tr td:nth-child(2) {
-				text-align: right;
-			}
-
-			.invoice-box table tr.top table td {
-				padding-bottom: 20px;
-			}
-
-			.invoice-box table tr.top table td.title {
-				font-size: 45px;
-				line-height: 45px;
-				color: #333;
-			}
-
-			.invoice-box table tr.information table td {
-				padding-bottom: 40px;
-			}
-
-			.invoice-box table tr.heading td {
-				background: #eee;
-				border-bottom: 1px solid #ddd;
-				font-weight: bold;
-			}
-
-			.invoice-box table tr.details td {
-				padding-bottom: 20px;
-			}
-
-			.invoice-box table tr.item td {
-				border-bottom: 1px solid #eee;
-			}
-
-			.invoice-box table tr.item.last td {
-				border-bottom: none;
-			}
-
-			.invoice-box table tr.total td:nth-child(2) {
-				border-top: 2px solid #eee;
-				font-weight: bold;
-			}
-
-			@@media only screen and (max-width: 600px) {
-				.invoice-box table tr.top table td {
-					width: 100%;
-					display: block;
-					text-align: center;
-				}
-
-				.invoice-box table tr.information table td {
-					width: 100%;
-					display: block;
-					text-align: center;
-				}
-			}
-
-			/** RTL **/
-			.invoice-box.rtl {
-				direction: rtl;
-				font-family: Tahoma, 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
-			}
-
-			.invoice-box.rtl table {
-				text-align: right;
-			}
-
-			.invoice-box.rtl table tr td:nth-child(2) {
-				text-align: left;
-			}
-		</style>
-</head>
-
-<body>
-<div class="invoice-box">
-    <table cellpadding="0" cellspacing="0">
-        <tr class="top">
-            <td colspan="2">
-                <table>
-                    <tr>
-                        <td class="title">
-                            <img
-                                src="https://code.dometrain.com/Dometrain3.png"
-                                style="width: 100%; max-width: 300px"
-                                alt=""/>
-                        </td>
-
-                        <td>
-								Invoice #: @GetInvoiceListWithSummary.TotalGrossAmount<br />
-                           @*  Created: @Invoice.IssueDate.ToString("MMMM dd, yyyy")<br/>
-                            Due: @Invoice.DueDate.ToString("MMMM dd, yyyy") *@
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-
-        <tr class="information">
-            <td colspan="2">
-                <table>
-                    <tr>
-                        <td>
-                           @*  @Invoice.SellerAddress.CompanyName<br/>
-                            @Invoice.SellerAddress.Street<br/>
-                            @Invoice.SellerAddress.City, @Invoice.SellerAddress.State @Invoice.SellerAddress.ZipCode<br/>
-                            @Invoice.CustomerAddress.Phone<br/>
-                            @Invoice.CustomerAddress.Email *@
-                        </td>
-
-                        <td>
-                        @*     @Invoice.CustomerAddress.CompanyName<br/>
-                            @Invoice.CustomerAddress.Street<br/>
-                            @Invoice.CustomerAddress.City, @Invoice.CustomerAddress.State @Invoice.CustomerAddress.ZipCode<br/>
-                            @Invoice.CustomerAddress.Phone<br/>
-                            @Invoice.CustomerAddress.Email *@
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-
-        <tr class="heading">
-            <td>Payment Method</td>
-
-            <td>Check #</td>
-        </tr>
-
-        <tr class="details">
-            <td>Check</td>
-
-            <td>1000</td>
-        </tr>
-
-        <tr class="heading">
-            <td>Item</td>
-
-            <td>Price</td>
-        </tr>
-
-       @*  @for (var i = 0; i < Invoice.Items.Count; i++)
-        {
-	        var invoiceItem = Invoice.Items[i];
-	        <tr class="item @(i == Invoice.Items.Count - 1 ? "last" : string.Empty)">
-		        <td>@invoiceItem.Name x@(invoiceItem.Quantity)</td>
-
-		        <td>@invoiceItem.Price.ToString("C")</td>
-	        </tr>
+        body {
+            font-family: Arial, sans-serif;
         }
 
-        <tr class="total">
-            <td></td>
+        .container {
+            width: 80%;
+            margin: auto;
+            border: 1px solid black;
+            padding: 20px;
+        }
 
-            <td>Total: @(Invoice.Items.Select(x => x.Price).Sum().ToString("C"))</td>
-        </tr> *@
-    </table>
-</div>
+        .header {
+            text-align: center;
+            font-weight: bold;
+        }
 
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
 
-<p>Hello there</p>
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .identifiant-table th, .identifiant-table td {
+            text-align: center;
+        }
+
+        .signature {
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <p>REPUBLIQUE TUNISIENNE</p>
+            <p>MINISTERE DU PLAN ET FINANCES</p>
+            <p>DIRECTION GENERALE DU CONTROLE FISCAL</p>
+            <h2>CERTIFICAT DE RETENU A LA SOURCE</h2>
+        </div>
+
+        <h3>A - PERSONNE OU ORGANISME PAYEUR :</h3>
+        <p><strong>Nom, Prénom ou Raison Sociale :</strong> Hanine</p>
+        <p><strong>Adresse :</strong> 123 Main St, Cityville</p>
+
+        <table class="identifiant-table">
+            <tr>
+                <th>Matricule fiscal</th>
+                <th>Code T.V.A</th>
+                <th>Code catégorie</th>
+                <th>N° Etb secondaire</th>
+            </tr>
+            <tr>
+                <td>MAT-5678</td>
+                <td>C123</td>
+                <td>CAT-001</td>
+                <td>ETB-XYZ</td>
+            </tr>
+        </table>
+
+        <h3>B - RETENUE EFFECTUÉE SUR :</h3>
+        <table>
+            <tr>
+                <th>N° de la facture</th>
+                <th>Date de la facture</th>
+                <th>Montant brut</th>
+                <th>Retenue</th>
+                <th>Montant net</th>
+            </tr>
+            <tr>
+                <td>202300798</td>
+                <td>3/2/2025</td>
+                <td>10.382.082</td>
+                <td>103.821</td>
+                <td>10.278.261</td>
+            </tr>
+            <tr>
+                <th colspan="2">Total</th>
+                <th>10.382.082</th>
+                <th>103.821</th>
+                <th>10.278.261</th>
+            </tr>
+        </table>
+
+        <h3>C - BENEFICIAIRE :</h3>
+        <p><strong>Nom, Prénom ou Raison Sociale :</strong> MegaPharm</p>
+        <p><strong>Adresse :</strong> New York, USA</p>
+
+        <table class="identifiant-table">
+            <tr>
+                <th>Matricule fiscal</th>
+                <th>Code T.V.A</th>
+                <th>Code catégorie</th>
+                <th>N° Etb secondaire</th>
+            </tr>
+            <tr>
+                <td>114562/B</td>
+                <td>A</td>
+                <td>M</td>
+                <td>000</td>
+            </tr>
+        </table>
+
+        <p>Je souligne, certifie exacts les renseignements figurant sur le présent certificat et m'expose aux sanctions prévues par la loi pour toute inexactitude.</p>
+
+        <div class="signature">
+            <p>Central Park, le : 4/4/2025</p>
+            <p><strong>Cachet et signature du payeur</strong></p>
+        </div>
+    </div>
 </body>
 </html>
-
 
 @code {
 	[Parameter] public GetInvoiceListWithSummary GetInvoiceListWithSummary { get; set; }

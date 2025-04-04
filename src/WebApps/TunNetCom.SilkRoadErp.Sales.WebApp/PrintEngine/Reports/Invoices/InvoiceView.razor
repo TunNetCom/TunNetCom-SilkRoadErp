@@ -106,18 +106,17 @@
             <td colspan="2">
                 <table>
                     <tr>
-                        <td class="title">
-                            <img
-                                src="https://code.dometrain.com/Dometrain3.png"
-                                style="width: 100%; max-width: 300px"
-                                alt=""/>
-                        </td>
+                        <td class="title"/>
 
                         <td>
-								Invoice #: @GetInvoiceListWithSummary.TotalGrossAmount<br />
+								Invoice #: @_invoice.Num<br />
                            @*  Created: @Invoice.IssueDate.ToString("MMMM dd, yyyy")<br/>
                             Due: @Invoice.DueDate.ToString("MMMM dd, yyyy") *@
                         </td>
+						<td>
+								REPUBLIQUE TUNISIENNE
+								MINISTERE DU PLAN ET FINANCES
+						</td>
                     </tr>
                 </table>
             </td>
@@ -190,5 +189,5 @@
 
 
 @code {
-	[Parameter] public GetInvoiceListWithSummary GetInvoiceListWithSummary { get; set; }
+	[Parameter] public InvoiceResponse _invoice { get; set; }
 }
