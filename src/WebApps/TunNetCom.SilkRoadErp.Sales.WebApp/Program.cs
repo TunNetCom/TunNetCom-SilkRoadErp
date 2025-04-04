@@ -1,4 +1,6 @@
 using Radzen;
+using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine;
+using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Invoices.RetenueSource;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +12,10 @@ var baseUrl = builder.Configuration.GetValue<string>("BaseUrl")
     ?? throw new ArgumentNullException("Sales base url was null!");
 
 builder.Services.AddSalesHttpClients(baseUrl);
+builder.Services.AddScoped<PrintRetenuSourceService>();
+builder.Services.AddScoped<PdfService>();
+
+
 
 builder.Services.AddLocalization();
 builder.Services.AddControllers();
