@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Playwright;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers;
 
 namespace TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Invoices.RetenueSource;
 
@@ -8,24 +10,27 @@ public class PrintRetenuSourceService
 {
     private readonly ILogger<PrintRetenuSourceService> _logger;
     private readonly IServiceProvider _serviceProvider;
+    private readonly ICustomersApiClient _customerService;
+    private readonly IInvoicesApiClient _invoicesService;
 
-    public PrintRetenuSourceService(ILogger<PrintRetenuSourceService> logger, IServiceProvider serviceProvider)
+    public PrintRetenuSourceService(ILogger<PrintRetenuSourceService> logger, IServiceProvider serviceProvider, IInvoicesApiClient invoicesService, ICustomersApiClient customerService)
     {
         _logger = logger;
         _serviceProvider = serviceProvider;
+        _invoicesService = invoicesService;
+        _customerService = customerService;
     }
 
-    public async Task<byte[]> GenerateInvoicePdfAsync(GetInvoiceListWithSummary GetInvoiceListWithSummary)
+    public async Task<byte[]> GenerateInvoicePdfAsync(List<int> InvoicesIdList)
     {
         // Log the generation of the invoice PDF
         _logger.LogInformation("Generating Retenu source");
-
         Microsoft.Playwright.Program.Main(["install"]);
         // Render the InvoiceView component to HTML
         var htmlRenderer = new HtmlRenderer(_serviceProvider, _serviceProvider.GetRequiredService<ILoggerFactory>());
         var html = await htmlRenderer.Dispatcher.InvokeAsync(async () =>
         {
-            var dictionary = new Dictionary<string, object?> { { "GetInvoiceListWithSummary", GetInvoiceListWithSummary } };
+            var dictionary = new Dictionary<string, object?> { { "InvoicesIdList", InvoicesIdList } };
             var parameters = ParameterView.FromDictionary(dictionary);
             var output = await htmlRenderer.RenderComponentAsync<RetenuSourceView>(parameters);
             return output.ToHtmlString();
@@ -41,7 +46,7 @@ public class PrintRetenuSourceService
         {
             Format = "A4",
             DisplayHeaderFooter = true,
-            HeaderTemplate = "<div style='font-size:12px; text-align:center; width:100%;'>My SaaS Application</div>",
+            HeaderTemplate = "<div style='font-size:12px; text-align:center; width:100%;'>Retenu</div>",
             FooterTemplate = "<div style='font-size:12px; text-align:center; width:100%;'>Page <span class=\"pageNumber\"></span> of <span class=\"totalPages\"></span></div>",
         });
 
