@@ -11,9 +11,11 @@ public class GetInvoicesByCustomerWithSummaryEndpoint : ICarterModule
                     int clientId,
                     [FromQuery] int pageNumber,
                     [FromQuery] int pageSize,
+                    [FromQuery] string sortOrder,
+                    [FromQuery] string sortProprety,
                     CancellationToken cancellationToken) =>
                 {
-                    var query = new GetInvoicesByCustomerWithSummaryQuery(clientId, pageNumber, pageSize);
+                    var query = new GetInvoicesByCustomerWithSummaryQuery(clientId, pageNumber, pageSize, sortProprety, sortOrder);
 
                     var result = await mediator.Send(query, cancellationToken);
 

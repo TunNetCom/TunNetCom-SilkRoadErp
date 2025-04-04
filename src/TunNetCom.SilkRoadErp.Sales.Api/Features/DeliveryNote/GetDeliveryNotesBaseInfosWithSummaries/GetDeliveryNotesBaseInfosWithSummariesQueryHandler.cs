@@ -5,9 +5,12 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNotes
 
 public class GetDeliveryNotesBaseInfosWithSummariesQueryHandler(
     SalesContext _context,
-    ILogger<GetDeliveryNoteQueryHandler> _logger)
+    ILogger<GetDeliveryNotesBaseInfosWithSummariesQueryHandler> _logger)
     : IRequestHandler<GetDeliveryNotesBaseInfosWithSummariesQuery, GetDeliveryNotesWithSummariesResponse>
 {
+        private const string _numColumName = "Num";
+        private const string _netAmountColumnName = "NetAmount";
+        private const string _grossAmountColumnName = "GrossAmount";
     public async Task<GetDeliveryNotesWithSummariesResponse> Handle(
         GetDeliveryNotesBaseInfosWithSummariesQuery request,
         CancellationToken cancellationToken)
@@ -64,7 +67,6 @@ public class GetDeliveryNotesBaseInfosWithSummariesQueryHandler(
             TotalVatAmount = totalVATAmount
         };
 
-
         _logger.LogEntitiesFetched(nameof(BonDeLivraison), pagedDeliveryNote.Items.Count);
 
         return getDeliveryNotesWithSummariesResponse;
@@ -75,7 +77,7 @@ public class GetDeliveryNotesBaseInfosWithSummariesQueryHandler(
         string sortProperty,
         string sortOrder)
     {
-        return SortQuery(deliveryNoteQuery, sortProperty, sortOrder.ToLower());
+        return SortQuery(deliveryNoteQuery, sortProperty, sortOrder);
     }
 
     private IQueryable<GetDeliveryNoteBaseInfos> SortQuery(
@@ -83,15 +85,14 @@ public class GetDeliveryNotesBaseInfosWithSummariesQueryHandler(
         string property,
         string order)
     {
-        // TODO move magic strings to constants
         return (property, order) switch
         {
-            ("Num", "ascending") => query.OrderBy(d => d.Num),
-            ("Num", "descending") => query.OrderByDescending(d => d.Num),
-            ("NetAmount", "ascending") => query.OrderBy(d => d.NetAmount),
-            ("NetAmount", "descending") => query.OrderByDescending(d => d.NetAmount),
-            ("GrossAmount", "ascending") => query.OrderBy(d => d.GrossAmount),
-            ("GrossAmount", "descending") => query.OrderByDescending(d => d.GrossAmount),
+            (_numColumName, SortConstants.Ascending) => query.OrderBy(d => d.Num),
+            (_numColumName, SortConstants.Descending) => query.OrderByDescending(d => d.Num),
+            (_netAmountColumnName, SortConstants.Ascending) => query.OrderBy(d => d.NetAmount),
+            (_netAmountColumnName, SortConstants.Descending) => query.OrderByDescending(d => d.NetAmount),
+            (_grossAmountColumnName, SortConstants.Ascending) => query.OrderBy(d => d.GrossAmount),
+            (_grossAmountColumnName, SortConstants.Descending) => query.OrderByDescending(d => d.GrossAmount),
             _ => query
         };
     }

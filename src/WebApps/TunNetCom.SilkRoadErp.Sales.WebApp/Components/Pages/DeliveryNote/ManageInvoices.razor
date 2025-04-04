@@ -66,7 +66,7 @@
                 AllowSorting="true"
                 Count="@getInvoiceListWithSummary.Invoices.TotalCount"
                 Data="@getInvoiceListWithSummary.Invoices.Items"
-                                LoadData="@LoadInvoiceData"
+                LoadData="@LoadInvoiceData"
                 @bind-Value="@SelectedInvoice"
                 SelectionMode="DataGridSelectionMode.Single">
                     <HeaderTemplate>
@@ -112,13 +112,16 @@
                                         FilterPopupRenderMode="PopupRenderMode.OnDemand"
                                         FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
                                         AllowPaging="true"
+                                        Page="@OnPage"
                                         PageSize="_defaultPageSize"
                                         PagerHorizontalAlign="HorizontalAlign.Left"
                                         ShowPagingSummary="true"
+                                        Count="_getDeliveryNotesWithSummariesResponse.GetDeliveryNoteBaseInfos.TotalCount"
                                         AllowSorting="true"
                                         GotoFirstPageOnSort="true"
                                         TItem="GetDeliveryNoteBaseInfos"
                                         Data="@_getDeliveryNotesWithSummariesResponse.GetDeliveryNoteBaseInfos.Items"
+                                        LoadData="@LoadInvoicedDeliveryNoteData"
                                         ColumnWidth="200px"
                                         SelectionMode="DataGridSelectionMode.Multiple"
                                         @bind-Value="@SelectedDeliveryNotesToDetach">
@@ -170,8 +173,10 @@
                 PagerHorizontalAlign="HorizontalAlign.Left"
                 ShowPagingSummary="true"
                 PageSize="_defaultPageSize"
+                Count="@UninvoicedDeliveryNotesSummary.GetDeliveryNoteBaseInfos.TotalCount"
                 AllowSorting="true"
                 Data="@UninvoicedDeliveryNotesSummary.GetDeliveryNoteBaseInfos.Items"
+                LoadData="LoadUninvoicedDeliveryNoteData"
                 ColumnWidth="200px"
                 SelectionMode="DataGridSelectionMode.Multiple"
                 @bind-Value="@SelectedDeliveryNotesToAttach">
@@ -352,6 +357,7 @@
                 pageSize: _defaultPageSize,
                 cancellationToken: _cancellationTokenSource.Token
             );
+        //TODO manage the case when no delivery notes are found
         await InvokeAsync(StateHasChanged);
     }
     private async Task LoadInvoicesForCustomers()
@@ -508,7 +514,7 @@
             await LoadInvoicesForCustomers();
             await LoadUninvoicedDeliveryNotes(_selectedCustomerId);
             await LoadDeliveryNotesForSelectedInvoice(_selectedInvoiceId);
-            
+
             SelectedDeliveryNotesToDetach = new List<GetDeliveryNoteBaseInfos>();
         }
         catch (Exception ex)
@@ -525,15 +531,153 @@
 
     void OnPage(PagerEventArgs args)
     {
-        //
+        // var parameters = new QueryStringParameters
+        //     {
+        //         PageNumber = args.PageIndex,
+        //         PageSize = _defaultPageSize
+        //     };
+        // var result = await invoicesService.GetInvoicesByCustomerIdWithSummary(SelectedCustomerId, parameters, _cancellationTokenSource.Token);
+        // if (result.IsT0)
+        // {
+        //     getInvoiceListWithSummary = result.AsT0;
+        // }
+
+        // if (result.IsT1)
+        // {
+        //     NotificationService.Notify(new NotificationMessage
+        //         {
+        //             Severity = NotificationSeverity.Error,
+        //             Summary = result.AsT1.Detail
+        //         });
+        // }
+
+        // await InvokeAsync(StateHasChanged);
     }
 
     private async Task LoadInvoiceData(LoadDataArgs args)
     {
-        // 
-        await Task.CompletedTask;
+        string _sortProperty = null;
+        string _sortOrder = null;
+        if (args.Sorts != null && args.Sorts.Any())
+        {
+            var sort = args.Sorts.First();
+            _sortProperty = sort.Property;
+            _sortOrder = sort.SortOrder == SortOrder.Ascending ? "ASC" : "DESC";
+        }
+        var parameters = new QueryStringParameters
+            {
+                PageNumber = (args.Skip.Value / _defaultPageSize) + 1,
+                PageSize = _defaultPageSize,
+                SearchKeyword = args.Filter,
+                SortOrder = _sortOrder,
+                SortProprety = _sortProperty
+            };
+        if (SelectedCustomerId <= 0)
+        {
+            getInvoiceListWithSummary = new GetInvoiceListWithSummary();
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        var result = await invoicesService.GetInvoicesByCustomerIdWithSummary(SelectedCustomerId, parameters, _cancellationTokenSource.Token);
+        if (result.IsT0)
+        {
+            getInvoiceListWithSummary = result.AsT0;
+        }
+
+        if (result.IsT1)
+        {
+            NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = result.AsT1.Detail
+                });
+        }
+
+        await InvokeAsync(StateHasChanged);
     }
 
+    private async Task LoadInvoicedDeliveryNoteData(LoadDataArgs args)
+    {
+        if (SelectedCustomerId <= 0 || SelectedInvoiceId <= 0)
+        {
+            return;
+        }
+        try
+        {
+            string _sortProperty = null;
+            string _sortOrder = null;
+            if (args.Sorts != null && args.Sorts.Any())
+            {
+                var sort = args.Sorts.First();
+                _sortProperty = sort.Property;
+                _sortOrder = sort.SortOrder == SortOrder.Ascending ? "ASC" : "DESC";
+            }
+            _getDeliveryNotesWithSummariesResponse = await deliveryNoteService.GetDeliveryNotesWithSummariesAsync(
+                    customerId: SelectedCustomerId,
+                    invoiceId: SelectedInvoiceId,
+                    isInvoiced: true,
+                    sortOrder: _sortOrder,
+                    sortProperty: _sortProperty,
+                    pageNumber: (args.Skip.Value / _defaultPageSize) + 1,
+                    pageSize: _defaultPageSize,
+                    cancellationToken: _cancellationTokenSource.Token
+                );
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = $"Failed to load uninvoiced delivery notes: {ex.Message}"
+                });
+            UninvoicedDeliveryNotes = new List<GetDeliveryNoteBaseInfos>();
+        }
+    }
+
+    private async Task LoadUninvoicedDeliveryNoteData(LoadDataArgs args)
+    {
+		if (SelectedCustomerId <= 0)
+		{
+			return;
+		}
+        try
+        {
+            string _sortProperty = null;
+            string _sortOrder = null;
+
+            if (args.Sorts != null && args.Sorts.Any())
+            {
+                var sort = args.Sorts.First();
+                _sortProperty = sort.Property;
+                _sortOrder = sort.SortOrder == SortOrder.Ascending ? "ASC" : "DESC";
+            }
+            UninvoicedDeliveryNotesSummary = await deliveryNoteService.GetDeliveryNotesWithSummariesAsync(
+                customerId: SelectedCustomerId,
+                invoiceId: null,
+                isInvoiced: false,
+                sortOrder: _sortOrder,
+                sortProperty: _sortProperty,
+                pageNumber: (args.Skip.Value / _defaultPageSize) + 1,
+                pageSize: _defaultPageSize,
+                cancellationToken: _cancellationTokenSource.Token
+            );
+
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = $"Failed to load uninvoiced delivery notes: {ex.Message}"
+                });
+            UninvoicedDeliveryNotes = new List<GetDeliveryNoteBaseInfos>();
+        }
+    }
     #endregion
 
 }

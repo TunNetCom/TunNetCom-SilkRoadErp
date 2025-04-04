@@ -10,7 +10,7 @@ public class GetDeliveryNotesWithSummariesEndpoint : ICarterModule
     {
         app.MapGet(
             "/deliverynotes/summaries",
-            async Task<Results<Ok<GetDeliveryNotesWithSummariesResponse>, NotFound<ProblemDetails>, BadRequest<ProblemDetails>>> (
+            async Task<Results<Ok<GetDeliveryNotesWithSummariesResponse>, BadRequest<ProblemDetails>>> (
             IMediator mediator,
             [AsParameters] GetDeliveryNotesQueryParams queryParams,
             CancellationToken cancellationToken) =>
@@ -27,23 +27,11 @@ public class GetDeliveryNotesWithSummariesEndpoint : ICarterModule
 
             var response = await mediator.Send(query, cancellationToken);
 
-            if (!response.GetDeliveryNoteBaseInfos.Items.Any())
-            {
-                // TODO: Add a localized message or check this logic
-                return TypedResults.NotFound(new ProblemDetails
-                {
-                    Status = StatusCodes.Status404NotFound,
-                    Title = "No delivery notes found",
-                    Detail = "No delivery notes found for the given criteria."
-                });
-            }
-
             return TypedResults.Ok(response);
         })
         .WithName("GetDeliveryNotesWithSummaries")
         .Produces<GetDeliveryNotesWithSummariesResponse>(StatusCodes.Status200OK)
         .ProducesProblem(StatusCodes.Status400BadRequest, "application/problem+json")
-        .ProducesProblem(StatusCodes.Status404NotFound, "application/problem+json")
         .ProducesProblem(StatusCodes.Status500InternalServerError, "application/problem+json")
         .WithDescription("Gets a paginated list of delivery notes with summaries for a customer, optionally filtered by invoice ID, invoiced status, and search keyword.");
     }

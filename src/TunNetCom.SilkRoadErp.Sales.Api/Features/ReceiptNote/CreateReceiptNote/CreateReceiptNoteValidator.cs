@@ -22,7 +22,7 @@ public class CreateReceiptNoteValidator : AbstractValidator<CreateReceiptNoteCom
             
     }
 }
-//int Num,
+//int _numColumName,
 //    long NumBonFournisseur,
 //    DateTime DateLivraison,
 //    int IdFournisseur,
