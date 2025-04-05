@@ -53,8 +53,8 @@
         </div>
 
         <h3>A - PERSONNE OU ORGANISME PAYEUR :</h3>
-        <p><strong>Nom, Prénom ou Raison Sociale :</strong> Hanine</p>
-        <p><strong>Adresse :</strong> 123 Main St, Cityville</p>
+        <p><strong>Nom, Prénom ou Raison Sociale :</strong> @RetenuSourcePrintModel.CustomerName</p>
+        <p><strong>Adresse :</strong> @RetenuSourcePrintModel.CustomerAdresse</p>
 
         <table class="identifiant-table">
             <tr>
@@ -64,10 +64,10 @@
                 <th>N° Etb secondaire</th>
             </tr>
             <tr>
-                <td>MAT-5678</td>
-                <td>C123</td>
-                <td>CAT-001</td>
-                <td>ETB-XYZ</td>
+                <td>@RetenuSourcePrintModel.CustomerMatricule</td>
+                <td>@RetenuSourcePrintModel.CustomerCode</td>
+                <td>@RetenuSourcePrintModel.CustomerCodeCat</td>
+                <td>@RetenuSourcePrintModel.CustomerEtbSec</td>
             </tr>
         </table>
 
@@ -81,17 +81,11 @@
                 <th>Montant net</th>
             </tr>
             <tr>
-                <td>202300798</td>
-                <td>3/2/2025</td>
-                <td>10.382.082</td>
-                <td>103.821</td>
-                <td>10.278.261</td>
-            </tr>
-            <tr>
-                <th colspan="2">Total</th>
-                <th>10.382.082</th>
-                <th>103.821</th>
-                <th>10.278.261</th>
+                <td>@RetenuSourcePrintModel.Invoices.First().Num</td>
+                <td>@RetenuSourcePrintModel.Invoices.First().Date</td>
+                <td>@RetenuSourcePrintModel.Invoices.First().TotHTva</td>
+                <td>@RetenuSourcePrintModel.Invoices.First().TotTva</td>
+                <td>@RetenuSourcePrintModel.Invoices.First().TotTTC</td>
             </tr>
         </table>
 
@@ -107,17 +101,17 @@
                 <th>N° Etb secondaire</th>
             </tr>
             <tr>
-                <td>114562/B</td>
-                <td>A</td>
-                <td>M</td>
-                <td>000</td>
+                <td>@RetenuSourcePrintModel.CompanyMatricule</td>
+                <td>@RetenuSourcePrintModel.CompanyCodeTVA</td>
+                <td>@RetenuSourcePrintModel.CompanyCodeCat</td>
+                <td>@RetenuSourcePrintModel.CompanyEtbSec</td>
             </tr>
         </table>
 
         <p>Je souligne, certifie exacts les renseignements figurant sur le présent certificat et m'expose aux sanctions prévues par la loi pour toute inexactitude.</p>
 
         <div class="signature">
-            <p>Central Park, le : 4/4/2025</p>
+            <p>@RetenuSourcePrintModel.CompanyAdress, le : @DateTime.Now.ToShortDateString()</p>
             <p><strong>Cachet et signature du payeur</strong></p>
         </div>
     </div>
@@ -125,5 +119,5 @@
 </html>
 
 @code {
-	[Parameter] public GetInvoiceListWithSummary GetInvoiceListWithSummary { get; set; }
+    [Parameter] public RetenuSourcePrintModel RetenuSourcePrintModel { get; set; }
 }

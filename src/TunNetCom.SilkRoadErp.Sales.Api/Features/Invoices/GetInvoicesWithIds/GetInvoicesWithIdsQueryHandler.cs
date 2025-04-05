@@ -17,17 +17,18 @@
                   TotTTC = f.BonDeLivraison.Sum(d => d.NetPayer),
                   TotHTva = f.BonDeLivraison.Sum(d => d.TotHTva),
                   TotTva = f.BonDeLivraison.Sum(d => d.TotTva),
+                  CustomerId = f.IdClient,
               })
               .ToListAsync(cancellationToken);
 
             if (!invoices.Any())
             {
                 _logger.LogInformation("No invoices found for IDs: {InvoiceIds}", string.Join(", ", query.InvoicesIds));
-                return Result.Ok<List<InvoiceResponse>>(new List<InvoiceResponse>());
+                return Result.Ok(new List<InvoiceResponse>());
             }
 
             _logger.LogInformation("Successfully retrieved {Count} invoices.", invoices.Count);
-            return Result.Ok<List<InvoiceResponse>>(invoices);
+            return Result.Ok(invoices);
         }
     }
 }
