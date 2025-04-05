@@ -82,7 +82,6 @@ public class InvoicesApiClient : IInvoicesApiClient
     {
         _logger.LogInformation("Fetching invoices by IDs from the API /invoices/byids");
 
-        // Since the endpoint uses GET with a body
         var request = new HttpRequestMessage(HttpMethod.Get, "/invoices/byids")
         {
             Content = JsonContent.Create(invoiceIds)
@@ -93,7 +92,7 @@ public class InvoicesApiClient : IInvoicesApiClient
         if (response.StatusCode == HttpStatusCode.OK)
         {
             var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
-            var invoices = JsonConvert.DeserializeObject<IList<InvoiceResponse>>(responseContent);
+            var invoices = JsonConvert.DeserializeObject<IList<InvoiceResponse>>(responseContent) ?? throw new ArgumentNullException("invoices_for_retenu_notfound");
             return invoices.ToList();
         }
 

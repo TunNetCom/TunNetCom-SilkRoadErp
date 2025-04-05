@@ -9,18 +9,12 @@ public record RetenuSourcePrintModel
     public string? CustomerCode { get; set; }
     public string? CustomerCodeCat { get; set; }
     public string? CustomerEtbSec { get; set; }
-
-    public string CompanyName { get; set; }
-    public string CompanyAdress { get; set; }
-
-    public string CompanyMatricule { get; set; }
-
-    public string CompanyCodeCat { get; set; }
-    public string CompanyCodeTVA { get; set; }
-    public string CompanyEtbSec { get; set; }
-
-
-
-    public List<InvoiceResponse> Invoices { get; set; }
+    public string? CompanyName { get; set; }
+    public string? CompanyAdress { get; set; }
+    public string? CompanyMatricule { get; set; }
+    public string? CompanyCodeCat { get; set; }
+    public string? CompanyCodeTVA { get; set; }
+    public string? CompanyEtbSec { get; set; }
+    public required List<InvoiceResponse> Invoices { get; set; }
 }
  

@@ -687,7 +687,7 @@
         .GenerateInvoicePdfAsync(invoices, cancellationToken: _cancellationTokenSource.Token);
 
         var fileName = $"Retenu à la source {SelectedInvoiceId}.pdf";
-        await JS.InvokeVoidAsync("downloadFile", fileName, Convert.ToBase64String(pdfBytes), "application/pdf");
+        await JS.InvokeVoidAsync("downloadFile", fileName, Convert.ToBase64String(pdfBytes.Value), "application/pdf");
     }
     #endregion
 }
