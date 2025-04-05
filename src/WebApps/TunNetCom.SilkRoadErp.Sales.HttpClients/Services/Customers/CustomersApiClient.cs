@@ -142,7 +142,7 @@ public class CustomersApiClient : ICustomersApiClient
         return pagedCustomers;
     }
 
-    public async Task<CustomerResponse?> GetCustomerById(int id, CancellationToken cancellationToken)
+    public async Task<CustomerResponse?> GetCustomerByIdAsync(int id, CancellationToken cancellationToken)
     {
         try
         {

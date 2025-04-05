@@ -174,7 +174,7 @@
 
         if (missingClientIds.Any())
         {
-            var tasks = missingClientIds.Select(id => CustomersApiClient.GetCustomerById(id, CancellationToken.None)).ToList();
+            var tasks = missingClientIds.Select(id => CustomersApiClient.GetCustomerByIdAsync(id, CancellationToken.None)).ToList();
             var customers = await Task.WhenAll(tasks);
 
             foreach (var customer in customers)

@@ -28,7 +28,7 @@ public interface ICustomersApiClient
         QueryStringParameters queryParameters,
         CancellationToken cancellationToken);
 
-    Task<CustomerResponse?> GetCustomerById(
+    Task<CustomerResponse?> GetCustomerByIdAsync(
         int id,
         CancellationToken cancellationToken);
 }

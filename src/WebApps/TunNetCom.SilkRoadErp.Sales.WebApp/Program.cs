@@ -1,5 +1,5 @@
 using Radzen;
-using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine;
+using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure;
 using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Invoices.RetenueSource;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -26,6 +26,7 @@ var localizationOptions = new RequestLocalizationOptions()
 
 builder.Services.AddBlazorBootstrap();
 builder.Services.AddRadzenComponents();
+builder.Services.AddScoped(typeof(IPrintPdfService<,>), typeof(PrintPdfPlayWrightService<,>));
 
 var app = builder.Build();
 
