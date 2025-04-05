@@ -13,7 +13,6 @@ var baseUrl = builder.Configuration.GetValue<string>("BaseUrl")
 
 builder.Services.AddSalesHttpClients(baseUrl);
 builder.Services.AddScoped<PrintRetenuSourceService>();
-builder.Services.AddScoped<PdfService>();
 
 
 

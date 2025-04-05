@@ -38,4 +38,8 @@
     <ProjectReference Include="..\TunNetCom.SilkRoadErp.Sales.Domain\TunNetCom.SilkRoadErp.Sales.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Features\AppParameters\InitOrUpdateAppParameters\" />
+  </ItemGroup>
+
 </Project>

@@ -19,7 +19,8 @@ public class InvoicesApiClient : IInvoicesApiClient
         QueryStringParameters queryParameters,
         CancellationToken cancellationToken)
     {
-            var response = await _httpClient.GetAsync(
+        _logger.LogInformation("Fetching invoices by customer ID from the API /invoices/client/{customerId}", customerId);
+        var response = await _httpClient.GetAsync(
                 $"/invoices/client/{customerId}?pageNumber={queryParameters.PageNumber}&pageSize={queryParameters.PageSize}&sortOrder={queryParameters.SortOrder}&sortProprety={queryParameters.SortProprety}",
                 cancellationToken: cancellationToken);
 
@@ -59,7 +60,9 @@ public class InvoicesApiClient : IInvoicesApiClient
         return pagedInvoices;
     }
 
-    public async Task<OneOf<CreateInvoiceRequest, BadRequestResponse>> CreateInvoice(CreateInvoiceRequest request, CancellationToken cancellationToken)
+    public async Task<OneOf<CreateInvoiceRequest, BadRequestResponse>> CreateInvoice(
+        CreateInvoiceRequest request,
+        CancellationToken cancellationToken)
     {
         var response = await _httpClient.PostAsJsonAsync("invoices", request, cancellationToken: cancellationToken);
         if (response.StatusCode == HttpStatusCode.Created)
@@ -72,4 +75,36 @@ public class InvoicesApiClient : IInvoicesApiClient
         }
         throw new Exception($"Invoices: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
     }
+
+    public async Task<OneOf<IList<InvoiceResponse>, BadRequestResponse>> GetInvoicesByIdsAsync(
+      List<int> invoiceIds,
+      CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Fetching invoices by IDs from the API /invoices/byids");
+
+        // Since the endpoint uses GET with a body
+        var request = new HttpRequestMessage(HttpMethod.Get, "/invoices/byids")
+        {
+            Content = JsonContent.Create(invoiceIds)
+        };
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.OK)
+        {
+            var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+            var invoices = JsonConvert.DeserializeObject<IList<InvoiceResponse>>(responseContent);
+            return invoices.ToList();
+        }
+
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+            var badRequestResponse = JsonConvert.DeserializeObject<BadRequestResponse>(responseContent);
+            return badRequestResponse;
+        }
+
+        throw new Exception($"Invoices: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync(cancellationToken)}");
+    }
 }
+

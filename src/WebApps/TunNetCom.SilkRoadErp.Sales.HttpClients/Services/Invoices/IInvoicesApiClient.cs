@@ -14,4 +14,8 @@ public interface IInvoicesApiClient
     Task<OneOf<CreateInvoiceRequest, BadRequestResponse>> CreateInvoice(
         CreateInvoiceRequest request,
         CancellationToken cancellationToken);
+
+    Task<OneOf<IList<InvoiceResponse>, BadRequestResponse>> GetInvoicesByIdsAsync(
+      List<int> invoiceIds,
+      CancellationToken cancellationToken);
 }

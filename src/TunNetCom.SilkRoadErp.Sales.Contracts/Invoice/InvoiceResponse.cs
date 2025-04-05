@@ -5,6 +5,9 @@ public class InvoiceResponse
     [JsonPropertyName("num")]
     public int Num { get; set; }
 
+    [JsonPropertyName("customerId")]
+    public int CustomerId { get; set; }
+
     [JsonPropertyName("date")]
     public DateTime Date { get; set; }
 
