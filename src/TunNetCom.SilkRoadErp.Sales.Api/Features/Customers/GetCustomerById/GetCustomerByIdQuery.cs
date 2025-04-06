@@ -1,11 +1,3 @@
 ﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.GetCustomerById;
 
-public class GetCustomerByIdQuery : IRequest<Result<CustomerResponse>>
-{
-    public int Id { get; set; }
-
-    public GetCustomerByIdQuery(int id)
-    {
-        Id = id;
-    }
-}
+public record GetCustomerByIdQuery(int Id) : IRequest<Result<CustomerResponse>>;

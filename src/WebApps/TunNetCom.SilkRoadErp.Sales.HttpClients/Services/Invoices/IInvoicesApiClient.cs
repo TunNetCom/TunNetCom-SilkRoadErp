@@ -1,4 +1,4 @@
-﻿using OneOf.Types;
+﻿using FluentResults;
 
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices;
 
@@ -18,4 +18,8 @@ public interface IInvoicesApiClient
     Task<OneOf<IList<InvoiceResponse>, BadRequestResponse>> GetInvoicesByIdsAsync(
       List<int> invoiceIds,
       CancellationToken cancellationToken);
+
+    Task<Result<FullInvoiceResponse>> GetFullInvoiceByIdAsync(
+        int id,
+        CancellationToken cancellationToken);
 }

@@ -50,24 +50,16 @@ public class CustomersApiClient : ICustomersApiClient
         int id,
         CancellationToken cancellationToken)
     {
-        try
+        var response = await _httpClient.GetAsync($"/customers/{id}", cancellationToken: cancellationToken);
+        if (response.StatusCode == HttpStatusCode.OK)
         {
-            var response = await _httpClient.GetAsync($"/customers/{id}", cancellationToken: cancellationToken);
-            if (response.StatusCode == HttpStatusCode.OK)
-            {
-                return await response.ReadJsonAsync<CustomerResponse>();
-            }
-            if (response.StatusCode == HttpStatusCode.NotFound)
-            {
-                return false;
-            }
-            throw new Exception($"Customersid: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
+            return await response.ReadJsonAsync<CustomerResponse>();
         }
-        catch (Exception ex)
+        if (response.StatusCode == HttpStatusCode.NotFound)
         {
-            _logger.LogError(ex.Message, ex);
-            throw;
+            return false;
         }
+        throw new Exception($"Customersid: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
     }
 
     public async Task<Stream> DeleteAsync(

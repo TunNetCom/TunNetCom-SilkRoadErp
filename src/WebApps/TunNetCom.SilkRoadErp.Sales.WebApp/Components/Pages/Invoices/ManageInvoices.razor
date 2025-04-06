@@ -14,6 +14,7 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Invoices.PrintInvoiceWithDetails
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Invoices.RetenueSource
 
 
@@ -25,12 +26,13 @@
 @inject ToastService toastService
 @inject NotificationService NotificationService
 @inject PrintRetenuSourceService PrintRetenuSourceService
+@inject PrintFullInvoiceService PrintFullInvoiceService
 @inject IJSRuntime JS
 
 <div>
     <h3>@Localizer["manage_invoices"]</h3>
-    <RadzenRow Gap="1rem" Style="width:fit-content">
-        <RadzenColumn Size="12" SizeMD="9">
+    <RadzenRow class="rz-text-align-center rz-border-info-light" Gap="1rem">
+        <RadzenColumn Size="6">
             <RadzenStack Orientation="Radzen.Orientation.Horizontal"
                          AlignItems="AlignItems.Center"
                          JustifyContent="JustifyContent.Left">
@@ -52,8 +54,11 @@
                 </RadzenDropDownDataGrid>
             </RadzenStack>
         </RadzenColumn>
-        <RadzenColumn Size="12" SizeMD="3">
+        <RadzenColumn Size="3">
             <RadzenButton Click=@(args => PrintRetenuSourceClick()) Text=@Localizer["retenu_source_print"] ButtonStyle="ButtonStyle.Primary" />
+        </RadzenColumn>
+        <RadzenColumn Size="3">
+            <RadzenButton Click=@(args => PrintInvoiceClick()) Text=@Localizer["invoice_print"] ButtonStyle="ButtonStyle.Primary" />
         </RadzenColumn>
     </RadzenRow>
 
@@ -85,7 +90,7 @@
                     <RadzenDataGridColumn Property="Date" Title="@Localizer["date"]" FormatString="{0:d}" Width="140px" />
                     <RadzenDataGridColumn Property="TotTTC" Title="@Localizer["total_incl_tax"]" Width="100px">
                         <Template Context="detail">
-                            @detail.TotTTC.FormatNumber()
+                            @detail.TotTTC.FormatAmount()
                         </Template>
                     </RadzenDataGridColumn>
                 </Columns>
@@ -93,13 +98,13 @@
             <RadzenCard Variant="Variant.Outlined" Style="margin-bottom: 1rem;">
                 <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" JustifyContent="JustifyContent.Start">
                     <RadzenText TextStyle="TextStyle.Button">
-                        @Localizer["total_net"]: @getInvoiceListWithSummary.TotalNetAmount.FormatNumber()
+                        @Localizer["total_net"]: @getInvoiceListWithSummary.TotalNetAmount.FormatAmount()
                     </RadzenText>
                     <RadzenText TextStyle="TextStyle.Button">
-                        @Localizer["total_gross"]: @getInvoiceListWithSummary.TotalGrossAmount.FormatNumber()
+                        @Localizer["total_gross"]: @getInvoiceListWithSummary.TotalGrossAmount.FormatAmount()
                     </RadzenText>
                     <RadzenText TextStyle="TextStyle.Button">
-                        @Localizer["total_vat"]: @getInvoiceListWithSummary.TotalVATAmount.FormatNumber()
+                        @Localizer["total_vat"]: @getInvoiceListWithSummary.TotalVATAmount.FormatAmount()
                     </RadzenText>
                 </RadzenStack>
             </RadzenCard>
@@ -135,12 +140,12 @@
                                             <RadzenDataGridColumn Property="Num" Title="@Localizer["number"]" />
                                             <RadzenDataGridColumn Property="GrossAmount" Title="@Localizer["total_ex_tax"]">
                                                 <Template Context="detail">
-                                                    @detail.GrossAmount.FormatNumber()
+                                                    @detail.GrossAmount.FormatAmount()
                                                 </Template>
                                             </RadzenDataGridColumn>
                                             <RadzenDataGridColumn Property="NetAmount" Title="@Localizer["net_payer"]">
                                                 <Template Context="detail">
-                                                    @detail.NetAmount.FormatNumber()
+                                                    @detail.NetAmount.FormatAmount()
                                                 </Template>
                                             </RadzenDataGridColumn>
                                         </Columns>
@@ -148,13 +153,13 @@
                                     <RadzenCard Variant="Variant.Outlined" Style="margin-bottom: 1rem;">
                                         <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" JustifyContent="JustifyContent.Start">
                                             <RadzenText TextStyle="TextStyle.Button">
-                                                @Localizer["total_net"]: @_getDeliveryNotesWithSummariesResponse?.TotalNetAmount.FormatNumber()
+                                                @Localizer["total_net"]: @_getDeliveryNotesWithSummariesResponse?.TotalNetAmount.FormatAmount()
                                             </RadzenText>
                                             <RadzenText TextStyle="TextStyle.Button">
-                                                @Localizer["total_gross"]: @_getDeliveryNotesWithSummariesResponse?.TotalGrossAmount.FormatNumber()
+                                                @Localizer["total_gross"]: @_getDeliveryNotesWithSummariesResponse?.TotalGrossAmount.FormatAmount()
                                             </RadzenText>
                                             <RadzenText TextStyle="TextStyle.Button">
-                                                @Localizer["total_vat"]: @_getDeliveryNotesWithSummariesResponse?.TotalVatAmount.FormatNumber()
+                                                @Localizer["total_vat"]: @_getDeliveryNotesWithSummariesResponse?.TotalVatAmount.FormatAmount()
                                             </RadzenText>
                                         </RadzenStack>
                                     </RadzenCard>
@@ -195,12 +200,12 @@
                     <RadzenDataGridColumn Property="Num" Title="@Localizer["number"]" />
                     <RadzenDataGridColumn Property="NetAmount" Title="@Localizer["total_ex_tax"]" FormatString="{0:N2}">
                         <Template Context="detail">
-                            @detail.NetAmount.FormatNumber()
+                            @detail.NetAmount.FormatAmount()
                         </Template>
                     </RadzenDataGridColumn>
                     <RadzenDataGridColumn Property="GrossAmount" Title="@Localizer["net_payer"]" FormatString="{0:N2}">
                         <Template Context="detail">
-                            @detail.GrossAmount.FormatNumber()
+                            @detail.GrossAmount.FormatAmount()
                         </Template>
                     </RadzenDataGridColumn>
                 </Columns>
@@ -209,13 +214,13 @@
             <RadzenCard Variant="Variant.Outlined" Style="margin-bottom: 1rem;">
                 <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" JustifyContent="JustifyContent.Start">
                     <RadzenText TextStyle="TextStyle.Subtitle1">
-                        @Localizer["total_net"]: @_uninvoicedDeliveryNotesSummary?.TotalNetAmount.FormatNumber()
+                        @Localizer["total_net"]: @_uninvoicedDeliveryNotesSummary?.TotalNetAmount.FormatAmount()
                     </RadzenText>
                     <RadzenText TextStyle="TextStyle.Subtitle1">
-                        @Localizer["total_gross"]: @_uninvoicedDeliveryNotesSummary?.TotalGrossAmount.FormatNumber()
+                        @Localizer["total_gross"]: @_uninvoicedDeliveryNotesSummary?.TotalGrossAmount.FormatAmount()
                     </RadzenText>
                     <RadzenText TextStyle="TextStyle.Subtitle1">
-                        @Localizer["total_vat"]: @_uninvoicedDeliveryNotesSummary?.TotalVatAmount.FormatNumber()
+                        @Localizer["total_vat"]: @_uninvoicedDeliveryNotesSummary?.TotalVatAmount.FormatAmount()
                     </RadzenText>
                 </RadzenStack>
             </RadzenCard>
@@ -684,9 +689,20 @@
         var invoices = new List<int>() { SelectedInvoiceId };
 
         var pdfBytes = await PrintRetenuSourceService
-        .GenerateInvoicePdfAsync(invoices, cancellationToken: _cancellationTokenSource.Token);
+        .GenerateRetenuSourcePdfAsync(invoices, cancellationToken: _cancellationTokenSource.Token);
 
         var fileName = $"Retenu à la source {SelectedInvoiceId}.pdf";
+        await JS.InvokeVoidAsync("downloadFile", fileName, Convert.ToBase64String(pdfBytes.Value), "application/pdf");
+    }
+
+    private async Task PrintInvoiceClick()
+    {
+        var invoices = new List<int>() { SelectedInvoiceId };
+
+        var pdfBytes = await PrintFullInvoiceService
+        .GenerateInvoicePdfAsync(SelectedInvoiceId, cancellationToken: _cancellationTokenSource.Token);
+
+        var fileName = $"Invoice {SelectedInvoiceId}.pdf";
         await JS.InvokeVoidAsync("downloadFile", fileName, Convert.ToBase64String(pdfBytes.Value), "application/pdf");
     }
     #endregion

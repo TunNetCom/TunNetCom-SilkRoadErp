@@ -2,7 +2,6 @@
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices;
-using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure;
 
 namespace TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Invoices.RetenueSource;
 
@@ -13,7 +12,7 @@ public class PrintRetenuSourceService(
     IAppParametersClient _appParametersClient,
     IPrintPdfService<RetenuSourcePrintModel, RetenuSourceView> _printService) 
 {
-    public async Task<Result<byte[]>> GenerateInvoicePdfAsync(
+    public async Task<Result<byte[]>> GenerateRetenuSourcePdfAsync(
         List<int> InvoicesIdList,
         CancellationToken cancellationToken)
     {

@@ -33,7 +33,14 @@ public class SilkPdfOptions
             Width = Width,
             Height = Height,
             PrintBackground = PrintBackground,
-            Landscape = Landscape
+            Landscape = Landscape,
+            Margin = new Margin
+            {
+                Top = MarginTop,
+                Bottom = MarginBottom,
+                Left = MarginLeft,
+                Right = MarginRight
+            }
         };
     }
 
@@ -41,10 +48,10 @@ public class SilkPdfOptions
     {
         Format = "A4",
         DisplayHeaderFooter = true,
-        MarginTop = "20mm",
-        MarginBottom = "20mm",
-        MarginLeft = "10mm",
-        MarginRight = "10mm",
+        MarginTop = "20px",
+        MarginBottom = "20px",
+        MarginLeft = "20px",
+        MarginRight = "20px",
         PrintBackground = true
     };
 }
