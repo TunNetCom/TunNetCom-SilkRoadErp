@@ -52,20 +52,32 @@ classDiagram
         +DateTime Date
         +decimal TotalAmount
         +Client Client
-        +ICollection~DeliveryNote~ DeliveryNote
+        +ICollection~DeliveryNote~ DeliveryNotes
+        +ICollection~SalesInvoiceLine~ SalesInvoiceLines
         +Payment Payment
+    }
+
+    class SalesInvoiceLine {
+        +int Id
+        +int SalesInvoiceId
+        +int ProductId
+        +int Quantity
+        +decimal UnitPrice
+        +decimal TotalLine
+        +SalesInvoice SalesInvoice
+        +Product Product
     }
 
     class DeliveryNote {
         +int Num
-        +DateTime date
-        +decimal TotHTva
-        +decimal NetPayer
-        +TimeOnly TempBl
-        +int? NumFacture
+        +DateTime Date
+        +decimal TotalExcludingVat
+        +decimal NetToPay
+        +TimeOnly DeliveryTime
+        +int? SalesInvoiceId
         +Client? Client
-        +Collection<LigneBl> LigneBl
-        +Facture? NumFactureNavigation 
+        +Collection~LigneBl~ Lines
+        +SalesInvoice? SalesInvoiceNavigation
         +Transaction? Transaction
     }
 
@@ -156,6 +168,7 @@ classDiagram
 
     Client "1" --> "0..*" SalesInvoice : Has
     SalesInvoice "1" --> "1..*" SalesInvoiceLine : Contains
+    SalesInvoice "1" --> "0..*" DeliveryNote : References
     SalesInvoice "1" --> "0..1" Payment : Paid By
     Supplier "1" --> "0..*" PurchaseOrder : Supplies
     PurchaseOrder "1" --> "1..*" PurchaseOrderLine : Contains
