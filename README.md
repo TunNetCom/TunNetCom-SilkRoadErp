@@ -53,19 +53,7 @@ classDiagram
         +decimal TotalAmount
         +Client Client
         +ICollection~DeliveryNote~ DeliveryNotes
-        +ICollection~SalesInvoiceLine~ SalesInvoiceLines
         +Payment Payment
-    }
-
-    class SalesInvoiceLine {
-        +int Id
-        +int SalesInvoiceId
-        +int ProductId
-        +int Quantity
-        +decimal UnitPrice
-        +decimal TotalLine
-        +SalesInvoice SalesInvoice
-        +Product Product
     }
 
     class DeliveryNote {
@@ -178,14 +166,12 @@ classDiagram
     }
 
     Client "1" --> "0..*" SalesInvoice : Has
-    SalesInvoice "1" --> "1..*" SalesInvoiceLine : Contains
     SalesInvoice "1" --> "0..*" DeliveryNote : References
     SalesInvoice "1" --> "0..1" Payment : Paid By
     DeliveryNote "1" --> "1..*" LigneBl : Contains
     Supplier "1" --> "0..*" PurchaseOrder : Supplies
     PurchaseOrder "1" --> "1..*" PurchaseOrderLine : Contains
     PurchaseOrder "1" --> "0..1" Payment : Paid By
-    SalesInvoiceLine "1" --> "1" Product : References
     PurchaseOrderLine "1" --> "1" Product : References
     LigneBl "1" --> "1" Product : References
     Product "1" --> "1" Category : Belongs To
