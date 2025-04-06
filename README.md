@@ -35,19 +35,33 @@ The Purchasing Module in SilkRoadErp includes:
 - **Receiving and Inspection**: Manage receiving and inspection of goods from suppliers.
 - **Purchasing Reports**: Access detailed reports on purchasing activities and supplier performance.
 
-sequenceDiagram
-    participant U as User
-    participant A as Application
-    participant DB as Database
-
-    U->>A: Enter credentials
-    A->>DB: Verify credentials
-    DB-->>A: Credentials valid
-    A-->>U: Grant access
-    Note right of A: Access token issued
-    U->>A: Perform action (e.g., view profile)
-    A-->>U: Action result
-
+## Diagram
+  
+```mermaid
+flowchart LR;
+    Admin <--> Frontend;
+    CommercialAgent <--> Frontend;
+    Frontend <--> SalesModule;
+    Frontend <--> PurchasingModule;
+    SalesModule --> SalesQueue;
+    PurchasingModule --> PurchasingQueue;
+    SalesQueue --> SalesService;
+    PurchasingQueue --> PurchasingService;
+    SalesService <--> Database;
+    PurchasingService <--> Database;
+    SalesService --> SyncQueue;
+    PurchasingService --> SyncQueue;
+    SyncQueue --> ExternalService;
+    ExternalService --> CallbackQueue;
+    CallbackQueue --> SalesService;
+    CallbackQueue --> PurchasingService;
+    ExternalService <--> ExternalAPI;
+    ExternalAPI --> Webhook;
+    Webhook --> SalesModule;
+    Webhook --> PurchasingModule;
+    SalesService <--> ReportingService;
+    PurchasingService <--> InventoryService;
+```
 
 
 ## Technology Stack
