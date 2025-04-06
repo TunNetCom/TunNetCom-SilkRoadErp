@@ -53,17 +53,20 @@ classDiagram
         +decimal TotalAmount
         +Client Client
         +ICollection~SalesInvoiceLine~ SalesInvoiceLines
+        +Payment Payment
     }
 
     class SalesInvoiceLine {
         +int Id
         +int SalesInvoiceId
+        +int ProductId
         +string ProductCode
         +string Description
         +int Quantity
         +decimal UnitPrice
         +decimal TotalLine
         +SalesInvoice SalesInvoice
+        +Product Product
     }
 
     class Supplier {
@@ -81,17 +84,20 @@ classDiagram
         +decimal TotalAmount
         +Supplier Supplier
         +ICollection~PurchaseOrderLine~ PurchaseOrderLines
+        +Payment Payment
     }
 
     class PurchaseOrderLine {
         +int Id
         +int PurchaseOrderId
+        +int ProductId
         +string ProductCode
         +string Description
         +int Quantity
         +decimal UnitPrice
         +decimal TotalLine
         +PurchaseOrder PurchaseOrder
+        +Product Product
     }
 
     class Product {
@@ -100,14 +106,67 @@ classDiagram
         +string Name
         +decimal Price
         +int StockQuantity
+        +int CategoryId
+        +Category Category
+        +ICollection~Inventory~ Inventories
+    }
+
+    class Category {
+        +int Id
+        +string Name
+        +string Description
+        +ICollection~Product~ Products
+    }
+
+    class Inventory {
+        +int Id
+        +int ProductId
+        +int WarehouseId
+        +int Quantity
+        +DateTime LastUpdated
+        +Product Product
+        +Warehouse Warehouse
+    }
+
+    class Warehouse {
+        +int Id
+        +string Name
+        +string Location
+        +ICollection~Inventory~ Inventories
+    }
+
+    class Payment {
+        +int Id
+        +int? SalesInvoiceId
+        +int? PurchaseOrderId
+        +decimal Amount
+        +DateTime PaymentDate
+        +string PaymentMethod
+        +SalesInvoice SalesInvoice
+        +PurchaseOrder PurchaseOrder
+    }
+
+    class Employee {
+        +int Id
+        +string FirstName
+        +string LastName
+        +string Role
+        +string Email
     }
 
     Client "1" --> "0..*" SalesInvoice : Has
     SalesInvoice "1" --> "1..*" SalesInvoiceLine : Contains
+    SalesInvoice "1" --> "0..1" Payment : Paid By
     Supplier "1" --> "0..*" PurchaseOrder : Supplies
     PurchaseOrder "1" --> "1..*" PurchaseOrderLine : Contains
+    PurchaseOrder "1" --> "0..1" Payment : Paid By
     SalesInvoiceLine "1" --> "1" Product : References
     PurchaseOrderLine "1" --> "1" Product : References
+    Product "1" --> "1" Category : Belongs To
+    Product "1" --> "0..*" Inventory : Tracked In
+    Inventory "1" --> "1" Warehouse : Stored In
+    Category "1" --> "0..*" Product : Categorizes
+    Warehouse "1" --> "0..*" Inventory : Holds
 ```
 
 
