@@ -76,9 +76,20 @@ classDiagram
         +TimeOnly DeliveryTime
         +int? SalesInvoiceId
         +Client? Client
-        +Collection~LigneBl~ Lines
+        +ICollection~LigneBl~ Lines
         +SalesInvoice? SalesInvoiceNavigation
         +Transaction? Transaction
+    }
+
+    class LigneBl {
+        +int Id
+        +int DeliveryNoteNum
+        +int ProductId
+        +int Quantity
+        +decimal UnitPrice
+        +decimal TotalLine
+        +DeliveryNote DeliveryNote
+        +Product Product
     }
 
     class Supplier {
@@ -170,11 +181,13 @@ classDiagram
     SalesInvoice "1" --> "1..*" SalesInvoiceLine : Contains
     SalesInvoice "1" --> "0..*" DeliveryNote : References
     SalesInvoice "1" --> "0..1" Payment : Paid By
+    DeliveryNote "1" --> "1..*" LigneBl : Contains
     Supplier "1" --> "0..*" PurchaseOrder : Supplies
     PurchaseOrder "1" --> "1..*" PurchaseOrderLine : Contains
     PurchaseOrder "1" --> "0..1" Payment : Paid By
-    SalesInvoiceLine "1" --> "1" Product : References
+    SalesInvoiceLine "1  --> "1" Product : References
     PurchaseOrderLine "1" --> "1" Product : References
+    LigneBl "1" --> "1" Product : References
     Product "1" --> "1" Category : Belongs To
     Product "1" --> "0..*" Inventory : Tracked In
     Inventory "1" --> "1" Warehouse : Stored In
