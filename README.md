@@ -35,6 +35,27 @@ The Purchasing Module in SilkRoadErp includes:
 - **Receiving and Inspection**: Manage receiving and inspection of goods from suppliers.
 - **Purchasing Reports**: Access detailed reports on purchasing activities and supplier performance.
 
+%% Mermaid Use Case Diagram
+%% Copy this into a GitHub README wrapped in ```mermaid blocks
+
+%% Use Case Diagram for Customer Management System
+%% Mermaid doesn't yet natively support use case diagrams, but we can simulate it with graph TD
+
+graph TD
+    actor1((User)) --> UC1[Add Customer]
+    actor1 --> UC2[Edit Customer]
+    actor1 --> UC3[Delete Customer]
+    actor1 --> UC4[Search Customers]
+    actor1 --> UC5[View Customer Details]
+
+    actor2((Admin)) --> UC6[Generate Reports]
+    actor2 --> UC3
+
+    classDef usecase fill:#f9f,stroke:#333,stroke-width:1px;
+    class UC1,UC2,UC3,UC4,UC5,UC6 usecase;
+
+
+
 ## Technology Stack
 
 - **Backend**: .NET 8
