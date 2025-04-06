@@ -66,8 +66,48 @@ classDiagram
         +SalesInvoice SalesInvoice
     }
 
+    class Supplier {
+        +int Id
+        +string Name
+        +string Address
+        +string Phone
+        +string Email
+    }
+
+    class PurchaseOrder {
+        +int Id
+        +int SupplierId
+        +DateTime Date
+        +decimal TotalAmount
+        +Supplier Supplier
+        +ICollection~PurchaseOrderLine~ PurchaseOrderLines
+    }
+
+    class PurchaseOrderLine {
+        +int Id
+        +int PurchaseOrderId
+        +string ProductCode
+        +string Description
+        +int Quantity
+        +decimal UnitPrice
+        +decimal TotalLine
+        +PurchaseOrder PurchaseOrder
+    }
+
+    class Product {
+        +int Id
+        +string ProductCode
+        +string Name
+        +decimal Price
+        +int StockQuantity
+    }
+
     Client "1" --> "0..*" SalesInvoice : Has
     SalesInvoice "1" --> "1..*" SalesInvoiceLine : Contains
+    Supplier "1" --> "0..*" PurchaseOrder : Supplies
+    PurchaseOrder "1" --> "1..*" PurchaseOrderLine : Contains
+    SalesInvoiceLine "1" --> "1" Product : References
+    PurchaseOrderLine "1" --> "1" Product : References
 ```
 
 
