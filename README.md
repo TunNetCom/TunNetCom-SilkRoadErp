@@ -56,17 +56,17 @@ classDiagram
         +Payment Payment
     }
 
-    class SalesInvoiceLine {
-        +int Id
-        +int SalesInvoiceId
-        +int ProductId
-        +string ProductCode
-        +string Description
-        +int Quantity
-        +decimal UnitPrice
-        +decimal TotalLine
-        +SalesInvoice SalesInvoice
-        +Product Product
+    class DeliveryNote {
+        +int Num
+        +DateTime date
+        +decimal TotHTva
+        +decimal NetPayer
+        +TimeOnly TempBl
+        +int? NumFacture
+        +Client? Client
+        +Collection<LigneBl> LigneBl
+        +Facture? NumFactureNavigation 
+        +Transaction? Transaction
     }
 
     class Supplier {
