@@ -1,4 +1,4 @@
-﻿using OneOf.Types;
+﻿using FluentResults;
 
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices;
 
@@ -24,17 +24,17 @@ public class InvoicesApiClient : IInvoicesApiClient
                 $"/invoices/client/{customerId}?pageNumber={queryParameters.PageNumber}&pageSize={queryParameters.PageSize}&sortOrder={queryParameters.SortOrder}&sortProprety={queryParameters.SortProprety}",
                 cancellationToken: cancellationToken);
 
-            if (response.StatusCode == HttpStatusCode.OK)
-            {
-                var responseContent = await response.Content.ReadAsStringAsync();
-                var invoices = JsonConvert.DeserializeObject<GetInvoiceListWithSummary>(responseContent);
-                return invoices;
-            }
-            if(response.StatusCode == HttpStatusCode.BadRequest)
-            {
-                return await response.ReadJsonAsync<BadRequestResponse>();
-            }
-            throw new Exception($"Invoices: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
+        if (response.StatusCode == HttpStatusCode.OK)
+        {
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var invoices = JsonConvert.DeserializeObject<GetInvoiceListWithSummary>(responseContent);
+            return invoices;
+        }
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            return await response.ReadJsonAsync<BadRequestResponse>();
+        }
+        throw new Exception($"Invoices: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
     }
 
     public async Task<PagedList<InvoiceResponse>> GetInvoices(QueryStringParameters queryParameters, CancellationToken cancellationToken)
@@ -105,5 +105,27 @@ public class InvoicesApiClient : IInvoicesApiClient
 
         throw new Exception($"Invoices: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync(cancellationToken)}");
     }
-}
 
+    public async Task<Result<FullInvoiceResponse>> GetFullInvoiceByIdAsync(
+    int id,
+    CancellationToken cancellationToken)
+    {
+        var response = await _httpClient.GetAsync(
+            $"/invoices/{id}/full",
+            cancellationToken: cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return Result.Fail("invoice_not_found");
+        }
+
+        response.EnsureSuccessStatusCode();
+
+        var invoice = await response.Content.ReadFromJsonAsync<FullInvoiceResponse>(
+            cancellationToken: cancellationToken);
+
+        return invoice is null
+            ? Result.Fail<FullInvoiceResponse>("invoice_is_empty")
+            : Result.Ok(invoice);
+    }
+}

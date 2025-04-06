@@ -23,7 +23,7 @@ public static class SilkPdfOptionsExtensions
             Width = options.Width,
             Height = options.Height,
             PrintBackground = options.PrintBackground,
-            Landscape = options.Landscape
+            Landscape = options.Landscape,
         };
     }
 }

@@ -1,7 +1,3 @@
-using Radzen;
-using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure;
-using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Invoices.RetenueSource;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -12,10 +8,7 @@ var baseUrl = builder.Configuration.GetValue<string>("BaseUrl")
     ?? throw new ArgumentNullException("Sales base url was null!");
 
 builder.Services.AddSalesHttpClients(baseUrl);
-builder.Services.AddScoped<PrintRetenuSourceService>();
-
-
-
+builder.Services.AddPrintEngine();
 builder.Services.AddLocalization();
 builder.Services.AddControllers();
 string[] supportedCultures = ["en", "fr"];
@@ -26,7 +19,6 @@ var localizationOptions = new RequestLocalizationOptions()
 
 builder.Services.AddBlazorBootstrap();
 builder.Services.AddRadzenComponents();
-builder.Services.AddScoped(typeof(IPrintPdfService<,>), typeof(PrintPdfPlayWrightService<,>));
 
 var app = builder.Build();
 
