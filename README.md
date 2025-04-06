@@ -36,17 +36,39 @@ The Purchasing Module in SilkRoadErp includes:
 - **Purchasing Reports**: Access detailed reports on purchasing activities and supplier performance.
 
 ## Diagram
-  
-@startuml
-actor Admin
-actor "Commercial Agent" as CA
-Admin --> (Manage Sales Module)
-Admin --> (Manage Purchasing Module)
-CA --> (Use Sales Module)
-CA --> (Use Purchasing Module)
-(Use Sales Module) --> (Generate Sales Report)
-(Use Purchasing Module) --> (Update Inventory)
-@enduml
+``` mermaid
+classDiagram
+    class Client {
+        +int Id
+        +string Name
+        +string Address
+        +string Phone
+        +string Email
+    }
+
+    class SalesInvoice {
+        +int Id
+        +int ClientId
+        +DateTime Date
+        +decimal TotalAmount
+        +Client Client
+        +ICollection~SalesInvoiceLine~ SalesInvoiceLines
+    }
+
+    class SalesInvoiceLine {
+        +int Id
+        +int SalesInvoiceId
+        +string ProductCode
+        +string Description
+        +int Quantity
+        +decimal UnitPrice
+        +decimal TotalLine
+        +SalesInvoice SalesInvoice
+    }
+
+    Client "1" --> "0..*" SalesInvoice : Has
+    SalesInvoice "1" --> "1..*" SalesInvoiceLine : Contains
+```
 
 
 ## Technology Stack
