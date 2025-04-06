@@ -52,7 +52,7 @@ classDiagram
         +DateTime Date
         +decimal TotalAmount
         +Client Client
-        +ICollection~SalesInvoiceLine~ SalesInvoiceLines
+        +ICollection~DeliveryNote~ DeliveryNote
         +Payment Payment
     }
 
