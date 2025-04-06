@@ -5,22 +5,53 @@
 
 <RadzenComponents @rendermode="InteractiveAuto" />
 
+<RadzenLayout>
+    <RadzenHeader>
+        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 0 15px;">
+            <!-- Left side -->
+            <div style="display: flex; align-items: center; gap: 0;">
+                <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
+                <RadzenLabel Text="Hanine Company" Style="margin-left: 10px" />
+            </div>
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
-
-    <main>
-        <div class="top-row px-4">
-            <LanguageSelector />
+            <!-- Right side -->
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <LanguageSelector />
+                <RadzenAppearanceToggle />
+            </div>
         </div>
-
-        <article class="content px-4">
+    </RadzenHeader>
+    <RadzenSidebar Responsive="false" Style="width: max-content">
+        <RadzenPanelMenu DisplayStyle="@(sidebarExpanded? MenuItemDisplayStyle.IconAndText: MenuItemDisplayStyle.Icon)" ShowArrow="false">
+            <RadzenPanelMenuItem Text="Overview" Icon="home" />
+            <RadzenPanelMenuItem Text="Dashboard" Icon="dashboard" />
+            <RadzenPanelMenuItem Text="Clients" Icon="account_circle">
+                <RadzenPanelMenuItem Text="Comptes" Icon="description" Path="/customers_list" />
+                <RadzenPanelMenuItem Text="Gestion Factures" Icon="chrome_reader_mode" Path="/manage-invoice" />
+            </RadzenPanelMenuItem>
+            <RadzenPanelMenuItem Text="Fournisseurs" Icon="card_travel">
+                <RadzenPanelMenuItem Text="Comptes" Icon="description" Path="/providers_list" />
+                <RadzenPanelMenuItem Text="Gestion Factures" Icon="chrome_reader_mode" />
+            </RadzenPanelMenuItem>
+            <RadzenPanelMenuItem Text="Stock" Icon="event_seat">
+                <RadzenPanelMenuItem Text="Articles" Icon="description" Path="/products_list" />
+            </RadzenPanelMenuItem>
+        </RadzenPanelMenu>
+    </RadzenSidebar>
+    <RadzenBody>
+        <div class="rz-p-4">
             @Body
-        </article>
-    </main>
-</div>
+        </div>
+    </RadzenBody>
+    <RadzenFooter>
+    </RadzenFooter>
+</RadzenLayout>
+
+@code {
+    bool sidebarExpanded = true;
+}
+
+
 
 <div id="blazor-error-ui">
     An unhandled error has occurred.
