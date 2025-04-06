@@ -37,18 +37,16 @@ The Purchasing Module in SilkRoadErp includes:
 
 ## Diagram
   
-```mermaid
-flowchart TD;
-    A[Admin] -->|Manages| SM[Sales Module];
-    A -->|Manages| PM[Purchasing Module];
-    CA[Commercial Agent] -->|Uses| SM;
-    CA -->|Uses| PM;
-    SM -->|Generate Sales Report| RS[Reporting Service];
-    SM -->|Sync Sales Data| ES[External Service];
-    PM -->|Update Inventory| IS[Inventory Service];
-    PM -->|Sync Purchase Data| ES;
-    ES -->|Real-time Updates| WH[Webhook];
-```
+@startuml
+actor Admin
+actor "Commercial Agent" as CA
+Admin --> (Manage Sales Module)
+Admin --> (Manage Purchasing Module)
+CA --> (Use Sales Module)
+CA --> (Use Purchasing Module)
+(Use Sales Module) --> (Generate Sales Report)
+(Use Purchasing Module) --> (Update Inventory)
+@enduml
 
 
 ## Technology Stack
