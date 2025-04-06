@@ -38,29 +38,16 @@ The Purchasing Module in SilkRoadErp includes:
 ## Diagram
   
 ```mermaid
-flowchart LR;
-    Admin <--> Frontend;
-    CommercialAgent <--> Frontend;
-    Frontend <--> SalesModule;
-    Frontend <--> PurchasingModule;
-    SalesModule --> SalesQueue;
-    PurchasingModule --> PurchasingQueue;
-    SalesQueue --> SalesService;
-    PurchasingQueue --> PurchasingService;
-    SalesService <--> Database;
-    PurchasingService <--> Database;
-    SalesService --> SyncQueue;
-    PurchasingService --> SyncQueue;
-    SyncQueue --> ExternalService;
-    ExternalService --> CallbackQueue;
-    CallbackQueue --> SalesService;
-    CallbackQueue --> PurchasingService;
-    ExternalService <--> ExternalAPI;
-    ExternalAPI --> Webhook;
-    Webhook --> SalesModule;
-    Webhook --> PurchasingModule;
-    SalesService <--> ReportingService;
-    PurchasingService <--> InventoryService;
+flowchart TD;
+    A[Admin] -->|Manages| SM[Sales Module];
+    A -->|Manages| PM[Purchasing Module];
+    CA[Commercial Agent] -->|Uses| SM;
+    CA -->|Uses| PM;
+    SM -->|Generate Sales Report| RS[Reporting Service];
+    SM -->|Sync Sales Data| ES[External Service];
+    PM -->|Update Inventory| IS[Inventory Service];
+    PM -->|Sync Purchase Data| ES;
+    ES -->|Real-time Updates| WH[Webhook];
 ```
 
 
