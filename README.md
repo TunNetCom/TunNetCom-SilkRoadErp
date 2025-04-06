@@ -185,7 +185,7 @@ classDiagram
     Supplier "1" --> "0..*" PurchaseOrder : Supplies
     PurchaseOrder "1" --> "1..*" PurchaseOrderLine : Contains
     PurchaseOrder "1" --> "0..1" Payment : Paid By
-    SalesInvoiceLine "1  --> "1" Product : References
+    SalesInvoiceLine "1" --> "1" Product : References
     PurchaseOrderLine "1" --> "1" Product : References
     LigneBl "1" --> "1" Product : References
     Product "1" --> "1" Category : Belongs To
