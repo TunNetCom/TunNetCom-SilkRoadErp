@@ -5,38 +5,38 @@
 @inject IStringLocalizer<SharedResource> Localizer
 @inject IJSRuntime JSRuntime
 
-<div class="d-flex justify-content-end">
-    <div class="form-group">
-        <select @bind="Culture" class="form-control">
-            <option value="en">English</option>
-            <option value="fr">Français</option>
-        </select>
-    </div>
-</div>
+<RadzenDropDown @bind-Value="SelectedCulture" 
+                Data="@AvailableCultures" 
+                TextProperty="DisplayName" 
+                ValueProperty="Name" 
+                Style="width: 150px"
+                Change="@OnCultureChanged">
+</RadzenDropDown>
 
-@code
-{
+@code {
+    private List<CultureInfo> AvailableCultures = new List<CultureInfo>
+    {
+        new CultureInfo("en"),
+        new CultureInfo("fr")
+    };
+
+    private string SelectedCulture { get; set; }
+
     protected override void OnInitialized()
     {
-        Culture = CultureInfo.CurrentCulture;
+        SelectedCulture = CultureInfo.CurrentCulture.Name;
     }
 
-    private CultureInfo Culture
+    private void OnCultureChanged()
     {
-        get
+        var selectedCulture = new CultureInfo(SelectedCulture);
+        if (CultureInfo.CurrentCulture != selectedCulture)
         {
-            return CultureInfo.CurrentCulture;
-        }
-        set
-        {
-            if (CultureInfo.CurrentCulture != value)
-            {
-                var uri = new Uri(Navigation.Uri).GetComponents(UriComponents.PathAndQuery, UriFormat.Unescaped);
-                var cultureEscaped = Uri.EscapeDataString(value.Name);
-                var uriEscaped = Uri.EscapeDataString(uri);
+            var uri = new Uri(Navigation.Uri).GetComponents(UriComponents.PathAndQuery, UriFormat.Unescaped);
+            var cultureEscaped = Uri.EscapeDataString(selectedCulture.Name);
+            var uriEscaped = Uri.EscapeDataString(uri);
 
-                Navigation.NavigateTo($"Culture/Set?culture={cultureEscaped}&redirectUri={uriEscaped}", forceLoad: true);
-            }
+            Navigation.NavigateTo($"Culture/Set?culture={cultureEscaped}&redirectUri={uriEscaped}", forceLoad: true);
         }
     }
 }
