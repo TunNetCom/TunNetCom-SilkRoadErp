@@ -35,6 +35,153 @@ The Purchasing Module in SilkRoadErp includes:
 - **Receiving and Inspection**: Manage receiving and inspection of goods from suppliers.
 - **Purchasing Reports**: Access detailed reports on purchasing activities and supplier performance.
 
+## Diagram
+``` mermaid
+classDiagram
+    class Client {
+        +int Id
+        +string Name
+        +string Address
+        +string Phone
+        +string Email
+    }
+
+    class SalesInvoice {
+        +int Id
+        +int ClientId
+        +DateTime Date
+        +decimal TotalAmount
+        +Client Client
+        +ICollection~DeliveryNote~ DeliveryNotes
+        +Payment Payment
+    }
+
+    class DeliveryNote {
+        +int Num
+        +DateTime Date
+        +decimal TotalExcludingVat
+        +decimal NetToPay
+        +TimeOnly DeliveryTime
+        +int? SalesInvoiceId
+        +Client? Client
+        +ICollection~LigneBl~ Lines
+        +SalesInvoice? SalesInvoiceNavigation
+        +Transaction? Transaction
+    }
+
+    class LigneBl {
+        +int Id
+        +int DeliveryNoteNum
+        +int ProductId
+        +int Quantity
+        +decimal UnitPrice
+        +decimal TotalLine
+        +DeliveryNote DeliveryNote
+        +Product Product
+    }
+
+    class Supplier {
+        +int Id
+        +string Name
+        +string Address
+        +string Phone
+        +string Email
+    }
+
+    class PurchaseOrder {
+        +int Id
+        +int SupplierId
+        +DateTime Date
+        +decimal TotalAmount
+        +Supplier Supplier
+        +ICollection~PurchaseOrderLine~ PurchaseOrderLines
+        +Payment Payment
+    }
+
+    class PurchaseOrderLine {
+        +int Id
+        +int PurchaseOrderId
+        +int ProductId
+        +string ProductCode
+        +string Description
+        +int Quantity
+        +decimal UnitPrice
+        +decimal TotalLine
+        +PurchaseOrder PurchaseOrder
+        +Product Product
+    }
+
+    class Product {
+        +int Id
+        +string ProductCode
+        +string Name
+        +decimal Price
+        +int StockQuantity
+        +int CategoryId
+        +Category Category
+        +ICollection~Inventory~ Inventories
+    }
+
+    class Category {
+        +int Id
+        +string Name
+        +string Description
+        +ICollection~Product~ Products
+    }
+
+    class Inventory {
+        +int Id
+        +int ProductId
+        +int WarehouseId
+        +int Quantity
+        +DateTime LastUpdated
+        +Product Product
+        +Warehouse Warehouse
+    }
+
+    class Warehouse {
+        +int Id
+        +string Name
+        +string Location
+        +ICollection~Inventory~ Inventories
+    }
+
+    class Payment {
+        +int Id
+        +int? SalesInvoiceId
+        +int? PurchaseOrderId
+        +decimal Amount
+        +DateTime PaymentDate
+        +string PaymentMethod
+        +SalesInvoice SalesInvoice
+        +PurchaseOrder PurchaseOrder
+    }
+
+    class Employee {
+        +int Id
+        +string FirstName
+        +string LastName
+        +string Role
+        +string Email
+    }
+
+    Client "1" --> "0..*" SalesInvoice : Has
+    SalesInvoice "1" --> "0..*" DeliveryNote : References
+    SalesInvoice "1" --> "0..1" Payment : Paid By
+    DeliveryNote "1" --> "1..*" LigneBl : Contains
+    Supplier "1" --> "0..*" PurchaseOrder : Supplies
+    PurchaseOrder "1" --> "1..*" PurchaseOrderLine : Contains
+    PurchaseOrder "1" --> "0..1" Payment : Paid By
+    PurchaseOrderLine "1" --> "1" Product : References
+    LigneBl "1" --> "1" Product : References
+    Product "1" --> "1" Category : Belongs To
+    Product "1" --> "0..*" Inventory : Tracked In
+    Inventory "1" --> "1" Warehouse : Stored In
+    Category "1" --> "0..*" Product : Categorizes
+    Warehouse "1" --> "0..*" Inventory : Holds
+```
+
+
 ## Technology Stack
 
 - **Backend**: .NET 8
