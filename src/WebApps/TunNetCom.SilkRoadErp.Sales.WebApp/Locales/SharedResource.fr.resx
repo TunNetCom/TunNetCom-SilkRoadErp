@@ -240,6 +240,9 @@
   <data name="uninvoiced_delivery_notes_details" xml:space="preserve">
     <value>Détails bons de livraison non facturées</value>
   </data>
+  <data name="attach_delivery_note_to_invoice" xml:space="preserve">
+    <value>Joindre à la facture</value>
+  </data>
   <data name="add_product" xml:space="preserve">
     <value>Ajouter un article</value>
   </data>
@@ -335,8 +338,5 @@
   </data>
   <data name="providers" xml:space="preserve">
     <value>Fournisseurs</value>
-  </data>
-  <data name="attach_delivery_note_to_invoice" xml:space="preserve">
-    <value>Joindre à la facture</value>
   </data>
 </root>

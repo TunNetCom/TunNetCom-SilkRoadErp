@@ -31,55 +31,66 @@
 
 <div>
     <h3>@Localizer["manage_invoices"]</h3>
-    <RadzenRow class="rz-text-align-center" Gap="1rem">
+    <RadzenRow class="rz-navbar" Gap="1rem" Style="background-color: #f8f9fa; padding: 1rem; border-bottom: 1px solid #dee2e6;">
         <RadzenColumn Size="6">
             <RadzenStack Orientation="Radzen.Orientation.Horizontal"
-                         AlignItems="AlignItems.Center"
-                         JustifyContent="JustifyContent.Left">
-                <RadzenLabel Text="@Localizer["select_customer"]" Component="DropDownDataGridFilteringLoadData" />
+            Gap="1.5rem"
+            AlignItems="AlignItems.Start"
+            JustifyContent="JustifyContent.Left"
+            Style="width: 100%;">
+
+                <!-- Wider Customer Dropdown (350px) -->
                 <RadzenDropDownDataGrid AllowClear="true"
-                                        @bind-Value="@SelectedCustomerId"
-                                        LoadData="@LoadCustomers"
-                                        AllowFiltering="true"
-                                        AllowFilteringByAllStringColumns="true"
-                                        AllowColumnResize="true"
-                                        Data="@_filteredCustomers"
-                                        TextProperty="@nameof(CustomerResponse.Nom)"
-                                        ValueProperty="@nameof(CustomerResponse.Id)"
-                                        Name="DropDownDataGridFilteringLoadData">
+                IsLoading=@isLoadingCustomers
+                @bind-Value="@SelectedCustomerId"
+                LoadData="@LoadCustomers"
+                AllowFiltering="true"
+                Style="width: 350px;"
+                Data="@_filteredCustomers"
+                TextProperty="@nameof(CustomerResponse.Nom)"
+                ValueProperty="@nameof(CustomerResponse.Id)"
+                Placeholder="@Localizer["select_customer"]">
                     <Columns>
-                        <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Id)" Title="@Localizer["customer_id"]" Width="100px" />
-                        <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Nom)" Title="@Localizer["company_name"]" Width="200px" />
+                        <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Id)" Title="ID" Width="80px" />
+                        <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Nom)" Title="Name" Width="220px" />
                     </Columns>
                 </RadzenDropDownDataGrid>
+
+                <!-- Expanded Buttons (now with fixed width) -->
+                <RadzenButton ButtonStyle="ButtonStyle.Primary"
+                Click="@PrintRetenuSourceClick"
+                Style="min-width: 160px; padding: 0 1rem;">
+                    <RadzenIcon Icon="print" Style="margin-right: 8px;" />
+                    <span>Print Retenu</span>
+                </RadzenButton>
+
+                <RadzenButton ButtonStyle="ButtonStyle.Primary"
+                Click="@PrintInvoiceClick"
+                Style="min-width: 160px; padding: 0 1rem;">
+                    <RadzenIcon Icon="print" Style="margin-right: 8px;" />
+                    <span>Print Invoice</span>
+                </RadzenButton>
             </RadzenStack>
         </RadzenColumn>
-        <RadzenColumn Size="3">
-            <RadzenButton Click=@(args => PrintRetenuSourceClick()) Text=@Localizer["retenu_source_print"] ButtonStyle="ButtonStyle.Primary" />
-        </RadzenColumn>
-        <RadzenColumn Size="3">
-            <RadzenButton Click=@(args => PrintInvoiceClick()) Text=@Localizer["invoice_print"] ButtonStyle="ButtonStyle.Primary" />
-        </RadzenColumn>
     </RadzenRow>
-
-
 
     <RadzenRow Gap="1rem" Style="width:fit-content">
         <RadzenColumn Size="12" SizeMD="6">
             <RadzenDataGrid ColumnWidth="200px"
-                            @ref="InvoiceGrid"
-                            AllowFiltering="true"
-                            AllowPaging="true"
-                            Page="@OnPage"
-                            PageSize="_defaultPageSize"
-                            PagerHorizontalAlign="HorizontalAlign.Left"
-                            ShowPagingSummary="true"
-                            AllowSorting="true"
-                            Count="@getInvoiceListWithSummary.Invoices.TotalCount"
-                            Data="@getInvoiceListWithSummary.Invoices.Items"
-                            LoadData="@LoadInvoiceData"
-                            @bind-Value="@SelectedInvoice"
-                            SelectionMode="DataGridSelectionMode.Single">
+            @ref="InvoiceGrid"
+            AllowFiltering="true"
+            AllowPaging="true"
+            Page="@OnPage"
+            PageSize="_defaultPageSize"
+            PagerHorizontalAlign="HorizontalAlign.Left"
+            ShowPagingSummary="true"
+            AllowSorting="true"
+            Count="@getInvoiceListWithSummary.Invoices.TotalCount"
+            Data="@getInvoiceListWithSummary.Invoices.Items"
+            LoadData="@LoadInvoiceData"
+            @bind-Value="@SelectedInvoice"
+            IsLoading=@isLoadingInvoices
+            SelectionMode="DataGridSelectionMode.Single">
                 <HeaderTemplate>
                     <div style="padding: 6px; font-size: 16px; font-weight: bold;">
                         @Localizer["customer_invoice_details"]
@@ -96,15 +107,15 @@
                 </Columns>
             </RadzenDataGrid>
             <RadzenCard Variant="Variant.Outlined" Style="margin-bottom: 1rem;">
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" JustifyContent="JustifyContent.Start">
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" JustifyContent="JustifyContent.End">
                     <RadzenText TextStyle="TextStyle.Button">
-                        @Localizer["total_net"]: @getInvoiceListWithSummary.TotalNetAmount.FormatAmount()
+                        @Localizer["total_net"]: <strong>@getInvoiceListWithSummary.TotalNetAmount.FormatAmount()</strong>
                     </RadzenText>
                     <RadzenText TextStyle="TextStyle.Button">
-                        @Localizer["total_gross"]: @getInvoiceListWithSummary.TotalGrossAmount.FormatAmount()
+                        @Localizer["total_gross"]: <strong>@getInvoiceListWithSummary.TotalGrossAmount.FormatAmount()</strong>
                     </RadzenText>
                     <RadzenText TextStyle="TextStyle.Button">
-                        @Localizer["total_vat"]: @getInvoiceListWithSummary.TotalVATAmount.FormatAmount()
+                        @Localizer["total_vat"]: <strong>@getInvoiceListWithSummary.TotalVATAmount.FormatAmount()</strong>
                     </RadzenText>
                 </RadzenStack>
             </RadzenCard>
@@ -118,24 +129,25 @@
                             <RadzenTabsItem Text="@Localizer["delivery_notes_details"]">
                                 <RadzenColumn>
                                     <RadzenDataGrid @ref="_grid"
-                                                    AllowRowSelectOnRowClick="true"
-                                                    AllowFiltering="true"
-                                                    FilterPopupRenderMode="PopupRenderMode.OnDemand"
-                                                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
-                                                    AllowPaging="true"
-                                                    Page="@OnPage"
-                                                    PageSize="_defaultPageSize"
-                                                    PagerHorizontalAlign="HorizontalAlign.Left"
-                                                    ShowPagingSummary="true"
-                                                    Count="_getDeliveryNotesWithSummariesResponse.GetDeliveryNoteBaseInfos.TotalCount"
-                                                    AllowSorting="true"
-                                                    GotoFirstPageOnSort="true"
-                                                    TItem="GetDeliveryNoteBaseInfos"
-                                                    Data="@_getDeliveryNotesWithSummariesResponse.GetDeliveryNoteBaseInfos.Items"
-                                                    LoadData="@LoadInvoicedDeliveryNoteData"
-                                                    ColumnWidth="200px"
-                                                    SelectionMode="DataGridSelectionMode.Multiple"
-                                                    @bind-Value="@_selectedDeliveryNotesToDetach">
+                                    AllowRowSelectOnRowClick="true"
+                                    AllowFiltering="true"
+                                    FilterPopupRenderMode="PopupRenderMode.OnDemand"
+                                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                    AllowPaging="true"
+                                    Page="@OnPage"
+                                    PageSize="_defaultPageSize"
+                                    PagerHorizontalAlign="HorizontalAlign.Left"
+                                    ShowPagingSummary="true"
+                                    Count="_getDeliveryNotesWithSummariesResponse.GetDeliveryNoteBaseInfos.TotalCount"
+                                    AllowSorting="true"
+                                    GotoFirstPageOnSort="true"
+                                    TItem="GetDeliveryNoteBaseInfos"
+                                    Data="@_getDeliveryNotesWithSummariesResponse.GetDeliveryNoteBaseInfos.Items"
+                                    LoadData="@LoadInvoicedDeliveryNoteData"
+                                    ColumnWidth="200px"
+                                    SelectionMode="DataGridSelectionMode.Multiple"
+                                    IsLoading=@isLoadingDeliveryNotesInCurrentInvoice
+                                    @bind-Value="@_selectedDeliveryNotesToDetach">
                                         <Columns>
                                             <RadzenDataGridColumn Property="Num" Title="@Localizer["number"]" />
                                             <RadzenDataGridColumn Property="GrossAmount" Title="@Localizer["total_ex_tax"]">
@@ -151,15 +163,15 @@
                                         </Columns>
                                     </RadzenDataGrid>
                                     <RadzenCard Variant="Variant.Outlined" Style="margin-bottom: 1rem;">
-                                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" JustifyContent="JustifyContent.Start">
+                                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" JustifyContent="JustifyContent.End">
                                             <RadzenText TextStyle="TextStyle.Button">
-                                                @Localizer["total_net"]: @_getDeliveryNotesWithSummariesResponse?.TotalNetAmount.FormatAmount()
+                                                @Localizer["total_net"]: <strong>@_getDeliveryNotesWithSummariesResponse?.TotalNetAmount.FormatAmount()</strong>
                                             </RadzenText>
                                             <RadzenText TextStyle="TextStyle.Button">
-                                                @Localizer["total_gross"]: @_getDeliveryNotesWithSummariesResponse?.TotalGrossAmount.FormatAmount()
+                                                @Localizer["total_gross"]: <strong>@_getDeliveryNotesWithSummariesResponse?.TotalGrossAmount.FormatAmount()</strong>
                                             </RadzenText>
                                             <RadzenText TextStyle="TextStyle.Button">
-                                                @Localizer["total_vat"]: @_getDeliveryNotesWithSummariesResponse?.TotalVatAmount.FormatAmount()
+                                                @Localizer["total_vat"]: <strong>@_getDeliveryNotesWithSummariesResponse?.TotalVatAmount.FormatAmount()</strong>
                                             </RadzenText>
                                         </RadzenStack>
                                     </RadzenCard>
@@ -168,29 +180,30 @@
                         </Tabs>
                     </RadzenTabs>
                     <RadzenButton Text="@Localizer["detach_from_invoice"]"
-                                  Click="@DetachDeliveryNotesFromInvoice"
-                                  Disabled="@(SelectedInvoiceId == 0 || !_selectedDeliveryNotesToDetach.Any())" />
+                    Click="@DetachDeliveryNotesFromInvoice"
+                    Disabled="@(SelectedInvoiceId == 0 || !_selectedDeliveryNotesToDetach.Any())" />
 
                 </RadzenStack>
             </RadzenCard>
         </RadzenColumn>
         <RadzenColumn>
             <RadzenDataGrid @ref="_grid"
-                            AllowRowSelectOnRowClick="true"
-                            AllowFiltering="true"
-                            FilterPopupRenderMode="PopupRenderMode.OnDemand"
-                            FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
-                            AllowPaging="true"
-                            PagerHorizontalAlign="HorizontalAlign.Left"
-                            ShowPagingSummary="true"
-                            PageSize="_defaultPageSize"
-                            Count="@_uninvoicedDeliveryNotesSummary.GetDeliveryNoteBaseInfos.TotalCount"
-                            AllowSorting="true"
-                            Data="@_uninvoicedDeliveryNotesSummary.GetDeliveryNoteBaseInfos.Items"
-                            LoadData="LoadUninvoicedDeliveryNoteData"
-                            ColumnWidth="200px"
-                            SelectionMode="DataGridSelectionMode.Multiple"
-                            @bind-Value="@_selectedDeliveryNotesToAttach">
+            AllowRowSelectOnRowClick="true"
+            AllowFiltering="true"
+            FilterPopupRenderMode="PopupRenderMode.OnDemand"
+            FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+            AllowPaging="true"
+            PagerHorizontalAlign="HorizontalAlign.Left"
+            ShowPagingSummary="true"
+            PageSize="_defaultPageSize"
+            Count="@_uninvoicedDeliveryNotesSummary.GetDeliveryNoteBaseInfos.TotalCount"
+            AllowSorting="true"
+            Data="@_uninvoicedDeliveryNotesSummary.GetDeliveryNoteBaseInfos.Items"
+            LoadData="LoadUninvoicedDeliveryNotesData"
+            IsLoading=@isLoadingUninvoicedDeliveryNotes
+            ColumnWidth="200px"
+            SelectionMode="DataGridSelectionMode.Multiple"
+            @bind-Value="@_selectedDeliveryNotesToAttach">
                 <HeaderTemplate>
                     <div style="padding: 6px; font-size: 16px; font-weight: bold;">
                         @Localizer["uninvoiced_delivery_notes_details"]
@@ -212,20 +225,20 @@
 
             </RadzenDataGrid>
             <RadzenCard Variant="Variant.Outlined" Style="margin-bottom: 1rem;">
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" JustifyContent="JustifyContent.Start">
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" JustifyContent="JustifyContent.End">
                     <RadzenText TextStyle="TextStyle.Subtitle1">
-                        @Localizer["total_net"]: @_uninvoicedDeliveryNotesSummary?.TotalNetAmount.FormatAmount()
+                        @Localizer["total_net"]: <strong>@_uninvoicedDeliveryNotesSummary?.TotalNetAmount.FormatAmount()</strong>
                     </RadzenText>
                     <RadzenText TextStyle="TextStyle.Subtitle1">
-                        @Localizer["total_gross"]: @_uninvoicedDeliveryNotesSummary?.TotalGrossAmount.FormatAmount()
+                        @Localizer["total_gross"]: <strong>@_uninvoicedDeliveryNotesSummary?.TotalGrossAmount.FormatAmount()</strong>
                     </RadzenText>
                     <RadzenText TextStyle="TextStyle.Subtitle1">
-                        @Localizer["total_vat"]: @_uninvoicedDeliveryNotesSummary?.TotalVatAmount.FormatAmount()
+                        @Localizer["total_vat"]: <strong>@_uninvoicedDeliveryNotesSummary?.TotalVatAmount.FormatAmount()</strong>
                     </RadzenText>
                 </RadzenStack>
             </RadzenCard>
             <RadzenButton Click=@(args => AttachDeliveryNoteToInvoiceClick("Primary button"))
-                          Text=@Localizer["attach_delivery_note_to_invoice"] ButtonStyle="ButtonStyle.Primary" />
+            Text=@Localizer["attach_delivery_note_to_invoice"] ButtonStyle="ButtonStyle.Primary" />
         </RadzenColumn>
     </RadzenRow>
 
@@ -285,6 +298,10 @@
         }
     }
 
+    bool isLoadingCustomers = false;
+    bool isLoadingInvoices = false;
+    bool isLoadingDeliveryNotesInCurrentInvoice = false;
+    bool isLoadingUninvoicedDeliveryNotes = false;
     private List<CustomerResponse> _filteredCustomers { get; set; } = new();
     private GetInvoiceListWithSummary getInvoiceListWithSummary { get; set; } = new GetInvoiceListWithSummary();
     private IList<GetDeliveryNoteBaseInfos> _selectedDeliveryNoteIdsToDetach = new List<GetDeliveryNoteBaseInfos>();
@@ -318,6 +335,7 @@
     #region Data Loading Methods
     private async Task LoadCustomers(LoadDataArgs args)
     {
+        isLoadingCustomers = true;
         var parameters = new QueryStringParameters
         {
             PageNumber = 1,
@@ -342,9 +360,10 @@
             _filteredCustomers = new List<CustomerResponse>();
         }
 
+        isLoadingCustomers = false;
         await InvokeAsync(StateHasChanged);
     }
-    
+
     private async Task SearchClients()
     {
         var parameters = new QueryStringParameters
@@ -375,7 +394,7 @@
         //TODO manage the case when no delivery notes are found
         await InvokeAsync(StateHasChanged);
     }
-    
+
     private async Task LoadInvoicesForCustomers()
     {
         var parameters = new QueryStringParameters
@@ -410,7 +429,7 @@
 
         await InvokeAsync(StateHasChanged);
     }
-    
+
     private async Task LoadUninvoicedDeliveryNotes(int selectedCustomerId)
     {
         SelectedCustomerId = selectedCustomerId;
@@ -462,7 +481,7 @@
             cancellationToken: _cancellationTokenSource.Token
         );
     }
-    
+
     private async Task AttachDeliveryNoteToInvoiceClick(string text)
     {
         if (SelectedInvoiceId > 0 && _selectedDeliveryNotesToAttach?.Any() == true)
@@ -554,7 +573,7 @@
 
     }
 
-    private async Task LoadInvoiceData(LoadDataArgs args)
+    async Task LoadInvoiceData(LoadDataArgs args)
     {
         string _sortProperty = null;
         string _sortOrder = null;
@@ -579,6 +598,8 @@
             return;
         }
 
+        isLoadingInvoices = true;
+        await Task.Yield(); // Forces UI to update and show spinner
         var result = await invoicesService.GetInvoicesByCustomerIdWithSummary(SelectedCustomerId, parameters, _cancellationTokenSource.Token);
         if (result.IsT0)
         {
@@ -594,6 +615,7 @@
             });
         }
 
+        isLoadingInvoices = false;
         await InvokeAsync(StateHasChanged);
     }
 
@@ -614,6 +636,8 @@
                 _sortProperty = sort.Property;
                 _sortOrder = sort.SortOrder == SortOrder.Ascending ? _sortAscConst : _sortDescConst;
             }
+
+            isLoadingDeliveryNotesInCurrentInvoice = true;
             _getDeliveryNotesWithSummariesResponse = await deliveryNoteService.GetDeliveryNotesWithSummariesAsync(
                     customerId: SelectedCustomerId,
                     invoiceId: SelectedInvoiceId,
@@ -624,6 +648,8 @@
                     pageSize: _defaultPageSize,
                     cancellationToken: _cancellationTokenSource.Token
                 );
+
+            isLoadingDeliveryNotesInCurrentInvoice = false;
             await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
@@ -638,7 +664,7 @@
         }
     }
 
-    private async Task LoadUninvoicedDeliveryNoteData(LoadDataArgs args)
+    private async Task LoadUninvoicedDeliveryNotesData(LoadDataArgs args)
     {
         try
         {
@@ -657,6 +683,7 @@
                 _sortOrder = sort.SortOrder == SortOrder.Ascending ? _sortAscConst : _sortDescConst;
             }
 
+            isLoadingUninvoicedDeliveryNotes = true;
             _uninvoicedDeliveryNotesSummary = await deliveryNoteService.GetDeliveryNotesWithSummariesAsync(
                 customerId: SelectedCustomerId,
                 invoiceId: null,
@@ -668,6 +695,7 @@
                 cancellationToken: _cancellationTokenSource.Token
             );
 
+            isLoadingUninvoicedDeliveryNotes = false;
             await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
@@ -686,6 +714,17 @@
     #region Print methods
     private async Task PrintRetenuSourceClick()
     {
+        if (SelectedInvoiceId <= 0)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["warning"],
+                Detail = Localizer["select_invoice"]
+            });
+            return;
+        }
+
         var invoices = new List<int>() { SelectedInvoiceId };
 
         var pdfBytes = await PrintRetenuSourceService
@@ -697,6 +736,17 @@
 
     private async Task PrintInvoiceClick()
     {
+        if (SelectedInvoiceId <= 0)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["warning"],
+                Detail = Localizer["select_invoice"]
+            });
+            return;
+        }
+
         var invoices = new List<int>() { SelectedInvoiceId };
 
         var pdfBytes = await PrintFullInvoiceService
