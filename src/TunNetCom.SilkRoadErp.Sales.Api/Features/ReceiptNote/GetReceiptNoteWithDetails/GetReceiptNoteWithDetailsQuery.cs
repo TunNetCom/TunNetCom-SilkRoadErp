@@ -3,7 +3,7 @@
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNoteWithDetails;
 
 public record GetReceiptNoteWithDetailsQuery(
-    QueryStringParameters QueryStringParameters,
+    QueryStringParameters queryStringParameters,
     int IdFournisseur,
-    bool? IsInvoiced,
+    bool IsInvoiced,
     int? InvoiceId) : IRequest<ReceiptNotesWithSummary>;

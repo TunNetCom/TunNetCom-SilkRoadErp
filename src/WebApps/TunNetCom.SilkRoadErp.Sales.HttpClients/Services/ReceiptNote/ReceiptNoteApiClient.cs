@@ -14,59 +14,52 @@ class ReceiptNoteApiClient : IReceiptNoteApiClient
         _httpClient = httpClient;
         _logger = logger;
     }
-    public async Task<OneOf<PagedList<ReceiptNoteDetailsResponse>, BadRequestResponse>> GetReceiptNote(
-      int providerId,
-      QueryStringParameters queryParameters,
-      CancellationToken cancellationToken)
+    public async Task<ReceiptNotesWithSummary> GetReceiptNote(
+            int providerId,
+            bool IsInvoiced,
+            int? InvoiceId,
+            QueryStringParameters queryParameters,
+            CancellationToken cancellationToken)
     {
-        var url = $"/api/receipt-notes?pageNumber={queryParameters.PageNumber}" +
-                    $"&pageSize={queryParameters.PageSize}" +
-                   $"&idFournisseur={providerId}";
-        var response = await _httpClient.GetAsync(url, cancellationToken);
-        response.EnsureSuccessStatusCode();
 
-        var responseContent = await response.Content.ReadAsStringAsync();
-        var pagedReceiptNotes = JsonConvert.DeserializeObject<PagedList<ReceiptNoteDetailsResponse>>(responseContent);
-
-        return pagedReceiptNotes;
-    }
-    public async Task<PagedList<ReceiptNoteDetailsResponse>> GetReceiptNotesAsync(
-       int? idFournisseur,
-       int pageNumber,
-       int pageSize,
-       string? searchKeyword,
-       bool? isFactured,
-       CancellationToken cancellationToken)
-    {
         var queryParams = new Dictionary<string, string>
         {
-            { "PageNumber", pageNumber.ToString() },
-            { "PageSize", pageSize.ToString() }
+            { "PageNumber", queryParameters.PageNumber.ToString() },
+            { "PageSize", queryParameters.PageSize.ToString() },
+            { "ProviderId", providerId.ToString() },
+            { "IsInvoiced", IsInvoiced.ToString() }
         };
 
-        if (idFournisseur.HasValue)
-            queryParams.Add("IdFournisseur", idFournisseur.Value.ToString());
+        // Add optional parameters if they are provided
+        if (!string.IsNullOrEmpty(queryParameters.SortProprety) && !string.IsNullOrEmpty(queryParameters.SortOrder))
+        {
+            queryParams.Add("SortProprety", queryParameters.SortProprety);
+            queryParams.Add("SortOrder", queryParameters.SortOrder);
+        }
+        if (!string.IsNullOrEmpty(queryParameters.SearchKeyword))
+        {
+            queryParams.Add("SearchKeyword", queryParameters.SearchKeyword);
+        }
+        if (InvoiceId.HasValue)
+        {
+            queryParams.Add("InvoiceId", InvoiceId.Value.ToString());
+        }
 
-        if (!string.IsNullOrEmpty(searchKeyword))
-            queryParams.Add("SearchKeyword", searchKeyword);
-
-        if (isFactured.HasValue)
-            queryParams.Add("IsFactured", isFactured.Value.ToString());
-
+        // Build the query string
         var queryString = string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
         var requestUri = $"/receipt-note?{queryString}";
 
-        // Make the HTTP request
+        // Send the GET request
         var response = await _httpClient.GetAsync(requestUri, cancellationToken);
-        response.EnsureSuccessStatusCode();
 
-        // Deserialize the response
+        response.EnsureSuccessStatusCode();
         var content = await response.Content.ReadAsStringAsync(cancellationToken);
-        var result = System.Text.Json.JsonSerializer.Deserialize<PagedList<ReceiptNoteDetailsResponse>>(content,
+        var result = System.Text.Json.JsonSerializer.Deserialize<ReceiptNotesWithSummary>(
+            content,
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-        return result ?? throw new InvalidOperationException("Failed to deserialize response");
+        return result;
+        
     }
 }
-
-   
+  

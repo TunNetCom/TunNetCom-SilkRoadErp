@@ -37,7 +37,7 @@
 @inject IJSRuntime JS
 
 <div>
-    <h3>@Localizer["manage_invoices"]</h3>
+    <h3>@Localizer["manage_providers_invoices"]</h3>
     <!-- Navigation bar with customer selection and print buttons -->
     <RadzenRow class="rz-navbar" Gap="1rem" Style="background-color: #f8f9fa; padding: 1rem; border-bottom: 1px solid #dee2e6;">
         <RadzenColumn Size="6">
@@ -93,10 +93,10 @@
             PagerHorizontalAlign="HorizontalAlign.Left"
             ShowPagingSummary="true"
             AllowSorting="true"
-            Data="@_invoices.Invoices.Items"
+            Data="@_invoicesList.Invoices.Items"
             LoadData="@LoadInvoices"
-            @bind-Value="@SelectedInvoice"
-            Count="_invoices.Invoices.TotalCount"
+            @bind-Value="@SelectedInvoices"
+            Count="_invoicesList.Invoices.TotalCount"
             SelectionMode="DataGridSelectionMode.Single">
                 <HeaderTemplate>
                     <div style="padding: 6px; font-size: 16px; font-weight: bold;">
@@ -117,13 +117,13 @@
             <RadzenCard Variant="Variant.Outlined" Style="margin-bottom: 1rem;">
                 <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" JustifyContent="JustifyContent.End">
                     <RadzenText TextStyle="TextStyle.Button">
-                        @Localizer["total_net"]: <strong>@_invoices.TotalNetAmount.FormatAmount()</strong>
+                        @Localizer["total_net"]: <strong>@_invoicesList.TotalNetAmount.FormatAmount()</strong>
                     </RadzenText>
                     <RadzenText TextStyle="TextStyle.Button">
-                        @Localizer["total_gross"]: <strong>@_invoices.TotalGrossAmount.FormatAmount()</strong>
+                        @Localizer["total_gross"]: <strong>@_invoicesList.TotalGrossAmount.FormatAmount()</strong>
                     </RadzenText>
                     <RadzenText TextStyle="TextStyle.Button">
-                        @Localizer["total_vat"]: <strong>@_invoices.TotalVATAmount.FormatAmount()</strong>
+                        @Localizer["total_vat"]: <strong>@_invoicesList.TotalVATAmount.FormatAmount()</strong>
                     </RadzenText>
                 </RadzenStack>
             </RadzenCard>
@@ -135,9 +135,9 @@
                 <RadzenStack Gap="1rem">
                     <RadzenTabs>
                         <Tabs>
-                            <RadzenTabsItem Text="@Localizer["delivery_notes_details"]">
+                            <RadzenTabsItem Text="@Localizer["receipt_notes_details"]">
                                 <RadzenColumn>
-                                    <RadzenDataGrid @ref="_grid"
+                                    <RadzenDataGrid @ref="_receiptNoteGrid"
                                     AllowRowSelectOnRowClick="true"
                                     AllowFiltering="true"
                                     FilterPopupRenderMode="PopupRenderMode.OnDemand"
@@ -148,12 +148,14 @@
                                     ShowPagingSummary="true"
                                     AllowSorting="true"
                                     GotoFirstPageOnSort="true"
+                                    Count = "_invoicedReceiptNotesWithSummary.ReceiptNotes.TotalCount"
                                     TItem="ReceiptNoteDetailsResponse"
-                                    Data="@_receiptNotes"
+                                    Data="@_invoicedReceiptNotesWithSummary.ReceiptNotes.Items"
+                                    LoadData="LoadReceiptNotesForSelectedInvoice"
                                     ColumnWidth="200px"
                                     SelectionMode="DataGridSelectionMode.Multiple"
                                     IsLoading=@isLoadingDeliveryNotesInCurrentInvoice
-                                    @bind-Value="@_selectedDeliveryNotesToDetach">
+                                    @bind-Value="@_selectedReceiptNotesToDetach">
                                         <Columns>
                                             <RadzenDataGridColumn Property="Num" Title="@Localizer["number"]" />
                                             <RadzenDataGridColumn Property="TotTTC" Title="@Localizer["total_ex_tax"]">
@@ -172,13 +174,13 @@
                                     <RadzenCard Variant="Variant.Outlined" Style="margin-bottom: 1rem;">
                                         <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" JustifyContent="JustifyContent.End">
                                             <RadzenText TextStyle="TextStyle.Button">
-                                                @Localizer["total_net"]: <strong>@_getDeliveryNotesWithSummariesResponse?.TotalNetAmount.FormatAmount()</strong>
+                                                @Localizer["total_net"]: <strong>@_invoicedReceiptNotesWithSummary?.TotalNetAmount.FormatAmount()</strong>
                                             </RadzenText>
                                             <RadzenText TextStyle="TextStyle.Button">
-                                                @Localizer["total_gross"]: <strong>@_getDeliveryNotesWithSummariesResponse?.TotalGrossAmount.FormatAmount()</strong>
+                                                @Localizer["total_gross"]: <strong>@_invoicedReceiptNotesWithSummary?.TotalGrossAmount.FormatAmount()</strong>
                                             </RadzenText>
                                             <RadzenText TextStyle="TextStyle.Button">
-                                                @Localizer["total_vat"]: <strong>@_getDeliveryNotesWithSummariesResponse?.TotalVatAmount.FormatAmount()</strong>
+                                                @Localizer["total_vat"]: <strong>@_invoicedReceiptNotesWithSummary?.TotalVATAmount.FormatAmount()</strong>
                                             </RadzenText>
                                         </RadzenStack>
                                     </RadzenCard>
@@ -187,14 +189,14 @@
                         </Tabs>
                     </RadzenTabs>
                     <RadzenButton Text="@Localizer["detach_from_invoice"]"
-                    Disabled="@(SelectedInvoiceId == 0 || !_selectedDeliveryNotesToDetach.Any())" />
+                    Disabled="@(SelectedInvoiceId == 0 || !_selectedReceiptNotesToDetach.Any())" />
                 </RadzenStack>
             </RadzenCard>
         </RadzenColumn>
 
         <!-- Uninvoiced delivery notes section -->
         <RadzenColumn>
-            <RadzenDataGrid @ref="_grid"
+            <RadzenDataGrid @ref="_receiptNoteGrid"
             AllowRowSelectOnRowClick="true"
             AllowFiltering="true"
             FilterPopupRenderMode="PopupRenderMode.OnDemand"
@@ -204,15 +206,16 @@
             ShowPagingSummary="true"
             PageSize="_defaultPageSize"
             AllowSorting="true"
-            Data="@_receiptNotes"
-            LoadData="LoadReceiptNote"
+            Count="@_uninvoicedReceiptNotesWithSummary.ReceiptNotes.TotalCount"
+            Data="@_uninvoicedReceiptNotesWithSummary.ReceiptNotes.Items"
+            LoadData="LoadUninvoicedReceiptNote"
             IsLoading=@isLoadingUninvoicedDeliveryNotes
             ColumnWidth="200px"
             SelectionMode="DataGridSelectionMode.Multiple"
-            @bind-Value="@_selectedDeliveryNotesToAttach">
+            @bind-Value="@_selectedReceiptNotesToAttach">
                 <HeaderTemplate>
                     <div style="padding: 6px; font-size: 16px; font-weight: bold;">
-                        @Localizer["uninvoiced_delivery_notes_details"]
+                        @Localizer["uninvoiced_receipt_notes_details"]
                     </div>
                 </HeaderTemplate>
                 <Columns>
@@ -233,18 +236,18 @@
             <RadzenCard Variant="Variant.Outlined" Style="margin-bottom: 1rem;">
                 <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" JustifyContent="JustifyContent.End">
                     <RadzenText TextStyle="TextStyle.Subtitle1">
-                        @Localizer["total_net"]: <strong>@_uninvoicedDeliveryNotesSummary?.TotalNetAmount.FormatAmount()</strong>
+                        @Localizer["total_net"]: <strong>@_uninvoicedReceiptNotesWithSummary?.TotalNetAmount.FormatAmount()</strong>
                     </RadzenText>
                     <RadzenText TextStyle="TextStyle.Subtitle1">
-                        @Localizer["total_gross"]: <strong>@_uninvoicedDeliveryNotesSummary?.TotalGrossAmount.FormatAmount()</strong>
+                        @Localizer["total_gross"]: <strong>@_uninvoicedReceiptNotesWithSummary?.TotalGrossAmount.FormatAmount()</strong>
                     </RadzenText>
                     <RadzenText TextStyle="TextStyle.Subtitle1">
-                        @Localizer["total_vat"]: <strong>@_uninvoicedDeliveryNotesSummary?.TotalVatAmount.FormatAmount()</strong>
+                        @Localizer["total_vat"]: <strong>@_uninvoicedReceiptNotesWithSummary?.TotalVATAmount.FormatAmount()</strong>
                     </RadzenText>
                 </RadzenStack>
             </RadzenCard>
             <RadzenButton
-            Text=@Localizer["attach_delivery_note_to_invoice"] ButtonStyle="ButtonStyle.Primary" />
+            Text=@Localizer["attach_receipt_note_to_invoice"] ButtonStyle="ButtonStyle.Primary" />
         </RadzenColumn>
     </RadzenRow>
 </div>
@@ -266,16 +269,13 @@
                 _selectedCustomerId = value;
                 SelectedInvoiceId = 0;
                 SelectedInvoice = new List<ProviderInvoiceResponse>();
-                getInvoiceListWithSummary = new GetInvoiceListWithSummary();
-                _uninvoicedDeliveryNotes = new List<GetDeliveryNoteBaseInfos>();
-                _uninvoicedDeliveryNotesSummary = new GetDeliveryNotesWithSummariesResponse();
-                _getDeliveryNotesWithSummariesResponse = new GetDeliveryNotesWithSummariesResponse();
-                // Data loading commented out for display-only version
+                _invoicesList = new GetProviderInvoicesWithSummary();
+				_uninvoicedReceiptNotesWithSummary = new ReceiptNotesWithSummary();
+                _invoicedReceiptNotesWithSummary = new ReceiptNotesWithSummary();
                 if (value > 0)
                 {
                     _ = LoadUninvoicedReceiptNote(value);
                     _ = LoadInvoices(value);
-                    //     _ = LoadUninvoicedDeliveryNotes(value);
                 }
             }
         }
@@ -291,17 +291,13 @@
                 _selectedProviderId = value;
                 SelectedInvoiceId = 0;
                 SelectedInvoice = new List<ProviderInvoiceResponse>();
-                getInvoiceListWithSummary = new GetInvoiceListWithSummary();
-                _uninvoicedDeliveryNotes = new List<GetDeliveryNoteBaseInfos>();
-                _uninvoicedDeliveryNotesSummary = new GetDeliveryNotesWithSummariesResponse();
-                _getDeliveryNotesWithSummariesResponse = new GetDeliveryNotesWithSummariesResponse();
-                // Data loading commented out for display-only version
+                _invoicesList = new GetProviderInvoicesWithSummary();
+                _uninvoicedReceiptNotesWithSummary = new ReceiptNotesWithSummary();
+				_invoicedReceiptNotesWithSummary = new ReceiptNotesWithSummary();
                 if (value > 0)
                 {
                     _ = LoadUninvoicedReceiptNote(value);
                     _ = LoadInvoices(value);
-                    // _ = LoadInvoicesForCustomers();
-                    // _ = LoadUninvoicedDeliveryNotes(value);
                 }
             }
         }
@@ -315,43 +311,48 @@
             if (_selectedInvoiceId != value)
             {
                 _selectedInvoiceId = value;
-                // Data loading commented out for display-only version
-                // _ = LoadInvoicesForCustomers();
-                // _ = LoadDeliveryNotesForSelectedInvoice(value);
+				_ = LoadReceiptNotesForSelectedInvoice(value);
             }
         }
     }
     private IList<ProviderInvoiceResponse> SelectedInvoice { get; set; } = new List<ProviderInvoiceResponse>();
-
+    private IList<ProviderInvoiceResponse> _selectedInvoices = new List<ProviderInvoiceResponse>();
+    private IList<ProviderInvoiceResponse> SelectedInvoices
+    {
+        get => _selectedInvoices;
+        set
+        {
+            _selectedInvoices = value;
+            SelectedInvoiceId = _selectedInvoices?.FirstOrDefault()?.Num ?? 0;
+            var selectedInvoice = _selectedInvoices?.FirstOrDefault();
+            _ = LoadReceiptNotesForSelectedInvoice(selectedInvoice?.Num ?? 0);
+        }
+    }
 
     bool isLoadingProviders = false;
     bool isLoadingInvoices = false;
     bool isLoadingDeliveryNotesInCurrentInvoice = false;
     bool isLoadingUninvoicedDeliveryNotes = false;
-    private List<CustomerResponse> _filteredCustomers { get; set; } = new();
     private IList<ProviderResponse> _providersList = new List<ProviderResponse>();
-    private GetInvoiceListWithSummary getInvoiceListWithSummary { get; set; } = new GetInvoiceListWithSummary();
-    private IList<ReceiptNoteDetailsResponse> _selectedDeliveryNoteIdsToDetach = new List<ReceiptNoteDetailsResponse>();
-    private IList<GetDeliveryNoteBaseInfos> _uninvoicedDeliveryNotes { get; set; } = new List<GetDeliveryNoteBaseInfos>();
-    private IList<ReceiptNoteDetailsResponse> _selectedDeliveryNotesToAttach { get; set; } = new List<ReceiptNoteDetailsResponse>();
+    private IList<ReceiptNoteDetailsResponse> _selectedReceiptNotesIdsToDetach = new List<ReceiptNoteDetailsResponse>();
+    private IList<ReceiptNoteDetailsResponse> _selectedReceiptNotesToAttach { get; set; } = new List<ReceiptNoteDetailsResponse>();
     private CancellationTokenSource _cancellationTokenSource = new();
-    private RadzenDataGrid<ReceiptNoteDetailsResponse> _grid;
+    private RadzenDataGrid<ReceiptNoteDetailsResponse> _receiptNoteGrid;
     private RadzenDataGrid<ProviderInvoiceResponse> ProviderInvoiceGrid;
-    private IList<ReceiptNoteDetailsResponse> _receiptNotes = new List<ReceiptNoteDetailsResponse>();
-    private GetProviderInvoicesWithSummary _invoices = new GetProviderInvoicesWithSummary();
-    private GetDeliveryNotesWithSummariesResponse _uninvoicedDeliveryNotesSummary = new GetDeliveryNotesWithSummariesResponse();
-    private GetDeliveryNotesWithSummariesResponse _getDeliveryNotesWithSummariesResponse = new GetDeliveryNotesWithSummariesResponse();
-    private IList<ReceiptNoteDetailsResponse> _selectedDeliveryNotesToDetach
+    private GetProviderInvoicesWithSummary _invoicesList = new GetProviderInvoicesWithSummary();
+    private ReceiptNotesWithSummary _uninvoicedReceiptNotesWithSummary = new ReceiptNotesWithSummary();
+    private ReceiptNotesWithSummary _invoicedReceiptNotesWithSummary = new ReceiptNotesWithSummary();
+
+    private IList<ReceiptNoteDetailsResponse> _selectedReceiptNotesToDetach
     {
-        get => _selectedDeliveryNoteIdsToDetach;
-        set => _selectedDeliveryNoteIdsToDetach = value;
+        get => _selectedReceiptNotesIdsToDetach;
+        set => _selectedReceiptNotesIdsToDetach = value;
     }
     #endregion
 
     #region Lifecycle Methods
     protected override async Task OnInitializedAsync()
     {
-        // Initial data loading commented out for display-only version
         await SearchProviders();
     }
 
@@ -406,25 +407,60 @@
         _providersList = pagedProviders.Items;
         await InvokeAsync(StateHasChanged);
     }
-    private async Task LoadReceiptNote(LoadDataArgs args)
+    private async Task LoadUninvoicedReceiptNote(LoadDataArgs args)
     {
+        string _sortProperty = null;
+        string _sortOrder = null;
+        if (args.Sorts != null && args.Sorts.Any())
+        {
+            var sort = args.Sorts.First();
+            _sortProperty = sort.Property;
+            _sortOrder = sort.SortOrder == SortOrder.Ascending ? _sortAscConst : _sortDescConst;
+        }
         var parameters = new QueryStringParameters
             {
                 PageNumber = (args.Skip.Value / _defaultPageSize) + 1,
                 PageSize = _defaultPageSize,
-                SearchKeyword = args.Filter
+                SearchKeyword = args.Filter,
+                SortOrder = _sortOrder,
+                SortProprety = _sortProperty
             };
-        var repi = await receiptNoteService.GetReceiptNotesAsync(SelectedProviderId, (args.Skip.Value / _defaultPageSize) + 1, _defaultPageSize, args.Filter , false, _cancellationTokenSource.Token);
-
-        _receiptNotes = repi.Items;
+        var repi = await receiptNoteService.GetReceiptNote(SelectedProviderId, false, null, parameters, _cancellationTokenSource.Token);
+        _uninvoicedReceiptNotesWithSummary = repi;
         await InvokeAsync(StateHasChanged);
     }
-    
+    private async Task LoadInvoicedReceiptNote(LoadDataArgs args)
+    {
+        string _sortProperty = null;
+        string _sortOrder = null;
+        if (args.Sorts != null && args.Sorts.Any())
+        {
+            var sort = args.Sorts.First();
+            _sortProperty = sort.Property;
+            _sortOrder = sort.SortOrder == SortOrder.Ascending ? _sortAscConst : _sortDescConst;
+        }
+        var parameters = new QueryStringParameters
+            {
+                PageNumber = (args.Skip.Value / _defaultPageSize) + 1,
+                PageSize = _defaultPageSize,
+                SearchKeyword = args.Filter,
+                SortOrder = _sortOrder,
+                SortProprety = _sortProperty
+            };
+        var repi = await receiptNoteService.GetReceiptNote(SelectedProviderId, false, null, parameters, _cancellationTokenSource.Token);
+        _uninvoicedReceiptNotesWithSummary = repi;
+        await InvokeAsync(StateHasChanged);
+    }
     private async Task LoadUninvoicedReceiptNote(int _provider)
     {
-        var repi = await receiptNoteService.GetReceiptNotesAsync(_provider, 1, _defaultPageSize, null, false, _cancellationTokenSource.Token);
-
-        _receiptNotes = repi.Items;
+        var parameters = new QueryStringParameters
+			{
+				PageNumber = 1,
+				PageSize = _defaultPageSize,
+				SearchKeyword = null
+			};
+        var repi = await receiptNoteService.GetReceiptNote(_provider, false, null, parameters, _cancellationTokenSource.Token);
+        _uninvoicedReceiptNotesWithSummary = repi;
         await InvokeAsync(StateHasChanged);
     }
 
@@ -438,7 +474,7 @@
             _sortProperty = sort.Property;
             _sortOrder = sort.SortOrder == SortOrder.Ascending ? _sortAscConst : _sortDescConst;
         }
-		var query = new QueryStringParameters
+        var query = new QueryStringParameters
 			{
 				PageNumber = (args.Skip.Value / _defaultPageSize) + 1,
 				PageSize = _defaultPageSize,
@@ -447,153 +483,60 @@
                 SortProprety = _sortProperty
 			};
         var invoices = await providerInvoiceService.GetProvidersInvoicesAsync(SelectedProviderId, query, default);
-		_invoices = invoices;
+        _invoicesList = invoices;
         await InvokeAsync(StateHasChanged);
     }
 
     private async Task LoadInvoices(int providerId)
     {
-		var query = new QueryStringParameters
+        var query = new QueryStringParameters
 			{
 				PageNumber = 1,
 				PageSize = _defaultPageSize,
 				SearchKeyword = null
 			};
         var invoices = await providerInvoiceService.GetProvidersInvoicesAsync(providerId, query , default);
-        _invoices = invoices;
+        _invoicesList = invoices;
         await InvokeAsync(StateHasChanged);
     }
-    /*
-   
-    private async Task LoadDeliveryNotesForSelectedInvoice(int invoiceNum)
-    {
-        SelectedInvoiceId = invoiceNum;
-        _getDeliveryNotesWithSummariesResponse = await deliveryNoteService.GetDeliveryNotesWithSummariesAsync(
-        customerId: SelectedCustomerId,
-        invoiceId: SelectedInvoiceId,
-        isInvoiced: true,
-        sortOrder: null,
-        sortProperty: null,
-        pageNumber: 1,
-        pageSize: _defaultPageSize,
-        cancellationToken: _cancellationTokenSource.Token
-        );
-        await InvokeAsync(StateHasChanged);
-        }
 
-    private async Task LoadInvoicesForCustomers()
+    private async Task LoadReceiptNotesForSelectedInvoice(int invoiceNum)
     {
+
         var parameters = new QueryStringParameters
-        {
-            PageNumber = 1,
-            PageSize = _defaultPageSize,
-            SearchKeyword = null
+            {
+                PageNumber =  1,
+                PageSize = _defaultPageSize,
+                SearchKeyword = null
             };
-
-        if (SelectedCustomerId <= 0)
-        {
-            getInvoiceListWithSummary = new GetInvoiceListWithSummary();
-            await InvokeAsync(StateHasChanged);
-            return;
-            }
-
-        var result = await invoicesService.GetInvoicesByCustomerIdWithSummary(SelectedCustomerId, parameters, _cancellationTokenSource.Token);
-        if (result.IsT0)
-        {
-            getInvoiceListWithSummary = result.AsT0;
-            }
-        if (result.IsT1)
-        {
-            NotificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Error,
-                Summary = result.AsT1.Detail
-                });
-            }
+        var repi = await receiptNoteService.GetReceiptNote(SelectedProviderId, true, invoiceNum, parameters, _cancellationTokenSource.Token);
+        _invoicedReceiptNotesWithSummary = repi;
         await InvokeAsync(StateHasChanged);
-        }
+    }
 
-    private async Task LoadUninvoicedDeliveryNotes(int selectedCustomerId)
+    private async Task LoadReceiptNotesForSelectedInvoice(LoadDataArgs args)
     {
-        SelectedCustomerId = selectedCustomerId;
-
-        try
+        string _sortProperty = null;
+        string _sortOrder = null;
+        if (args.Sorts != null && args.Sorts.Any())
         {
-            _uninvoicedDeliveryNotesSummary = await deliveryNoteService.GetDeliveryNotesWithSummariesAsync(
-            customerId: SelectedCustomerId,
-            invoiceId: null,
-            isInvoiced: false,
-            sortOrder: null,
-            sortProperty: null,
-            pageNumber: 1,
-            pageSize: _defaultPageSize,
-            cancellationToken: _cancellationTokenSource.Token
-            );
-            }
-        catch (Exception ex)
-        {
-            NotificationService.Notify(new NotificationMessage
+            var sort = args.Sorts.First();
+            _sortProperty = sort.Property;
+            _sortOrder = sort.SortOrder == SortOrder.Ascending ? _sortAscConst : _sortDescConst;
+        }
+        var parameters = new QueryStringParameters
             {
-                Severity = NotificationSeverity.Error,
-                Summary = Localizer["error"],
-                Detail = $"Failed to load uninvoiced delivery notes: {ex.Message}"
-                });
-            _uninvoicedDeliveryNotes = new List<GetDeliveryNoteBaseInfos>();
-            }
+                PageNumber = (args.Skip.Value / _defaultPageSize) + 1,
+                PageSize = _defaultPageSize,
+                SearchKeyword = args.Filter,
+                SortOrder = _sortOrder,
+                SortProprety = _sortProperty
+            };
+        var repi = await receiptNoteService.GetReceiptNote(SelectedProviderId, true, SelectedInvoiceId, parameters, _cancellationTokenSource.Token);
+        _invoicedReceiptNotesWithSummary = repi;
         await InvokeAsync(StateHasChanged);
-        }
-
-    async Task OnSort(DataGridColumnSortEventArgs<GetDeliveryNoteBaseInfos> args)
-    {
-        var columnName = args.Column.Property;
-        var sortOrder = args.SortOrder;
-        await FetchSortedDeliveryNotesAsync(columnName, sortOrder.ToString());
-        }
-
-    private async Task FetchSortedDeliveryNotesAsync(string columnName, string sortOrder)
-    {
-        _getDeliveryNotesWithSummariesResponse = await deliveryNoteService.GetDeliveryNotesWithSummariesAsync(
-        customerId: SelectedCustomerId,
-        invoiceId: SelectedInvoiceId,
-        isInvoiced: true,
-        pageNumber: 1,
-        pageSize: _defaultPageSize,
-        sortOrder: sortOrder,
-        sortProperty: columnName,
-        cancellationToken: _cancellationTokenSource.Token
-        );
-        }
-
-    private async Task AttachDeliveryNoteToInvoiceClick(string text)
-    {
-        // Implementation commented out for display-only version
-        }
-
-    private async Task DetachDeliveryNotesFromInvoice()
-    {
-        // Implementation commented out for display-only version
-        }
-
-    void OnPage(PagerEventArgs args)
-    {
-        // Empty implementation for display-only version
-        }
-
-    async Task LoadInvoiceData(LoadDataArgs args)
-    {
-        // Implementation commented out for display-only version
-        }
-
-    private async Task LoadInvoicedDeliveryNoteData(LoadDataArgs args)
-    {
-        // Implementation commented out for display-only version
-        }
-
-    private async Task LoadUninvoicedDeliveryNotesData(LoadDataArgs args)
-    {
-        // Implementation commented out for display-only version
-        }
-        */
+    }
+   
     #endregion
 
     #region Print methods

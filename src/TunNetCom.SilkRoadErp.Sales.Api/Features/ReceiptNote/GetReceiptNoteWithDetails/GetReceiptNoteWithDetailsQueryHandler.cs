@@ -11,14 +11,13 @@ public class GetReceiptNoteWithDetailsQueryHandler(
     private const string NumColumnName = "Num";
     private const string DateColumnName = "Date";
     private const string NetAmountColumnName = "TotTTC";
-    private const string GrossAmountColumnName = "TotHTva";
 
     public async Task<ReceiptNotesWithSummary> Handle(
         GetReceiptNoteWithDetailsQuery query,
         CancellationToken cancellationToken)
     {
         // Validate query parameters
-        if (query.QueryStringParameters.PageNumber < 1 || query.QueryStringParameters.PageSize < 1)
+        if (query.queryStringParameters.PageNumber < 1 || query.queryStringParameters.PageSize < 1)
         {
             throw new ArgumentException("PageNumber and PageSize must be greater than 0.");
         }
@@ -26,7 +25,6 @@ public class GetReceiptNoteWithDetailsQueryHandler(
         // Build the base query
         var receiptNotesQuery = _context.ReceiptNoteView
             .Where(b => b.IdFournisseur == query.IdFournisseur)
-            .Where(b => b.NumFactureFournisseur == null) // Filter where NumFactureFournisseur is null
             .Select(b => new ReceiptNoteDetailsResponse
             {
                 Num = b.Num,
@@ -42,30 +40,42 @@ public class GetReceiptNoteWithDetailsQueryHandler(
             .AsQueryable();
 
         // Apply sorting if specified
-        if (!string.IsNullOrEmpty(query.QueryStringParameters.SortProprety) &&
-            !string.IsNullOrEmpty(query.QueryStringParameters.SortOrder))
+        if (!string.IsNullOrEmpty(query.queryStringParameters.SortProprety) &&
+            !string.IsNullOrEmpty(query.queryStringParameters.SortOrder))
         {
             _logger.LogInformation(
                 "Sorting receipt notes by column: {Column}, order: {Order}",
-                query.QueryStringParameters.SortProprety,
-                query.QueryStringParameters.SortOrder);
+                query.queryStringParameters.SortProprety,
+                query.queryStringParameters.SortOrder);
             receiptNotesQuery = ApplySorting(
                 receiptNotesQuery,
-                query.QueryStringParameters.SortProprety,
-                query.QueryStringParameters.SortOrder);
+                query.queryStringParameters.SortProprety,
+                query.queryStringParameters.SortOrder);
         }
+
+        if(query.IsInvoiced && query.InvoiceId.HasValue)
+        {
+            receiptNotesQuery = receiptNotesQuery
+                .Where(b => b.NumFactureFournisseur == query.InvoiceId);
+        }
+
+         if(query.IsInvoiced == false)
+        {
+            receiptNotesQuery = receiptNotesQuery
+                .Where(b => b.NumFactureFournisseur == null);
+        }
+
 
         // Get paged result
         var pagedResult = await PagedList<ReceiptNoteDetailsResponse>.ToPagedListAsync(
             receiptNotesQuery,
-            query.QueryStringParameters.PageNumber,
-            query.QueryStringParameters.PageSize,
+            query.queryStringParameters.PageNumber,
+            query.queryStringParameters.PageSize,
             cancellationToken);
 
         // Materialize the full result set for totals (without pagination)
         var allReceiptNotes = await receiptNotesQuery.ToListAsync(cancellationToken);
 
-        // Calculate totals
         var totalGrossAmount = allReceiptNotes.Sum(b => b.TotHTva);
         var totalNetAmount = allReceiptNotes.Sum(b => b.TotTTC);
         var totalVATAmount = allReceiptNotes.Sum(b => b.TotTva);
@@ -73,10 +83,9 @@ public class GetReceiptNoteWithDetailsQueryHandler(
         _logger.LogInformation(
             "Retrieved {Count} receipt notes for page {PageNumber} with page size {PageSize}",
             pagedResult.TotalCount,
-            query.QueryStringParameters.PageNumber,
-            query.QueryStringParameters.PageSize);
+            query.queryStringParameters.PageNumber,
+            query.queryStringParameters.PageSize);
 
-        // Construct the response
         return new ReceiptNotesWithSummary
         {
             ReceiptNotes = pagedResult,
@@ -87,23 +96,29 @@ public class GetReceiptNoteWithDetailsQueryHandler(
     }
 
     private IQueryable<ReceiptNoteDetailsResponse> ApplySorting(
-        IQueryable<ReceiptNoteDetailsResponse> query,
-        string sortProperty,
-        string sortOrder)
+IQueryable<ReceiptNoteDetailsResponse> invoiceQuery,
+string sortProperty,
+string sortOrder)
     {
-        return (sortProperty.ToLower(), sortOrder.ToLower()) switch
+        return SortQuery(invoiceQuery, sortProperty, sortOrder);
+    }
+
+    private IQueryable<ReceiptNoteDetailsResponse> SortQuery(
+        IQueryable<ReceiptNoteDetailsResponse> query,
+        string property,
+        string order)
+    {
+        return (property, order) switch
         {
-            (NumColumnName, "asc") => query.OrderBy(d => d.Num),
-            (NumColumnName, "desc") => query.OrderByDescending(d => d.Num),
-            (DateColumnName, "asc") => query.OrderBy(d => d.Date),
-            (DateColumnName, "desc") => query.OrderByDescending(d => d.Date),
-            (NetAmountColumnName, "asc") => query.OrderBy(d => d.TotTTC),
-            (NetAmountColumnName, "desc") => query.OrderByDescending(d => d.TotTTC),
-            (GrossAmountColumnName, "asc") => query.OrderBy(d => d.TotHTva),
-            (GrossAmountColumnName, "desc") => query.OrderByDescending(d => d.TotHTva),
-            _ => query // Default: no sorting if invalid property/order
+            (NumColumnName, SortConstants.Ascending) => query.OrderBy(d => d.Num),
+            (NumColumnName, SortConstants.Descending) => query.OrderByDescending(d => d.Num),
+            (NetAmountColumnName, SortConstants.Ascending) => query.OrderBy(d => d.TotTTC),
+            (NetAmountColumnName, SortConstants.Descending) => query.OrderByDescending(d => d.TotTTC),
+            (DateColumnName, SortConstants.Ascending) => query.OrderBy(d => d.Date),
+            (DateColumnName, SortConstants.Descending) => query.OrderByDescending(d => d.Date),
+            _ => query
         };
     }
 }
 
-//TODO sorting and total count and data validation and checks 
+//TODO data validation and checks 
