@@ -4,7 +4,9 @@ using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProviderInvoice;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote;
 
 
 public static class SalesHttpClients
@@ -46,6 +48,14 @@ public static class SalesHttpClients
         services.AddHttpClient<IAppParametersClient, AppParametersClient>(provider =>
         {
             provider.BaseAddress = new Uri($"{baseUrl}/");
+        });
+        services.AddHttpClient<IReceiptNoteApiClient, ReceiptNoteApiClient>(receipt =>
+        {
+            receipt.BaseAddress = new Uri(baseUrl);
+        });
+        services.AddHttpClient<IProviderInvoiceApiClient, ProviderInvoiceApiClient>(invoice =>
+        {
+            invoice.BaseAddress = new Uri(baseUrl);
         });
     }
 }
