@@ -10,11 +10,14 @@ public interface IReceiptNoteApiClient
         int? InvoiceId,
         QueryStringParameters queryParameters,
         CancellationToken cancellationToken);
-    //Task<PagedList<ReceiptNoteDetailsResponse>> GetReceiptNotesAsync(
-    //   int? idFournisseur,
-    //   int pageNumber,
-    //   int pageSize,
-    //   string? searchKeyword,
-    //   bool? isFactured,
-    //   CancellationToken cancellationToken);
+
+    Task<bool> AttachReceiptNotesToInvoiceAsync(
+        int invoiceId,
+        List<int> receiptNotesIds,
+        CancellationToken cancellationToken = default);
+
+    Task DetachReceiptNotesFromInvoiceAsync(
+        int invoiceId,
+        List<int> receiptNotesIds,
+        CancellationToken cancellationToken = default);
 }

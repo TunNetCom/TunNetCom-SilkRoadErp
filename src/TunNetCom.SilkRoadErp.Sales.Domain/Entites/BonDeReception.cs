@@ -56,48 +56,6 @@ public partial class BonDeReception
 
     public int? NumFactureFournisseur { get; set; }
 
-    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
-    public decimal TotTtc
-    {
-        get
-        {
-            decimal total = 0;
-            foreach (var ligne in LigneBonReception)
-            {
-                total += ligne.TotTtc;
-            }
-            return total;
-        }
-    }
-
-    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
-    public decimal TotHt
-    {
-        get
-        {
-            decimal total = 0;
-            foreach (var ligne in LigneBonReception)
-            {
-                total += ligne.TotHt;
-            }
-            return total;
-        }
-    }
-
-    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
-    public decimal TotTva
-    {
-        get
-        {
-            decimal total = 0;
-            foreach (var ligne in LigneBonReception)
-            {
-                total += ligne.TotTtc - ligne.TotHt;
-            }
-            return total;
-        }
-    }
-
     public virtual Fournisseur IdFournisseurNavigation { get; set; } = null!;
 
     public virtual ICollection<LigneBonReception> LigneBonReception { get; set; } = new List<LigneBonReception>();

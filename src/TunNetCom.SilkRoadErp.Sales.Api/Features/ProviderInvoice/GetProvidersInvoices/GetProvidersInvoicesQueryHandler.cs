@@ -1,6 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNoteWithDetails;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderInvoice.GetProvidersInvoices;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderInvoice.GetProvidersInvoices;
 
 public class GetProvidersInvoicesQueryHandler(
     SalesContext _context,
@@ -15,17 +13,17 @@ public class GetProvidersInvoicesQueryHandler(
     CancellationToken cancellationToken)
     {
         var invoiceQuery = _context.ProviderInvoiceView
-            .Where(f => f.ProviderId == query.IdFournisseur)
-            .Select(f => new ProviderInvoiceResponse
-            {
-                Num = f.Num,
-                ProviderId = f.ProviderId,
-                Date = f.Date,
-                TotTTC = f.TotalTTC,
-                TotHTva = f.TotalHT,
-                TotTva = f.TotTva,
-            })
-            .AsQueryable();
+    .Where(f => f.ProviderId == query.IdFournisseur)
+    .Select(f => new ProviderInvoiceResponse
+    {
+        Num = f.Num,
+        ProviderId = f.ProviderId,
+        Date = f.Date,
+        TotTTC = f.TotalTTC,
+        TotHTva = f.TotalHT,
+        TotTva = f.TotTva,
+    })
+    .AsQueryable();
 
         if (query.SortOrder != null && query.SortProperty != null)
         {
@@ -33,19 +31,16 @@ public class GetProvidersInvoicesQueryHandler(
             invoiceQuery = ApplySorting(invoiceQuery, query.SortProperty, query.SortOrder);
         }
 
+        // Get the paged results
         var pagedResult = await PagedList<ProviderInvoiceResponse>.ToPagedListAsync(
             invoiceQuery,
             query.PageNumber,
             query.PageSize,
             cancellationToken);
 
-        // Materialize the full result set into memory for aggregation
-        var allInvoices = await invoiceQuery.ToListAsync(cancellationToken);
-
-        // Perform aggregations on the in-memory list
-        var totalGrossAmount = allInvoices.Sum(d => d.TotHTva);
-        var totalVATAmount = allInvoices.Sum(d => d.TotTva);
-        var totalNetAmount = allInvoices.Sum(d => d.TotTTC);
+        var totalGrossAmount = await invoiceQuery.SumAsync(r => r.TotHTva, cancellationToken);
+        var totalNetAmount = await invoiceQuery.SumAsync(r => r.TotTTC, cancellationToken);
+        var totalVATAmount = await invoiceQuery.SumAsync(r => r.TotTTC - r.TotHTva, cancellationToken);
 
         _logger.LogInformation(
             "Retrieved {Count} receipt notes for page {PageNumber} with page size {PageSize}",

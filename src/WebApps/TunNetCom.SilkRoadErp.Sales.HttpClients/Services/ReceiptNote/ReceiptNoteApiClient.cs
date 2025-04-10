@@ -1,8 +1,5 @@
-﻿using System.Net.Http;
-using System.Text.Json;
+﻿using System.Text.Json;
 using TunNetCom.SilkRoadErp.Sales.Contracts.RecieptNotes;
-using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices;
-
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote;
 
 class ReceiptNoteApiClient : IReceiptNoteApiClient
@@ -61,5 +58,54 @@ class ReceiptNoteApiClient : IReceiptNoteApiClient
         return result;
         
     }
+
+
+    public async Task<bool> AttachReceiptNotesToInvoiceAsync(
+        int invoiceId,
+        List<int> receiptNotesIds,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new AttachReceiptNotesRequest
+        { 
+            ReceiptNotesIds= receiptNotesIds,
+            InvoiceId = invoiceId
+        };
+
+        var headers = new Dictionary<string, string>()
+        {
+        { "Accept", "application/problem+json" }
+        };
+
+        var response = await _httpClient.PutAsJsonAsync(
+            "/receipt-note/attach-to-invoice",
+            command,
+            cancellationToken);
+
+        response.EnsureSuccessStatusCode();
+        return true;
+        //TODO : Handle the response as needed
+    }
+
+    public async Task DetachReceiptNotesFromInvoiceAsync(
+        int invoiceId,
+        List<int> receiptNotesIds,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new DetachReceiptNotesRequest
+        {
+            ReceiptNoteIds = receiptNotesIds,
+            InvoiceId = invoiceId
+        };
+        var headers = new Dictionary<string, string>()
+        {
+            { "Accept", "application/problem+json" }
+        };
+        var response = await _httpClient.PutAsJsonAsync(
+            "/receipt-note/detach",
+            command,
+            cancellationToken);
+        response.EnsureSuccessStatusCode();
+    }
 }
+
   

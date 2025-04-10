@@ -1,5 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;
-using TunNetCom.SilkRoadErp.Sales.Contracts.Providers;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.Providers;
 
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers;
 
@@ -23,10 +22,4 @@ public interface IProvidersApiClient
     Task<OneOf<CreateProviderRequest, BadRequestResponse>> CreateAsync(
         CreateProviderRequest request,
         CancellationToken cancellationToken);
-    Task<PagedList<ProviderInvoiceResponse>> GetProvidersInvoicesAsync(
-        int? idFournisseur = null,
-        int pageNumber = 1,
-        int pageSize = 10,
-        string? searchKeyword = null,
-        CancellationToken cancellationToken = default);
 }

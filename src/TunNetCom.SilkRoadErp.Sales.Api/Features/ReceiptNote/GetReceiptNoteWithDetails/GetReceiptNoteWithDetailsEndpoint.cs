@@ -1,6 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNoteWithDetails;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNoteWithDetails;
 public class GetReceiptNoteWithDetailsEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
@@ -19,8 +17,6 @@ public class GetReceiptNoteWithDetailsEndpoint : ICarterModule
                 [FromQuery] int? InvoiceId,
                 CancellationToken cancellationToken) =>
             {
-                try
-                {
                     var queryStringParams = new QueryStringParameters
                     {
                         PageNumber = PageNumber,
@@ -30,28 +26,16 @@ public class GetReceiptNoteWithDetailsEndpoint : ICarterModule
                         SearchKeyword = SearchKeyword
                     };
 
-                    // Construct the query
                     var query = new GetReceiptNoteWithDetailsQuery(
                         queryStringParameters: queryStringParams,
                         IdFournisseur: ProviderId,
                         IsInvoiced: IsInvoiced,
                         InvoiceId: InvoiceId);
 
-
-                    // Execute the query
                     var response = await mediator.Send(query, cancellationToken);
 
                     return TypedResults.Ok(response);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "An error occurred",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
+                
             })
         .WithName("GetReceiptNote")
         .Produces<ReceiptNotesWithSummary>(StatusCodes.Status200OK)

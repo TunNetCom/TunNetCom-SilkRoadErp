@@ -15,9 +15,9 @@ public class ProviderInvoiceApiClient : IProviderInvoiceApiClient
         _logger = logger;
     }
 
-    public async Task<GetProviderInvoicesWithSummary> GetProvidersInvoicesAsync(
-    int idFournisseur ,
-    QueryStringParameters query ,
+    public async Task<OneOf<GetProviderInvoicesWithSummary, BadRequestResponse>> GetProvidersInvoicesAsync(
+    int idFournisseur,
+    QueryStringParameters query,
     CancellationToken cancellationToken)
     {
         var queryParams = new Dictionary<string, string>
@@ -41,15 +41,22 @@ public class ProviderInvoiceApiClient : IProviderInvoiceApiClient
         var queryString = string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
         var requestUri = $"/provider-invoice?{queryString}";
 
-            var response = await _httpClient.GetAsync(requestUri, cancellationToken);
-            response.EnsureSuccessStatusCode();
+        var response = await _httpClient.GetAsync(requestUri, cancellationToken);
+        //response.EnsureSuccessStatusCode();
 
-            var content = await response.Content.ReadAsStringAsync(cancellationToken);
+        var content = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (response.StatusCode == HttpStatusCode.OK)
+        {
             var result = System.Text.Json.JsonSerializer.Deserialize<GetProviderInvoicesWithSummary>(
                 content,
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-            return result?? new GetProviderInvoicesWithSummary();
-
+            return result ?? new GetProviderInvoicesWithSummary();
+        }
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            return await response.ReadJsonAsync<BadRequestResponse>();
+        }
+        throw new Exception($"Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
     }
+
 }

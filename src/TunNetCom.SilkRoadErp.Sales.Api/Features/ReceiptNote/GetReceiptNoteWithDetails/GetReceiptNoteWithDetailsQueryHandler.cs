@@ -1,7 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNoteWithDetails;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNoteWithDetails;
 
 public class GetReceiptNoteWithDetailsQueryHandler(
     SalesContext _context,
@@ -16,11 +13,6 @@ public class GetReceiptNoteWithDetailsQueryHandler(
         GetReceiptNoteWithDetailsQuery query,
         CancellationToken cancellationToken)
     {
-        // Validate query parameters
-        if (query.queryStringParameters.PageNumber < 1 || query.queryStringParameters.PageSize < 1)
-        {
-            throw new ArgumentException("PageNumber and PageSize must be greater than 0.");
-        }
 
         // Build the base query
         var receiptNotesQuery = _context.ReceiptNoteView
@@ -73,12 +65,9 @@ public class GetReceiptNoteWithDetailsQueryHandler(
             query.queryStringParameters.PageSize,
             cancellationToken);
 
-        // Materialize the full result set for totals (without pagination)
-        var allReceiptNotes = await receiptNotesQuery.ToListAsync(cancellationToken);
-
-        var totalGrossAmount = allReceiptNotes.Sum(b => b.TotHTva);
-        var totalNetAmount = allReceiptNotes.Sum(b => b.TotTTC);
-        var totalVATAmount = allReceiptNotes.Sum(b => b.TotTva);
+        var totalGrossAmount = await receiptNotesQuery.SumAsync(r => r.TotHTva, cancellationToken) ;
+        var totalNetAmount = await receiptNotesQuery.SumAsync(r => r.TotTTC, cancellationToken);
+        var totalVATAmount = await receiptNotesQuery.SumAsync(r => r.TotTTC - r.TotHTva, cancellationToken);
 
         _logger.LogInformation(
             "Retrieved {Count} receipt notes for page {PageNumber} with page size {PageSize}",

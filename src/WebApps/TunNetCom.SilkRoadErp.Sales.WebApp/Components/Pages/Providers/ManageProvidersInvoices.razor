@@ -189,7 +189,8 @@
                         </Tabs>
                     </RadzenTabs>
                     <RadzenButton Text="@Localizer["detach_from_invoice"]"
-                    Disabled="@(SelectedInvoiceId == 0 || !_selectedReceiptNotesToDetach.Any())" />
+                    Click="@DetachReceiptNotesFromInvoice"
+                    Disabled="@(SelectedInvoiceId == 0 || !_selectedReceiptNotesIdsToDetach.Any())" />
                 </RadzenStack>
             </RadzenCard>
         </RadzenColumn>
@@ -246,7 +247,7 @@
                     </RadzenText>
                 </RadzenStack>
             </RadzenCard>
-            <RadzenButton
+            <RadzenButton Click=@(args => AttachReceiptNotesToInvoiceClick("Primary button"))
             Text=@Localizer["attach_receipt_note_to_invoice"] ButtonStyle="ButtonStyle.Primary" />
         </RadzenColumn>
     </RadzenRow>
@@ -483,7 +484,17 @@
                 SortProprety = _sortProperty
 			};
         var invoices = await providerInvoiceService.GetProvidersInvoicesAsync(SelectedProviderId, query, default);
-        _invoicesList = invoices;
+		if (invoices.IsT1)
+		{
+			NotificationService.Notify(new NotificationMessage
+				{
+					Severity = NotificationSeverity.Error,
+					Summary = Localizer["error"],
+					Detail = invoices.AsT1.Detail
+				});
+			return;
+		}
+        _invoicesList = invoices.AsT0;
         await InvokeAsync(StateHasChanged);
     }
 
@@ -496,7 +507,17 @@
 				SearchKeyword = null
 			};
         var invoices = await providerInvoiceService.GetProvidersInvoicesAsync(providerId, query , default);
-        _invoicesList = invoices;
+        if (invoices.IsT1)
+        {
+            NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = invoices.AsT1.Detail
+                });
+            return;
+        }
+        _invoicesList = invoices.AsT0;
         await InvokeAsync(StateHasChanged);
     }
 
@@ -535,6 +556,87 @@
         var repi = await receiptNoteService.GetReceiptNote(SelectedProviderId, true, SelectedInvoiceId, parameters, _cancellationTokenSource.Token);
         _invoicedReceiptNotesWithSummary = repi;
         await InvokeAsync(StateHasChanged);
+    }
+
+
+    private async Task DetachReceiptNotesFromInvoice()
+    {
+        try
+        {
+            var deliveryNoteIds = _selectedReceiptNotesIdsToDetach.Select(dn => dn.Num).ToList();
+            
+            var result = receiptNoteService.DetachReceiptNotesFromInvoiceAsync(SelectedInvoiceId, deliveryNoteIds, _cancellationTokenSource.Token);
+
+            NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = Localizer["success"],
+                    Detail = Localizer["receipt_notes_detached"]
+                });
+            await LoadInvoices(SelectedProviderId);
+            await LoadUninvoicedReceiptNote(SelectedProviderId);
+            await LoadReceiptNotesForSelectedInvoice(SelectedInvoiceId);
+
+            _selectedReceiptNotesIdsToDetach = new List<ReceiptNoteDetailsResponse>();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = ex.Message
+                });
+            Console.WriteLine($"Error detaching receipt notes from invoice: {ex.Message}");
+        }
+    }
+    private async Task AttachReceiptNotesToInvoiceClick(string text)
+    {
+        if (SelectedInvoiceId > 0 && _selectedReceiptNotesToAttach?.Any() == true)
+        {
+            var deliveryNoteIds = _selectedReceiptNotesToAttach.Select(dn => dn.Num).ToList();
+            var attachToInvoiceRequest = new AttachToInvoiceRequest
+                {
+                    InvoiceId = SelectedInvoiceId,
+                    DeliveryNoteIds = deliveryNoteIds
+                };
+
+            var result = await receiptNoteService.AttachReceiptNotesToInvoiceAsync(SelectedInvoiceId, deliveryNoteIds, _cancellationTokenSource.Token);
+
+            if (result)
+            {
+                NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = Localizer["success"],
+                        Detail = Localizer["receipt_notes_attached"]
+                    });
+
+                _selectedReceiptNotesToAttach = new List<ReceiptNoteDetailsResponse>();
+
+                await LoadInvoices(SelectedProviderId);
+                await LoadUninvoicedReceiptNote(SelectedProviderId);
+                await LoadReceiptNotesForSelectedInvoice(SelectedInvoiceId);
+
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = Localizer["error"]
+                    });
+            }
+        }
+        else
+        {
+            NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = Localizer["warning"],
+                    Detail = Localizer["select_invoice_and_receipt_notes"]
+                });
+        }
     }
    
     #endregion

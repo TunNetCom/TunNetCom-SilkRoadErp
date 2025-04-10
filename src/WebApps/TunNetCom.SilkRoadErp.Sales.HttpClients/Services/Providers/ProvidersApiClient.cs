@@ -1,7 +1,4 @@
-﻿using System.Text.Json;
-using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;
-using TunNetCom.SilkRoadErp.Sales.Contracts.Providers;
-using TunNetCom.SilkRoadErp.Sales.HttpClients.Services;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.Providers;
 
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers;
 
@@ -132,55 +129,5 @@ public class ProvidersApiClient : IProvidersApiClient
             return await response.ReadJsonAsync<BadRequestResponse>();
         }
         throw new Exception($"Providers: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
-    }
-    public async Task<PagedList<ProviderInvoiceResponse>> GetProvidersInvoicesAsync(
-    int? idFournisseur = null,
-    int pageNumber = 1,
-    int pageSize = 10,
-    string? searchKeyword = null,
-    CancellationToken cancellationToken = default)
-    {
-        // Build query string parameters
-        var queryParams = new Dictionary<string, string>
-        {
-            { "PageNumber", pageNumber.ToString() },
-            { "PageSize", pageSize.ToString() }
-        };
-
-        if (idFournisseur.HasValue)
-        {
-            queryParams.Add("IdFournisseur", idFournisseur.Value.ToString());
-        }
-
-        if (!string.IsNullOrEmpty(searchKeyword))
-        {
-            queryParams.Add("SearchKeyword", searchKeyword);
-        }
-
-        var queryString = string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
-        var requestUri = $"/provider-invoice?{queryString}";
-
-        try
-        {
-            var response = await _httpClient.GetAsync(requestUri, cancellationToken);
-            response.EnsureSuccessStatusCode();
-
-            var content = await response.Content.ReadAsStringAsync(cancellationToken);
-            var result = System.Text.Json.JsonSerializer.Deserialize<PagedList<ProviderInvoiceResponse>>(
-                content,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-            return result ?? throw new InvalidOperationException("Failed to deserialize response");
-        }
-        catch (HttpRequestException ex)
-        {
-            // Handle HTTP-specific errors (e.g., network issues, 400, 500 status codes)
-            throw new Exception($"Failed to retrieve provider invoices: {ex.Message}", ex);
-        }
-        catch (System.Text.Json.JsonException ex)
-        {
-            // Handle JSON deserialization errors
-            throw new Exception($"Failed to parse provider invoices response: {ex.Message}", ex);
-        }
     }
 }

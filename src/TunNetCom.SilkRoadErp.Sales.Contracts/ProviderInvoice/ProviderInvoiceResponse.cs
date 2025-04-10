@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;
 
 public class ProviderInvoiceResponse
 {
