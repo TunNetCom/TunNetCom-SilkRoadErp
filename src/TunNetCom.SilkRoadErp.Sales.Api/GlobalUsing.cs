@@ -27,3 +27,4 @@ global using TunNetCom.SilkRoadErp.Sales.Contracts.Products;
 global using TunNetCom.SilkRoadErp.Sales.Contracts.Quotations;
 global using TunNetCom.SilkRoadErp.Sales.Contracts.RecieptNotes;
 global using TunNetCom.SilkRoadErp.Sales.Contracts.Sorting;
+global using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;

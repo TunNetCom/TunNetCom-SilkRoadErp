@@ -8,6 +8,7 @@
 @using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests
 @using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Invoice
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Sorting
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices
@@ -247,8 +248,6 @@
 @code {
     #region Fields and Properties
     private const int _defaultPageSize = 5;
-    private const string _sortAscConst = "ASC";
-    private const string _sortDescConst = "DESC";
     private int _selectedCustomerId;
     private int SelectedCustomerId
     {
@@ -581,7 +580,7 @@
         {
             var sort = args.Sorts.First();
             _sortProperty = sort.Property;
-            _sortOrder = sort.SortOrder == SortOrder.Ascending ? _sortAscConst : _sortDescConst;
+            _sortOrder = sort.SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending;
         }
         var parameters = new QueryStringParameters
         {
@@ -634,7 +633,7 @@
             {
                 var sort = args.Sorts.First();
                 _sortProperty = sort.Property;
-                _sortOrder = sort.SortOrder == SortOrder.Ascending ? _sortAscConst : _sortDescConst;
+                _sortOrder = sort.SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending;
             }
 
             isLoadingDeliveryNotesInCurrentInvoice = true;
@@ -680,7 +679,7 @@
             {
                 var sort = args.Sorts.First();
                 _sortProperty = sort.Property;
-                _sortOrder = sort.SortOrder == SortOrder.Ascending ? _sortAscConst : _sortDescConst;
+                _sortOrder = sort.SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending;
             }
 
             isLoadingUninvoicedDeliveryNotes = true;
