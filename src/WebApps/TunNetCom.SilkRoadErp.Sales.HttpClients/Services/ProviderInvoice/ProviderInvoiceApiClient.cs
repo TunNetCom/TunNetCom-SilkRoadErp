@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Text;
+using System.Text.Json;
 using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;
 
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProviderInvoice;
@@ -57,6 +58,28 @@ public class ProviderInvoiceApiClient : IProviderInvoiceApiClient
             return await response.ReadJsonAsync<BadRequestResponse>();
         }
         throw new Exception($"Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
+    }
+
+    public async Task<List<ProviderInvoiceResponse>> GetProviderInvoicesByIdsAsync(
+        List<int> invoicesIds,
+        CancellationToken cancellationToken = default)
+    {
+        // Serialize the list of IDs to JSON
+        var jsonContent = System.Text.Json.JsonSerializer.Serialize(invoicesIds);
+        var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+        // Send POST request
+        var response = await _httpClient.PostAsync("provider-invoices/byids", content, cancellationToken);
+
+        // Ensure the response is successful
+        response.EnsureSuccessStatusCode();
+
+        // Deserialize the response
+        var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+        var result = System.Text.Json.JsonSerializer.Deserialize<List<ProviderInvoiceResponse>>(responseContent,
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        return result ;
     }
 
 }

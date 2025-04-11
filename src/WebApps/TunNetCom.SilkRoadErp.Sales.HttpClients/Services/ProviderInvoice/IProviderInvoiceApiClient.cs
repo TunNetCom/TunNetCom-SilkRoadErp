@@ -8,4 +8,8 @@ public interface IProviderInvoiceApiClient
         int idFournisseur,
         QueryStringParameters query,
         CancellationToken cancellationToken = default);
+
+    Task<List<ProviderInvoiceResponse>> GetProviderInvoicesByIdsAsync(
+        List<int> invoicesIds,
+        CancellationToken cancellationToken = default);
 }

@@ -65,9 +65,17 @@ public class GetReceiptNoteWithDetailsQueryHandler(
             query.queryStringParameters.PageSize,
             cancellationToken);
 
-        var totalGrossAmount = await receiptNotesQuery.SumAsync(r => r.TotHTva, cancellationToken) ;
-        var totalNetAmount = await receiptNotesQuery.SumAsync(r => r.TotTTC, cancellationToken);
-        var totalVATAmount = await receiptNotesQuery.SumAsync(r => r.TotTTC - r.TotHTva, cancellationToken);
+        var totals = await receiptNotesQuery
+            .GroupBy(_ => 1)
+            .Select(g => new {
+                GrossAmount = g.Sum(x => x.TotHTva),
+                NetAmount = g.Sum(x => x.TotTTC)
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var totalGrossAmount = totals?.GrossAmount ?? 0;
+        var totalNetAmount = totals?.NetAmount ?? 0;
+        var totalVATAmount = totalNetAmount - totalGrossAmount;
 
         _logger.LogInformation(
             "Retrieved {Count} receipt notes for page {PageNumber} with page size {PageSize}",

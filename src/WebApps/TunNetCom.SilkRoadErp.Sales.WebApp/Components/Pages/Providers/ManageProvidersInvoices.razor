@@ -10,6 +10,7 @@
 @using TunNetCom.SilkRoadErp.Sales.Contracts.RecieptNotes
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Invoice
 @using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Sorting
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers
@@ -22,6 +23,7 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Invoices.PrintInvoiceWithDetails
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Invoices.RetenueSource
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Invoices.RetenueSourceFournisseur
 @inject IReceiptNoteApiClient receiptNoteService
 @inject IProvidersApiClient providersService
 @inject ICustomersApiClient customerService
@@ -33,6 +35,7 @@
 @inject ToastService toastService
 @inject NotificationService NotificationService
 @inject PrintRetenuSourceService PrintRetenuSourceService
+@inject RetenuSourceFournisseurPrintService RetenuSourceFournisseurPrintService
 @inject PrintFullInvoiceService PrintFullInvoiceService
 @inject IJSRuntime JS
 
@@ -257,8 +260,7 @@
 @code {
     #region Fields and Properties
     private const int _defaultPageSize = 5;
-    private const string _sortAscConst = "ASC";
-    private const string _sortDescConst = "DESC";
+    private const int _minValueId = 0;
     private int _selectedCustomerId;
     private int SelectedCustomerId
     {
@@ -268,12 +270,12 @@
             if (_selectedCustomerId != value)
             {
                 _selectedCustomerId = value;
-                SelectedInvoiceId = 0;
+                SelectedInvoiceId = _minValueId;
                 SelectedInvoice = new List<ProviderInvoiceResponse>();
                 _invoicesList = new GetProviderInvoicesWithSummary();
-				_uninvoicedReceiptNotesWithSummary = new ReceiptNotesWithSummary();
+                _uninvoicedReceiptNotesWithSummary = new ReceiptNotesWithSummary();
                 _invoicedReceiptNotesWithSummary = new ReceiptNotesWithSummary();
-                if (value > 0)
+                if (value > _minValueId)
                 {
                     _ = LoadUninvoicedReceiptNote(value);
                     _ = LoadInvoices(value);
@@ -290,12 +292,12 @@
             if (_selectedProviderId != value)
             {
                 _selectedProviderId = value;
-                SelectedInvoiceId = 0;
+                SelectedInvoiceId = _minValueId;
                 SelectedInvoice = new List<ProviderInvoiceResponse>();
                 _invoicesList = new GetProviderInvoicesWithSummary();
                 _uninvoicedReceiptNotesWithSummary = new ReceiptNotesWithSummary();
-				_invoicedReceiptNotesWithSummary = new ReceiptNotesWithSummary();
-                if (value > 0)
+                _invoicedReceiptNotesWithSummary = new ReceiptNotesWithSummary();
+                if (value > _minValueId)
                 {
                     _ = LoadUninvoicedReceiptNote(value);
                     _ = LoadInvoices(value);
@@ -312,7 +314,7 @@
             if (_selectedInvoiceId != value)
             {
                 _selectedInvoiceId = value;
-				_ = LoadReceiptNotesForSelectedInvoice(value);
+                _ = LoadReceiptNotesForSelectedInvoice(value);
             }
         }
     }
@@ -324,9 +326,9 @@
         set
         {
             _selectedInvoices = value;
-            SelectedInvoiceId = _selectedInvoices?.FirstOrDefault()?.Num ?? 0;
+            SelectedInvoiceId = _selectedInvoices?.FirstOrDefault()?.Num ?? _minValueId;
             var selectedInvoice = _selectedInvoices?.FirstOrDefault();
-            _ = LoadReceiptNotesForSelectedInvoice(selectedInvoice?.Num ?? 0);
+            _ = LoadReceiptNotesForSelectedInvoice(selectedInvoice?.Num ?? _minValueId);
         }
     }
 
@@ -416,7 +418,7 @@
         {
             var sort = args.Sorts.First();
             _sortProperty = sort.Property;
-            _sortOrder = sort.SortOrder == SortOrder.Ascending ? _sortAscConst : _sortDescConst;
+            _sortOrder = sort.SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending;
         }
         var parameters = new QueryStringParameters
             {
@@ -438,7 +440,7 @@
         {
             var sort = args.Sorts.First();
             _sortProperty = sort.Property;
-            _sortOrder = sort.SortOrder == SortOrder.Ascending ? _sortAscConst : _sortDescConst;
+            _sortOrder = sort.SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending;
         }
         var parameters = new QueryStringParameters
             {
@@ -473,7 +475,7 @@
         {
             var sort = args.Sorts.First();
             _sortProperty = sort.Property;
-            _sortOrder = sort.SortOrder == SortOrder.Ascending ? _sortAscConst : _sortDescConst;
+            _sortOrder = sort.SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending;
         }
         var query = new QueryStringParameters
 			{
@@ -484,16 +486,16 @@
                 SortProprety = _sortProperty
 			};
         var invoices = await providerInvoiceService.GetProvidersInvoicesAsync(SelectedProviderId, query, default);
-		if (invoices.IsT1)
-		{
-			NotificationService.Notify(new NotificationMessage
+        if (invoices.IsT1)
+        {
+            NotificationService.Notify(new NotificationMessage
 				{
 					Severity = NotificationSeverity.Error,
 					Summary = Localizer["error"],
 					Detail = invoices.AsT1.Detail
 				});
-			return;
-		}
+            return;
+        }
         _invoicesList = invoices.AsT0;
         await InvokeAsync(StateHasChanged);
     }
@@ -543,7 +545,7 @@
         {
             var sort = args.Sorts.First();
             _sortProperty = sort.Property;
-            _sortOrder = sort.SortOrder == SortOrder.Ascending ? _sortAscConst : _sortDescConst;
+            _sortOrder = sort.SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending;
         }
         var parameters = new QueryStringParameters
             {
@@ -564,7 +566,7 @@
         try
         {
             var deliveryNoteIds = _selectedReceiptNotesIdsToDetach.Select(dn => dn.Num).ToList();
-            
+
             var result = receiptNoteService.DetachReceiptNotesFromInvoiceAsync(SelectedInvoiceId, deliveryNoteIds, _cancellationTokenSource.Token);
 
             NotificationService.Notify(new NotificationMessage
@@ -592,7 +594,7 @@
     }
     private async Task AttachReceiptNotesToInvoiceClick(string text)
     {
-        if (SelectedInvoiceId > 0 && _selectedReceiptNotesToAttach?.Any() == true)
+        if (SelectedInvoiceId > _minValueId && _selectedReceiptNotesToAttach?.Any() == true)
         {
             var deliveryNoteIds = _selectedReceiptNotesToAttach.Select(dn => dn.Num).ToList();
             var attachToInvoiceRequest = new AttachToInvoiceRequest
@@ -638,14 +640,13 @@
                 });
         }
     }
-   
+
     #endregion
 
     #region Print methods
     private async Task PrintRetenuSourceClick()
     {
-        // Show notification if no invoice selected
-        if (SelectedInvoiceId <= 0)
+        if (SelectedInvoiceId <= _minValueId)
         {
             NotificationService.Notify(new NotificationMessage
                 {
@@ -656,19 +657,19 @@
             return;
         }
         // Print functionality commented out for display-only version
-        /*
+
         var invoices = new List<int>() { SelectedInvoiceId };
-        var pdfBytes = await PrintRetenuSourceService
+        var pdfBytes = await RetenuSourceFournisseurPrintService
         .GenerateRetenuSourcePdfAsync(invoices, cancellationToken: _cancellationTokenSource.Token);
         var fileName = $"Retenu à la source {SelectedInvoiceId}.pdf";
         await JS.InvokeVoidAsync("downloadFile", fileName, Convert.ToBase64String(pdfBytes.Value), "application/pdf");
-        */
+
     }
 
     private async Task PrintInvoiceClick()
     {
         // Show notification if no invoice selected
-        if (SelectedInvoiceId <= 0)
+        if (SelectedInvoiceId <= _minValueId)
         {
             NotificationService.Notify(new NotificationMessage
                 {
