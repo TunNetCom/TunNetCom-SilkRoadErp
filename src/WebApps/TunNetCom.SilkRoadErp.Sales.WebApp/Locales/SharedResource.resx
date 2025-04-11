@@ -243,4 +243,22 @@
   <data name="attach_delivery_note_to_invoice" xml:space="preserve">
     <value />
   </data>
+  <data name="manage_providers_invoices" xml:space="preserve">
+    <value />
+  </data>
+  <data name="select_provider" xml:space="preserve">
+    <value />
+  </data>
+  <data name="provider_invoice_details" xml:space="preserve">
+    <value />
+  </data>
+  <data name="receipt_notes_details" xml:space="preserve">
+    <value />
+  </data>
+  <data name="uninvoiced_receipt_notes_details" xml:space="preserve">
+    <value />
+  </data>
+  <data name="attach_receipt_note_to_invoice" xml:space="preserve">
+    <value />
+  </data>
 </root>

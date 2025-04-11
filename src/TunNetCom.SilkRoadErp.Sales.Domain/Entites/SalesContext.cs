@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations;
+using TunNetCom.SilkRoadErp.Sales.Domain.Views;
 #nullable enable
 
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
@@ -57,6 +58,10 @@ public partial class SalesContext : DbContext
     public virtual DbSet<Systeme> Systeme { get; set; }
 
     public virtual DbSet<Transaction> Transaction { get; set; }
+
+    public virtual DbSet<ReceiptNoteView> ReceiptNoteView { get; set; }
+
+    public virtual DbSet<ProviderInvoiceView> ProviderInvoiceView { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

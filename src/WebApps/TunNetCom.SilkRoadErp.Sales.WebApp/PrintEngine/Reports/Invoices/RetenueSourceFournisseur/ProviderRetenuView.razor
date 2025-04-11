@@ -1,0 +1,123 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificat de Retenue</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            width: 80%;
+            margin: auto;
+            border: 1px solid black;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .identifiant-table th, .identifiant-table td {
+            text-align: center;
+        }
+
+        .signature {
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <p>REPUBLIQUE TUNISIENNE</p>
+            <p>MINISTERE DU PLAN ET FINANCES</p>
+            <p>DIRECTION GENERALE DU CONTROLE FISCAL</p>
+            <h2>CERTIFICAT DE RETENU A LA SOURCE</h2>
+        </div>
+
+        <h3>A - PERSONNE OU ORGANISME PAYEUR :</h3>
+        <p><strong>Nom, Prénom ou Raison Sociale :</strong> @Model.Nom</p>
+        <p><strong>Adresse :</strong> @Model.Adresse</p>
+
+        <table class="identifiant-table">
+            <tr>
+                <th>Matricule fiscal</th>
+                <th>Code T.V.A</th>
+                <th>Code catégorie</th>
+                <th>N° Etb secondaire</th>
+            </tr>
+            <tr>
+                <td>@Model.Matricule</td>
+                <td>@Model.Code</td>
+                <td>@Model.CodeCat</td>
+                <td>@Model.EtbSec</td>
+            </tr>
+        </table>
+
+        <h3>B - RETENUE EFFECTUÉE SUR :</h3>
+        <table>
+            <tr>
+                <th>N° de la facture</th>
+                <th>Date de la facture</th>
+                <th>Montant brut</th>
+                <th>Retenue</th>
+                <th>Montant net</th>
+            </tr>
+            <tr>
+                <td>@Model.Invoices.First().Num</td>
+                <td>@Model.Invoices.First().Date</td>
+                <td>@Model.Invoices.First().TotHTva</td>
+                <td>@Model.Invoices.First().TotTva</td>
+                <td>@Model.Invoices.First().TotTTC</td>
+            </tr>
+        </table>
+
+        <h3>C - BENEFICIAIRE :</h3>
+        <p><strong>Nom, Prénom ou Raison Sociale :</strong> @Model.CompanyName</p>
+        <p><strong>Adresse :</strong> New York, USA</p>
+
+        <table class="identifiant-table">
+            <tr>
+                <th>Matricule fiscal</th>
+                <th>Code T.V.A</th>
+                <th>Code catégorie</th>
+                <th>N° Etb secondaire</th>
+            </tr>
+            <tr>
+                <td>@Model.CompanyMatricule</td>
+                <td>@Model.CompanyCodeTVA</td>
+                <td>@Model.CompanyCodeCat</td>
+                <td>@Model.CompanyEtbSec</td>
+            </tr>
+        </table>
+
+        <p>Je souligne, certifie exacts les renseignements figurant sur le présent certificat et m'expose aux sanctions prévues par la loi pour toute inexactitude.</p>
+
+        <div class="signature">
+            <p>@Model.CompanyAdress, le : @DateTime.Now.ToShortDateString()</p>
+            <p><strong>Cachet et signature du payeur</strong></p>
+        </div>
+    </div>
+</body>
+</html>
+
+@code {
+    [Parameter] public RetenuSourceFournisseurPrintModel Model { get; set; }
+}

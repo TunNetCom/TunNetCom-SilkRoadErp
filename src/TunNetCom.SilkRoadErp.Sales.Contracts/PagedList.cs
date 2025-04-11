@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using TunNetCom.SilkRoadErp.Sales.Api.Exceptions;
 
 namespace TunNetCom.SilkRoadErp.Sales.Contracts;
 
@@ -34,6 +35,11 @@ public class PagedList<T>
         int pageSize,
         CancellationToken cancellationToken = default)
     {
+        if (pageNumber < 1 || pageSize < 1)
+        {
+            throw new InvalidPaginationParamsException();
+        }
+
         var count = await source.CountAsync(cancellationToken);
         var items = await source.Skip((pageNumber - 1) * pageSize)
                                 .Take(pageSize)

@@ -1,5 +1,4 @@
 ﻿using TunNetCom.SilkRoadErp.Sales.Contracts.Providers;
-using TunNetCom.SilkRoadErp.Sales.HttpClients.Services;
 
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers;
 
