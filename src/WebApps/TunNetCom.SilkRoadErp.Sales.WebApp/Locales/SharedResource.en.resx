@@ -243,6 +243,9 @@
   <data name="attach_delivery_note_to_invoice" xml:space="preserve">
     <value />
   </data>
+  <data name="delivery_note_number" xml:space="preserve">
+    <value />
+  </data>
   <data name="manage_providers_invoices" xml:space="preserve">
     <value />
   </data>

@@ -34,12 +34,14 @@ public interface IDeliveryNoteApiClient
 
     Task<GetDeliveryNotesWithSummariesResponse> GetDeliveryNotesWithSummariesAsync(
        int customerId,
-       int? invoiceId,
-       bool isInvoiced,
-       string? sortOrder,
-       string? sortProperty,
-       int pageNumber = 1,
-       int pageSize = 20,
-       CancellationToken cancellationToken = default);
+        int? invoiceId,
+        bool isInvoiced,
+        string? sortOrder,
+        string? sortProperty,
+        CancellationToken cancellationToken,
+        int pageNumber = 1,
+        int pageSize = 10);
+
+    Task<DeliveryNoteResponse?> GetDeliveryNoteByNumAsync(int num, CancellationToken cancellationToken);
 
 }

@@ -339,6 +339,9 @@
   <data name="providers" xml:space="preserve">
     <value>Fournisseurs</value>
   </data>
+  <data name="delivery_note_number" xml:space="preserve">
+    <value>Bon de livraison : </value>
+  </data>
   <data name="manage_providers_invoices" xml:space="preserve">
     <value> Gérer les Factures des fournisseurs</value>
   </data>
