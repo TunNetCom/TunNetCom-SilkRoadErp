@@ -1,6 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.HttpClients.Services;
-
-namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products;
+﻿namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products;
 
 public class ProductsApiClient : IProductsApiClient
 {

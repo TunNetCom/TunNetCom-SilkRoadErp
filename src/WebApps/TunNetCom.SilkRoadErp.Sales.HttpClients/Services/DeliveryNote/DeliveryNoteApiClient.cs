@@ -1,16 +1,16 @@
-﻿using Newtonsoft.Json;
-using System.Net.Http.Json;
-using System.Text;
-using System.Text.Json;
-using TunNetCom.SilkRoadErp.Sales.Contracts.Customers;
-using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
 using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote;
 
 public class DeliveryNoteApiClient(HttpClient _httpClient) : IDeliveryNoteApiClient
 {
-    public async Task<PagedList<DeliveryNoteResponse>> GetDeliveryNotes(int pageNumber, int pageSize, int? customerId, string? searchKeyword, bool? isFactured)
+    public async Task<PagedList<DeliveryNoteResponse>> GetDeliveryNotes(
+        int pageNumber,
+        int pageSize,
+        int? customerId,
+        string? searchKeyword,
+        bool? isFactured)
      {
         var queryString = $"/deliveryNote?pageNumber={pageNumber}&pageSize={pageSize}";
 
@@ -34,9 +34,6 @@ public class DeliveryNoteApiClient(HttpClient _httpClient) : IDeliveryNoteApiCli
         var content = await response.Content.ReadFromJsonAsync<PagedList<DeliveryNoteResponse>>();
         return content!;
     }
-
-
-
 
     public async Task<int> CreateDeliveryNote(CreateDeliveryNoteRequest createDeliveryNoteRequest)
     {
@@ -67,7 +64,6 @@ public class DeliveryNoteApiClient(HttpClient _httpClient) : IDeliveryNoteApiCli
         return System.Text.Json.JsonSerializer.Deserialize<List<DeliveryNoteResponse>>(content) ?? new List<DeliveryNoteResponse>();
     }
     
-
     public async Task<bool> AttachToInvoiceAsync(AttachToInvoiceRequest request, CancellationToken cancellationToken)
     {
         try
@@ -100,6 +96,7 @@ public class DeliveryNoteApiClient(HttpClient _httpClient) : IDeliveryNoteApiCli
             throw new Exception("Failed to attach delivery notes to invoice", ex);
         }
     }
+
     public async Task<List<DeliveryNoteResponse>> GetUninvoicedDeliveryNotesAsync(int clientId, CancellationToken cancellationToken)
     {
         try
@@ -126,8 +123,8 @@ public class DeliveryNoteApiClient(HttpClient _httpClient) : IDeliveryNoteApiCli
     }
 
     public async Task<OneOf<bool, BadRequestResponse>> DetachFromInvoiceAsync(
-DetachFromInvoiceRequest request,
-CancellationToken cancellationToken)
+        DetachFromInvoiceRequest request,
+        CancellationToken cancellationToken)
     {
         var headers = new Dictionary<string, string>()
         {
@@ -164,9 +161,9 @@ CancellationToken cancellationToken)
         bool isInvoiced,
         string? sortOrder,
         string? sortProperty,
+        CancellationToken cancellationToken,
         int pageNumber = 1,
-        int pageSize = 10,
-        CancellationToken cancellationToken = default)
+        int pageSize = 10)
     {
         // Construct the query string with all parameters
         var queryParams = new List<string>
@@ -215,6 +212,38 @@ CancellationToken cancellationToken)
         {
             Console.WriteLine($"Error deserializing response: {ex.Message}");
             throw;
+        }
+    }
+
+    public async Task<DeliveryNoteResponse?> GetDeliveryNoteByNumAsync(
+        int num,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync($"/deliveryNote/{num}", cancellationToken);
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return null;
+            }
+
+            response.EnsureSuccessStatusCode();
+
+            var deliveryNote = await response
+                .Content
+                .ReadFromJsonAsync<DeliveryNoteResponse>(cancellationToken: cancellationToken);
+
+            if (deliveryNote is null)
+            {
+                throw new InvalidOperationException("Failed to deserialize the delivery note response.");
+            }
+
+            return deliveryNote;
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new HttpRequestException($"Failed to fetch delivery note: {ex.Message}", ex);
         }
     }
 }

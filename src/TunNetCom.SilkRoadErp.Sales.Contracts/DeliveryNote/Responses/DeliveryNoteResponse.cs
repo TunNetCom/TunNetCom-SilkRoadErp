@@ -29,5 +29,5 @@ public class DeliveryNoteResponse
     public int? ClientId { get; set; }
 
     [JsonPropertyName("lignes")]
-    public List<LigneBlRequest> Lignes { get; set; }
+    public List<DeliveryNoteDetailResponse> Lignes { get; set; }
 }

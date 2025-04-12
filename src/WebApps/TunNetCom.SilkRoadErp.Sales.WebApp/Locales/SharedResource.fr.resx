@@ -339,4 +339,7 @@
   <data name="providers" xml:space="preserve">
     <value>Fournisseurs</value>
   </data>
+  <data name="delivery_note_number" xml:space="preserve">
+    <value>Bon de livraison : </value>
+  </data>
 </root>

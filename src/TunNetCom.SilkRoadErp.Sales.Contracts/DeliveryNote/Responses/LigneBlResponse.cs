@@ -1,6 +1,6 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 
-public class LigneBlRequest
+public class DeliveryNoteDetailResponse
 {
     [JsonPropertyName("id")]
     public int Id { get; set; }
@@ -28,4 +28,6 @@ public class LigneBlRequest
 
     [JsonPropertyName("totTtc")]
     public decimal TotTtc { get; set; }
+
+    public string? RefAndDisplay { get { return $"{RefProduit} -- {DesignationLi}"; } }
 }

@@ -1,4 +1,5 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
+using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNoteByNum;
 
@@ -11,9 +12,32 @@ public class GetDeliveryNoteByNumQueryHandler(
     {
         _logger.LogFetchingEntityById(nameof(BonDeLivraison), getDeliveryNoteByNumQuery.Num);
 
-        var deliveryNote = await _context.BonDeLivraison.FindAsync(getDeliveryNoteByNumQuery.Num, cancellationToken);
+        var deliveryNoteResponse = await _context.BonDeLivraison
+            .Select(LigneBl => new DeliveryNoteResponse
+            {
+                Num = LigneBl.Num,
+                Date = LigneBl.Date,
+                ClientId = LigneBl.ClientId,
+                TotTva = LigneBl.TotTva,
+                NetPayer = LigneBl.NetPayer,
+                NumFacture = LigneBl.NumFacture,
+                TempBl = LigneBl.TempBl,
+                TotHT = LigneBl.TotHTva,
+                Lignes = LigneBl.LigneBl.Select(l => new DeliveryNoteDetailResponse
+                {
+                    RefProduit = l.RefProduit,
+                    DesignationLi = l.DesignationLi,
+                    QteLi = l.QteLi,
+                    PrixHt = l.PrixHt,
+                    Remise = l.Remise,
+                    Tva = l.Tva,
+                    TotHt = l.TotHt,
+                    TotTtc = l.TotTtc
+                }).ToList(),
+            })
+            .FirstOrDefaultAsync(d => d.Num == getDeliveryNoteByNumQuery.Num, cancellationToken);
 
-        if (deliveryNote is null)
+        if (deliveryNoteResponse is null)
         {
             _logger.LogEntityNotFound(nameof(BonDeLivraison), getDeliveryNoteByNumQuery.Num);
 
@@ -22,6 +46,6 @@ public class GetDeliveryNoteByNumQueryHandler(
 
         _logger.LogEntityFetchedById(nameof(BonDeLivraison), getDeliveryNoteByNumQuery.Num);
 
-        return deliveryNote.Adapt<DeliveryNoteResponse>();
+        return deliveryNoteResponse;
     }
 }
