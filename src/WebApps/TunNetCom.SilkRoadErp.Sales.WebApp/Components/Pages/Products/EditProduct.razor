@@ -13,18 +13,18 @@
 @inject NavigationManager navigationManager
 @inject IStringLocalizer<SharedResource> localizer
 
-<h3>@(string.IsNullOrEmpty(product.Refe) ? localizer["add_product"] : localizer["edit_product"])</h3>
+<h3>@(string.IsNullOrEmpty(product.Reference) ? localizer["add_product"] : localizer["edit_product"])</h3>
 
 <div class="container mt-4">
     <EditForm Model="product" OnValidSubmit="HandleValidSubmit" class="row g-3">
         <AntiforgeryToken />
         <div class="col-md-3">
             <label for="productRefe" class="form-label">@localizer["product_refe"]</label>
-            <InputText id="productRefe" @bind-Value="product.Refe" class="form-control" />
+            <InputText id="productRefe" @bind-Value="product.Reference" class="form-control" />
         </div>
         <div class="col-md-9">
             <label for="productName" class="form-label">@localizer["product_name"]</label>
-            <InputText id="productName" @bind-Value="product.Nom" class="form-control" />
+            <InputText id="productName" @bind-Value="product.Name" class="form-control" />
         </div>
         <div class="col-md-4">
             <label for="productQte" class="form-label">@localizer["product_qte"]</label>
@@ -32,31 +32,31 @@
         </div>
         <div class="col-md-4">
             <label for="productQteLimite" class="form-label">@localizer["product_qteLimite"]</label>
-            <InputNumber id="productQteLimite" @bind-Value="product.QteLimite" class="form-control" />
+            <InputNumber id="productQteLimite" @bind-Value="product.QteLimit" class="form-control" />
         </div>
         <div class="col-md-4">
             <label for="productRemise" class="form-label">@localizer["product_remise"]</label>
-            <InputNumber id="productRemise" @bind-Value="product.Remise" class="form-control" />
+            <InputNumber id="productRemise" @bind-Value="product.DiscountPourcentage" class="form-control" />
         </div>
         <div class="col-md-4">
             <label for="productRemiseAchat" class="form-label">@localizer["product_remiseAchat"]</label>
-            <InputNumber id="productRemiseAchat" @bind-Value="product.RemiseAchat" class="form-control" />
+            <InputNumber id="productRemiseAchat" @bind-Value="product.DiscountPourcentageOfPurchasing" class="form-control" />
         </div>
         <div class="col-md-4">
             <label for="productTva" class="form-label">@localizer["product_tva"]</label>
-            <InputNumber id="productTva" @bind-Value="product.Tva" class="form-control"  />
+            <InputNumber id="productTva" @bind-Value="product.VatRate" class="form-control"  />
         </div>
         <div class="col-md-4">
             <label for="productPrix" class="form-label">@localizer["product_prix"]</label>
-            <InputNumber id="productPrix" @bind-Value="product.Prix" class="form-control" />
+            <InputNumber id="productPrix" @bind-Value="product.Price" class="form-control" />
         </div>
         <div class="col-md-4">
             <label for="productPrixAchat" class="form-label">@localizer["product_prixAchat"]</label>
-            <InputNumber id="productPrixAchat" @bind-Value="product.PrixAchat" class="form-control" />
+            <InputNumber id="productPrixAchat" @bind-Value="product.PurchasingPrice" class="form-control" />
         </div>
         <div class="col-md-4">
             <label for="productVisibility" class="form-label">@localizer["product_visibilite"]</label>
-            <Switch id="productVisibility" ValueExpression="@(() => product.Visibilite)"  />
+            <Switch id="productVisibility" ValueExpression="@(() => product.Visibility)"  />
         </div>
         <div class="col-12">
             <input type="submit" class="btn btn-primary" value="@localizer["save_label"]" />
@@ -96,16 +96,16 @@
             var createProductResult = await productService.CreateAsync(
                 new CreateProductRequest
                     {
-                        Refe = product.Refe,
-                        Nom = product.Nom,
+                        Refe = product.Reference,
+                        Nom = product.Name,
                         Qte = product.Qte,
-                        QteLimite = product.QteLimite,
-                        Remise = product.Remise,
-                        RemiseAchat = product.RemiseAchat,
-                        Tva = product.Tva,
-                        Prix = product.Prix,
-                        PrixAchat = product.PrixAchat,
-                        Visibilite = product.Visibilite
+                        QteLimite = product.QteLimit,
+                        Remise = product.DiscountPourcentage,
+                        RemiseAchat = product.DiscountPourcentageOfPurchasing,
+                        Tva = product.VatRate,
+                        Prix = product.Price,
+                        PrixAchat = product.PurchasingPrice,
+                        Visibilite = product.Visibility
                     },
                     cancellationTokenSource.Token);
 
@@ -123,17 +123,17 @@
         var updateProductResult = await productService.UpdateAsync(
             new UpdateProductRequest
                 {
-                    Refe = product.Refe,
-                    Nom = product.Nom,
+                    Refe = product.Reference,
+                    Nom = product.Name,
                     Qte = product.Qte,
-                    QteLimite = product.QteLimite,
-                    Remise = product.Remise,
-                    RemiseAchat = product.RemiseAchat,
-                    Tva = product.Tva,
-                    Prix = product.Prix,
-                    PrixAchat = product.PrixAchat,
-                    Visibilite = product.Visibilite
-                }, product.Refe,
+                    QteLimite = product.QteLimit,
+                    Remise = product.DiscountPourcentage,
+                    RemiseAchat = product.DiscountPourcentageOfPurchasing,
+                    Tva = product.VatRate,
+                    Prix = product.Price,
+                    PrixAchat = product.PurchasingPrice,
+                    Visibilite = product.Visibility
+                }, product.Reference,
             cancellationTokenSource.Token);
 
         if (updateProductResult.IsT0)

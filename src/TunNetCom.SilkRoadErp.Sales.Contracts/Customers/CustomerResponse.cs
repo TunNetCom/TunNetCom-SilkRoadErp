@@ -5,8 +5,8 @@ public class CustomerResponse
     [JsonPropertyName("id")]
     public int Id { get; set; }
 
-    [JsonPropertyName("nom")]
-    public string? Nom { get; set; }
+    [JsonPropertyName("name")]
+    public string? Name { get; set; }
 
     [JsonPropertyName("tel")]
     public string? Tel { get; set; }

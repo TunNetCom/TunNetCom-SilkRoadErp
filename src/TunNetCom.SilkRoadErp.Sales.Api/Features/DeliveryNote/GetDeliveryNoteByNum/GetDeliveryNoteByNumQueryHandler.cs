@@ -1,5 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
-using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNoteByNum;
 
@@ -8,34 +7,36 @@ public class GetDeliveryNoteByNumQueryHandler(
     ILogger<GetDeliveryNoteByNumQueryHandler> _logger)
     : IRequestHandler<GetDeliveryNoteByNumQuery, Result<DeliveryNoteResponse>>
 {
-    public async Task<Result<DeliveryNoteResponse>> Handle(GetDeliveryNoteByNumQuery getDeliveryNoteByNumQuery, CancellationToken cancellationToken)
+    public async Task<Result<DeliveryNoteResponse>> Handle(
+        GetDeliveryNoteByNumQuery getDeliveryNoteByNumQuery,
+        CancellationToken cancellationToken)
     {
         _logger.LogFetchingEntityById(nameof(BonDeLivraison), getDeliveryNoteByNumQuery.Num);
 
         var deliveryNoteResponse = await _context.BonDeLivraison
             .Select(LigneBl => new DeliveryNoteResponse
             {
-                Num = LigneBl.Num,
+                DeliveryNoteNumber = LigneBl.Num,
                 Date = LigneBl.Date,
-                ClientId = LigneBl.ClientId,
-                TotTva = LigneBl.TotTva,
-                NetPayer = LigneBl.NetPayer,
-                NumFacture = LigneBl.NumFacture,
-                TempBl = LigneBl.TempBl,
-                TotHT = LigneBl.TotHTva,
-                Lignes = LigneBl.LigneBl.Select(l => new DeliveryNoteDetailResponse
+                CustomerId = LigneBl.ClientId,
+                TotalVat = LigneBl.TotTva,
+                TotalAmount = LigneBl.NetPayer,
+                InvoiceNumber = LigneBl.NumFacture,
+                CreationTime = LigneBl.TempBl,
+                TotalExcludingTax = LigneBl.TotHTva,
+                Items = LigneBl.LigneBl.Select(l => new DeliveryNoteDetailResponse
                 {
-                    RefProduit = l.RefProduit,
-                    DesignationLi = l.DesignationLi,
-                    QteLi = l.QteLi,
-                    PrixHt = l.PrixHt,
-                    Remise = l.Remise,
-                    Tva = l.Tva,
-                    TotHt = l.TotHt,
-                    TotTtc = l.TotTtc
+                    ProductReference = l.RefProduit,
+                    Description = l.DesignationLi,
+                    Quantity = l.QteLi,
+                    UnitPriceExcludingTax = l.PrixHt,
+                    DiscountPercentage = l.Remise,
+                    VatPercentage = l.Tva,
+                    TotalExcludingTax = l.TotHt,
+                    TotalIncludingTax = l.TotTtc
                 }).ToList(),
             })
-            .FirstOrDefaultAsync(d => d.Num == getDeliveryNoteByNumQuery.Num, cancellationToken);
+            .FirstOrDefaultAsync(d => d.DeliveryNoteNumber == getDeliveryNoteByNumQuery.Num, cancellationToken);
 
         if (deliveryNoteResponse is null)
         {

@@ -31,8 +31,8 @@
           Responsive="true"
           @ref="grid">
 
-        <GridColumn TItem="CustomerResponse" HeaderText="@Localizer["customer_name"]" PropertyName="CustomerName" SortString="CustomerName" SortKeySelector="item => item.Nom" FilterTextboxWidth="80">
-            @context.Nom
+        <GridColumn TItem="CustomerResponse" HeaderText="@Localizer["customer_name"]" PropertyName="CustomerName" SortString="CustomerName" SortKeySelector="item => item.Name" FilterTextboxWidth="80">
+            @context.Name
         </GridColumn>
         <GridColumn TItem="CustomerResponse" HeaderText="@Localizer["customer_phone"]" PropertyName="Phone" SortString="Phone" SortKeySelector="item => item.Tel" FilterTextboxWidth="100">
             @context.Tel

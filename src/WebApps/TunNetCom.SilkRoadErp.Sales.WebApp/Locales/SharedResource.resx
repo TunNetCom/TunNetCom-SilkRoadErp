@@ -264,4 +264,28 @@
   <data name="attach_receipt_note_to_invoice" xml:space="preserve">
     <value />
   </data>
+  <data name="discount_percentage" xml:space="preserve">
+    <value />
+  </data>
+  <data name="unit_price_required" xml:space="preserve">
+    <value />
+  </data>
+  <data name="quantity" xml:space="preserve">
+    <value />
+  </data>
+  <data name="product" xml:space="preserve">
+    <value />
+  </data>
+  <data name="total_including_tax" xml:space="preserve">
+    <value />
+  </data>
+  <data name="total_excluding_tax" xml:space="preserve">
+    <value />
+  </data>
+  <data name="unit_price_ht" xml:space="preserve">
+    <value />
+  </data>
+  <data name="vat_percentage" xml:space="preserve">
+    <value />
+  </data>
 </root>

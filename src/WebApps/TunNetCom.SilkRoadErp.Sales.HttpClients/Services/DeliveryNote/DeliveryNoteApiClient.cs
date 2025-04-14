@@ -1,4 +1,5 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
+﻿using FluentResults;
+using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
 using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote;
@@ -35,17 +36,52 @@ public class DeliveryNoteApiClient(HttpClient _httpClient) : IDeliveryNoteApiCli
         return content!;
     }
 
-    public async Task<int> CreateDeliveryNote(CreateDeliveryNoteRequest createDeliveryNoteRequest)
+    public async Task<Result<long>> CreateDeliveryNoteAsync(
+       CreateDeliveryNoteRequest request,
+       CancellationToken cancellationToken)
     {
-        var response = await _httpClient.PostAsJsonAsync("/deliveryNote", createDeliveryNoteRequest);
-        response.EnsureSuccessStatusCode();
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync(
+                "/deliveryNote",
+                request,
+                cancellationToken);
 
-        var responseJson = await response.Content.ReadAsStringAsync();
-        Console.WriteLine("Response JSON: " + responseJson);
+            if (response.IsSuccessStatusCode)
+            {
+                // Assuming the API returns the created delivery note ID in the Location header
+                var location = response.Headers.Location?.ToString();
+                if (long.TryParse(location?.Split('/').Last(), out var deliveryNoteId))
+                {
+                    return Result.Ok(deliveryNoteId);
+                }
+                return Result.Fail("Could not extract delivery note ID from response");
+            }
 
+            if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+            {
+                var problemDetails = await response.Content.ReadFromJsonAsync<BadRequestResponse>(
+                    cancellationToken);
 
-        var deliveryNoteResponse = JsonConvert.DeserializeObject<DeliveryNoteResponse>(responseJson);
-        return deliveryNoteResponse.Num;
+                if (problemDetails?.errors != null)
+                {
+                    var errors = problemDetails.errors
+                        .SelectMany(kvp => kvp.Value.Select(v => $"{kvp.Key}: {v}"));
+                    return Result.Fail(errors);
+                }
+                return Result.Fail("Validation failed but no error details provided");
+            }
+
+            return Result.Fail($"Failed to create delivery note: {response.StatusCode}");
+        }
+        catch (HttpRequestException ex)
+        {
+            return Result.Fail($"Network error occurred: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            return Result.Fail($"Unexpected error: {ex.Message}");
+        }
     }
 
     public async Task<List<DeliveryNoteResponse>> GetDeliveryNotesByClientId(int clientId)

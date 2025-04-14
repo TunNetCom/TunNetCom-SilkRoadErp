@@ -5,7 +5,9 @@ public class CreateDeliveryNoteCommandHandler(
     ILogger<CreateDeliveryNoteCommandHandler> _logger)
     : IRequestHandler<CreateDeliveryNoteCommand, Result<int>>
 {
-    public async Task<Result<int>> Handle(CreateDeliveryNoteCommand createDeliveryNoteCommand, CancellationToken cancellationToken) 
+    public async Task<Result<int>> Handle(
+        CreateDeliveryNoteCommand createDeliveryNoteCommand,
+        CancellationToken cancellationToken) 
     {
         _logger.LogEntityCreated(nameof(BonDeLivraison), createDeliveryNoteCommand);
 
@@ -21,21 +23,22 @@ public class CreateDeliveryNoteCommandHandler(
                 createDeliveryNoteCommand.ClientId
             );
 
-        foreach(var ligne in createDeliveryNoteCommand.Lignes) 
+        foreach(var deliveryNoteDetail in createDeliveryNoteCommand.DeliveryNoteDetails) 
         {
             var lignesBl = new LigneBl
             {
-                RefProduit = ligne.RefProduit,
-                DesignationLi = ligne.DesignationLi,
-                QteLi = ligne.QteLi,
-                PrixHt = ligne.PrixHt,
-                Remise = ligne.Remise,
-                TotHt = ligne.TotHt,
-                Tva = ligne.Tva,
-                TotTtc = ligne.TotTtc,
+                RefProduit = deliveryNoteDetail.RefProduit,
+                DesignationLi = deliveryNoteDetail.DesignationLi,
+                QteLi = deliveryNoteDetail.QteLi,
+                PrixHt = deliveryNoteDetail.PrixHt,
+                Remise = deliveryNoteDetail.Remise,
+                TotHt = deliveryNoteDetail.TotHt,
+                Tva = deliveryNoteDetail.Tva,
+                TotTtc = deliveryNoteDetail.TotTtc,
                 NumBlNavigation = deliveryNote
             };
-            //TODO make method to add lignesBl
+
+            // TODO make method to add lignesBl
             deliveryNote.LigneBl.Add( lignesBl );
         }
 
