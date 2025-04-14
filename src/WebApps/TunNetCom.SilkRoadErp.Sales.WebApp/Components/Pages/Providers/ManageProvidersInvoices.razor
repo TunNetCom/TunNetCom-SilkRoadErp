@@ -136,11 +136,6 @@
 
         <!-- Invoiced delivery notes section -->
         <RadzenColumn Size="12" SizeMD="6">
-            <RadzenCard Variant="Variant.Outlined" Style="height: 100%;">
-                <RadzenStack Gap="1rem">
-                    <RadzenTabs>
-                        <Tabs>
-                            <RadzenTabsItem Text="@Localizer["receipt_notes_details"]">
                                 <RadzenColumn>
                                     <RadzenDataGrid @ref="_receiptNoteGrid"
                                     AllowRowSelectOnRowClick="true"
@@ -161,6 +156,11 @@
                                     SelectionMode="DataGridSelectionMode.Multiple"
                                     IsLoading=@isLoadingDeliveryNotesInCurrentInvoice
                                     @bind-Value="@_selectedReceiptNotesToDetach">
+                    <HeaderTemplate>
+                        <div style="padding: 6px; font-size: 16px; font-weight: bold;">
+                            @Localizer["receipt_notes_details"]
+                        </div>
+                    </HeaderTemplate>
                                         <Columns>
                                             <RadzenDataGridColumn Property="Num" Title="@Localizer["number"]" />
                                             <RadzenDataGridColumn Property="TotTTC" Title="@Localizer["total_ex_tax"]">
@@ -190,14 +190,9 @@
                                         </RadzenStack>
                                     </RadzenCard>
                                 </RadzenColumn>
-                            </RadzenTabsItem>
-                        </Tabs>
-                    </RadzenTabs>
                     <RadzenButton Text="@Localizer["detach_from_invoice"]"
                     Click="@DetachReceiptNotesFromInvoice"
                     Disabled="@(SelectedInvoiceId == 0 || !_selectedReceiptNotesIdsToDetach.Any())" />
-                </RadzenStack>
-            </RadzenCard>
         </RadzenColumn>
 
         <!-- Uninvoiced delivery notes section -->
@@ -257,8 +252,6 @@
         </RadzenColumn>
     </RadzenRow>
 </div>
-@* Click=@(args => AttachDeliveryNoteToInvoiceClick("Primary button")) *@
-@* Click="@DetachDeliveryNotesFromInvoice" *@
 @code {
     #region Fields and Properties
     private const int _defaultPageSize = 5;
