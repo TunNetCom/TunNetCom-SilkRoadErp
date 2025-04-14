@@ -22,6 +22,7 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Invoices.PrintInvoiceWithDetails
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Invoices.ProviderInvoices
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Invoices.RetenueSource
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Invoices.RetenueSourceFournisseur
 @inject IReceiptNoteApiClient receiptNoteService
@@ -35,6 +36,7 @@
 @inject ToastService toastService
 @inject NotificationService NotificationService
 @inject PrintRetenuSourceService PrintRetenuSourceService
+@inject PrintProviderFullInvoiceService PrintProviderFullInvoiceService
 @inject RetenuSourceFournisseurPrintService RetenuSourceFournisseurPrintService
 @inject PrintFullInvoiceService PrintFullInvoiceService
 @inject IJSRuntime JS
@@ -680,13 +682,13 @@
             return;
         }
         // Print functionality commented out for display-only version
-        /*
+        
         var invoices = new List<int>() { SelectedInvoiceId };
-        var pdfBytes = await PrintFullInvoiceService
+        var pdfBytes = await PrintProviderFullInvoiceService
         .GenerateInvoicePdfAsync(SelectedInvoiceId, cancellationToken: _cancellationTokenSource.Token);
         var fileName = $"Invoice {SelectedInvoiceId}.pdf";
         await JS.InvokeVoidAsync("downloadFile", fileName, Convert.ToBase64String(pdfBytes.Value), "application/pdf");
-        */
+        
     }
     #endregion
 }

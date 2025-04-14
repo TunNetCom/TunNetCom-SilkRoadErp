@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using System.Text.Json;
+using FluentResults;
 using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;
 
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProviderInvoice;
@@ -82,4 +83,26 @@ public class ProviderInvoiceApiClient : IProviderInvoiceApiClient
         return result ;
     }
 
+    public async Task<Result<FullProviderInvoiceResponse>> GetFullProviderInvoiceByIdAsync(
+    int id,
+    CancellationToken cancellationToken)
+    {
+        var response = await _httpClient.GetAsync(
+            $"/provider-invoices/{id}/full",
+            cancellationToken: cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return Result.Fail("invoice_not_found");
+        }
+
+        response.EnsureSuccessStatusCode();
+
+        var invoice = await response.Content.ReadFromJsonAsync<FullProviderInvoiceResponse>(
+            cancellationToken: cancellationToken);
+
+        return invoice is null
+            ? Result.Fail<FullProviderInvoiceResponse>("invoice_is_empty")
+            : Result.Ok(invoice);
+    }
 }

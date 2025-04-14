@@ -24,7 +24,7 @@
 //            NumFacture: 202512,
 //            DeliveryNoteIds: new List<int> { 202501, 202502, 202503 } 
 //        );
-//        var invoice = new Facture { Num = 202512, IdClient = 100 };
+//        var invoice = new Facture { Num = 202512, ProviderId = 100 };
 //        _context.Facture.Add(invoice);
 //        await _context.SaveChangesAsync();
 
@@ -40,7 +40,7 @@
 //    public async Task Handle_DeliveryNotesAlreadyAttached_ReturnsFailResult()
 //    {
 //        // Arrange
-//        var invoice = new Facture { Num = 202512, IdClient = 100 };
+//        var invoice = new Facture { Num = 202512, ProviderId = 100 };
 //        _context.Facture.Add(invoice);
 
 //        var deliveryNotes = new List<BonDeLivraison>
@@ -69,7 +69,7 @@
 //    public async Task Handle_ValidAttachment_ReturnsSuccessResult()
 //    {
 //        // Arrange
-//        var invoice = new Facture { Num = 202512, IdClient = 100 };
+//        var invoice = new Facture { Num = 202512, ProviderId = 100 };
 //        _context.Facture.Add(invoice);
 
 //        var deliveryNotes = new List<BonDeLivraison>
