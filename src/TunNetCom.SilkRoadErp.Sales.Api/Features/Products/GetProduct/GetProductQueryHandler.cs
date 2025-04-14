@@ -10,24 +10,24 @@ public class GetProductQueryHandler(
         var productsQuery = _context.Produit.Select(t =>
             new ProductResponse
             {
-                Refe = t.Refe,
-                Nom = t.Nom,
+                Reference = t.Refe,
+                Name = t.Nom,
                 Qte = t.Qte,
-                QteLimite = t.QteLimite,
-                Remise = t.Remise,
-                RemiseAchat = t.RemiseAchat,
-                Tva = t.Tva,
-                Prix = t.Prix,
-                PrixAchat = t.PrixAchat,
-                Visibilite = t.Visibilite,
+                QteLimit = t.QteLimite,
+                DiscountPourcentage = t.Remise,
+                DiscountPourcentageOfPurchasing = t.RemiseAchat,
+                VatRate = t.Tva,
+                Price = t.Prix,
+                PurchasingPrice = t.PrixAchat,
+                Visibility = t.Visibilite,
                 
             })
             .AsQueryable();
         if (!string.IsNullOrEmpty(getProductQuery.SearchKeyword))
         {
             productsQuery = productsQuery.Where(
-                c => c.Refe.Contains(getProductQuery.SearchKeyword)
-                || c.Nom.Contains(getProductQuery.SearchKeyword));
+                c => c.Reference.Contains(getProductQuery.SearchKeyword)
+                || c.Name.Contains(getProductQuery.SearchKeyword));
         }
         var pagedProducts = await PagedList<ProductResponse>.ToPagedListAsync(
             productsQuery,

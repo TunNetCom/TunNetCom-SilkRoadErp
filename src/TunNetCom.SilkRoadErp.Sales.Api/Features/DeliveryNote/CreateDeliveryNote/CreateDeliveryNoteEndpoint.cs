@@ -16,13 +16,23 @@ public class CreateDeliveryNoteEndpoint : ICarterModule
                 var createDeliveryNoteCommand = new CreateDeliveryNoteCommand
                 (
                     Date: createDeliveryNoteRequest.Date,
-                    TotHTva: createDeliveryNoteRequest.TotHTva,
-                    TotTva : createDeliveryNoteRequest.TotTva,
-                    NetPayer : createDeliveryNoteRequest.NetPayer,
-                    TempBl: createDeliveryNoteRequest.TempBl,
-                    NumFacture : createDeliveryNoteRequest.NumFacture,
-                    ClientId : createDeliveryNoteRequest.ClientId,
-                    Lignes : createDeliveryNoteRequest.Lignes
+                    TotHTva: createDeliveryNoteRequest.TotalExcludingTax,
+                    TotTva : createDeliveryNoteRequest.TotalVat,
+                    NetPayer : createDeliveryNoteRequest.TotalAmount,
+                    TempBl: createDeliveryNoteRequest.DeliveryTime,
+                    NumFacture : createDeliveryNoteRequest.InvoiceNumber,
+                    ClientId : createDeliveryNoteRequest.CustomerId,
+                    DeliveryNoteDetails : createDeliveryNoteRequest.Items.Select(selector => new LigneBlSubCommand
+                    {
+                        RefProduit = selector.ProductReference,
+                        DesignationLi = selector.Description,
+                        QteLi = selector.Quantity,
+                        PrixHt = selector.UnitPriceExcludingTax,
+                        Remise = selector.DiscountPercentage,
+                        TotHt = selector.TotalExcludingTax,
+                        Tva = selector.VatPercentage,
+                        TotTtc = selector.TotalIncludingTax
+                    })
                 );
 
                 var result = await mediator.Send(createDeliveryNoteCommand, cancellationToken);

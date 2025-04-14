@@ -60,7 +60,7 @@ public class PrintRetenuSourceService(
         return new RetenuSourcePrintModel
         {
             Invoices = new List<InvoiceResponse>() { invoiceResponse },
-            CustomerName = customerResponse.Nom,
+            CustomerName = customerResponse.Name,
             CustomerTel = customerResponse.Tel,
             CustomerAdresse = customerResponse.Adresse,
             CustomerMatricule = customerResponse.Matricule,

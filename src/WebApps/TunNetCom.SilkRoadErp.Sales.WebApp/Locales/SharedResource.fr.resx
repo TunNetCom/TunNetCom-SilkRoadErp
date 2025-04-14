@@ -243,6 +243,45 @@
   <data name="attach_delivery_note_to_invoice" xml:space="preserve">
     <value>Joindre à la facture</value>
   </data>
+  <data name="delivery_note_number" xml:space="preserve">
+    <value>Bon de livraison : </value>
+  </data>
+  <data name="manage_providers_invoices" xml:space="preserve">
+    <value> Gérer les Factures des fournisseurs</value>
+  </data>
+  <data name="select_provider" xml:space="preserve">
+    <value>Selectionner un fournisseur</value>
+  </data>
+  <data name="provider_invoice_details" xml:space="preserve">
+    <value>Détails facture fournisseur</value>
+  </data>
+  <data name="receipt_notes_details" xml:space="preserve">
+    <value>Détails bons de réception</value>
+  </data>
+  <data name="uninvoiced_receipt_notes_details" xml:space="preserve">
+    <value>Détails bons de réception non facturés</value>
+  </data>
+  <data name="attach_receipt_note_to_invoice" xml:space="preserve">
+    <value>Joindre bons de réception à la facture</value>
+  </data>
+  <data name="discount_percentage" xml:space="preserve">
+    <value>Remise %</value>
+  </data>
+  <data name="unit_price_required" xml:space="preserve">
+    <value>Prix Unitaire</value>
+  </data>
+  <data name="quantity" xml:space="preserve">
+    <value>Qte</value>
+  </data>
+  <data name="product" xml:space="preserve">
+    <value>Article</value>
+  </data>
+  <data name="total_including_tax" xml:space="preserve">
+    <value>Total TTC</value>
+  </data>
+  <data name="total_excluding_tax" xml:space="preserve">
+    <value>Total HT</value>
+  </data>
   <data name="add_product" xml:space="preserve">
     <value>Ajouter un article</value>
   </data>
@@ -339,25 +378,10 @@
   <data name="providers" xml:space="preserve">
     <value>Fournisseurs</value>
   </data>
-  <data name="delivery_note_number" xml:space="preserve">
-    <value>Bon de livraison : </value>
+  <data name="unit_price_ht" xml:space="preserve">
+    <value>Prix Unitaire</value>
   </data>
-  <data name="manage_providers_invoices" xml:space="preserve">
-    <value> Gérer les Factures des fournisseurs</value>
-  </data>
-  <data name="select_provider" xml:space="preserve">
-    <value>Selectionner un fournisseur</value>
-  </data>
-  <data name="provider_invoice_details" xml:space="preserve">
-    <value>Détails facture fournisseur</value>
-  </data>
-  <data name="receipt_notes_details" xml:space="preserve">
-    <value>Détails bons de réception</value>
-  </data>
-  <data name="uninvoiced_receipt_notes_details" xml:space="preserve">
-    <value>Détails bons de réception non facturés</value>
-  </data>
-  <data name="attach_receipt_note_to_invoice" xml:space="preserve">
-    <value>Joindre bons de réception à la facture</value>
+  <data name="vat_percentage" xml:space="preserve">
+    <value>TVA</value>
   </data>
 </root>

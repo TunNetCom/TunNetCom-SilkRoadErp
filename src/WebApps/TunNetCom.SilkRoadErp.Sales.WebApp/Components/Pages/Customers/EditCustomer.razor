@@ -21,7 +21,7 @@
         <AntiforgeryToken />
         <div>
             <label>@localizer["customer_name"]: </label>
-            <InputText @bind-Value="customer.Nom" class="form-control" />
+            <InputText @bind-Value="customer.Name" class="form-control" />
         </div>
         <div>
             <label>@localizer["customer_phone"]: </label>
@@ -90,7 +90,7 @@
             var createCustomerResult = await customerService.CreateAsync(
                 new CreateCustomerRequest
                     {
-                        Nom = customer.Nom,
+                        Nom = customer.Name,
                         Tel = customer.Tel,
                         Adresse = customer.Adresse,
                         Matricule = customer.Matricule,
@@ -115,7 +115,7 @@
         var updateCustomerResult = await customerService.UpdateAsync(
             new UpdateCustomerRequest
                 {
-                    Nom = customer.Nom,
+                    Nom = customer.Name,
                     Tel = customer.Tel,
                     Adresse = customer.Adresse,
                     Matricule = customer.Matricule,

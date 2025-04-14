@@ -2,33 +2,33 @@
 
 public class ProductResponse
 {
-    [JsonPropertyName("refe")]
-    public string Refe { get; set; } = string.Empty;
+    [JsonPropertyName("reference")]
+    public string Reference { get; set; } = string.Empty;
 
-    [JsonPropertyName("nom")]
-    public string Nom { get; set; } = string.Empty;
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
 
     [JsonPropertyName("qte")]
     public int Qte { get; set; }
 
-    [JsonPropertyName("qteLimite")]
-    public int QteLimite { get; set; }
+    [JsonPropertyName("qteLimit")]
+    public int QteLimit { get; set; }
 
-    [JsonPropertyName("remise")]
-    public double Remise { get; set; }
+    [JsonPropertyName("discountPourcentage")]
+    public double DiscountPourcentage { get; set; }
 
-    [JsonPropertyName("remiseAchat")]
-    public double RemiseAchat { get; set; }
+    [JsonPropertyName("discountPourcentageOfPurchasing")]
+    public double DiscountPourcentageOfPurchasing { get; set; }
 
-    [JsonPropertyName("tva")]
-    public double Tva { get; set; }
+    [JsonPropertyName("vatRate")]
+    public double VatRate { get; set; }
 
-    [JsonPropertyName("prix")]
-    public decimal Prix { get; set; }
+    [JsonPropertyName("price")]
+    public decimal Price { get; set; }
 
-    [JsonPropertyName("prixAchat")]
-    public decimal PrixAchat { get; set; }
+    [JsonPropertyName("purchasingPrice")]
+    public decimal PurchasingPrice { get; set; }
 
-    [JsonPropertyName("visibilite")]
-    public bool Visibilite { get; set; }
+    [JsonPropertyName("visibility")]
+    public bool Visibility { get; set; }
 }

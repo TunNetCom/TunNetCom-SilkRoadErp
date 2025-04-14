@@ -81,11 +81,11 @@
                 <th>Montant net</th>
             </tr>
             <tr>
-                <td>@Model.Invoices.First().Num</td>
+                <td>@Model.Invoices.First().Number</td>
                 <td>@Model.Invoices.First().Date</td>
                 <td>@Model.Invoices.First().TotHTva</td>
                 <td>@Model.Invoices.First().TotTva</td>
-                <td>@Model.Invoices.First().TotTTC</td>
+                <td>@Model.Invoices.First().TotalIncludingTax</td>
             </tr>
         </table>
 

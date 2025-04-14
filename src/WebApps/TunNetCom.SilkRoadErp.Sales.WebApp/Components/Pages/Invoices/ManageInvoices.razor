@@ -48,12 +48,12 @@
                 AllowFiltering="true"
                 Style="width: 350px;"
                 Data="@_filteredCustomers"
-                TextProperty="@nameof(CustomerResponse.Nom)"
+                TextProperty="@nameof(CustomerResponse.Name)"
                 ValueProperty="@nameof(CustomerResponse.Id)"
                 Placeholder="@Localizer["select_customer"]">
                     <Columns>
                         <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Id)" Title="ID" Width="80px" />
-                        <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Nom)" Title="Name" Width="220px" />
+                        <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Name)" Title="Name" Width="220px" />
                     </Columns>
                 </RadzenDropDownDataGrid>
 
@@ -102,7 +102,7 @@
                     <RadzenDataGridColumn Property="Date" Title="@Localizer["date"]" FormatString="{0:d}" Width="140px" />
                     <RadzenDataGridColumn Property="TotTTC" Title="@Localizer["total_incl_tax"]" Width="100px">
                         <Template Context="detail">
-                            @detail.TotTTC.FormatAmount()
+                            @detail.TotalIncludingTax.FormatAmount()
                         </Template>
                     </RadzenDataGridColumn>
                 </Columns>
@@ -293,7 +293,7 @@
         {
             _selectedInvoices = value;
             var selectedInvoice = _selectedInvoices?.FirstOrDefault();
-            _ = LoadDeliveryNotesForSelectedInvoice(selectedInvoice?.Num ?? 0);
+            _ = LoadDeliveryNotesForSelectedInvoice(selectedInvoice?.Number ?? 0);
         }
     }
 
@@ -338,7 +338,7 @@
         var parameters = new QueryStringParameters
         {
             PageNumber = 1,
-            PageSize = 10,
+            PageSize = _defaultPageSize,
             SearchKeyword = args.Filter
         };
 

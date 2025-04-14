@@ -19,11 +19,11 @@ public class GetInvoicesByCustomerWithSummaryQueryHandler(
         var invoicesQuery = invoicesQueryBase
             .Select(f => new InvoiceResponse
             {
-                Num = f.Num,
+                Number = f.Num,
                 Date = f.Date,
                 TotHTva = f.BonDeLivraison.Sum(d => d.TotHTva),
                 TotTva = f.BonDeLivraison.Sum(d => d.TotTva),
-                TotTTC = f.BonDeLivraison.Sum(d => d.NetPayer) + 1000
+                TotalIncludingTax = f.BonDeLivraison.Sum(d => d.NetPayer) + 1000
             })
             .AsQueryable();
 
@@ -68,10 +68,10 @@ public class GetInvoicesByCustomerWithSummaryQueryHandler(
     {
         return (property, order) switch
         {
-            (_numColumName, SortConstants.Ascending) => query.OrderBy(d => d.Num),
-            (_numColumName, SortConstants.Descending) => query.OrderByDescending(d => d.Num),
-            (_netAmountColumnName, SortConstants.Ascending) => query.OrderBy(d => d.TotTTC),
-            (_netAmountColumnName, SortConstants.Descending) => query.OrderByDescending(d => d.TotTTC),
+            (_numColumName, SortConstants.Ascending) => query.OrderBy(d => d.Number),
+            (_numColumName, SortConstants.Descending) => query.OrderByDescending(d => d.Number),
+            (_netAmountColumnName, SortConstants.Ascending) => query.OrderBy(d => d.TotalIncludingTax),
+            (_netAmountColumnName, SortConstants.Descending) => query.OrderByDescending(d => d.TotalIncludingTax),
             (_grossAmountColumnName, SortConstants.Ascending) => query.OrderBy(d => d.TotHTva),
             (_grossAmountColumnName, SortConstants.Descending) => query.OrderByDescending(d => d.TotHTva),
             _ => query

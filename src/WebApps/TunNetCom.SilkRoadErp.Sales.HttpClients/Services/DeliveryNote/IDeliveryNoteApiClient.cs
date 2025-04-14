@@ -1,4 +1,5 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
+﻿using FluentResults;
+using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
 using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote;
@@ -12,8 +13,9 @@ public interface IDeliveryNoteApiClient
         string? searchKeyword,
         bool? isFactured);
 
-    Task<int> CreateDeliveryNote(
-        CreateDeliveryNoteRequest createDeliveryNoteRequest);
+    Task<Result<long>> CreateDeliveryNoteAsync(
+       CreateDeliveryNoteRequest request,
+       CancellationToken cancellationToken);
 
     Task<List<DeliveryNoteResponse>> GetDeliveryNotesByClientId(
         int clientId);

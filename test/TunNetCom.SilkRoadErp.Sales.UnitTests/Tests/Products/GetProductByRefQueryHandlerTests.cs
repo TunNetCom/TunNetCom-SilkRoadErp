@@ -44,7 +44,7 @@ public class GetProductByRefQueryHandlerTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(product.Nom, result.Value.Nom);
+        Assert.Equal(product.Nom, result.Value.Name);
     }
 
     [Fact]
