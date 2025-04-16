@@ -1,4 +1,5 @@
 ﻿@page "/manage-invoice"
+
 @using Microsoft.Extensions.Localization
 @using Radzen.Blazor
 @using Radzen
@@ -17,7 +18,6 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Invoices.PrintInvoiceWithDetails
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Invoices.RetenueSource
-
 
 @inject ICustomersApiClient customerService
 @inject IInvoicesApiClient invoicesService
@@ -98,11 +98,11 @@
                     </div>
                 </HeaderTemplate>
                 <Columns>
-                    <RadzenDataGridColumn Property="Num" Title="@Localizer["invoice_number"]" Width="120px" />
-                    <RadzenDataGridColumn Property="Date" Title="@Localizer["date"]" FormatString="{0:d}" Width="140px" />
-                    <RadzenDataGridColumn Property="TotTTC" Title="@Localizer["total_incl_tax"]" Width="100px">
+                    <RadzenDataGridColumn Property="@nameof(InvoiceResponse.Number)" Title="@Localizer["invoice_number"]" Width="120px" />
+                    <RadzenDataGridColumn Property="@nameof(InvoiceResponse.Date)" Title="@Localizer["date"]" FormatString="{0:d}" Width="140px" />
+                    <RadzenDataGridColumn Property="@nameof(InvoiceResponse.TotalIncludingTaxAmount)" Title="@Localizer["total_incl_tax"]" Width="100px">
                         <Template Context="detail">
-                            @detail.TotalIncludingTax.FormatAmount()
+                            @detail.TotalIncludingTaxAmount.FormatAmount()
                         </Template>
                     </RadzenDataGridColumn>
                 </Columns>
@@ -110,10 +110,10 @@
             <RadzenCard Variant="Variant.Outlined" Style="margin-bottom: 1rem;">
                 <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" JustifyContent="JustifyContent.End">
                     <RadzenText TextStyle="TextStyle.Button">
-                        @Localizer["total_net"]: <strong>@getInvoiceListWithSummary.TotalNetAmount.FormatAmount()</strong>
+                        @Localizer["total_net"]: <strong>@getInvoiceListWithSummary.TotalIncludingTaxAmount.FormatAmount()</strong>
                     </RadzenText>
                     <RadzenText TextStyle="TextStyle.Button">
-                        @Localizer["total_gross"]: <strong>@getInvoiceListWithSummary.TotalGrossAmount.FormatAmount()</strong>
+                        @Localizer["total_gross"]: <strong>@getInvoiceListWithSummary.TotalExcludingTaxAmount.FormatAmount()</strong>
                     </RadzenText>
                     <RadzenText TextStyle="TextStyle.Button">
                         @Localizer["total_vat"]: <strong>@getInvoiceListWithSummary.TotalVATAmount.FormatAmount()</strong>
@@ -150,13 +150,13 @@
                                     IsLoading=@isLoadingDeliveryNotesInCurrentInvoice
                                     @bind-Value="@_selectedDeliveryNotesToDetach">
                                         <Columns>
-                                            <RadzenDataGridColumn Property="Num" Title="@Localizer["number"]" />
-                                            <RadzenDataGridColumn Property="GrossAmount" Title="@Localizer["total_ex_tax"]">
+                                            <RadzenDataGridColumn Property="@nameof(GetDeliveryNoteBaseInfos.Number)" Title="@Localizer["number"]" />
+                                            <RadzenDataGridColumn Property="@nameof(GetDeliveryNoteBaseInfos.GrossAmount)" Title="@Localizer["total_ex_tax"]">
                                                 <Template Context="detail">
                                                     @detail.GrossAmount.FormatAmount()
                                                 </Template>
                                             </RadzenDataGridColumn>
-                                            <RadzenDataGridColumn Property="NetAmount" Title="@Localizer["net_payer"]">
+                                            <RadzenDataGridColumn Property="@nameof(GetDeliveryNoteBaseInfos.NetAmount)" Title="@Localizer["net_payer"]">
                                                 <Template Context="detail">
                                                     @detail.NetAmount.FormatAmount()
                                                 </Template>
@@ -211,13 +211,13 @@
                     </div>
                 </HeaderTemplate>
                 <Columns>
-                    <RadzenDataGridColumn Property="Num" Title="@Localizer["number"]" />
-                    <RadzenDataGridColumn Property="NetAmount" Title="@Localizer["total_ex_tax"]" FormatString="{0:N2}">
+                    <RadzenDataGridColumn Property="@nameof(GetDeliveryNoteBaseInfos.Number)" Title="@Localizer["number"]" />
+                    <RadzenDataGridColumn Property="@nameof(GetDeliveryNoteBaseInfos.NetAmount)" Title="@Localizer["total_ex_tax"]" FormatString="{0:N2}">
                         <Template Context="detail">
                             @detail.NetAmount.FormatAmount()
                         </Template>
                     </RadzenDataGridColumn>
-                    <RadzenDataGridColumn Property="GrossAmount" Title="@Localizer["net_payer"]" FormatString="{0:N2}">
+                    <RadzenDataGridColumn Property="@nameof(GetDeliveryNoteBaseInfos.GrossAmount)" Title="@Localizer["net_payer"]" FormatString="{0:N2}">
                         <Template Context="detail">
                             @detail.GrossAmount.FormatAmount()
                         </Template>
@@ -347,7 +347,6 @@
             var pagedCustomers = await customerService.GetAsync(parameters, _cancellationTokenSource.Token);
             _filteredCustomers = pagedCustomers.Items;
         }
-
         catch (Exception ex)
         {
             NotificationService.Notify(new NotificationMessage
@@ -411,7 +410,11 @@
             return;
         }
 
-        var result = await invoicesService.GetInvoicesByCustomerIdWithSummary(SelectedCustomerId, parameters, _cancellationTokenSource.Token);
+        var result = await invoicesService.GetInvoicesByCustomerIdWithSummary(
+            SelectedCustomerId,
+            parameters,
+            _cancellationTokenSource.Token);
+
         if (result.IsT0)
         {
             getInvoiceListWithSummary = result.AsT0;
@@ -485,7 +488,7 @@
     {
         if (SelectedInvoiceId > 0 && _selectedDeliveryNotesToAttach?.Any() == true)
         {
-            var deliveryNoteIds = _selectedDeliveryNotesToAttach.Select(dn => dn.Num).ToList();
+            var deliveryNoteIds = _selectedDeliveryNotesToAttach.Select(dn => dn.Number).ToList();
             var attachToInvoiceRequest = new AttachToInvoiceRequest
             {
                 InvoiceId = SelectedInvoiceId,
@@ -534,7 +537,7 @@
     {
         try
         {
-            var deliveryNoteIds = _selectedDeliveryNotesToDetach.Select(dn => dn.Num).ToList();
+            var deliveryNoteIds = _selectedDeliveryNotesToDetach.Select(dn => dn.Number).ToList();
             var request = new DetachFromInvoiceRequest
             {
                 InvoiceId = SelectedInvoiceId,

@@ -1,5 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNote;
-using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNotesBaseInfosWithSummaries;
 
@@ -8,9 +7,9 @@ public class GetDeliveryNotesBaseInfosWithSummariesQueryHandler(
     ILogger<GetDeliveryNotesBaseInfosWithSummariesQueryHandler> _logger)
     : IRequestHandler<GetDeliveryNotesBaseInfosWithSummariesQuery, GetDeliveryNotesWithSummariesResponse>
 {
-        private const string _numColumName = "Num";
-        private const string _netAmountColumnName = "NetAmount";
-        private const string _grossAmountColumnName = "GrossAmount";
+        private const string _numColumName = nameof(GetDeliveryNoteBaseInfos.Number);
+        private const string _netAmountColumnName = nameof(GetDeliveryNoteBaseInfos.NetAmount);
+        private const string _grossAmountColumnName = nameof(GetDeliveryNoteBaseInfos.GrossAmount);
     public async Task<GetDeliveryNotesWithSummariesResponse> Handle(
         GetDeliveryNotesBaseInfosWithSummariesQuery request,
         CancellationToken cancellationToken)
@@ -22,7 +21,7 @@ public class GetDeliveryNotesBaseInfosWithSummariesQueryHandler(
             .Select(t =>
             new GetDeliveryNoteBaseInfos
             {
-                Num = t.Num,
+                Number = t.Num,
                 Date = t.Date,
                 NetAmount = t.NetPayer,
                 GrossAmount = t.TotHTva,
@@ -43,7 +42,10 @@ public class GetDeliveryNotesBaseInfosWithSummariesQueryHandler(
 
         if(request.SortOrder != null && request.SortProperty != null)
         {
-            _logger.LogInformation("sorting delivery notes column : {column} order : {order}", request.SortProperty, request.SortOrder);
+            _logger.LogInformation(
+                "sorting delivery notes column : {column} order : {order}",
+                request.SortProperty,
+                request.SortOrder);
             deliveryNoteQuery = ApplySorting(deliveryNoteQuery, request.SortProperty, request.SortOrder);
         }
 
@@ -87,8 +89,8 @@ public class GetDeliveryNotesBaseInfosWithSummariesQueryHandler(
     {
         return (property, order) switch
         {
-            (_numColumName, SortConstants.Ascending) => query.OrderBy(d => d.Num),
-            (_numColumName, SortConstants.Descending) => query.OrderByDescending(d => d.Num),
+            (_numColumName, SortConstants.Ascending) => query.OrderBy(d => d.Number),
+            (_numColumName, SortConstants.Descending) => query.OrderByDescending(d => d.Number),
             (_netAmountColumnName, SortConstants.Ascending) => query.OrderBy(d => d.NetAmount),
             (_netAmountColumnName, SortConstants.Descending) => query.OrderByDescending(d => d.NetAmount),
             (_grossAmountColumnName, SortConstants.Ascending) => query.OrderBy(d => d.GrossAmount),

@@ -2,8 +2,8 @@
 
 public class GetDeliveryNoteBaseInfos
 {
-    [JsonPropertyName("num")]
-    public int Num { get; set; }
+    [JsonPropertyName("number")]
+    public int Number { get; set; }
 
     [JsonPropertyName("date")]
     public DateTime Date { get; set; }
