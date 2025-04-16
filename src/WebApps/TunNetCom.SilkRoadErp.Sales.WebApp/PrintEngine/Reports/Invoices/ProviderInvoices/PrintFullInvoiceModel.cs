@@ -8,16 +8,17 @@ public class ProviderInvoiceModel
 
     public ProviderDetailsModel Provider { get; set; } = null!;
     public List<ProviderReceiptNoteModel> ReceiptNotes { get; set; } = new(); // Added for receipt notes
-    public decimal SubtotalExclTax { get; internal set; } // HT: Hors Taxes (excl. tax)
-    public decimal TotalTax { get; internal set; } // TVA: Tax amount
-    public decimal TotalInclTax { get; internal set; } // TTC: Toutes Taxes Comprises (incl. tax)
-    public decimal TaxBase19 { get; internal set; } // Base for 19% tax rate
-    public decimal TaxBase7 { get; internal set; } // Base for 7% tax rate
-    public decimal TaxAmount19 { get; internal set; } // Tax at 19%
-    public decimal TaxAmount7 { get; internal set; } // Tax at 7%
-    public decimal TaxBase13 { get; internal set; } // Base for 13% tax rate
-    public decimal TaxAmount13 { get; internal set; } // Tax at 13%
-    public decimal StampDuty { get; set; } // Timbre: Stamp or fiscal duty
+    public decimal TotalHT { get; internal set; }
+    public decimal TotalTVA { get; internal set; }
+    public decimal TotalTTC { get; internal set; }
+    public decimal Base19 { get; internal set; }
+    public decimal Base7 { get; internal set; }
+    public decimal Tva19 { get; internal set; }
+    public decimal Tva7 { get; internal set; }
+    public decimal Base13 { get; internal set; }
+    public decimal Tva13 { get; internal set; }
+    public decimal Timbre { get; set; }
+
 }
 
 public class ProviderDetailsModel
@@ -36,7 +37,6 @@ public class ProviderDetailsModel
 public class ProviderReceiptNoteModel
 {
     public int ReceiptNoteId { get; set; }
-    public int DeliveryNoteNumber { get; set; } // Links to ProviderDeliveryNoteModel.NoteNumber
     public DateTime ReceiptDate { get; set; }
     public string? ReceiverName { get; set; } // Name of person/entity receiving goods
     public string? Status { get; set; } // e.g., "Received", "Partial", "Discrepancy"
@@ -58,8 +58,8 @@ public class ProviderReceiptLineModel
     public int OrderedQuantity { get; set; } // Quantity per delivery note
     public int ReceivedQuantity { get; set; } // Quantity actually received
     public decimal UnitPriceExclTax { get; set; }
+    public double Remise { get; set; }
     public double TaxRate { get; set; }
     public decimal LineTotalExclTax { get; set; } // Received value (HT)
     public decimal LineTotalInclTax { get; set; } // Received value (TTC)
-    public string? DiscrepancyNote { get; set; } // Notes on quantity/value mismatches
 }

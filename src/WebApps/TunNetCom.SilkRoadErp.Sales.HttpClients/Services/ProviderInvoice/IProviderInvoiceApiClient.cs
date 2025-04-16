@@ -1,4 +1,5 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;
+﻿using FluentResults;
+using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;
 
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProviderInvoice; 
 
@@ -12,4 +13,8 @@ public interface IProviderInvoiceApiClient
     Task<List<ProviderInvoiceResponse>> GetProviderInvoicesByIdsAsync(
         List<int> invoicesIds,
         CancellationToken cancellationToken = default);
+
+    Task<Result<FullProviderInvoiceResponse>> GetFullProviderInvoiceByIdAsync(
+    int id,
+    CancellationToken cancellationToken);
 }

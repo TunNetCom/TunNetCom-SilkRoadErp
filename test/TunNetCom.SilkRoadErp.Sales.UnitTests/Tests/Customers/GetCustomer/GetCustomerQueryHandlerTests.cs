@@ -68,7 +68,7 @@
 
 //        // Assert
 //        Assert.Single(result);
-//        Assert.Equal("Client test", result.First().Nom);
+//        Assert.Equal("Client test", result.First().Name);
 //    }
 
 //    [Fact]

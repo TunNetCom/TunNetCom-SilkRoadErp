@@ -42,9 +42,9 @@
 //             nom: "Provider Looking For",
 //             tel: "123456789",
 //             fax: "Fax",
-//             matricule: "Matricule",
+//             matricule: "RegistrationNumber",
 //             code: "Code",
-//             codeCat: "CodeCat",
+//             codeCat: "CategoryCode",
 //             etbSec: "etbsec",
 //             mail: "email@example.com",
 //             mailDeux: "email@example.com",
@@ -57,7 +57,7 @@
 //        var query = new GetProviderQuery(
 //          PageNumber: 1,
 //          PageSize: 10,
-//          SearchKeyword: provider.Nom
+//          SearchKeyword: provider.Name
 //      );
 
 //        // Act
@@ -65,7 +65,7 @@
 
 //        // Assert
 //        Assert.Single(result);
-//        Assert.Equal(provider.Nom, result.First().Nom);
+//        Assert.Equal(provider.Name, result.First().Name);
 //    }
 
 //    [Fact]
@@ -76,9 +76,9 @@
 //             nom: "Provider All 1",
 //             tel: "123456789",
 //             fax: "Fax",
-//             matricule: "Matricule",
+//             matricule: "RegistrationNumber",
 //             code: "Code",
-//             codeCat: "CodeCat",
+//             codeCat: "CategoryCode",
 //             etbSec: "etbsec",
 //             mail: "email@example.com",
 //             mailDeux: "email@example.com",
@@ -89,9 +89,9 @@
 //            nom: "Provider All 2",
 //            tel: "123456789",
 //            fax: "Fax",
-//            matricule: "Matricule",
+//            matricule: "RegistrationNumber",
 //            code: "Code",
-//            codeCat: "CodeCat",
+//            codeCat: "CategoryCode",
 //            etbSec: "etbsec",
 //            mail: "email@example.com",
 //            mailDeux: "email@example.com",

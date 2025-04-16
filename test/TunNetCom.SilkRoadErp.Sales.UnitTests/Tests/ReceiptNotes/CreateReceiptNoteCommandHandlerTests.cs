@@ -32,7 +32,7 @@
 //        await _context.SaveChangesAsync();
 
 //        var command = new CreateReceiptNoteCommand(
-//            Num: 1234567822,
+//            ProviderInvoiceNumber: 1234567822,
 //            NumBonFournisseur: 1234567822,
 //            DateLivraison: new DateTime(2020, 11, 20),
 //            IdFournisseur: 1,
@@ -52,7 +52,7 @@
 //    {
 //        // Arrange
 //        var command = new CreateReceiptNoteCommand(
-//          Num: 12345123,
+//          ProviderInvoiceNumber: 12345123,
 //          NumBonFournisseur: 12345123,
 //          DateLivraison: new DateTime(2020, 11, 20),
 //          IdFournisseur: 1,
@@ -70,7 +70,7 @@
 //    {
 //        // Arrange
 //        var command = new CreateReceiptNoteCommand(
-//          Num: 123456,
+//          ProviderInvoiceNumber: 123456,
 //          NumBonFournisseur: 123456,
 //          DateLivraison: new DateTime(2020, 4, 20),
 //          IdFournisseur: 1,
@@ -88,7 +88,7 @@
 //    {
 //        // Arrange
 //        var command = new CreateReceiptNoteCommand(
-//          Num: 123459,
+//          ProviderInvoiceNumber: 123459,
 //          NumBonFournisseur: 123459,
 //          DateLivraison: new DateTime(2020, 7, 20),
 //          IdFournisseur: 1,

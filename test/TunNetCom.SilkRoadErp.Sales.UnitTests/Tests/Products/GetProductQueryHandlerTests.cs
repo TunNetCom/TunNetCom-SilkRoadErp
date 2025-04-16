@@ -70,7 +70,7 @@
 
 //        // Assert
 //        Assert.Single(result);
-//        Assert.Equal("Product testb", result.First().Nom);
+//        Assert.Equal("Product testb", result.First().Name);
 //    }
 
 //    [Fact]

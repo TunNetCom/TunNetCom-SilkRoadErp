@@ -21,7 +21,7 @@
 //        // Arrange
 //        var paginationParams = new QueryStringParameters { PageNumber = 1, PageSize = 10, SearchKeyword = "John" };
 //        var pagedCustomers = new PagedList<CustomerResponse>(
-//            new List<CustomerResponse> { new() { Id = 1, Nom = "John Doe" } },
+//            new List<CustomerResponse> { new() { Id = 1, Name = "John Doe" } },
 //            count: 1, pageNumber: 1, pageSize: 10);
 
 //        _mediatorMock.Setup(m => m.Send(It.IsAny<GetCustomerQuery>(), It.IsAny<CancellationToken>()))
@@ -35,7 +35,7 @@
 //        Assert.Equal(1, typedResult.Value.TotalCount);
 //        Assert.Equal(10, typedResult.Value.PageSize);
 //        Assert.Single(typedResult.Value);
-//        Assert.Equal("John Doe", typedResult.Value[0].Nom);
+//        Assert.Equal("John Doe", typedResult.Value[0].Name);
 
 //        var paginationHeader = _httpContext.Response.Headers["X-Pagination"].ToString();
 //        Assert.False(string.IsNullOrEmpty(paginationHeader));
