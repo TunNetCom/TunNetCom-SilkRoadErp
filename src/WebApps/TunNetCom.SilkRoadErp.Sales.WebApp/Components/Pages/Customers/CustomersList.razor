@@ -3,7 +3,6 @@
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Customers
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
-@using BlazorBootstrap
 @using Radzen.Blazor
 @using Radzen
 @using TunNetCom.DeleteModal
@@ -58,8 +57,6 @@
                 <Template Context="customer">
                     <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Style="margin-right: 0.5rem"
                                   Click="@((args) => OnClickEditButton(args, @customer.Id.ToString()))" />
-                    @* <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" *@
-                    @*               Click="@((args) => OnClickDeleteButton(args, customer.Id.ToString()))" /> *@
                     <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Click="@(() => ConfirmDeleteCustomer(@customer.Id))" />
                 </Template>
             </RadzenDataGridColumn>
@@ -74,7 +71,7 @@
     private RadzenDataGrid<CustomerResponse> customerGrid = default!;
     private Modal yesOrNoDeleteModal = default!;
 
-    private string searchKeyword = "";
+    private string searchKeyword = string.Empty;
     private List<CustomerResponse> customers = new();
     private int totalCustomers;
     private bool isLoadingCustomers = false;
@@ -90,23 +87,12 @@
 
     async Task LoadCustomerData(LoadDataArgs args)
     {
-        string _sortProperty = null;
-        string _sortOrder = null;
-
-        if (args.Sorts != null && args.Sorts.Any())
-        {
-            var sort = args.Sorts.First();
-            _sortProperty = sort.Property;
-            _sortOrder = sort.SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending;
-        }
 
         var parameters = new QueryStringParameters
             {
                 PageNumber = (args.Skip.Value / _defaultPageSize) + 1,
                 PageSize = args.Top ?? 10,
                 SearchKeyword = searchKeyword ?? args.Filter,
-                SortOrder = _sortOrder,
-                SortProprety = _sortProperty
             };
 
         isLoadingCustomers = true;
@@ -137,8 +123,8 @@
 
     async Task ConfirmDeleteCustomer(int customerId)
     {
-        bool? confirmed = await DialogService.Confirm("Are you sure you want to delete this customer?",
-                                                      "Delete Confirmation",
+        bool? confirmed = await DialogService.Confirm(Localizer["delete_customer_confirmation"],
+                                                      Localizer["delete_confirmation"],
                                                       new ConfirmOptions() { OkButtonText = "Yes", CancelButtonText = "No" });
 
         if (confirmed == true)

@@ -21,7 +21,7 @@
     <RadzenTemplateForm Data="@customer" Submit="@OnSubmit">
         <RadzenFieldset>
             <RadzenLabel Text="@localizer["customer_name"]" />
-            <RadzenTextBox @bind-Value="customer.Nom" Placeholder="@localizer["customer_name"]" Name="Nom" Style="width:100%;" />
+            <RadzenTextBox @bind-Value="customer.Name" Placeholder="@localizer["customer_name"]" Name="Nom" Style="width:100%;" />
 
             <RadzenLabel Text="@localizer["customer_phone"]" />
             <RadzenTextBox @bind-Value="customer.Tel" Name="Tel" Style="width:100%;" />
