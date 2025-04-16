@@ -1,0 +1,178 @@
+﻿@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Invoices.ProviderInvoices
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            font-size: 12px;
+            margin: 0;
+            padding: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            border: 1px solid #000;
+            padding: 5px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+
+        .text-left {
+            text-align: left;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-bold {
+            font-weight: bold;
+        }
+
+        .delivery-note-header {
+            background-color: #e6e6e6;
+            font-weight: bold;
+        }
+
+        .footer-container {
+            display: flex;
+            margin-top: 20px;
+        }
+
+        .tva-bases {
+            width: 40%;
+            margin-right: 20px;
+        }
+
+        .totals {
+            width: 50%;
+            margin-left: auto;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .footer {
+            margin-top: 10px;
+            text-align: center;
+            font-style: italic;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <table>
+        <thead>
+            <tr>
+                <th>Code</th>
+                <th class="text-left">Désignation</th>
+                <th>Qte</th>
+                <th>P.H.T</th>
+                <th>Rem %</th>
+                <th>TOT H.T</th>
+                <th>TVA</th>
+                <th>TOT TTC</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var receiptNote in Model.ReceiptNotes)
+            {
+                <tr class="delivery-note-header">
+                    <td colspan="8">
+                        BR N° @receiptNote.ReceiptNoteId - @receiptNote.ReceiptDate.ToString("dd/MM/yyyy")
+                    </td>
+                </tr>
+
+                @foreach (var line in receiptNote.Lines)
+                {
+                    <tr>
+                        <td>@line.ProductCode</td>
+                        <td class="text-left">@line.Description</td>
+                        <td>@line.ReceivedQuantity</td>
+                        <td>@line.UnitPriceExclTax.FormatAmount()</td>
+                        <td>@line.Remise</td>
+                        <td>@line.LineTotalExclTax.FormatAmount()</td>
+                        <td>@((int)line.TaxRate)%</td>
+                        <td>@line.LineTotalInclTax.FormatAmount()</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+
+    <div class="footer-container" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 30px; margin-top: 20px;">
+        <div class="tva-bases" style="flex: 1; min-width: 0;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th style="text-align: left; padding: 5px; border-bottom: 1px solid #ddd;">tx TVA</th>
+                    <th style="text-align: right; padding: 5px; border-bottom: 1px solid #ddd;">19%</th>
+                    <th style="text-align: right; padding: 5px; border-bottom: 1px solid #ddd;">13%</th>
+                    <th style="text-align: right; padding: 5px; border-bottom: 1px solid #ddd;">7%</th>
+                    <th style="text-align: right; padding: 5px; border-bottom: 1px solid #ddd;">Total</th>
+                </tr>
+                <tr>
+                    <td style="text-align: left; padding: 5px;">Base</td>
+                    <td style="text-align: right; padding: 5px; font-family: monospace;">@Model.Base19.FormatAmount()</td>
+                    <td style="text-align: right; padding: 5px; font-family: monospace;">@Model.Base13.FormatAmount()</td>
+                    <td style="text-align: right; padding: 5px; font-family: monospace;">@Model.Base7.FormatAmount()</td>
+                    <td style="text-align: right; padding: 5px; font-family: monospace;">@Model.TotalHT.FormatAmount()</td>
+                </tr>
+                <tr>
+                    <td style="text-align: left; padding: 5px;">Mt TVA</td>
+                    <td style="text-align: right; padding: 5px; font-family: monospace;">@Model.Tva19.FormatAmount()</td>
+                    <td style="text-align: right; padding: 5px; font-family: monospace;">@Model.Tva13.FormatAmount()</td>
+                    <td style="text-align: right; padding: 5px; font-family: monospace;">@Model.Tva7.FormatAmount()</td>
+                    <td style="text-align: right; padding: 5px; font-family: monospace;">@Model.TotalTVA.FormatAmount()</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="totals" style="flex: 0 0 auto;">
+            <table style="border-collapse: collapse; width: 100%;">
+                <tr>
+                    <td style="text-align: left; padding: 5px; border-bottom: 1px solid #eee;">Total HT:</td>
+                    <td style="text-align: right; padding: 5px; border-bottom: 1px solid #eee; font-family: monospace;">@Model.TotalHT.FormatAmount()</td>
+                </tr>
+                <tr>
+                    <td style="text-align: left; padding: 5px; border-bottom: 1px solid #eee;">Total TVA:</td>
+                    <td style="text-align: right; padding: 5px; border-bottom: 1px solid #eee; font-family: monospace;">@Model.TotalTVA.FormatAmount()</td>
+                </tr>
+                <tr>
+                    <td style="text-align: left; padding: 5px; border-bottom: 1px solid #eee;">Timbre:</td>
+                    <td style="text-align: right; padding: 5px; border-bottom: 1px solid #eee; font-family: monospace;">@Model.Timbre</td>
+                </tr>
+                <tr>
+                    <td style="text-align: left; padding: 5px; font-weight: bold;">Total TTC:</td>
+                    <td style="text-align: right; padding: 5px; font-weight: bold; background-color: #f5f5f5; font-family: monospace;">@Model.TotalTTC.FormatAmount()</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="footer">
+        Arrêtée la présente facture à la somme de @AmountHelper.ConvertFloatToFrenchToWords((float)Model.TotalTTC, AmountHelper.TYPE_FACTURE)
+    </div>
+</body>
+</html>
+
+@code {
+    [Parameter]
+    public ProviderInvoiceModel Model { get; set; }
+}

@@ -24,7 +24,7 @@
 //            NumFacture: 202512,
 //            DeliveryNoteIds: new List<int> { 202501, 202502, 202503 } 
 //        );
-//        var invoice = new Facture { Num = 202512, IdClient = 100 };
+//        var invoice = new Facture { ProviderInvoiceNumber = 202512, ProviderId = 100 };
 //        _context.Facture.Add(invoice);
 //        await _context.SaveChangesAsync();
 
@@ -40,13 +40,13 @@
 //    public async Task Handle_DeliveryNotesAlreadyAttached_ReturnsFailResult()
 //    {
 //        // Arrange
-//        var invoice = new Facture { Num = 202512, IdClient = 100 };
+//        var invoice = new Facture { ProviderInvoiceNumber = 202512, ProviderId = 100 };
 //        _context.Facture.Add(invoice);
 
 //        var deliveryNotes = new List<BonDeLivraison>
 //        {
-//            new BonDeLivraison { Num = 202501, NumFacture = 100, NumFacture = 2 },
-//            new BonDeLivraison { Num = 202502, NumFacture = 100, NumFacture = null }
+//            new BonDeLivraison { ProviderInvoiceNumber = 202501, NumFacture = 100, NumFacture = 2 },
+//            new BonDeLivraison { ProviderInvoiceNumber = 202502, NumFacture = 100, NumFacture = null }
 //        };
 //        _context.BonDeLivraison.AddRange(deliveryNotes);
 //        await _context.SaveChangesAsync();
@@ -69,13 +69,13 @@
 //    public async Task Handle_ValidAttachment_ReturnsSuccessResult()
 //    {
 //        // Arrange
-//        var invoice = new Facture { Num = 202512, IdClient = 100 };
+//        var invoice = new Facture { ProviderInvoiceNumber = 202512, ProviderId = 100 };
 //        _context.Facture.Add(invoice);
 
 //        var deliveryNotes = new List<BonDeLivraison>
 //        {
-//            new BonDeLivraison { Num = 202501, NumFacture = 100, NumFacture = null },
-//            new BonDeLivraison { Num = 202502, NumFacture = 100, NumFacture = null }
+//            new BonDeLivraison { ProviderInvoiceNumber = 202501, NumFacture = 100, NumFacture = null },
+//            new BonDeLivraison { ProviderInvoiceNumber = 202502, NumFacture = 100, NumFacture = null }
 //        };
 //        _context.BonDeLivraison.AddRange(deliveryNotes);
 //        await _context.SaveChangesAsync();
