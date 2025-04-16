@@ -4,69 +4,128 @@
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using BlazorBootstrap
+@using Radzen.Blazor
+@using Radzen
 @using TunNetCom.DeleteModal
-@inject ICustomersApiClient customerService
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Sorting
 @inject NavigationManager navigationManager
 @inject IStringLocalizer<SharedResource> Localizer
+@inject ICustomersApiClient customerService
+@inject ToastService toastService
 
-<div class="container mt-4">
-    <div class="container mt-4">
-        <div class="row">
-            <div class="col-md-6 d-flex align-items-center">
-                <h3 class="mb-3">@Localizer["customers"]</h3>
-             </div>
-             <div class="col-md-6 d-flex justify-content-end align-items-center">
-                 <button class="btn btn-primary mb-3" @onclick="CreateCustomer">@Localizer["add_customer"]</button>
-            </div>
-         </div>
-    </div>
-    <input class="form-control mb-3" placeholder="@Localizer["Search"]" @bind="searchKeyword" @oninput="SearchClients" />
+@* <Modal @ref="yesOrNoDeleteModal" /> *@
+<RadzenCard Style="margin: 1rem;">
+    <RadzenStack JustifyContent="JustifyContent.SpaceBetween" >
+        <h3>@Localizer["customers"]</h3>
+    </RadzenStack>
 
 
-    <Grid TItem="CustomerResponse"
-          Class="table table-hover table-bordered table-striped"
-          DataProvider="CustomersDataProvider"
-          AllowPaging="true"
-          AllowSorting="true"
-          Responsive="true"
-          @ref="grid">
+    <RadzenCard Style="margin-bottom: 1rem;">
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap">
+            <RadzenTextBox @bind-Value="searchKeyword"
+                           Placeholder="@Localizer["Search"]"
+                           Style="width: 300px;"
+                           Change="@(async args => await customerGrid.Reload())" />
 
-        <GridColumn TItem="CustomerResponse" HeaderText="@Localizer["customer_name"]" PropertyName="CustomerName" SortString="CustomerName" SortKeySelector="item => item.Nom" FilterTextboxWidth="80">
-            @context.Nom
-        </GridColumn>
-        <GridColumn TItem="CustomerResponse" HeaderText="@Localizer["customer_phone"]" PropertyName="Phone" SortString="Phone" SortKeySelector="item => item.Tel" FilterTextboxWidth="100">
-            @context.Tel
-        </GridColumn>
-        <GridColumn TItem="CustomerResponse" HeaderText="@Localizer["customer_email"]" PropertyName="Email" SortString="Email" SortKeySelector="item => item.Mail" FilterTextboxWidth="120">
-            @context.Mail
-        </GridColumn>
-        <GridColumn TItem="CustomerResponse" HeaderText="@Localizer["actions_label"]">
-            <Button Color="ButtonColor.Primary" @onclick="((args) => OnClickEditButton(args, context.Id.ToString()))">
-                @Localizer["edit_button_label"]
-            </Button>
-            <Button Color="ButtonColor.Danger" @onclick="((args) => OnClickDeleteButton(args, context.Id.ToString()))">
-                @Localizer["delete_button_label"]
-            </Button>
-        </GridColumn>
-    </Grid>
-</div>
+            <RadzenButton Icon="add_circle"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Text="@Localizer["add_customer"]"
+                          Click="@CreateCustomer" />
+        </RadzenStack>
+    </RadzenCard>
 
-<Modal @ref="yesOrNoDeleteModal" />
+
+    <RadzenDataGrid @ref="customerGrid"
+                    Page="@OnPage"
+                    Count="@totalCustomers"
+                    Data="@customers"
+                    LoadData="@LoadCustomerData"
+                    AllowPaging="true"
+                    AllowSorting="true"
+                    AllowFiltering="true"
+                    PageSizeOptions="@pageSizeOptions"
+                    PageSize="@_defaultPageSize"
+                    ColumnWidth="200px"
+                    IsLoading="@isLoadingCustomers"
+                    ShowPagingSummary="true"
+                    Responsive="true">
+
+        <Columns>
+            <RadzenDataGridColumn Property="Nom" Title="@Localizer["customer_name"]" />
+            <RadzenDataGridColumn Property="Tel" Title="@Localizer["customer_phone"]" />
+            <RadzenDataGridColumn Property="Mail" Title="@Localizer["customer_email"]" />
+            <RadzenDataGridColumn Title="@Localizer["actions_label"]">
+                <Template Context="customer">
+                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Style="margin-right: 0.5rem"
+                                  Click="@((args) => OnClickEditButton(args, @customer.Id.ToString()))" />
+                    @* <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" *@
+                    @*               Click="@((args) => OnClickDeleteButton(args, customer.Id.ToString()))" /> *@
+                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Click="@(() => ConfirmDeleteCustomer(@customer.Id))" />
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+
+</RadzenCard>
+
 
 @code {
-    [Inject] protected ToastService toastService { get; set; } = default!;
-    private string searchKeyword = string.Empty;
-    int currentCustomerIdToDelete = 0;
-    private CancellationTokenSource cancellationTokenSource = new();
+
+    private RadzenDataGrid<CustomerResponse> customerGrid = default!;
     private Modal yesOrNoDeleteModal = default!;
-    Grid<CustomerResponse> grid = default!;
 
+    private string searchKeyword = "";
+    private List<CustomerResponse> customers = new();
+    private int totalCustomers;
+    private bool isLoadingCustomers = false;
+    private int currentCustomerIdToDelete;
+    private CancellationTokenSource cancellationTokenSource = new();
+    private const int _defaultPageSize = 10;
+    IEnumerable<int> pageSizeOptions = new int[] { 10, 20, 30 };
 
-    private async Task ProcessDelete(MouseEventArgs e)
+    void OnPage(PagerEventArgs args)
     {
-        await customerService.DeleteAsync(currentCustomerIdToDelete, cancellationTokenSource.Token);
-        toastService.Notify(new(ToastType.Warning, $"{Localizer["customer"]} {Localizer["deleted_with_success"]}"));
-        await yesOrNoDeleteModal.HideAsync();
+
+    }
+
+    async Task LoadCustomerData(LoadDataArgs args)
+    {
+        string _sortProperty = null;
+        string _sortOrder = null;
+
+        if (args.Sorts != null && args.Sorts.Any())
+        {
+            var sort = args.Sorts.First();
+            _sortProperty = sort.Property;
+            _sortOrder = sort.SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending;
+        }
+
+        var parameters = new QueryStringParameters
+            {
+                PageNumber = (args.Skip.Value / _defaultPageSize) + 1,
+                PageSize = args.Top ?? 10,
+                SearchKeyword = searchKeyword ?? args.Filter,
+                SortOrder = _sortOrder,
+                SortProprety = _sortProperty
+            };
+
+        isLoadingCustomers = true;
+        await Task.Yield();
+
+        var result = await customerService.GetAsync(parameters, cancellationTokenSource.Token);
+        customers = result.Items;
+        totalCustomers = result.TotalCount;
+
+        isLoadingCustomers = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await customerGrid.Reload();
+        }
     }
 
     protected void OnClickEditButton(EventArgs args, string id)
@@ -74,47 +133,20 @@
         EditCustomer(int.Parse(id));
     }
 
-    private async Task SearchClients(ChangeEventArgs e)
+    [Inject] DialogService DialogService { get; set; }
+
+    async Task ConfirmDeleteCustomer(int customerId)
     {
-        searchKeyword = e?.Value?.ToString() ?? string.Empty;
+        bool? confirmed = await DialogService.Confirm("Are you sure you want to delete this customer?",
+                                                      "Delete Confirmation",
+                                                      new ConfirmOptions() { OkButtonText = "Yes", CancelButtonText = "No" });
 
-        await grid.RefreshDataAsync();
-    }
-
-    protected async Task OnClickDeleteButton(EventArgs args, string id)
-    {
-        currentCustomerIdToDelete = int.Parse(id);
-        var parameters = new Dictionary<string, object>();
-        parameters.Add("OnclickCallback", EventCallback.Factory.Create<MouseEventArgs>(this, ProcessDelete));
-        await yesOrNoDeleteModal.ShowAsync<DeleteModal>(title: Localizer["delete_modal_title"], parameters: parameters);
-    }
-
-    private async Task<GridDataProviderResult<CustomerResponse>> CustomersDataProvider(
-        GridDataProviderRequest<CustomerResponse> request)
-    {
-        string sortString = string.Empty;
-        SortDirection sortDirection = SortDirection.None;
-
-        if (request.Sorting is not null && request.Sorting.Any())
+        if (confirmed == true)
         {
-            sortString = request.Sorting.FirstOrDefault()!.SortString;
-            sortDirection = request.Sorting.FirstOrDefault()!.SortDirection;
+            await customerService.DeleteAsync(customerId, cancellationTokenSource.Token);
+            toastService.Notify(new(ToastType.Warning, $"{Localizer["customer"]} {Localizer["deleted_with_success"]}"));
+            await customerGrid.Reload();
         }
-        var customersParameters = new QueryStringParameters
-            {
-                PageNumber = request.PageNumber,
-                PageSize = request.PageSize,
-                SearchKeyword = searchKeyword
-            };
-
-        var result = await customerService.GetAsync(customersParameters, cancellationTokenSource.Token);
-        return await Task.FromResult(new GridDataProviderResult<CustomerResponse> { Data = result.Items, TotalCount = result.TotalCount });
-    }
-
-    public void Dispose()
-    {
-        cancellationTokenSource.Cancel();
-        cancellationTokenSource.Dispose();
     }
 
     private void CreateCustomer()
@@ -126,4 +158,12 @@
     {
         navigationManager.NavigateTo($"/editcustomer/{id}");
     }
+
+    public void Dispose()
+    {
+        cancellationTokenSource.Cancel();
+        cancellationTokenSource.Dispose();
+    }
 }
+
+

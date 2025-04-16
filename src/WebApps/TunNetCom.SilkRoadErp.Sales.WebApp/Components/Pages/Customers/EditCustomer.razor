@@ -14,59 +14,56 @@
 @inject NavigationManager navigationManager
 @inject IStringLocalizer<SharedResource> localizer
 
+
 <h3>@(customer.Id == 0 ? localizer["add_client"] : localizer["edit_client"])</h3>
 
-<div class="form-container">
-    <EditForm Model="customer" OnValidSubmit="HandleValidSubmit">
-        <AntiforgeryToken />
-        <div>
-            <label>@localizer["customer_name"]: </label>
-            <InputText @bind-Value="customer.Nom" class="form-control" />
-        </div>
-        <div>
-            <label>@localizer["customer_phone"]: </label>
-            <InputText @bind-Value="customer.Tel" class="form-control" />
-        </div>
-        <div>
-            <label>@localizer["customer_adress"]: </label>
-            <InputText @bind-Value="customer.Adresse" class="form-control" />
-        </div>
-        <div>
-            <label>@localizer["customer_matricule"]: </label>
-            <InputText @bind-Value="customer.Matricule" class="form-control" />
-        </div>
-        <div>
-            <label>@localizer["customer_code"]: </label>
-            <InputText @bind-Value="customer.Code" class="form-control" />
-        </div>
-        <div>
-            <label>@localizer["customer_code_cat"]: </label>
-            <InputText @bind-Value="customer.CodeCat" class="form-control" />
-        </div>
-        <div>
-            <label>@localizer["customer_etb_sec"]: </label>
-            <InputText @bind-Value="customer.EtbSec" class="form-control" />
-        </div>
-        <div>
-            <label>@localizer["customer_email"]: </label>
-            <InputText @bind-Value="customer.Mail" class="form-control" />
-        </div>
+<RadzenCard Style="padding: 20px; max-width: 600px;">
+    <RadzenTemplateForm Data="@customer" Submit="@OnSubmit">
+        <RadzenFieldset>
+            <RadzenLabel Text="@localizer["customer_name"]" />
+            <RadzenTextBox @bind-Value="customer.Nom" Placeholder="@localizer["customer_name"]" Name="Nom" Style="width:100%;" />
 
-        <div style="margin-top:10px;">
-            <input type="submit" class="btn btn-primary" value="@localizer["save_label"]" />
-            <input type="button" class="btn btn-secondary" @onclick="Cancel" value="@localizer["cancel_label"]" />
-        </div>
-    </EditForm>
-</div>
+            <RadzenLabel Text="@localizer["customer_phone"]" />
+            <RadzenTextBox @bind-Value="customer.Tel" Name="Tel" Style="width:100%;" />
+
+            <RadzenLabel Text="@localizer["customer_adress"]" />
+            <RadzenTextBox @bind-Value="customer.Adresse" Name="Adresse" Style="width:100%;" />
+
+            <RadzenLabel Text="@localizer["customer_matricule"]" />
+            <RadzenTextBox @bind-Value="customer.Matricule" Name="Matricule" Style="width:100%;" />
+
+            <RadzenLabel Text="@localizer["customer_code"]" />
+            <RadzenTextBox @bind-Value="customer.Code" Name="Code" Style="width:100%;" />
+
+            <RadzenLabel Text="@localizer["customer_code_cat"]" />
+            <RadzenTextBox @bind-Value="customer.CodeCat" Name="CodeCat" Style="width:100%;" />
+
+            <RadzenLabel Text="@localizer["customer_etb_sec"]" />
+            <RadzenTextBox @bind-Value="customer.EtbSec" Name="EtbSec" Style="width:100%;" />
+
+            <RadzenLabel Text="@localizer["customer_email"]" />
+            <RadzenTextBox @bind-Value="customer.Mail" Name="Mail" Style="width:100%;" />
+
+            <div class="mt-2">
+                <RadzenButton ButtonType="Radzen.ButtonType.Submit" Text="@localizer["save_label"]" Style="margin-right: 10px;" Icon="save" />
+                <RadzenButton Text="@localizer["cancel_label"]" Click="@Cancel" ButtonStyle="ButtonStyle.Danger" Icon="close" />
+            </div>
+        </RadzenFieldset>
+    </RadzenTemplateForm>
+</RadzenCard>
 
 <Modal @ref="errorsModal" />
 
 @code {
     [Parameter] public int? Id { get; set; }
     [Inject] protected ToastService toastService { get; set; } = default!;
+    [Inject] protected DialogService dialogService { get; set; } = default!;
     private CustomerResponse customer = new CustomerResponse();
     private CancellationTokenSource cancellationTokenSource = new();
     private Modal errorsModal = default!;
+    // The RadzenForm expects an EventCallback, so we us callback factory to wrap the method, define a property and bind it in razor
+    private EventCallback<CustomerResponse> OnSubmit => EventCallback.Factory.Create<CustomerResponse>(this, HandleValidSubmit);
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -83,7 +80,7 @@
         }
     }
 
-    private async Task HandleValidSubmit()
+    private async Task HandleValidSubmit(CustomerResponse model)
     {
         if (customer.Id == 0)
         {
@@ -108,7 +105,7 @@
                 return;
             }
 
-            await ShowErrorsModal(createCustomerResult.AsT1.ToErrorsList());
+            await ShowErrorsDialog(createCustomerResult.AsT1.ToErrorsList());
             return;
         }
 
@@ -140,7 +137,7 @@
             return;
         }
 
-        await ShowErrorsModal(updateCustomerResult.AsT1.ToErrorsList());
+        await ShowErrorsDialog(updateCustomerResult.AsT1.ToErrorsList());
     }
 
     private void Cancel()
@@ -148,10 +145,15 @@
         navigationManager.NavigateTo("/customers_list");
     }
 
-    private async Task ShowErrorsModal(List<string> errorList)
+    private async Task ShowErrorsDialog(List<string> errorList)
     {
-        var parameters = new Dictionary<string, object>();
-        parameters.Add(Consts.ValidationParams, errorList);
-        await errorsModal.ShowAsync<ErrorsModal>(title: Consts.ErrorModalTitle, parameters: parameters);
+        await dialogService.OpenAsync("Validation Errors", ds => @<div>
+            <ul>
+                @foreach (var error in errorList)
+                {
+                    <li>@error</li>
+                }
+            </ul>
+        </div>, new DialogOptions() { Width = "500px", Height = "300px", CloseDialogOnOverlayClick = true });
     }
 }
