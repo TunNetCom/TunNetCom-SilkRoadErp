@@ -87,7 +87,7 @@
             var createCustomerResult = await customerService.CreateAsync(
                 new CreateCustomerRequest
                     {
-                        Nom = customer.Nom,
+                        Nom = customer.Name,
                         Tel = customer.Tel,
                         Adresse = customer.Adresse,
                         Matricule = customer.Matricule,
@@ -112,7 +112,7 @@
         var updateCustomerResult = await customerService.UpdateAsync(
             new UpdateCustomerRequest
                 {
-                    Nom = customer.Nom,
+                    Nom = customer.Name,
                     Tel = customer.Tel,
                     Adresse = customer.Adresse,
                     Matricule = customer.Matricule,

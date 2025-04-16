@@ -33,20 +33,20 @@
           Responsive="true"
           @ref="grid">
 
-        <GridColumn TItem="ProductResponse" HeaderText="@Localizer["product_refe"]" PropertyName="ProductRefe" SortString="ProductRefe" SortKeySelector="item => item.Refe" FilterTextboxWidth="80">
-            @context.Refe
+        <GridColumn TItem="ProductResponse" HeaderText="@Localizer["product_refe"]" PropertyName="ProductRefe" SortString="ProductRefe" SortKeySelector="item => item.Reference" FilterTextboxWidth="80">
+            @context.Reference
         </GridColumn>
-        <GridColumn TItem="ProductResponse" HeaderText="@Localizer["product_name"]" PropertyName="ProductName" SortString="ProductName" SortKeySelector="item => item.Nom" FilterTextboxWidth="80">
-            @context.Nom
+        <GridColumn TItem="ProductResponse" HeaderText="@Localizer["product_name"]" PropertyName="ProductName" SortString="ProductName" SortKeySelector="item => item.Name" FilterTextboxWidth="80">
+            @context.Name
         </GridColumn>
         <GridColumn TItem="ProductResponse" HeaderText="@Localizer["product_qte"]" PropertyName="Qte" SortString="Qte" SortKeySelector="item => item.Qte" FilterTextboxWidth="100">
             @context.Qte
         </GridColumn>
         <GridColumn TItem="ProductResponse" HeaderText="@Localizer["actions_label"]">
-            <Button Color="ButtonColor.Primary" @onclick="((args) => OnClickEditButton(args, context.Refe.ToString()))">
+            <Button Color="ButtonColor.Primary" @onclick="((args) => OnClickEditButton(args, context.Reference.ToString()))">
                 @Localizer["edit_button_label"]
             </Button>
-            <Button Color="ButtonColor.Danger" @onclick="((args) => OnClickDeleteButton(args, context.Refe.ToString()))">
+            <Button Color="ButtonColor.Danger" @onclick="((args) => OnClickDeleteButton(args, context.Reference.ToString()))">
                 @Localizer["delete_button_label"]
             </Button>
         </GridColumn>

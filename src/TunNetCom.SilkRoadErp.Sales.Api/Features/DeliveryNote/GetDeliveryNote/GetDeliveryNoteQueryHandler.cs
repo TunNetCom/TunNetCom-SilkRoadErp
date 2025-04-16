@@ -7,7 +7,9 @@ public class GetDeliveryNoteQueryHandler(
     ILogger<GetDeliveryNoteQueryHandler> _logger)
     : IRequestHandler<GetDeliveryNoteQuery, PagedList<DeliveryNoteResponse>>
 {
-    public async Task<PagedList<DeliveryNoteResponse>> Handle(GetDeliveryNoteQuery getDeliveryNoteQuery, CancellationToken cancellationToken)
+    public async Task<PagedList<DeliveryNoteResponse>> Handle(
+        GetDeliveryNoteQuery getDeliveryNoteQuery,
+        CancellationToken cancellationToken)
     {
         _logger.LogPaginationRequest(nameof(BonDeLivraison), getDeliveryNoteQuery.PageNumber, getDeliveryNoteQuery.PageSize);
 
@@ -16,24 +18,24 @@ public class GetDeliveryNoteQueryHandler(
             .Select(t =>
             new DeliveryNoteResponse
             {
-                Num = t.Num,
+                DeliveryNoteNumber = t.Num,
                 Date = t.Date,
-                TotHT = t.TotHTva,
-                TotTva = t.TotTva,
-                NetPayer = t.NetPayer,
-                TempBl = t.TempBl,
-                NumFacture = t.NumFacture,
-                ClientId = t.ClientId
+                TotalExcludingTax = t.TotHTva,
+                TotalVat = t.TotTva,
+                TotalAmount = t.NetPayer,
+                CreationTime = t.TempBl,
+                InvoiceNumber = t.NumFacture,
+                CustomerId = t.ClientId
             })
             .AsQueryable();
 
         if (!string.IsNullOrEmpty(getDeliveryNoteQuery.SearchKeyword))
         {
             deliveryNoteQuery = deliveryNoteQuery.Where(
-                d => d.Num.ToString().Contains(getDeliveryNoteQuery.SearchKeyword)
+                d => d.DeliveryNoteNumber.ToString().Contains(getDeliveryNoteQuery.SearchKeyword)
                 || d.Date.ToString().Contains(getDeliveryNoteQuery.SearchKeyword)
-                || d.ClientId.ToString().Contains(getDeliveryNoteQuery.SearchKeyword)
-                || d.NumFacture.ToString().Contains(getDeliveryNoteQuery.SearchKeyword));
+                || d.CustomerId.ToString().Contains(getDeliveryNoteQuery.SearchKeyword)
+                || d.InvoiceNumber.ToString().Contains(getDeliveryNoteQuery.SearchKeyword));
         }
 
         var pagedDeliveryNote = await PagedList<DeliveryNoteResponse>.ToPagedListAsync(

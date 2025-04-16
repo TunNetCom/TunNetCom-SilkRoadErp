@@ -12,7 +12,7 @@ public class GetCustomerQueryHandler(
         var clientsQuery = _context.Client.Select(t =>
             new CustomerResponse
             {
-                Nom = t.Nom,
+                Name = t.Nom,
                 Adresse = t.Adresse,
                 Code = t.Code,
                 CodeCat = t.CodeCat,
@@ -28,7 +28,7 @@ public class GetCustomerQueryHandler(
         {
             clientsQuery = clientsQuery.Where(
                 c => c.Id.ToString().Contains(getCustomerQuery.SearchKeyword)
-                || c.Nom.Contains(getCustomerQuery.SearchKeyword)
+                || c.Name.Contains(getCustomerQuery.SearchKeyword)
                 || c.Tel.Contains(getCustomerQuery.SearchKeyword)
                 || c.Adresse.Contains(getCustomerQuery.SearchKeyword)
                 || c.Matricule.Contains(getCustomerQuery.SearchKeyword)

@@ -13,8 +13,8 @@
               .Where(f => query.InvoicesIds.Contains(f.Num))
               .Select(f => new InvoiceResponse
               {
-                  Num = f.Num,
-                  TotTTC = f.BonDeLivraison.Sum(d => d.NetPayer),
+                  Number = f.Num,
+                  TotalIncludingTax = f.BonDeLivraison.Sum(d => d.NetPayer),
                   TotHTva = f.BonDeLivraison.Sum(d => d.TotHTva),
                   TotTva = f.BonDeLivraison.Sum(d => d.TotTva),
                   CustomerId = f.IdClient,

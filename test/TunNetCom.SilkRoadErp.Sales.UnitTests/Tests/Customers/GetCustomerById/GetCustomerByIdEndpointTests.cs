@@ -18,7 +18,7 @@ public class GetCustomerByIdEndpointTests
     {
         // Arrange
         var customerId = 1;
-        var customerResponse = new CustomerResponse { Id = customerId, Nom = "John Doe" };
+        var customerResponse = new CustomerResponse { Id = customerId, Name = "John Doe" };
         var expectedResult = Result.Ok(customerResponse);
 
         _mediatorMock.Setup(m => m.Send(It.IsAny<GetCustomerByIdQuery>(), It.IsAny<CancellationToken>()))
@@ -33,7 +33,7 @@ public class GetCustomerByIdEndpointTests
         // Assert
         var typedResult = Assert.IsType<Ok<CustomerResponse>>(result.Result);
         Assert.Equal(customerId, typedResult.Value.Id);
-        Assert.Equal("John Doe", typedResult.Value.Nom);
+        Assert.Equal("John Doe", typedResult.Value.Name);
     }
 
     [Fact]

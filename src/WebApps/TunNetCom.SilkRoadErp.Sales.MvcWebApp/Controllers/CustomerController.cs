@@ -153,7 +153,7 @@ public class CustomerController : Controller
         var model = new CustomerViewModel
         {
             Id = customer.Id,
-            Nom = customer.Nom,
+            Nom = customer.Name,
             Tel = customer.Tel,
             Adresse = customer.Adresse,
             Matricule = customer.Matricule,

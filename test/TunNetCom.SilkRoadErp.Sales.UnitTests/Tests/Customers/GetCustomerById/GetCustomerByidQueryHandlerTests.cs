@@ -44,7 +44,7 @@ public class GetCustomerByidQueryHandlerTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(client.Nom, result.Value.Nom);
+        Assert.Equal(client.Nom, result.Value.Name);
     }
 
     [Fact]

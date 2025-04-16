@@ -1,28 +1,59 @@
 ﻿namespace TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
+using System.Text.Json.Serialization;
 
 public class CreateDeliveryNoteRequest
 {
     [JsonPropertyName("date")]
     public DateTime Date { get; set; }
 
-    [JsonPropertyName("totHTva")]
-    public decimal TotHTva { get; set; }
+    [JsonPropertyName("totalExcludingTax")]
+    public decimal TotalExcludingTax { get; set; }
 
-    [JsonPropertyName("totTva")]
-    public decimal TotTva { get; set; }
+    [JsonPropertyName("totalVat")]
+    public decimal TotalVat { get; set; }
 
-    [JsonPropertyName("netPayer")]
-    public decimal NetPayer { get; set; }
+    [JsonPropertyName("totalAmount")]
+    public decimal TotalAmount { get; set; }
 
-    [JsonPropertyName("tempBl")]
-    public TimeOnly TempBl { get; set; }
+    [JsonPropertyName("deliveryTime")]
+    public TimeOnly DeliveryTime { get; set; }
 
-    [JsonPropertyName("numFacture")]
-    public int? NumFacture { get; set; }
+    [JsonPropertyName("invoiceNumber")]
+    public int? InvoiceNumber { get; set; }
 
-    [JsonPropertyName("clientId")]
-    public int? ClientId { get; set; }
+    [JsonPropertyName("customerId")]
+    public int? CustomerId { get; set; }
 
-    [JsonPropertyName("lignes")]
-    public List<LigneBlRequest> Lignes { get; set; }
+    [JsonPropertyName("items")]
+    public List<DeliveryNoteItemRequest> Items { get; set; } = new();
+}
+
+public class DeliveryNoteItemRequest
+{
+    [JsonPropertyName("id")]
+    public int Id { get; set; }
+
+    [JsonPropertyName("productReference")]
+    public string ProductReference { get; set; } = string.Empty;
+
+    [JsonPropertyName("description")]
+    public string Description { get; set; } = string.Empty;
+
+    [JsonPropertyName("quantity")]
+    public int Quantity { get; set; }
+
+    [JsonPropertyName("unitPriceExcludingTax")]
+    public decimal UnitPriceExcludingTax { get; set; }
+
+    [JsonPropertyName("discountPercentage")]
+    public double DiscountPercentage { get; set; }
+
+    [JsonPropertyName("totalExcludingTax")]
+    public decimal TotalExcludingTax { get; set; }
+
+    [JsonPropertyName("vatPercentage")]
+    public double VatPercentage { get; set; }
+
+    [JsonPropertyName("totalIncludingTax")]
+    public decimal TotalIncludingTax { get; set; }
 }

@@ -2,8 +2,8 @@
 
 public class InvoiceResponse
 {
-    [JsonPropertyName("num")]
-    public int Num { get; set; }
+    [JsonPropertyName("number")]
+    public int Number { get; set; }
 
     [JsonPropertyName("customerId")]
     public int CustomerId { get; set; }
@@ -11,8 +11,8 @@ public class InvoiceResponse
     [JsonPropertyName("date")]
     public DateTime Date { get; set; }
 
-    [JsonPropertyName("totTTC")]
-    public decimal TotTTC { get; set; }
+    [JsonPropertyName("totalIncludingTax")]
+    public decimal TotalIncludingTax { get; set; }
 
     [JsonPropertyName("totHTva")]
     public decimal TotHTva { get; set; }

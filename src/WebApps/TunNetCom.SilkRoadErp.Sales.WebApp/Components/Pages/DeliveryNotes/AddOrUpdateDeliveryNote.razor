@@ -1,55 +1,64 @@
 ﻿@page "/AddOrUpdateDeliveryNote"
 @page "/AddOrUpdateDeliveryNote/{num?}"
+
+@using Radzen.Blazor
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.Extensions.Localization
 @using Microsoft.JSInterop
 @using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests
 @using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses
-@using Radzen.Blazor
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+
 @inject IStringLocalizer<SharedResource> Localizer
-@inject ICustomersApiClient customerService
 @inject ToastService toastService
 @inject NotificationService NotificationService
 @inject IJSRuntime JSRuntime
-@inject IDeliveryNoteApiClient DeliveryNoteClient
-@inject IProductsApiClient productService
+@inject IDeliveryNoteApiClient deliveryNoteApiClient
+@inject IProductsApiClient productsApiClient
+@inject IInvoicesApiClient invoicesApiClient
+@inject ICustomersApiClient customersApiClient
+@inject ILogger<AddOrUpdateDeliveryNote> logger
 
 <style>
-    .rz-grid-table {
-        width: unset;
-    }
-
     .delivery-note-container {
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 20px;
     }
 
     .delivery-note-form {
         display: flex;
         gap: 20px;
         align-items: center;
-    }
-
-    .summary-section {
-        display: flex;
-        gap: 20px;
-        align-items: center;
-    }
-
-    .summary-item {
-        background-color: #f8f9fa;
-        padding: 5px 10px;
-        border-radius: 5px;
+        flex-wrap: wrap;
+        flex-grow: 1;
     }
 
     .header-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+    }
+
+    .summary-card {
+        background-color: #f8f9fa;
+        padding: 10px 20px;
+        border-radius: 5px;
+        margin-left: auto; /* This pushes it to the right */
+        border-left: 1px solid #ddd; /* Optional: adds a separator line */
+    }
+
+    .action-buttons {
         display: flex;
         gap: 10px;
         align-items: center;
@@ -80,140 +89,162 @@ else
                                     AllowFiltering="true"
                                     Style="width: 350px;"
                                     Data="@_filteredCustomers"
-                                    TextProperty="@nameof(CustomerResponse.Nom)"
+                                    TextProperty="@nameof(CustomerResponse.Name)"
                                     ValueProperty="@nameof(CustomerResponse.Id)"
                                     Placeholder="@Localizer["select_customer"]">
                 <Columns>
                     <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Id)" Title="ID" Width="80px" />
-                    <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Nom)" Title="@Localizer["name"]" Width="220px" />
+                    <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Name)" Title="@Localizer["name"]" Width="220px" />
+                </Columns>
+            </RadzenDropDownDataGrid>
+
+            <RadzenLabel Text="@Localizer["invoice_number"]" />
+            <RadzenDropDownDataGrid AllowClear="true"
+                                    IsLoading="@isLoadingInvoices"
+                                    @bind-Value="@_selectedInvoiceId"
+                                    LoadData="@LoadCustomerInvoices"
+                                    AllowFiltering="true"
+                                    Style="width: 350px;"
+                                    Data="@_filteredInvoices"
+                                    TextProperty="@nameof(InvoiceResponse.Number)"
+                                    ValueProperty="@nameof(InvoiceResponse.Number)"
+                                    Placeholder="@Localizer["select_invoice"]">
+                <Columns>
+                    <RadzenDropDownDataGridColumn Property="@nameof(InvoiceResponse.Number)" Title="Num" Width="100px" />
+                    <RadzenDropDownDataGridColumn Property="@nameof(InvoiceResponse.Date)" Title="Date" Width="100px" />
+                    <RadzenDropDownDataGridColumn Property="@nameof(InvoiceResponse.TotalIncludingTax)" Title="@Localizer["tot_ttc"]" Width="200px" />
                 </Columns>
             </RadzenDropDownDataGrid>
         </div>
-
-        <div class="summary-section">
-            <div class="summary-item">
-                <RadzenLabel Text="@Localizer["total_ht"]" />
-                <span>@totalHt.FormatAmount()</span>
-            </div>
-            <div class="summary-item">
-                <RadzenLabel Text="@Localizer["total_vat"]" />
-                <span>@totalVat.FormatAmount()</span>
-            </div>
-            <div class="summary-item">
-                <RadzenLabel Text="@Localizer["total_ttc"]" />
-                <span>@totalTtc.FormatAmount()</span>
-            </div>
-        </div>
     </div>
 
+    <!-- DataGrid with Actions -->
     <RadzenDataGrid @ref="ordersGrid" AllowAlternatingRows="false"
-                    AllowFiltering="true" AllowPaging="true" PageSize="5" AllowSorting="true"
+                    AllowPaging="true"
                     EditMode="@editMode"
-                    Data="@orders" TItem="DeliveryNoteDetailResponse" RowUpdate="@OnUpdateRow"
-                    RowCreate="@OnCreateRow" Sort="@Reset" Page="@Reset" Filter="@Reset" ColumnWidth="200px">
+                    Data="@orders" TItem="DeliveryNoteDetailResponse"
+                    RowUpdate="@OnUpdateRow"
+                    RowCreate="@OnCreateRow"
+                    Page="@Reset"
+                    ColumnWidth="200px">
         <HeaderTemplate>
             <div class="header-actions">
-                <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="add_circle" Text="@Localizer["add_new_order"]"
-                              Click="@InsertRow" Disabled="@(editMode == DataGridEditMode.Single && ordersToInsert.Count() > 0)" />
+                <div class="action-buttons">
+                    <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="add_circle" Text="@Localizer["add_new_order"]"
+                                  Click="@InsertRow" Disabled="@(editMode == DataGridEditMode.Single && ordersToInsert.Count() > 0)" />
 
-                <RadzenButton ButtonStyle="ButtonStyle.Primary"
-                              Icon="print"
-                              Text="@Localizer["print"]"
-                              Variant="Variant.Flat"
-                              Disabled="@(!orders.Any())" />
+                    <RadzenButton ButtonStyle="ButtonStyle.Primary"
+                                  Icon="print"
+                                  Text="@Localizer["print"]"
+                                  Variant="Variant.Flat"
+                                  Disabled="@(!orders.Any())" />
 
-                <RadzenButton ButtonStyle="ButtonStyle.Primary"
-                              Icon="save"
-                              Text="@Localizer["save"]"
-                              Variant="Variant.Flat" />
+                    <RadzenButton ButtonStyle="ButtonStyle.Primary"
+                                  Icon="save"
+                                  Text="@Localizer["save"]"
+                                  Variant="Variant.Flat"
+                                  Click="@SaveDeliveryNote" />
 
-                <RadzenButton ButtonStyle="ButtonStyle.Primary"
-                              Icon="receipt"
-                              Text="@Localizer["convert_to_price_note"]"
-                              Variant="Variant.Flat"
-                              Disabled="@(!orders.Any())" />
+                    <RadzenButton ButtonStyle="ButtonStyle.Primary"
+                                  Icon="receipt"
+                                  Text="@Localizer["convert_to_price_note"]"
+                                  Variant="Variant.Flat"
+                                  Disabled="@(!orders.Any())" />
+                </div>
+
+                <RadzenCard class="summary-card" Variant="Variant.Outlined">
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" JustifyContent="JustifyContent.End">
+                        <RadzenText TextStyle="TextStyle.Button">
+                            @Localizer["total_net"]: <strong>@totalTtc.FormatAmount()</strong>
+                        </RadzenText>
+                        <RadzenText TextStyle="TextStyle.Button">
+                            @Localizer["total_gross"]: <strong>@totalHt.FormatAmount()</strong>
+                        </RadzenText>
+                        <RadzenText TextStyle="TextStyle.Button">
+                            @Localizer["total_vat"]: <strong>@totalVat.FormatAmount()</strong>
+                        </RadzenText>
+                    </RadzenStack>
+                </RadzenCard>
             </div>
         </HeaderTemplate>
         <Columns>
-            <RadzenDataGridColumn Property="Id" Title="Id" Frozen="true" Visible="false" />
-
             <RadzenDataGridColumn Width="600px" TItem="DeliveryNoteDetailResponse"
-                                  Property="@nameof(DeliveryNoteDetailResponse.RefAndDisplay)"
+                                  Property="@nameof(DeliveryNoteDetailResponse.ProductReferenceAndDescription)"
                                   Title="@Localizer["product"]">
                 <EditTemplate Context="order">
                     <RadzenDropDownDataGrid Style="width: 100%; max-width: 600px;"
                                             AllowClear="true"
-                                            @bind-Value="order.RefProduit"
+                                            @bind-Value="order.ProductReference"
                                             LoadData="@LoadData"
                                             AllowFiltering="true"
                                             Data="@(GetCurrentProductList(order))"
                                             Count="@count"
-                                            TextProperty="@nameof(DeliveryNoteDetailResponse.RefAndDisplay)"
-                                            ValueProperty="@nameof(DeliveryNoteDetailResponse.RefProduit)"
+                                            TextProperty="@nameof(DeliveryNoteDetailResponse.ProductReferenceAndDescription)"
+                                            ValueProperty="@nameof(DeliveryNoteDetailResponse.ProductReference)"
                                             Name="DropDownDataGridFilteringLoadData" />
                 </EditTemplate>
             </RadzenDataGridColumn>
 
-            <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.QteLi)"
+            <RadzenDataGridColumn Width="100px" Property="@nameof(DeliveryNoteDetailResponse.Quantity)"
                                   Title="@Localizer["quantity"]">
                 <EditTemplate Context="order">
                     <RadzenNumeric TValue="int"
-                                   Value="order.QteLi"
-                                   Change="@(args => OnValueChanged(order, args, nameof(order.QteLi)))"
+                                   Value="order.Quantity"
+                                   Change="@(args => OnValueChanged(order, args, nameof(order.Quantity)))"
                                    Style="width:100%;"
-                                   Name="QteLi" />
-                    <RadzenRequiredValidator Text="@Localizer["quantity_required"]" Component="QteLi" Popup="true" />
+                                   Name="Quantity" />
+                    <RadzenRequiredValidator Text="@Localizer["quantity_required"]" Component="Quantity" Popup="true" />
                 </EditTemplate>
             </RadzenDataGridColumn>
 
-            <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.PrixHt)" Title="@Localizer["unit_price_ht"]">
+            <RadzenDataGridColumn Width="150px" Property="@nameof(DeliveryNoteDetailResponse.UnitPriceExcludingTax)" Title="@Localizer["unit_price_ht"]">
                 <Template Context="order">
-                    @order.PrixHt.FormatAmount()
+                    @order.UnitPriceExcludingTax.FormatAmount()
                 </Template>
                 <EditTemplate Context="order">
                     <RadzenNumeric TValue="decimal"
-                                   Value="order.PrixHt"
-                                   Change="@(args => OnValueChanged(order, args, nameof(order.PrixHt)))"
+                                   Value="order.UnitPriceExcludingTax"
+                                   Change="@(args => OnValueChanged(order, args, nameof(order.UnitPriceExcludingTax)))"
                                    Style="width:100%;"
                                    Format="n0"
-                                   Name="PrixHt" />
-                    <RadzenRequiredValidator Text="@Localizer["unit_price_required"]" Component="PrixHt" Popup="true" />
+                                   Name="UnitPriceExcludingTax" />
+                    <RadzenRequiredValidator Text="@Localizer["unit_price_required"]" Component="UnitPriceExcludingTax" Popup="true" />
                 </EditTemplate>
             </RadzenDataGridColumn>
 
-            <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.Remise)"
+            <RadzenDataGridColumn Width="100px" Property="@nameof(DeliveryNoteDetailResponse.DiscountPercentage)"
                                   Title="@Localizer["discount_percentage"]">
                 <EditTemplate Context="order">
                     <RadzenNumeric TValue="double"
-                                   Value="order.Remise"
-                                   Change="@(args => OnValueChanged(order, args, nameof(order.Remise)))"
+                                   Value="order.DiscountPercentage"
+                                   Change="@(args => OnValueChanged(order, args, nameof(order.DiscountPercentage)))"
                                    Style="width:100%;"
                                    FormatString="{0:N2}%"
-                                   Name="Remise" />
+                                   Name="DiscountPercentage" />
                 </EditTemplate>
             </RadzenDataGridColumn>
 
-            <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.TotHt)" Title="@Localizer["total_ht"]">
+            <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.TotalExcludingTax)" Title="@Localizer["total_excluding_tax"]">
                 <Template Context="order">
-                    @order.TotHt.FormatAmount()
+                    @order.TotalExcludingTax.FormatAmount()
                 </Template>
             </RadzenDataGridColumn>
 
-            <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.Tva)" Title="@Localizer["vat_percentage"]">
+            <RadzenDataGridColumn Width="100px" Property="@nameof(DeliveryNoteDetailResponse.VatPercentage)" Title="@Localizer["vat_percentage"]">
                 <EditTemplate Context="order">
                     <RadzenNumeric TValue="double"
-                                   Value="order.Tva"
-                                   Change="@(args => OnValueChanged(order, args, nameof(order.Tva)))"
+                                   Value="order.VatPercentage"
+                                   Change="@(args => OnValueChanged(order, args, nameof(order.VatPercentage)))"
                                    Style="width:100%;"
                                    FormatString="{0:N2}%"
-                                   Name="Tva" />
-                    <RadzenRequiredValidator Text="@Localizer["vat_required"]" Component="Tva" Popup="true" />
+                                   Name="VatPercentage" />
+                    <RadzenRequiredValidator Text="@Localizer["vat_required"]" Component="VatPercentage" Popup="true" />
                 </EditTemplate>
             </RadzenDataGridColumn>
 
-            <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.TotTtc)" Title="@Localizer["total_ttc"]">
+            <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.TotalIncludingTax)" Title="@Localizer["total_including_tax"]">
                 <Template Context="order">
-                    @order.TotTtc.FormatAmount()
+                    @order.TotalIncludingTax.FormatAmount()
                 </Template>
             </RadzenDataGridColumn>
 
@@ -240,45 +271,34 @@ else
                                   Shade="Shade.Lighter" Size="ButtonSize.Medium" class="rz-my-1 rz-ms-1"
                                   Click="@(args => DeleteRow(order))" aria-label="Delete">
                     </RadzenButton>
-@*                     <div class="invoice-dropdown-container">
-                        <RadzenLabel Text="@Localizer["invoice"]" />
-                        <RadzenDropDownDataGrid AllowClear="true"
-                                                IsLoading="@isLoadingInvoices"
-                                                @bind-Value="@selectedInvoiceId"
-                                                LoadData="@LoadInvoices"
-                                                AllowFiltering="true"
-                                                Style="width: 350px;"
-                                                Data="@_filteredInvoices"
-                                                TextProperty="@nameof(InvoiceResponse.Num)"
-                                                ValueProperty="@nameof(InvoiceResponse.Num)"
-                                                Placeholder="@Localizer["select_invoice"]">
-                            <Columns>
-                                <RadzenDropDownDataGridColumn Property="@nameof(InvoiceResponse.Num)" Title="@Localizer["number"]" Width="100px" />
-                                <RadzenDropDownDataGridColumn Property="@nameof(InvoiceResponse.Date)" Title="@Localizer["date"]" Width="120px" Format="d" />
-                                <RadzenDropDownDataGridColumn Property="@nameof(InvoiceResponse.TotTTC)" Title="@Localizer["total"]" Width="100px" Format="n2" />
-                            </Columns>
-                        </RadzenDropDownDataGrid>
-                    </div> *@
                 </EditTemplate>
             </RadzenDataGridColumn>
         </Columns>
     </RadzenDataGrid>
 }
 
-
 @code {
-    [Parameter] public string? num { get; set; } // Made num nullable
+    [Parameter] public string? num { get; set; }
     RadzenDataGrid<DeliveryNoteDetailResponse> ordersGrid;
     List<DeliveryNoteDetailResponse> orders;
-    List<DeliveryNoteDetailResponse> searchList; // Changed to List<DeliveryNoteDetailResponse>
+    List<DeliveryNoteDetailResponse> searchList;
     int count;
     private CancellationTokenSource _cancellationTokenSource = new();
     private List<CustomerResponse> _filteredCustomers { get; set; } = new();
-    private bool isLoading = true; // Added loading state for UI
-
-    // New properties for delivery note info
-    string deliveryNoteNumber = $"BL-{DateTime.Now:yyyyMMdd}-001"; // Example default value
+    private List<InvoiceResponse> _filteredInvoices { get; set; } = new();
+    List<KeyValuePair<int, string>> editedFields = new List<KeyValuePair<int, string>>();
+    DataGridEditMode editMode = DataGridEditMode.Single;
+    List<DeliveryNoteDetailResponse> ordersToInsert = new List<DeliveryNoteDetailResponse>();
+    List<DeliveryNoteDetailResponse> ordersToUpdate = new List<DeliveryNoteDetailResponse>();
+    private bool isLoading = true;
+    bool isLoadingCustomers = false;
+    bool isLoadingInvoices = false;
+    decimal totalHt;
+    decimal totalVat;
+    decimal totalTtc;
+    string deliveryNoteNumber;
     DateTime deliveryNoteDate = DateTime.Now;
+
     private int? _selectedCustomerId;
     int? selectedCustomerId
     {
@@ -288,23 +308,24 @@ else
             if (_selectedCustomerId != value)
             {
                 _selectedCustomerId = value;
-                StateHasChanged(); // Ensure UI updates when customer changes
+                StateHasChanged();
             }
         }
     }
-    bool isLoadingCustomers = false;
 
-    // Summary totals
-    decimal totalHt;
-    decimal totalVat;
-    decimal totalTtc;
-
-    List<KeyValuePair<int, string>> editedFields = new List<KeyValuePair<int, string>>();
-
-    DataGridEditMode editMode = DataGridEditMode.Single;
-
-    List<DeliveryNoteDetailResponse> ordersToInsert = new List<DeliveryNoteDetailResponse>();
-    List<DeliveryNoteDetailResponse> ordersToUpdate = new List<DeliveryNoteDetailResponse>();
+    private int? _selectedInvoiceId;
+    int? selectedInvoiceId
+    {
+        get => _selectedInvoiceId;
+        set
+        {
+            if (_selectedInvoiceId != value)
+            {
+                _selectedInvoiceId = value;
+                StateHasChanged();
+            }
+        }
+    }
 
     void Reset()
     {
@@ -318,30 +339,75 @@ else
         ordersToUpdate.Remove(order);
     }
 
-    private async Task SaveDeliveryNoteInfo()
+    protected override async Task OnInitializedAsync()
     {
-        var deliveryNoteInfo = new
-        {
-            Number = deliveryNoteNumber,
-            Date = deliveryNoteDate,
-            CustomerId = selectedCustomerId
-        };
-        Console.WriteLine($"Saving: Number={deliveryNoteNumber}, Date={deliveryNoteDate}, CustomerId={selectedCustomerId}");
-        await InvokeAsync(StateHasChanged);
+        await base.OnInitializedAsync();
+
+        searchList = new List<DeliveryNoteDetailResponse>();
+
+        await LoadCustomers(null);
+        await FetchDeliveryNote();
+        await LoadCustomerInvoices(null);
+
+        isLoading = false;
     }
 
-    private async Task SearchClients()
+    private async Task SaveDeliveryNote()
     {
-        var parameters = new QueryStringParameters
-        {
-            PageNumber = 1,
-            PageSize = 10,
-            SearchKeyword = string.Empty
-        };
         try
         {
-            var pagedCustomers = await customerService.GetAsync(parameters, _cancellationTokenSource.Token);
-            _filteredCustomers = pagedCustomers.Items;
+            isLoading = true;
+            StateHasChanged();
+
+            var request = new CreateDeliveryNoteRequest
+            {
+                Date = deliveryNoteDate,
+                TotalExcludingTax = totalHt,
+                TotalVat = totalVat,
+                TotalAmount = totalTtc,
+                DeliveryTime = TimeOnly.FromDateTime(DateTime.Now),
+                InvoiceNumber = _selectedInvoiceId,
+                CustomerId = _selectedCustomerId,
+                Items = orders.Select(o => new DeliveryNoteItemRequest
+                {
+                    Id = o.Id,
+                    ProductReference = o.ProductReference,
+                    Description = o.Description,
+                    Quantity = o.Quantity,
+                    UnitPriceExcludingTax = o.UnitPriceExcludingTax,
+                    DiscountPercentage = o.DiscountPercentage,
+                    TotalExcludingTax = o.TotalExcludingTax,
+                    VatPercentage = o.VatPercentage,
+                    TotalIncludingTax = o.TotalIncludingTax
+                }).ToList()
+            };
+
+            var response = await deliveryNoteApiClient.CreateDeliveryNoteAsync(request, _cancellationTokenSource.Token);
+
+            if (response.IsSuccess)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = Localizer["success"],
+                    Detail = Localizer["delivery_note_saved_successfully"]
+                });
+
+                // Update the delivery note number if this is a new note
+                if (string.IsNullOrEmpty(deliveryNoteNumber))
+                {
+                    deliveryNoteNumber = response.ToString();
+                }
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = $"{Localizer["failed_to_save_delivery_note"]}: {response.Errors.First().Message}"
+                });
+            }
         }
         catch (Exception ex)
         {
@@ -349,22 +415,15 @@ else
             {
                 Severity = NotificationSeverity.Error,
                 Summary = Localizer["error"],
-                Detail = $"{Localizer["failed_to_load_customers"]}: {ex.Message}"
+                Detail = $"{Localizer["failed_to_save_delivery_note"]}: {ex.Message}"
             });
-            _filteredCustomers = new List<CustomerResponse>();
+            logger.LogError(ex, "Failed to save delivery note");
         }
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        await base.OnInitializedAsync();
-
-        searchList = new List<DeliveryNoteDetailResponse>(); // Initialize as empty list
-
-        await SearchClients();
-        await FetchDeliveryNote();
-
-        isLoading = false; // Set loading to false after initialization
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
     }
 
     private async Task FetchDeliveryNote()
@@ -382,42 +441,44 @@ else
         {
             if (int.TryParse(num, out var numAsInt))
             {
-                var deliveryNote = await DeliveryNoteClient.GetDeliveryNoteByNumAsync(
+                var deliveryNote = await deliveryNoteApiClient.GetDeliveryNoteByNumAsync(
                     numAsInt,
                     _cancellationTokenSource.Token);
 
                 if (deliveryNote != null)
                 {
-                    deliveryNoteNumber = deliveryNote.Num.ToString();
+                    deliveryNoteNumber = deliveryNote.DeliveryNoteNumber.ToString();
                     deliveryNoteDate = deliveryNote.Date;
-                    selectedCustomerId = deliveryNote.ClientId;
+                    selectedCustomerId = deliveryNote.CustomerId;
+                    selectedInvoiceId = deliveryNote.InvoiceNumber;
 
-                    if (deliveryNote.Lignes != null && deliveryNote.Lignes.Any())
+                    if (deliveryNote.Items != null && deliveryNote.Items.Any())
                     {
-                        orders = deliveryNote.Lignes;
+                        orders = deliveryNote.Items;
                     }
                     else
                     {
                         orders = new List<DeliveryNoteDetailResponse>();
                     }
 
-                    totalHt = deliveryNote.TotHT;
-                    totalVat = deliveryNote.TotTva;
-                    totalTtc = deliveryNote.NetPayer;
+                    totalHt = deliveryNote.TotalExcludingTax;
+                    totalVat = deliveryNote.TotalVat;
+                    totalTtc = deliveryNote.TotalAmount;
                 }
             }
 
             await InvokeAsync(StateHasChanged);
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Error,
                 Summary = Localizer["error"],
-                Detail = $"{Localizer["failed_to_fetch_delivery_note"]}: {ex.Message}"
+                Detail = $"{Localizer["failed_to_fetch_delivery_note"]}: {e.Message}"
             });
 
+            logger.LogError(e, "Failed to save delivery note");
             await InvokeAsync(StateHasChanged);
         }
     }
@@ -445,9 +506,9 @@ else
             {
                 Severity = NotificationSeverity.Error,
                 Summary = Localizer["error"],
-                Detail = $"{Localizer["failed_to_save_row"]}: {e.Message}"
+                Detail = $"{Localizer["failed_to_save_delivery_note"]}"
             });
-            throw;
+            logger.LogError(e, "Failed to save delivery note");
         }
     }
 
@@ -490,16 +551,16 @@ else
 
     private List<DeliveryNoteDetailResponse> GetCurrentProductList(DeliveryNoteDetailResponse currentOrder)
     {
-        if (!string.IsNullOrEmpty(currentOrder.RefProduit))
+        if (!string.IsNullOrEmpty(currentOrder.ProductReference))
         {
-            // Find the product in the searchList that matches the current RefProduit
-            var currentProduct = searchList.FirstOrDefault(p => p.RefProduit == currentOrder.RefProduit);
+            // Find the product in the searchList that matches the current ProductReference
+            var currentProduct = searchList.FirstOrDefault(p => p.ProductReference == currentOrder.ProductReference);
             if (currentProduct != null)
             {
                 // Create a new list starting with the current product
                 var list = new List<DeliveryNoteDetailResponse> { currentProduct };
                 // Add other products from searchList, excluding the current one
-                list.AddRange(searchList.Where(p => p.RefProduit != currentOrder.RefProduit));
+                list.AddRange(searchList.Where(p => p.ProductReference != currentOrder.ProductReference));
                 return list;
             }
         }
@@ -525,18 +586,18 @@ else
 
         try
         {
-            var pagedProducts = await productService.GetPagedAsync(productsParameters, _cancellationTokenSource.Token);
+            var pagedProducts = await productsApiClient.GetPagedAsync(productsParameters, _cancellationTokenSource.Token);
             searchList = pagedProducts.Items.Select(
                 p => new DeliveryNoteDetailResponse
                 {
-                    RefProduit = p.Refe,
-                    DesignationLi = p.Nom,
-                    PrixHt = p.Prix,
-                    QteLi = 1,
-                    Remise = 0,
-                    Tva = p.Tva,
-                    TotHt = 0,
-                    TotTtc = 0
+                    ProductReference = p.Reference,
+                    Description = p.Name,
+                    UnitPriceExcludingTax = p.Price,
+                    Quantity = 1,
+                    DiscountPercentage = 0,
+                    VatPercentage = p.VatRate,
+                    TotalExcludingTax = 0,
+                    TotalIncludingTax = 0
                 }).ToList();
 
             count = pagedProducts.TotalCount;
@@ -568,13 +629,57 @@ else
         {
             PageNumber = 1,
             PageSize = 10,
-            SearchKeyword = args.Filter
+            SearchKeyword = args?.Filter ?? string.Empty
         };
 
         try
         {
-            var pagedCustomers = await customerService.GetAsync(parameters, _cancellationTokenSource.Token);
+            var pagedCustomers = await customersApiClient.GetAsync(parameters, _cancellationTokenSource.Token);
             _filteredCustomers = pagedCustomers.Items;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"{Localizer["failed_to_load_customers"]}: {ex.Message}"
+            });
+            _filteredCustomers = new List<CustomerResponse>();
+        }
+
+        isLoadingCustomers = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task LoadCustomerInvoices(LoadDataArgs args)
+    {
+        if (!selectedCustomerId.HasValue)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["select_a_customer_before"],
+            });
+            return;
+        }
+
+        isLoadingCustomers = true;
+        var parameters = new QueryStringParameters
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            SearchKeyword = null
+        };
+
+        try
+        {
+            var pagedCustomers = await invoicesApiClient.GetInvoicesByCustomerIdWithSummary(
+                selectedCustomerId.Value,
+                parameters,
+                _cancellationTokenSource.Token);
+
+            _filteredInvoices = pagedCustomers.AsT0.Invoices.Items;
         }
         catch (Exception ex)
         {
@@ -595,17 +700,17 @@ else
     {
         switch (propertyName)
         {
-            case nameof(order.QteLi):
-                order.QteLi = Convert.ToInt16(value);
+            case nameof(order.Quantity):
+                order.Quantity = Convert.ToInt16(value);
                 break;
-            case nameof(order.PrixHt):
-                order.PrixHt = Convert.ToDecimal(value);
+            case nameof(order.UnitPriceExcludingTax):
+                order.UnitPriceExcludingTax = Convert.ToDecimal(value);
                 break;
-            case nameof(order.Remise):
-                order.Remise = Convert.ToDouble(value);
+            case nameof(order.DiscountPercentage):
+                order.DiscountPercentage = Convert.ToDouble(value);
                 break;
-            case nameof(order.Tva):
-                order.Tva = Convert.ToDouble(value);
+            case nameof(order.VatPercentage):
+                order.VatPercentage = Convert.ToDouble(value);
                 break;
         }
 
@@ -616,26 +721,26 @@ else
 
     private void CalculateTotals(DeliveryNoteDetailResponse order)
     {
-        if (order.QteLi > 0 && order.PrixHt > 0)
+        if (order.Quantity > 0 && order.UnitPriceExcludingTax > 0)
         {
-            decimal totalBeforeDiscount = order.QteLi * order.PrixHt;
-            decimal discountAmount = totalBeforeDiscount * (decimal)(order.Remise / 100);
-            order.TotHt = totalBeforeDiscount - discountAmount;
-            decimal vatAmount = order.TotHt * (decimal)(order.Tva / 100);
-            order.TotTtc = order.TotHt + vatAmount;
+            decimal totalBeforeDiscount = order.Quantity * order.UnitPriceExcludingTax;
+            decimal discountAmount = totalBeforeDiscount * (decimal)(order.DiscountPercentage / 100);
+            order.TotalExcludingTax = totalBeforeDiscount - discountAmount;
+            decimal vatAmount = order.TotalExcludingTax * (decimal)(order.VatPercentage / 100);
+            order.TotalIncludingTax = order.TotalExcludingTax + vatAmount;
         }
         else
         {
-            order.TotHt = 0;
-            order.TotTtc = 0;
+            order.TotalExcludingTax = 0;
+            order.TotalIncludingTax = 0;
         }
     }
 
     private void UpdateTotals()
     {
-        totalHt = orders.Sum(o => o.TotHt);
-        totalVat = orders.Sum(o => o.TotTtc - o.TotHt);
-        totalTtc = orders.Sum(o => o.TotTtc);
+        totalHt = orders.Sum(o => o.TotalExcludingTax);
+        totalVat = orders.Sum(o => o.TotalIncludingTax - o.TotalExcludingTax);
+        totalTtc = orders.Sum(o => o.TotalIncludingTax);
     }
 
     void OnUpdateRow(DeliveryNoteDetailResponse order)
