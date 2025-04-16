@@ -47,40 +47,40 @@ public class PrintProviderFullInvoiceService(
     {
         return new ProviderInvoiceModel
         {
-            InvoiceNumber = response.Num,
+            InvoiceNumber = response.ProviderInvoiceNumber,
             IssueDate = response.Date,
             ProviderId = response.ProviderId,
             Provider = new ProviderDetailsModel
             {
                 Id = response.Provider.Id,
-                Name = response.Provider.Nom,
-                Phone = response.Provider.Tel,
-                Address = response.Provider.Adresse,
-                TaxId = response.Provider.Matricule,
+                Name = response.Provider.Name,
+                Phone = response.Provider.Phone,
+                Address = response.Provider.Adress,
+                TaxId = response.Provider.RegistrationNumber,
                 ProviderCode = response.Provider.Code,
-                CategoryCode = response.Provider.CodeCat,
-                SecondaryEstablishment = response.Provider.EtbSec,
+                CategoryCode = response.Provider.CategoryCode,
+                SecondaryEstablishment = response.Provider.SecondaryEstablishment,
                 Email = response.Provider.Mail
             },
             ReceiptNotes = response.ReceiptNotes.Select(rn => new ProviderReceiptNoteModel
             {
-                ReceiptNoteId = rn.Num,
+                ReceiptNoteId = rn.ReceiptNoteNumber,
                 ReceiptDate = rn.Date,
                 ProviderId = rn.ProviderId,
-                ReceivedValueInclTax = rn.TotHTva,
-                ReceivedValueExclTax = rn.TotTva,
-                ReceivedTaxAmount = rn.NetPayer,
+                ReceivedValueInclTax = rn.TotalExcludingVat,
+                ReceivedValueExclTax = rn.TotalVat,
+                ReceivedTaxAmount = rn.NetToPay,
                 Lines = rn.Lines.Select(line => new ProviderReceiptLineModel
                 {
-                    LineId = line.IdLi,
-                    ProductCode = line.RefProduit,
-                    Description = line.DesignationLi,
-                    ReceivedQuantity = line.QteLi,
-                    Remise = line.Remise,
-                    UnitPriceExclTax = line.PrixHt,
-                    LineTotalExclTax = line.TotHt,
-                    TaxRate = line.Tva,
-                    LineTotalInclTax = line.TotTtc
+                    LineId = line.LineId,
+                    ProductCode = line.ProductReference,
+                    Description = line.ItemDescription,
+                    ReceivedQuantity = line.ItemQuantity,
+                    Remise = line.Discount,
+                    UnitPriceExclTax = line.UnitPriceExcludingTax,
+                    LineTotalExclTax = line.TotalExcludingTax,
+                    TaxRate = line.VatRate,
+                    LineTotalInclTax = line.TotalIncludingTax
                 }).ToList()
             }).ToList()
         };

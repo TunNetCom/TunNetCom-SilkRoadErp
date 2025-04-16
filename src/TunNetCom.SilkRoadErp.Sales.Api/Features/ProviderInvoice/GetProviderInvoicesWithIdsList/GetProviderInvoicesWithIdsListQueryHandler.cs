@@ -16,12 +16,12 @@ public class GetProviderInvoicesWithIdsListQueryHandler(
             .Where(f => request.InvoicesIds.Contains(f.Num)) // Assuming 'Id' exists; adjust if it's different
             .Select(f => new ProviderInvoiceResponse
             {
-                Num = f.Num, // Convert int to string if Num in response is string
+                Num = f.Num, // Convert int to string if ProviderInvoiceNumber in response is string
                 ProviderId = f.ProviderId,
                 Date = f.Date,
                 TotTTC = f.TotalTTC,
                 TotHTva = f.TotalHT,
-                TotTva = f.TotalTTC - f.TotalHT // Compute TotTva since it's not a DB column
+                TotTva = f.TotalTTC - f.TotalHT // Compute TotalVat since it's not a DB column
             })
             .ToList();
 

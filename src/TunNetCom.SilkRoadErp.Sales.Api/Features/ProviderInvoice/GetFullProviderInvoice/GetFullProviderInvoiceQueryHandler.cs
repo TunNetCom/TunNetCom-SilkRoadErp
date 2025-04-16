@@ -41,37 +41,37 @@ public class GetFullProviderInvoiceQueryHandler(
                 .ThenInclude(bl => bl.LigneBonReception)
             .Select(f => new FullProviderInvoiceResponse
             {
-                Num = f.Num,
+                ProviderInvoiceNumber = f.Num,
                 Date = f.Date,
                 ProviderId = f.IdFournisseur,
                 Provider = f.IdFournisseurNavigation != null ? new ProviderInfos
                 {
                     Id = f.IdFournisseurNavigation.Id,
-                    Nom = f.IdFournisseurNavigation.Nom,
-                    Tel = f.IdFournisseurNavigation.Tel,
-                    Adresse = f.IdFournisseurNavigation.Adresse,
-                    Matricule = f.IdFournisseurNavigation.Matricule,
+                    Name = f.IdFournisseurNavigation.Nom,
+                    Phone = f.IdFournisseurNavigation.Tel,
+                    Adress = f.IdFournisseurNavigation.Adresse,
+                    RegistrationNumber = f.IdFournisseurNavigation.Matricule,
                     Code = f.IdFournisseurNavigation.Code,
-                    CodeCat = f.IdFournisseurNavigation.CodeCat,
-                    EtbSec = f.IdFournisseurNavigation.EtbSec,
+                    CategoryCode = f.IdFournisseurNavigation.CodeCat,
+                    SecondaryEstablishment = f.IdFournisseurNavigation.EtbSec,
                     Mail = f.IdFournisseurNavigation.Mail
                 } : null!,
                 ReceiptNotes = f.BonDeReception.Select(bl => new FullProviderInvoiceReceiptNotes
                 {
-                    Num = bl.Num,
+                    ReceiptNoteNumber = bl.Num,
                     Date = bl.Date,
                     ProviderId = bl.IdFournisseur,
                     Lines = bl.LigneBonReception.Select(li => new ReceiptNotesLine
                     {
-                        IdLi = li.IdLigne,
-                        RefProduit = li.RefProduit,
-                        DesignationLi = li.DesignationLi,
-                        QteLi = li.QteLi,
-                        PrixHt = li.PrixHt,
-                        Remise = li.Remise,
-                        TotHt = li.TotHt,
-                        Tva = li.Tva,
-                        TotTtc = li.TotTtc
+                        LineId = li.IdLigne,
+                        ProductReference = li.RefProduit,
+                        ItemDescription = li.DesignationLi,
+                        ItemQuantity = li.QteLi,
+                        UnitPriceExcludingTax = li.PrixHt,
+                        Discount = li.Remise,
+                        TotalExcludingTax = li.TotHt,
+                        VatRate = li.Tva,
+                        TotalIncludingTax = li.TotTtc
                     }).ToList()
                 }).ToList()
             }
@@ -79,9 +79,9 @@ public class GetFullProviderInvoiceQueryHandler(
         
         providerInvoice.ReceiptNotes.ForEach(bl =>
         {
-            bl.TotHTva = bl.Lines.Sum(li => li.TotHt);
-            bl.NetPayer = bl.Lines.Sum(li => li.TotTtc);
-            bl.TotTva = bl.NetPayer - bl.TotHTva;
+            bl.TotalExcludingVat = bl.Lines.Sum(li => li.TotalExcludingTax);
+            bl.NetToPay = bl.Lines.Sum(li => li.TotalIncludingTax);
+            bl.TotalVat = bl.NetToPay - bl.TotalExcludingVat;
         });
 
         return providerInvoice;
