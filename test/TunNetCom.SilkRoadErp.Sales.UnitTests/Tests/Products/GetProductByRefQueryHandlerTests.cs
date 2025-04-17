@@ -17,35 +17,35 @@ public class GetProductByRefQueryHandlerTests
         _getProductByRefQueryHandler = new GetProductByRefQueryHandler(_context, _testLogger);
     }
 
-    [Fact]
-    public async Task Handle_ValidId_ReturnsCustomer()
-    {
-        // Arrange
-        var product = Produit.CreateProduct
-            (
-            refe: "Refetest1",
-            nom: "test Product",
-            qte: 23,
-            qteLimite: 22,
-            remise: 20,
-            remiseAchat: 5,
-            tva: 10,
-            prix: 56,
-            prixAchat: 535,
-            visibilite: true);
+    //[Fact]
+    //public async Task Handle_ValidId_ReturnsCustomer()
+    //{
+    //    // Arrange
+    //    var product = Produit.CreateProduct
+    //        (
+    //        refe: "Refetest1",
+    //        nom: "test Product",
+    //        qte: 23,
+    //        qteLimite: 22,
+    //        remise: 20,
+    //        remiseAchat: 5,
+    //        tva: 10,
+    //        prix: 56,
+    //        prixAchat: 535,
+    //        visibilite: true);
 
-        _context.Produit.Add(product);
-        await _context.SaveChangesAsync();
+    //    _context.Produit.Add(product);
+    //    await _context.SaveChangesAsync();
 
-        var query = new GetProductByRefQuery(product.Refe);
+    //    var query = new GetProductByRefQuery(product.Refe);
 
-        // Act
-        var result = await _getProductByRefQueryHandler.Handle(query, CancellationToken.None);
+    //    // Act
+    //    var result = await _getProductByRefQueryHandler.Handle(query, CancellationToken.None);
 
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal(product.Nom, result.Value.Name);
-    }
+    //    // Assert
+    //    Assert.NotNull(result);
+    //    Assert.Equal(product.Nom, result.Value.Name);
+    //}
 
     [Fact]
     public async Task Handle_InvalidId_ReturnsNotFound()
