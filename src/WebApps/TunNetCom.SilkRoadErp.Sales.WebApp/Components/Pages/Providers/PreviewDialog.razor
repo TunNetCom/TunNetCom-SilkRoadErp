@@ -1,0 +1,81 @@
+﻿@page "/dialogcard/{ProviderId}"
+
+@using Radzen
+@using Radzen.Blazor
+@using Microsoft.EntityFrameworkCore
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers
+@inject IProvidersApiClient providerService
+@inject Radzen.DialogService dialogService
+
+<RadzenStack Gap="1rem" Orientation="Radzen.Orientation.Vertical" JustifyContent="JustifyContent.SpaceBetween" Style="height: 100%;">
+    <RadzenStack>
+        <RadzenRow>
+            <RadzenColumn Size="12" SizeMD="6" class="rz-p-4 rz-border-radius-1" Style="border: var(--rz-grid-cell-border)">
+                <RadzenText TextStyle="TextStyle.Subtitle1">Informations du Fournisseur</RadzenText>
+                <RadzenStack Gap="0" class="rz-text-truncate">
+                    <RadzenText TextStyle="TextStyle.Overline" class="rz-mt-2 rz-my-0" Style="color: var(--rz-text-tertiary-color);">Nom</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1" class="rz-text-truncate"><b>@provider?.Nom</b></RadzenText>
+                    <RadzenText TextStyle="TextStyle.Overline" class="rz-mt-2 rz-my-0" Style="color: var(--rz-text-tertiary-color);">Téléphone</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1" class="rz-text-truncate"><b>@provider?.Tel</b></RadzenText>
+                    <RadzenText TextStyle="TextStyle.Overline" class="rz-mt-2 rz-my-0" Style="color: var(--rz-text-tertiary-color);">Email</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1" class="rz-text-truncate"><b>@provider?.Mail</b></RadzenText>
+                    @if (!string.IsNullOrEmpty(provider?.MailDeux))
+                    {
+                        <RadzenText TextStyle="TextStyle.Overline" class="rz-mt-2 rz-my-0" Style="color: var(--rz-text-tertiary-color);">Email Secondaire</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body1" class="rz-text-truncate"><b>@provider?.MailDeux</b></RadzenText>
+                    }
+                </RadzenStack>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeMD="6" class="rz-p-4 rz-border-radius-1" Style="border: var(--rz-grid-cell-border)">
+                <RadzenText TextStyle="TextStyle.Subtitle1">Détails Supplémentaires</RadzenText>
+                <RadzenStack Gap="0" class="rz-text-truncate">
+                    <RadzenText TextStyle="TextStyle.Overline" class="rz-mt-2 rz-my-0" Style="color: var(--rz-text-tertiary-color);">Adresse</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1" class="rz-text-truncate"><b>@provider?.Adresse</b></RadzenText>
+                    <RadzenText TextStyle="TextStyle.Overline" class="rz-mt-2 rz-my-0" Style="color: var(--rz-text-tertiary-color);">Fax</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1" class="rz-text-truncate"><b>@(provider?.Fax ?? "N/A")</b></RadzenText>
+                    <RadzenText TextStyle="TextStyle.Overline" class="rz-mt-2 rz-my-0" Style="color: var(--rz-text-tertiary-color);">Matricule</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1" class="rz-text-truncate"><b>@(provider?.Matricule ?? "N/A")</b></RadzenText>
+                    <RadzenText TextStyle="TextStyle.Overline" class="rz-mt-2 rz-my-0" Style="color: var(--rz-text-tertiary-color);">Constructeur</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1" class="rz-text-truncate"><b>@(provider?.Constructeur == true ? "Oui" : "Non")</b></RadzenText>
+                </RadzenStack>
+            </RadzenColumn>
+        </RadzenRow>
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+            <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-m-0"><b>Immatriculation Fiscale</b></RadzenText>
+            <RadzenBadge BadgeStyle="BadgeStyle.Secondary" Text="@(provider?.Code ?? "N/A")" />
+        </RadzenStack>
+        <RadzenCard class="rz-p-4 rz-border-radius-1" Style="border: var(--rz-grid-cell-border)">
+            <RadzenText TextStyle="TextStyle.Subtitle1">Codes du Fournisseur</RadzenText>
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" class="rz-text-truncate" Wrap="FlexWrap.Wrap">
+                <RadzenStack Gap="0">
+                    <RadzenText TextStyle="TextStyle.Overline" class="rz-my-0" Style="color: var(--rz-text-tertiary-color);">Code</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1" class="rz-text-truncate"><b>@(provider?.Code ?? "N/A")</b></RadzenText>
+                </RadzenStack>
+                <RadzenStack Gap="0">
+                    <RadzenText TextStyle="TextStyle.Overline" class="rz-my-0" Style="color: var(--rz-text-tertiary-color);">Code Catégorie</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1" class="rz-text-truncate"><b>@(provider?.CodeCat ?? "N/A")</b></RadzenText>
+                </RadzenStack>
+                <RadzenStack Gap="0">
+                    <RadzenText TextStyle="TextStyle.Overline" class="rz-my-0" Style="color: var(--rz-text-tertiary-color);">Établissement Secondaire</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1" class="rz-text-truncate"><b>@(provider?.EtbSec ?? "N/A")</b></RadzenText>
+                </RadzenStack>
+            </RadzenStack>
+        </RadzenCard>
+    </RadzenStack>
+    <RadzenStack Visible="@ShowClose" Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+        <RadzenButton Click="@((args) => dialogService.Close(true))" Variant="Variant.Flat" Text="Fermer" Style="width: 120px" />
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    [Parameter] public int ProviderId { get; set; }
+    [Parameter] public bool ShowClose { get; set; } = true;
+
+    ProviderResponse provider;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var result = await providerService.GetAsync(ProviderId, default);
+        provider = result.AsT0;
+    }
+}
