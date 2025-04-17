@@ -12,10 +12,10 @@
 @inject ICustomersApiClient customerService
 @inject ToastService toastService
 
-@* <Modal @ref="yesOrNoDeleteModal" /> *@
+
 <RadzenCard Style="margin: 1rem;">
     <RadzenStack JustifyContent="JustifyContent.SpaceBetween" >
-        <h3>@Localizer["customers"]</h3>
+        <h3>@Localizer["Clients"]</h3>
     </RadzenStack>
 
 
@@ -28,7 +28,7 @@
 
             <RadzenButton Icon="add_circle"
                           ButtonStyle="ButtonStyle.Primary"
-                          Text="@Localizer["add_customer"]"
+                          Text="@Localizer["AddClient"]"
                           Click="@CreateCustomer" />
         </RadzenStack>
     </RadzenCard>
@@ -50,7 +50,7 @@
                     Responsive="true">
 
         <Columns>
-            <RadzenDataGridColumn Property="Nom" Title="@Localizer["customer_name"]" />
+            <RadzenDataGridColumn Property="Name" Title="@Localizer["customer_name"]" />
             <RadzenDataGridColumn Property="Tel" Title="@Localizer["customer_phone"]" />
             <RadzenDataGridColumn Property="Mail" Title="@Localizer["customer_email"]" />
             <RadzenDataGridColumn Title="@Localizer["actions_label"]">
@@ -69,8 +69,6 @@
 @code {
 
     private RadzenDataGrid<CustomerResponse> customerGrid = default!;
-    private Modal yesOrNoDeleteModal = default!;
-
     private string searchKeyword = string.Empty;
     private List<CustomerResponse> customers = new();
     private int totalCustomers;
