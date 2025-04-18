@@ -288,4 +288,19 @@
   <data name="vat_percentage" xml:space="preserve">
     <value />
   </data>
+  <data name="customer_name" xml:space="preserve">
+    <value />
+  </data>
+  <data name="customer_phone" xml:space="preserve">
+    <value />
+  </data>
+  <data name="customer_address" xml:space="preserve">
+    <value />
+  </data>
+  <data name="customer_matricule" xml:space="preserve">
+    <value />
+  </data>
+  <data name="customer_email" xml:space="preserve">
+    <value />
+  </data>
 </root>

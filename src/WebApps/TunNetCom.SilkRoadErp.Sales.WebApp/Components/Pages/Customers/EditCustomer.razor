@@ -1,6 +1,6 @@
 ﻿@page "/editcustomer/{id:int?}"
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Customers
-@using BlazorBootstrap
+@using Radzen.Blazor
 @using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.HttpClients
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
@@ -15,44 +15,117 @@
 @inject IStringLocalizer<SharedResource> localizer
 
 
-<h3>@(customer.Id == 0 ? localizer["add_client"] : localizer["edit_client"])</h3>
-
-<RadzenCard Style="padding: 20px; max-width: 600px;">
+<RadzenCard Style="padding: 20px; max-width: 900px; margin: auto;">
     <RadzenTemplateForm Data="@customer" Submit="@OnSubmit">
-        <RadzenFieldset>
-            <RadzenLabel Text="@localizer["customer_name"]" />
-            <RadzenTextBox @bind-Value="customer.Name" Placeholder="@localizer["customer_name"]" Name="Nom" Style="width:100%;" />
 
-            <RadzenLabel Text="@localizer["customer_phone"]" />
-            <RadzenTextBox @bind-Value="customer.Tel" Name="Tel" Style="width:100%;" />
+        <h3>@(customer.Id == 0 ? localizer["AddClient"] : localizer["EditClient"])</h3>
 
-            <RadzenLabel Text="@localizer["customer_adress"]" />
-            <RadzenTextBox @bind-Value="customer.Adresse" Name="Adresse" Style="width:100%;" />
+        <RadzenRow Class="g-1 mb-3">
+            <RadzenColumn Width="4">
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
+                    <RadzenIcon Icon="person" />
+                    <RadzenLabel Text="@localizer["customer_name"]" />
+                </RadzenStack>
+                <RadzenTextBox @bind-Value="customer.Name" Name="Nom"
+                               Placeholder="@localizer["customer_name"]"
+                               Style="width: 80%;" />
+            </RadzenColumn>
 
-            <RadzenLabel Text="@localizer["customer_matricule"]" />
-            <RadzenTextBox @bind-Value="customer.Matricule" Name="Matricule" Style="width:100%;" />
+            <RadzenColumn Width="4">
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
+                    <RadzenIcon Icon="call" />
+                    <RadzenLabel Text="@localizer["customer_phone"]" />
+                </RadzenStack>
+                <RadzenTextBox @bind-Value="customer.Tel" Name="Tel"
+                               Placeholder="@localizer["customer_phone"]"
+                               Style="width: 80%;" />
+            </RadzenColumn>
+        </RadzenRow>
 
-            <RadzenLabel Text="@localizer["customer_code"]" />
-            <RadzenTextBox @bind-Value="customer.Code" Name="Code" Style="width:100%;" />
+        <RadzenRow Class="mb-3 g-1">
+            <RadzenColumn Width="6">
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
+                    <RadzenIcon Icon="email" />
+                    <RadzenLabel Text="@localizer["customer_email"]" />
+                </RadzenStack>
+                <RadzenTextBox @bind-Value="customer.Mail" Name="Mail"
+                               Placeholder="your@example.com"
+                               Style="width: 60%;" />
+            </RadzenColumn>
+        </RadzenRow>
 
-            <RadzenLabel Text="@localizer["customer_code_cat"]" />
-            <RadzenTextBox @bind-Value="customer.CodeCat" Name="CodeCat" Style="width:100%;" />
+        <RadzenRow Class="mb-3 g-1">
+            <RadzenColumn Width="6">
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
+                    <RadzenIcon Icon="home" />
+                    <RadzenLabel Text="@localizer["customer_address"]" />
+                </RadzenStack>
+                <RadzenTextBox @bind-Value="customer.Adresse" Name="Adresse"
+                               Placeholder="@localizer["customer_address"]"
+                               Style="width: 60%;" />
+            </RadzenColumn>
+        </RadzenRow>
 
-            <RadzenLabel Text="@localizer["customer_etb_sec"]" />
-            <RadzenTextBox @bind-Value="customer.EtbSec" Name="EtbSec" Style="width:100%;" />
+        <RadzenRow Class="mb-3 g-1">
+            <RadzenColumn Width="6">
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
+                    <RadzenIcon Icon="badge" />
+                    <RadzenLabel Text="@localizer["customer_matricule"]" />
+                </RadzenStack>
+                <RadzenTextBox @bind-Value="customer.Matricule" Name="Matricule"
+                               Placeholder="@localizer["customer_matricule"]"
+                               Style="width: 50%;" />
+            </RadzenColumn>
+        </RadzenRow>
 
-            <RadzenLabel Text="@localizer["customer_email"]" />
-            <RadzenTextBox @bind-Value="customer.Mail" Name="Mail" Style="width:100%;" />
+        <RadzenRow Class="mb-3 g-1">
+            <RadzenColumn Width="4">
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
+                    <RadzenIcon Icon="code" />
+                    <RadzenLabel Text="@localizer["Code"]" />
+                </RadzenStack>
+                <RadzenTextBox @bind-Value="customer.Code" Name="Code"
+                               Placeholder="@localizer["Code"]"
+                               Style="width: 80%;" />
+            </RadzenColumn>
 
-            <div class="mt-2">
-                <RadzenButton ButtonType="Radzen.ButtonType.Submit" Text="@localizer["save_label"]" Style="margin-right: 10px;" Icon="save" />
-                <RadzenButton Text="@localizer["cancel_label"]" Click="@Cancel" ButtonStyle="ButtonStyle.Danger" Icon="close" />
-            </div>
-        </RadzenFieldset>
+            <RadzenColumn Width="4">
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
+                    <RadzenIcon Icon="category" />
+                    <RadzenLabel Text="@localizer["CodeCat"]" />
+                </RadzenStack>
+                <RadzenTextBox @bind-Value="customer.CodeCat" Name="CodeCat"
+                               Placeholder="@localizer["CodeCat"]"
+                               Style="width: 80%;" />
+            </RadzenColumn>
+        </RadzenRow>
+
+        <RadzenRow Class="mb-3 g-1">
+            <RadzenColumn Width="6">
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
+                    <RadzenIcon Icon="business" />
+                    <RadzenLabel Text="@localizer["EtbSec"]" />
+                </RadzenStack>
+                <RadzenTextBox @bind-Value="customer.EtbSec" Name="EtbSec"
+                               Placeholder="@localizer["EtbSec"]"
+                               Style="width: 35%;" />
+            </RadzenColumn>
+        </RadzenRow>
+
+        <RadzenRow Style="margin-top: 30px;">
+            <RadzenColumn Width="12" Style="text-align: right;">
+                <RadzenButton ButtonType="Radzen.ButtonType.Submit"
+                              Text="@localizer["save_label"]"
+                              Icon="save"
+                              Style="margin-right: 10px;" />
+                <RadzenButton Text="@localizer["cancel_label"]"
+                              Click="@Cancel"
+                              ButtonStyle="ButtonStyle.Danger"
+                              Icon="close" />
+            </RadzenColumn>
+        </RadzenRow>
     </RadzenTemplateForm>
 </RadzenCard>
-
-<Modal @ref="errorsModal" />
 
 @code {
     [Parameter] public int? Id { get; set; }
@@ -60,7 +133,6 @@
     [Inject] protected DialogService dialogService { get; set; } = default!;
     private CustomerResponse customer = new CustomerResponse();
     private CancellationTokenSource cancellationTokenSource = new();
-    private Modal errorsModal = default!;
     // The RadzenForm expects an EventCallback, so we us callback factory to wrap the method, define a property and bind it in razor
     private EventCallback<CustomerResponse> OnSubmit => EventCallback.Factory.Create<CustomerResponse>(this, HandleValidSubmit);
 
@@ -147,13 +219,18 @@
 
     private async Task ShowErrorsDialog(List<string> errorList)
     {
-        await dialogService.OpenAsync("Validation Errors", ds => @<div>
-            <ul>
-                @foreach (var error in errorList)
-                {
-                    <li>@error</li>
-                }
-            </ul>
-        </div>, new DialogOptions() { Width = "500px", Height = "300px", CloseDialogOnOverlayClick = true });
+        await dialogService.OpenAsync("Validation Errors", ds => @<div style="padding:10px;">
+        <ul style="margin:0; padding-left: 20px;">
+            @foreach (var error in errorList)
+        {
+            <li>@error</li>
+        }
+        </ul>
+    </div>, new DialogOptions()
+          {
+              CloseDialogOnOverlayClick = true,
+              Draggable = true,
+              Resizable = true
+          });
     }
 }
