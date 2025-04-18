@@ -1,87 +1,166 @@
 ﻿@page "/editprovider/{Id:int?}"
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Providers
-@using BlazorBootstrap
 @using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
-@using TunNetCom.ErrorsModal
-@using TunNetCom.NotFoundModal
 @using System.Globalization
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services
 @inject IProvidersApiClient providerService
 @inject NavigationManager navigationManager
 @inject IStringLocalizer<SharedResource> localizer
 
-<h3>@(provider.Id == 0 ? localizer["add_provider"] : localizer["edit_provider"])</h3>
+<RadzenCard Style="padding: 20px; max-width: 900px; margin: auto;">
+    <RadzenTemplateForm Data="@provider" Submit="@OnSubmit">
 
-<div class="container mt-4">
-    <EditForm Model="provider" OnValidSubmit="HandleValidSubmit" class="row g-3">
-        <AntiforgeryToken />
-        <div class="col-md-12">
-            <label for="providerName" class="form-label">@localizer["provider_name"]: </label>
-            <InputText id="providerName" @bind-Value="provider.Nom" class="form-control" />
-        </div>
-        <div class="col-md-12">
-            <label for="providerPhone" class="form-label">@localizer["provider_phone"]: </label>
-            <InputText id="providerPhone" @bind-Value="provider.Tel" class="form-control" />
-        </div>
-        <div class="col-md-12">
-            <label for="providerFax" class="form-label">@localizer["provider_fax"]: </label>
-            <InputText @bind-Value="provider.Fax" class="form-control" />
-        </div>
-        <div class="col-md-12">
-            <label for="providerMatricule" class="form-label">@localizer["provider_matricule"]: </label>
-            <InputText id="providerMarticule" @bind-Value="provider.Matricule" class="form-control" />
-        </div>
-        <div class="col-md-12">
-            <label for="providerCode" class="form-label">@localizer["provider_code"]: </label>
-            <InputText id="providerCode" @bind-Value="provider.Code" class="form-control" />
-        </div>
-        <div class="col-md-12">
-            <label for="providerCodeCat" class="form-label">@localizer["provider_code_cat"]: </label>
-            <InputText id="providerCodeCat" @bind-Value="provider.CodeCat" class="form-control" />
-        </div>
-        <div class="col-md-12">
-            <label for="providerEtbSec" class="form-label">@localizer["provider_etb_sec"]: </label>
-            <InputText id="providerEtbSec" @bind-Value="provider.EtbSec" class="form-control" />
-        </div>
-        <div class="col-md-6">
-            <label for="providerMail" class="form-label">@localizer["provider_email"]: </label>
-            <InputText id="providerMail" @bind-Value="provider.Mail" class="form-control" />
-        </div>
-        <div class="col-md-6">
-            <label for="providerMailDeux" class="form-label">@localizer["provider_second_email"]: </label>
-            <InputText id="providerMailDeux" @bind-Value="provider.MailDeux" class="form-control" />
-        </div>
-        <div class="col-md-12">
-            <label for="pro" class="form-label">@localizer["provider_adress"]: </label>
-            <InputText @bind-Value="provider.Adresse" class="form-control" />
-        </div>
-        <div class="col-md-12">
-            <label class="form-label">@localizer["provider_constructor"]:</label>
-            <div class="btn-group" role="group" aria-label="Binary choice">
-                <button type="button" class="btn btn-primary" @onclick="() => provider.Constructeur = true">@localizer["True"]</button>
-                <button type="button" class="btn btn-secondary" @onclick="() => provider.Constructeur = false">@localizer["False"]</button>
-            </div>
-        </div>
+        <h3>@(provider.Id == 0 ? localizer["add_provider"] : localizer["edit_provider"])</h3>
 
-        <div class="col-12">
-            <input type="submit" class="btn btn-primary" value="@localizer["save_label"]" />
-            <input type="button" class="btn btn-secondary" @onclick="Cancel" value="@localizer["cancel_label"]" />
-        </div>
+        <RadzenRow Class="mb-3 g-1">
+            <RadzenColumn Size="12" SizeSM="6">
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
+                    <RadzenIcon Icon="person" />
+                    <RadzenLabel Text="@localizer["provider_name"]" />
+                </RadzenStack>
+                <RadzenTextBox @bind-Value="provider.Nom" Name="Nom"
+                               Placeholder="@localizer["provider_name"]"
+                               Style="width: 100%;" />
+            </RadzenColumn>
 
-     </EditForm >
-</div>
+            <RadzenColumn Size="12" SizeSM="6">
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
+                    <RadzenIcon Icon="call" />
+                    <RadzenLabel Text="@localizer["provider_phone"]" />
+                </RadzenStack>
+                <RadzenTextBox @bind-Value="provider.Tel" Name="Tel"
+                               Placeholder="@localizer["provider_phone"]"
+                               Style="width: 100%;" />
+            </RadzenColumn>
+        </RadzenRow>
 
-<Modal @ref="errorsModal" />
+        <RadzenRow Class="mb-3 g-1">
+            <RadzenColumn size="6">
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
+                    <RadzenIcon Icon="call" />
+                    <RadzenLabel Text="@localizer["provider_fax"]" />
+                </RadzenStack>
+                <RadzenTextBox @bind-Value="provider.Fax" Name="Mail"
+                               Placeholder="@localizer["provider_fax"]"
+                               Style="width: 100%;" />
+            </RadzenColumn>
+
+            <RadzenColumn size="6">
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
+                    <RadzenIcon Icon="badge" />
+                    <RadzenLabel Text="@localizer["provider_matricule"]" />
+                </RadzenStack>
+                <RadzenTextBox @bind-Value="provider.Matricule" Name="Matricule"
+                               Placeholder="@localizer["provider_matricule"]"
+                               Style="width: 100%;" />
+            </RadzenColumn>
+        </RadzenRow>
+
+        <RadzenRow Class="mb-3 g-1">
+            <RadzenColumn size="6">
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
+                    <RadzenIcon Icon="code" />
+                    <RadzenLabel Text="@localizer["provider_code"]" />
+                </RadzenStack>
+                <RadzenTextBox @bind-Value="provider.Code" Name="Code"
+                               Placeholder="@localizer["provider_code"]"
+                               Style="width: 100%;" />
+            </RadzenColumn>
+
+            <RadzenColumn size="6">
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
+                    <RadzenIcon Icon="category" />
+                    <RadzenLabel Text="@localizer["provider_code_cat"]" />
+                </RadzenStack>
+                <RadzenTextBox @bind-Value="provider.CodeCat" Name="CodeCat"
+                               Placeholder="@localizer["provider_code_cat"]"
+                               Style="width: 100%;" />
+            </RadzenColumn>
+        </RadzenRow>
+
+        <RadzenRow Class="mb-3 g-1">
+            <RadzenColumn size="6">
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
+                    <RadzenIcon Icon="business" />
+                    <RadzenLabel Text="@localizer["provider_etb_sec"]" />
+                </RadzenStack>
+                <RadzenTextBox @bind-Value="provider.EtbSec" Name="EtbSec"
+                               Placeholder="@localizer["provider_etb_sec"]"
+                               Style="width: 100%;" />
+            </RadzenColumn>
+        </RadzenRow>
+
+        <RadzenRow Class="mb-3 g-1">
+            <RadzenColumn size="6">
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
+                    <RadzenIcon Icon="email" />
+                    <RadzenLabel Text="@localizer["provider_email"]" />
+                </RadzenStack>
+                <RadzenTextBox @bind-Value="provider.Mail" Name="Code"
+                               Placeholder="@localizer["provider_email"]"
+                               Style="width: 100%;" />
+            </RadzenColumn>
+
+            <RadzenColumn size="6">
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
+                    <RadzenIcon Icon="email" />
+                    <RadzenLabel Text="@localizer["provider_second_email"]" />
+                </RadzenStack>
+                <RadzenTextBox @bind-Value="provider.MailDeux" Name="CodeCat"
+                               Placeholder="@localizer["provider_second_email"]"
+                               Style="width: 100%;" />
+            </RadzenColumn>
+        </RadzenRow>
+        <RadzenRow Class="mb-4 g-1">
+            <RadzenColumn Size="6">
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
+                    <RadzenIcon Icon="home" />
+                    <RadzenLabel Text="@localizer["provider_adress"]" />
+                </RadzenStack>
+                <RadzenTextBox @bind-Value="provider.Adresse" Name="Adresse"
+                               Placeholder="@localizer["provider_adress"]"
+                               Style="width: 100%;" />
+            </RadzenColumn>
+        </RadzenRow>
+
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center" Gap="1rem">
+            <RadzenLabel Text="@localizer["provider_constructor"]" />
+            <RadzenToggleButton @bind-Value="provider.Constructeur"
+                                TValue="bool"
+                                Text="@(provider.Constructeur ? localizer["True"] : localizer["False"])"
+                                Icon="@(provider.Constructeur ? "check_circle" : "cancel")"
+                                ButtonStyle="@(provider.Constructeur ? ButtonStyle.Success : ButtonStyle.Danger)"
+                                Style="min-width: 150px;"
+                                InputAttributes="@(new Dictionary<string, object> { { "aria-label", localizer["provider_constructor"] } })" />
+        </RadzenStack>
+
+        <RadzenRow Style="margin-top: 30px;">
+            <RadzenColumn Width="12" Style="text-align: right;">
+                <RadzenButton ButtonType="Radzen.ButtonType.Submit"
+                              Text="@localizer["save_label"]"
+                              Icon="save"
+                              Style="margin-right: 10px;" />
+                <RadzenButton Text="@localizer["cancel_label"]"
+                              Click="@Cancel"
+                              ButtonStyle="ButtonStyle.Danger"
+                              Icon="close" />
+            </RadzenColumn>
+        </RadzenRow>
+    </RadzenTemplateForm>
+</RadzenCard>
 
 @code {
         [Parameter] public int? Id { get; set; }
         [Inject] protected ToastService toastService { get; set; } = default!;
+        [Inject] protected DialogService dialogService { get; set; } = default!;
         private ProviderResponse provider = new ProviderResponse();
         private CancellationTokenSource cancellationTokenSource = new();
-        private Modal errorsModal = default!;
+        private EventCallback<ProviderResponse> OnSubmit => EventCallback.Factory.Create<ProviderResponse>(this, HandleValidSubmit);
+        private ButtonStyle ToggleButtonStyle => provider.Constructeur ? ButtonStyle.Success : ButtonStyle.Danger;
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -126,7 +205,7 @@
                 return;
             }
 
-            await ShowErrorsModal(createProviderResult.AsT1.ToErrorsList());
+            await ShowErrorsDialog(createProviderResult.AsT1.ToErrorsList());
             return;
         }
         var updateProviderResult = await providerService.UpdateAsync(
@@ -153,19 +232,27 @@
             return;
         }
 
-        await ShowErrorsModal(updateProviderResult.AsT1.ToErrorsList());
+        await ShowErrorsDialog(updateProviderResult.AsT1.ToErrorsList());
     }
     private void Cancel()
     {
         navigationManager.NavigateTo("/providers_list");
     }
 
-    private async Task ShowErrorsModal(List<string> errorList)
+    private async Task ShowErrorsDialog(List<string> errorList)
     {
-        var parameters = new Dictionary<string, object>
+        await dialogService.OpenAsync("Validation Errors", ds => @<div style="padding:10px;">
+        <ul style="margin:0; padding-left: 20px;">
+            @foreach (var error in errorList)
         {
-            { Consts.ValidationParams, errorList }
-        };
-        await errorsModal.ShowAsync<ErrorsModal>(title: Consts.ErrorModalTitle, parameters: parameters);
+            <li>@error</li>
+        }
+        </ul>
+    </div>, new DialogOptions()
+          {
+              CloseDialogOnOverlayClick = true,
+              Draggable = true,
+              Resizable = true
+          });
     }
 }
