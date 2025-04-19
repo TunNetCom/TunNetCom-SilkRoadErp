@@ -1,11 +1,10 @@
-using TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
 var seqServerUrl = builder.Configuration["Seq:ServerUrl"];
 // Configure Serilog
-Serilog.Log.Logger = new LoggerConfiguration()
+Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
     .Enrich.FromLogContext()
@@ -19,6 +18,21 @@ builder.Services.AddCarter();
 
 builder.Services.AddDbContext<SalesContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 400,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 20,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+            }
+        ));
+});
 
 var assembly = typeof(Program).Assembly;
 
@@ -37,17 +51,19 @@ builder.Services.AddSingleton<IExceptionHandler, GlobalExceptionHandler>();
 
 var app = builder.Build();
 
+app.UseRateLimiter();
+
 //if (app.Environment.IsDevelopment())
 //{
-    app.UseDeveloperExceptionPage();
-    app.UseSwagger();
-    app.UseSwaggerUI();
+app.UseDeveloperExceptionPage();
+app.UseSwagger();
+app.UseSwaggerUI();
 //}
 
 app.UseSerilogRequestLogging();
 
 // Use the exception handler
-app.ConfigureExceptionHandler(); 
+app.ConfigureExceptionHandler();
 
 app.UseHttpsRedirection();
 
@@ -55,14 +71,14 @@ app.MapCarter();
 
 try
 {
-    Serilog.Log.Information("Starting web host");
+    Log.Information("Starting web host");
     app.Run();
 }
 catch (Exception ex)
 {
-    Serilog.Log.Fatal(ex, "Host terminated unexpectedly");
+    Log.Fatal(ex, "Host terminated unexpectedly");
 }
 finally
 {
-    Serilog.Log.CloseAndFlush();
+    Log.CloseAndFlush();
 }
