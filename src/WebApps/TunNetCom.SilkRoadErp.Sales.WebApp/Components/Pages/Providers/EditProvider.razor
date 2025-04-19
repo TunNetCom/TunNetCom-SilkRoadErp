@@ -12,133 +12,85 @@
 
 <RadzenCard Style="padding: 20px; max-width: 900px; margin: auto;">
     <RadzenTemplateForm Data="@provider" Submit="@OnSubmit">
+        <h3 class="mb-4">@(provider.Id == 0 ? localizer["add_provider"] : localizer["edit_provider"])</h3>
 
-        <h3>@(provider.Id == 0 ? localizer["add_provider"] : localizer["edit_provider"])</h3>
+        <RadzenRow Class="g-4 mb-4">
 
-        <RadzenRow Class="mb-3 g-1">
-            <RadzenColumn Size="12" SizeSM="6">
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
-                    <RadzenIcon Icon="person" />
-                    <RadzenLabel Text="@localizer["provider_name"]" />
-                </RadzenStack>
-                <RadzenTextBox @bind-Value="provider.Nom" Name="Nom"
-                               Placeholder="@localizer["provider_name"]"
-                               Style="width: 100%;" />
+            <!-- Left Column -->
+            <RadzenColumn Size="12" SizeSM="6" Class="d-flex flex-column gap-3">
+                <RadzenFormField Text="@localizer["provider_name"]">
+                    <Start><RadzenIcon Icon="person" /></Start>
+                    <ChildContent><RadzenTextBox @bind-Value="provider.Nom" Name="Nom" Style="width: 100%;" /></ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="@localizer["provider_phone"]">
+                    <Start><RadzenIcon Icon="call" /></Start>
+                    <ChildContent><RadzenTextBox @bind-Value="provider.Tel" Name="Tel" Style="width: 100%;" /></ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="@localizer["provider_fax"]">
+                    <Start><RadzenIcon Icon="print" /></Start>
+                    <ChildContent><RadzenTextBox @bind-Value="provider.Fax" Name="Fax" Style="width: 100%;" /></ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="@localizer["provider_matricule"]">
+                    <Start><RadzenIcon Icon="badge" /></Start>
+                    <ChildContent><RadzenTextBox @bind-Value="provider.Matricule" Name="Matricule" Style="width: 100%;" /></ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="@localizer["provider_etb_sec"]">
+                    <Start><RadzenIcon Icon="business" /></Start>
+                    <ChildContent><RadzenTextBox @bind-Value="provider.EtbSec" Name="EtbSec" Style="width: 100%;" /></ChildContent>
+                </RadzenFormField>
             </RadzenColumn>
 
-            <RadzenColumn Size="12" SizeSM="6">
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
-                    <RadzenIcon Icon="call" />
-                    <RadzenLabel Text="@localizer["provider_phone"]" />
-                </RadzenStack>
-                <RadzenTextBox @bind-Value="provider.Tel" Name="Tel"
-                               Placeholder="@localizer["provider_phone"]"
-                               Style="width: 100%;" />
-            </RadzenColumn>
-        </RadzenRow>
+            <!-- Right Column -->
+            <RadzenColumn Size="12" SizeSM="6" Class="d-flex flex-column gap-3">
+                <RadzenFormField Text="@localizer["provider_code"]">
+                    <Start><RadzenIcon Icon="code" /></Start>
+                    <ChildContent><RadzenTextBox @bind-Value="provider.Code" Name="Code" Style="width: 100%;" /></ChildContent>
+                </RadzenFormField>
 
-        <RadzenRow Class="mb-3 g-1">
-            <RadzenColumn size="6">
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
-                    <RadzenIcon Icon="call" />
-                    <RadzenLabel Text="@localizer["provider_fax"]" />
-                </RadzenStack>
-                <RadzenTextBox @bind-Value="provider.Fax" Name="Mail"
-                               Placeholder="@localizer["provider_fax"]"
-                               Style="width: 100%;" />
-            </RadzenColumn>
+                <RadzenFormField Text="@localizer["provider_code_cat"]">
+                    <Start><RadzenIcon Icon="category" /></Start>
+                    <ChildContent><RadzenTextBox @bind-Value="provider.CodeCat" Name="CodeCat" Style="width: 100%;" /></ChildContent>
+                </RadzenFormField>
 
-            <RadzenColumn size="6">
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
-                    <RadzenIcon Icon="badge" />
-                    <RadzenLabel Text="@localizer["provider_matricule"]" />
-                </RadzenStack>
-                <RadzenTextBox @bind-Value="provider.Matricule" Name="Matricule"
-                               Placeholder="@localizer["provider_matricule"]"
-                               Style="width: 100%;" />
-            </RadzenColumn>
-        </RadzenRow>
+                <RadzenFormField Text="@localizer["provider_email"]">
+                    <Start><RadzenIcon Icon="email" /></Start>
+                    <ChildContent><RadzenTextBox @bind-Value="provider.Mail" Name="Mail" Style="width: 100%;" /></ChildContent>
+                </RadzenFormField>
 
-        <RadzenRow Class="mb-3 g-1">
-            <RadzenColumn size="6">
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
-                    <RadzenIcon Icon="code" />
-                    <RadzenLabel Text="@localizer["provider_code"]" />
-                </RadzenStack>
-                <RadzenTextBox @bind-Value="provider.Code" Name="Code"
-                               Placeholder="@localizer["provider_code"]"
-                               Style="width: 100%;" />
-            </RadzenColumn>
+                <RadzenFormField Text="@localizer["provider_second_email"]">
+                    <Start><RadzenIcon Icon="email" /></Start>
+                    <ChildContent><RadzenTextBox @bind-Value="provider.MailDeux" Name="MailDeux" Style="width: 100%;" /></ChildContent>
+                </RadzenFormField>
 
-            <RadzenColumn size="6">
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
-                    <RadzenIcon Icon="category" />
-                    <RadzenLabel Text="@localizer["provider_code_cat"]" />
-                </RadzenStack>
-                <RadzenTextBox @bind-Value="provider.CodeCat" Name="CodeCat"
-                               Placeholder="@localizer["provider_code_cat"]"
-                               Style="width: 100%;" />
+                <RadzenFormField Text="@localizer["provider_adress"]">
+                    <Start><RadzenIcon Icon="home" /></Start>
+                    <ChildContent><RadzenTextBox @bind-Value="provider.Adresse" Name="Adresse" Style="width: 100%;" /></ChildContent>
+                </RadzenFormField>
             </RadzenColumn>
         </RadzenRow>
 
-        <RadzenRow Class="mb-3 g-1">
-            <RadzenColumn size="6">
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
-                    <RadzenIcon Icon="business" />
-                    <RadzenLabel Text="@localizer["provider_etb_sec"]" />
-                </RadzenStack>
-                <RadzenTextBox @bind-Value="provider.EtbSec" Name="EtbSec"
-                               Placeholder="@localizer["provider_etb_sec"]"
-                               Style="width: 100%;" />
-            </RadzenColumn>
-        </RadzenRow>
-
-        <RadzenRow Class="mb-3 g-1">
-            <RadzenColumn size="6">
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
-                    <RadzenIcon Icon="email" />
-                    <RadzenLabel Text="@localizer["provider_email"]" />
-                </RadzenStack>
-                <RadzenTextBox @bind-Value="provider.Mail" Name="Code"
-                               Placeholder="@localizer["provider_email"]"
-                               Style="width: 100%;" />
-            </RadzenColumn>
-
-            <RadzenColumn size="6">
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
-                    <RadzenIcon Icon="email" />
-                    <RadzenLabel Text="@localizer["provider_second_email"]" />
-                </RadzenStack>
-                <RadzenTextBox @bind-Value="provider.MailDeux" Name="CodeCat"
-                               Placeholder="@localizer["provider_second_email"]"
-                               Style="width: 100%;" />
-            </RadzenColumn>
-        </RadzenRow>
-        <RadzenRow Class="mb-4 g-1">
-            <RadzenColumn Size="6">
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
-                    <RadzenIcon Icon="home" />
-                    <RadzenLabel Text="@localizer["provider_adress"]" />
-                </RadzenStack>
-                <RadzenTextBox @bind-Value="provider.Adresse" Name="Adresse"
-                               Placeholder="@localizer["provider_adress"]"
-                               Style="width: 100%;" />
-            </RadzenColumn>
-        </RadzenRow>
-
-        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center" Gap="1rem">
+        <!-- Toggle Button -->
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal"
+                     JustifyContent="JustifyContent.Center"
+                     AlignItems="AlignItems.Center"
+                     Gap="1rem"
+                     Class="mb-4">
             <RadzenLabel Text="@localizer["provider_constructor"]" />
             <RadzenToggleButton @bind-Value="provider.Constructeur"
                                 TValue="bool"
                                 Text="@(provider.Constructeur ? localizer["True"] : localizer["False"])"
                                 Icon="@(provider.Constructeur ? "check_circle" : "cancel")"
-                                ButtonStyle="ButtonStyle.Danger" 
+                                ButtonStyle="ButtonStyle.Danger"
                                 ToggleButtonStyle="ButtonStyle.Success"
                                 Style="min-width: 150px;"
                                 InputAttributes="@(new Dictionary<string, object> { { "aria-label", localizer["provider_constructor"] } })" />
         </RadzenStack>
 
-        <RadzenRow Style="margin-top: 30px;">
+        <RadzenRow>
             <RadzenColumn Width="12" Style="text-align: right;">
                 <RadzenButton ButtonType="Radzen.ButtonType.Submit"
                               Text="@localizer["save_label"]"
