@@ -24,13 +24,32 @@ steps:
     projectKey: 'TunNetCom_Silk_Road_ERP'
     projectName: 'TunNetCom'
 
-
 - task: VSBuild@1
   inputs:
     solution: '$(solution)'
     msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)"'
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
+
+- powershell: |
+    Invoke-WebRequest -Uri "https://github.com/jeremylong/DependencyCheck/releases/download/v8.4.0/dependency-check-8.4.0-release.zip" -OutFile "dependency-check.zip"
+    Expand-Archive -Path "dependency-check.zip" -DestinationPath "$(Agent.ToolsDirectory)\dependency-check"
+  displayName: 'Télécharger OWASP Dependency-Check'
+
+- powershell: |
+    & "$(Agent.ToolsDirectory)\dependency-check\dependency-check\bin\dependency-check.bat" `
+    --project "TunNetCom_Silk_Road_ERP" `
+    --scan "$(Build.SourcesDirectory)" `
+    --format "HTML" `
+    --out "$(Build.ArtifactStagingDirectory)\odc-report"
+  displayName: 'Scanner les dépendances avec OWASP Dependency-Check'
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)\odc-report'
+    ArtifactName: 'OWASP-Dependency-Report'
+    publishLocation: 'Container'
+  displayName: 'Publier le rapport de vulnérabilités'
 
 - task: VSTest@2
   inputs:
