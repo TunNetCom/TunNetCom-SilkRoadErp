@@ -7,6 +7,11 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 public partial class Client 
 {
+    private Client()
+    {
+        
+    }
+
     public void UpdateClient(
         string nom,
         string? tel,
