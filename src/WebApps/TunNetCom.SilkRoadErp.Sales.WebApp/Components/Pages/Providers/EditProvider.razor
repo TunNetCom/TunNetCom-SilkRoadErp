@@ -80,10 +80,17 @@
                      Gap="1rem"
                      Class="mb-4">
             <RadzenLabel Text="@localizer["provider_constructor"]" />
-            <RadzenSwitch @bind-Value="provider.Constructeur" TValue="bool" />
+            <RadzenToggleButton @bind-Value="provider.Constructeur"
+                                TValue="bool"
+                                Text="@(provider.Constructeur ? localizer["True"] : localizer["False"])"
+                                Icon="@(provider.Constructeur ? "check_circle" : "cancel")"
+                                ButtonStyle="ButtonStyle.Danger"
+                                ToggleButtonStyle="ButtonStyle.Success"
+                                Style="min-width: 150px;"
+                                InputAttributes="@(new Dictionary<string, object> { { "aria-label", localizer["provider_constructor"] } })" />
         </RadzenStack>
 
-        <RadzenRow Style="margin-top: 20px;">
+        <RadzenRow>
             <RadzenColumn Width="12" Style="text-align: right;">
                 <RadzenButton ButtonType="Radzen.ButtonType.Submit"
                               Text="@localizer["save_label"]"
