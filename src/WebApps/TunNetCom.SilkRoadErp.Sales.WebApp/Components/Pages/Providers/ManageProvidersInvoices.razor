@@ -122,6 +122,9 @@
                                 @bind-Value="@_selectedReceiptNotesToDetach"
                                 Style="border: none;"
                                 Class="custom-grid">
+                    <EmptyTemplate>
+                        <p style="color: lightgrey; font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
+                    </EmptyTemplate>
                     <HeaderTemplate>
                         <div style="font-size: 1.25rem; font-weight: 600; color: #1a1a1a; padding-bottom: 1rem;">
                             @Localizer["receipt_notes_details"]
@@ -177,6 +180,9 @@
                                 SelectionMode="DataGridSelectionMode.Single"
                                 Style="border: none;"
                                 Class="custom-grid">
+                    <EmptyTemplate>
+                        <p style="color: lightgrey; font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
+                    </EmptyTemplate>
                     <HeaderTemplate>
                         <div style="font-size: 1.25rem; font-weight: 600; color: #1a1a1a; padding-bottom: 1rem;">
                             @Localizer["provider_invoice_details"]
@@ -255,6 +261,9 @@
                                 @bind-Value="@_selectedReceiptNotesToAttach"
                                 Style="border: none;"
                                 Class="custom-grid">
+                    <EmptyTemplate>
+                        <p style="color: lightgrey; font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
+                    </EmptyTemplate>
                     <HeaderTemplate>
                         <div style="font-size: 1.25rem; font-weight: 600; color: #1a1a1a; padding-bottom: 1rem;">
                             @Localizer["uninvoiced_receipt_notes_details"]

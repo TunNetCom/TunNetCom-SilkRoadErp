@@ -2,14 +2,14 @@
 
 public class GetInvoiceListWithSummary
 {
-    [JsonPropertyName("totalGrossAmount")]
-    public decimal TotalGrossAmount { get; set; }
+    [JsonPropertyName("totalExcludingTaxAmount")]
+    public decimal TotalExcludingTaxAmount { get; set; }
 
     [JsonPropertyName("totalVATAmount")]
     public decimal TotalVATAmount { get; set; }
 
-    [JsonPropertyName("totalNetAmount")]
-    public decimal TotalNetAmount { get; set; }
+    [JsonPropertyName("TotalIncludingTaxAmount")]
+    public decimal TotalIncludingTaxAmount { get; set; }
 
     [JsonPropertyName("invoices")]
     public PagedList<InvoiceResponse> Invoices { get; set; } = new PagedList<InvoiceResponse>();

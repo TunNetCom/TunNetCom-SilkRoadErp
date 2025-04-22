@@ -68,7 +68,7 @@
 <!-- Loading Indicator -->
 @if (isLoading)
 {
-    <p>@Localizer["loading_delivery_note"]...</p>
+    <RadzenProgressBarCircular ProgressBarStyle="ProgressBarStyle.Primary" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
 }
 else
 {
@@ -112,7 +112,7 @@ else
                 <Columns>
                     <RadzenDropDownDataGridColumn Property="@nameof(InvoiceResponse.Number)" Title="Num" Width="100px" />
                     <RadzenDropDownDataGridColumn Property="@nameof(InvoiceResponse.Date)" Title="Date" Width="100px" />
-                    <RadzenDropDownDataGridColumn Property="@nameof(InvoiceResponse.TotalIncludingTax)" Title="@Localizer["tot_ttc"]" Width="200px" />
+                    <RadzenDropDownDataGridColumn Property="@nameof(InvoiceResponse.TotalIncludingTaxAmount)" Title="@Localizer["tot_ttc"]" Width="200px" />
                 </Columns>
             </RadzenDropDownDataGrid>
         </div>

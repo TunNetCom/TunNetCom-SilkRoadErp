@@ -282,17 +282,41 @@
   <data name="total_excluding_tax" xml:space="preserve">
     <value>Total HT</value>
   </data>
-  <data name="add_product" xml:space="preserve">
-    <value>Ajouter un article</value>
+  <data name="unit_price_ht" xml:space="preserve">
+    <value>Prix Unitaire</value>
   </data>
-  <data name="products" xml:space="preserve">
-    <value>Articles</value>
+  <data name="vat_percentage" xml:space="preserve">
+    <value>TVA</value>
+  </data>
+  <data name="customer_name" xml:space="preserve">
+    <value>Nom Client</value>
+  </data>
+  <data name="customer_phone" xml:space="preserve">
+    <value>Téléphone Client</value>
+  </data>
+  <data name="customer_address" xml:space="preserve">
+    <value>Adresse Client</value>
+  </data>
+  <data name="customer_matricule" xml:space="preserve">
+    <value>Matricule client</value>
+  </data>
+  <data name="customer_email" xml:space="preserve">
+    <value>Email Client</value>
   </data>
   <data name="actions_label" xml:space="preserve">
     <value>Actions</value>
   </data>
   <data name="cancel_label" xml:space="preserve">
     <value>Annuler</value>
+  </data>
+  <data name="save_label" xml:space="preserve">
+    <value>Sauvegarder</value>
+  </data>
+  <data name="add_product" xml:space="preserve">
+    <value>Ajouter un article</value>
+  </data>
+  <data name="products" xml:space="preserve">
+    <value>Articles</value>
   </data>
   <data name="delete_button_label" xml:space="preserve">
     <value>Supprimer</value>
@@ -372,16 +396,7 @@
   <data name="product_visibilite" xml:space="preserve">
     <value>Visibilité</value>
   </data>
-  <data name="save_label" xml:space="preserve">
-    <value>Sauvegarder</value>
-  </data>
   <data name="providers" xml:space="preserve">
     <value>Fournisseurs</value>
-  </data>
-  <data name="unit_price_ht" xml:space="preserve">
-    <value>Prix Unitaire</value>
-  </data>
-  <data name="vat_percentage" xml:space="preserve">
-    <value>TVA</value>
   </data>
 </root>

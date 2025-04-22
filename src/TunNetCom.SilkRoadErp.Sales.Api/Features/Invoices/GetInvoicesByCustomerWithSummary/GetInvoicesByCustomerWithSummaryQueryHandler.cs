@@ -1,29 +1,35 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetInvoicesByCustomerWithSummary;
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.AppParameters.GetAppParameters;
+
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetInvoicesByCustomerWithSummary;
 
 public class GetInvoicesByCustomerWithSummaryQueryHandler(
     SalesContext _context,
-    ILogger<GetInvoicesByCustomerWithSummaryQueryHandler> _logger)
+    ILogger<GetInvoicesByCustomerWithSummaryQueryHandler> _logger,
+    IMediator mediator)
     : IRequestHandler<GetInvoicesByCustomerWithSummaryQuery, Result<GetInvoiceListWithSummary>>
 {
-    private const string _numColumName = "Num";
-    private const string _netAmountColumnName = "NetAmount";
-    private const string _grossAmountColumnName = "GrossAmount";
+    private const string _numberColumnName = nameof(InvoiceResponse.Number);
+    private const string _grossAmountColumnName = nameof(InvoiceResponse.TotalExcludingTaxAmount);
+    private const string _netAmountColumnName = nameof(InvoiceResponse.TotalIncludingTaxAmount);
+
     public async Task<Result<GetInvoiceListWithSummary>> Handle(
         GetInvoicesByCustomerWithSummaryQuery query,
         CancellationToken cancellationToken)
     {
+        var appParams = await mediator.Send(new GetAppParametersQuery());
+
+        _logger.LogPaginationRequest(nameof(Facture), query.PageNumber, query.PageSize);
         var invoicesQueryBase = _context.Facture
             .Where(f => f.IdClient == query.ClientId);
 
-        // TODO: replace the magic number 1000 with a constant from application settings
         var invoicesQuery = invoicesQueryBase
             .Select(f => new InvoiceResponse
             {
                 Number = f.Num,
                 Date = f.Date,
-                TotHTva = f.BonDeLivraison.Sum(d => d.TotHTva),
-                TotTva = f.BonDeLivraison.Sum(d => d.TotTva),
-                TotalIncludingTax = f.BonDeLivraison.Sum(d => d.NetPayer) + 1000
+                TotalExcludingTaxAmount = f.BonDeLivraison.Sum(d => d.TotHTva),
+                TotalVATAmount = f.BonDeLivraison.Sum(d => d.TotTva),
+                TotalIncludingTaxAmount = f.BonDeLivraison.Sum(d => d.NetPayer) + appParams.Value.Timbre
             })
             .AsQueryable();
 
@@ -46,17 +52,18 @@ public class GetInvoicesByCustomerWithSummaryQueryHandler(
         var getInvoiceListWithSummary = new GetInvoiceListWithSummary
         {
             Invoices = pagedInvoices,
-            TotalGrossAmount = totalGrossAmount,
-            TotalNetAmount = totalNetAmount,
+            TotalExcludingTaxAmount = totalGrossAmount,
+            TotalIncludingTaxAmount = totalNetAmount,
             TotalVATAmount = totalVATAmount
         };
 
         return Result.Ok(getInvoiceListWithSummary);
     }
+
     private IQueryable<InvoiceResponse> ApplySorting(
-    IQueryable<InvoiceResponse> invoiceQuery,
-    string sortProperty,
-    string sortOrder)
+        IQueryable<InvoiceResponse> invoiceQuery,
+        string sortProperty,
+        string sortOrder)
     {
         return SortQuery(invoiceQuery, sortProperty, sortOrder);
     }
@@ -68,12 +75,12 @@ public class GetInvoicesByCustomerWithSummaryQueryHandler(
     {
         return (property, order) switch
         {
-            (_numColumName, SortConstants.Ascending) => query.OrderBy(d => d.Number),
-            (_numColumName, SortConstants.Descending) => query.OrderByDescending(d => d.Number),
-            (_netAmountColumnName, SortConstants.Ascending) => query.OrderBy(d => d.TotalIncludingTax),
-            (_netAmountColumnName, SortConstants.Descending) => query.OrderByDescending(d => d.TotalIncludingTax),
-            (_grossAmountColumnName, SortConstants.Ascending) => query.OrderBy(d => d.TotHTva),
-            (_grossAmountColumnName, SortConstants.Descending) => query.OrderByDescending(d => d.TotHTva),
+            (_numberColumnName, SortConstants.Ascending) => query.OrderBy(d => d.Number),
+            (_numberColumnName, SortConstants.Descending) => query.OrderByDescending(d => d.Number),
+            (_netAmountColumnName, SortConstants.Ascending) => query.OrderBy(d => d.TotalIncludingTaxAmount),
+            (_netAmountColumnName, SortConstants.Descending) => query.OrderByDescending(d => d.TotalIncludingTaxAmount),
+            (_grossAmountColumnName, SortConstants.Ascending) => query.OrderBy(d => d.TotalExcludingTaxAmount),
+            (_grossAmountColumnName, SortConstants.Descending) => query.OrderByDescending(d => d.TotalExcludingTaxAmount),
             _ => query
         };
     }

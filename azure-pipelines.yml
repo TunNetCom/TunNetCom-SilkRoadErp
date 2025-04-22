@@ -1,8 +1,3 @@
-# ASP.NET
-# Build and test ASP.NET projects.
-# Add steps that publish symbols, save build artifacts, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/apps/aspnet/build-aspnet-4
-
 trigger:
 - master
 
@@ -21,6 +16,14 @@ steps:
   inputs:
     restoreSolution: '$(solution)'
 
+- task: SonarCloudPrepare@3
+  inputs:
+    SonarQube: 'Connexion-SonarCloud'
+    organization: 'tunnetcom'
+    scannerMode: 'dotnet'
+    projectKey: 'TunNetCom_Silk_Road_ERP'
+    projectName: 'TunNetCom'
+
 - task: VSBuild@1
   inputs:
     solution: '$(solution)'
@@ -28,9 +31,35 @@ steps:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
 
+- powershell: |
+    Invoke-WebRequest -Uri "https://github.com/jeremylong/DependencyCheck/releases/download/v8.4.0/dependency-check-8.4.0-release.zip" -OutFile "dependency-check.zip"
+    Expand-Archive -Path "dependency-check.zip" -DestinationPath "$(Agent.ToolsDirectory)\dependency-check"
+  displayName: 'Download OWASP Dependency-Check'
+
+- powershell: |
+    & "$(Agent.ToolsDirectory)\dependency-check\dependency-check\bin\dependency-check.bat" `
+    --project "TunNetCom_Silk_Road_ERP" `
+    --scan "$(Build.SourcesDirectory)" `
+    --format "JSON" `
+    --out "$(Build.ArtifactStagingDirectory)\odc-report"
+  displayName: 'Scan dependencies with OWASP Dependency-Check (JSON format)'
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)\odc-report'
+    ArtifactName: 'OWASP-Dependency-Report'
+    publishLocation: 'Container'
+  displayName: 'Publish the vulnerability report'
+
 - task: VSTest@2
   inputs:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
     codeCoverageEnabled: true
     runSettingsFile: 'test.runsettings'
+
+- task: SonarCloudAnalyze@3
+
+- task: SonarCloudPublish@3
+  inputs:
+    pollingTimeoutSec: '300'

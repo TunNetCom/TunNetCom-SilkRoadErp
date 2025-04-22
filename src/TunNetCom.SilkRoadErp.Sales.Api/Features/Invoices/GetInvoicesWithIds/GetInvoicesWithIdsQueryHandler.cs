@@ -14,9 +14,9 @@
               .Select(f => new InvoiceResponse
               {
                   Number = f.Num,
-                  TotalIncludingTax = f.BonDeLivraison.Sum(d => d.NetPayer),
-                  TotHTva = f.BonDeLivraison.Sum(d => d.TotHTva),
-                  TotTva = f.BonDeLivraison.Sum(d => d.TotTva),
+                  TotalIncludingTaxAmount = f.BonDeLivraison.Sum(d => d.NetPayer),
+                  TotalExcludingTaxAmount = f.BonDeLivraison.Sum(d => d.TotHTva),
+                  TotalVATAmount = f.BonDeLivraison.Sum(d => d.TotTva),
                   CustomerId = f.IdClient,
               })
               .ToListAsync(cancellationToken);

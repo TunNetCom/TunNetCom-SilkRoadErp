@@ -34,4 +34,9 @@ public partial class Systeme
     public string? AdresseRetenu { get; set; }
 
     public double PourcentageRetenu { get; set; }
+
+    public decimal DiscountPercentage { get; set; }
+
+    public decimal VatAmount { get; set; }
+
 }

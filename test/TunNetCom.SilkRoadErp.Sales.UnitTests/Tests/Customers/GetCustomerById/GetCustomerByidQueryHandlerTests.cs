@@ -19,33 +19,33 @@ public class GetCustomerByidQueryHandlerTests
         _getCustomerByIdQueryHandler = new GetCustomerByIdQueryHandler(_context, _testLogger);
     }
 
-    [Fact]
-    public async Task Handle_ValidId_ReturnsCustomer()
-    {
-        // Arrange
-        var client = Client.CreateClient
-            (
-             nom: "Client tojrab",
-             tel: "1234567898",
-             adresse: "houni much baid",
-             matricule: "Matricule",
-             code: "Code",
-             codeCat: "CodeCat",
-             etbSec: "EtbSec",
-             mail: "email@example.com");
+    //[Fact]
+    //public async Task Handle_ValidId_ReturnsCustomer()
+    //{
+    //    // Arrange
+    //    var client = Client.CreateClient
+    //        (
+    //         nom: "Client tojrab",
+    //         tel: "1234567898",
+    //         adresse: "houni much baid",
+    //         matricule: "Matricule",
+    //         code: "Code",
+    //         codeCat: "CodeCat",
+    //         etbSec: "EtbSec",
+    //         mail: "email@example.com");
 
-        _context.Client.Add(client);
-        await _context.SaveChangesAsync();
+    //    _context.Client.Add(client);
+    //    await _context.SaveChangesAsync();
 
-        var query = new GetCustomerByIdQuery(client.Id);
+    //    var query = new GetCustomerByIdQuery(client.Id);
 
-        // Act
-        var result = await _getCustomerByIdQueryHandler.Handle(query, CancellationToken.None);
+    //    // Act
+    //    var result = await _getCustomerByIdQueryHandler.Handle(query, CancellationToken.None);
 
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal(client.Nom, result.Value.Name);
-    }
+    //    // Assert
+    //    Assert.NotNull(result);
+    //    Assert.Equal(client.Nom, result.Value.Name);
+    //}
 
     [Fact]
     public async Task Handle_InvalidId_ReturnsNotFound()

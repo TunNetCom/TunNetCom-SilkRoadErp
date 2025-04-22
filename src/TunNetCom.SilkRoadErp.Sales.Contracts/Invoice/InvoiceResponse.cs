@@ -11,12 +11,12 @@ public class InvoiceResponse
     [JsonPropertyName("date")]
     public DateTime Date { get; set; }
 
-    [JsonPropertyName("totalIncludingTax")]
-    public decimal TotalIncludingTax { get; set; }
+    [JsonPropertyName("TotalIncludingTaxAmount")]
+    public decimal TotalIncludingTaxAmount { get; set; }
 
-    [JsonPropertyName("totHTva")]
-    public decimal TotHTva { get; set; }
+    [JsonPropertyName("TotalExcludingTaxAmount")]
+    public decimal TotalExcludingTaxAmount { get; set; }
 
-    [JsonPropertyName("totTva")]
-    public decimal TotTva { get; set; }
+    [JsonPropertyName("totalVATAmount")]
+    public decimal TotalVATAmount { get; set; }
 }

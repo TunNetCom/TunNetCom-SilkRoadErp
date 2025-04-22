@@ -35,9 +35,6 @@ public class UpdateProviderValidator : AbstractValidator<UpdateProviderCommand>
            .MaximumLength(50).WithMessage("mail_must_be_less_than_50_characters")
            .EmailAddress().WithMessage("mail_must_be_a_valid_email_address");
 
-        RuleFor(x => x.Constructeur)
-           .NotEmpty().WithMessage("constructor_must_be_a_valid_boolean_value_true_or_false");
-
         RuleFor(x => x.Adresse)
             .MaximumLength(50).WithMessage("adress_must_be_less_than_50_characters");
     }
