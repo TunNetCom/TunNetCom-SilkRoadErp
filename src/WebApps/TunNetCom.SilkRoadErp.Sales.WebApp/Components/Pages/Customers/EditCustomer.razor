@@ -20,100 +20,70 @@
 
         <h3>@(customer.Id == 0 ? localizer["AddClient"] : localizer["EditClient"])</h3>
 
-        <RadzenRow Class="g-1 mb-3">
-            <RadzenColumn Width="4">
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
-                    <RadzenIcon Icon="person" />
-                    <RadzenLabel Text="@localizer["customer_name"]" />
-                </RadzenStack>
-                <RadzenTextBox @bind-Value="customer.Name" Name="Nom"
-                               Placeholder="@localizer["customer_name"]"
-                               Style="width: 80%;" />
+        <RadzenRow Class="g-2 mb-4">
+            <RadzenColumn Size="12" SizeSM="6" Class="d-flex flex-column gap-3">
+                <RadzenFormField Text="@localizer["customer_name"]">
+                    <Start><RadzenIcon Icon="person" /></Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="customer.Name" Name="Nom" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="@localizer["customer_email"]">
+                    <Start><RadzenIcon Icon="email" /></Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="customer.Mail" Name="Mail" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="@localizer["customer_matricule"]">
+                    <Start><RadzenIcon Icon="badge" /></Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="customer.Matricule" Name="Matricule" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="@localizer["CodeCat"]">
+                    <Start><RadzenIcon Icon="category" /></Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="customer.CodeCat" Name="CodeCat" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
             </RadzenColumn>
 
-            <RadzenColumn Width="4">
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
-                    <RadzenIcon Icon="call" />
-                    <RadzenLabel Text="@localizer["customer_phone"]" />
-                </RadzenStack>
-                <RadzenTextBox @bind-Value="customer.Tel" Name="Tel"
-                               Placeholder="@localizer["customer_phone"]"
-                               Style="width: 80%;" />
-            </RadzenColumn>
-        </RadzenRow>
+            <RadzenColumn Size="12" SizeSM="6" Class="d-flex flex-column gap-3">
+                <RadzenFormField Text="@localizer["customer_phone"]">
+                    <Start><RadzenIcon Icon="call" /></Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="customer.Tel" Name="Tel" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
 
-        <RadzenRow Class="mb-3 g-1">
-            <RadzenColumn Width="6">
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
-                    <RadzenIcon Icon="email" />
-                    <RadzenLabel Text="@localizer["customer_email"]" />
-                </RadzenStack>
-                <RadzenTextBox @bind-Value="customer.Mail" Name="Mail"
-                               Placeholder="your@example.com"
-                               Style="width: 60%;" />
-            </RadzenColumn>
-        </RadzenRow>
+                <RadzenFormField Text="@localizer["customer_address"]">
+                    <Start><RadzenIcon Icon="home" /></Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="customer.Adresse" Name="Adresse" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
 
-        <RadzenRow Class="mb-3 g-1">
-            <RadzenColumn Width="6">
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
-                    <RadzenIcon Icon="home" />
-                    <RadzenLabel Text="@localizer["customer_address"]" />
-                </RadzenStack>
-                <RadzenTextBox @bind-Value="customer.Adresse" Name="Adresse"
-                               Placeholder="@localizer["customer_address"]"
-                               Style="width: 60%;" />
-            </RadzenColumn>
-        </RadzenRow>
+                <RadzenFormField Text="@localizer["Code"]">
+                    <Start><RadzenIcon Icon="code" /></Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="customer.Code" Name="Code" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
 
-        <RadzenRow Class="mb-3 g-1">
-            <RadzenColumn Width="6">
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
-                    <RadzenIcon Icon="badge" />
-                    <RadzenLabel Text="@localizer["customer_matricule"]" />
-                </RadzenStack>
-                <RadzenTextBox @bind-Value="customer.Matricule" Name="Matricule"
-                               Placeholder="@localizer["customer_matricule"]"
-                               Style="width: 50%;" />
-            </RadzenColumn>
-        </RadzenRow>
-
-        <RadzenRow Class="mb-3 g-1">
-            <RadzenColumn Width="4">
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
-                    <RadzenIcon Icon="code" />
-                    <RadzenLabel Text="@localizer["Code"]" />
-                </RadzenStack>
-                <RadzenTextBox @bind-Value="customer.Code" Name="Code"
-                               Placeholder="@localizer["Code"]"
-                               Style="width: 80%;" />
-            </RadzenColumn>
-
-            <RadzenColumn Width="4">
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
-                    <RadzenIcon Icon="category" />
-                    <RadzenLabel Text="@localizer["CodeCat"]" />
-                </RadzenStack>
-                <RadzenTextBox @bind-Value="customer.CodeCat" Name="CodeCat"
-                               Placeholder="@localizer["CodeCat"]"
-                               Style="width: 80%;" />
-            </RadzenColumn>
-        </RadzenRow>
-
-        <RadzenRow Class="mb-3 g-1">
-            <RadzenColumn Width="6">
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" Style="margin-bottom: 5px;">
-                    <RadzenIcon Icon="business" />
-                    <RadzenLabel Text="@localizer["EtbSec"]" />
-                </RadzenStack>
-                <RadzenTextBox @bind-Value="customer.EtbSec" Name="EtbSec"
-                               Placeholder="@localizer["EtbSec"]"
-                               Style="width: 35%;" />
+                <RadzenFormField Text="@localizer["EtbSec"]">
+                    <Start><RadzenIcon Icon="business" /></Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="customer.EtbSec" Name="EtbSec" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
             </RadzenColumn>
         </RadzenRow>
 
         <RadzenRow Style="margin-top: 30px;">
-            <RadzenColumn Width="12" Style="text-align: right;">
+            <RadzenColumn Size="12" Style="text-align: right;">
                 <RadzenButton ButtonType="Radzen.ButtonType.Submit"
                               Text="@localizer["save_label"]"
                               Icon="save"
@@ -126,6 +96,7 @@
         </RadzenRow>
     </RadzenTemplateForm>
 </RadzenCard>
+
 
 @code {
     [Parameter] public int? Id { get; set; }
