@@ -22,6 +22,17 @@ public class GetCustomerByIdQueryHandler(
 
         _logger.LogEntityFetchedById(nameof(Client), getClientByIdQuery.Id);
 
-        return client.Adapt<CustomerResponse>();
+        return new CustomerResponse
+        {
+            Id = client.Id,
+            Name = client.Nom, 
+            Tel = client.Tel,
+            Adresse = client.Adresse,
+            Matricule = client.Matricule,
+            Code = client.Code,
+            CodeCat = client.CodeCat,
+            EtbSec = client.EtbSec,
+            Mail = client.Mail
+        };
     }
 }
