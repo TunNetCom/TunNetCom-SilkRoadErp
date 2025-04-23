@@ -1,0 +1,164 @@
+﻿@page "/app_parameters"
+@using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters
+@using Radzen.Blazor
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.HttpClients
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using System.Globalization
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services
+@inject IAppParametersClient appParametersService
+@inject NavigationManager navigationManager
+@inject IStringLocalizer<SharedResource> localizer
+
+<RadzenCard Style="padding: 20px; max-width: 900px; margin: auto;">
+    <RadzenTemplateForm Data="@system" Submit="@OnSubmit">
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.Center">
+            <h3>App parameters</h3>
+        </RadzenStack>
+
+        <RadzenRow Class="g-2 mb-4">
+            <RadzenColumn Size="12" SizeSM="6" Class="d-flex flex-column gap-3">
+                <RadzenFormField Text="@localizer["system_name"]">
+                    <Start><RadzenIcon Icon="person" /></Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="system.NomSociete" Name="Nom" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="@localizer["system_email"]">
+                    <Start><RadzenIcon Icon="email" /></Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="system.Email" Name="Mail" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="Timbre">
+                    <Start><RadzenIcon Icon="email" /></Start>
+                    <ChildContent>
+                        <RadzenNumeric @bind-Value="system.Timbre" Name="Timbre" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="Adresse Retenu">
+                    <Start><RadzenIcon Icon="home" /></Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="system.AdresseRetenu" Name="AdresseRetenu" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="@localizer["system_matricule"]">
+                    <Start><RadzenIcon Icon="badge" /></Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="system.MatriculeFiscale" Name="Matricule" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="@localizer["CodeCat"]">
+                    <Start><RadzenIcon Icon="category" /></Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="system.CodeCategorie" Name="CodeCat" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="PourcentageFodec">
+                    <Start><RadzenIcon Icon="email" /></Start>
+                    <ChildContent>
+                        <RadzenNumeric @bind-Value="system.PourcentageFodec" Name="" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
+            </RadzenColumn>
+
+            <RadzenColumn Size="12" SizeSM="6" Class="d-flex flex-column gap-3">
+                <RadzenFormField Text="@localizer["system_phone"]">
+                    <Start><RadzenIcon Icon="call" /></Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="system.Tel" Name="Tel" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="@localizer["Fax"]">
+                    <Start><RadzenIcon Icon="call" /></Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="system.Fax" Name="Tel" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="@localizer["address"]">
+                    <Start><RadzenIcon Icon="home" /></Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="system.Adresse" Name="Adresse" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="@localizer["CodeTva"]">
+                    <Start><RadzenIcon Icon="code" /></Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="system.CodeTva" Name="Code" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="@localizer["EtbSec"]">
+                    <Start><RadzenIcon Icon="business" /></Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="system.EtbSecondaire" Name="EtbSec" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="Pourcentage Retenu">
+                    <Start><RadzenIcon Icon="email" /></Start>
+                    <ChildContent>
+                        <RadzenNumeric @bind-Value="system.PourcentageRetenu" Name="" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
+            </RadzenColumn>
+        </RadzenRow>
+
+        <!-- Dummy Buttons for now till i implement the update (WIP) -->
+        <RadzenRow Style="margin-top: 30px;">
+            <RadzenColumn Size="12" Style="text-align: center;">
+                <RadzenButton ButtonType="Radzen.ButtonType.Submit"
+                              Text="@localizer["save_label"]"
+                              Icon="save"
+                              Style="margin-right: 10px;" />
+                <RadzenButton Text="@localizer["cancel_label"]"
+                              Click="@Cancel"
+                              ButtonStyle="ButtonStyle.Danger"
+                              Icon="close" />
+            </RadzenColumn>
+        </RadzenRow>
+    </RadzenTemplateForm>
+</RadzenCard>
+
+@code {
+	private GetAppParametersResponse system = new GetAppParametersResponse();
+	[Inject] ToastService toastService { get; set; } = default!;
+	[Inject] DialogService dialogService { get; set; } = default!;
+	private CancellationToken cancellationToken = new CancellationToken();
+    private EventCallback<GetAppParametersResponse> OnSubmit => EventCallback.Factory.Create<GetAppParametersResponse>(this, HandleValidSubmit);
+
+	protected override async Task OnInitializedAsync()
+	{
+		var systemResult = await appParametersService.GetAppParametersAsync(cancellationToken);
+		if (systemResult.IsT0)
+		{
+			system = systemResult.AsT0;
+			return;
+		}
+		navigationManager.NavigateTo("/error");
+	}
+
+	private async Task HandleValidSubmit(GetAppParametersResponse model)
+	{
+		if (system.NomSociete != "")
+		{
+			toastService.Notify(new(ToastType.Success, $" Retrieved app parameters with success "));
+		}
+	}
+
+	private void Cancel()
+	{
+		navigationManager.NavigateTo("/app_parameters");
+	}
+}
