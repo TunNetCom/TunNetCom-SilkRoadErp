@@ -24,7 +24,7 @@
             <RadzenTextBox @bind-Value="searchKeyword"
                            Placeholder="@Localizer["Search"]"
                            Style="width: 300px;"
-                           Change="@(async args => await customerGrid.Reload())" />
+                           @oninput="OnSearchInput" />
 
             <RadzenButton Icon="add_circle"
                           ButtonStyle="ButtonStyle.Primary"
@@ -42,6 +42,8 @@
                     AllowPaging="true"
                     AllowSorting="true"
                     AllowFiltering="true"
+                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                    AllowColumnResize="true"
                     PageSizeOptions="@pageSizeOptions"
                     PageSize="@_defaultPageSize"
                     ColumnWidth="200px"
@@ -77,6 +79,26 @@
     private CancellationTokenSource cancellationTokenSource = new();
     private const int _defaultPageSize = 10;
     IEnumerable<int> pageSizeOptions = new int[] { 10, 20, 30 };
+    private System.Timers.Timer? debounceTimer;
+
+    // Added manual debounce for live filtering as you type
+    private async Task OnSearchInput(ChangeEventArgs e)
+    {
+        searchKeyword = e.Value?.ToString() ?? "";
+
+        debounceTimer?.Stop();
+        debounceTimer?.Dispose();
+
+        debounceTimer = new System.Timers.Timer(300); 
+        debounceTimer.Elapsed += async (_, _) =>
+        {
+            debounceTimer?.Stop();
+            debounceTimer?.Dispose();
+            await InvokeAsync(() => customerGrid.Reload());
+        };
+        debounceTimer.AutoReset = false;
+        debounceTimer.Start();
+    }
 
     void OnPage(PagerEventArgs args)
     {
