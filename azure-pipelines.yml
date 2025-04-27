@@ -63,7 +63,7 @@ steps:
 - task: reportgenerator@5
   displayName: 'Convert coverage to Cobertura'
   inputs:
-    reports: '**/*.coverage'
+    reports: '$(Agent.TempDirectory)/**/*.coveragexml'
     targetdir: '$(Build.SourcesDirectory)/CoverageConverted'
     reporttypes: 'Cobertura'
 
