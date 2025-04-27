@@ -23,6 +23,8 @@ steps:
     scannerMode: 'dotnet'
     projectKey: 'TunNetCom_Silk_Road_ERP'
     projectName: 'TunNetCom'
+    extraProperties: |
+          sonar.cs.opencover.reportsPaths=$(Build.SourcesDirectory)/coverage.cobertura.xml
 
 - task: VSBuild@1
   inputs:
@@ -57,6 +59,22 @@ steps:
     configuration: '$(buildConfiguration)'
     codeCoverageEnabled: true
     runSettingsFile: 'test.runsettings'
+
+- task: PowerShell@2
+  displayName: 'Convert .coverage to cobertura'
+  inputs:
+    targetType: 'inline'
+    script: |
+      dotnet tool install --global coverlet.console --version 3.2.0 --ignore-failed-sources
+      
+      $coverage = Get-ChildItem "$(Agent.TempDirectory)" -Recurse -Include *.coverage | Select-Object -First 1
+      
+      if ($coverage) {
+          coverlet "$($coverage.FullName)" --target "dotnet" --format cobertura --output "$(Build.SourcesDirectory)/coverage.cobertura.xml"
+      } else {
+          exit 1
+      }
+    pwsh: true
 
 - task: SonarCloudAnalyze@3
 
