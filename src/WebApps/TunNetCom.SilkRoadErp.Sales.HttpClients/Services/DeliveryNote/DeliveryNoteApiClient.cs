@@ -282,4 +282,13 @@ public class DeliveryNoteApiClient(HttpClient _httpClient) : IDeliveryNoteApiCli
             throw new HttpRequestException($"Failed to fetch delivery note: {ex.Message}", ex);
         }
     }
+
+    public async Task<List<DeliveryNoteDetailResponse>> GetDeliveryNotesAsync(string productReference, CancellationToken cancellationToken = default)
+    {
+        var response = await _httpClient.GetAsync($"/deliveryNoteHistory/{productReference}", cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        // Deserialize the response
+        return await response.Content.ReadFromJsonAsync<List<DeliveryNoteDetailResponse>>(cancellationToken);
+    }
 }

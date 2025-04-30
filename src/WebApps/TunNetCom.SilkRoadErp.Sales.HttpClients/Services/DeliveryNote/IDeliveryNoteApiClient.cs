@@ -44,6 +44,11 @@ public interface IDeliveryNoteApiClient
         int pageNumber = 1,
         int pageSize = 10);
 
-    Task<DeliveryNoteResponse?> GetDeliveryNoteByNumAsync(int num, CancellationToken cancellationToken);
+    Task<DeliveryNoteResponse?> GetDeliveryNoteByNumAsync(
+        int num,
+        CancellationToken cancellationToken);
 
+    Task<List<DeliveryNoteDetailResponse>> GetDeliveryNotesAsync(
+        string productReference,
+        CancellationToken cancellationToken = default);
 }

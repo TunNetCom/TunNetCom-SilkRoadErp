@@ -5,8 +5,11 @@
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.Extensions.Localization
 @using Microsoft.JSInterop
+@using System.Text.Json
+@using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters
 @using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests
 @using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices
@@ -22,7 +25,9 @@
 @inject IProductsApiClient productsApiClient
 @inject IInvoicesApiClient invoicesApiClient
 @inject ICustomersApiClient customersApiClient
+@inject IAppParametersClient appParametersClient
 @inject ILogger<AddOrUpdateDeliveryNote> logger
+@inject DialogService DialogService
 
 <style>
     .delivery-note-container {
@@ -203,7 +208,7 @@ else
 
             <RadzenDataGridColumn Width="150px" Property="@nameof(DeliveryNoteDetailResponse.UnitPriceExcludingTax)" Title="@Localizer["unit_price_ht"]">
                 <Template Context="order">
-                    @order.UnitPriceExcludingTax.FormatAmount()
+                    <div @onclick="() => ShowDialog(order.ProductReference)">@order.UnitPriceExcludingTax.FormatAmount()</div>
                 </Template>
                 @* <EditTemplate Context="order"> *@
                 @*     <RadzenNumeric TValue="decimal" *@
@@ -215,6 +220,7 @@ else
                 @*     <RadzenRequiredValidator Text="@Localizer["unit_price_required"]" Component="UnitPriceExcludingTax" Popup="true" /> *@
                 @* </EditTemplate> *@
             </RadzenDataGridColumn>
+
 
             <RadzenDataGridColumn Width="100px" Property="@nameof(DeliveryNoteDetailResponse.DiscountPercentage)"
             Title="@Localizer["discount_percentage"]">
@@ -308,7 +314,7 @@ else
     decimal totalTtc;
     string deliveryNoteNumber;
     DateTime deliveryNoteDate = DateTime.Now;
-
+    private GetAppParametersResponse getAppParametersResponse;
     private int? _selectedCustomerId;
     int? selectedCustomerId
     {
@@ -357,11 +363,11 @@ else
         await base.OnInitializedAsync();
 
         searchList = new List<DeliveryNoteDetailResponse>();
-
+        var param = await appParametersClient.GetAppParametersAsync(_cancellationTokenSource.Token);
+        getAppParametersResponse = param.AsT0;
         await LoadCustomers(null);
         await FetchDeliveryNote();
         await LoadCustomerInvoices(null);
-
         isLoading = false;
     }
 
@@ -388,9 +394,9 @@ else
                     Description = o.Description,
                     Quantity = o.Quantity,
                     UnitPriceExcludingTax = o.UnitPriceExcludingTax,
-                    DiscountPercentage = o.DiscountPercentage,
+                    // DiscountPercentage = o.DiscountPercentage,
                     TotalExcludingTax = o.TotalExcludingTax,
-                    VatPercentage = o.VatPercentage,
+                    // VatPercentage = o.VatPercentage,
                     TotalIncludingTax = o.TotalIncludingTax
                 }).ToList()
             };
@@ -610,8 +616,8 @@ else
                     Description = p.Name,
                     UnitPriceExcludingTax = p.Price,
                     Quantity = 1,
-                    DiscountPercentage = p.DiscountPourcentage,
-                    VatPercentage = p.VatRate,
+                    // DiscountPercentage = p.DiscountPourcentage,
+                    // VatPercentage = p.VatRate,
                     TotalExcludingTax = 0,
                     TotalIncludingTax = 0
                 }).ToList();
@@ -726,8 +732,8 @@ else
                 order.Description = selectedProduct.Description;
                 order.ProductReference = selectedProduct.ProductReference;
                 order.UnitPriceExcludingTax = selectedProduct.UnitPriceExcludingTax; // Assuming UnitPriceExcludingTax is a property in DeliveryNoteDetailResponse
-                order.DiscountPercentage = selectedProduct.DiscountPercentage;
-                order.VatPercentage = selectedProduct.VatPercentage;
+                order.DiscountPercentage = getAppParametersResponse.DiscountPercentage;
+                order.VatPercentage = getAppParametersResponse.VatAmount;
                 // Recalculate totals (if necessary)
                 CalculateTotals(order);
                 UpdateTotals();
@@ -748,10 +754,10 @@ else
                 order.UnitPriceExcludingTax = Convert.ToDecimal(value);
                 break;
             case nameof(order.DiscountPercentage):
-                order.DiscountPercentage = Convert.ToDouble(value);
+                // order.DiscountPercentage = Convert.ToDouble(value);
                 break;
             case nameof(order.VatPercentage):
-                order.VatPercentage = Convert.ToDouble(value);
+                // order.VatPercentage = Convert.ToDouble(value);
                 break;
         }
 
@@ -806,5 +812,112 @@ else
         ordersToInsert.Remove(order);
         UpdateTotals();
         StateHasChanged(); // Refresh totals
+    }
+
+    // Method to show the dialog
+    // private async Task ShowDialog(decimal unitPrice)
+    // {
+    //     await DialogService.OpenAsync("Unit Price Details");
+    //     ds =>
+    //         <div>
+    //             <p> Unit Price(ExcludingTax): @unitPrice.FormatAmount()</p>
+    //             <RadzenButton Text ="Close" Click ="() => ds.Close()"/>
+    //         </div>,
+    //         new DialogOptions { Width = "400px", Height = "200px" });
+    
+    // }
+
+    public async Task ShowDialog(string ProductReference)
+    {
+        await LoadStateAsync();
+
+        await DialogService.OpenAsync<HistoryDialog>($"ProductReference {ProductReference}",
+               new Dictionary<string, object>() { { "ProductReference", ProductReference } },
+               new DialogOptions()
+                   {
+                       Resizable = true,
+                       Draggable = true,
+                       Resize = OnResize,
+                       Drag = OnDrag,
+                       Width = Settings != null ? Settings.Width : "700px",
+                       Height = Settings != null ? Settings.Height : "512px",
+                       Left = Settings != null ? Settings.Left : null,
+                       Top = Settings != null ? Settings.Top : null
+                   });
+
+        await SaveStateAsync();
+    }
+
+    void OnDrag(System.Drawing.Point point)
+    {
+        JSRuntime.InvokeVoidAsync("eval", $"console.log('Dialog drag. Left:{point.X}, Top:{point.Y}')");
+
+        if (Settings == null)
+        {
+            Settings = new DialogSettings();
+        }
+
+        Settings.Left = $"{point.X}px";
+        Settings.Top = $"{point.Y}px";
+
+        InvokeAsync(SaveStateAsync);
+    }
+
+    void OnResize(System.Drawing.Size size)
+    {
+        JSRuntime.InvokeVoidAsync("eval", $"console.log('Dialog resize. Width:{size.Width}, Height:{size.Height}')");
+
+        if (Settings == null)
+        {
+            Settings = new DialogSettings();
+        }
+
+        Settings.Width = $"{size.Width}px";
+        Settings.Height = $"{size.Height}px";
+
+        InvokeAsync(SaveStateAsync);
+    }
+
+    DialogSettings _settings;
+    public DialogSettings Settings
+    {
+        get
+        {
+            return _settings;
+        }
+        set
+        {
+            if (_settings != value)
+            {
+                _settings = value;
+                InvokeAsync(SaveStateAsync);
+            }
+        }
+    }
+
+    private async Task LoadStateAsync()
+    {
+        await Task.CompletedTask;
+
+        var result = await JSRuntime.InvokeAsync<string>("window.localStorage.getItem", "DialogSettings");
+        if (!string.IsNullOrEmpty(result))
+        {
+            _settings = JsonSerializer.Deserialize<DialogSettings>(result);
+        }
+    }
+
+    private async Task SaveStateAsync()
+    {
+        await Task.CompletedTask;
+
+        await JSRuntime.InvokeVoidAsync("window.localStorage.setItem", "DialogSettings", JsonSerializer.Serialize<DialogSettings>(Settings));
+    }
+
+    public class DialogSettings
+    {
+        public string Left { get; set; }
+        public string Top { get; set; }
+        public string Width { get; set; }
+        public string Height { get; set; }
     }
 }

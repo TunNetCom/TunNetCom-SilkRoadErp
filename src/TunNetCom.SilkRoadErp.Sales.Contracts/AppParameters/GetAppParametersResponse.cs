@@ -40,4 +40,10 @@ public class GetAppParametersResponse
 
     [JsonPropertyName("pourcentageRetenu")]
     public double PourcentageRetenu { get; set; }
+
+    [JsonPropertyName("discountPercentage")]
+    public double DiscountPercentage { get; set; }
+
+    [JsonPropertyName("vatAmount")]
+    public double VatAmount { get; set; }
 }

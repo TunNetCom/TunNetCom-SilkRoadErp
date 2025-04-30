@@ -1,0 +1,78 @@
+﻿@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote
+@using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests
+@using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses
+@using Radzen
+@using Radzen.Blazor
+@inject IDeliveryNoteApiClient deliveryNoteService
+@inject DialogService DialogService
+
+<h3>History Dialog</h3>
+
+@if (deliveryNoteDetails == null)
+{
+    <p>Loading...</p>
+}
+else if (!deliveryNoteDetails.Any())
+{
+    <p>No delivery notes found for product reference: @ProductReference</p>
+}
+else
+{
+    <RadzenDataGrid Data="@deliveryNoteDetails" TItem="DeliveryNoteDetailResponse" AllowSorting="true" AllowPaging="true" PageSize="5">
+        <Columns>
+            <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.Provider)" Title="Provider Name" Width="150px" />
+            <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.Date)" Title="Delivery Date" Width="150px" />
+            <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.Description)" Title="Description" Width="200px" />
+            <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.UnitPriceExcludingTax)" Title="Unit Price (Excl. Tax)" Width="150px"/>
+            <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.DiscountPercentage)" Title="Discount (%)" Width="100px" />
+            <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.VatPercentage)" Title="VAT (%)" Width="100px" />
+            <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.NetTtcUnitaire)" Title="Net TTC Unitaire" Width="150px"/>
+            <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.PrixHtFodec)" Title="Price HT Fodec" Width="150px"/>
+        </Columns>
+    </RadzenDataGrid>
+}
+
+@if (ShowClose)
+{
+    <div style="margin-top: 20px;">
+        <RadzenButton Text="Close" Click="@(() => DialogService.Close())" />
+    </div>
+}
+
+@code {
+    [Parameter] public string ProductReference { get; set; } = string.Empty;
+    [Parameter] public bool ShowClose { get; set; } = true;
+    private List<DeliveryNoteDetailResponse> deliveryNoteDetails = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDeliveryNotes();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Reload data if ProductReference changes
+        await LoadDeliveryNotes();
+    }
+
+    private async Task LoadDeliveryNotes()
+    {
+        if (string.IsNullOrWhiteSpace(ProductReference))
+        {
+            deliveryNoteDetails = new List<DeliveryNoteDetailResponse>();
+            return;
+        }
+
+        try
+        {
+            var result = await deliveryNoteService.GetDeliveryNotesAsync(ProductReference);
+            deliveryNoteDetails = result ?? new List<DeliveryNoteDetailResponse>();
+        }
+        catch (HttpRequestException)
+        {
+            // Handle API errors (e.g., network issues, 500 errors)
+            deliveryNoteDetails = new List<DeliveryNoteDetailResponse>();
+            // Optionally notify user (e.g., via NotificationService)
+        }
+    }
+}
