@@ -32,6 +32,12 @@ public class DeliveryNoteResponse
 
 public class DeliveryNoteDetailResponse
 {
+    [JsonPropertyName("Provider")]
+    public string Provider { get; set; }
+
+    [JsonPropertyName("Date")]
+    public DateTime Date { get; set; }
+
     [JsonPropertyName("id")]
     public int Id { get; set; }
 
@@ -61,4 +67,7 @@ public class DeliveryNoteDetailResponse
 
     [JsonPropertyName("totalIncludingTax")]
     public decimal TotalIncludingTax { get; set; }
+    public decimal NetTtcUnitaire { get; set; } // Calculated
+    public decimal? PrixHtFodec { get; set; } // Calculated, nullable
+
 }

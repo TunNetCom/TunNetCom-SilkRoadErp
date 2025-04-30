@@ -5,8 +5,11 @@
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.Extensions.Localization
 @using Microsoft.JSInterop
+@using System.Text.Json
+@using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters
 @using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests
 @using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices
@@ -22,46 +25,48 @@
 @inject IProductsApiClient productsApiClient
 @inject IInvoicesApiClient invoicesApiClient
 @inject ICustomersApiClient customersApiClient
+@inject IAppParametersClient appParametersClient
 @inject ILogger<AddOrUpdateDeliveryNote> logger
+@inject DialogService DialogService
 
 <style>
     .delivery-note-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-        flex-wrap: wrap;
-        gap: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 20px;
     }
 
     .delivery-note-form {
-        display: flex;
-        gap: 20px;
-        align-items: center;
-        flex-wrap: wrap;
-        flex-grow: 1;
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+    flex-grow: 1;
     }
 
     .header-actions {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-        justify-content: space-between;
-        width: 100%;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
     }
 
     .summary-card {
-        background-color: #f8f9fa;
-        padding: 10px 20px;
-        border-radius: 5px;
-        margin-left: auto; /* This pushes it to the right */
-        border-left: 1px solid #ddd; /* Optional: adds a separator line */
+    background-color: #f8f9fa;
+    padding: 10px 20px;
+    border-radius: 5px;
+    margin-left: auto; /* This pushes it to the right */
+    border-left: 1px solid #ddd; /* Optional: adds a separator line */
     }
 
     .action-buttons {
-        display: flex;
-        gap: 10px;
-        align-items: center;
+    display: flex;
+    gap: 10px;
+    align-items: center;
     }
 </style>
 
@@ -83,15 +88,15 @@ else
 
             <RadzenLabel Text="@Localizer["customer"]" />
             <RadzenDropDownDataGrid AllowClear="true"
-                                    IsLoading="@isLoadingCustomers"
-                                    @bind-Value="@selectedCustomerId"
-                                    LoadData="@LoadCustomers"
-                                    AllowFiltering="true"
-                                    Style="width: 350px;"
-                                    Data="@_filteredCustomers"
-                                    TextProperty="@nameof(CustomerResponse.Name)"
-                                    ValueProperty="@nameof(CustomerResponse.Id)"
-                                    Placeholder="@Localizer["select_customer"]">
+            IsLoading="@isLoadingCustomers"
+            @bind-Value="@selectedCustomerId"
+            LoadData="@LoadCustomers"
+            AllowFiltering="true"
+            Style="width: 350px;"
+            Data="@_filteredCustomers"
+            TextProperty="@nameof(CustomerResponse.Name)"
+            ValueProperty="@nameof(CustomerResponse.Id)"
+            Placeholder="@Localizer["select_customer"]">
                 <Columns>
                     <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Id)" Title="ID" Width="80px" />
                     <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Name)" Title="@Localizer["name"]" Width="220px" />
@@ -100,15 +105,15 @@ else
 
             <RadzenLabel Text="@Localizer["invoice_number"]" />
             <RadzenDropDownDataGrid AllowClear="true"
-                                    IsLoading="@isLoadingInvoices"
-                                    @bind-Value="@_selectedInvoiceId"
-                                    LoadData="@LoadCustomerInvoices"
-                                    AllowFiltering="true"
-                                    Style="width: 350px;"
-                                    Data="@_filteredInvoices"
-                                    TextProperty="@nameof(InvoiceResponse.Number)"
-                                    ValueProperty="@nameof(InvoiceResponse.Number)"
-                                    Placeholder="@Localizer["select_invoice"]">
+            IsLoading="@isLoadingInvoices"
+            @bind-Value="@_selectedInvoiceId"
+            LoadData="@LoadCustomerInvoices"
+            AllowFiltering="true"
+            Style="width: 350px;"
+            Data="@_filteredInvoices"
+            TextProperty="@nameof(InvoiceResponse.Number)"
+            ValueProperty="@nameof(InvoiceResponse.Number)"
+            Placeholder="@Localizer["select_invoice"]">
                 <Columns>
                     <RadzenDropDownDataGridColumn Property="@nameof(InvoiceResponse.Number)" Title="Num" Width="100px" />
                     <RadzenDropDownDataGridColumn Property="@nameof(InvoiceResponse.Date)" Title="Date" Width="100px" />
@@ -120,36 +125,36 @@ else
 
     <!-- DataGrid with Actions -->
     <RadzenDataGrid @ref="ordersGrid" AllowAlternatingRows="false"
-                    AllowPaging="true"
-                    EditMode="@editMode"
-                    Data="@orders" TItem="DeliveryNoteDetailResponse"
-                    RowUpdate="@OnUpdateRow"
-                    RowCreate="@OnCreateRow"
-                    Page="@Reset"
-                    ColumnWidth="200px">
+    AllowPaging="true"
+    EditMode="@editMode"
+    Data="@orders" TItem="DeliveryNoteDetailResponse"
+    RowUpdate="@OnUpdateRow"
+    RowCreate="@OnCreateRow"
+    Page="@Reset"
+    ColumnWidth="200px">
         <HeaderTemplate>
             <div class="header-actions">
                 <div class="action-buttons">
                     <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="add_circle" Text="@Localizer["add_new_order"]"
-                                  Click="@InsertRow" Disabled="@(editMode == DataGridEditMode.Single && ordersToInsert.Count() > 0)" />
+                    Click="@InsertRow" Disabled="@(editMode == DataGridEditMode.Single && ordersToInsert.Count() > 0)" />
 
                     <RadzenButton ButtonStyle="ButtonStyle.Primary"
-                                  Icon="print"
-                                  Text="@Localizer["print"]"
-                                  Variant="Variant.Flat"
-                                  Disabled="@(!orders.Any())" />
+                    Icon="print"
+                    Text="@Localizer["print"]"
+                    Variant="Variant.Flat"
+                    Disabled="@(!orders.Any())" />
 
                     <RadzenButton ButtonStyle="ButtonStyle.Primary"
-                                  Icon="save"
-                                  Text="@Localizer["save"]"
-                                  Variant="Variant.Flat"
-                                  Click="@SaveDeliveryNote" />
+                    Icon="save"
+                    Text="@Localizer["save"]"
+                    Variant="Variant.Flat"
+                    Click="@SaveDeliveryNote" />
 
                     <RadzenButton ButtonStyle="ButtonStyle.Primary"
-                                  Icon="receipt"
-                                  Text="@Localizer["convert_to_price_note"]"
-                                  Variant="Variant.Flat"
-                                  Disabled="@(!orders.Any())" />
+                    Icon="receipt"
+                    Text="@Localizer["convert_to_price_note"]"
+                    Variant="Variant.Flat"
+                    Disabled="@(!orders.Any())" />
                 </div>
 
                 <RadzenCard class="summary-card" Variant="Variant.Outlined">
@@ -169,59 +174,67 @@ else
         </HeaderTemplate>
         <Columns>
             <RadzenDataGridColumn Width="600px" TItem="DeliveryNoteDetailResponse"
-                                  Property="@nameof(DeliveryNoteDetailResponse.ProductReferenceAndDescription)"
-                                  Title="@Localizer["product"]">
+            Property="@nameof(DeliveryNoteDetailResponse.ProductReferenceAndDescription)"
+            Title="@Localizer["product"]">
+                <Template Context="order">
+                    @order.ProductReferenceAndDescription
+                </Template>
                 <EditTemplate Context="order">
                     <RadzenDropDownDataGrid Style="width: 100%; max-width: 600px;"
-                                            AllowClear="true"
-                                            @bind-Value="order.ProductReference"
-                                            LoadData="@LoadData"
-                                            AllowFiltering="true"
-                                            Data="@(GetCurrentProductList(order))"
-                                            Count="@count"
-                                            TextProperty="@nameof(DeliveryNoteDetailResponse.ProductReferenceAndDescription)"
-                                            ValueProperty="@nameof(DeliveryNoteDetailResponse.ProductReference)"
-                                            Name="DropDownDataGridFilteringLoadData" />
+                    AllowClear="true"
+                    @bind-Value="order.ProductReference"
+                    LoadData="@LoadData"
+                    AllowFiltering="true"
+                    Data="@(GetCurrentProductList(order))"
+                    Count="@count"
+                    Change="@(args => OnProductSelected(order, args))"
+                    TextProperty="@nameof(DeliveryNoteDetailResponse.ProductReferenceAndDescription)"
+                    ValueProperty="@nameof(DeliveryNoteDetailResponse.ProductReference)"
+                    Name="DropDownDataGridFilteringLoadData" />
                 </EditTemplate>
             </RadzenDataGridColumn>
 
             <RadzenDataGridColumn Width="100px" Property="@nameof(DeliveryNoteDetailResponse.Quantity)"
-                                  Title="@Localizer["quantity"]">
+            Title="@Localizer["quantity"]">
                 <EditTemplate Context="order">
                     <RadzenNumeric TValue="int"
-                                   Value="order.Quantity"
-                                   Change="@(args => OnValueChanged(order, args, nameof(order.Quantity)))"
-                                   Style="width:100%;"
-                                   Name="Quantity" />
+                    Value="order.Quantity"
+                    Change="@(args => OnValueChanged(order, args, nameof(order.Quantity)))"
+                    Style="width:100%;"
+                    Name="Quantity"/>
                     <RadzenRequiredValidator Text="@Localizer["quantity_required"]" Component="Quantity" Popup="true" />
                 </EditTemplate>
             </RadzenDataGridColumn>
 
             <RadzenDataGridColumn Width="150px" Property="@nameof(DeliveryNoteDetailResponse.UnitPriceExcludingTax)" Title="@Localizer["unit_price_ht"]">
                 <Template Context="order">
-                    @order.UnitPriceExcludingTax.FormatAmount()
+                    <div @onclick="() => ShowDialog(order.ProductReference)">@order.UnitPriceExcludingTax.FormatAmount()</div>
                 </Template>
-                <EditTemplate Context="order">
-                    <RadzenNumeric TValue="decimal"
-                                   Value="order.UnitPriceExcludingTax"
-                                   Change="@(args => OnValueChanged(order, args, nameof(order.UnitPriceExcludingTax)))"
-                                   Style="width:100%;"
-                                   Format="n0"
-                                   Name="UnitPriceExcludingTax" />
-                    <RadzenRequiredValidator Text="@Localizer["unit_price_required"]" Component="UnitPriceExcludingTax" Popup="true" />
-                </EditTemplate>
+                @* <EditTemplate Context="order"> *@
+                @*     <RadzenNumeric TValue="decimal" *@
+                @*                    Value="order.UnitPriceExcludingTax" *@
+                @*                    Change="@(args => OnValueChanged(order, args, nameof(order.UnitPriceExcludingTax)))" *@
+                @*                    Style="width:100%;" *@
+                @*                    Format="n0" *@
+                @*                    Name="UnitPriceExcludingTax" /> *@
+                @*     <RadzenRequiredValidator Text="@Localizer["unit_price_required"]" Component="UnitPriceExcludingTax" Popup="true" /> *@
+                @* </EditTemplate> *@
             </RadzenDataGridColumn>
 
+
             <RadzenDataGridColumn Width="100px" Property="@nameof(DeliveryNoteDetailResponse.DiscountPercentage)"
-                                  Title="@Localizer["discount_percentage"]">
-                <EditTemplate Context="order">
-                    <RadzenNumeric TValue="double"
-                                   Value="order.DiscountPercentage"
-                                   Change="@(args => OnValueChanged(order, args, nameof(order.DiscountPercentage)))"
-                                   Style="width:100%;"
-                                   FormatString="{0:N2}%"
-                                   Name="DiscountPercentage" />
-                </EditTemplate>
+            Title="@Localizer["discount_percentage"]">
+                <Template Context="order">
+                    @order.DiscountPercentage
+                </Template>
+                @* <EditTemplate Context="order"> *@
+                @*     <RadzenNumeric TValue="double" *@
+                @*     Value="order.DiscountPercentage" *@
+                @*     Change="@(args => OnValueChanged(order, args, nameof(order.DiscountPercentage)))" *@
+                @*     Style="width:100%;" *@
+                @*     FormatString="{0:N2}%" *@
+                @*     Name="DiscountPercentage" /> *@
+                @* </EditTemplate> *@
             </RadzenDataGridColumn>
 
             <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.TotalExcludingTax)" Title="@Localizer["total_excluding_tax"]">
@@ -231,15 +244,18 @@ else
             </RadzenDataGridColumn>
 
             <RadzenDataGridColumn Width="100px" Property="@nameof(DeliveryNoteDetailResponse.VatPercentage)" Title="@Localizer["vat_percentage"]">
-                <EditTemplate Context="order">
-                    <RadzenNumeric TValue="double"
-                                   Value="order.VatPercentage"
-                                   Change="@(args => OnValueChanged(order, args, nameof(order.VatPercentage)))"
-                                   Style="width:100%;"
-                                   FormatString="{0:N2}%"
-                                   Name="VatPercentage" />
-                    <RadzenRequiredValidator Text="@Localizer["vat_required"]" Component="VatPercentage" Popup="true" />
-                </EditTemplate>
+                <Template Context="order">
+                    @order.VatPercentage
+                </Template>
+                @* <EditTemplate Context="order"> *@
+                @*     <RadzenNumeric TValue="double" *@
+                @*     Value="order.VatPercentage" *@
+                @*     Change="@(args => OnValueChanged(order, args, nameof(order.VatPercentage)))" *@
+                @*     Style="width:100%;" *@
+                @*     FormatString="{0:N2}%" *@
+                @*     Name="VatPercentage" /> *@
+                @*     <RadzenRequiredValidator Text="@Localizer["vat_required"]" Component="VatPercentage" Popup="true" /> *@
+                @* </EditTemplate> *@
             </RadzenDataGridColumn>
 
             <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.TotalIncludingTax)" Title="@Localizer["total_including_tax"]">
@@ -249,27 +265,27 @@ else
             </RadzenDataGridColumn>
 
             <RadzenDataGridColumn Context="order" Filterable="false" Sortable="false" TextAlign="TextAlign.Right"
-                                  Frozen="true" FrozenPosition="FrozenColumnPosition.Right">
+            Frozen="true" FrozenPosition="FrozenColumnPosition.Right">
                 <Template Context="order">
                     <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat"
-                                  Size="ButtonSize.Medium" Click="@(args => EditRow(order))" @onclick:stopPropagation="true">
+                    Size="ButtonSize.Medium" Click="@(args => EditRow(order))" @onclick:stopPropagation="true">
                     </RadzenButton>
                     <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat"
-                                  Shade="Shade.Lighter" Size="ButtonSize.Medium" class="rz-my-1 rz-ms-1"
-                                  Click="@(args => DeleteRow(order))" @onclick:stopPropagation="true">
+                    Shade="Shade.Lighter" Size="ButtonSize.Medium" class="rz-my-1 rz-ms-1"
+                    Click="@(args => DeleteRow(order))" @onclick:stopPropagation="true">
                     </RadzenButton>
                 </Template>
                 <EditTemplate Context="order">
                     <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat"
-                                  Size="ButtonSize.Medium" Click="@((args) => SaveRow(order))" aria-label="Save">
+                    Size="ButtonSize.Medium" Click="@((args) => SaveRow(order))" aria-label="Save">
                     </RadzenButton>
                     <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat"
-                                  Size="ButtonSize.Medium" class="rz-my-1 rz-ms-1"
-                                  Click="@((args) => CancelEdit(order))" aria-label="Cancel">
+                    Size="ButtonSize.Medium" class="rz-my-1 rz-ms-1"
+                    Click="@((args) => CancelEdit(order))" aria-label="Cancel">
                     </RadzenButton>
                     <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat"
-                                  Shade="Shade.Lighter" Size="ButtonSize.Medium" class="rz-my-1 rz-ms-1"
-                                  Click="@(args => DeleteRow(order))" aria-label="Delete">
+                    Shade="Shade.Lighter" Size="ButtonSize.Medium" class="rz-my-1 rz-ms-1"
+                    Click="@(args => DeleteRow(order))" aria-label="Delete">
                     </RadzenButton>
                 </EditTemplate>
             </RadzenDataGridColumn>
@@ -298,7 +314,7 @@ else
     decimal totalTtc;
     string deliveryNoteNumber;
     DateTime deliveryNoteDate = DateTime.Now;
-
+    private GetAppParametersResponse getAppParametersResponse;
     private int? _selectedCustomerId;
     int? selectedCustomerId
     {
@@ -308,11 +324,9 @@ else
             if (_selectedCustomerId != value)
             {
                 _selectedCustomerId = value;
-                // Reset the selected invoice when the customer changes
-                _selectedInvoiceId = null;
-                // Load invoices for the selected customer
-                _ = LoadCustomerInvoices(null);
-
+                selectedInvoiceId = null;
+                _filteredInvoices = new List<InvoiceResponse>();
+                _ = LoadCustomerInvoices(new LoadDataArgs());
                 StateHasChanged();
             }
         }
@@ -349,11 +363,11 @@ else
         await base.OnInitializedAsync();
 
         searchList = new List<DeliveryNoteDetailResponse>();
-
+        var param = await appParametersClient.GetAppParametersAsync(_cancellationTokenSource.Token);
+        getAppParametersResponse = param.AsT0;
         await LoadCustomers(null);
         await FetchDeliveryNote();
         await LoadCustomerInvoices(null);
-
         isLoading = false;
     }
 
@@ -380,9 +394,9 @@ else
                     Description = o.Description,
                     Quantity = o.Quantity,
                     UnitPriceExcludingTax = o.UnitPriceExcludingTax,
-                    DiscountPercentage = o.DiscountPercentage,
+                    // DiscountPercentage = o.DiscountPercentage,
                     TotalExcludingTax = o.TotalExcludingTax,
-                    VatPercentage = o.VatPercentage,
+                    // VatPercentage = o.VatPercentage,
                     TotalIncludingTax = o.TotalIncludingTax
                 }).ToList()
             };
@@ -549,7 +563,10 @@ else
             Reset();
         }
 
-        var order = new DeliveryNoteDetailResponse();
+        var order = new DeliveryNoteDetailResponse
+        {
+            Quantity =1
+        };
         ordersToInsert.Add(order);
         await ordersGrid.InsertRow(order);
     }
@@ -599,8 +616,8 @@ else
                     Description = p.Name,
                     UnitPriceExcludingTax = p.Price,
                     Quantity = 1,
-                    DiscountPercentage = 0,
-                    VatPercentage = p.VatRate,
+                    // DiscountPercentage = p.DiscountPourcentage,
+                    // VatPercentage = p.VatRate,
                     TotalExcludingTax = 0,
                     TotalIncludingTax = 0
                 }).ToList();
@@ -661,11 +678,11 @@ else
     {
         if (!selectedCustomerId.HasValue)
         {
-            NotificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Warning,
-                Summary = Localizer["select_a_customer_before"],
-            });
+            // NotificationService.Notify(new NotificationMessage
+            // {
+            //     Severity = NotificationSeverity.Warning,
+            //     Summary = Localizer["select_a_customer_before"],
+            // });
             return;
         }
 
@@ -701,6 +718,31 @@ else
         await InvokeAsync(StateHasChanged);
     }
 
+    async Task OnProductSelected(DeliveryNoteDetailResponse order, object value)
+    {
+        if (value != null && value is string productReference)
+        {
+            // Fetch the product details based on the selected productReference
+            var selectedProduct = GetCurrentProductList(order)
+                .FirstOrDefault(p => p.ProductReference == productReference);
+
+            if (selectedProduct != null)
+            {
+                // Update the unit price
+                order.Description = selectedProduct.Description;
+                order.ProductReference = selectedProduct.ProductReference;
+                order.UnitPriceExcludingTax = selectedProduct.UnitPriceExcludingTax; // Assuming UnitPriceExcludingTax is a property in DeliveryNoteDetailResponse
+                order.DiscountPercentage = getAppParametersResponse.DiscountPercentage;
+                order.VatPercentage = getAppParametersResponse.VatAmount;
+                // Recalculate totals (if necessary)
+                CalculateTotals(order);
+                UpdateTotals();
+                // Notify the grid to refresh
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
     private async Task OnValueChanged(DeliveryNoteDetailResponse order, object value, string propertyName)
     {
         switch (propertyName)
@@ -712,10 +754,10 @@ else
                 order.UnitPriceExcludingTax = Convert.ToDecimal(value);
                 break;
             case nameof(order.DiscountPercentage):
-                order.DiscountPercentage = Convert.ToDouble(value);
+                // order.DiscountPercentage = Convert.ToDouble(value);
                 break;
             case nameof(order.VatPercentage):
-                order.VatPercentage = Convert.ToDouble(value);
+                // order.VatPercentage = Convert.ToDouble(value);
                 break;
         }
 
@@ -770,5 +812,112 @@ else
         ordersToInsert.Remove(order);
         UpdateTotals();
         StateHasChanged(); // Refresh totals
+    }
+
+    // Method to show the dialog
+    // private async Task ShowDialog(decimal unitPrice)
+    // {
+    //     await DialogService.OpenAsync("Unit Price Details");
+    //     ds =>
+    //         <div>
+    //             <p> Unit Price(ExcludingTax): @unitPrice.FormatAmount()</p>
+    //             <RadzenButton Text ="Close" Click ="() => ds.Close()"/>
+    //         </div>,
+    //         new DialogOptions { Width = "400px", Height = "200px" });
+    
+    // }
+
+    public async Task ShowDialog(string ProductReference)
+    {
+        await LoadStateAsync();
+
+        await DialogService.OpenAsync<HistoryDialog>($"ProductReference {ProductReference}",
+               new Dictionary<string, object>() { { "ProductReference", ProductReference } },
+               new DialogOptions()
+                   {
+                       Resizable = true,
+                       Draggable = true,
+                       Resize = OnResize,
+                       Drag = OnDrag,
+                       Width = Settings != null ? Settings.Width : "700px",
+                       Height = Settings != null ? Settings.Height : "512px",
+                       Left = Settings != null ? Settings.Left : null,
+                       Top = Settings != null ? Settings.Top : null
+                   });
+
+        await SaveStateAsync();
+    }
+
+    void OnDrag(System.Drawing.Point point)
+    {
+        JSRuntime.InvokeVoidAsync("eval", $"console.log('Dialog drag. Left:{point.X}, Top:{point.Y}')");
+
+        if (Settings == null)
+        {
+            Settings = new DialogSettings();
+        }
+
+        Settings.Left = $"{point.X}px";
+        Settings.Top = $"{point.Y}px";
+
+        InvokeAsync(SaveStateAsync);
+    }
+
+    void OnResize(System.Drawing.Size size)
+    {
+        JSRuntime.InvokeVoidAsync("eval", $"console.log('Dialog resize. Width:{size.Width}, Height:{size.Height}')");
+
+        if (Settings == null)
+        {
+            Settings = new DialogSettings();
+        }
+
+        Settings.Width = $"{size.Width}px";
+        Settings.Height = $"{size.Height}px";
+
+        InvokeAsync(SaveStateAsync);
+    }
+
+    DialogSettings _settings;
+    public DialogSettings Settings
+    {
+        get
+        {
+            return _settings;
+        }
+        set
+        {
+            if (_settings != value)
+            {
+                _settings = value;
+                InvokeAsync(SaveStateAsync);
+            }
+        }
+    }
+
+    private async Task LoadStateAsync()
+    {
+        await Task.CompletedTask;
+
+        var result = await JSRuntime.InvokeAsync<string>("window.localStorage.getItem", "DialogSettings");
+        if (!string.IsNullOrEmpty(result))
+        {
+            _settings = JsonSerializer.Deserialize<DialogSettings>(result);
+        }
+    }
+
+    private async Task SaveStateAsync()
+    {
+        await Task.CompletedTask;
+
+        await JSRuntime.InvokeVoidAsync("window.localStorage.setItem", "DialogSettings", JsonSerializer.Serialize<DialogSettings>(Settings));
+    }
+
+    public class DialogSettings
+    {
+        public string Left { get; set; }
+        public string Top { get; set; }
+        public string Width { get; set; }
+        public string Height { get; set; }
     }
 }
