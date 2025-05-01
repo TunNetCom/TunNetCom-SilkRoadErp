@@ -21,8 +21,8 @@ steps:
     SonarQube: 'Connexion-SonarCloud'
     organization: 'tunnetcom'
     scannerMode: 'dotnet'
-    projectKey: 'TunNetCom_Silk_Road_ERP'
-    projectName: 'TunNetCom'
+    projectKey: 'tunnetcom_silk-road-erp'
+    projectName: 'Silk_Road_ERP'
     extraProperties: |
       sonar.cs.opencover.reportsPaths=$(Build.SourcesDirectory)/CoverageConverted/Cobertura.xml
 
