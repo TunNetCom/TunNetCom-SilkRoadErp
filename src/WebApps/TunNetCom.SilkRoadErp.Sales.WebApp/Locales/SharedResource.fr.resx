@@ -399,4 +399,7 @@
   <data name="providers" xml:space="preserve">
     <value>Fournisseurs</value>
   </data>
+  <data name="pourcentage_retenu" xml:space="preserve">
+    <value>Pourcentage Retenu</value>
+  </data>
 </root>

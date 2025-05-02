@@ -312,4 +312,7 @@
   <data name="save_label" xml:space="preserve">
     <value>Save</value>
   </data>
+  <data name="pourcentage_retenu" xml:space="preserve">
+    <value>Retained percentage</value>
+  </data>
 </root>
