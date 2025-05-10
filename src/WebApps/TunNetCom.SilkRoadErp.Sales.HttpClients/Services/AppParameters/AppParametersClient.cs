@@ -21,4 +21,39 @@ internal class AppParametersClient(HttpClient _httpClient, ILogger<AppParameters
         }
         throw new Exception($"AppParameters: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync(cancellationToken)}");
     }
+
+    public async Task<OneOf<ResponseTypes, BadRequestResponse>> UpdateAppParametersAsync(
+        UpdateAppParametersRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var headers = new Dictionary<string, string>()
+            {
+                { $"Accept", $"application/problem+json" }
+            };
+
+            var response = await _httpClient.PutAsJsonAsync($"/appParameters", request, headers, cancellationToken);
+            if (response.StatusCode == HttpStatusCode.NoContent)
+            {
+                return ResponseTypes.Success;
+            }
+            if(response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return ResponseTypes.NotFound;
+            }
+            if (response.StatusCode == HttpStatusCode.BadRequest)
+            {
+                return await response.ReadJsonAsync<BadRequestResponse>();
+            }
+            throw new Exception($"AppParameters: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync(cancellationToken)}");
+
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message, ex);
+            throw;
+        }
+    }
+
 }
