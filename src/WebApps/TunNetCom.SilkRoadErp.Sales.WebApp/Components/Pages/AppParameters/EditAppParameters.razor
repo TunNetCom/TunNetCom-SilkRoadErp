@@ -1,0 +1,201 @@
+﻿@page "/app_parameters"
+@using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters
+@using Radzen.Blazor
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.HttpClients
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using System.Globalization
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services
+@inject IAppParametersClient appParametersService
+@inject NavigationManager navigationManager
+@inject IStringLocalizer<SharedResource> localizer
+
+<RadzenCard Style="padding: 20px; max-width: 700px; margin: auto;">
+    <RadzenTemplateForm Data="@system" Submit="@OnSubmit">
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.Center" Style="margin-bottom: 0.5rem;">
+            <h3>App Parameters</h3>
+        </RadzenStack>
+
+        <RadzenRow Class="g-2 mb-4">
+            <RadzenColumn Size="12" SizeSM="6" Class="d-flex flex-column gap-3">
+                <RadzenFormField Text="@localizer["Nom"]">
+                    <Start><RadzenIcon Icon="person" /></Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="system.NomSociete" Name="Nom" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="@localizer["Mail"]">
+                    <Start><RadzenIcon Icon="email" /></Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="system.Email" Name="Mail" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="@localizer["Timbre"]">
+                    <Start><RadzenIcon Icon="loyalty" /></Start>
+                    <ChildContent>
+                        <RadzenNumeric @bind-Value="system.Timbre" Name="Timbre" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="@localizer["Adresse_retenu"]">
+                    <Start><RadzenIcon Icon="home" /></Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="system.AdresseRetenu" Name="AdresseRetenu" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="@localizer["matricule_fiscale"]">
+                    <Start><RadzenIcon Icon="badge" /></Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="system.MatriculeFiscale" Name="Matricule" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="@localizer["CodeCat"]">
+                    <Start><RadzenIcon Icon="category" /></Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="system.CodeCategorie" Name="CodeCat" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="@localizer["pourcentage_fodec"]">
+                    <Start><RadzenIcon Icon="email" /></Start>
+                    <ChildContent>
+                        <RadzenNumeric @bind-Value="system.PourcentageFodec" Name="PourcentageFodec" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
+            </RadzenColumn>
+
+            <RadzenColumn Size="12" SizeSM="6" Class="d-flex flex-column gap-3">
+                <RadzenFormField Text="@localizer["Tel"]">
+                    <Start><RadzenIcon Icon="call" /></Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="system.Tel" Name="Tel" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="@localizer["Fax"]">
+                    <Start><RadzenIcon Icon="call" /></Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="system.Fax" Name="Tel" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="@localizer["Adresse"]">
+                    <Start><RadzenIcon Icon="home" /></Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="system.Adresse" Name="Adresse" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="@localizer["CodeTva"]">
+                    <Start><RadzenIcon Icon="code" /></Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="system.CodeTva" Name="CodeTva" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="@localizer["EtbSec"]">
+                    <Start><RadzenIcon Icon="business" /></Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="system.EtbSecondaire" Name="EtbSec" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="@localizer["pourcentage_retenu"]">
+                    <Start><RadzenIcon Icon="assessment" /></Start>
+                    <ChildContent>
+                        <RadzenNumeric @bind-Value="system.PourcentageRetenu" Name="PourcentageRetenu" Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
+            </RadzenColumn>
+        </RadzenRow>
+
+        <RadzenRow Style="margin-top: 15px;">
+            <RadzenColumn Size="12" Style="text-align: center;">
+                <RadzenButton ButtonType="Radzen.ButtonType.Submit"
+                Text="@localizer["save_label"]"
+                Icon="save"
+                Style="width: 200px;" />
+            </RadzenColumn>
+        </RadzenRow>
+    </RadzenTemplateForm>
+</RadzenCard>
+
+@code {
+    private GetAppParametersResponse system = new GetAppParametersResponse();
+    [Inject] ToastService toastService { get; set; } = default!;
+    [Inject] DialogService dialogService { get; set; } = default!;
+    private CancellationToken cancellationToken = new CancellationToken();
+    private EventCallback<GetAppParametersResponse> OnSubmit => EventCallback.Factory.Create<GetAppParametersResponse>(this, HandleValidSubmit);
+
+    protected override async Task OnInitializedAsync()
+    {
+        var systemResult = await appParametersService.GetAppParametersAsync(cancellationToken);
+        if (systemResult.IsT0)
+        {
+            system = systemResult.AsT0;
+            return;
+        }
+        navigationManager.NavigateTo("/error");
+    }
+
+    private async Task HandleValidSubmit(GetAppParametersResponse model)
+    {
+
+        var updateAppParametersResult = await appParametersService.UpdateAppParametersAsync(
+            new UpdateAppParametersRequest
+				{
+					NomSociete = system.NomSociete,
+					Email = system.Email,
+					Tel = system.Tel,
+					Fax = system.Fax,
+					Adresse = system.Adresse,
+					MatriculeFiscale = system.MatriculeFiscale,
+					CodeTva = system.CodeTva,
+					CodeCategorie = system.CodeCategorie,
+					Timbre = system.Timbre,
+					AdresseRetenu = system.AdresseRetenu,
+					PourcentageFodec = system.PourcentageFodec,
+					PourcentageRetenu = system.PourcentageRetenu,
+					EtbSecondaire = system.EtbSecondaire
+				}, cancellationToken);
+
+        if (updateAppParametersResult.IsT0)
+        {
+            if (updateAppParametersResult.AsT0 == ResponseTypes.Success)
+            {
+                toastService.Notify(new(ToastType.Success, $"Updated app parameters with success "));
+                navigationManager.NavigateTo("/app_parameters");
+                return;
+            }
+
+            navigationManager.NavigateTo("/error");
+            return;
+        }
+
+		await ShowErrorsDialog(updateAppParametersResult.AsT1.ToErrorsList());
+    }
+
+    private async Task ShowErrorsDialog(List<string> errorList)
+    {
+        await dialogService.OpenAsync("Validation Errors", ds => @<div style="padding:10px;">
+        <ul style="margin:0; padding-left: 20px;">
+            @foreach (var error in errorList)
+        {
+            <li>@error</li>
+        }
+        </ul>
+    </div>, new DialogOptions()
+          {
+              CloseDialogOnOverlayClick = true,
+              Draggable = true,
+              Resizable = true
+          });
+    }
+
+}
