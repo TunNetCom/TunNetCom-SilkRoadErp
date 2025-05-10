@@ -12,7 +12,9 @@ public class GetProductEndpoint : ICarterModule
             var query = new GetProductQuery(
                 paginationQueryParams.PageNumber,
                 paginationQueryParams.PageSize,
-                paginationQueryParams.SearchKeyword);
+                paginationQueryParams.SearchKeyword,
+                paginationQueryParams.SortProprety,
+                paginationQueryParams.SortOrder);
 
             var pagedProducts = await mediator.Send(query, cancellationToken);
             var metadata = new

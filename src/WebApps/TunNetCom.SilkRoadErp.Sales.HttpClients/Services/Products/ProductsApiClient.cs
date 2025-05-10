@@ -35,9 +35,17 @@ public class ProductsApiClient : IProductsApiClient
 
     public async Task<PagedList<ProductResponse>> GetPagedAsync(QueryStringParameters queryParameters, CancellationToken cancellationToken)
     {
-        var response = await _httpClient.GetAsync(
-            $"/products?pageNumber={queryParameters.PageNumber}&pageSize={queryParameters.PageSize}&searchKeyword={queryParameters.SearchKeyword}",
-            cancellationToken: cancellationToken);
+        var queryString = $"/products?pageNumber={queryParameters.PageNumber}&pageSize={queryParameters.PageSize}";
+        if (!string.IsNullOrEmpty(queryParameters.SearchKeyword))
+        {
+            queryString += $"&searchKeyword={queryParameters.SearchKeyword}";
+        }
+        if (!string.IsNullOrEmpty(queryParameters.SortProprety))
+        {
+            queryString += $"&sortProprety={queryParameters.SortProprety}&sortOrder={queryParameters.SortOrder ?? "asc"}";
+        }
+
+        var response = await _httpClient.GetAsync(queryString, cancellationToken: cancellationToken);
 
         var responseContent = await response.Content.ReadAsStringAsync();
         var pagedProducts = JsonConvert.DeserializeObject<PagedList<ProductResponse>>(responseContent);

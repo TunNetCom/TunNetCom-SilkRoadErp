@@ -2,4 +2,6 @@
 public record GetProductQuery(
      int PageNumber,
      int PageSize,
-     string? SearchKeyword) : IRequest<PagedList<ProductResponse>> ;
+     string? SearchKeyword,
+     string? SortProprety,
+     string? SortOrder) : IRequest<PagedList<ProductResponse>> ;
