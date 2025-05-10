@@ -38,7 +38,7 @@ public class SidebarData
         [
             new MenuItem(href:"/providers_list", title:"Consulter Fournisseurs"),
             new MenuItem(href:"/manage-providers-invoices", title:"Gestion Facture Fournisseurs"),
-            new MenuItem(href:"#", title:"Commandes Fournisseurs"),
+            new MenuItem(href:"/orders", title:"Commandes Fournisseurs"),
         ]),
 
         //new MenuItem(title:"Stock", icon:"ri-shopping-cart-fill", childMenuItems:
@@ -51,6 +51,12 @@ public class SidebarData
             new MenuItem(href:"/products_list", title:"Stock"),
             new MenuItem(href:"#", title:"Open street map"),
         ]),
+        new MenuItem(title:"Paramétres systéme", icon:"ri-tools-fill", childMenuItems:
+        [
+            new MenuItem(href:"#", title:"Dark"),
+            new MenuItem(href:"#", title:"Light"),
+        ]),
+
         new MenuItem(title:"Theme", icon:"ri-paint-brush-fill", childMenuItems:
         [
             new MenuItem(href:"#", title:"Dark"),
