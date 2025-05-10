@@ -303,12 +303,6 @@
   <data name="customer_email" xml:space="preserve">
     <value>Client Email</value>
   </data>
-  <data name="actions_label" xml:space="preserve">
-    <value>Actions</value>
-  </data>
-  <data name="cancel_label" xml:space="preserve">
-    <value>Cancel</value>
-  </data>
   <data name="save_label" xml:space="preserve">
     <value>Save</value>
   </data>
@@ -346,6 +340,15 @@
     <value />
   </data>
   <data name="input_error" xml:space="preserve">
+    <value />
+  </data>
+  <data name="actions_label" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="cancel_label" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="manage_customer_invoices" xml:space="preserve">
     <value />
   </data>
 </root>
