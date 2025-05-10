@@ -386,6 +386,9 @@
                 sortProperty: null,
                 pageNumber: 1,
                 pageSize: _defaultPageSize,
+				searchKeyword: null,
+                startDate:null,
+				EndDate: null,
                 cancellationToken: _cancellationTokenSource.Token
             );
 
@@ -446,6 +449,9 @@
                 sortProperty: null,
                 pageNumber: 1,
                 pageSize: _defaultPageSize,
+                searchKeyword: null,
+                startDate:null,
+                EndDate: null,
                 cancellationToken: _cancellationTokenSource.Token
             );
         }
@@ -480,8 +486,10 @@
             pageSize: _defaultPageSize,
             sortOrder: sortOrder,
             sortProperty: columnName,
-            cancellationToken: _cancellationTokenSource.Token
-        );
+            searchKeyword: null,
+            startDate:null,
+            EndDate: null,
+            cancellationToken: _cancellationTokenSource.Token);
     }
 
     private async Task AttachDeliveryNoteToInvoiceClick(string text)
@@ -648,8 +656,11 @@
                     sortProperty: _sortProperty,
                     pageNumber: (args.Skip.Value / _defaultPageSize) + 1,
                     pageSize: _defaultPageSize,
+                    searchKeyword: null,
+                    startDate:null,
+                    EndDate: null,
                     cancellationToken: _cancellationTokenSource.Token
-                );
+                            );
 
             isLoadingDeliveryNotesInCurrentInvoice = false;
             await InvokeAsync(StateHasChanged);
@@ -694,8 +705,10 @@
                 sortProperty: _sortProperty,
                 pageNumber: (args.Skip.Value / _defaultPageSize) + 1,
                 pageSize: _defaultPageSize,
-                cancellationToken: _cancellationTokenSource.Token
-            );
+                searchKeyword: null,
+                startDate:null,
+                EndDate: null,
+                cancellationToken: _cancellationTokenSource.Token);
 
             isLoadingUninvoicedDeliveryNotes = false;
             await InvokeAsync(StateHasChanged);

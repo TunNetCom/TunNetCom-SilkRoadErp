@@ -192,64 +192,69 @@ public class DeliveryNoteApiClient(HttpClient _httpClient) : IDeliveryNoteApiCli
     }
 
     public async Task<GetDeliveryNotesWithSummariesResponse> GetDeliveryNotesWithSummariesAsync(
-        int customerId,
-        int? invoiceId,
-        bool isInvoiced,
-        string? sortOrder,
-        string? sortProperty,
-        CancellationToken cancellationToken,
-        int pageNumber = 1,
-        int pageSize = 10)
+                int? customerId,
+                int? invoiceId,
+                bool? isInvoiced,
+                string? sortOrder,
+                string? sortProperty,
+                int pageNumber,
+                int pageSize,
+                string? searchKeyword,
+                DateTime? startDate,
+                DateTime? endDate, // Fixed naming convention
+                CancellationToken cancellationToken)
     {
-        // Construct the query string with all parameters
-        var queryParams = new List<string>
+        // Validate pagination parameters
+        if (pageNumber < 1 || pageSize < 1)
         {
-            $"customerId={customerId}",
-            $"isInvoiced={isInvoiced}",
-            $"pageNumber={pageNumber}",
-            $"pageSize={pageSize}",
-            $"sortOrder={sortOrder}",
-            $"sortProperty={sortProperty}"
-        };
-        var GetDeliveryNotesWithSummariesQueryParams = new GetDeliveryNotesQueryParams
-        {
-            CustomerId = customerId,
-            IsInvoiced = isInvoiced,
-            PageNumber = pageNumber,
-            PageSize = pageSize,
-            SortOrder = sortOrder,
-            SortProperty = sortProperty,
-            InvoiceId = invoiceId
-        };
-        if (invoiceId.HasValue)
-        {
-            queryParams.Add($"invoiceId={invoiceId.Value}");
+            throw new ArgumentException("PageNumber and PageSize must be greater than zero.");
         }
 
-        var queryString = $"/deliverynotes/summaries?{string.Join("&", queryParams)}";
+        // Build query string with only non-null parameters
+        var queryParams = new Dictionary<string, string>();
+
+        if (customerId.HasValue)
+            queryParams.Add("customerId", customerId.Value.ToString());
+        if (invoiceId.HasValue)
+            queryParams.Add("invoiceId", invoiceId.Value.ToString());
+        if (isInvoiced.HasValue)
+            queryParams.Add("isInvoiced", isInvoiced.Value.ToString());
+        if (!string.IsNullOrEmpty(sortOrder))
+            queryParams.Add("sortOrder", sortOrder);
+        if (!string.IsNullOrEmpty(sortProperty))
+            queryParams.Add("sortProperty", sortProperty);
+        if (!string.IsNullOrEmpty(searchKeyword))
+            queryParams.Add("searchKeyword", searchKeyword);
+        if (startDate.HasValue)
+            queryParams.Add("startDate", startDate.Value.ToString("yyyy-MM-dd"));
+        if (endDate.HasValue)
+            queryParams.Add("endDate", endDate.Value.ToString("yyyy-MM-dd"));
+
+        queryParams.Add("pageNumber", pageNumber.ToString());
+        queryParams.Add("pageSize", pageSize.ToString());
+
+        // Construct query string with URL encoding
+        var queryString = string.Join("&", queryParams.Select(p => $"{p.Key}={Uri.EscapeDataString(p.Value)}"));
+        var requestUri = $"/deliverynotes/summaries?{queryString}";
 
         try
         {
             // Make the HTTP GET request
-            var response = await _httpClient.GetAsync(queryString, cancellationToken);
+            var response = await _httpClient.GetAsync(requestUri, cancellationToken);
             response.EnsureSuccessStatusCode();
 
-            // Deserialize the response into GetDeliveryNotesWithSummariesResponse
-            var summariesResponse = await response.Content.ReadFromJsonAsync<GetDeliveryNotesWithSummariesResponse>(cancellationToken: cancellationToken);
+            // Deserialize the response
+            var summariesResponse = await response.Content.ReadFromJsonAsync<GetDeliveryNotesWithSummariesResponse>(
+                cancellationToken: cancellationToken);
 
             return summariesResponse ?? throw new InvalidOperationException("Failed to deserialize the response.");
         }
-        catch (HttpRequestException ex)
+        catch (JsonException ex)
         {
-            Console.WriteLine($"Error fetching delivery notes summaries: {ex.Message}");
-            throw;
-        }
-        catch (System.Text.Json.JsonException ex)
-        {
-            Console.WriteLine($"Error deserializing response: {ex.Message}");
-            throw;
+            throw new InvalidOperationException("Failed to deserialize delivery notes summaries response.", ex);
         }
     }
+    
 
     public async Task<DeliveryNoteResponse?> GetDeliveryNoteByNumAsync(
         int num,

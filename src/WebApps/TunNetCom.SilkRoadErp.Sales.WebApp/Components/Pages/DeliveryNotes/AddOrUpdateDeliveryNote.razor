@@ -9,6 +9,7 @@
 @using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters
 @using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests
 @using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Sorting
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote
@@ -30,6 +31,130 @@
 @inject DialogService DialogService
 
 <style>
+    /* Header actions container */
+    .header-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 24px;
+        background-color: #ffffff;
+        border-bottom: 1px solid #e5e7eb;
+        width: 100%;
+    }
+
+    /* Action buttons container */
+    .action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+    }
+
+    /* Button styling */
+    .action-button {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 8px 12px;
+        border-radius: 6px;
+        transition: background-color 0.2s, box-shadow 0.2s;
+        color: #ffffff;
+        background-color: #3b82f6;
+        border: none;
+    }
+
+        .action-button:hover:not(:disabled) {
+            background-color: #2563eb;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .action-button:disabled {
+            background-color: #d1d5db;
+            color: #6b7280;
+            cursor: not-allowed;
+        }
+
+    /* Success button styling */
+    .success-button {
+        background-color: #10b981;
+    }
+
+        .success-button:hover:not(:disabled) {
+            background-color: #059669;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+    /* Summary card styling */
+    .summary-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 8px 16px;
+        background-color: #f8fafc;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        flex: 0 0 auto;
+    }
+
+    /* Summary stack */
+    .summary-stack {
+        gap: 1.5rem;
+    }
+
+    /* Summary text */
+    .summary-text {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 13px;
+        color: #1f2937;
+        line-height: 1.5;
+    }
+
+        .summary-text strong {
+            font-weight: 600;
+            color: #111827;
+        }
+
+    /* Responsive design */
+    @@media (max-width: 768px) {
+        .header-actions
+
+    {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 12px 16px;
+        gap: 12px;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+        width: 100%;
+        gap: 8px;
+    }
+
+    .action-button,
+    .success-button {
+        width: 100%;
+        text-align: center;
+        font-size: 12px;
+        padding: 10px;
+    }
+
+    .summary-card {
+        width: 100%;
+        padding: 8px 12px;
+    }
+
+    .summary-stack {
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: flex-start;
+    }
+
+    .summary-text {
+        font-size: 12px;
+    }
+
+    }
     .delivery-note-container {
     display: flex;
     justify-content: space-between;
@@ -47,27 +172,27 @@
     flex-grow: 1;
     }
 
-    .header-actions {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    }
+    /* .header-actions { */
+    /* display: flex; */
+    /* gap: 10px; */
+    /* align-items: center; */
+    /* justify-content: space-between; */
+    /* width: 100%; */
+    /* } */
 
-    .summary-card {
-    background-color: #f8f9fa;
-    padding: 10px 20px;
-    border-radius: 5px;
-    margin-left: auto; /* This pushes it to the right */
-    border-left: 1px solid #ddd; /* Optional: adds a separator line */
-    }
+    /* .summary-card { */
+    /* background-color: #f8f9fa; */
+    /* padding: 10px 20px; */
+    /* border-radius: 5px; */
+    /* margin-left: auto; /* This pushes it to the right */ */
+    /* border-left: 1px solid #ddd; /* Optional: adds a separator line */ */
+    /* } */
 
-    .action-buttons {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    }
+    /* .action-buttons { */
+    /* display: flex; */
+    /* gap: 10px; */
+    /* align-items: center; */
+    /* } */
 </style>
 
 <!-- Loading Indicator -->
@@ -80,8 +205,8 @@ else
     <!-- Delivery Note Container with Form and Summary -->
     <div class="delivery-note-container">
         <div class="delivery-note-form">
-            <RadzenLabel Text="@Localizer["delivery_note_number"]" />
-            <RadzenTextBox @bind-Value="deliveryNoteNumber" Name="DeliveryNoteNumber" Style="width: 200px;" ReadOnly="true" />
+	        <RadzenLabel Text="@Localizer["delivery_note_number"]" Component="DeliveryNoteNumber" AriaLabel="@Localizer["delivery_note_number"]" />
+	        <RadzenTextBox @bind-Value="deliveryNoteNumber" Name="DeliveryNoteNumber" Style="width: 200px;" ReadOnly="true" AriaReadOnly="true" />
 
             <RadzenLabel Text="@Localizer["date"]" />
             <RadzenDatePicker @bind-Value="deliveryNoteDate" Name="DeliveryNoteDate" Style="width: 200px;" DateFormat="d MMMM yyyy" ShowTime="false" />
@@ -133,45 +258,53 @@ else
     Page="@Reset"
     ColumnWidth="200px">
         <HeaderTemplate>
-            <div class="header-actions">
-                <div class="action-buttons">
-                    <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="add_circle" Text="@Localizer["add_new_order"]"
-                    Click="@InsertRow" Disabled="@(editMode == DataGridEditMode.Single && ordersToInsert.Count() > 0)" />
+    <div class="header-actions">
+        <div class="action-buttons">
+            <RadzenButton ButtonStyle="ButtonStyle.Success" 
+                          Icon="add_circle" 
+                          Text="@Localizer["add_new_order"]"
+                          Click="@InsertRow" 
+                          Disabled="@(editMode == DataGridEditMode.Single && ordersToInsert.Count() > 0)"
+                          class="action-button success-button"
+                          AriaLabel="@Localizer["add_new_order"]" />
 
-                    <RadzenButton ButtonStyle="ButtonStyle.Primary"
-                    Icon="print"
-                    Text="@Localizer["print"]"
-                    Variant="Variant.Flat"
-                    Disabled="@(!orders.Any())" />
+            <RadzenButton ButtonStyle="ButtonStyle.Primary"
+                          Icon="print"
+                          Text="@Localizer["print"]"
+                          Variant="Variant.Flat"
+                          Disabled="@(!orders.Any())"
+                          class="action-button"
+                          AriaLabel="@Localizer["print"]" />
 
-                    <RadzenButton ButtonStyle="ButtonStyle.Primary"
-                    Icon="save"
-                    Text="@Localizer["save"]"
-                    Variant="Variant.Flat"
-                    Click="@SaveDeliveryNote" />
+            <RadzenButton ButtonStyle="ButtonStyle.Primary"
+                          Icon="save"
+                          Text="@Localizer["save"]"
+                          Variant="Variant.Flat"
+                          Click="@SaveDeliveryNote" 
+                          Disabled="@(!orders.Any())"
+                          class="action-button"
+                          AriaLabel="@Localizer["save"]" />
 
-                    <RadzenButton ButtonStyle="ButtonStyle.Primary"
-                    Icon="receipt"
-                    Text="@Localizer["convert_to_price_note"]"
-                    Variant="Variant.Flat"
-                    Disabled="@(!orders.Any())" />
-                </div>
-
-                <RadzenCard class="summary-card" Variant="Variant.Outlined">
-                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" JustifyContent="JustifyContent.End">
-                        <RadzenText TextStyle="TextStyle.Button">
-                            @Localizer["total_net"]: <strong>@totalTtc.FormatAmount()</strong>
-                        </RadzenText>
-                        <RadzenText TextStyle="TextStyle.Button">
-                            @Localizer["total_gross"]: <strong>@totalHt.FormatAmount()</strong>
-                        </RadzenText>
-                        <RadzenText TextStyle="TextStyle.Button">
-                            @Localizer["total_vat"]: <strong>@totalVat.FormatAmount()</strong>
-                        </RadzenText>
-                    </RadzenStack>
-                </RadzenCard>
             </div>
-        </HeaderTemplate>
+
+        <RadzenCard class="summary-card" Variant="Variant.Outlined">
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" 
+                         Gap="1.5rem" 
+                         JustifyContent="JustifyContent.End"
+                         class="summary-stack">
+                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                    @Localizer["total_net"]: <strong>@totalTtc.FormatAmount()</strong>
+                </RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                    @Localizer["total_gross"]: <strong>@totalHt.FormatAmount()</strong>
+                </RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                    @Localizer["total_vat"]: <strong>@totalVat.FormatAmount()</strong>
+                </RadzenText>
+            </RadzenStack>
+        </RadzenCard>
+    </div>
+</HeaderTemplate>
         <Columns>
             <RadzenDataGridColumn Width="600px" TItem="DeliveryNoteDetailResponse"
             Property="@nameof(DeliveryNoteDetailResponse.ProductReferenceAndDescription)"
@@ -299,6 +432,7 @@ else
     List<DeliveryNoteDetailResponse> orders;
     List<DeliveryNoteDetailResponse> searchList;
     int count;
+    private const int DefaultPageSize = 7;
     private CancellationTokenSource _cancellationTokenSource = new();
     private List<CustomerResponse> _filteredCustomers { get; set; } = new();
     private List<InvoiceResponse> _filteredInvoices { get; set; } = new();
@@ -375,6 +509,26 @@ else
     {
         try
         {
+	        if (!_selectedCustomerId.HasValue )
+	        {
+		        NotificationService.Notify(new NotificationMessage
+		        {
+			        Severity = NotificationSeverity.Error,
+			        Summary = Localizer["error"],
+                        Detail = $"{Localizer["select_customer"]}"
+		        });
+		        return;
+	        }
+	        if (!_selectedCustomerId.HasValue )
+	        {
+		        NotificationService.Notify(new NotificationMessage
+		        {
+			        Severity = NotificationSeverity.Error,
+			        Summary = Localizer["error"],
+                        Detail = $"{Localizer["select_customer"]}"
+		        });
+		        return;
+	        }
             isLoading = true;
             StateHasChanged();
 
@@ -415,7 +569,7 @@ else
                 // Update the delivery note number if this is a new note
                 if (string.IsNullOrEmpty(deliveryNoteNumber))
                 {
-                    deliveryNoteNumber = response.ToString();
+                    deliveryNoteNumber = response.ValueOrDefault.ToString();
                 }
             }
             else
@@ -515,7 +669,17 @@ else
 
     async Task SaveRow(DeliveryNoteDetailResponse order)
     {
-        try
+	    if (order.ProductReference == "" || order.Quantity < 1)
+	    {
+		    NotificationService.Notify(new NotificationMessage
+		    {
+			    Severity = NotificationSeverity.Error,
+			    Summary = Localizer["error"],
+			    Detail = $"{Localizer["input_error"]}"
+		    });
+		    return;
+	    }
+	    try
         {
             await ordersGrid.UpdateRow(order);
         }
@@ -589,59 +753,61 @@ else
         return searchList;
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    // protected override async Task OnAfterRenderAsync(bool firstRender)
+    // {
+    //     if (firstRender)
+    //     {
+    //         await LoadData(new LoadDataArgs());
+    //     }
+    // }
+
+    async Task LoadData(LoadDataArgs args)
     {
-        if (firstRender)
-        {
-            await LoadProducts();
-        }
-    }
+	    string _sortProperty = null;
+	    string _sortOrder = null;
+	    if (args.Sorts != null && args.Sorts.Any())
+	    {
+		    var sort = args.Sorts.First();
+		    _sortProperty = sort.Property;
+		    _sortOrder = sort.SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending;
+	    }
+	    var parameters = new QueryStringParameters
+	    {
+		    PageNumber = (args.Skip.Value / DefaultPageSize) + 1,
+		    PageSize = DefaultPageSize,
+		    SearchKeyword = args.Filter,
+		    SortOrder = _sortOrder,
+		    SortProprety = _sortProperty
+	    };
 
-    async Task LoadProducts(string filter = "")
-    {
-        var productsParameters = new QueryStringParameters
-        {
-            PageNumber = 1,
-            PageSize = 10,
-            SearchKeyword = filter
-        };
+	    try
+	    {
+            var pagedProducts = await productsApiClient.GetPagedAsync(parameters, _cancellationTokenSource.Token);
+		    searchList = pagedProducts.Items.Select(
+			    p => new DeliveryNoteDetailResponse
+			    {
+				    ProductReference = p.Reference,
+				    Description = p.Name,
+				    UnitPriceExcludingTax = p.Price,
+				    Quantity = 1,
+			    }).ToList();
 
-        try
-        {
-            var pagedProducts = await productsApiClient.GetPagedAsync(productsParameters, _cancellationTokenSource.Token);
-            searchList = pagedProducts.Items.Select(
-                p => new DeliveryNoteDetailResponse
-                {
-                    ProductReference = p.Reference,
-                    Description = p.Name,
-                    UnitPriceExcludingTax = p.Price,
-                    Quantity = 1,
-                    // DiscountPercentage = p.DiscountPourcentage,
-                    // VatPercentage = p.VatRate,
-                    TotalExcludingTax = 0,
-                    TotalIncludingTax = 0
-                }).ToList();
+		    count = pagedProducts.TotalCount;
+            
+	    }
+	    catch (Exception ex)
+	    {
+		    NotificationService.Notify(new NotificationMessage
+		    {
+			    Severity = NotificationSeverity.Error,
+			    Summary = Localizer["error"],
+			    Detail = $"{Localizer["failed_to_load_products"]}: {ex.Message}"
+		    });
+		    searchList = new List<DeliveryNoteDetailResponse>();
+		    count = 0;
+	    }
 
-            count = pagedProducts.TotalCount;
-        }
-        catch (Exception ex)
-        {
-            NotificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Error,
-                Summary = Localizer["error"],
-                Detail = $"{Localizer["failed_to_load_products"]}: {ex.Message}"
-            });
-            searchList = new List<DeliveryNoteDetailResponse>();
-            count = 0;
-        }
-
-        await InvokeAsync(StateHasChanged);
-    }
-
-    void LoadData(LoadDataArgs args)
-    {
-        _ = LoadProducts(args.Filter);
+	    await InvokeAsync(StateHasChanged);
     }
 
     async Task LoadCustomers(LoadDataArgs args)

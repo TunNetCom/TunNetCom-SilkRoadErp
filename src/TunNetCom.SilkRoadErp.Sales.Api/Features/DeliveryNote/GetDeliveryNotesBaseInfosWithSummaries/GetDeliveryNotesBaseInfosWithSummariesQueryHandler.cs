@@ -7,9 +7,10 @@ public class GetDeliveryNotesBaseInfosWithSummariesQueryHandler(
     ILogger<GetDeliveryNotesBaseInfosWithSummariesQueryHandler> _logger)
     : IRequestHandler<GetDeliveryNotesBaseInfosWithSummariesQuery, GetDeliveryNotesWithSummariesResponse>
 {
-        private const string _numColumName = nameof(GetDeliveryNoteBaseInfos.Number);
-        private const string _netAmountColumnName = nameof(GetDeliveryNoteBaseInfos.NetAmount);
-        private const string _grossAmountColumnName = nameof(GetDeliveryNoteBaseInfos.GrossAmount);
+    private const string _numColumName = nameof(GetDeliveryNoteBaseInfos.Number);
+    private const string _netAmountColumnName = nameof(GetDeliveryNoteBaseInfos.NetAmount);
+    private const string _grossAmountColumnName = nameof(GetDeliveryNoteBaseInfos.GrossAmount);
+
     public async Task<GetDeliveryNotesWithSummariesResponse> Handle(
         GetDeliveryNotesBaseInfosWithSummariesQuery request,
         CancellationToken cancellationToken)
@@ -17,39 +18,63 @@ public class GetDeliveryNotesBaseInfosWithSummariesQueryHandler(
         _logger.LogPaginationRequest(nameof(BonDeLivraison), request.PageNumber, request.PageSize);
 
         var deliveryNoteQuery = _context.BonDeLivraison
-            .Where(d => d.ClientId == request.CustomerId)
-            .Select(t =>
-            new GetDeliveryNoteBaseInfos
+            .Select(t => new GetDeliveryNoteBaseInfos
             {
                 Number = t.Num,
                 Date = t.Date,
                 NetAmount = t.NetPayer,
                 GrossAmount = t.TotHTva,
                 VatAmount = t.TotTva,
-                NumFacture = t.NumFacture
+                NumFacture = t.NumFacture,
+                CustomerId = t.ClientId,
             })
             .AsQueryable();
 
-        if (request.InvoiceId.HasValue && request.IsInvoiced)
+        if (request.CustomerId.HasValue)
+        {
+            deliveryNoteQuery = deliveryNoteQuery.Where(d => d.CustomerId == request.CustomerId);
+        }
+
+        if (request.IsInvoiced.Equals(true) && !request.InvoiceId.HasValue)
+        {
+            deliveryNoteQuery = deliveryNoteQuery.Where(d => d.NumFacture.HasValue);
+        }
+        // Apply InvoiceId and IsInvoiced filters
+        if (request.InvoiceId.HasValue && request.IsInvoiced.Equals(true))
         {
             deliveryNoteQuery = deliveryNoteQuery.Where(d => d.NumFacture == request.InvoiceId);
         }
 
-        if(!request.IsInvoiced)
+        if (request.IsInvoiced.Equals(false))
         {
             deliveryNoteQuery = deliveryNoteQuery.Where(d => d.NumFacture == null);
         }
 
-        if(request.SortOrder != null && request.SortProperty != null)
+
+        // Apply Date Range filters
+        if (request.StartDate.HasValue)
+        {
+            _logger.LogInformation("Applying start date filter: {startDate}", request.StartDate);
+            deliveryNoteQuery = deliveryNoteQuery.Where(d => d.Date >= request.StartDate.Value);
+        }
+
+        if (request.EndDate.HasValue)
+        {
+            _logger.LogInformation("Applying end date filter: {endDate}", request.EndDate);
+            deliveryNoteQuery = deliveryNoteQuery.Where(d => d.Date <= request.EndDate.Value);
+        }
+
+        // Apply Sorting
+        if (request.SortOrder != null && request.SortProperty != null)
         {
             _logger.LogInformation(
-                "sorting delivery notes column : {column} order : {order}",
+                "Sorting delivery notes column: {column} order: {order}",
                 request.SortProperty,
                 request.SortOrder);
             deliveryNoteQuery = ApplySorting(deliveryNoteQuery, request.SortProperty, request.SortOrder);
         }
 
-        _logger.LogInformation("Getting Gross, Vat and Net amounts");
+        _logger.LogInformation("Getting Gross, Vat, and Net amounts");
 
         var totalGrossAmount = await deliveryNoteQuery.SumAsync(d => d.GrossAmount, cancellationToken);
         var totalVATAmount = await deliveryNoteQuery.SumAsync(d => d.VatAmount, cancellationToken);

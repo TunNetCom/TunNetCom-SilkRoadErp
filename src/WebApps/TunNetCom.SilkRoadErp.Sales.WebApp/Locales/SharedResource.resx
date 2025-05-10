@@ -168,10 +168,10 @@
   <data name="Previous" xml:space="preserve">
     <value />
   </data>
-  <data name="Save" xml:space="preserve">
+  <data name="save" xml:space="preserve">
     <value />
   </data>
-  <data name="Search" xml:space="preserve">
+  <data name="search" xml:space="preserve">
     <value />
   </data>
   <data name="SilkRoadErp" xml:space="preserve">
@@ -301,6 +301,46 @@
     <value />
   </data>
   <data name="customer_email" xml:space="preserve">
+    <value />
+  </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="save_label" type="System.Resources.ResXNullRef, System.Windows.Forms">
+    <value />
+  </data>
+  <data name="delivery_notes" xml:space="preserve">
+    <value />
+  </data>
+  <data name="invoiced" xml:space="preserve">
+    <value />
+  </data>
+  <data name="not_invoiced" xml:space="preserve">
+    <value />
+  </data>
+  <data name="start_date" xml:space="preserve">
+    <value />
+  </data>
+  <data name="end_date" xml:space="preserve">
+    <value />
+  </data>
+  <data name="delivery_note_status" xml:space="preserve">
+    <value />
+  </data>
+  <data name="select_invoice" xml:space="preserve">
+    <value />
+  </data>
+  <data name="delivery_note_saved_successfully" xml:space="preserve">
+    <value />
+  </data>
+  <data name="add_new_order" xml:space="preserve">
+    <value />
+  </data>
+  <data name="print" xml:space="preserve">
+    <value />
+  </data>
+  <data name="failed_to_save_delivery_note" xml:space="preserve">
+    <value />
+  </data>
+  <data name="input_error" xml:space="preserve">
     <value />
   </data>
 </root>

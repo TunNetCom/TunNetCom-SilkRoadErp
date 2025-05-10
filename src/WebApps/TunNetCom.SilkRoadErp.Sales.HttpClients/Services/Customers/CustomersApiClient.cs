@@ -125,10 +125,19 @@ public class CustomersApiClient : ICustomersApiClient
 
     public async Task<PagedList<CustomerResponse>> SearchCustomers(QueryStringParameters queryParameters, CancellationToken cancellationToken)
     {
-        var response = await _httpClient.GetAsync(
-             $"/customers?pageNumber={queryParameters.PageNumber}&pageSize={queryParameters.PageSize}&searchKeyword={queryParameters.SearchKeyword}",
-            cancellationToken);
+        // Initialize the query string with required parameters
+        var queryString = $"?pageNumber={queryParameters.PageNumber}&pageSize={queryParameters.PageSize}";
 
+        // Add searchKeyword only if it is not null or empty
+        if (!string.IsNullOrEmpty(queryParameters.SearchKeyword))
+        {
+            queryString += $"&searchKeyword={Uri.EscapeDataString(queryParameters.SearchKeyword)}";
+        }
+
+        // Make the HTTP request
+        var response = await _httpClient.GetAsync($"/customers{queryString}", cancellationToken);
+
+        // Read and deserialize the response
         var responseContent = await response.Content.ReadAsStringAsync();
         var pagedCustomers = JsonConvert.DeserializeObject<PagedList<CustomerResponse>>(responseContent);
         return pagedCustomers;

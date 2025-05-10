@@ -19,4 +19,7 @@ public class GetDeliveryNoteBaseInfos
 
     [JsonPropertyName("vatAmount")]
     public decimal VatAmount { get; set; }
+
+    [JsonPropertyName("customerId")]
+    public int? CustomerId { get; set; }
 }
