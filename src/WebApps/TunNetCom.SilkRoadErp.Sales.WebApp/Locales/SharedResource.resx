@@ -303,4 +303,7 @@
   <data name="customer_email" xml:space="preserve">
     <value />
   </data>
+  <data name="pourcentage_retenu" xml:space="preserve">
+    <value />
+  </data>
 </root>
