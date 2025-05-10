@@ -46,9 +46,9 @@ public class SidebarData
         //    new MenuItem(href:"#", title:"Consulter Stock"),
         //]),
 
-        new MenuItem(title:"Maps", icon:"ri-global-fill", childMenuItems:
+        new MenuItem(title:"Stock", icon:"ri-shopping-cart-fill", childMenuItems:
         [
-            new MenuItem(href:"#", title:"Google maps"),
+            new MenuItem(href:"/products_list", title:"Stock"),
             new MenuItem(href:"#", title:"Open street map"),
         ]),
         new MenuItem(title:"Theme", icon:"ri-paint-brush-fill", childMenuItems:
