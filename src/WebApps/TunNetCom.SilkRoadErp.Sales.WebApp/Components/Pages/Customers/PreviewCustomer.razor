@@ -1,0 +1,141 @@
+﻿@page "/dialogcard/Customer/{CustomerId}"
+
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
+@using Radzen.Blazor
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@inject ICustomersApiClient CustomerService
+@inject IStringLocalizer<SharedResource> Localizer
+
+    <div class="customer-preview-container">
+        <RadzenCard class="customer-preview-card">
+            <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1.5rem">
+                <h3 class="customer-preview-title">@Localizer["CustomerPreview"]</h3>
+
+                @if (customer == null)
+                {
+                    <p class="no-data">Unable to load customer information.</p>
+                }
+                else
+                {
+                    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
+                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                            <RadzenLabel Text="@Localizer["customer_id"]" class="preview-label" />
+                            <span class="preview-value">@customer.Id</span>
+                        </RadzenStack>
+                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                            <RadzenLabel Text="@Localizer["customer_name"]" class="preview-label" />
+                            <span class="preview-value">@(customer.Name ?? "N/A")</span>
+                        </RadzenStack>
+                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                            <RadzenLabel Text="@Localizer["customer_phone"]" class="preview-label" />
+                            <span class="preview-value">@(customer.Tel ?? "N/A")</span>
+                        </RadzenStack>
+                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                            <RadzenLabel Text="@Localizer["customer_address"]" class="preview-label" />
+                            <span class="preview-value">@(customer.Adresse ?? "N/A")</span>
+                        </RadzenStack>
+                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                            <RadzenLabel Text="@Localizer["customer_matricule"]" class="preview-label" />
+                            <span class="preview-value">@(customer.Matricule ?? "N/A")</span>
+                        </RadzenStack>
+                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                            <RadzenLabel Text="@Localizer["customer_code"]" class="preview-label" />
+                            <span class="preview-value">@(customer.Code ?? "N/A")</span>
+                        </RadzenStack>
+                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                            <RadzenLabel Text="@Localizer["customer_codeCat"]" class="preview-label" />
+                            <span class="preview-value">@(customer.CodeCat ?? "N/A")</span>
+                        </RadzenStack>
+                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                            <RadzenLabel Text="@Localizer["customer_etbSec"]" class="preview-label" />
+                            <span class="preview-value">@(customer.EtbSec ?? "N/A")</span>
+                        </RadzenStack>
+                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                            <RadzenLabel Text="@Localizer["customer_email"]" class="preview-label" />
+                            <span class="preview-value">@(customer.Mail ?? "N/A")</span>
+                        </RadzenStack>
+                    </RadzenStack>
+                }
+
+                @if (ShowClose)
+                {
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem">
+                        <RadzenButton Text="@Localizer["Close"]" ButtonStyle="ButtonStyle.Secondary" Click="@(() => DialogService.Close())" />
+                    </RadzenStack>
+                }
+            </RadzenStack>
+        </RadzenCard>
+    </div>
+
+
+@code {
+    [Parameter] public int CustomerId { get; set; }
+    [Parameter] public bool ShowClose { get; set; } = true;
+    [Inject] private DialogService DialogService { get; set; } = null!;
+
+    CustomerResponse customer = new();
+
+    protected override async Task OnParametersSetAsync()
+    {
+            var result = await CustomerService.GetCustomerByIdAsync(CustomerId, default);
+            customer = result;
+    }
+}
+
+<style>
+    :root {
+        --primary-color: #1a73e8;
+        --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        --card-bg: #ffffff;
+        --border-radius: 8px;
+        --border-color: #e0e0e0;
+        --text-color: #202124;
+        --muted-text: #5f6368;
+    }
+
+    .customer-preview-container {
+        padding: 1rem;
+        max-width: 600px;
+        margin: 0 auto;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .customer-preview-card {
+        background: var(--card-bg);
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
+        padding: 1.5rem;
+        border: none;
+    }
+
+    .customer-preview-title {
+        color: var(--text-color);
+        font-weight: 600;
+        margin: 0;
+        font-size: 1.75rem;
+        line-height: 1.2;
+    }
+
+    .preview-label {
+        color: var(--muted-text);
+        font-weight: 500;
+        font-size: 0.95rem;
+        width: 40%;
+    }
+
+    .preview-value {
+        color: var(--text-color);
+        font-size: 0.95rem;
+        width: 60%;
+        text-align: right;
+        word-break: break-word;
+    }
+
+    .no-data {
+        color: var(--muted-text);
+        font-size: 1rem;
+        text-align: center;
+        margin: 2rem 0;
+    }
+</style>

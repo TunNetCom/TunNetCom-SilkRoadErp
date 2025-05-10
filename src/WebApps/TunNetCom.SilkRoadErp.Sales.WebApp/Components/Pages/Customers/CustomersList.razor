@@ -1,4 +1,5 @@
 ﻿@page "/customers_list"
+@using System.Text.Json
 @using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Customers
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
@@ -7,64 +8,193 @@
 @using Radzen
 @using TunNetCom.DeleteModal
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Sorting
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.Providers
 @inject NavigationManager navigationManager
 @inject IStringLocalizer<SharedResource> Localizer
 @inject ICustomersApiClient customerService
 @inject ToastService toastService
+@inject DialogService DialogService
+@inject IJSRuntime JSRuntime
+@inject NotificationService NotificationService
 
 
-<RadzenCard Style="margin: 1rem;">
-    <RadzenStack JustifyContent="JustifyContent.SpaceBetween" >
-        <h3>@Localizer["Clients"]</h3>
-    </RadzenStack>
-
-
-    <RadzenCard Style="margin-bottom: 1rem;">
-        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap">
-            <RadzenTextBox @bind-Value="searchKeyword"
-                           Placeholder="@Localizer["Search"]"
-                           Style="width: 300px;"
-                           Change="@(async args => await customerGrid.Reload())" />
-
-            <RadzenButton Icon="add_circle"
+<div class="clients-container">
+    <div class="clients-card">
+        <div class="clients-header">
+            <h3 class="clients-title">@Localizer["Clients"]</h3>
+            <RadzenButton Icon="add" Text="@Localizer["AddClient"]"
                           ButtonStyle="ButtonStyle.Primary"
-                          Text="@Localizer["AddClient"]"
-                          Click="@CreateCustomer" />
-        </RadzenStack>
-    </RadzenCard>
+                          Click="CreateCustomer"
+                          Class="btn-primary" />
+        </div>
 
+        <RadzenTextBox Placeholder="@Localizer["Search"]"
+                       @bind-Value="searchKeyword"
+                       Change="@(async (string value) => await customerGrid.Reload())"
+                       Class="clients-search" />
 
-    <RadzenDataGrid @ref="customerGrid"
-                    Page="@OnPage"
-                    Count="@totalCustomers"
-                    Data="@customers"
-                    LoadData="@LoadCustomerData"
-                    AllowPaging="true"
-                    AllowSorting="true"
-                    AllowFiltering="true"
-                    PageSizeOptions="@pageSizeOptions"
-                    PageSize="@_defaultPageSize"
-                    ColumnWidth="200px"
-                    IsLoading="@isLoadingCustomers"
-                    ShowPagingSummary="true"
-                    Responsive="true">
+        <RadzenDataGrid @ref="customerGrid"
+                        TItem="CustomerResponse"
+                        Data="@customers"
+                        Count="@totalCustomers"
+                        LoadData="@LoadCustomerData"
+                        AllowFiltering="true"
+                        AllowPaging="true"
+                        AllowSorting="true"
+                        FilterPopupRenderMode="PopupRenderMode.OnDemand"
+                        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                        PageSize="@_defaultPageSize"
+                        Density="Density.Compact"
+                        Class="clients-grid"
+                        IsLoading="@isLoadingCustomers"
+                        ShowPagingSummary="true"
+                        Responsive="true">
+            <EmptyTemplate>
+                <p style="color: lightgrey; font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
+            </EmptyTemplate>
+            <Columns>
+                <RadzenDataGridColumn TItem="CustomerResponse" Property="Name" Title="@Localizer["customer_name"]" Width="200px">
+                    <Template Context="customer">
+                        <span class="grid-cell">@customer.Name</span>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="CustomerResponse" Property="Tel" Title="@Localizer["customer_phone"]" Width="200px">
+                    <Template Context="customer">
+                        <span class="grid-cell">@customer.Tel</span>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="CustomerResponse" Property="Mail" Title="@Localizer["customer_email"]" Width="200px">
+                    <Template Context="customer">
+                        <span class="grid-cell">@customer.Mail</span>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="CustomerResponse" Filterable="false" Sortable="false" Width="200px" TextAlign="TextAlign.Center">
+	                <Template Context="customer">
+		                <RadzenButton Icon="account_circle" ButtonStyle="ButtonStyle.Info" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter"
+		                              Click="@(() => OpenOrder(customer.Id))"
+		                              Title="@Localizer["preview_button_label"]" />
+		                <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Success" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter" Class="rz-my-1 rz-ms-1"
+		                              Click="@(() => OnClickEditButton(null, customer.Id.ToString()))"
+		                              Title="@Localizer["edit_button_label"]"/>
+		                <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter"
+		                              Click="@(() => ConfirmDeleteCustomer(customer.Id))"
+		                              Title="@Localizer["delete_button_label"]"/>
+	                </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    </div>
+</div>
 
-        <Columns>
-            <RadzenDataGridColumn Property="Name" Title="@Localizer["customer_name"]" />
-            <RadzenDataGridColumn Property="Tel" Title="@Localizer["customer_phone"]" />
-            <RadzenDataGridColumn Property="Mail" Title="@Localizer["customer_email"]" />
-            <RadzenDataGridColumn Title="@Localizer["actions_label"]">
-                <Template Context="customer">
-                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Style="margin-right: 0.5rem"
-                                  Click="@((args) => OnClickEditButton(args, @customer.Id.ToString()))" />
-                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Click="@(() => ConfirmDeleteCustomer(@customer.Id))" />
-                </Template>
-            </RadzenDataGridColumn>
-        </Columns>
-    </RadzenDataGrid>
+<style>
+    :root {
+        --primary-color: #1a73e8;
+        --primary-hover: #135ab6;
+        --danger-color: #d32f2f;
+        --danger-hover: #b71c1c;
+        --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        --card-bg: #ffffff;
+        --grid-header-bg: #f5f7fa;
+        --grid-header-color: #202124;
+        --grid-row-hover: #f1f3f5;
+        --border-radius: 8px;
+        --border-color: #e0e0e0;
+        --text-color: #202124;
+        --muted-text: #5f6368;
+    }
 
-</RadzenCard>
+    .clients-container {
+        padding: 1.25rem;
+        max-width: 1280px;
+        margin: 1rem auto;
+    }
 
+    .clients-card {
+        background: var(--card-bg);
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
+        padding: 1.5rem;
+        border: none;
+    }
+
+    .clients-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.25rem;
+    }
+
+    .clients-title {
+        color: var(--text-color);
+        font-weight: 600;
+        margin: 0;
+        font-size: 2rem;
+        line-height: 1.2;
+    }
+
+    .clients-search {
+        width: 100%;
+        border-radius: var(--border-radius);
+        border: 1px solid var(--border-color);
+        padding: 0.75rem 1rem;
+        margin-bottom: 1.25rem;
+        font-size: 0.95rem;
+        color: var(--text-color);
+        background: #fafafa;
+    }
+
+    .clients-search:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+        outline: none;
+        background: #ffffff;
+    }
+
+    .clients-grid {
+        border-radius: var(--border-radius);
+        overflow: hidden;
+        background: var(--card-bg);
+        border: none;
+    }
+
+    .clients-grid .rz-datatable thead {
+        background: var(--grid-header-bg);
+        color: var(--grid-header-color);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .clients-grid .rz-datatable thead th {
+        font-weight: 500;
+        padding: 0.75rem 1rem;
+        text-align: left;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+    }
+
+    .clients-grid .rz-datatable tbody tr {
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .clients-grid .rz-datatable tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    .clients-grid .rz-datatable tbody tr:hover {
+        background: var(--grid-row-hover);
+    }
+
+    .grid-cell {
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+        color: var(--text-color);
+        line-height: 1.5;
+    }
+
+    .clients-grid .rz-grid-table {
+        border-collapse: collapse;
+    }
+</style>
 
 @code {
 
@@ -77,6 +207,7 @@
     private CancellationTokenSource cancellationTokenSource = new();
     private const int _defaultPageSize = 10;
     IEnumerable<int> pageSizeOptions = new int[] { 10, 20, 30 };
+    private const int NotificationDuration = 4000;
 
     void OnPage(PagerEventArgs args)
     {
@@ -117,8 +248,6 @@
         EditCustomer(int.Parse(id));
     }
 
-    [Inject] DialogService DialogService { get; set; }
-
     async Task ConfirmDeleteCustomer(int customerId)
     {
         bool? confirmed = await DialogService.Confirm(Localizer["delete_customer_confirmation"],
@@ -148,6 +277,110 @@
         cancellationTokenSource.Cancel();
         cancellationTokenSource.Dispose();
     }
+
+    public async Task OpenOrder(int customerId)
+    {
+        await LoadStateAsync();
+
+        await DialogService.OpenAsync<PreviewCustomer>($"CustomerId {customerId}",
+            new Dictionary<string, object>() { { "CustomerId", customerId } },
+	        new DialogOptions()
+	        {
+		        Resizable = true,
+		        Draggable = true,
+		        Resize = OnResize,
+		        Drag = OnDrag,
+		        Width = Settings != null ? Settings.Width : "700px",
+		        Height = Settings != null ? Settings.Height : "512px",
+		        Left = Settings != null ? Settings.Left : null,
+		        Top = Settings != null ? Settings.Top : null
+	        });
+
+    }
+    void OnDrag(System.Drawing.Point point)
+    {
+        JSRuntime.InvokeVoidAsync("eval", $"console.log('Dialog drag. Left:{point.X}, Top:{point.Y}')");
+
+        if (Settings == null)
+        {
+            Settings = new DialogSettings();
+        }
+
+        Settings.Left = $"{point.X}px";
+        Settings.Top = $"{point.Y}px";
+
+        InvokeAsync(SaveStateAsync);
+    }
+
+    void OnResize(System.Drawing.Size size)
+    {
+        JSRuntime.InvokeVoidAsync("eval", $"console.log('Dialog resize. Width:{size.Width}, Height:{size.Height}')");
+
+        if (Settings == null)
+        {
+            Settings = new DialogSettings();
+        }
+
+        Settings.Width = $"{size.Width}px";
+        Settings.Height = $"{size.Height}px";
+
+        InvokeAsync(SaveStateAsync);
+    }
+
+    DialogSettings _settings;
+    public DialogSettings Settings
+    {
+        get
+        {
+            return _settings;
+        }
+        set
+        {
+            if (_settings != value)
+            {
+                _settings = value;
+                InvokeAsync(SaveStateAsync);
+            }
+        }
+    }
+
+    private async Task LoadStateAsync()
+    {
+        await Task.CompletedTask;
+
+        var result = await JSRuntime.InvokeAsync<string>("window.localStorage.getItem", "DialogSettings");
+        if (!string.IsNullOrEmpty(result))
+        {
+            _settings = JsonSerializer.Deserialize<DialogSettings>(result);
+        }
+    }
+
+    private async Task SaveStateAsync()
+    {
+        await Task.CompletedTask;
+
+        await JSRuntime.InvokeVoidAsync("window.localStorage.setItem", "DialogSettings", JsonSerializer.Serialize<DialogSettings>(Settings));
+    }
+
+    public class DialogSettings
+    {
+        public string Left { get; set; }
+        public string Top { get; set; }
+        public string Width { get; set; }
+        public string Height { get; set; }
+    }
+
+    private void ShowNotification(NotificationSeverity severity, string summary, string detail)
+    {
+        NotificationService.Notify(new NotificationMessage
+            {
+                Severity = severity,
+                Summary = summary,
+                Detail = detail,
+                Duration = NotificationDuration
+            });
+    }
+
 }
 
 
