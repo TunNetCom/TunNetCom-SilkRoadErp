@@ -1,65 +1,31 @@
-﻿@using Microsoft.Extensions.Localization
-@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+﻿@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Layout.Sidebar
 @inherits LayoutComponentBase
-@inject IStringLocalizer<SharedResource> Localizer
+@inject IJSRuntime JS
 
-<RadzenComponents @rendermode="InteractiveAuto" />
-
-<RadzenLayout>
-    <RadzenHeader>
-        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 0 15px;">
-            <!-- Left side -->
-            <div style="display: flex; align-items: center; gap: 0;">
-                <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
-                <RadzenLabel Text="Hanine Company" Style="margin-left: 10px" />
-            </div>
-
-            <!-- Right side -->
-            <div style="display: flex; align-items: center; gap: 20px;">
-                <LanguageSelector />
-                <RadzenAppearanceToggle />
-            </div>
-        </div>
-    </RadzenHeader>
-    <RadzenSidebar Responsive="false" Style="width: max-content">
-        <RadzenPanelMenu DisplayStyle="@(sidebarExpanded? MenuItemDisplayStyle.IconAndText: MenuItemDisplayStyle.Icon)" ShowArrow="false">
-            <RadzenPanelMenuItem Text="Overview" Icon="home" />
-            <RadzenPanelMenuItem Text="Dashboard" Icon="dashboard" />
-            <RadzenPanelMenuItem Text="Clients" Icon="account_circle">
-                <RadzenPanelMenuItem Text="Comptes" Icon="description" Path="/customers_list" />
-                <RadzenPanelMenuItem Text="Gestion Factures" Icon="chrome_reader_mode" Path="/manage-invoice" />
-                <RadzenPanelMenuItem Text="Bon de livraison" Icon="add_shopping_cart" Path="/AddOrUpdateDeliveryNote" />
-                <RadzenPanelMenuItem Text="Bon de livraison List" Icon="pageview" Path="/delivery-notes" />
-            </RadzenPanelMenuItem>
-            <RadzenPanelMenuItem Text="Fournisseurs" Icon="card_travel">
-                <RadzenPanelMenuItem Text="Comptes" Icon="description" Path="/providers_list" />
-                <RadzenPanelMenuItem Text="Gestion Factures" Icon="chrome_reader_mode" Path="/manage-providers-invoices" />
-            </RadzenPanelMenuItem>
-            <RadzenPanelMenuItem Text="Stock" Icon="event_seat">
-                <RadzenPanelMenuItem Text="Articles" Icon="description" Path="/products_list" />
-            </RadzenPanelMenuItem>
-        </RadzenPanelMenu>
-    </RadzenSidebar>
-    <RadzenBody>
-        <div class="rz-p-4">
-            @Body
-        </div>
-    </RadzenBody>
-    <RadzenFooter>
-    </RadzenFooter>
-</RadzenLayout>
-
-@code {
-    bool sidebarExpanded = true;
-}
-
-
-
-<div id="blazor-error-ui">
-    An unhandled error has occurred.
-    <a href="" class="reload">Reload</a>
-    <a class="dismiss">🗙</a>
-</div>
-
+<RadzenComponents @rendermode="InteractiveServer" />
 <Toasts class="p-3" AutoHide="true" Delay="4000" Placement="ToastsPlacement.TopRight" />
 
+<div class="layout has-sidebar fixed-sidebar fixed-header">
+	<SidebarComponent @ref="sideBarComponent" @rendermode="InteractiveServer" />
+
+	@* <div @onclick="@(e => sideBarComponent?.MouseClickedInOverlay())" id="overlay" class="overlay @(sideBarComponent?. == true ? "active" : "")"></div> *@
+    
+	<div class="layout">
+		<main class="content" @onclick="@(e => sideBarComponent?.MouseClickedInContent())">
+			<div>
+				<a @onclick="(e => sideBarComponent?.BtnToggleClicked())" id="btn-toggle" href="#" class="sidebar-toggler break-point-sm">
+					<i class="ri-menu-line ri-xl"></i>
+				</a>
+			</div>
+			<div class="main-content">
+				@Body
+			</div>
+			<FooterComponent />
+		</main>
+		<RadzenDialog />
+	</div>
+</div>
+
+@code {
+	SidebarComponent? sideBarComponent;
+}
