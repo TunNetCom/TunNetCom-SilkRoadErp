@@ -18,18 +18,21 @@ else if (!deliveryNoteDetails.Any())
 }
 else
 {
-    <RadzenDataGrid Data="@deliveryNoteDetails" TItem="DeliveryNoteDetailResponse" AllowSorting="true" AllowPaging="true" PageSize="5">
-        <Columns>
-            <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.Provider)" Title="Provider Name" Width="150px" />
-            <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.Date)" Title="Delivery Date" Width="150px" />
-            <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.Description)" Title="Description" Width="200px" />
-            <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.UnitPriceExcludingTax)" Title="Unit Price (Excl. Tax)" Width="150px"/>
-            <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.DiscountPercentage)" Title="Discount (%)" Width="100px" />
-            <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.VatPercentage)" Title="VAT (%)" Width="100px" />
-            <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.NetTtcUnitaire)" Title="Net TTC Unitaire" Width="150px"/>
-            <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.PrixHtFodec)" Title="Price HT Fodec" Width="150px"/>
-        </Columns>
-    </RadzenDataGrid>
+	<RadzenDataGrid Data="@deliveryNoteDetails" TItem="DeliveryNoteDetailResponse" AllowSorting="true" AllowPaging="true" PageSize="5">
+		<EmptyTemplate>
+			<p style="color: lightgrey; font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
+		</EmptyTemplate>
+		<Columns>
+			<RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.Provider)" Title="Provider Name" Width="150px"/>
+			<RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.Date)" Title="Delivery Date" Width="150px"/>
+			<RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.Description)" Title="Description" Width="200px"/>
+			<RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.UnitPriceExcludingTax)" Title="Unit Price (Excl. Tax)" Width="150px"/>
+			<RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.DiscountPercentage)" Title="Discount (%)" Width="100px"/>
+			<RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.VatPercentage)" Title="VAT (%)" Width="100px"/>
+			<RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.NetTtcUnitaire)" Title="Net TTC Unitaire" Width="150px"/>
+			<RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.PrixHtFodec)" Title="Price HT Fodec" Width="150px"/>
+		</Columns>
+	</RadzenDataGrid>
 }
 
 @if (ShowClose)

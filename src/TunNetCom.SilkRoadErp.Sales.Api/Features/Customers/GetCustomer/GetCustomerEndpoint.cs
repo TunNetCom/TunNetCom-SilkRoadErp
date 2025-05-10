@@ -4,37 +4,28 @@ public class GetCustomersEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapGet("/customers", HandleGetCustomersAsync)
+        app.MapGet("/customers", async (
+                [FromQuery] int pageNumber,
+                [FromQuery] int pageSize,
+                [FromQuery] string? searchKeyword,
+                IMediator mediator,
+                CancellationToken cancellationToken) =>
+            {
+                if (pageNumber < 1 || pageSize < 1)
+                {
+                    return Results.Problem(
+                        statusCode: StatusCodes.Status400BadRequest,
+                        detail: "PageNumber and PageSize must be greater than zero.");
+                }
+
+                var query = new GetCustomerQuery (pageNumber, pageSize, searchKeyword);
+
+                var pagedCustomers = await mediator.Send(query, cancellationToken);
+                return Results.Ok(pagedCustomers);
+            })
             .Produces<PagedList<CustomerResponse>>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .WithDescription("Retrieves a paginated list of customers.");
-    }
-
-    public static async Task<Results<Ok<PagedList<CustomerResponse>>, ValidationProblem>> HandleGetCustomersAsync(
-        [AsParameters] QueryStringParameters paginationQueryParams,
-        IMediator mediator,
-        HttpContext httpContext,
-        CancellationToken cancellationToken)
-    {
-        var query = new GetCustomerQuery(
-            paginationQueryParams.PageNumber,
-            paginationQueryParams.PageSize,
-            paginationQueryParams.SearchKeyword);
-
-        var pagedCustomers = await mediator.Send(query, cancellationToken);
-
-        var metadata = new
-        {
-            pagedCustomers.TotalCount,
-            pagedCustomers.PageSize,
-            pagedCustomers.CurrentPage,
-            pagedCustomers.TotalPages,
-            pagedCustomers.HasNext,
-            pagedCustomers.HasPrevious
-        };
-
-        httpContext.Response.Headers["X-Pagination"] = JsonConvert.SerializeObject(metadata);
-
-        return TypedResults.Ok(pagedCustomers);
+            .WithDescription("Retrieves a paginated list of customers with optional search filtering.")
+            .WithOpenApi();
     }
 }

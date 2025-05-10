@@ -168,10 +168,10 @@
   <data name="Previous" xml:space="preserve">
     <value>Previous</value>
   </data>
-  <data name="Save" xml:space="preserve">
+  <data name="save" xml:space="preserve">
     <value>Save</value>
   </data>
-  <data name="Search" xml:space="preserve">
+  <data name="search" xml:space="preserve">
     <value>Search...</value>
   </data>
   <data name="SilkRoadErp" xml:space="preserve">
@@ -181,7 +181,7 @@
     <value>Phone</value>
   </data>
   <data name="customer" xml:space="preserve">
-    <value>Client</value>
+    <value>Customer</value>
   </data>
   <data name="delete_message" xml:space="preserve">
     <value>Voulez-vous supprimer le</value>
@@ -303,14 +303,53 @@
   <data name="customer_email" xml:space="preserve">
     <value>Client Email</value>
   </data>
+  <data name="save_label" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="delivery_notes" xml:space="preserve">
+    <value />
+  </data>
+  <data name="invoiced" xml:space="preserve">
+    <value />
+  </data>
+  <data name="not_invoiced" xml:space="preserve">
+    <value />
+  </data>
+  <data name="start_date" xml:space="preserve">
+    <value />
+  </data>
+  <data name="end_date" xml:space="preserve">
+    <value />
+  </data>
+  <data name="delivery_note_status" xml:space="preserve">
+    <value />
+  </data>
+  <data name="select_invoice" xml:space="preserve">
+    <value />
+  </data>
+  <data name="delivery_note_saved_successfully" xml:space="preserve">
+    <value />
+  </data>
+  <data name="add_new_order" xml:space="preserve">
+    <value />
+  </data>
+  <data name="print" xml:space="preserve">
+    <value />
+  </data>
+  <data name="failed_to_save_delivery_note" xml:space="preserve">
+    <value />
+  </data>
+  <data name="input_error" xml:space="preserve">
+    <value />
+  </data>
   <data name="actions_label" xml:space="preserve">
     <value>Actions</value>
   </data>
   <data name="cancel_label" xml:space="preserve">
     <value>Cancel</value>
   </data>
-  <data name="save_label" xml:space="preserve">
-    <value>Save</value>
+  <data name="manage_customer_invoices" xml:space="preserve">
+    <value />
   </data>
   <data name="pourcentage_retenu" xml:space="preserve">
     <value>Retained percentage</value>

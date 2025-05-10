@@ -22,7 +22,10 @@ public class GetDeliveryNotesWithSummariesEndpoint : ICarterModule
                 SortOrder : queryParams.SortOrder,
                 SortProperty: queryParams.SortProperty,
                 CustomerId: queryParams.CustomerId,
-                InvoiceId: queryParams.InvoiceId
+                InvoiceId: queryParams.InvoiceId,
+                SearchKeyword:queryParams.SearchKeyword,
+                StartDate: queryParams.StartDate,
+                EndDate: queryParams.EndDate
             );
 
             var response = await mediator.Send(query, cancellationToken);

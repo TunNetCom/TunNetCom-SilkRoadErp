@@ -14,9 +14,9 @@ public class GetDeliveryNoteQueryHandler(
         _logger.LogPaginationRequest(nameof(BonDeLivraison), getDeliveryNoteQuery.PageNumber, getDeliveryNoteQuery.PageSize);
 
         var deliveryNoteQuery = _context.BonDeLivraison
-            .Where(d => getDeliveryNoteQuery.IsFactured.HasValue || d.NumFacture.HasValue == getDeliveryNoteQuery.IsFactured)
-            .Select(t =>
-            new DeliveryNoteResponse
+            .Where(d => !getDeliveryNoteQuery.IsFactured.HasValue ||
+                        (getDeliveryNoteQuery.IsFactured.Value ? d.NumFacture != null : d.NumFacture == null))
+            .Select(t => new DeliveryNoteResponse
             {
                 DeliveryNoteNumber = t.Num,
                 Date = t.Date,
@@ -33,9 +33,9 @@ public class GetDeliveryNoteQueryHandler(
         {
             deliveryNoteQuery = deliveryNoteQuery.Where(
                 d => d.DeliveryNoteNumber.ToString().Contains(getDeliveryNoteQuery.SearchKeyword)
-                || d.Date.ToString().Contains(getDeliveryNoteQuery.SearchKeyword)
-                || d.CustomerId.ToString().Contains(getDeliveryNoteQuery.SearchKeyword)
-                || d.InvoiceNumber.ToString().Contains(getDeliveryNoteQuery.SearchKeyword));
+                  || d.Date.ToString().Contains(getDeliveryNoteQuery.SearchKeyword)
+                  || d.CustomerId.ToString().Contains(getDeliveryNoteQuery.SearchKeyword)
+                  || (d.InvoiceNumber != null && d.InvoiceNumber.ToString().Contains(getDeliveryNoteQuery.SearchKeyword)));
         }
 
         var pagedDeliveryNote = await PagedList<DeliveryNoteResponse>.ToPagedListAsync(
@@ -43,7 +43,6 @@ public class GetDeliveryNoteQueryHandler(
             getDeliveryNoteQuery.PageNumber,
             getDeliveryNoteQuery.PageSize,
             cancellationToken);
-
 
         _logger.LogEntitiesFetched(nameof(BonDeLivraison), pagedDeliveryNote.Items.Count);
 
