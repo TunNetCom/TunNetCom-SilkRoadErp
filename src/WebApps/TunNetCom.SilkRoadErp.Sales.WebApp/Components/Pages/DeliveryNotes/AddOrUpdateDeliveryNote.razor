@@ -31,20 +31,40 @@
 @inject DialogService DialogService
 
 <style>
-    /* Header actions container */
+    .delivery-note-container {
+        display: grid;
+        gap: 16px;
+        margin-bottom: 20px;
+        background-color: #ffffff;
+        padding: 24px;
+        border-radius: 6px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .delivery-note-form {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+        flex-grow: 1;
+        margin-top: 24px;
+        pointer-events: auto !important;
+    }
+
     .header-actions {
         display: flex;
         flex-wrap: wrap;
-        gap: 16px;
+        gap: 10px;
         align-items: center;
         justify-content: space-between;
         padding: 12px 24px;
+        padding-top: 40px;
         background-color: #ffffff;
         border-bottom: 1px solid #e5e7eb;
         width: 100%;
     }
 
-    /* Action buttons container */
     .action-buttons {
         display: flex;
         flex-wrap: wrap;
@@ -52,7 +72,6 @@
         align-items: center;
     }
 
-    /* Button styling */
     .action-button {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         font-size: 13px;
@@ -63,6 +82,7 @@
         color: #ffffff;
         background-color: #3b82f6;
         border: none;
+        pointer-events: auto !important;
     }
 
         .action-button:hover:not(:disabled) {
@@ -76,7 +96,6 @@
             cursor: not-allowed;
         }
 
-    /* Success button styling */
     .success-button {
         background-color: #10b981;
     }
@@ -86,7 +105,6 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
-    /* Summary card styling */
     .summary-card {
         border: 1px solid #e5e7eb;
         border-radius: 6px;
@@ -96,12 +114,10 @@
         flex: 0 0 auto;
     }
 
-    /* Summary stack */
     .summary-stack {
         gap: 1.5rem;
     }
 
-    /* Summary text */
     .summary-text {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         font-size: 13px;
@@ -114,7 +130,6 @@
             color: #111827;
         }
 
-    /* Responsive design */
     @@media (max-width: 768px) {
         .header-actions
 
@@ -154,45 +169,16 @@
         font-size: 12px;
     }
 
-    }
     .delivery-note-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-    gap: 20px;
+        padding: 16px;
     }
 
     .delivery-note-form {
-    display: flex;
-    gap: 20px;
-    align-items: center;
-    flex-wrap: wrap;
-    flex-grow: 1;
+        gap: 8px;
+        margin-top: 16px;
     }
 
-    /* .header-actions { */
-    /* display: flex; */
-    /* gap: 10px; */
-    /* align-items: center; */
-    /* justify-content: space-between; */
-    /* width: 100%; */
-    /* } */
-
-    /* .summary-card { */
-    /* background-color: #f8f9fa; */
-    /* padding: 10px 20px; */
-    /* border-radius: 5px; */
-    /* margin-left: auto; /* This pushes it to the right */ */
-    /* border-left: 1px solid #ddd; /* Optional: adds a separator line */ */
-    /* } */
-
-    /* .action-buttons { */
-    /* display: flex; */
-    /* gap: 10px; */
-    /* align-items: center; */
-    /* } */
+    }
 </style>
 
 <!-- Loading Indicator -->

@@ -1,0 +1,45 @@
+﻿@using BlazorProTemplate.Components.Layout.Sidebar
+@if (MenuItem != null)
+{
+	<li class="menu-item @(MenuItem.HasChildMenuItems ? "sub-menu" : "") @(MenuItem.IsOpened ? "open" : "")">
+		<NavLink href="@MenuItem.Href" @onclick="MenuItemClick" style="cursor:pointer">
+			@if (MenuItem.Icon != null)
+			{
+				<span class="menu-icon">
+					<i class="@MenuItem.Icon"></i>
+				</span>
+			}
+			<span class="menu-title">@MenuItem.Title</span>
+			@if (MenuItem.Suffix != null)
+			{
+				<span class="menu-suffix">
+					<span class="badge @MenuItem.Suffix.Class">@MenuItem.Suffix.Title</span>
+				</span>
+			}
+		</NavLink>
+		@if (MenuItem.HasChildMenuItems)
+		{
+			<div class="sub-menu-list" style="display:block; height:@($"{MenuItem.CalcSubMenuHeight()}px");">
+				<ul>
+					@foreach (var childMenuItem in MenuItem.ChildMenuItems!)
+					{
+						<MenuItemComponent MenuItem="childMenuItem" MenuItemClickCallback="MenuItemClickCallback" />
+					}
+				</ul>
+			</div>
+		}
+	</li>
+}
+
+@code {
+	[Parameter]
+	public MenuItem? MenuItem { get; set; }
+
+	[Parameter]
+	public EventCallback<MenuItem> MenuItemClickCallback { get; set; }
+
+	public async Task MenuItemClick()
+	{
+		await MenuItemClickCallback.InvokeAsync(MenuItem);
+	}
+}

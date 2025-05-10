@@ -1,0 +1,97 @@
+﻿@page "/dashboard"
+@using Radzen
+@using Radzen.Blazor
+
+<div class="container-fluid overflow-auto">
+    <RadzenLabel Text="Sales Revenue by Product Category" Component="ChartTitle" Style="font-size: 1.5em; font-weight: bold; margin-bottom: 10px;" />
+    <RadzenChart>
+        <RadzenLineSeries Data="@electronicsData" CategoryProperty="Month" ValueProperty="Revenue" Title="Electronics" Stroke="#FF6384" StrokeWidth="2">
+            <TooltipTemplate Context="data">
+                <div>@data.Month: $@String.Format("{0:N0}", data.Revenue)</div>
+            </TooltipTemplate>
+        </RadzenLineSeries>
+        <RadzenLineSeries Data="@clothingData" CategoryProperty="Month" ValueProperty="Revenue" Title="Clothing" Stroke="#36A2EB" StrokeWidth="2">
+            <TooltipTemplate Context="data">
+                <div>@data.Month: $@String.Format("{0:N0}", data.Revenue)</div>
+            </TooltipTemplate>
+        </RadzenLineSeries>
+        <RadzenLineSeries Data="@furnitureData" CategoryProperty="Month" ValueProperty="Revenue" Title="Furniture" Stroke="#FFCE56" StrokeWidth="2">
+            <TooltipTemplate Context="data">
+                <div>@data.Month: $@String.Format("{0:N0}", data.Revenue)</div>
+            </TooltipTemplate>
+        </RadzenLineSeries>
+        <RadzenCategoryAxis>
+            <RadzenGridLines Visible="true" />
+            <RadzenAxisTitle Text="2024" />
+        </RadzenCategoryAxis>
+        <RadzenValueAxis Formatter="@(value => $"${value:N0}")">
+            <RadzenGridLines Visible="true" />
+            <RadzenAxisTitle Text="Revenue (USD)" />
+        </RadzenValueAxis>
+        <RadzenLegend Visible="true" />
+        <RadzenChartTooltipOptions Visible="true" />
+    </RadzenChart>
+</div>
+<div class="container-fluid overflow-auto mb-4">
+	<div class="row">
+		<div class="col-md-4 mb-3">
+			<RadzenCard Style="padding: 15px; text-align: center;">
+				<h4>Total Revenue</h4>
+				<p style="font-size: 1.2em; font-weight: bold;">$@String.Format("{0:N0}", totalRevenue)</p>
+			</RadzenCard>
+		</div>
+		<div class="col-md-4 mb-3">
+			<RadzenCard Style="padding: 15px; text-align: center;">
+				<h4>Top Category</h4>
+				<p style="font-size: 1.2em; font-weight: bold;">@topCategory</p>
+			</RadzenCard>
+		</div>
+		<div class="col-md-4 mb-3">
+			<RadzenCard Style="padding: 15px; text-align: center; background-color: #f0f4f8;">
+				<h4>Avg Monthly Revenue</h4>
+				<p style="font-size: 1.2em; font-weight: bold;">$@String.Format("{0:N0}", averageMonthlyRevenue)</p>
+			</RadzenCard>
+		</div>
+	</div>
+</div>
+
+@code {
+    private List<SalesData> electronicsData = new();
+    private List<SalesData> clothingData = new();
+    private List<SalesData> furnitureData = new();
+    private double totalRevenue;
+    private string topCategory = "";
+    private double averageMonthlyRevenue;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var months = new List<string> { "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
+        var electronicsRevenue = new List<double> { 150000, 120000, 180000, 170000, 140000, 200000, 190000, 210000, 160000, 220000, 200000, 230000 };
+        var clothingRevenue = new List<double> { 80000, 85000, 90000, 95000, 100000, 110000, 105000, 115000, 120000, 125000, 130000, 140000 };
+        var furnitureRevenue = new List<double> { 50000, 55000, 60000, 65000, 70000, 75000, 80000, 85000, 90000, 95000, 100000, 110000 };
+
+        // Populate data for each series
+        electronicsData = months.Zip(electronicsRevenue, (month, revenue) => new SalesData { Month = month, Revenue = revenue }).ToList();
+        clothingData = months.Zip(clothingRevenue, (month, revenue) => new SalesData { Month = month, Revenue = revenue }).ToList();
+        furnitureData = months.Zip(furnitureRevenue, (month, revenue) => new SalesData { Month = month, Revenue = revenue }).ToList();
+
+        totalRevenue = electronicsData.Sum(e => e.Revenue) + clothingData.Sum(c => c.Revenue) + furnitureData.Sum(f => f.Revenue);
+        var categorySums = new Dictionary<string, double>
+        {
+	        { "Electronics", electronicsData.Sum(e => e.Revenue) },
+	        { "Clothing", clothingData.Sum(c => c.Revenue) },
+	        { "Furniture", furnitureData.Sum(f => f.Revenue) }
+        };
+        topCategory = categorySums.OrderByDescending(c => c.Value).First().Key;
+        averageMonthlyRevenue = totalRevenue / 12;
+
+
+        await base.OnInitializedAsync();
+    }
+
+    public class SalesData
+    {
+        public string Month { get; set; } = string.Empty;
+        public double Revenue { get; set; }
+    }
+}
