@@ -1,9 +1,14 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Products.GetProduct;
+﻿using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Products.GetProduct;
 public class GetProductQueryHandler(
     SalesContext _context,
     ILogger<GetProductQueryHandler> _logger)
     : IRequestHandler<GetProductQuery, PagedList<ProductResponse>>
 {
+    private const string _referenceColumn = nameof(ProductResponse.Reference);
+    private const string _qteColumn = nameof(ProductResponse.Qte);
+    private const string _priceColumn = nameof(ProductResponse.Price);
     public async Task<PagedList<ProductResponse>> Handle(GetProductQuery getProductQuery, CancellationToken cancellationToken)
     {
         _logger.LogPaginationRequest(nameof(Produit), getProductQuery.PageNumber, getProductQuery.PageSize);
@@ -29,6 +34,13 @@ public class GetProductQueryHandler(
                 c => c.Reference.Contains(getProductQuery.SearchKeyword)
                 || c.Name.Contains(getProductQuery.SearchKeyword));
         }
+
+        if (getProductQuery.SortOrder != null && getProductQuery.SortProprety != null)
+        {
+            _logger.LogInformation("sorting products column : {column} order : {order}", getProductQuery.SortProprety, getProductQuery.SortOrder);
+            productsQuery = ApplySorting(productsQuery, getProductQuery.SortProprety, getProductQuery.SortOrder);
+        }
+
         var pagedProducts = await PagedList<ProductResponse>.ToPagedListAsync(
             productsQuery,
             getProductQuery.PageNumber,
@@ -39,5 +51,29 @@ public class GetProductQueryHandler(
 
         return pagedProducts;
 
+    }
+    private IQueryable<ProductResponse> ApplySorting(
+        IQueryable<ProductResponse> productQuery,
+        string sortProperty,
+        string sortOrder)
+    {
+        return SortQuery(productQuery, sortProperty, sortOrder);
+    }
+
+    private IQueryable<ProductResponse> SortQuery(
+        IQueryable<ProductResponse> query,
+        string property,
+        string order)
+    {
+        return (property, order) switch
+        {
+            (_referenceColumn, SortConstants.Ascending) => query.OrderBy(d => d.Reference),
+            (_referenceColumn, SortConstants.Descending) => query.OrderByDescending(d => d.Reference),
+            (_priceColumn, SortConstants.Ascending) => query.OrderBy(d => d.Price),
+            (_priceColumn, SortConstants.Descending) => query.OrderByDescending(d => d.Price),
+            (_qteColumn, SortConstants.Ascending) => query.OrderBy(d => d.Qte),
+            (_qteColumn, SortConstants.Descending) => query.OrderByDescending(d => d.Qte),
+            _ => query
+        };
     }
 }
