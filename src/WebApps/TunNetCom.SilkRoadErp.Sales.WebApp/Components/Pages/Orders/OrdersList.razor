@@ -1,0 +1,100 @@
+﻿@page "/orders"
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Commande
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Orders
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@inject IOrderApiClient OrderApiClient
+@inject NotificationService NotificationService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Liste des commandes</PageTitle>
+
+<h3>Liste des commandes</h3>
+
+<RadzenButton Text="Ajouter une commande"
+              Click="@(() => NavigationManager.NavigateTo("/AddOrUpdateDeliveryNote"))"
+              ButtonStyle="ButtonStyle.Primary"
+              Size="ButtonSize.Medium"
+              Style="margin-bottom: 20px;" />
+
+@if (_isLoading)
+{
+    <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+}
+else if (_errorMessage != null)
+{
+    <RadzenAlert AlertStyle="AlertStyle.Danger" Shade="Shade.Darker">
+        Erreur : @_errorMessage
+    </RadzenAlert>
+}
+else
+{
+    <RadzenDataGrid Data="@_orders"
+                    TItem="OrderSummaryResponse"
+                    AllowSorting="true"
+                    AllowFiltering="true"
+                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                    AllowColumnResize="true"
+                    AllowPaging="true"
+                    PageSize="10"
+                    ShowPagingSummary="true">
+        <Columns>
+            <RadzenDataGridColumn TItem="OrderSummaryResponse" Property="OrderNumber" Title="N° de commande" Width="120px" />
+            <RadzenDataGridColumn TItem="OrderSummaryResponse" Property="SupplierId" Title="Fournisseur" Width="120px" />
+            <RadzenDataGridColumn TItem="OrderSummaryResponse" Property="Date" Title="Date" Width="150px">
+                <Template Context="order">
+                    @order.Date.ToString("dd/MM/yyyy")
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="OrderSummaryResponse" Property="TotalExcludingVat" Title="Total HT" Width="150px">
+                <Template Context="order">
+                    @order.TotalExcludingVat.FormatAmount()
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="OrderSummaryResponse" Property="TotalVat" Title="TVA" Width="120px">
+                <Template Context="order">
+                    @order.TotalVat.FormatAmount()
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="OrderSummaryResponse" Property="NetToPay" Title="Net à payer" Width="150px">
+                <Template Context="order">
+                    @order.NetToPay.FormatAmount()
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="OrderSummaryResponse" Width="100px" Sortable="false" Filterable="false">
+                <Template Context="order">
+                    <RadzenButton Text="Voir"
+                                  Click="@(() => NavigationManager.NavigateTo($"/order/{order.OrderNumber}"))"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Size="ButtonSize.Small" />
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+}
+
+@code {
+    private List<OrderSummaryResponse> _orders = new();
+    private bool _isLoading = true;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _orders = await OrderApiClient.GetOrdersListAsync();
+            _isLoading = false;
+        }
+        catch (Exception ex)
+        {
+            _isLoading = false;
+            _errorMessage = $"Échec du chargement des commandes : {ex.Message}";
+            NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Erreur",
+                    Detail = _errorMessage,
+                    Duration = 4000
+                });
+        }
+    }
+}

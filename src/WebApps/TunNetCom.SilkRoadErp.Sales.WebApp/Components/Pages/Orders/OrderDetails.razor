@@ -1,0 +1,122 @@
+﻿@page "/order/{OrderId:int}"
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Commande
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Orders
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@inject IOrderApiClient OrderApiClient
+@inject NotificationService NotificationService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Détails de la commande - @OrderId</PageTitle>
+
+<h3>Détails de la commande - Commande n°@OrderId</h3>
+
+<RadzenButton Text="Retour à la liste"
+              Click="@(() => NavigationManager.NavigateTo("/orders"))"
+              ButtonStyle="ButtonStyle.Secondary"
+              Size="ButtonSize.Medium"
+              Style="margin-bottom: 20px;" />
+
+@if (_isLoading)
+{
+    <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+}
+else if (_errorMessage != null)
+{
+    <RadzenAlert AlertStyle="AlertStyle.Danger" Shade="Shade.Darker">
+        Erreur : @_errorMessage
+    </RadzenAlert>
+}
+else if (_order.OrderNumber == 0)
+{
+    <RadzenAlert AlertStyle="AlertStyle.Warning" Shade="Shade.Lighter">
+        La commande avec l'identifiant @OrderId est introuvable.
+    </RadzenAlert>
+}
+else
+{
+    <RadzenCard>
+        <h4>Informations sur la commande</h4>
+        <RadzenRow>
+            <RadzenColumn Size="6">
+                <RadzenFieldset Text="Détails de la commande">
+                    <RadzenRow>
+                        <RadzenColumn Size="12"><b>Numéro de commande :</b> @_order.OrderNumber</RadzenColumn>
+                        <RadzenColumn Size="12"><b>Date :</b> @_order.Date.ToString("dd/MM/yyyy")</RadzenColumn>
+                        <RadzenColumn Size="12"><b>Fournisseur ID :</b> @_order.SupplierId</RadzenColumn>
+                        <RadzenColumn Size="12"><b>Total HT :</b> @_order.TotalExcludingVat.FormatAmount()</RadzenColumn>
+                        <RadzenColumn Size="12"><b>TVA :</b> @_order.TotalVat.FormatAmount()</RadzenColumn>
+                        <RadzenColumn Size="12"><b>Net à payer :</b> @_order.NetToPay.FormatAmount()</RadzenColumn>
+                    </RadzenRow>
+                </RadzenFieldset>
+            </RadzenColumn>
+            <RadzenColumn Size="6">
+                <RadzenFieldset Text="Détails du fournisseur">
+                    <RadzenRow>
+                        <RadzenColumn Size="12"><b>Nom :</b> @_order.Supplier?.Name</RadzenColumn>
+                        <RadzenColumn Size="12"><b>Téléphone :</b> @_order.Supplier?.Phone</RadzenColumn>
+                        <RadzenColumn Size="12"><b>Adresse :</b> @_order.Supplier?.Address</RadzenColumn>
+                        <RadzenColumn Size="12"><b>Email :</b> @_order.Supplier?.Mail</RadzenColumn>
+                        <RadzenColumn Size="12"><b>Matricule fiscal :</b> @_order.Supplier?.RegistrationNumber</RadzenColumn>
+                    </RadzenRow>
+                </RadzenFieldset>
+            </RadzenColumn>
+        </RadzenRow>
+    </RadzenCard>
+
+    <RadzenCard Style="margin-top: 20px;">
+        <h4>Lignes de la commande</h4>
+        <RadzenDataGrid Data="@_order.OrderLines"
+                        TItem="OrderLine"
+                        AllowSorting="true"
+                        AllowFiltering="true"
+                        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                        AllowColumnResize="true"
+                        AllowPaging="true"
+                        PageSize="10"
+                        ShowPagingSummary="true">
+            <Columns>
+                <RadzenDataGridColumn TItem="OrderLine" Property="LineId" Title="ID Ligne" Width="100px" />
+                <RadzenDataGridColumn TItem="OrderLine" Property="ProductReference" Title="Référence produit" Width="150px" />
+                <RadzenDataGridColumn TItem="OrderLine" Property="ItemDescription" Title="Description" Width="200px" />
+                <RadzenDataGridColumn TItem="OrderLine" Property="ItemQuantity" Title="Quantité" Width="100px" />
+                <RadzenDataGridColumn TItem="OrderLine" Property="UnitPriceExcludingTax" Title="Prix unitaire (HT)" Width="150px" />
+                <RadzenDataGridColumn TItem="OrderLine" Property="Discount" Title="Remise" Width="100px" />
+                <RadzenDataGridColumn TItem="OrderLine" Property="TotalExcludingTax" Title="Total (HT)" Width="150px" />
+                <RadzenDataGridColumn TItem="OrderLine" Property="VatRate" Title="Taux TVA" Width="100px" FormatString="{0:P}" />
+                <RadzenDataGridColumn TItem="OrderLine" Property="TotalIncludingTax" Title="Total (TTC)" Width="150px" />
+            </Columns>
+        </RadzenDataGrid>
+    </RadzenCard>
+}
+
+@code {
+    [Parameter]
+    public int OrderId { get; set; }
+
+    private FullOrderResponse _order = new();
+    private bool _isLoading = true;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _order = await OrderApiClient.GetFullOrderAsync(OrderId);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Échec du chargement des détails de la commande : {ex.Message}";
+            NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Erreur",
+                    Detail = _errorMessage,
+                    Duration = 4000
+                });
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}
