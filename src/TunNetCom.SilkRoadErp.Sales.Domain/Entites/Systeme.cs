@@ -7,6 +7,36 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 public partial class Systeme
 {
+
+    public void UpdateSysteme(
+        string nomSociete,
+        decimal timbre,
+        string adresse,
+        string tel,
+        string? fax,
+        string? email,
+        string? matriculeFiscale,
+        string codeTva,
+        string? codeCategorie,
+        string? etbSecondaire,
+        decimal pourcentageFodec,
+        string? adresseRetenu,
+        double pourcentageRetenu)
+    {
+        this.NomSociete = nomSociete;
+        this.Timbre = timbre;
+        this.Adresse = adresse;
+        this.Tel = tel;
+        this.Fax = fax;
+        this.Email = email;
+        this.MatriculeFiscale = matriculeFiscale;
+        this.CodeTva = codeTva;
+        this.CodeCategorie = codeCategorie;
+        this.EtbSecondaire = etbSecondaire;
+        this.PourcentageFodec = pourcentageFodec;
+        this.AdresseRetenu = adresseRetenu;
+        this.PourcentageRetenu = pourcentageRetenu;
+    }
     public int Id { get; set; }
 
     public string NomSociete { get; set; } = null!;

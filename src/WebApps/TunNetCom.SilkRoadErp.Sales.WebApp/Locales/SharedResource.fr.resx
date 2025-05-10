@@ -438,4 +438,7 @@
   <data name="manage_customer_invoices" xml:space="preserve">
     <value>Gérer Factures Clients</value>
   </data>
+  <data name="pourcentage_retenu" xml:space="preserve">
+    <value>Pourcentage Retenu</value>
+  </data>
 </root>
