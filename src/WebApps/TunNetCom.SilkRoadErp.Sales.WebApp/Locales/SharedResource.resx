@@ -349,4 +349,22 @@
   <data name="pourcentage_retenu" xml:space="preserve">
     <value />
   </data>
+  <data name="CustomerPreview" xml:space="preserve">
+    <value />
+  </data>
+  <data name="UnableToLoadCustomer" xml:space="preserve">
+    <value />
+  </data>
+  <data name="NotAvailable" xml:space="preserve">
+    <value />
+  </data>
+  <data name="customer_code" xml:space="preserve">
+    <value />
+  </data>
+  <data name="customer_codeCat" xml:space="preserve">
+    <value />
+  </data>
+  <data name="customer_etbSec" xml:space="preserve">
+    <value />
+  </data>
 </root>

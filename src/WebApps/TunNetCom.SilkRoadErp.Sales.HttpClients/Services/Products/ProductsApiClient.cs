@@ -66,7 +66,7 @@ public class ProductsApiClient : IProductsApiClient
 
     public async Task<OneOf<CreateProductRequest, BadRequestResponse>> CreateAsync(CreateProductRequest request, CancellationToken cancellationToken)
     {
-        var response = await _httpClient.PostAsJsonAsync($"", request, cancellationToken: cancellationToken);
+        var response = await _httpClient.PostAsJsonAsync($"/products", request, cancellationToken: cancellationToken);
         if (response.StatusCode == HttpStatusCode.Created)
         {
             return await response.ReadJsonAsync<CreateProductRequest>();
@@ -87,7 +87,7 @@ public class ProductsApiClient : IProductsApiClient
                     { "Accept", "application/problem+json" }
                 };
 
-            var response = await _httpClient.PutAsJsonAsync($"{refe}", request, headers, cancellationToken);
+            var response = await _httpClient.PutAsJsonAsync($"/products/{refe}", request, headers, cancellationToken);
             if (response.StatusCode == HttpStatusCode.NoContent)
             {
                 return ResponseTypes.Success;
@@ -113,7 +113,7 @@ public class ProductsApiClient : IProductsApiClient
     {
         try
         {
-            var response = await _httpClient.DeleteAsync($"{refe}", cancellationToken: cancellationToken);
+            var response = await _httpClient.DeleteAsync($"/products/{refe}", cancellationToken: cancellationToken);
             if (response.StatusCode is HttpStatusCode.NoContent)
             {
                 return await response.Content.ReadAsStreamAsync(cancellationToken);

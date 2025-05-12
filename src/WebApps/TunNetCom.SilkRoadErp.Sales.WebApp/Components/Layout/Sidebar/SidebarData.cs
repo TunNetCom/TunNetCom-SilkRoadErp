@@ -49,13 +49,15 @@ public class SidebarData
         new MenuItem(title:"Stock", icon:"ri-shopping-cart-fill", childMenuItems:
         [
             new MenuItem(href:"/products_list", title:"Stock"),
-            new MenuItem(href:"#", title:"Open street map"),
+            new MenuItem(href:"/products_list_view", title:"Consulter Stock"),
         ]),
         new MenuItem(title:"Theme", icon:"ri-paint-brush-fill", childMenuItems:
         [
             new MenuItem(href:"#", title:"Dark"),
             new MenuItem(href:"#", title:"Light"),
         ]),
+        new MenuItem(href:"#" , icon:"ri-settings-fill", title:"Paramétres système"),
+
     };
 
 }

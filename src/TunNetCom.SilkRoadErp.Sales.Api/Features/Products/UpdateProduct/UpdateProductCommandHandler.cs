@@ -18,15 +18,15 @@ public class UpdateProductCommandHandler(
             return Result.Fail(EntityNotFound.Error());
         }
 
-        var isProductNameExist = await _context.Produit.AnyAsync(
-                    pro => pro.Nom == updateProductCommand.Nom
-                    && pro.Refe != updateProductCommand.Refe,
-                    cancellationToken);
+        //var isProductNameExist = await _context.Produit.AnyAsync(
+        //            pro => pro.Nom == updateProductCommand.Nom
+        //            && pro.Refe != updateProductCommand.Refe,
+        //            cancellationToken);
 
-        if (isProductNameExist)
-        {
-            return Result.Fail("product_name_exist");
-        }
+        //if (isProductNameExist)
+        //{
+        //    return Result.Fail("product_name_exist");
+        //}
 
         productToUpdate.UpdateProduct(
             refe: updateProductCommand.Refe,
