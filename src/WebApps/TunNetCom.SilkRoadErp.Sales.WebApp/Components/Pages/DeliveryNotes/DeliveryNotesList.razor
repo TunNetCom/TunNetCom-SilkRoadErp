@@ -18,7 +18,7 @@
                          @bind-Value="searchCriteria.StartDate" 
                          DateFormat="dd/MM/yyyy" 
                          Placeholder="@Localizer["start_date"]" 
-                         class="w-100 search-input" />
+                         class="w-100 " />
     </div>
     <div class="search-field" style="margin-right: 15px;">
         <label for="endDate">@Localizer["end_date"]</label> 
@@ -26,7 +26,7 @@
                          @bind-Value="searchCriteria.EndDate" 
                          DateFormat="dd/MM/yyyy" 
                          Placeholder="@Localizer["end_date"]" 
-                         class="w-100 search-input" />
+                         class="w-100 " />
     </div>
     <div class="search-field">
         <label for="customer">@Localizer["customer"]</label>
@@ -46,7 +46,7 @@
             </Columns>
         </RadzenDropDownDataGrid>
     </div>
-    <div class="search-field">
+ @*    <div class="search-field">
         <label for="invoiceStatus">@Localizer["delivery_note_status"]</label>
         <RadzenDropDown id="invoiceStatus" 
                         @bind-Value="searchCriteria.InvoiceStatus" 
@@ -54,7 +54,7 @@
                         AllowClear="false" 
                         Placeholder="@Localizer["select_status"]" 
                         class="w-100 search-input" />
-    </div>
+    </div> *@
     <div class="search-button">
         <RadzenButton Text="@Localizer["search"]" 
                       Icon="search" 
@@ -65,7 +65,7 @@
 </div>
 <div class="delivery-notes-list-container">
     <RadzenCard class="list-card">
-        <h2>@Localizer["delivery_notes"]</h2>
+        <h2>Devis</h2>
         <RadzenDataGrid Data="@deliveryNotes.GetDeliveryNoteBaseInfos.Items"
                         LoadData="@Callback"
                         TItem="GetDeliveryNoteBaseInfos"
@@ -82,7 +82,7 @@
 	        <Columns>
 		        <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos"
 		                              Property="@nameof(GetDeliveryNoteBaseInfos.Number)"
-		                              Title="@Localizer["delivery_note_number"]"
+		                              Title="Numéro"
 		                              Width="150px"/>
 		        <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos"
 		                              Property="@nameof(GetDeliveryNoteBaseInfos.Date)"
@@ -98,12 +98,12 @@
 		                              Title="@Localizer["total_gross"]"
 		                              Width="200px"/>
 
-		        <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos"
+@* 		        <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos"
 		                              Title="@Localizer["delivery_note_status"]"
 		                              Width="150px"
 		                              Sortable="false"
-		                              Filterable="false">
-			        <Template Context="deliveryNote">
+		                              Filterable="false"> 
+			         <Template Context="deliveryNote">
 				        @if (deliveryNote.NumFacture.HasValue && deliveryNote.NumFacture != 0)
 				        {
 					        <RadzenBadge Text="@Localizer["invoiced"]" BadgeStyle="BadgeStyle.Success"/>
@@ -113,7 +113,7 @@
 					        <RadzenBadge Text="@Localizer["not_invoiced"]" BadgeStyle="BadgeStyle.Warning"/>
 				        }
 			        </Template>
-		        </RadzenDataGridColumn>
+		        </RadzenDataGridColumn> *@
 	        </Columns>
         </RadzenDataGrid>
         <RadzenCard class="summary-card" Variant="Variant.Outlined">
