@@ -557,7 +557,8 @@ a {
 .action-button {
 	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 	font-size: 13px;
-	font-weight: 500;
+	font-weight: 
+		;
 	padding: 8px 12px;
 	border-radius: 6px;
 	transition: background-color 0.2s, box-shadow 0.2s;

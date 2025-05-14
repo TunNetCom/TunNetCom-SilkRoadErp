@@ -56,7 +56,7 @@ public class SidebarData
             new MenuItem(href:"#", title:"Dark"),
             new MenuItem(href:"#", title:"Light"),
         ]),
-        new MenuItem(href:"#" , icon:"ri-settings-fill", title:"Paramétres système"),
+        new MenuItem(href:"/app_parameters" , icon:"ri-settings-fill", title:"Paramétres système"),
 
     };
 
