@@ -17,14 +17,12 @@
         <div class="sidebar-content">
             <nav class="menu open-current-submenu">
                 <ul>
-                    <li class="menu-header"><span>BLAZOR</span></li>
-
                     @foreach (var menuItem in standardItems)
                     {
                         <MenuItemComponent MenuItem="@menuItem" MenuItemClickCallback="MenuItemClick" />
                     }
 
-                    <li class="menu-header"><span> GENERAL </span></li>
+                    <li class="menu-header"><span> Gestion </span></li>
 
                     @foreach (var menuItem in generalMenuItems)
                     {

@@ -1,162 +1,318 @@
-﻿@page "/editproduct/{refe?}"
+﻿@page "/editproduct/{Refe?}"
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Products
-@using BlazorBootstrap
+@using Radzen.Blazor
 @using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products
-@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
-@using TunNetCom.ErrorsModal
-@using TunNetCom.NotFoundModal
+@using System.ComponentModel.DataAnnotations
 @using System.Globalization
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services
-@inject IProductsApiClient productService
-@inject NavigationManager navigationManager
-@inject IStringLocalizer<SharedResource> localizer
+@inject IProductsApiClient ProductService
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<SharedResource> Localizer
+@inject ToastService ToastService
 
-<h3>@(string.IsNullOrEmpty(product.Reference) ? localizer["add_product"] : localizer["edit_product"])</h3>
+<RadzenCard Style="padding: 20px; max-width: 900px; margin: 2rem auto;">
+    <RadzenTemplateForm Data="@productModel" Submit="@OnSubmit">
+        <h3>@(string.IsNullOrEmpty(Refe) ? Localizer["add_product"] : Localizer["edit_product"])</h3>
 
-<div class="container mt-4">
-    <EditForm Model="product" OnValidSubmit="HandleValidSubmit" class="row g-3">
-        <AntiforgeryToken />
-        <div class="col-md-3">
-            <label for="productRefe" class="form-label">@localizer["product_refe"]</label>
-            <InputText id="productRefe" @bind-Value="product.Reference" class="form-control" />
-        </div>
-        <div class="col-md-9">
-            <label for="productName" class="form-label">@localizer["product_name"]</label>
-            <InputText id="productName" @bind-Value="product.Name" class="form-control" />
-        </div>
-        <div class="col-md-4">
-            <label for="productQte" class="form-label">@localizer["product_qte"]</label>
-            <InputNumber id="productQte" @bind-Value="product.Qte" class="form-control" />
-        </div>
-        <div class="col-md-4">
-            <label for="productQteLimite" class="form-label">@localizer["product_qteLimite"]</label>
-            <InputNumber id="productQteLimite" @bind-Value="product.QteLimit" class="form-control" />
-        </div>
-        <div class="col-md-4">
-            <label for="productRemise" class="form-label">@localizer["product_remise"]</label>
-            <InputNumber id="productRemise" @bind-Value="product.DiscountPourcentage" class="form-control" />
-        </div>
-        <div class="col-md-4">
-            <label for="productRemiseAchat" class="form-label">@localizer["product_remiseAchat"]</label>
-            <InputNumber id="productRemiseAchat" @bind-Value="product.DiscountPourcentageOfPurchasing" class="form-control" />
-        </div>
-        <div class="col-md-4">
-            <label for="productTva" class="form-label">@localizer["product_tva"]</label>
-            <InputNumber id="productTva" @bind-Value="product.VatRate" class="form-control"  />
-        </div>
-        <div class="col-md-4">
-            <label for="productPrix" class="form-label">@localizer["product_prix"]</label>
-            <InputNumber id="productPrix" @bind-Value="product.Price" class="form-control" />
-        </div>
-        <div class="col-md-4">
-            <label for="productPrixAchat" class="form-label">@localizer["product_prixAchat"]</label>
-            <InputNumber id="productPrixAchat" @bind-Value="product.PurchasingPrice" class="form-control" />
-        </div>
-        <div class="col-md-4">
-            <label for="productVisibility" class="form-label">@localizer["product_visibilite"]</label>
-            <Switch id="productVisibility" ValueExpression="@(() => product.Visibility)"  />
-        </div>
-        <div class="col-12">
-            <input type="submit" class="btn btn-primary" value="@localizer["save_label"]" />
-            <input type="button" class="btn btn-secondary" @onclick="Cancel" value="@localizer["cancel_label"]" />
-        </div>
-    </EditForm>
-</div>
+        <RadzenRow Class="g-2 mb-4">
+            <!-- Left Column: Core Product Info -->
+            <RadzenColumn Size="12" SizeSM="6" Class="d-flex flex-column gap-3">
+                <RadzenFormField Text="@Localizer["product_refe"]">
+                    <Start><RadzenIcon Icon="class" /></Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="productModel.Reference" Name="@nameof(ProductModel.Reference)" Style="width: 100%;" Disabled="@(!string.IsNullOrEmpty(Refe))" />
+                    </ChildContent>
+                    <Helper>
+                        <RadzenRequiredValidator Component="Reference" Text="@Localizer["required_field"]" />
+                    </Helper>
+                </RadzenFormField>
 
-<Modal @ref="errorsModal" />
+                <RadzenFormField Text="@Localizer["product_name"]">
+                    <Start><RadzenIcon Icon="label" /></Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="productModel.Name" Name="@nameof(ProductModel.Name)" Style="width: 100%;" />
+                    </ChildContent>
+                    <Helper>
+                        <RadzenRequiredValidator Component="Name" Text="@Localizer["required_field"]" />
+                        <RadzenLengthValidator Component="Name" Max="100" Text="@string.Format(Localizer["max_length"], 100)" />
+                    </Helper>
+                </RadzenFormField>
+
+                <RadzenFormField Text="@Localizer["product_qte"]">
+                    <Start><RadzenIcon Icon="inventory" /></Start>
+                    <ChildContent>
+                        <RadzenNumeric @bind-Value="productModel.Qte" Name="@nameof(ProductModel.Qte)" Style="width: 100%;" Min="0" />
+                    </ChildContent>
+                    <Helper>
+                        <RadzenRangeValidator Component="Qte" Min="0" Text="@Localizer["positive_number"]" />
+                    </Helper>
+                </RadzenFormField>
+
+                <RadzenFormField Text="@Localizer["product_qteLimite"]">
+                    <Start><RadzenIcon Icon="warning" /></Start>
+                    <ChildContent>
+                        <RadzenNumeric @bind-Value="productModel.QteLimit" Name="@nameof(ProductModel.QteLimit)" Style="width: 100%;" Min="0" />
+                    </ChildContent>
+                    <Helper>
+                        <RadzenRangeValidator Component="QteLimit" Min="0" Text="@Localizer["positive_number"]" />
+                    </Helper>
+                </RadzenFormField>
+
+                <RadzenFormField Text="@Localizer["product_remise"]">
+                    <Start><RadzenIcon Icon="code" /></Start>
+                    <ChildContent>
+                        <RadzenNumeric @bind-Value="productModel.DiscountPourcentage" Name="@nameof(ProductModel.DiscountPourcentage)" Style="width: 100%;" Min="0" Max="100" Step="0.1" />
+                    </ChildContent>
+                    <Helper>
+                        <RadzenRangeValidator Component="DiscountPourcentage" Min="0" Max="100" Text="@Localizer["percentage_range"]" />
+                    </Helper>
+                </RadzenFormField>
+            </RadzenColumn>
+
+            <!-- Right Column: Pricing Info -->
+            <RadzenColumn Size="12" SizeSM="6" Class="d-flex flex-column gap-3">
+                <RadzenFormField Text="@Localizer["product_remiseAchat"]">
+                    <Start><RadzenIcon Icon="shopping_cart" /></Start>
+                    <ChildContent>
+                        <RadzenNumeric @bind-Value="productModel.DiscountPourcentageOfPurchasing" Name="@nameof(ProductModel.DiscountPourcentageOfPurchasing)" Style="width: 100%;" Min="0" Max="100" Step="0.1" />
+                    </ChildContent>
+                    <Helper>
+                        <RadzenRangeValidator Component="DiscountPourcentageOfPurchasing" Min="0" Max="100" Text="@Localizer["percentage_range"]" />
+                    </Helper>
+                </RadzenFormField>
+
+                <RadzenFormField Text="@Localizer["product_tva"]">
+                    <Start><RadzenIcon Icon="account_balance" /></Start>
+                    <ChildContent>
+                        <RadzenNumeric @bind-Value="productModel.VatRate" Name="@nameof(ProductModel.VatRate)" Style="width: 100%;" Min="0" Max="100" Step="0.1" />
+                    </ChildContent>
+                    <Helper>
+                        <RadzenRangeValidator Component="VatRate" Min="0" Max="100" Text="@Localizer["percentage_range"]" />
+                    </Helper>
+                </RadzenFormField>
+
+                <RadzenFormField Text="@Localizer["product_prix"]">
+                    <Start><RadzenIcon Icon="attach_money" /></Start>
+                    <ChildContent>
+                        <RadzenNumeric @bind-Value="productModel.Price" Name="@nameof(ProductModel.Price)" Style="width: 100%;" Min="0" Step="0.01" />
+                    </ChildContent>
+                    <Helper>
+                        <RadzenRangeValidator Component="Price" Min="0" Text="@Localizer["positive_number"]" />
+                    </Helper>
+                </RadzenFormField>
+
+                <RadzenFormField Text="@Localizer["product_prixAchat"]">
+                    <Start><RadzenIcon Icon="shopping_basket" /></Start>
+                    <ChildContent>
+                        <RadzenNumeric @bind-Value="productModel.PurchasingPrice" Name="@nameof(ProductModel.PurchasingPrice)" Style="width: 100%;" Min="0" Step="0.01" />
+                    </ChildContent>
+                    <Helper>
+                        <RadzenRangeValidator Component="PurchasingPrice" Min="0" Text="@Localizer["positive_number"]" />
+                    </Helper>
+                </RadzenFormField>
+            </RadzenColumn>
+        </RadzenRow>
+
+        <!-- Form Actions -->
+        <RadzenRow Style="margin-top: 30px;">
+            <RadzenColumn Size="12" Style="text-align: right;">
+                <RadzenButton ButtonType="Radzen.ButtonType.Submit"
+                            Text="@Localizer["save_label"]"
+                            Icon="save"
+                            Style="margin-right: 10px;"
+                            Disabled="@isSubmitting">
+                    @if (isSubmitting)
+                    {
+                        <RadzenIcon Icon="hourglass_top" Style="margin-right: 5px;" />
+                    }
+                </RadzenButton>
+                <RadzenButton Text="@Localizer["cancel_label"]"
+                            Click="@Cancel"
+                            ButtonStyle="ButtonStyle.Danger"
+                            Icon="close"
+                            Disabled="@isSubmitting" />
+            </RadzenColumn>
+        </RadzenRow>
+    </RadzenTemplateForm>
+</RadzenCard>
 
 @code {
     [Parameter] public string? Refe { get; set; }
-    [Inject] protected ToastService toastService { get; set; } = default!;
-    private ProductResponse product = new ProductResponse();
+    private ProductModel productModel = new();
+    private bool isSubmitting = false;
     private CancellationTokenSource cancellationTokenSource = new();
-    private Modal errorsModal = default!;
+    private EventCallback<ProductModel> OnSubmit => EventCallback.Factory.Create<ProductModel>(this, HandleValidSubmit);
 
+    // Product Model Definition
+    public class ProductModel
+    {
+        [Required(ErrorMessage = "Reference is required")]
+        [StringLength(50, ErrorMessage = "Reference cannot exceed 50 characters")]
+        public string Reference { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Name is required")]
+        [StringLength(100, ErrorMessage = "Name cannot exceed 100 characters")]
+        public string Name { get; set; } = string.Empty;
+
+        [Range(0, int.MaxValue, ErrorMessage = "Quantity must be positive")]
+        public int Qte { get; set; }
+
+        [Range(0, int.MaxValue, ErrorMessage = "Limit quantity must be positive")]
+        public int QteLimit { get; set; }
+
+        [Range(0, 100, ErrorMessage = "Discount must be between 0 and 100")]
+        public double DiscountPourcentage { get; set; }
+
+        [Range(0, 100, ErrorMessage = "Purchase discount must be between 0 and 100")]
+        public double DiscountPourcentageOfPurchasing { get; set; }
+
+        [Range(0, 100, ErrorMessage = "VAT rate must be between 0 and 100")]
+        public double VatRate { get; set; }
+
+        [Range(0, double.MaxValue, ErrorMessage = "Price must be positive")]
+        public decimal Price { get; set; }
+
+        [Range(0, double.MaxValue, ErrorMessage = "Purchase price must be positive")]
+        public decimal PurchasingPrice { get; set; }
+
+        public bool Visibility { get; set; }
+    }
+
+    // Lifecycle Methods
     protected override async Task OnInitializedAsync()
     {
-        if (!string.IsNullOrEmpty(Refe))
+        if (string.IsNullOrEmpty(Refe)) return;
+
+        try
         {
-            var productResult = await productService.GetAsync(Refe, cancellationTokenSource.Token);
+            var productResult = await ProductService.GetAsync(Refe, cancellationTokenSource.Token);
             if (productResult.IsT0)
             {
-                product = productResult.AsT0;
-                return;
-            }
-
-            navigationManager.NavigateTo("/Error");
-        }
-    }
-
-    private async Task HandleValidSubmit()
-    {
-        if (string.IsNullOrEmpty(Refe))
-        {
-            var createProductResult = await productService.CreateAsync(
-                new CreateProductRequest
-                    {
-                        Refe = product.Reference,
-                        Nom = product.Name,
-                        Qte = product.Qte,
-                        QteLimite = product.QteLimit,
-                        Remise = product.DiscountPourcentage,
-                        RemiseAchat = product.DiscountPourcentageOfPurchasing,
-                        Tva = product.VatRate,
-                        Prix = product.Price,
-                        PrixAchat = product.PurchasingPrice,
-                        Visibilite = product.Visibility
-                    },
-                    cancellationTokenSource.Token);
-
-            if (createProductResult.IsT0)
-            {
-                toastService.Notify(new(ToastType.Success, $"{localizer["product"]} {localizer["created_with_success"]}"));
-                navigationManager.NavigateTo("/products_list");
-                return;
-            }
-
-            await ShowErrorsModal(createProductResult.AsT1.ToErrorsList());
-            return;
-        }
-
-        var updateProductResult = await productService.UpdateAsync(
-            new UpdateProductRequest
+                var product = productResult.AsT0;
+                productModel = new ProductModel
                 {
-                    Refe = product.Reference,
-                    Nom = product.Name,
+                    Reference = product.Reference,
+                    Name = product.Name,
                     Qte = product.Qte,
-                    QteLimite = product.QteLimit,
-                    Remise = product.DiscountPourcentage,
-                    RemiseAchat = product.DiscountPourcentageOfPurchasing,
-                    Tva = product.VatRate,
-                    Prix = product.Price,
-                    PrixAchat = product.PurchasingPrice,
-                    Visibilite = product.Visibility
-                }, product.Reference,
-            cancellationTokenSource.Token);
-
-        if (updateProductResult.IsT0)
-        {
-            toastService.Notify(new(ToastType.Success, $"{localizer["product"]} {localizer["updated_with_success"]}"));
-            navigationManager.NavigateTo("/products_list");
-            return;
+                    QteLimit = product.QteLimit,
+                    DiscountPourcentage = product.DiscountPourcentage,
+                    DiscountPourcentageOfPurchasing = product.DiscountPourcentageOfPurchasing,
+                    VatRate = product.VatRate,
+                    Price = product.Price,
+                    PurchasingPrice = product.PurchasingPrice,
+                    Visibility = product.Visibility
+                };
+            }
+            else
+            {
+                ShowErrorToast(Localizer["product_not_found"]);
+                NavigationManager.NavigateTo("/products_list");
+            }
         }
-
-        await ShowErrorsModal(updateProductResult.AsT1.ToErrorsList());
+        catch (Exception)
+        {
+            ShowErrorToast(Localizer["loading_error"]);
+        }
     }
 
+    // Form Submission
+    private async Task HandleValidSubmit(ProductModel model)
+    {
+        try
+        {
+            isSubmitting = true;
+            StateHasChanged();
+
+            if (string.IsNullOrEmpty(Refe))
+            {
+                var createResult = await ProductService.CreateAsync(new CreateProductRequest
+                {
+                    Refe = model.Reference,
+                    Nom = model.Name,
+                    Qte = model.Qte,
+                    QteLimite = model.QteLimit,
+                    Remise = model.DiscountPourcentage,
+                    RemiseAchat = model.DiscountPourcentageOfPurchasing,
+                    Tva = model.VatRate,
+                    Prix = model.Price,
+                    PrixAchat = model.PurchasingPrice,
+                    Visibilite = model.Visibility
+                }, cancellationTokenSource.Token);
+
+                if (createResult.IsT0)
+                {
+                    ToastService.Notify(new(ToastType.Success, $"{Localizer["product"]} {Localizer["created_with_success"]}"));
+                    NavigationManager.NavigateTo("/products_list");
+                }
+                else
+                {
+                    ShowErrorsToast(createResult.AsT1.ToErrorsList());
+                }
+                return;
+            }
+
+            var updateResult = await ProductService.UpdateAsync(new UpdateProductRequest
+            {
+                Refe = model.Reference,
+                Nom = model.Name,
+                Qte = model.Qte,
+                QteLimite = model.QteLimit,
+                Remise = model.DiscountPourcentage,
+                RemiseAchat = model.DiscountPourcentageOfPurchasing,
+                Tva = model.VatRate,
+                Prix = model.Price,
+                PrixAchat = model.PurchasingPrice,
+                Visibilite = model.Visibility
+            }, model.Reference, cancellationTokenSource.Token);
+
+            if (updateResult.IsT0)
+            {
+                ToastService.Notify(new(ToastType.Success, $"{Localizer["product"]} {Localizer["updated_with_success"]}"));
+                NavigationManager.NavigateTo("/products_list");
+            }
+            else
+            {
+                ShowErrorsToast(updateResult.AsT1.ToErrorsList());
+            }
+        }
+        catch (Exception)
+        {
+            ShowErrorToast(Localizer["unexpected_error"]);
+        }
+        finally
+        {
+            isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    // Cancel Action
     private void Cancel()
     {
-        navigationManager.NavigateTo("/products_list");
+        if (!isSubmitting)
+        {
+            NavigationManager.NavigateTo("/products_list");
+        }
     }
 
-    private async Task ShowErrorsModal(List<string> errorList)
+    // Error Handling with Toasts
+    private void ShowErrorsToast(List<string> errors)
     {
-        var parameters = new Dictionary<string, object>
-        {
-            { Consts.ValidationParams, errorList }
-        };
-        await errorsModal.ShowAsync<ErrorsModal>(title: Consts.ErrorModalTitle, parameters: parameters);
+        var errorMessage = $"{Localizer["validation_errors"]}: {string.Join("; ", errors)}";
+        ToastService.Notify(new(ToastType.Danger, errorMessage));
+    }
+
+    private void ShowErrorToast(string message)
+    {
+        ToastService.Notify(new(ToastType.Danger, message));
+    }
+
+    // Cleanup
+    public void Dispose()
+    {
+        cancellationTokenSource?.Cancel();
+        cancellationTokenSource?.Dispose();
     }
 }
