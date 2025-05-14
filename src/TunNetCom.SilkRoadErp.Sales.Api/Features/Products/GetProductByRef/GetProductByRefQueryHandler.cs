@@ -18,7 +18,19 @@ public class GetProductByRefQueryHandler(
             return Result.Fail(EntityNotFound.Error());
         }
         _logger.LogEntityFetchedById(nameof(Produit), getProductByRefQuery.Refe);
-
-        return product.Adapt<ProductResponse>();
+        var productResponse = new ProductResponse
+        {
+            DiscountPourcentageOfPurchasing = product.RemiseAchat,
+            DiscountPourcentage = product.Remise,
+            Name = product.Nom,
+            Price = product.Prix,
+            PurchasingPrice = product.PrixAchat,
+            Qte = product.Qte,
+            QteLimit = product.QteLimite,
+            Reference = product.Refe,
+            VatRate = product.Tva,
+            Visibility = product.Visibilite
+        };
+        return productResponse;
     }
 }

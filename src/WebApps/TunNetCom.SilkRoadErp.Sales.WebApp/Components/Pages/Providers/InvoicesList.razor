@@ -1,0 +1,462 @@
+﻿@* @page "/supplier-invoices" *@
+@* @using Microsoft.Extensions.Localization *@
+@* @* @using TunNetCom.SilkRoadErp.Sales.Contracts.Invoices.Responses *@ 
+@* @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices *@
+@* @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales *@
+@* @inject IInvoicesApiClient InvoiceService *@
+@* @inject IProvidersApiClient ProvidersService *@
+@* @inject IStringLocalizer<SharedResource> Localizer *@
+@* @using Radzen.Blazor *@
+@* @using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice *@
+@* @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers *@
+@* @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers *@
+@* @inject NavigationManager NavigationManager *@
+
+@* <div class="search-header"> *@
+@*     <div class="search-field"> *@
+@*         <label for="startDate">@Localizer["start_date"]</label> *@
+@*         <RadzenDatePicker id="startDate" *@
+@*                           @bind-Value="searchCriteria.StartDate" *@
+@*                           DateFormat="dd/MM/yyyy" *@
+@*                           Placeholder="@Localizer["start_date"]" *@
+@*                           class="w-100 search-input" /> *@
+@*     </div> *@
+@*     <div class="search-field"> *@
+@*         <label for="endDate">@Localizer["end_date"]</label> *@
+@*         <RadzenDatePicker id="endDate" *@
+@*                           @bind-Value="searchCriteria.EndDate" *@
+@*                           DateFormat="dd/MM/yyyy" *@
+@*                           Placeholder="@Localizer["end_date"]" *@
+@*                           class="w-100 search-input" /> *@
+@*     </div> *@
+@*     <div class="search-field"> *@
+@*         <label for="provider">@Localizer["provider"]</label> *@
+@*         <RadzenDropDownDataGrid AllowClear="true" *@
+@*                                 IsLoading="@isLoadingProviders" *@
+@*                                 @bind-Value="@searchCriteria.SelectedProviderId" *@
+@*                                 AllowFiltering="true" *@
+@*                                 Style="width: 100%; border-radius: 8px; border: 1px solid #e0e0e0; transition: all 0.2s ease;" *@
+@*                                 LoadData="LoadProviders" *@
+@*                                 Data="@_providersList" *@
+@*                                 TextProperty="@nameof(ProviderResponse.Nom)" *@
+@*                                 ValueProperty="@nameof(ProviderResponse.Id)" *@
+@*                                 Placeholder="@Localizer["select_provider"]" *@
+@*                                 Class="custom-dropdown"> *@
+@*             <Columns> *@
+@*                 <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Id)" *@
+@*                                               Title="ID" *@
+@*                                               Width="100px" /> *@
+@*                 <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Nom)" *@
+@*                                               Title="Name" *@
+@*                                               Width="300px" /> *@
+@*             </Columns> *@
+@*         </RadzenDropDownDataGrid> *@
+@*     </div> *@
+@*     <div class="search-field"> *@
+@*         <label for="invoiceStatus">@Localizer["invoice_status"]</label> *@
+@*         <RadzenDropDown id="invoiceStatus" *@
+@*                         @bind-Value="searchCriteria.InvoiceStatus" *@
+@*                         Data="@invoiceStatuses" *@
+@*                         AllowClear="false" *@
+@*                         Placeholder="@Localizer["select_status"]" *@
+@*                         class="w-100 search-input" /> *@
+@*     </div> *@
+@*     <div class="search-button"> *@
+@*         <RadzenButton Text="@Localizer["search"]" *@
+@*                       Icon="search" *@
+@*                       ButtonStyle="ButtonStyle.Primary" *@
+@*                       Click="@SearchInvoices" *@
+@*                       class="action-button" /> *@
+@*     </div> *@
+@* </div> *@
+@* <div class="invoices-list-container"> *@
+@*     <RadzenCard class="list-card"> *@
+@*         <h2>@Localizer["supplier_invoices"]</h2> *@
+@*         <RadzenDataGrid Data="@invoices.Invoices.Items" *@
+@*                         LoadData="@Callback" *@
+@*                         TItem="InvoiceResponse" *@
+@*                         AllowSorting="true" *@
+@*                         AllowFiltering="true" *@
+@*                         AllowPaging="true" *@
+@*                         PageSize="15" *@
+@*                         Count="@invoices.Invoices.TotalCount" *@
+@*                         AllowColumnResize="true" *@
+@*                         RowSelect="@(args => ViewInvoice(args.Number.ToString()))"> *@
+@*             <EmptyTemplate> *@
+@*                 <p style="color: lightgrey; font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p> *@
+@*             </EmptyTemplate> *@
+@*             <Columns> *@
+@*                 <RadzenDataGridColumn TItem="GetInvoiceBaseInfos" *@
+@*                                       Property="@nameof(GetInvoiceBaseInfos.Number)" *@
+@*                                       Title="@Localizer["invoice_number"]" *@
+@*                                       Width="150px" /> *@
+@*                 <RadzenDataGridColumn TItem="GetInvoiceBaseInfos" *@
+@*                                       Property="@nameof(GetInvoiceBaseInfos.Date)" *@
+@*                                       Title="@Localizer["date"]" *@
+@*                                       Width="150px" *@
+@*                                       FormatString="{0:d MMMM yyyy}" /> *@
+@*                 <RadzenDataGridColumn TItem="GetInvoiceBaseInfos" *@
+@*                                       Property="@nameof(GetInvoiceBaseInfos.ProviderId)" *@
+@*                                       Title="@Localizer["provider"]" *@
+@*                                       Width="200px" /> *@
+@*                 <RadzenDataGridColumn TItem="GetInvoiceBaseInfos" *@
+@*                                       Property="@nameof(GetInvoiceBaseInfos.GrossAmount)" *@
+@*                                       Title="@Localizer["total_gross"]" *@
+@*                                       Width="200px" /> *@
+@*                 <RadzenDataGridColumn TItem="GetInvoiceBaseInfos" *@
+@*                                       Title="@Localizer["invoice_status"]" *@
+@*                                       Width="150px" *@
+@*                                       Sortable="false" *@
+@*                                       Filterable="false"> *@
+@*                     <Template Context="invoice"> *@
+@*                         @if (invoice.IsPaid) *@
+@*                         { *@
+@*                             <RadzenBadge Text="@Localizer["paid"]" BadgeStyle="BadgeStyle.Success" /> *@
+@*                         } *@
+@*                         else *@
+@*                         { *@
+@*                             <RadzenBadge Text="@Localizer["unpaid"]" BadgeStyle="BadgeStyle.Warning" /> *@
+@*                         } *@
+@*                     </Template> *@
+@*                 </RadzenDataGridColumn> *@
+@*             </Columns> *@
+@*         </RadzenDataGrid> *@
+@*         <RadzenCard class="summary-card" Variant="Variant.Outlined"> *@
+@*             <RadzenStack Orientation="Radzen.Orientation.Horizontal" *@
+@*                          Gap="1.5rem" *@
+@*                          JustifyContent="JustifyContent.End" *@
+@*                          class="summary-stack"> *@
+@*                 <RadzenText TextStyle="TextStyle.Body1" class="summary-text"> *@
+@*                     @Localizer["total_net"]: <strong>@invoices.TotalNetAmount.FormatAmount()</strong> *@
+@*                 </RadzenText> *@
+@*                 <RadzenText TextStyle="TextStyle.Body1" class="summary-text"> *@
+@*                     @Localizer["total_gross"]: <strong>@invoices.TotalGrossAmount.FormatAmount()</strong> *@
+@*                 </RadzenText> *@
+@*                 <RadzenText TextStyle="TextStyle.Body1" class="summary-text"> *@
+@*                     @Localizer["total_vat"]: <strong>@invoices.TotalVatAmount.FormatAmount()</strong> *@
+@*                 </RadzenText> *@
+@*             </RadzenStack> *@
+@*         </RadzenCard> *@
+@*     </RadzenCard> *@
+@* </div> *@
+
+@* @* CSS remains unchanged *@ 
+@* <style> *@
+@*     .invoices-list-container { *@
+@*         padding: 16px 24px; *@
+@*         min-height: 100%; *@
+@*     } *@
+
+@*     .list-card { *@
+@*         background-color: #ffffff; *@
+@*         border: 1px solid #e5e7eb; *@
+@*         border-radius: 6px; *@
+@*         padding: 16px; *@
+@*         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); *@
+@*         max-width: 1200px; *@
+@*         margin: 0 auto; *@
+@*     } *@
+
+@*     h2 { *@
+@*         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; *@
+@*         font-size: 20px; *@
+@*         color: #1f2937; *@
+@*         margin-bottom: 16px; *@
+@*     } *@
+
+@*     .action-button { *@
+@*         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; *@
+@*         font-size: 13px; *@
+@*         font-weight: 500; *@
+@*         padding: 6px 12px; *@
+@*         border-radius: 6px; *@
+@*         background-color: #3b82f6; *@
+@*         color: #ffffff; *@
+@*         border: none; *@
+@*         transition: background-color 0.2s, box-shadow 0.2s; *@
+@*     } *@
+
+@*         .action-button:hover:not(:disabled) { *@
+@*             background-color: #2563eb; *@
+@*             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); *@
+@*         } *@
+
+@*         .action-button:disabled { *@
+@*             background-color: #d1d5db; *@
+@*             color: #6b7280; *@
+@*             cursor: not-allowed; *@
+@*         } *@
+
+@*     .search-header { *@
+@*         display: grid; *@
+@*         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); *@
+@*         gap: 16px; *@
+@*         margin-bottom: 20px; *@
+@*         align-items: end; *@
+@*         background-color: #ffffff; *@
+@*         padding: 16px; *@
+@*         border-radius: 6px; *@
+@*         border: 1px solid #e5e7eb; *@
+@*         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); *@
+@*     } *@
+
+@*     .search-field { *@
+@*         display: flex; *@
+@*         flex-direction: column; *@
+@*     } *@
+
+@*         .search-field label { *@
+@*             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; *@
+@*             font-size: 13px; *@
+@*             font-weight: 500; *@
+@*             color: #374151; *@
+@*             margin-bottom: 6px; *@
+@*         } *@
+
+@*     .search-input { *@
+@*         width: 100% !important; *@
+@*         background-color: #f9fafb; *@
+@*         border: 1px solid #d1d5db; *@
+@*         border-radius: 4px; *@
+@*         padding: 8px; *@
+@*         font-size: 14px; *@
+@*         transition: border-color 0.2s, box-shadow 0.2s; *@
+@*     } *@
+
+@*         .search-input:hover { *@
+@*             border-color: #9ca3af; *@
+@*         } *@
+
+@*         .search-input:focus { *@
+@*             border-color: #3b82f6; *@
+@*             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); *@
+@*             outline: none; *@
+@*         } *@
+
+@*     .search-button { *@
+@*         display: flex; *@
+@*         align-items: flex-end; *@
+@*     } *@
+
+@*     @@media (max-width: 768px) { *@
+@*         .invoices-list-container { *@
+@*             padding: 12px 16px; *@
+@*         } *@
+
+@*         .list-card { *@
+@*             padding: 12px; *@
+@*         } *@
+
+@*         h2 { *@
+@*             font-size: 18px; *@
+@*         } *@
+
+@*         .action-button { *@
+@*             font-size: 12px; *@
+@*             padding: 6px 10px; *@
+@*         } *@
+
+@*         .search-header { *@
+@*             grid-template-columns: 1fr; *@
+@*             gap: 12px; *@
+@*             padding: 12px; *@
+@*             margin-bottom: 16px; *@
+@*         } *@
+
+@*         .search-field { *@
+@*             min-width: 100%; *@
+@*         } *@
+
+@*             .search-field label { *@
+@*                 font-size: 12px; *@
+@*             } *@
+
+@*         .search-input { *@
+@*             font-size: 13px; *@
+@*             padding: 6px; *@
+@*         } *@
+
+@*         .search-button { *@
+@*             margin-bottom: 0; *@
+@*         } *@
+@*     } *@
+
+@*     .summary-card { *@
+@*         border: 1px solid #e5e7eb; *@
+@*         border-radius: 6px; *@
+@*         padding: 8px 16px; *@
+@*         background-color: #f8fafc; *@
+@*         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); *@
+@*         flex: 0 0 auto; *@
+@*     } *@
+
+@*     .summary-stack { *@
+@*         gap: 1.5rem; *@
+@*     } *@
+
+@*     .summary-text { *@
+@*         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; *@
+@*         font-size: 13px; *@
+@*         color: #1f2937; *@
+@*         line-height: 1.5; *@
+@*     } *@
+
+@*         .summary-text strong { *@
+@*             font-weight: 600; *@
+@*             color: #111827; *@
+@*         } *@
+
+@*     @@media (min-width: 769px) and (max-width: 1024px) { *@
+@*         .search-header { *@
+@*             grid-template-columns: repeat(2, 1fr); *@
+@*         } *@
+
+@*         .summary-card { *@
+@*             width: 100%; *@
+@*             padding: 8px 12px; *@
+@*         } *@
+
+@*         .summary-stack { *@
+@*             flex-direction: column; *@
+@*             gap: 0.75rem; *@
+@*             align-items: flex-start; *@
+@*         } *@
+
+@*         .summary-text { *@
+@*             font-size: 12px; *@
+@*         } *@
+@*     } *@
+@* </style> *@
+
+@* @code { *@
+@*     private GetProviderInvoicesWithSummary invoices = new GetProviderInvoicesWithSummary(); *@
+@*     private const int DefaultPageSize = 10; *@
+@*     private SearchCriteria searchCriteria = new SearchCriteria(); *@
+@*     private List<ProviderResponse> _providersList = new(); *@
+@*     private bool isLoadingProviders = false; *@
+@*     private List<string> invoiceStatuses = new() { "Tous", "Payé", "Non Payé" }; *@
+
+@*     protected override async Task OnInitializedAsync() *@
+@*     { *@
+@*         // Load providers initially *@
+@*         await LoadProviders(new LoadDataArgs { Filter = string.Empty }); *@
+
+@*         // Initialize invoices with default parameters *@
+@*         invoices = await InvoiceService.GetInvoicesWithSummariesAsync( *@
+@*             pageNumber: 1, *@
+@*             pageSize: DefaultPageSize, *@
+@*             providerId: null, *@
+@*             sortOrder: null, *@
+@*             sortProperty: null, *@
+@*             searchKeyword: null, *@
+@*             startDate: null, *@
+@*             endDate: null, *@
+@*             isPaid: null, *@
+@*             cancellationToken: default *@
+@*         ); *@
+
+@*         await InvokeAsync(StateHasChanged); *@
+@*     } *@
+
+@*     async Task LoadProviders(LoadDataArgs args) *@
+@*     { *@
+@*         isLoadingProviders = true; *@
+@*         var parameters = new QueryStringParameters *@
+@*             { *@
+@*                 PageNumber = 1, *@
+@*                 PageSize = 7, *@
+@*                 SearchKeyword = args?.Filter ?? string.Empty *@
+@*             }; *@
+
+@*         try *@
+@*         { *@
+@*             var pagedProviders = await ProvidersService.SearchProviders(parameters, default); *@
+@*             _providersList = pagedProviders.Items.ToList(); *@
+@*         } *@
+@*         catch (Exception ex) *@
+@*         { *@
+@*             _providersList = new List<ProviderResponse>(); *@
+@*         } *@
+@*         finally *@
+@*         { *@
+@*             isLoadingProviders = false; *@
+@*         } *@
+
+@*         await InvokeAsync(StateHasChanged); *@
+@*     } *@
+
+@*     private void ViewInvoice(string id) *@
+@*     { *@
+@*         NavigationManager.NavigateTo($"/AddOrUpdateInvoice/{id}"); *@
+@*     } *@
+
+@*     private async Task SearchInvoices() *@
+@*     { *@
+@*         // Trigger a reload of the grid with current search criteria *@
+@*         invoices = await InvoiceService.GetInvoicesWithSummariesAsync( *@
+@*             pageNumber: 1, *@
+@*             pageSize: DefaultPageSize, *@
+@*             providerId: searchCriteria.SelectedProviderId, *@
+@*             sortOrder: null, *@
+@*             sortProperty: null, *@
+@*             searchKeyword: null, *@
+@*             startDate: searchCriteria.StartDate, *@
+@*             endDate: searchCriteria.EndDate, *@
+@*             isPaid: searchCriteria.InvoiceStatus switch *@
+@*             { *@
+@*                 "Payé" => true, *@
+@*                 "Non Payé" => false, *@
+@*                 _ => null *@
+@*             }, *@
+@*             cancellationToken: default *@
+@*         ); *@
+
+@*         await InvokeAsync(StateHasChanged); *@
+@*     } *@
+
+@*     private async Task Callback(LoadDataArgs args) *@
+@*     { *@
+@*         var filter = args.Filter?.ToString(); *@
+@*         var sort = args.OrderBy?.ToString(); *@
+@*         int pageNumber = (args.Skip.Value / DefaultPageSize) + 1; *@
+@*         int pageSize = DefaultPageSize; *@
+
+@*         // Parse sort string (e.g., "Number desc" or "Date") *@
+@*         string sortProperty = null; *@
+@*         string sortOrder = null; *@
+@*         if (!string.IsNullOrEmpty(sort)) *@
+@*         { *@
+@*             var sortParts = sort.Split(' '); *@
+@*             sortProperty = sortParts[0]; *@
+@*             sortOrder = sortParts.Length > 1 && sortParts[1].ToLower() == "desc" ? "Descending" : "Ascending"; *@
+@*         } *@
+
+@*         invoices = await InvoiceService.GetInvoices( *@
+@*             pageNumber: pageNumber, *@
+@*             pageSize: pageSize, *@
+@*             providerId: searchCriteria.SelectedProviderId, *@
+@*             sortOrder: sortOrder, *@
+@*             sortProperty: sortProperty, *@
+@*             searchKeyword: filter, *@
+@*             startDate: searchCriteria.StartDate, *@
+@*             endDate: searchCriteria.EndDate, *@
+@*             isPaid: searchCriteria.InvoiceStatus switch *@
+@*             { *@
+@*                 "Payé" => true, *@
+@*                 "Non Payé" => false, *@
+@*                 _ => null *@
+@*             }, *@
+@*             cancellationToken: default *@
+@*         ); *@
+
+@*         await InvokeAsync(StateHasChanged); *@
+@*     } *@
+
+@*     public class SearchCriteria *@
+@*     { *@
+@*         public DateTime? StartDate { get; set; } *@
+@*         public DateTime? EndDate { get; set; } *@
+@*         public int? SelectedProviderId { get; set; } *@
+@*         public string InvoiceStatus { get; set; } = "Tous"; *@
+@*     } *@
+@* } *@

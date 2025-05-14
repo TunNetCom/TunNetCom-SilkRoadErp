@@ -342,16 +342,34 @@
   <data name="input_error" xml:space="preserve">
     <value />
   </data>
+  <data name="manage_customer_invoices" xml:space="preserve">
+    <value />
+  </data>
+  <data name="pourcentage_retenu" xml:space="preserve">
+    <value>Retained percentage</value>
+  </data>
   <data name="actions_label" xml:space="preserve">
     <value>Actions</value>
   </data>
   <data name="cancel_label" xml:space="preserve">
     <value>Cancel</value>
   </data>
-  <data name="manage_customer_invoices" xml:space="preserve">
+  <data name="CustomerPreview" xml:space="preserve">
     <value />
   </data>
-  <data name="pourcentage_retenu" xml:space="preserve">
-    <value>Retained percentage</value>
+  <data name="UnableToLoadCustomer" xml:space="preserve">
+    <value />
+  </data>
+  <data name="NotAvailable" xml:space="preserve">
+    <value />
+  </data>
+  <data name="customer_code" xml:space="preserve">
+    <value />
+  </data>
+  <data name="customer_codeCat" xml:space="preserve">
+    <value />
+  </data>
+  <data name="customer_etbSec" xml:space="preserve">
+    <value />
   </data>
 </root>

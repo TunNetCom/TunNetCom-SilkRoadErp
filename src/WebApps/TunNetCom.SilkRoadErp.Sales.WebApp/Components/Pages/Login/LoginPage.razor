@@ -1,0 +1,67 @@
+﻿@page "/login"
+@using Radzen
+@using Radzen.Blazor
+@inject NavigationManager Navigation
+@inject DialogService DialogService
+
+<RadzenCard style="width: 450px; max-width: 90%; margin: 80px auto; padding: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+    <RadzenTemplateForm TItem="LoginModel" Data="@loginModel" Submit="@OnSubmit">
+        <RadzenStack Gap="2rem" AlignItems="AlignItems.Center">
+            <h2 style="color: #333; font-weight: 500;">Connexion</h2>
+
+            <RadzenStack Gap="1.5rem" style="width: 100%;">
+                <RadzenFormField Text="Nom d'utilisateur" Variant="Variant.Filled">
+                    <RadzenTextBox Name="Username" @bind-Value="@loginModel.Username" Placeholder="Entrez votre nom d'utilisateur" Style="width: 100%;" />
+                </RadzenFormField>
+
+                <RadzenFormField Text="Mot de passe" Variant="Variant.Filled">
+                    <RadzenPassword Name="Password" @bind-Value="@loginModel.Password" Placeholder="Entrez votre mot de passe" Style="width: 100%;" />
+                </RadzenFormField>
+            </RadzenStack>
+
+            <RadzenButton ButtonType="Radzen.ButtonType.Submit"
+                          Text="@(isLoading ? "Connexion en cours..." : "Se connecter")"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Disabled="@isLoading"
+                          Style="width: 100%; padding: 12px;" />
+        </RadzenStack>
+    </RadzenTemplateForm>
+</RadzenCard>
+
+@code {
+    public class LoginModel
+    {
+        public string Username { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+    }
+
+    private LoginModel loginModel = new();
+    private bool isLoading = false;
+
+    private async Task OnSubmit()
+    {
+        try
+        {
+            // Activer l'état de chargement
+            isLoading = true;
+            StateHasChanged(); // Forcer le rendu pour afficher le loader
+
+            // Simuler un délai de 2 secondes
+            await Task.Delay(2000);
+
+            // Afficher une notification de succès
+            // await DialogService.Alert("Connexion réussie ! Redirection en cours...", "Succès");
+
+            // Attendre encore 1 seconde pour l'effet
+            await Task.Delay(1000);
+
+            // Rediriger vers la page Home
+            Navigation.NavigateTo("/");
+        }
+        finally
+        {
+            // Réinitialiser l'état de chargement
+            isLoading = false;
+        }
+    }
+}

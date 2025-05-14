@@ -7,67 +7,66 @@
 @inject ICustomersApiClient CustomerService
 @inject IStringLocalizer<SharedResource> Localizer
 
-    <div class="customer-preview-container">
-        <RadzenCard class="customer-preview-card">
-            <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1.5rem">
-                <h3 class="customer-preview-title">@Localizer["CustomerPreview"]</h3>
+<div class="customer-preview-container">
+    <RadzenCard class="customer-preview-card">
+        <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1.5rem">
+            <h3 class="customer-preview-title">@Localizer["CustomerPreview"]</h3>
 
-                @if (customer == null)
-                {
-                    <p class="no-data">Unable to load customer information.</p>
-                }
-                else
-                {
-                    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
-                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
-                            <RadzenLabel Text="@Localizer["customer_id"]" class="preview-label" />
-                            <span class="preview-value">@customer.Id</span>
-                        </RadzenStack>
-                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
-                            <RadzenLabel Text="@Localizer["customer_name"]" class="preview-label" />
-                            <span class="preview-value">@(customer.Name ?? "N/A")</span>
-                        </RadzenStack>
-                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
-                            <RadzenLabel Text="@Localizer["customer_phone"]" class="preview-label" />
-                            <span class="preview-value">@(customer.Tel ?? "N/A")</span>
-                        </RadzenStack>
-                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
-                            <RadzenLabel Text="@Localizer["customer_address"]" class="preview-label" />
-                            <span class="preview-value">@(customer.Adresse ?? "N/A")</span>
-                        </RadzenStack>
-                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
-                            <RadzenLabel Text="@Localizer["customer_matricule"]" class="preview-label" />
-                            <span class="preview-value">@(customer.Matricule ?? "N/A")</span>
-                        </RadzenStack>
-                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
-                            <RadzenLabel Text="@Localizer["customer_code"]" class="preview-label" />
-                            <span class="preview-value">@(customer.Code ?? "N/A")</span>
-                        </RadzenStack>
-                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
-                            <RadzenLabel Text="@Localizer["customer_codeCat"]" class="preview-label" />
-                            <span class="preview-value">@(customer.CodeCat ?? "N/A")</span>
-                        </RadzenStack>
-                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
-                            <RadzenLabel Text="@Localizer["customer_etbSec"]" class="preview-label" />
-                            <span class="preview-value">@(customer.EtbSec ?? "N/A")</span>
-                        </RadzenStack>
-                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
-                            <RadzenLabel Text="@Localizer["customer_email"]" class="preview-label" />
-                            <span class="preview-value">@(customer.Mail ?? "N/A")</span>
-                        </RadzenStack>
+            @if (customer == null)
+            {
+                <p class="no-data">@Localizer["UnableToLoadCustomer"]</p>
+            }
+            else
+            {
+                <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                        <RadzenLabel Text="@Localizer["customer_id"]" class="preview-label" />
+                        <span class="preview-value">@customer.Id</span>
                     </RadzenStack>
-                }
-
-                @if (ShowClose)
-                {
-                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem">
-                        <RadzenButton Text="@Localizer["Close"]" ButtonStyle="ButtonStyle.Secondary" Click="@(() => DialogService.Close())" />
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                        <RadzenLabel Text="@Localizer["customer_name"]" class="preview-label" />
+                        <span class="preview-value">@(customer.Name ?? @Localizer["NotAvailable"])</span>
                     </RadzenStack>
-                }
-            </RadzenStack>
-        </RadzenCard>
-    </div>
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                        <RadzenLabel Text="@Localizer["customer_phone"]" class="preview-label" />
+                        <span class="preview-value">@(customer.Tel ?? @Localizer["NotAvailable"])</span>
+                    </RadzenStack>
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                        <RadzenLabel Text="@Localizer["customer_address"]" class="preview-label" />
+                        <span class="preview-value">@(customer.Adresse ?? @Localizer["NotAvailable"])</span>
+                    </RadzenStack>
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                        <RadzenLabel Text="@Localizer["customer_matricule"]" class="preview-label" />
+                        <span class="preview-value">@(customer.Matricule ?? @Localizer["NotAvailable"])</span>
+                    </RadzenStack>
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                        <RadzenLabel Text="@Localizer["customer_code"]" class="preview-label" />
+                        <span class="preview-value">@(customer.Code ?? @Localizer["NotAvailable"])</span>
+                    </RadzenStack>
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                        <RadzenLabel Text="@Localizer["customer_codeCat"]" class="preview-label" />
+                        <span class="preview-value">@(customer.CodeCat ?? @Localizer["NotAvailable"])</span>
+                    </RadzenStack>
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                        <RadzenLabel Text="@Localizer["customer_etbSec"]" class="preview-label" />
+                        <span class="preview-value">@(customer.EtbSec ?? @Localizer["NotAvailable"])</span>
+                    </RadzenStack>
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                        <RadzenLabel Text="@Localizer["customer_email"]" class="preview-label" />
+                        <span class="preview-value">@(customer.Mail ?? @Localizer["NotAvailable"])</span>
+                    </RadzenStack>
+                </RadzenStack>
+            }
 
+            @if (ShowClose)
+            {
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem">
+                    <RadzenButton Text="@Localizer["Close"]" ButtonStyle="ButtonStyle.Secondary" Click="@(() => DialogService.Close())" />
+                </RadzenStack>
+            }
+        </RadzenStack>
+    </RadzenCard>
+</div>
 
 @code {
     [Parameter] public int CustomerId { get; set; }
@@ -78,8 +77,8 @@
 
     protected override async Task OnParametersSetAsync()
     {
-            var result = await CustomerService.GetCustomerByIdAsync(CustomerId, default);
-            customer = result;
+        var result = await CustomerService.GetCustomerByIdAsync(CustomerId, default);
+        customer = result;
     }
 }
 
