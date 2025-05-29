@@ -26,7 +26,7 @@ public class CreateCustomerEndpoint : ICarterModule
             Mail: request.Mail
         );
 
-        var result = await mediator.Send(createCustomerCommand, cancellationToken);
+        Result<int> result = await mediator.Send(createCustomerCommand, cancellationToken);
 
         if (result.IsFailed)
         {

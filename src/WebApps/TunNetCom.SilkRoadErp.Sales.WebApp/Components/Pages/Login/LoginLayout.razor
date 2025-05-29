@@ -1,0 +1,17 @@
+﻿@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Layout.Sidebar
+@inherits LayoutComponentBase
+@inject IJSRuntime JS
+
+<RadzenComponents @rendermode="InteractiveServer" />
+<Toasts class="p-3" AutoHide="true" Delay="4000" Placement="ToastsPlacement.TopRight" />
+
+<div class="layout has-sidebar fixed-sidebar fixed-header"> 
+	<div class="layout">
+		<main class="content">
+
+			<div class="main-content">
+				@Body
+			</div>
+		</main>
+	</div>
+</div>
