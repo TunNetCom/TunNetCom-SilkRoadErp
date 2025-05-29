@@ -1,3 +1,5 @@
+using RadzenBlazorDemos.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -11,6 +13,7 @@ builder.Services.AddSalesHttpClients(baseUrl);
 builder.Services.AddPrintEngine();
 builder.Services.AddLocalization();
 builder.Services.AddControllers();
+builder.Services.AddScoped<GitHubService>();
 string[] supportedCultures = ["en", "fr"];
 var localizationOptions = new RequestLocalizationOptions()
     .SetDefaultCulture(supportedCultures[0])

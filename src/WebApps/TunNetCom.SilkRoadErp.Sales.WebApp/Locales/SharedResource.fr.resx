@@ -172,7 +172,7 @@
     <value>Sauvegarder</value>
   </data>
   <data name="search" xml:space="preserve">
-    <value>Rechercher...</value>
+    <value>Rechercher</value>
   </data>
   <data name="SilkRoadErp" xml:space="preserve">
     <value>Erp de la Route de la Soie</value>
@@ -348,6 +348,24 @@
   <data name="pourcentage_retenu" xml:space="preserve">
     <value>Pourcentage Retenu</value>
   </data>
+  <data name="CustomerPreview" xml:space="preserve">
+    <value>Aperçu du client</value>
+  </data>
+  <data name="UnableToLoadCustomer" xml:space="preserve">
+    <value>Impossible de charger les informations du client</value>
+  </data>
+  <data name="NotAvailable" xml:space="preserve">
+    <value>Non disponible</value>
+  </data>
+  <data name="customer_code" xml:space="preserve">
+    <value>Code du client</value>
+  </data>
+  <data name="customer_codeCat" xml:space="preserve">
+    <value>Code catégorie du client</value>
+  </data>
+  <data name="customer_etbSec" xml:space="preserve">
+    <value>Établissement secondaire</value>
+  </data>
   <data name="actions_label" xml:space="preserve">
     <value>Actions</value>
   </data>
@@ -440,23 +458,5 @@
   </data>
   <data name="providers" xml:space="preserve">
     <value>Fournisseurs</value>
-  </data>
-  <data name="CustomerPreview" xml:space="preserve">
-    <value>Aperçu du client</value>
-  </data>
-  <data name="UnableToLoadCustomer" xml:space="preserve">
-    <value>Impossible de charger les informations du client</value>
-  </data>
-  <data name="NotAvailable" xml:space="preserve">
-    <value>Non disponible</value>
-  </data>
-  <data name="customer_code" xml:space="preserve">
-    <value>Code du client</value>
-  </data>
-  <data name="customer_codeCat" xml:space="preserve">
-    <value>Code catégorie du client</value>
-  </data>
-  <data name="customer_etbSec" xml:space="preserve">
-    <value>Établissement secondaire</value>
   </data>
 </root>

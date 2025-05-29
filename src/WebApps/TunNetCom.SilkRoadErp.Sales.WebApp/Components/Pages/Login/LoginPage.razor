@@ -1,32 +1,145 @@
 ﻿@page "/login"
+@layout LoginLayout
+
+
 @using Radzen
 @using Radzen.Blazor
 @inject NavigationManager Navigation
 @inject DialogService DialogService
 
-<RadzenCard style="width: 450px; max-width: 90%; margin: 80px auto; padding: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-    <RadzenTemplateForm TItem="LoginModel" Data="@loginModel" Submit="@OnSubmit">
-        <RadzenStack Gap="2rem" AlignItems="AlignItems.Center">
-            <h2 style="color: #333; font-weight: 500;">Connexion</h2>
 
-            <RadzenStack Gap="1.5rem" style="width: 100%;">
-                <RadzenFormField Text="Nom d'utilisateur" Variant="Variant.Filled">
-                    <RadzenTextBox Name="Username" @bind-Value="@loginModel.Username" Placeholder="Entrez votre nom d'utilisateur" Style="width: 100%;" />
-                </RadzenFormField>
+<div class="login-container">
+    <RadzenCard class="login-card">
+        <RadzenTemplateForm TItem="LoginModel" Data="@loginModel" Submit="@OnSubmit">
+            <RadzenStack Gap="2rem" AlignItems="AlignItems.Center">
+                <div class="app-header">
+                    <h1 class="app-title">Silk Road ERP</h1>
+                    <p class="app-subtitle">Système de Gestion Intégré</p>
+                </div>
 
-                <RadzenFormField Text="Mot de passe" Variant="Variant.Filled">
-                    <RadzenPassword Name="Password" @bind-Value="@loginModel.Password" Placeholder="Entrez votre mot de passe" Style="width: 100%;" />
-                </RadzenFormField>
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="error-message">
+                        <RadzenIcon Icon="error" />
+                        <span>@errorMessage</span>
+                    </div>
+                }
+
+                <RadzenStack Gap="1.5rem" style="width: 100%;">
+                    <RadzenFormField Text="Nom d'utilisateur" Variant="Variant.Filled">
+                        <RadzenTextBox Name="Username" @bind-Value="@loginModel.Username" Placeholder="Entrez votre nom d'utilisateur" Style="width: 100%;" />
+                    </RadzenFormField>
+
+                    <RadzenFormField Text="Mot de passe" Variant="Variant.Filled">
+                        <RadzenPassword Name="Password" @bind-Value="@loginModel.Password" Placeholder="Entrez votre mot de passe" Style="width: 100%;" />
+                    </RadzenFormField>
+                </RadzenStack>
+
+                <RadzenButton ButtonType="Radzen.ButtonType.Submit"
+                              Text="@(isLoading ? "Connexion en cours..." : "Se connecter")"
+                              ButtonStyle="ButtonStyle.Primary"
+                              Disabled="@isLoading"
+                              Style="width: 100%; padding: 12px; font-weight: 500;" />
+
+                <div class="forgot-password">
+                    <RadzenLink Path="/forgot-password" Text="Mot de passe oublié ?" />
+                </div>
             </RadzenStack>
+        </RadzenTemplateForm>
+    </RadzenCard>
+</div>
 
-            <RadzenButton ButtonType="Radzen.ButtonType.Submit"
-                          Text="@(isLoading ? "Connexion en cours..." : "Se connecter")"
-                          ButtonStyle="ButtonStyle.Primary"
-                          Disabled="@isLoading"
-                          Style="width: 100%; padding: 12px;" />
-        </RadzenStack>
-    </RadzenTemplateForm>
-</RadzenCard>
+<style>
+    .login-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
+        padding: 1rem;
+    }
+
+    .login-card {
+        width: 450px;
+        max-width: 90%;
+        padding: 2.5rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        border-radius: 12px;
+        background: white;
+    }
+
+    .app-header {
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+
+    .app-title {
+        color: #2c3e50;
+        font-size: 2rem;
+        font-weight: 600;
+        margin: 0;
+        letter-spacing: -0.5px;
+    }
+
+    .app-subtitle {
+        color: #7f8c8d;
+        font-size: 1rem;
+        margin: 0.5rem 0 0;
+    }
+
+    :deep(.rz-textbox), :deep(.rz-password) {
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    :deep(.rz-textbox:focus), :deep(.rz-password:focus) {
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+    }
+
+    :deep(.rz-button) {
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    :deep(.rz-button:hover) {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .forgot-password {
+        text-align: center;
+        margin-top: 0.5rem;
+    }
+
+    :deep(.rz-link) {
+        color: #3498db;
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: color 0.3s ease;
+    }
+
+    :deep(.rz-link:hover) {
+        color: #2980b9;
+        text-decoration: underline;
+    }
+
+    .error-message {
+        background-color: #fee2e2;
+        border: 1px solid #fecaca;
+        color: #dc2626;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        width: 100%;
+        font-size: 0.9rem;
+    }
+
+    .error-message :deep(.rz-icon) {
+        font-size: 1.2rem;
+    }
+</style>
 
 @code {
     public class LoginModel
@@ -37,31 +150,52 @@
 
     private LoginModel loginModel = new();
     private bool isLoading = false;
+    private string errorMessage = string.Empty;
 
     private async Task OnSubmit()
     {
         try
         {
+            // Clear any previous error message
+            errorMessage = string.Empty;
+            
             // Activer l'état de chargement
             isLoading = true;
-            StateHasChanged(); // Forcer le rendu pour afficher le loader
+            StateHasChanged();
 
             // Simuler un délai de 2 secondes
             await Task.Delay(2000);
 
-            // Afficher une notification de succès
-            // await DialogService.Alert("Connexion réussie ! Redirection en cours...", "Succès");
-
-            // Attendre encore 1 seconde pour l'effet
-            await Task.Delay(1000);
+            // Vérifier les identifiants (à remplacer par votre logique d'authentification réelle)
+            if (loginModel.Username != "hanine" || loginModel.Password != "hanine123")
+            {
+                errorMessage = "Nom d'utilisateur ou mot de passe incorrect";
+                return;
+            }
 
             // Rediriger vers la page Home
             Navigation.NavigateTo("/");
         }
+        catch (Exception ex)
+        {
+            errorMessage = "Une erreur est survenue lors de la connexion";
+        }
         finally
         {
-            // Réinitialiser l'état de chargement
             isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleForgotPassword()
+    {
+        try
+        {
+            await DialogService.Alert("Un email de réinitialisation sera envoyé à votre adresse email.", "Réinitialisation du mot de passe");
+        }
+        catch (Exception ex)
+        {
+            await DialogService.Alert("Une erreur est survenue. Veuillez réessayer plus tard.", "Erreur");
         }
     }
 }

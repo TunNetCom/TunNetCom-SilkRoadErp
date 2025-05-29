@@ -12,41 +12,41 @@
 @inject NavigationManager NavigationManager
 
 <div class="search-header">
-    <div class="search-field">
+    <div class="search-field" style="margin-right: 15px;">
         <label for="startDate">@Localizer["start_date"]</label>
         <RadzenDatePicker id="startDate" 
-                         @bind-Value="searchCriteria.StartDate" 
-                         DateFormat="dd/MM/yyyy" 
-                         Placeholder="@Localizer["start_date"]" 
-                         class="w-100 search-input" />
+        @bind-Value="searchCriteria.StartDate" 
+        DateFormat="dd/MM/yyyy" 
+        Placeholder="@Localizer["start_date"]" 
+        class="w-100 " />
     </div>
-    <div class="search-field">
+    <div class="search-field" style="margin-right: 15px;">
         <label for="endDate">@Localizer["end_date"]</label> 
         <RadzenDatePicker id="endDate" 
-                         @bind-Value="searchCriteria.EndDate" 
-                         DateFormat="dd/MM/yyyy" 
-                         Placeholder="@Localizer["end_date"]" 
-                         class="w-100 search-input" />
+        @bind-Value="searchCriteria.EndDate" 
+        DateFormat="dd/MM/yyyy" 
+        Placeholder="@Localizer["end_date"]" 
+        class="w-100 " />
     </div>
     <div class="search-field">
-        <label for="customer">@Localizer["customer"]</label>
+        <label for="customer">Fournisseur</label>
         <RadzenDropDownDataGrid id="customer"
-                                AllowClear="true"
-                                @bind-Value="@searchCriteria.SelectedCustomerId"
-                                LoadData="@LoadCustomers"
-                                AllowFiltering="true"
-                                class="w-100 search-input"
-                                Data="@_filteredCustomers"
-                                TextProperty="@nameof(CustomerResponse.Name)"
-                                ValueProperty="@nameof(CustomerResponse.Id)"
-                                Placeholder="@Localizer["select_customer"]">
+        AllowClear="true"
+        @bind-Value="@searchCriteria.SelectedCustomerId"
+        LoadData="@LoadCustomers"
+        AllowFiltering="true"
+        class="w-100 search-input"
+        Data="@_filteredCustomers"
+        TextProperty="@nameof(CustomerResponse.Name)"
+        ValueProperty="@nameof(CustomerResponse.Id)"
+        Placeholder="Selectionner un fournisseur">
             <Columns>
                 <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Id)" Title="ID" Width="80px" />
                 <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Name)" Title="@Localizer["name"]" Width="220px" />
             </Columns>
         </RadzenDropDownDataGrid>
     </div>
-    <div class="search-field">
+    @*    <div class="search-field">
         <label for="invoiceStatus">@Localizer["delivery_note_status"]</label>
         <RadzenDropDown id="invoiceStatus" 
                         @bind-Value="searchCriteria.InvoiceStatus" 
@@ -54,83 +54,90 @@
                         AllowClear="false" 
                         Placeholder="@Localizer["select_status"]" 
                         class="w-100 search-input" />
-    </div>
+    </div> *@
     <div class="search-button">
         <RadzenButton Text="@Localizer["search"]" 
-                      Icon="search" 
-                      ButtonStyle="ButtonStyle.Primary" 
-                      Click="@SearchDeliveryNotes" 
-                      class="action-button" />
+        Icon="search" 
+        ButtonStyle="ButtonStyle.Primary" 
+        Click="@SearchDeliveryNotes" 
+        class="action-button" />
     </div>
 </div>
 <div class="delivery-notes-list-container">
     <RadzenCard class="list-card">
-        <h2>@Localizer["delivery_notes"]</h2>
+        <h2>Commandes</h2>
         <RadzenDataGrid Data="@deliveryNotes.GetDeliveryNoteBaseInfos.Items"
-                        LoadData="@Callback"
-                        TItem="GetDeliveryNoteBaseInfos"
-                        AllowSorting="true"
-                        AllowFiltering="true"
-                        AllowPaging="true"
-                        PageSize="15"
-                        Count="@deliveryNotes.GetDeliveryNoteBaseInfos.TotalCount"
-                        AllowColumnResize="true"
-                        RowSelect="@(args => ViewDeliveryNote(args.Number.ToString()))">
-	        <EmptyTemplate>
-		        <p style="color: lightgrey; font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
-	        </EmptyTemplate>
-	        <Columns>
-		        <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos"
-		                              Property="@nameof(GetDeliveryNoteBaseInfos.Number)"
-		                              Title="@Localizer["delivery_note_number"]"
-		                              Width="150px"/>
-		        <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos"
-		                              Property="@nameof(GetDeliveryNoteBaseInfos.Date)"
-		                              Title="@Localizer["date"]"
-		                              Width="150px"
-		                              FormatString="{0:d MMMM yyyy}"/>
-		        <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos"
-		                              Property="@nameof(GetDeliveryNoteBaseInfos.CustomerId)"
-		                              Title="@Localizer["customer"]"
-		                              Width="200px"/>
-		        <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos"
-		                              Property="@nameof(GetDeliveryNoteBaseInfos.GrossAmount)"
-		                              Title="@Localizer["total_gross"]"
-		                              Width="200px"/>
+        LoadData="@Callback"
+        TItem="GetDeliveryNoteBaseInfos"
+        AllowSorting="true"
+        AllowFiltering="true"
+        AllowPaging="true"
+        PageSize="15"
+        Count="@deliveryNotes.GetDeliveryNoteBaseInfos.TotalCount"
+        AllowColumnResize="true"
+        RowSelect="@(args => ViewDeliveryNote(args.Number.ToString()))">
+            <EmptyTemplate>
+                <p style="color: lightgrey; font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
+            </EmptyTemplate>
+            <Columns>
+                <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos"
+                Property="@nameof(GetDeliveryNoteBaseInfos.Number)"
+                Title="Numéro"
+                Width="150px"/>
+                <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos"
+                Property="@nameof(GetDeliveryNoteBaseInfos.Date)"
+                Title="@Localizer["date"]"
+                Width="150px"
+                FormatString="{0:d MMMM yyyy}"/>
+                <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos"
+                Property="@nameof(GetDeliveryNoteBaseInfos.CustomerName)"
+                Title="Fournisseur"
+                Width="200px"/>
+                    <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos"
+                    Property="@nameof(GetDeliveryNoteBaseInfos.GrossAmount)"
+                    Title="@Localizer["total_gross"]"
+                    Width="200px"/>
 
-		        <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos"
-		                              Title="@Localizer["delivery_note_status"]"
-		                              Width="150px"
-		                              Sortable="false"
-		                              Filterable="false">
-			        <Template Context="deliveryNote">
-				        @if (deliveryNote.NumFacture.HasValue && deliveryNote.NumFacture != 0)
-				        {
-					        <RadzenBadge Text="@Localizer["invoiced"]" BadgeStyle="BadgeStyle.Success"/>
-				        }
-				        else
-				        {
-					        <RadzenBadge Text="@Localizer["not_invoiced"]" BadgeStyle="BadgeStyle.Warning"/>
-				        }
-			        </Template>
-		        </RadzenDataGridColumn>
-	        </Columns>
+                    <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos"
+                    Title="Status"
+                    Width="150px"
+                    Sortable="false"
+                    Filterable="false"> 
+                        <Template Context="deliveryNote">
+                            @{
+                                var x = Random.Shared.Next(1, 30); 
+                            }
+                            @if (x <= 10)
+                            {
+                                <RadzenBadge Text="Validée" BadgeStyle="BadgeStyle.Success"/>
+                            }
+                            @if (x > 10 && x <= 20)
+                            {
+                                <RadzenBadge Text="Brouillon" BadgeStyle="BadgeStyle.Secondary" />
+                            }
+                            @if (x > 20 && x <= 30)
+                            {
+                                <RadzenBadge Text="En attente" BadgeStyle="BadgeStyle.Primary" />
+                            }
+                        </Template>
+                    </RadzenDataGridColumn>
+            </Columns>
         </RadzenDataGrid>
         <RadzenCard class="summary-card" Variant="Variant.Outlined">
-	        <RadzenStack Orientation="Radzen.Orientation.Horizontal" 
-	                     Gap="1.5rem" 
-	                     JustifyContent="JustifyContent.End"
-	                     class="summary-stack">
-		        <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-			        @Localizer["total_net"]: <strong>@deliveryNotes.TotalNetAmount.FormatAmount()</strong>
-		        </RadzenText>
-		        <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-			        @Localizer["total_gross"]: <strong>@deliveryNotes.TotalGrossAmount.FormatAmount()</strong>
-		        </RadzenText>
-		        <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-			        @Localizer["total_vat"]: <strong>@deliveryNotes.TotalVatAmount.FormatAmount()</strong>
-		        </RadzenText>
-	        </RadzenStack>
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" 
+            Gap="1.5rem" 
+            JustifyContent="JustifyContent.End"
+            class="summary-stack">
+                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                    @Localizer["total_net"]: <strong>@deliveryNotes.TotalNetAmount.FormatAmount()</strong>
+                </RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                    @Localizer["total_gross"]: <strong>@deliveryNotes.TotalGrossAmount.FormatAmount()</strong>
+                </RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                    @Localizer["total_vat"]: <strong>@deliveryNotes.TotalVatAmount.FormatAmount()</strong>
+                </RadzenText>
+            </RadzenStack>
         </RadzenCard>
 
     </RadzenCard>
@@ -139,195 +146,195 @@
 @* CSS remains unchanged *@
 <style>
     .delivery-notes-list-container {
-        padding: 16px 24px;
-        min-height: 100%;
+    padding: 16px 24px;
+    min-height: 100%;
     }
 
     .list-card {
-        background-color: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 6px;
-        padding: 16px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        max-width: 1200px;
-        margin: 0 auto;
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    max-width: 1200px;
+    margin: 0 auto;
     }
 
     h2 {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        font-size: 20px;
-        color: #1f2937;
-        margin-bottom: 16px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 20px;
+    color: #1f2937;
+    margin-bottom: 16px;
     }
 
     /* Action button styles (unchanged) */
     .action-button {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        font-size: 13px;
-        font-weight: 500;
-        padding: 6px 12px;
-        border-radius: 6px;
-        background-color: #3b82f6;
-        color: #ffffff;
-        border: none;
-        transition: background-color 0.2s, box-shadow 0.2s;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: 6px;
+    background-color: #3b82f6;
+    color: #ffffff;
+    border: none;
+    transition: background-color 0.2s, box-shadow 0.2s;
     }
 
-        .action-button:hover:not(:disabled) {
-            background-color: #2563eb;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
+    .action-button:hover:not(:disabled) {
+    background-color: #2563eb;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
 
-        .action-button:disabled {
-            background-color: #d1d5db;
-            color: #6b7280;
-            cursor: not-allowed;
-        }
+    .action-button:disabled {
+    background-color: #d1d5db;
+    color: #6b7280;
+    cursor: not-allowed;
+    }
 
     /* Search header styles */
     .search-header {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 16px;
-        margin-bottom: 20px;
-        align-items: end;
-        background-color: #ffffff;
-        padding: 16px;
-        border-radius: 6px;
-        border: 1px solid #e5e7eb;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+    align-items: end;
+    background-color: #ffffff;
+    padding: 16px;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
 
     .search-field {
-        display: flex;
-        flex-direction: column;
+    display: flex;
+    flex-direction: column;
     }
 
-        .search-field label {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            font-size: 13px;
-            font-weight: 500;
-            color: #374151;
-            margin-bottom: 6px;
-        }
+    .search-field label {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 6px;
+    }
 
     .search-input {
-        width: 100% !important;
-        background-color: #f9fafb;
-        border: 1px solid #d1d5db;
-        border-radius: 4px;
-        padding: 8px;
-        font-size: 14px;
-        transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100% !important;
+    background-color: #f9fafb;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
     }
 
-        .search-input:hover {
-            border-color: #9ca3af;
-        }
+    .search-input:hover {
+    border-color: #9ca3af;
+    }
 
-        .search-input:focus {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-            outline: none;
-        }
+    .search-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    outline: none;
+    }
 
     .search-button {
-        display: flex;
-        align-items: flex-end;
+    display: flex;
+    align-items: flex-end;
     }
 
     /* Responsive adjustments */
     @@media (max-width: 768px) {
-        .delivery-notes-list-container
+    .delivery-notes-list-container
 
     {
-        padding: 12px 16px;
+    padding: 12px 16px;
     }
 
     .list-card {
-        padding: 12px;
+    padding: 12px;
     }
 
     h2 {
-        font-size: 18px;
+    font-size: 18px;
     }
 
     .action-button {
-        font-size: 12px;
-        padding: 6px 10px;
+    font-size: 12px;
+    padding: 6px 10px;
     }
 
     .search-header {
-        grid-template-columns: 1fr;
-        gap: 12px;
-        padding: 12px;
-        margin-bottom: 16px;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 12px;
+    margin-bottom: 16px;
     }
 
     .search-field {
-        min-width: 100%;
+    min-width: 100%;
     }
 
-        .search-field label {
-            font-size: 12px;
-        }
+    .search-field label {
+    font-size: 12px;
+    }
 
     .search-input {
-        font-size: 13px;
-        padding: 6px;
+    font-size: 13px;
+    padding: 6px;
     }
 
     .search-button {
-        margin-bottom: 0;
+    margin-bottom: 0;
     }
 
     }
 
     .summary-card {
-        border: 1px solid #e5e7eb;
-        border-radius: 6px;
-        padding: 8px 16px;
-        background-color: #f8fafc;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        flex: 0 0 auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 8px 16px;
+    background-color: #f8fafc;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    flex: 0 0 auto;
     }
     /* Summary stack */
     .summary-stack {
-        gap: 1.5rem;
+    gap: 1.5rem;
     }
     /* Summary text */
     .summary-text {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        font-size: 13px;
-        color: #1f2937;
-        line-height: 1.5;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 13px;
+    color: #1f2937;
+    line-height: 1.5;
     }
 
-        .summary-text strong {
-            font-weight: 600;
-            color: #111827;
-        }
+    .summary-text strong {
+    font-weight: 600;
+    color: #111827;
+    }
     @@media (min-width: 769px) and (max-width: 1024px) {
-        .search-header
+    .search-header
 
     {
-        grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     }
 
-        .summary-card {
-            width: 100%;
-            padding: 8px 12px;
-        }
+    .summary-card {
+    width: 100%;
+    padding: 8px 12px;
+    }
 
-        .summary-stack {
-            flex-direction: column;
-            gap: 0.75rem;
-            align-items: flex-start;
-        }
+    .summary-stack {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-start;
+    }
 
-        .summary-text {
-            font-size: 12px;
-        }
+    .summary-text {
+    font-size: 12px;
+    }
 
     }
 </style>
@@ -359,6 +366,11 @@
             EndDate: null, // Fixed parameter name
             cancellationToken: default
         );
+
+        foreach (var item in deliveryNotes.GetDeliveryNoteBaseInfos.Items)
+        {
+            item.CustomerName = "Somef";
+        }
 
         await InvokeAsync(StateHasChanged);
     }
@@ -411,6 +423,11 @@
             EndDate: searchCriteria.EndDate, // Fixed parameter name
             cancellationToken: default
         );
+
+        foreach (var item in deliveryNotes.GetDeliveryNoteBaseInfos.Items)
+        {
+            item.CustomerName = "Somef";
+        }
 
         await InvokeAsync(StateHasChanged);
     }
