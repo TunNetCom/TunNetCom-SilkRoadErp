@@ -58,9 +58,9 @@ public class CreateCustomerCommandHandlerTests
     [Fact]
     public async Task Handle_NewCustomer_ReturnsSuccessResult()
     {
-        // Arrange
+        // Arrange  
         var command = new CreateCustomerCommand(
-            Nom: "New Customer 66",
+            Nom: "New Customer 77",
             Tel: "123456",
             Adresse: "Address",
             Matricule: "Matricule",
