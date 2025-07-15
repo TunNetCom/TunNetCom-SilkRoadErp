@@ -20,9 +20,10 @@ public class CreateCustomerCommandHandlerTests
     }
 
     [Fact]
+
     public async Task Handle_CustomerNameExists_ReturnsFailResult()
     {
-        // Arrange
+        // Arrange — simulate adding a valid new customer
         var command = new CreateCustomerCommand(
             Nom: "Existing Customer in create",
             Tel: "123456",
