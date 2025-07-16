@@ -59,5 +59,31 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.CreateInvoice
             Assert.True(result.IsSuccess);
             Assert.True(result.Value > 0); 
         }
+        [Fact]
+        public async Task Handle_LogsInvoiceCreatedSuccessfully()
+        {
+            // Arrange
+            var client = Client.CreateClient(
+                nom: "Client Success",
+                tel: "222222",
+                adresse: "Sfax",
+                matricule: "SUCCESS123",
+                code: "C3",
+                codeCat: "Y1",
+                etbSec: "003",
+                mail: "success@example.com");
+
+            _context.Client.Add(client);
+            await _context.SaveChangesAsync();
+
+            var command = new CreateInvoiceCommand(DateTime.Today, client.Id);
+
+            // Act
+            var result = await _createInvoiceCommandhandler.Handle(command, CancellationToken.None);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            Assert.Contains(_testLogger.Logs, log => log.Contains($"{nameof(Facture)} created successfully with ID: {result.Value}"));
+        }
     }                                   
 }

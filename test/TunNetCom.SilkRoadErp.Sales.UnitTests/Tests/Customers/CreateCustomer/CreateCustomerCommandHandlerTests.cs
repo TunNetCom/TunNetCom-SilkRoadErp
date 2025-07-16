@@ -131,4 +131,5 @@ public class CreateCustomerCommandHandlerTests
             _testLogger.Logs,
             log => log.Contains($"{nameof(Client)} created successfully with ID: {result.Value}"));
     }
+
 }
