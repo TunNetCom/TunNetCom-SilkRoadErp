@@ -1,4 +1,5 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers.CreateCustomer;
+﻿using Xunit;
+namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers.CreateCustomer;
 
 public class CreateCustomerCommandHandlerTests
 {

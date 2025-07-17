@@ -1,6 +1,7 @@
 ﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.UpdateCustomer;
 using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.ResultExtensions;
 using TunNetCom.SilkRoadErp.Sales.Contracts.Customers;
+using Xunit;
 
 namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers.Endpoints;
 

@@ -1,4 +1,6 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetFullInvoiceById;
+﻿using MediatR;
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetFullInvoiceById;
+
 
 public class GetFullInvoiceByIdQueryHandler(
     SalesContext _context,

@@ -1,4 +1,5 @@
 ﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.GetCustomerById;
+using Xunit;
 
 namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers.GetCustomerById;
 
@@ -75,4 +76,6 @@ public class GetCustomerByidQueryHandlerTests
         // Assert
         Assert.Contains(_testLogger.Logs, log => log.Contains($"{nameof(Client)} with ID: {query.Id} not found"));
     }
+
+   
 }

@@ -1,4 +1,5 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Products;
+﻿using Xunit;
+namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Products;
 
 public class CreateProductCommandHandlerTests
 {

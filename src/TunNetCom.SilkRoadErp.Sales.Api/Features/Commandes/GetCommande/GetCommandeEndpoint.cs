@@ -1,12 +1,10 @@
 ﻿using TunNetCom.SilkRoadErp.Sales.Contracts.Commande;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Commandes.GetCommandes;
 using Carter;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Commandes.GetCommandes;
 public class OrderEndpoints : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)

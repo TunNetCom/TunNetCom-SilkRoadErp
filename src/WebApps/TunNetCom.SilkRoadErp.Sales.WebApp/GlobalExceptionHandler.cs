@@ -1,7 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Net;
-using Microsoft.AspNetCore.Diagnostics;
+﻿using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure;
 
 public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IExceptionHandler
@@ -15,7 +14,7 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IE
     {
         logger.LogError(exception, "An unhandled exception has occurred while executing the request.");
 
-      
+
         var genericProblemDetails = new ProblemDetails
         {
             Status = (int)HttpStatusCode.InternalServerError,
