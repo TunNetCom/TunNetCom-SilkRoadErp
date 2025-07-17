@@ -1,11 +1,11 @@
 ﻿namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Providers;
-public class DeleteProviderCommandHandlerTests
+public class DeleteProviderCommandHandlerTest
 {
     private readonly SalesContext _context;
     private readonly TestLogger<DeleteProviderCommandHandler> _testLogger;
     private readonly DeleteProviderCommandHandler _handler;
 
-    public DeleteProviderCommandHandlerTests()
+    public DeleteProviderCommandHandlerTest()
     {
         var options = new DbContextOptionsBuilder<SalesContext>()
             .UseInMemoryDatabase(databaseName: "SalesContext")

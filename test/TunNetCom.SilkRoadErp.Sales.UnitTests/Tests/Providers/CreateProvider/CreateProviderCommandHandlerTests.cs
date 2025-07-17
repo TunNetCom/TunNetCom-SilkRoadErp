@@ -1,11 +1,11 @@
 ﻿namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Providers;
-public class CreateProviderCommandHandlerTests
+public class CreateProviderCommandHandlerTest
 {
     private readonly SalesContext _context;
     private readonly TestLogger<CreateProviderCommandHandler> _testLogger;
     private readonly CreateProviderCommandHandler _handler;
 
-    public CreateProviderCommandHandlerTests()
+    public CreateProviderCommandHandlerTest()
     {
 
         var options = new DbContextOptionsBuilder<SalesContext>()

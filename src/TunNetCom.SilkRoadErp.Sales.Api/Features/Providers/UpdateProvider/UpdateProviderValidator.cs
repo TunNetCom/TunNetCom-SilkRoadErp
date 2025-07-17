@@ -28,12 +28,12 @@ public class UpdateProviderValidator : AbstractValidator<UpdateProviderCommand>
            .MaximumLength(50).WithMessage("etbSec_must_be_less_than_50_characters");
 
         RuleFor(x => x.Mail)
-                   .MaximumLength(50).WithMessage("mail_must_be_less_than_50_characters")
-                   .EmailAddress().WithMessage("mail_must_be_a_valid_email_address");
+            .EmailAddress().WithMessage("mail_must_be_a_valid_email_address")
+            .When(x => !string.IsNullOrEmpty(x.Mail));
 
         RuleFor(x => x.MailDeux)
-           .MaximumLength(50).WithMessage("mail_must_be_less_than_50_characters")
-           .EmailAddress().WithMessage("mail_must_be_a_valid_email_address");
+            .EmailAddress().WithMessage("mail_must_be_a_valid_email_address")
+            .When(x => !string.IsNullOrEmpty(x.MailDeux));
 
         RuleFor(x => x.Adresse)
             .MaximumLength(50).WithMessage("adress_must_be_less_than_50_characters");
