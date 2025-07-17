@@ -1,33 +1,33 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.DetachReceiptNotesFromInvoice;
-
-public class DetachReceiptNotesFromInvoiceCommandHandler(
-    SalesContext context,
-    ILogger<DetachReceiptNotesFromInvoiceCommandHandler> logger)
-    : IRequestHandler<DetachReceiptNotesFromInvoiceCommand, Result>
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.DetachReceiptNotesFromInvoice
 {
-    public async Task<Result> Handle(DetachReceiptNotesFromInvoiceCommand request, CancellationToken cancellationToken)
+    public class DetachReceiptNotesFromInvoiceCommandHandler(
+         SalesContext context,
+         ILogger<DetachReceiptNotesFromInvoiceCommandHandler> logger)
+         : IRequestHandler<DetachReceiptNotesFromInvoiceCommand, Result>
     {
-        logger.LogInformation("Detaching delivery notes {DeliveryNoteIds} from invoice {InvoiceId}",
-            string.Join(", ", request.ReceiptNoteIds), request.InvoiceId);
-        var isInvoiceExist = await context.FactureFournisseur
-            .AnyAsync(f => f.Num == request.InvoiceId, cancellationToken);
-
-        if (!isInvoiceExist)
+        public async Task<Result> Handle(DetachReceiptNotesFromInvoiceCommand request, CancellationToken cancellationToken)
         {
-            logger.LogWarning("Invoice with id {InvoiceId} not found", request.InvoiceId);
-            return Result.Fail(EntityNotFound.Error());
+            logger.LogInformation("Detaching receipt notes {ReceiptNoteIds} from invoice {InvoiceId}",
+                string.Join(", ", request.ReceiptNoteIds), request.InvoiceId);
+            var invoiceExists = await context.FactureFournisseur
+                .AnyAsync(f => f.Num == request.InvoiceId, cancellationToken);
+            if (!invoiceExists)
+            {
+                logger.LogWarning("Invoice with ID {InvoiceId} not found", request.InvoiceId);
+                return Result.Fail("EntityNotFound"); 
+            }
+            var notesToDetach = await context.BonDeReception
+                .Where(note => request.ReceiptNoteIds.Contains(note.Num) &&
+                               note.NumFactureFournisseur == request.InvoiceId)
+                .ToListAsync(cancellationToken);
+            foreach (var note in notesToDetach)
+            {
+                note.NumFactureFournisseur = null;
+            }
+            var updated = await context.SaveChangesAsync(cancellationToken);
+            logger.LogInformation("Successfully detached {Count} receipt notes from invoice {InvoiceId}",
+                updated, request.InvoiceId);
+            return Result.Ok();
         }
-
-        var updatedCount = await context.BonDeReception
-            .Where(d => request.ReceiptNoteIds.Contains(d.Num) && d.NumFactureFournisseur == request.InvoiceId)
-            .ExecuteUpdateAsync(
-            setters => setters.SetProperty(d => d.NumFactureFournisseur, (int?)null),
-            cancellationToken);
-
-        logger.LogInformation(
-            "Successfully detached {Count} delivery notes from invoice {InvoiceId}",
-            updatedCount,
-            request.InvoiceId);
-        return Result.Ok();
     }
 }

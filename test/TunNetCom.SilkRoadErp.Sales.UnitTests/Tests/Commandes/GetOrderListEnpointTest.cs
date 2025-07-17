@@ -13,29 +13,24 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Commande
             // Arrange
             var mockMediator = new Mock<IMediator>();
             var orders = new List<OrderSummaryResponse>
-        {
-            new OrderSummaryResponse { OrderNumber = 1, SupplierId = 10, TotalExcludingVat = 100, NetToPay = 120, TotalVat = 20 }
-        };
-            mockMediator.Setup(m => m.Send(It.IsAny<GetOrdersListQuery>(), It.IsAny<CancellationToken>()))
-                        .ReturnsAsync(Result.Ok(orders));
-            var endpoint = async (IMediator mediator, CancellationToken cancellationToken) =>
             {
-                var query = new GetOrdersListQuery();
-                var result = await mediator.Send(query, cancellationToken);
-
-                if (result.IsFailed)
-                {
-                    return Results.BadRequest(new { Message = "An error occurred", Errors = result.Errors });
-                }
-                return Results.Ok(result.Value);
+                new OrderSummaryResponse { OrderNumber = 1, SupplierId = 10, TotalExcludingVat = 100, NetToPay = 120, TotalVat = 20 }
             };
+
+            mockMediator.Setup(m => m.Send(It.IsAny<GetOrdersListQuery>(), It.IsAny<CancellationToken>()))
+                       .ReturnsAsync(Result.Ok(orders));
+
             // Act
-            var result = await endpoint(mockMediator.Object, CancellationToken.None);
+            var result = await GetOrdersListEndpoint.HandleAsync(mockMediator.Object, CancellationToken.None);
+
             // Assert
             var okResult = Assert.IsType<Ok<List<OrderSummaryResponse>>>(result);
-            Assert.Single(okResult.Value);
-            Assert.Equal(1, okResult.Value[0].OrderNumber);
+            var returnedOrders = okResult.Value;
+            Assert.NotNull(returnedOrders);
+            Assert.Single(returnedOrders);
+            Assert.Equal(1, returnedOrders[0].OrderNumber);
         }
+
         [Fact]
         public async Task GetOrdersList_ReturnsBadRequest_WhenMediatorFails()
         {
@@ -46,33 +41,40 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Commande
             mockMediator.Setup(m => m.Send(It.IsAny<GetOrdersListQuery>(), It.IsAny<CancellationToken>()))
                         .ReturnsAsync(Result.Fail<List<OrderSummaryResponse>>(errors));
 
-            var endpoint = async (IMediator mediator, CancellationToken cancellationToken) =>
-            {
-                var query = new GetOrdersListQuery();
-                var result = await mediator.Send(query, cancellationToken);
-
-                if (result.IsFailed)
-                {
-                    return Results.BadRequest(new { Message = "An error occurred", Errors = result.Errors });
-                }
-
-                return Results.Ok(result.Value);
-            };
-
             // Act
-            var result = await endpoint(mockMediator.Object, CancellationToken.None);
-            // Assert : vérifie que c’est bien un BadRequest
-            Assert.NotNull(result);
-            Assert.IsAssignableFrom<IResult>(result);
-            Assert.StartsWith("BadRequest", result.GetType().Name);
-            var valueProperty = result.GetType().GetProperty("Value");
-            Assert.NotNull(valueProperty);
-            var value = valueProperty!.GetValue(result);
+            var result = await GetOrdersListEndpoint.HandleAsync(mockMediator.Object, CancellationToken.None);
+
+            // Assert
+            var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
+            var value = badRequest.Value;
+
             Assert.NotNull(value);
-            var messageProperty = value.GetType().GetProperty("Message");
-            Assert.NotNull(messageProperty);
-            var messageValue = messageProperty!.GetValue(value)?.ToString();
-            Assert.Equal("An error occurred", messageValue);
+            Assert.Equal("An error occurred", value.Message);
+            Assert.NotNull(value.Errors);
+            Assert.Single(value.Errors);
+        }
+    }
+
+    public class ErrorResponse
+    {
+        public string Message { get; set; } = string.Empty;
+        public List<IError> Errors { get; set; } = new();
+    }
+
+    public static class GetOrdersListEndpoint
+    {
+        public static async Task<IResult> HandleAsync(IMediator mediator, CancellationToken cancellationToken)
+        {
+            var query = new GetOrdersListQuery();
+            var result = await mediator.Send(query, cancellationToken);
+
+            return result.IsFailed
+                ? Results.BadRequest(new ErrorResponse
+                {
+                    Message = "An error occurred",
+                    Errors = result.Errors
+                })
+                : Results.Ok(result.Value);
         }
     }
 }
