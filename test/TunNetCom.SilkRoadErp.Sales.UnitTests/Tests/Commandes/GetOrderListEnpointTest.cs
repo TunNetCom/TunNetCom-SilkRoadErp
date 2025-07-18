@@ -5,7 +5,7 @@ using Xunit;
 
 namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Commande
 {
-    public class GetOrdersListEndpointTests
+    public class GetOrdersListEndpointTest
     {
         [Fact]
         public async Task GetOrdersList_ReturnsOk_WithOrders()

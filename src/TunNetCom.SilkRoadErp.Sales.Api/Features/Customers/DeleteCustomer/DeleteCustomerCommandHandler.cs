@@ -17,7 +17,6 @@ public class DeleteCustomerCommandHandler(SalesContext _context,
         if (client is null)
         {
             _logger.LogEntityNotFound(nameof(Client), deleteCustomerCommand.Id);
-
             return Result.Fail(EntityNotFound.Error());
         }
 
