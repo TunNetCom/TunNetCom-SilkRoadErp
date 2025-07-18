@@ -1,27 +1,34 @@
 ﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.priceQuote.UpdatePriceQuote;
 
-public class UpdatePriceQuoteCommandHandler(
-    SalesContext _context,
-    ILogger<UpdatePriceQuoteCommandHandler> _logger)
-    : IRequestHandler<UpdatePriceQuoteCommand, Result>
+public class UpdatePriceQuoteCommandHandler : IRequestHandler<UpdatePriceQuoteCommand, Result>
 {
-    public async Task<Result> Handle(
-        UpdatePriceQuoteCommand updatePriceQuoteCommand,
-        CancellationToken cancellationToken)
+    private readonly SalesContext _context;
+    private readonly ILogger<UpdatePriceQuoteCommandHandler> _logger;
+
+    public UpdatePriceQuoteCommandHandler(
+        SalesContext context,
+        ILogger<UpdatePriceQuoteCommandHandler> logger)
+    {
+        _context = context;
+        _logger = logger;
+    }
+
+    public async Task<Result> Handle(UpdatePriceQuoteCommand updatePriceQuoteCommand, CancellationToken cancellationToken)
     {
         _logger.LogEntityUpdateAttempt(nameof(Devis), updatePriceQuoteCommand.Num);
 
-        var quotationToUpdate = await _context.Devis.FindAsync(updatePriceQuoteCommand.Num);
+        // Chercher le devis à mettre à jour
+        var quotationToUpdate = await _context.Devis.FindAsync(new object[] { updatePriceQuoteCommand.Num }, cancellationToken);
 
         if (quotationToUpdate is null)
         {
             _logger.LogEntityNotFound(nameof(Devis), updatePriceQuoteCommand.Num);
-
             return Result.Fail(EntityNotFound.Error());
         }
 
+        // Vérifier qu’aucun autre devis (différent) n’a le même numéro
         var isQuotationNumExist = await _context.Devis.AnyAsync(
-            quo => quo.Num == updatePriceQuoteCommand.Num,
+            quo => quo.Num == updatePriceQuoteCommand.Num && quo.Num != quotationToUpdate.Num,
             cancellationToken);
 
         if (isQuotationNumExist)
@@ -29,6 +36,7 @@ public class UpdatePriceQuoteCommandHandler(
             return Result.Fail("quotation_num_exist");
         }
 
+        // Mettre à jour les propriétés
         quotationToUpdate.UpdateDevis(
             num: updatePriceQuoteCommand.Num,
             idClient: updatePriceQuoteCommand.IdClient,

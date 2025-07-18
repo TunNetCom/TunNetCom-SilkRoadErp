@@ -4,10 +4,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.priceQuote.GetPriceQuote
 {
     public class GetPriceQuoteQueryHandler(
     SalesContext _context,
-    ILogger<GetCustomerQueryHandler> _logger) 
+    ILogger<GetCustomerQueryHandler> _logger)
     : IRequestHandler<GetPriceQuoteQuery, PagedList<QuotationResponse>>
     {
-       
+
         public async Task<PagedList<QuotationResponse>> Handle(GetPriceQuoteQuery getPriceQuoteQuery, CancellationToken cancellationToken)
         {
             _logger.LogPaginationRequest(nameof(Devis), getPriceQuoteQuery.PageNumber, getPriceQuoteQuery.PageSize);
