@@ -1,23 +1,33 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.DeleteDeliveryNote;
+﻿using Carter;
+using MediatR;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Routing;
+using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.ResultExtensions;
+
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.DeleteDeliveryNote;
 
 public class DeleteDeliveryNoteEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapDelete("/deliveryNote/{num:int}", async Task<Results<NoContent, NotFound>> (
-            IMediator mediator,
-            int num,
-            CancellationToken cancellationToken) =>
+        app.MapDelete("/deliveryNote/{num:int}", HandleDeleteDeliveryNoteAsync);
+    }
+
+    // 🧪 Cette méthode publique est testable
+    public static async Task<Results<NoContent, NotFound>> HandleDeleteDeliveryNoteAsync(
+        IMediator mediator,
+        int num,
+        CancellationToken cancellationToken)
+    {
+        var deleteDeliveryNoteCommand = new DeleteDeliveryNoteCommand(num);
+        var deleteResult = await mediator.Send(deleteDeliveryNoteCommand, cancellationToken);
+
+        if (deleteResult.IsEntityNotFound())
         {
-            var deleteDeliveryNoteCommand = new DeleteDeliveryNoteCommand(num);
-            var deleteResult = await mediator.Send(deleteDeliveryNoteCommand, cancellationToken);
+            return TypedResults.NotFound();
+        }
 
-            if (deleteResult.IsEntityNotFound())
-            {
-                return TypedResults.NotFound();
-            }
-
-            return TypedResults.NoContent();
-        });
+        return TypedResults.NoContent();
     }
 }

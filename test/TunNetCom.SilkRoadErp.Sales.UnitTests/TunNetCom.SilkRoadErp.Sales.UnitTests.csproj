@@ -46,7 +46,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Features\Customers\GetCustomer\" />
     <Folder Include="Infrastructure\Utilities\" />
     <Folder Include="Tests\PriceQuote\UpdatePriceQuote\" />
   </ItemGroup>
