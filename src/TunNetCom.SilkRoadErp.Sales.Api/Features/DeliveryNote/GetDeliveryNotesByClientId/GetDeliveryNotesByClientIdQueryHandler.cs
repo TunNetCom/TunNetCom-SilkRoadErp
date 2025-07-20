@@ -1,31 +1,57 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
+﻿using FluentResults;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNotesByClientId;
-
-public class GetDeliveryNotesByClientIdQueryHandler(
-    SalesContext _context,
-    ILogger<GetDeliveryNotesByClientIdQueryHandler> _logger)
-    : IRequestHandler<GetDeliveryNoteByClientIdQuery, Result<List<DeliveryNoteResponse>>>
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNotesByClientId
 {
-    public async Task<Result<List<DeliveryNoteResponse>>> Handle(
-        GetDeliveryNoteByClientIdQuery getDeliveryNoteByClientIdQuery,
-        CancellationToken cancellationToken)
+    public class GetDeliveryNotesByClientIdQueryHandler : IRequestHandler<GetDeliveryNoteByClientIdQuery, Result<List<DeliveryNoteResponse>>>
     {
-        _logger.LogFetchingEntityById(nameof(BonDeLivraison), getDeliveryNoteByClientIdQuery.ClientId);
+        private readonly SalesContext _context;
+        private readonly ILogger<GetDeliveryNotesByClientIdQueryHandler> _logger;
 
-        var deliveryNotes = await _context.BonDeLivraison
-            .Where(d => d.ClientId == getDeliveryNoteByClientIdQuery.ClientId)
-            .ToListAsync(cancellationToken);
-
-        if (deliveryNotes is null || deliveryNotes.Count == 0)
+        public GetDeliveryNotesByClientIdQueryHandler(
+            SalesContext context,
+            ILogger<GetDeliveryNotesByClientIdQueryHandler> logger)
         {
-            _logger.LogEntityNotFound(nameof(BonDeLivraison), getDeliveryNoteByClientIdQuery.ClientId);
-
-            return Result.Fail(EntityNotFound.Error("not_found"));
+            _context = context;
+            _logger = logger;
         }
 
-        _logger.LogEntitiesFetched(nameof(BonDeLivraison), deliveryNotes.Count);
+        public async Task<Result<List<DeliveryNoteResponse>>> Handle(
+            GetDeliveryNoteByClientIdQuery query,
+            CancellationToken cancellationToken)
+        {
+            _logger.LogInformation("Fetching delivery notes for ClientId {ClientId}", query.ClientId);
 
-        return Result.Ok(deliveryNotes.Adapt<List<DeliveryNoteResponse>>());
+            var deliveryNotes = await _context.BonDeLivraison
+                .Where(d => d.ClientId == query.ClientId)
+                .Select(d => new DeliveryNoteResponse
+                {
+                    DeliveryNoteNumber = d.Num,
+                    Date = d.Date,
+                    CreationTime = d.TempBl,
+                    CustomerId = d.ClientId,
+                    InvoiceNumber = d.NumFacture,
+                    TotalExcludingTax = d.TotHTva,
+                    TotalVat = d.TotTva,
+                    TotalAmount = d.NetPayer,
+                    Items = new List<DeliveryNoteDetailResponse>() // Empty or populate as needed
+                })
+                .ToListAsync(cancellationToken);
+
+            if (deliveryNotes.Count == 0)
+            {
+                _logger.LogWarning("No delivery notes found for ClientId {ClientId}", query.ClientId);
+                return Result.Fail(EntityNotFound.Error("not_found"));
+            }
+
+            return Result.Ok(deliveryNotes);
+        }
     }
 }

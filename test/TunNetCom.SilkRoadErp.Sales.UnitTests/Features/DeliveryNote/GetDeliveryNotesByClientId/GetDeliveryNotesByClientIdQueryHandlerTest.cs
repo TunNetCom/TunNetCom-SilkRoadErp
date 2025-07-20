@@ -1,33 +1,41 @@
-﻿using Mapster;
+﻿using FluentAssertions;
+using FluentResults;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Moq;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNotesByClientId;
 using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
+using Xunit;
+
 namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.DeliveryNotes
 {
     public class GetDeliveryNotesByClientIdQueryHandlerTest
     {
-        private readonly DbContextOptions<SalesContext> _dbContextOptions;
-        private readonly Mock<ILogger<GetDeliveryNotesByClientIdQueryHandler>> _mockLogger;
+        private Mock<ILogger<GetDeliveryNotesByClientIdQueryHandler>> _mockLogger;
+
         public GetDeliveryNotesByClientIdQueryHandlerTest()
         {
-            _dbContextOptions = new DbContextOptionsBuilder<SalesContext>()
-                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            _mockLogger = new Mock<ILogger<GetDeliveryNotesByClientIdQueryHandler>>();
+        }
+
+        private SalesContext CreateContext()
+        {
+            var options = new DbContextOptionsBuilder<SalesContext>()
+                .UseInMemoryDatabase(Guid.NewGuid().ToString())
                 .Options;
-            _mockLogger = new Mock<ILogger<GetDeliveryNotesByClientIdQueryHandler>>();         
-            TypeAdapterConfig<BonDeLivraison, DeliveryNoteResponse>.NewConfig()
-                .Map(dest => dest.CustomerId, src => src.ClientId)
-                .Map(dest => dest.DeliveryNoteNumber, src => src.Num)
-                .Map(dest => dest.CreationTime, src => src.TempBl)
-                .Map(dest => dest.InvoiceNumber, src => src.NumFacture)
-                .Map(dest => dest.TotalExcludingTax, src => src.TotHTva)
-                .Map(dest => dest.TotalVat, src => src.TotTva)
-                .Map(dest => dest.TotalAmount, src => src.NetPayer);
+            return new SalesContext(options);
         }
 
         [Fact]
         public async Task Handle_ShouldReturnDeliveryNotes_WhenClientIdExists()
         {
-            // Arrange
-            using var context = new SalesContext(_dbContextOptions);
+            using var context = CreateContext();
+
             context.BonDeLivraison.Add(new BonDeLivraison
             {
                 Num = 1,
@@ -40,25 +48,27 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.DeliveryNotes
                 NumFacture = 5
             });
             await context.SaveChangesAsync();
+
             var handler = new GetDeliveryNotesByClientIdQueryHandler(context, _mockLogger.Object);
             var query = new GetDeliveryNoteByClientIdQuery(10);
-            // Act
+
             var result = await handler.Handle(query, CancellationToken.None);
-            // Assert
+
             result.IsSuccess.Should().BeTrue();
             result.Value.Should().HaveCount(1);
             result.Value.First().CustomerId.Should().Be(10);
         }
+
         [Fact]
         public async Task Handle_ShouldReturnFail_WhenNoDeliveryNotesFound()
         {
-            // Arrange
-            using var context = new SalesContext(_dbContextOptions);
+            using var context = CreateContext();
+
             var handler = new GetDeliveryNotesByClientIdQueryHandler(context, _mockLogger.Object);
-            var query = new GetDeliveryNoteByClientIdQuery(999); // ClientId non existant
-           // Act
+            var query = new GetDeliveryNoteByClientIdQuery(999);
+
             var result = await handler.Handle(query, CancellationToken.None);
-            // Assert
+
             result.IsFailed.Should().BeTrue();
             result.Errors.First().Message.Should().Be("not_found");
         }
