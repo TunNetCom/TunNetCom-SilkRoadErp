@@ -16,7 +16,6 @@ public class GetDeliveryNotesBaseInfosWithSummariesQueryHandler(
         CancellationToken cancellationToken)
     {
         _logger.LogPaginationRequest(nameof(BonDeLivraison), request.PageNumber, request.PageSize);
-
         var deliveryNoteQuery = _context.BonDeLivraison
             .Select(t => new GetDeliveryNoteBaseInfos
             {
@@ -29,27 +28,22 @@ public class GetDeliveryNotesBaseInfosWithSummariesQueryHandler(
                 CustomerId = t.ClientId,
             })
             .AsQueryable();
-
         if (request.CustomerId.HasValue)
         {
             deliveryNoteQuery = deliveryNoteQuery.Where(d => d.CustomerId == request.CustomerId);
         }
-
         if (request.IsInvoiced.Equals(true) && !request.InvoiceId.HasValue)
         {
             deliveryNoteQuery = deliveryNoteQuery.Where(d => d.NumFacture.HasValue);
         }
-        // Apply InvoiceId and IsInvoiced filters
         if (request.InvoiceId.HasValue && request.IsInvoiced.Equals(true))
         {
             deliveryNoteQuery = deliveryNoteQuery.Where(d => d.NumFacture == request.InvoiceId);
         }
-
         if (request.IsInvoiced.Equals(false))
         {
             deliveryNoteQuery = deliveryNoteQuery.Where(d => d.NumFacture == null);
         }
-
 
         // Apply Date Range filters
         if (request.StartDate.HasValue)
@@ -57,13 +51,11 @@ public class GetDeliveryNotesBaseInfosWithSummariesQueryHandler(
             _logger.LogInformation("Applying start date filter: {startDate}", request.StartDate);
             deliveryNoteQuery = deliveryNoteQuery.Where(d => d.Date >= request.StartDate.Value);
         }
-
         if (request.EndDate.HasValue)
         {
             _logger.LogInformation("Applying end date filter: {endDate}", request.EndDate);
             deliveryNoteQuery = deliveryNoteQuery.Where(d => d.Date <= request.EndDate.Value);
         }
-
         // Apply Sorting
         if (request.SortOrder != null && request.SortProperty != null)
         {
@@ -73,19 +65,15 @@ public class GetDeliveryNotesBaseInfosWithSummariesQueryHandler(
                 request.SortOrder);
             deliveryNoteQuery = ApplySorting(deliveryNoteQuery, request.SortProperty, request.SortOrder);
         }
-
         _logger.LogInformation("Getting Gross, Vat, and Net amounts");
-
         var totalGrossAmount = await deliveryNoteQuery.SumAsync(d => d.GrossAmount, cancellationToken);
         var totalVATAmount = await deliveryNoteQuery.SumAsync(d => d.VatAmount, cancellationToken);
         var totalNetAmount = await deliveryNoteQuery.SumAsync(d => d.NetAmount, cancellationToken);
-
         var pagedDeliveryNote = await PagedList<GetDeliveryNoteBaseInfos>.ToPagedListAsync(
             deliveryNoteQuery,
             request.PageNumber,
             request.PageSize,
             cancellationToken);
-
         var getDeliveryNotesWithSummariesResponse = new GetDeliveryNotesWithSummariesResponse
         {
             GetDeliveryNoteBaseInfos = pagedDeliveryNote,
@@ -93,9 +81,7 @@ public class GetDeliveryNotesBaseInfosWithSummariesQueryHandler(
             TotalNetAmount = totalNetAmount,
             TotalVatAmount = totalVATAmount
         };
-
         _logger.LogEntitiesFetched(nameof(BonDeLivraison), pagedDeliveryNote.Items.Count);
-
         return getDeliveryNotesWithSummariesResponse;
     }
 
@@ -106,7 +92,6 @@ public class GetDeliveryNotesBaseInfosWithSummariesQueryHandler(
     {
         return SortQuery(deliveryNoteQuery, sortProperty, sortOrder);
     }
-
     private IQueryable<GetDeliveryNoteBaseInfos> SortQuery(
         IQueryable<GetDeliveryNoteBaseInfos> query,
         string property,

@@ -10,9 +10,13 @@ public class GetFullInvoiceByIdEndpoint : ICarterModule
     public static async Task<Results<Ok<FullInvoiceResponse>, NotFound>> HandleGetFullInvoiceByIdAsync(
         IMediator mediator, int id, CancellationToken cancellationToken)
     {
-        var query = new GetFullInvoiceByIdQuery(id);
-        var result = await mediator.Send(query, cancellationToken);
+        var result = await mediator.Send(new GetFullInvoiceByIdQuery(id), cancellationToken);
 
-        return result.IsEntityNotFound() ? TypedResults.NotFound() : TypedResults.Ok(result.Value);
+        if (result.IsFailed)
+        {
+            return TypedResults.NotFound();
+        }
+
+        return TypedResults.Ok(result.Value);
     }
 }

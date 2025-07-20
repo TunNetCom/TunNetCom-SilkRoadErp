@@ -1,4 +1,4 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.DetachFromInvoice;
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.DetachFromInvoice;
 
 public class DetachFromInvoiceCommandHandler(
     SalesContext context,
@@ -19,15 +19,20 @@ public class DetachFromInvoiceCommandHandler(
             return Result.Fail("invoice_not_found");
         }
 
-        var updatedCount = await context.BonDeLivraison
+        var deliveryNotesToUpdate = await context.BonDeLivraison
             .Where(d => request.DeliveryNoteIds.Contains(d.Num) && d.NumFacture == request.InvoiceId)
-            .ExecuteUpdateAsync(
-            setters => setters.SetProperty(d => d.NumFacture, (int?)null),
-            cancellationToken);
+            .ToListAsync(cancellationToken);
+
+        foreach (var note in deliveryNotesToUpdate)
+        {
+            note.NumFacture = null;
+        }
+
+        await context.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation(
             "Successfully detached {Count} delivery notes from invoice {InvoiceId}",
-            updatedCount,
+            deliveryNotesToUpdate.Count,
             request.InvoiceId);
 
         return Result.Ok();

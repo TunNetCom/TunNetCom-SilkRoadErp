@@ -45,7 +45,7 @@ public class GetDeliveryNotesBasedOnProductReferenceHandler(
         NetTtcUnitaire = x.NetTtcUnitaire,
         PrixHtFodec = x.PrixHtFodec
     })
-    .ToListAsync(cancellationToken);
+    .ToListAsync(cancellationToken); 
 
         return deliveryNotes;
     }

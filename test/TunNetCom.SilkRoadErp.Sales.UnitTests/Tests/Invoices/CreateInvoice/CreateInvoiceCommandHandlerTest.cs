@@ -1,10 +1,6 @@
-﻿using System.Reflection.Metadata;
-using TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.CreateCustomer;
-using TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.CreateInvoice;
-using Xunit;
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.CreateInvoice;
 namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.CreateInvoice
 {
-    
     public class CreateInvoiceCommandHandlerTest
     {
         private readonly SalesContext _context;
@@ -15,7 +11,6 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.CreateInvoice
             var options = new DbContextOptionsBuilder<SalesContext>()
            .UseInMemoryDatabase(databaseName: "SalesContext")
        .Options;
-
             _context = new SalesContext(options);
             _testLogger = new TestLogger<CreateInvoiceCommandHandler>();
             _createInvoiceCommandhandler = new CreateInvoiceCommandHandler(_context, _testLogger);
@@ -25,10 +20,8 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.CreateInvoice
         {
             // Arrange
             var command = new CreateInvoiceCommand(DateTime.Now, ClientId: 999); // client inexistant
-
             // Act
             var result = await _createInvoiceCommandhandler.Handle(command, CancellationToken.None);
-
             // Assert
             Assert.False(result.IsSuccess);
             Assert.Equal("not_found", result.Errors.First().Message);
@@ -49,12 +42,9 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.CreateInvoice
 
             _context.Client.Add(client);
             await _context.SaveChangesAsync();
-
             var command = new CreateInvoiceCommand(DateTime.Now, client.Id);
-
             // Act
             var result = await _createInvoiceCommandhandler.Handle(command, CancellationToken.None);
-
             // Assert
             Assert.True(result.IsSuccess);
             Assert.True(result.Value > 0); 
@@ -72,18 +62,17 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.CreateInvoice
                 codeCat: "Y1",
                 etbSec: "003",
                 mail: "success@example.com");
-
             _context.Client.Add(client);
             await _context.SaveChangesAsync();
-
             var command = new CreateInvoiceCommand(DateTime.Today, client.Id);
-
             // Act
             var result = await _createInvoiceCommandhandler.Handle(command, CancellationToken.None);
-
             // Assert
-            Assert.True(result.IsSuccess);
-            Assert.Contains(_testLogger.Logs, log => log.Contains($"{nameof(Facture)} created successfully with ID: {result.Value}"));
+            Assert.True(result.IsSuccess);       
+            Assert.Contains(_testLogger.Logs, log =>
+                log.Contains("Facture created successfully with Num") &&
+                log.Contains(result.Value.ToString())
+            );
         }
     }                                   
 }

@@ -46,6 +46,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Features\Invoices\GetInvoicesByCustomerWithSummary\" />
     <Folder Include="Infrastructure\Utilities\" />
     <Folder Include="Tests\PriceQuote\UpdatePriceQuote\" />
   </ItemGroup>
