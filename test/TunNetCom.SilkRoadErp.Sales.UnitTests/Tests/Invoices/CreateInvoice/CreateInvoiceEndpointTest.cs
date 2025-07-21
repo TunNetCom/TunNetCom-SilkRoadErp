@@ -1,4 +1,13 @@
-﻿
+﻿using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using FluentAssertions;
+using MediatR;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
+using FluentResults;
+using Moq;
 using TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.CreateInvoice;
 using TunNetCom.SilkRoadErp.Sales.Contracts.Invoice;
 using Xunit;
@@ -16,13 +25,13 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.CreateInvoice
             _endpoint = new CreateInvoiceEndpoint();
         }
 
-        [Fact]
+        [Fact(DisplayName = "HandleCreateInvoiceAsync returns Created result when creation succeeds")]
         public async Task HandleCreateInvoiceAsync_SuccessfulCreation_ReturnsCreatedResult()
         {
             // Arrange
             var request = new CreateInvoiceRequest
             {
-                Date = DateTime.Now,
+                Date = DateTime.UtcNow,
                 ClientId = 1
             };
 
@@ -45,16 +54,17 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.CreateInvoice
             createdResult.Should().NotBeNull();
             createdResult!.Location.Should().Be("/invoices/1");
             createdResult.Value.Should().BeEquivalentTo(request);
-            _mediatorMock.Verify(m => m.Send(It.IsAny<CreateInvoiceCommand>(), It.IsAny<CancellationToken>()), Times.Once());
+
+            _mediatorMock.Verify(m => m.Send(It.IsAny<CreateInvoiceCommand>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
-        [Fact]
+        [Fact(DisplayName = "HandleCreateInvoiceAsync returns ValidationProblem when client not found")]
         public async Task HandleCreateInvoiceAsync_InvalidClient_ReturnsValidationProblem()
         {
             // Arrange
             var request = new CreateInvoiceRequest
             {
-                Date = DateTime.Now,
+                Date = DateTime.UtcNow,
                 ClientId = 999 // client non existant
             };
 
@@ -71,18 +81,25 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.CreateInvoice
             // Assert
             var validationProblem = result.Result as ValidationProblem;
             validationProblem.Should().NotBeNull();
-            validationProblem!.ProblemDetails.Errors.First().Value.Should().Contain("not_found");
+
+            // Le dictionnaire Errors contient une erreur avec la valeur "not_found"
+            validationProblem!.ProblemDetails.Errors.Values
+                .SelectMany(errors => errors)
+                .Should()
+                .Contain(e => e.Contains("not_found"));
+
             validationProblem.StatusCode.Should().Be(400);
-            _mediatorMock.Verify(m => m.Send(It.IsAny<CreateInvoiceCommand>(), It.IsAny<CancellationToken>()), Times.Once());
+
+            _mediatorMock.Verify(m => m.Send(It.IsAny<CreateInvoiceCommand>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
-        [Fact]
+        [Fact(DisplayName = "HandleCreateInvoiceAsync throws OperationCanceledException if cancellation requested")]
         public async Task HandleCreateInvoiceAsync_CancellationRequested_ThrowsOperationCanceledException()
         {
             // Arrange
             var request = new CreateInvoiceRequest
             {
-                Date = DateTime.Now,
+                Date = DateTime.UtcNow,
                 ClientId = 1
             };
 
@@ -97,7 +114,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.CreateInvoice
             await Assert.ThrowsAsync<OperationCanceledException>(() =>
                 _endpoint.HandleCreateInvoiceAsync(_mediatorMock.Object, request, cts.Token));
 
-            _mediatorMock.Verify(m => m.Send(It.IsAny<CreateInvoiceCommand>(), It.IsAny<CancellationToken>()), Times.Once());
+            _mediatorMock.Verify(m => m.Send(It.IsAny<CreateInvoiceCommand>(), It.IsAny<CancellationToken>()), Times.Once);
         }
     }
 }

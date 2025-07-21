@@ -1,37 +1,55 @@
-﻿using Microsoft.EntityFrameworkCore;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+﻿using FluentResults;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;
+using TunNetCom.SilkRoadErp.Sales.Domain.Views;
 
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderInvoice.GetProviderInvoicesWithIdsList;
 
-public class GetProviderInvoicesWithIdsListQueryHandler(
-    SalesContext context,
-    ILogger<GetProviderInvoicesWithIdsListQueryHandler> logger)
-    : IRequestHandler<GetProviderInvoicesWithIdsListQuery, List<ProviderInvoiceResponse>>
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderInvoice.GetProviderInvoicesWithIdsList
 {
-    public async Task<List<ProviderInvoiceResponse>> Handle(
-        GetProviderInvoicesWithIdsListQuery request,
-        CancellationToken cancellationToken)
+    public class GetProviderInvoicesWithIdsListQueryHandler
+        : IRequestHandler<GetProviderInvoicesWithIdsListQuery, List<ProviderInvoiceResponse>>
     {
-        var invoiceQuery = context.ProviderInvoiceView
-            .Where(f => request.InvoicesIds.Contains(f.Num)) // Assuming 'Id' exists; adjust if it's different
-            .Select(f => new ProviderInvoiceResponse
-            {
-                Num = f.Num, // Convert int to string if ProviderInvoiceNumber in response is string
-                ProviderId = f.ProviderId,
-                Date = f.Date,
-                TotTTC = f.TotalTTC,
-                TotHTva = f.TotalHT,
-                TotTva = f.TotalTTC - f.TotalHT // Compute TotalVat since it's not a DB column
-            })
-            .ToList();
+        private readonly SalesContext _context;
+        private readonly ILogger<GetProviderInvoicesWithIdsListQueryHandler> _logger;
 
-        if (!invoiceQuery.Any())
+        public GetProviderInvoicesWithIdsListQueryHandler(
+            SalesContext context,
+            ILogger<GetProviderInvoicesWithIdsListQueryHandler> logger)
         {
-            logger.LogInformation("No invoices found for IDs: {InvoiceIds}", string.Join(", ", request.InvoicesIds));
-            return new List<ProviderInvoiceResponse>();
+            _context = context;
+            _logger = logger;
         }
 
-        logger.LogInformation("Successfully retrieved {Count} invoices.", invoiceQuery.Count);
-        return  invoiceQuery;
+        public async Task<List<ProviderInvoiceResponse>> Handle(
+            GetProviderInvoicesWithIdsListQuery request,
+            CancellationToken cancellationToken)
+        {
+            var invoices = await _context.ProviderInvoiceView
+                .AsNoTracking() // important for views
+                .Where(f => request.InvoicesIds.Contains(f.Num))
+                .Select(f => new ProviderInvoiceResponse
+                {
+                    Num = f.Num,
+                    ProviderId = f.ProviderId,
+                    Date = f.Date,
+                    TotTTC = f.TotalTTC,
+                    TotHTva = f.TotalHT,
+                    TotTva = f.TotalTTC - f.TotalHT
+                })
+                .ToListAsync(cancellationToken);
+
+            if (invoices == null || !invoices.Any())
+            {
+                _logger.LogInformation("No invoices found for the given IDs: {Ids}", string.Join(", ", request.InvoicesIds));
+            }
+
+            return invoices;
+        }
     }
 }

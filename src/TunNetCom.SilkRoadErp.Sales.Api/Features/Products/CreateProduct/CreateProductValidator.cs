@@ -33,8 +33,7 @@ public class CreateProductValidator : AbstractValidator<CreateProductCommand>
         RuleFor(x => x.PrixAchat)
             .GreaterThan(0).WithMessage("prix_achat_must_be_greater_than_0");
 
-        RuleFor(x => x.Visibilite)
-            .NotNull().WithMessage("visibilite_must_be_specified");
+       
 
 
     }

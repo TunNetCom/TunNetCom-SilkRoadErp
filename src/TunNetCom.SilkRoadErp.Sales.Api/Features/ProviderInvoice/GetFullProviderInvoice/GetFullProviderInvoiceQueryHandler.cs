@@ -1,7 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetFullInvoiceById;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderInvoice.GetFullProviderInvoice;
-
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderInvoice.GetFullProviderInvoice;
 public class GetFullProviderInvoiceQueryHandler(
     SalesContext _context,
     ILogger<GetFullProviderInvoiceQueryHandler> _logger)
@@ -11,24 +8,15 @@ public class GetFullProviderInvoiceQueryHandler(
         GetFullProviderInvoiceQuery query,
         CancellationToken cancellationToken)
     {
-        
         FullProviderInvoiceResponse? invoice = await GetFullInvoiceByIdAsync(query, cancellationToken);
-
         if (invoice is null)
         {
-            _logger.LogEntityNotFound(
-                nameof(FactureFournisseur),
-                query.Id);
+            _logger.LogEntityNotFound(nameof(FactureFournisseur), query.Id);
             return Result.Fail(EntityNotFound.Error());
         }
-
-        _logger.LogEntityFetchedById(
-            nameof(FactureFournisseur),
-            query.Id);
-
+        _logger.LogEntityFetchedById(nameof(FactureFournisseur), query.Id);
         return invoice;
     }
-
     private async Task<FullProviderInvoiceResponse?> GetFullInvoiceByIdAsync(
         GetFullProviderInvoiceQuery query,
         CancellationToken cancellationToken)
@@ -74,17 +62,18 @@ public class GetFullProviderInvoiceQueryHandler(
                         TotalIncludingTax = li.TotTtc
                     }).ToList()
                 }).ToList()
-            }
-            ).FirstOrDefaultAsync(cancellationToken);
-        
-        providerInvoice.ReceiptNotes.ForEach(bl =>
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+        if (providerInvoice != null && providerInvoice.ReceiptNotes != null)
         {
-            bl.TotalExcludingVat = bl.Lines.Sum(li => li.TotalExcludingTax);
-            bl.NetToPay = bl.Lines.Sum(li => li.TotalIncludingTax);
-            bl.TotalVat = bl.NetToPay - bl.TotalExcludingVat;
-        });
-
+            foreach (var bl in providerInvoice.ReceiptNotes)
+            {
+                bl.TotalExcludingVat = bl.Lines?.Sum(li => li.TotalExcludingTax) ?? 0;
+                bl.NetToPay = bl.Lines?.Sum(li => li.TotalIncludingTax) ?? 0;
+                bl.TotalVat = bl.NetToPay - bl.TotalExcludingVat;
+            }
+        }
         return providerInvoice;
-        
     }
 }
+
