@@ -47,7 +47,7 @@
 
   <ItemGroup>
     <Folder Include="Features\Invoices\GetInvoicesByCustomerWithSummary\" />
-    <Folder Include="Features\Providers\UpdateProvider\" />
+    <Folder Include="Features\ReceiptNote\GetReceiptNoteById\" />
     <Folder Include="Infrastructure\Utilities\" />
     <Folder Include="Tests\PriceQuote\UpdatePriceQuote\" />
   </ItemGroup>

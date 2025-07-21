@@ -7,4 +7,4 @@ public record CreateReceiptNoteCommand(
     int IdFournisseur,
     DateTime Date,
     int? NumFactureFournisseur
-    ):IRequest<Result<int>>;
+    ) : IRequest<Result<int>>;

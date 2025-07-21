@@ -1,47 +1,46 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes;
-
-public class GetReceiptNoteByIdQueryHandlerTests
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure;
+using TunNetCom.SilkRoadErp.Sales.Contracts;
+using TunNetCom.SilkRoadErp.Sales.Contracts.RecieptNotes;
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNote;
+public class GetReceiptNoteQueryHandler(SalesContext _context, ILogger<GetReceiptNoteQueryHandler> _logger)
+    : IRequestHandler<GetReceiptNoteQuery, PagedList<ReceiptNoteResponse>>
 {
-    private readonly SalesContext _context;
-    private readonly TestLogger<GetReceiptNoteByIdQueryHandler> _testlogger;
-    private readonly GetReceiptNoteByIdQueryHandler _handler;
-
-    public GetReceiptNoteByIdQueryHandlerTests()
+    public async Task<PagedList<ReceiptNoteResponse>> Handle(
+        GetReceiptNoteQuery getReceiptNoteQuery,
+        CancellationToken cancellationToken)
     {
-        var options = new DbContextOptionsBuilder<SalesContext>()
-            .UseInMemoryDatabase(databaseName: "SalesContext")
-            .Options;
-        _context = new SalesContext(options);
-        _testlogger = new TestLogger<GetReceiptNoteByIdQueryHandler>();
-        _handler = new GetReceiptNoteByIdQueryHandler(_context, _testlogger);
-    }
+        _logger.LogPaginationRequest(nameof(BonDeReception), getReceiptNoteQuery.PageNumber, getReceiptNoteQuery.PageSize);
+        IQueryable<ReceiptNoteResponse> ReceiptNoteQuery = _context.BonDeReception.Select(R =>
+            new ReceiptNoteResponse
+            {
+                Num = R.Num,
+                NumBonFournisseur = R.NumBonFournisseur,
+                DateLivraison = R.DateLivraison,
+                IdFournisseur = R.IdFournisseur,
+                Date = R.Date,
+                NumFactureFournisseur = R.NumFactureFournisseur
+            })
+            .AsQueryable();
+        if (!string.IsNullOrEmpty(getReceiptNoteQuery.SearchKeyword))
+        {
+            string keyword = getReceiptNoteQuery.SearchKeyword;
 
-    [Fact]
-    public async Task Handle_ReceiptNoteNotFound_ReturnsFailResult()
-    {
-        // Arrange
-        var query = new GetReceiptNoteByIdQuery(1);
+            ReceiptNoteQuery = ReceiptNoteQuery.Where(R =>
+                R.Num.ToString() == keyword
+                || R.NumBonFournisseur.ToString() == keyword
+                || R.DateLivraison.ToString() == keyword
+                || R.IdFournisseur.ToString() == keyword
+                || R.Date.ToString() == keyword
+                || (R.NumFactureFournisseur.HasValue && R.NumFactureFournisseur.Value.ToString() == keyword)
+            );
+        }
+        PagedList<ReceiptNoteResponse> pagedReceipts = await PagedList<ReceiptNoteResponse>.ToPagedListAsync(
+            ReceiptNoteQuery,
+            getReceiptNoteQuery.PageNumber,
+            getReceiptNoteQuery.PageSize,
+            cancellationToken);
 
-        // Act
-        var result = await _handler.Handle(query, CancellationToken.None);
-
-        //Assert
-        Assert.False(result.IsSuccess);
-        Assert.Equal("not_found", result.Errors.First().Message);
-    }
-
-    [Fact]
-    public async Task Handle_LogsProviderNotFound()
-    {
-        // Arrange
-        var query = new GetReceiptNoteByIdQuery(1);
-
-        // Act
-        var result = await _handler.Handle(query, CancellationToken.None);
-
-        //Assert
-        Assert.False(result.IsSuccess);
-        Assert.Equal("not_found", result.Errors.First().Message);
-        Assert.Contains(_testlogger.Logs, log => log.Contains($"BonDeReception with ID: {query.Num} not found"));
+        _logger.LogEntitiesFetched(nameof(BonDeReception), pagedReceipts.Items.Count);
+        return pagedReceipts;
     }
 }
