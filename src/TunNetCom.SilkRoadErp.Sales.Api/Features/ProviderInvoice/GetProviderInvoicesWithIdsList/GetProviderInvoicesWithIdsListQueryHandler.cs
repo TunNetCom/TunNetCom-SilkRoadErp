@@ -1,14 +1,12 @@
 ﻿using FluentResults;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;
 using TunNetCom.SilkRoadErp.Sales.Domain.Views;
-
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderInvoice.GetProviderInvoicesWithIdsList
 {
@@ -31,7 +29,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderInvoice.GetProviderIn
             CancellationToken cancellationToken)
         {
             var invoices = await _context.ProviderInvoiceView
-                .AsNoTracking() // important for views
+                .AsNoTracking()
                 .Where(f => request.InvoicesIds.Contains(f.Num))
                 .Select(f => new ProviderInvoiceResponse
                 {
@@ -44,7 +42,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderInvoice.GetProviderIn
                 })
                 .ToListAsync(cancellationToken);
 
-            if (invoices == null || !invoices.Any())
+            if (!invoices.Any())
             {
                 _logger.LogInformation("No invoices found for the given IDs: {Ids}", string.Join(", ", request.InvoicesIds));
             }

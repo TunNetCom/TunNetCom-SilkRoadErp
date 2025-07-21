@@ -1,20 +1,35 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.GetProviderById;
+﻿using FluentResults;
+using Mapster;
+using Microsoft.Extensions.Logging;
+using System.Threading;
+using System.Threading.Tasks;
+using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
+using TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.GetProviderById;
 
-public class GetProviderByIdQueryHandler(SalesContext _context, ILogger<GetProviderByIdQueryHandler> _logger)
-    : IRequestHandler<GetProviderByIdQuery, Result<ProviderResponse>>
+public class GetProviderByIdQueryHandler : IRequestHandler<GetProviderByIdQuery, Result<ProviderResponse>>
 {
-    public async Task<Result<ProviderResponse>> Handle(GetProviderByIdQuery getProviderByIdQuery, CancellationToken cancellationToken)
-    {
-        _logger.LogFetchingEntityById(nameof(Fournisseur), getProviderByIdQuery.Id);
+    private readonly SalesContext _context;
+    private readonly ILogger<GetProviderByIdQueryHandler> _logger;
 
-        var provider = await _context.Fournisseur.FindAsync(getProviderByIdQuery.Id);
+    public GetProviderByIdQueryHandler(SalesContext context, ILogger<GetProviderByIdQueryHandler> logger)
+    {
+        _context = context;
+        _logger = logger;
+    }
+
+    public async Task<Result<ProviderResponse>> Handle(GetProviderByIdQuery query, CancellationToken cancellationToken)
+    {
+        _logger.LogFetchingEntityById(nameof(Fournisseur), query.Id);
+
+        var provider = await _context.Fournisseur.FindAsync(query.Id);
         if (provider is null)
         {
-            _logger.LogEntityNotFound(nameof(Fournisseur), getProviderByIdQuery.Id);
+            _logger.LogEntityNotFound(nameof(Fournisseur), query.Id);
             return Result.Fail(EntityNotFound.Error());
         }
 
-        _logger.LogEntityFetchedById(nameof(Fournisseur), getProviderByIdQuery.Id);
-        return provider.Adapt<ProviderResponse>();
+        _logger.LogEntityFetchedById(nameof(Fournisseur), query.Id);
+
+        return Result.Ok(provider.Adapt<ProviderResponse>());
     }
 }
