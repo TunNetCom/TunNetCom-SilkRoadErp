@@ -31,8 +31,8 @@ public class CreateCustomerCommandHandler(
         );
 
 
-        _context.Client.Add(client);
-        await _context.SaveChangesAsync(cancellationToken);
+        _ = _context.Client.Add(client);
+        _ = await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogEntityCreatedSuccessfully(nameof(Client), client.Id);
 

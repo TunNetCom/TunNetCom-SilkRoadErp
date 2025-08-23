@@ -51,6 +51,12 @@ builder.Services.AddSingleton<IExceptionHandler, GlobalExceptionHandler>();
 
 var app = builder.Build();
 
+using (IServiceScope scope = app.Services.CreateScope())
+{
+    SalesContext dbContext = scope.ServiceProvider.GetRequiredService<SalesContext>();
+    _ = dbContext.Database.EnsureCreated();
+}
+
 app.UseRateLimiter();
 
 //if (app.Environment.IsDevelopment())
