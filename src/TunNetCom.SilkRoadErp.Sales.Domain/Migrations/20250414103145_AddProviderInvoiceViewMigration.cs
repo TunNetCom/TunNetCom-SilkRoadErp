@@ -10,8 +10,8 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            
-                migrationBuilder.Sql(@"
+
+            _ = migrationBuilder.Sql(@"
             CREATE VIEW [dbo].[ProviderInvoiceView]
 AS
 SELECT dbo.FactureFournisseur.Num, dbo.FactureFournisseur.id_fournisseur AS ProviderId, dbo.FactureFournisseur.NumFactureFournisseur AS ProviderInvoiceNumber, dbo.FactureFournisseur.dateFacturationFournisseur AS InvoicingDate, 
@@ -28,7 +28,7 @@ GROUP BY dbo.FactureFournisseur.Num, dbo.FactureFournisseur.id_fournisseur, dbo.
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql("DROP VIEW [dbo].[ProviderInvoiceView]");
+            _ = migrationBuilder.Sql("DROP VIEW [dbo].[ProviderInvoiceView]");
         }
     }
 }

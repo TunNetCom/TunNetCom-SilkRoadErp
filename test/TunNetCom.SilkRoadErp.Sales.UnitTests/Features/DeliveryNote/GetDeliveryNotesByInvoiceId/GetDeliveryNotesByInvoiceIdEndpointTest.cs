@@ -20,8 +20,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.DeliveryNote.GetDeliveryNo
 
             var expectedNotes = new List<DeliveryNoteResponse>
             {
-                new DeliveryNoteResponse
-                {
+                new() {
                     DeliveryNoteNumber = 1,
                     Date = DateTime.Today,
                     CreationTime = TimeOnly.FromDateTime(DateTime.Now),
@@ -32,8 +31,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.DeliveryNote.GetDeliveryNo
                     TotalVat = 20,
                     Items = new List<DeliveryNoteDetailResponse>
                     {
-                        new DeliveryNoteDetailResponse
-                        {
+                        new() {
                             Id = 1,
                             Provider = "Provider A",
                             Date = DateTime.Today,
@@ -51,15 +49,15 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.DeliveryNote.GetDeliveryNo
                     }
                 }
             };
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.Is<GetDeliveryNotesByInvoiceIdQuery>(q => q.NumFacture == invoiceId), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Ok(expectedNotes));
             // Act
             var result = await _endpoint.InvokePrivateHandler(invoiceId, _mediatorMock.Object, CancellationToken.None);
             // Assert
             var okResult = result.Result as Ok<List<DeliveryNoteResponse>>;
-            okResult.Should().NotBeNull();
-            okResult!.Value.Should().BeEquivalentTo(expectedNotes);
+            _ = okResult.Should().NotBeNull();
+            _ = okResult!.Value.Should().BeEquivalentTo(expectedNotes);
             _mediatorMock.Verify(m => m.Send(It.IsAny<GetDeliveryNotesByInvoiceIdQuery>(), It.IsAny<CancellationToken>()), Times.Once());
         }
 
@@ -69,13 +67,13 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.DeliveryNote.GetDeliveryNo
             // Arrange
             int invoiceId = 999;
             var failResult = Result.Fail<List<DeliveryNoteResponse>>(new Error("not_found").WithMetadata("ErrorType", "EntityNotFound"));
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.IsAny<GetDeliveryNotesByInvoiceIdQuery>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(failResult);
             // Act
             var result = await _endpoint.InvokePrivateHandler(invoiceId, _mediatorMock.Object, CancellationToken.None);
             // Assert
-            result.Result.Should().BeOfType<NotFound>();
+            _ = result.Result.Should().BeOfType<NotFound>();
         }
 
         [Fact]
@@ -85,11 +83,11 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.DeliveryNote.GetDeliveryNo
             int invoiceId = 500;
             var cts = new CancellationTokenSource();
             cts.Cancel();
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.IsAny<GetDeliveryNotesByInvoiceIdQuery>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new OperationCanceledException());
             // Act & Assert
-            await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            _ = await Assert.ThrowsAsync<OperationCanceledException>(() =>
                 _endpoint.InvokePrivateHandler(invoiceId, _mediatorMock.Object, cts.Token));
             _mediatorMock.Verify(m => m.Send(It.IsAny<GetDeliveryNotesByInvoiceIdQuery>(), It.IsAny<CancellationToken>()), Times.Once());
         }

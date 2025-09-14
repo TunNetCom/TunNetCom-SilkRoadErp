@@ -20,7 +20,7 @@ public class GetFullProviderInvoiceEndpointTest
         {
             ProviderInvoiceNumber = invoiceId,
         };
-        _mediatorMock.Setup(m => m.Send(It.Is<GetFullProviderInvoiceQuery>(q => q.Id == invoiceId), It.IsAny<CancellationToken>()))
+        _ = _mediatorMock.Setup(m => m.Send(It.Is<GetFullProviderInvoiceQuery>(q => q.Id == invoiceId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Ok(response));
         // Act
         var result = await GetFullProviderInvoiceEndpoint.HandleGetFullProviderInvoiceByIdAsync(
@@ -36,12 +36,12 @@ public class GetFullProviderInvoiceEndpointTest
         // Arrange
         int invoiceId = 404;
         var failResult = Result.Fail<FullProviderInvoiceResponse>(EntityNotFound.Error());
-        _mediatorMock.Setup(m => m.Send(It.Is<GetFullProviderInvoiceQuery>(q => q.Id == invoiceId), It.IsAny<CancellationToken>()))
+        _ = _mediatorMock.Setup(m => m.Send(It.Is<GetFullProviderInvoiceQuery>(q => q.Id == invoiceId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(failResult);
         // Act
         var result = await GetFullProviderInvoiceEndpoint.HandleGetFullProviderInvoiceByIdAsync(
             _mediatorMock.Object, invoiceId, CancellationToken.None);
         // Assert
-        Assert.IsType<NotFound>(result.Result);
+        _ = Assert.IsType<NotFound>(result.Result);
     }
 }

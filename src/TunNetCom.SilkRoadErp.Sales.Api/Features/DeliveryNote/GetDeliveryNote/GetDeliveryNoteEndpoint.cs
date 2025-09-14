@@ -4,7 +4,7 @@ public class GetDeliveryNoteEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapGet("/deliveryNote", async (
+        _ = app.MapGet("/deliveryNote", async (
             [AsParameters] QueryStringParameters paginationQueryParams,
             bool? isFactured,
             IMediator mediator,

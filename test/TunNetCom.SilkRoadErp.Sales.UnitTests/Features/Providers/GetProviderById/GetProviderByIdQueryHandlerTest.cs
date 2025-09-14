@@ -4,8 +4,8 @@
     public GetProviderByIdQueryHandlerTests()
     {
         _loggerMock = new Mock<ILogger<GetProviderByIdQueryHandler>>();
-        _loggerMock.Setup(x => x.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
-        _loggerMock.Setup(x => x.Log(
+        _ = _loggerMock.Setup(x => x.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
+        _ = _loggerMock.Setup(x => x.Log(
             It.IsAny<LogLevel>(),
             It.IsAny<EventId>(),
             It.IsAny<It.IsAnyType>(),
@@ -26,7 +26,7 @@
         if (providers.Length > 0)
         {
             context.Fournisseur.AddRange(providers);
-            context.SaveChanges();
+            _ = context.SaveChanges();
         }
         return context;
     }

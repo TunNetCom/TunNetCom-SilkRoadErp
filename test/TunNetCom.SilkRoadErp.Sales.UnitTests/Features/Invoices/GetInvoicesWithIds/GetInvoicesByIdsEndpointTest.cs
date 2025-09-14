@@ -16,10 +16,10 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.GetInvoicesWithId
             var invoicesIds = new List<int> { 1, 2 };
             var invoices = new List<InvoiceResponse>
             {
-                new InvoiceResponse { Number = 1, CustomerId = 10, TotalExcludingTaxAmount = 100, TotalVATAmount = 19, TotalIncludingTaxAmount = 119 },
-                new InvoiceResponse { Number = 2, CustomerId = 11, TotalExcludingTaxAmount = 200, TotalVATAmount = 38, TotalIncludingTaxAmount = 238 },
+                new() { Number = 1, CustomerId = 10, TotalExcludingTaxAmount = 100, TotalVATAmount = 19, TotalIncludingTaxAmount = 119 },
+                new() { Number = 2, CustomerId = 11, TotalExcludingTaxAmount = 200, TotalVATAmount = 38, TotalIncludingTaxAmount = 238 },
             };
-            _mediatorMock.Setup(m => m.Send(It.IsAny<GetInvoicesWithIdsQuery>(), It.IsAny<CancellationToken>()))
+            _ = _mediatorMock.Setup(m => m.Send(It.IsAny<GetInvoicesWithIdsQuery>(), It.IsAny<CancellationToken>()))
                          .ReturnsAsync(Result.Ok(invoices));
             // Act
             var result = await GetInvoicesByIdsEndpoint.HandleGetInvoicesByIdsAsync(
@@ -39,7 +39,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.GetInvoicesWithId
             // Arrange
             var invoicesIds = new List<int> { 1000 };
             var emptyResult = new List<InvoiceResponse>();
-            _mediatorMock.Setup(m => m.Send(It.IsAny<GetInvoicesWithIdsQuery>(), It.IsAny<CancellationToken>()))
+            _ = _mediatorMock.Setup(m => m.Send(It.IsAny<GetInvoicesWithIdsQuery>(), It.IsAny<CancellationToken>()))
                          .ReturnsAsync(Result.Ok(emptyResult));
             // Act
             var result = await GetInvoicesByIdsEndpoint.HandleGetInvoicesByIdsAsync(
@@ -58,7 +58,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.GetInvoicesWithId
             // Arrange
             var invoicesIds = new List<int> { 123 };
             var failResult = Result.Fail<List<InvoiceResponse>>("Unexpected error");
-            _mediatorMock.Setup(m => m.Send(It.IsAny<GetInvoicesWithIdsQuery>(), It.IsAny<CancellationToken>()))
+            _ = _mediatorMock.Setup(m => m.Send(It.IsAny<GetInvoicesWithIdsQuery>(), It.IsAny<CancellationToken>()))
                          .ReturnsAsync(failResult);
             // Act
             var result = await GetInvoicesByIdsEndpoint.HandleGetInvoicesByIdsAsync(
@@ -68,7 +68,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.GetInvoicesWithId
             // Assert
             var resultUnion = Assert.IsType<Results<Ok<List<InvoiceResponse>>, BadRequest<List<IError>>>>(result);
             var badRequestResult = Assert.IsType<BadRequest<List<IError>>>(result.Result);
-            Assert.Single(badRequestResult.Value);
+            _ = Assert.Single(badRequestResult.Value);
             Assert.Equal("Unexpected error", badRequestResult.Value[0].Message);
         }
     }

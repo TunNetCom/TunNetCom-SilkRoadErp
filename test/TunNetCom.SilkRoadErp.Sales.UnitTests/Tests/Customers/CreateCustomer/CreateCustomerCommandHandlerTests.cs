@@ -45,8 +45,8 @@ public class CreateCustomerCommandHandlerTests
             etbSec: "EtbSec",
             mail: "email@example.com");
 
-        _context.Client.Add(clientDuplicated);
-        await _context.SaveChangesAsync();
+        _ = _context.Client.Add(clientDuplicated);
+        _ = await _context.SaveChangesAsync();
 
         // Act
         var result = await _createCustomerCommandHandler.Handle(command, CancellationToken.None);
@@ -92,7 +92,7 @@ public class CreateCustomerCommandHandlerTests
             Mail: "email@example.com");
 
         // Act
-        await _createCustomerCommandHandler.Handle(command, CancellationToken.None);
+        _ = await _createCustomerCommandHandler.Handle(command, CancellationToken.None);
 
         // Assert
         Assert.Contains(_testLogger.Logs, log => log.Contains($"Creating {nameof(Client)} with values: {command}"));

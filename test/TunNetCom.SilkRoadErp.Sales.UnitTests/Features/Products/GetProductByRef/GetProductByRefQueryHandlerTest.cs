@@ -28,8 +28,8 @@
             prix: 100m,
             prixAchat: 80m,
             visibilite: true);
-        await _context.Produit.AddAsync(product);
-        await _context.SaveChangesAsync();
+        _ = await _context.Produit.AddAsync(product);
+        _ = await _context.SaveChangesAsync();
         var query = new GetProductByRefQuery("P001");
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);

@@ -11,8 +11,8 @@ public class DeleteProductCommandHandler(SalesContext _context, ILogger<DeletePr
             _logger.LogEntityNotFound(nameof(Produit), deleteProductCommand.Refe);
             return Result.Fail(EntityNotFound.Error());
         }
-        _context.Remove(product);
-        await _context.SaveChangesAsync(cancellationToken);
+        _ = _context.Remove(product);
+        _ = await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogEntityDeleted(nameof(Produit), deleteProductCommand.Refe);
         return Result.Ok();

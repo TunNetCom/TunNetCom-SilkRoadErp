@@ -20,8 +20,7 @@ public class GetFullInvoiceByIdEndpointTest
             ClientId = 10,
             Lines = new List<DeliveryNoteLineResponse>
             {
-                new DeliveryNoteLineResponse
-                {
+                new() {
                     IdLi = 1,
                     RefProduit = "REF001",
                     DesignationLi = "Produit 1",
@@ -41,16 +40,16 @@ public class GetFullInvoiceByIdEndpointTest
          
             DeliveryNotes = new List<FullInvoiceCustomerResponseDeliveryNoteResponse> { deliveryNote }
         };
-        mockMediator
+        _ = mockMediator
             .Setup(m => m.Send(It.Is<GetFullInvoiceByIdQuery>(q => q.Id == invoiceId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Ok(expectedResponse));
         // Act
         var result = await GetFullInvoiceByIdEndpoint.HandleGetFullInvoiceByIdAsync(mockMediator.Object, invoiceId, CancellationToken.None);
         // Assert
         var okResult = result.Result as Ok<FullInvoiceResponse>;
-        okResult.Should().NotBeNull();
-        okResult!.Value.Num.Should().Be(invoiceId);
-        okResult.Value.DeliveryNotes.Should().HaveCount(1);
+        _ = okResult.Should().NotBeNull();
+        _ = okResult!.Value.Num.Should().Be(invoiceId);
+        _ = okResult.Value.DeliveryNotes.Should().HaveCount(1);
     }
 
     [Fact]
@@ -59,12 +58,12 @@ public class GetFullInvoiceByIdEndpointTest
         // Arrange
         var invoiceId = 999;
         var mockMediator = new Mock<IMediator>();
-        mockMediator
+        _ = mockMediator
             .Setup(m => m.Send(It.Is<GetFullInvoiceByIdQuery>(q => q.Id == invoiceId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Fail<FullInvoiceResponse>("EntityNotFound"));
         // Act
         var result = await GetFullInvoiceByIdEndpoint.HandleGetFullInvoiceByIdAsync(mockMediator.Object, invoiceId, CancellationToken.None);
         // Assert
-        result.Result.Should().BeOfType<NotFound>();
+        _ = result.Result.Should().BeOfType<NotFound>();
     }
 }

@@ -40,7 +40,7 @@ public class CreateReceiptNoteEndpointTest
             Date = DateTime.UtcNow,
             NumFactureFournisseur = null
         };
-        _mediatorMock
+        _ = _mediatorMock
             .Setup(m => m.Send(It.IsAny<CreateReceiptNoteCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Ok(1)); // simulate success
         // Act
@@ -66,12 +66,12 @@ public class CreateReceiptNoteEndpointTest
         };
 
         var failedResult = Result.Fail("receiptnote_number_exists");
-        _mediatorMock
+        _ = _mediatorMock
             .Setup(m => m.Send(It.IsAny<CreateReceiptNoteCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(failedResult);
         // Act
         var result = await InvokeEndpoint(request, _mediatorMock);
         // Assert
-        Assert.IsType<ValidationProblem>(result);
+        _ = Assert.IsType<ValidationProblem>(result);
     }
 }

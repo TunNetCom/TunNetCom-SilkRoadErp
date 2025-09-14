@@ -21,7 +21,7 @@
                 NumFactureFournisseur: 1
             );
             var result = _validator.TestValidate(command);
-            result.ShouldHaveValidationErrorFor(c => c.Num)
+            _ = result.ShouldHaveValidationErrorFor(c => c.Num)
                   .WithErrorMessage("number_is_required");
         }
 
@@ -37,7 +37,7 @@
                 NumFactureFournisseur: 1
             );
             var result = _validator.TestValidate(command);
-            result.ShouldHaveValidationErrorFor(c => c.NumBonFournisseur)
+            _ = result.ShouldHaveValidationErrorFor(c => c.NumBonFournisseur)
                   .WithErrorMessage("provider_receipt_number_is_required");
         }
 
@@ -53,7 +53,7 @@
                 NumFactureFournisseur: 1
             );
             var result = _validator.TestValidate(command);
-            result.ShouldHaveValidationErrorFor(c => c.DateLivraison)
+            _ = result.ShouldHaveValidationErrorFor(c => c.DateLivraison)
                   .WithErrorMessage("delivery_date_is_required");
         }
 
@@ -69,7 +69,7 @@
                 NumFactureFournisseur: 1
             );
             var result = _validator.TestValidate(command);
-            result.ShouldHaveValidationErrorFor(c => c.IdFournisseur)
+            _ = result.ShouldHaveValidationErrorFor(c => c.IdFournisseur)
                   .WithErrorMessage("providerid_must_be_greater_than_or_equal_to_0");
         }
 
@@ -85,7 +85,7 @@
                 NumFactureFournisseur: 1
             );
             var result = _validator.TestValidate(command);
-            result.ShouldHaveValidationErrorFor(c => c.Date)
+            _ = result.ShouldHaveValidationErrorFor(c => c.Date)
                   .WithErrorMessage("date_is_required");
         }
 
@@ -101,7 +101,7 @@
                 NumFactureFournisseur: -1
             );
             var result = _validator.TestValidate(command);
-            result.ShouldHaveValidationErrorFor(c => c.NumFactureFournisseur)
+            _ = result.ShouldHaveValidationErrorFor(c => c.NumFactureFournisseur)
                   .WithErrorMessage("invoice_number_must_be_greater_than_or_equal_to_0");
         }
 

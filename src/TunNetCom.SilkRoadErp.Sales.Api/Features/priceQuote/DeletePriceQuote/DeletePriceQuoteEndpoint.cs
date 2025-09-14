@@ -4,7 +4,7 @@ public class DeletePriceQuoteEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapDelete("/quotations/{num:int}", async Task<Results<NoContent, NotFound>> (
+        _ = app.MapDelete("/quotations/{num:int}", async Task<Results<NoContent, NotFound>> (
              IMediator mediator,
              int num,
              CancellationToken cancellationToken) =>

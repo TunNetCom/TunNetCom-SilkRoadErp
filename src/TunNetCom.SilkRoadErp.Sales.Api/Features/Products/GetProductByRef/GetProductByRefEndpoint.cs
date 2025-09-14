@@ -3,8 +3,8 @@ public class GetProductByRefEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapGet("/products/{refe}", async Task<Results<Ok<ProductResponse>, NotFound>> (
-            IMediator mediator, 
+        _ = app.MapGet("/products/{refe}", async Task<Results<Ok<ProductResponse>, NotFound>> (
+            IMediator mediator,
             string refe,
             CancellationToken cancellationToken) =>
         {

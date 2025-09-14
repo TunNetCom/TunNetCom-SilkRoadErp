@@ -22,9 +22,9 @@ public class DeleteReceiptNoteCommandHandlerTest
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
         // Assert
-        result.IsSuccess.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e => e.Message == "not_found");
-        _testLogger.Logs.Should().Contain(log =>
+        _ = result.IsSuccess.Should().BeFalse();
+        _ = result.Errors.Should().ContainSingle(e => e.Message == "not_found");
+        _ = _testLogger.Logs.Should().Contain(log =>
             log.Contains($"{nameof(BonDeReception)} with ID: {command.Num} not found"));
     }
 
@@ -39,15 +39,15 @@ public class DeleteReceiptNoteCommandHandlerTest
             idFournisseur: 1,
             date: new DateTime(2023, 1, 1),
             numFactureFournisseur: 5678);
-        _context.BonDeReception.Add(receiptNote);
-        await _context.SaveChangesAsync();
+        _ = _context.BonDeReception.Add(receiptNote);
+        _ = await _context.SaveChangesAsync();
         var command = new DeleteReceiptNoteCommand(receiptNote.Num);
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
         // Assert
-        result.IsSuccess.Should().BeTrue();
+        _ = result.IsSuccess.Should().BeTrue();
         var deleted = await _context.BonDeReception.FindAsync(receiptNote.Num);
-        deleted.Should().BeNull();
+        _ = deleted.Should().BeNull();
     }
 
     [Fact]
@@ -61,13 +61,13 @@ public class DeleteReceiptNoteCommandHandlerTest
             idFournisseur: 2,
             date: new DateTime(2023, 5, 5),
             numFactureFournisseur: 7890);
-        _context.BonDeReception.Add(receiptNote);
-        await _context.SaveChangesAsync();
+        _ = _context.BonDeReception.Add(receiptNote);
+        _ = await _context.SaveChangesAsync();
         var command = new DeleteReceiptNoteCommand(receiptNote.Num);
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
         // Assert
-        _testLogger.Logs.Should().Contain(log =>
+        _ = _testLogger.Logs.Should().Contain(log =>
             log.Contains($"{nameof(BonDeReception)} with ID: {command.Num} deleted successfully"));
     }
 }

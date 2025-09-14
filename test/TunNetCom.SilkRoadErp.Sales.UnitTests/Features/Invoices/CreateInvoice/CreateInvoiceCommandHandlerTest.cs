@@ -20,8 +20,8 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.CreateInvoice
         {
             var command = new CreateInvoiceCommand(DateTime.Today, ClientId: 999);
             var result = await _handler.Handle(command, CancellationToken.None);
-            result.IsFailed.Should().BeTrue();
-            result.Errors[0].Message.Should().Be("not_found");
+            _ = result.IsFailed.Should().BeTrue();
+            _ = result.Errors[0].Message.Should().Be("not_found");
         }
 
         [Fact]
@@ -36,15 +36,15 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.CreateInvoice
                 codeCat: "CAT1",
                 etbSec: "ES1",
                 mail: "test@example.com");
-            _context.Client.Add(client);
-            await _context.SaveChangesAsync();
+            _ = _context.Client.Add(client);
+            _ = await _context.SaveChangesAsync();
             var command = new CreateInvoiceCommand(DateTime.Today, client.Id);
             var result = await _handler.Handle(command, CancellationToken.None);
-            result.IsSuccess.Should().BeTrue();
-            result.Value.Should().BeGreaterThan(0);
+            _ = result.IsSuccess.Should().BeTrue();
+            _ = result.Value.Should().BeGreaterThan(0);
            var invoiceInDb = await _context.Facture.FirstOrDefaultAsync(f => f.Num == result.Value);
-            invoiceInDb.Should().NotBeNull();
-            invoiceInDb!.IdClient.Should().Be(client.Id);
+            _ = invoiceInDb.Should().NotBeNull();
+            _ = invoiceInDb!.IdClient.Should().Be(client.Id);
         }
 
         [Fact]
@@ -59,8 +59,8 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.CreateInvoice
                 codeCat: "CAT1",
                 etbSec: "ES1",
                 mail: "test@example.com");
-            _context.Client.Add(client);
-            await _context.SaveChangesAsync();
+            _ = _context.Client.Add(client);
+            _ = await _context.SaveChangesAsync();
             var command = new CreateInvoiceCommand(DateTime.Today, client.Id);
             var result = await _handler.Handle(command, CancellationToken.None);
             _loggerMock.Verify(

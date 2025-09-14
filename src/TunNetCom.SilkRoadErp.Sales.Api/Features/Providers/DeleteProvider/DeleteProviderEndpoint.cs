@@ -4,7 +4,7 @@ public class DeleteProviderEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapDelete("/providers/{id:int}", async Task<Results<NoContent, NotFound>> (IMediator mediator, int id, CancellationToken cancellationToken) =>
+        _ = app.MapDelete("/providers/{id:int}", async Task<Results<NoContent, NotFound>> (IMediator mediator, int id, CancellationToken cancellationToken) =>
         {
             var deleteProviderCommand = new DeleteProviderCommand(id);
             var deleteResult = await mediator.Send(deleteProviderCommand, cancellationToken);

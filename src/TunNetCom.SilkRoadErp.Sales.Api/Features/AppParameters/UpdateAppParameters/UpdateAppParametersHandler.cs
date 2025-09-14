@@ -14,7 +14,7 @@ public class UpdateAppParametersCommandHandler(
         _logger.LogEntityUpdateAttempt(nameof(Systeme), 1);
 
         // Check if the app parameters exist in the database
-        var appParametersToUpdate = await _context.Systeme.FirstOrDefaultAsync(cancellationToken);
+        var appParametersToUpdate = await _context.Systeme.AsNoTracking().FirstOrDefaultAsync(cancellationToken);
 
         if (appParametersToUpdate is null)
         {
@@ -38,7 +38,7 @@ public class UpdateAppParametersCommandHandler(
             adresseRetenu: updateAppParametersCommand.AdresseRetenu,
             pourcentageRetenu: (double)updateAppParametersCommand.PourcentageRetenu);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        _ = await _context.SaveChangesAsync(cancellationToken);
         _logger.LogEntityUpdated(nameof(Systeme), 1);
 
         return Result.Ok();

@@ -9,10 +9,10 @@ public static class PrintEngineStartupExtensions
 {
     public static void AddPrintEngine(this IServiceCollection services)
     {
-        services.AddScoped<PrintRetenuSourceService>();
-        services.AddScoped<PrintFullInvoiceService>();
-        services.AddScoped<RetenuSourceFournisseurPrintService>();
-        services.AddScoped<PrintProviderFullInvoiceService>();
-        services.AddScoped(typeof(IPrintPdfService<,>), typeof(PrintPdfPlayWrightService<,>));
+        _ = services.AddScoped<PrintRetenuSourceService>();
+        _ = services.AddScoped<PrintFullInvoiceService>();
+        _ = services.AddScoped<RetenuSourceFournisseurPrintService>();
+        _ = services.AddScoped<PrintProviderFullInvoiceService>();
+        _ = services.AddScoped(typeof(IPrintPdfService<,>), typeof(PrintPdfPlayWrightService<,>));
     }
 }

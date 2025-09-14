@@ -27,15 +27,15 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes
                 Date = DateTime.Now.AddDays(-1),
                 NumFactureFournisseur = 101112
             };
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.Is<GetReceiptNoteByIdQuery>(q => q.Num == receiptNoteNum), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Ok(expectedResponse));
             // Act
             var result = await InvokeEndpoint(receiptNoteNum);
             // Assert
             var okResult = result.Result as Ok<ReceiptNoteResponse>;
-            okResult.Should().NotBeNull();
-            okResult!.Value.Should().BeEquivalentTo(expectedResponse);
+            _ = okResult.Should().NotBeNull();
+            _ = okResult!.Value.Should().BeEquivalentTo(expectedResponse);
             _mediatorMock.VerifyAll();
         }
 
@@ -44,14 +44,14 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes
         {
             // Arrange
             const int receiptNoteNum = 999;
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.Is<GetReceiptNoteByIdQuery>(q => q.Num == receiptNoteNum), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Fail<ReceiptNoteResponse>(EntityNotFound.Error("not_found")));
             // Act
             var result = await InvokeEndpoint(receiptNoteNum);
             // Assert
             var notFoundResult = result.Result as NotFound;
-            notFoundResult.Should().NotBeNull();
+            _ = notFoundResult.Should().NotBeNull();
             _mediatorMock.VerifyAll();
         }
         private async Task<Results<Ok<ReceiptNoteResponse>, NotFound>> InvokeEndpoint(int num)

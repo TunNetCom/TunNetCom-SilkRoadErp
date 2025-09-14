@@ -268,7 +268,7 @@ namespace TunNetCom.SilkRoadErp.Sales.HttpClients
             {
                 foreach (var (key, value) in headers)
                 {
-                    request.Headers.TryAddWithoutValidation(key, value);
+                    _ = request.Headers.TryAddWithoutValidation(key, value);
                 }
             }
         }

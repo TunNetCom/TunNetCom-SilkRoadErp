@@ -15,7 +15,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.CreateInvoice
                 ClientId = 1
             };
             var expectedInvoiceNum = 123;
-            mediatorMock
+            _ = mediatorMock
                 .Setup(m => m.Send(It.IsAny<CreateInvoiceCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Ok(expectedInvoiceNum));
             var endpoint = new CreateInvoiceEndpoint();
@@ -23,9 +23,9 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.CreateInvoice
             var result = await endpoint.HandleCreateInvoiceAsync(mediatorMock.Object, request, CancellationToken.None);
             // Assert
             var createdResult = result.Result as Created<CreateInvoiceRequest>;
-            createdResult.Should().NotBeNull();
-            createdResult!.Location.Should().Be($"/invoices/{expectedInvoiceNum}");
-            createdResult.Value.Should().Be(request);
+            _ = createdResult.Should().NotBeNull();
+            _ = createdResult!.Location.Should().Be($"/invoices/{expectedInvoiceNum}");
+            _ = createdResult.Value.Should().Be(request);
         }
 
         [Fact]
@@ -39,7 +39,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.CreateInvoice
                 ClientId = 999 
             };
             var failedResult = Result.Fail<int>("not_found");
-            mediatorMock
+            _ = mediatorMock
                 .Setup(m => m.Send(It.IsAny<CreateInvoiceCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(failedResult);
             var endpoint = new CreateInvoiceEndpoint();
@@ -47,7 +47,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.CreateInvoice
             var result = await endpoint.HandleCreateInvoiceAsync(mediatorMock.Object, request, CancellationToken.None);
             // Assert
             var problemResult = result.Result as ValidationProblem;
-            problemResult.Should().NotBeNull();
+            _ = problemResult.Should().NotBeNull();
         }
     }
 }

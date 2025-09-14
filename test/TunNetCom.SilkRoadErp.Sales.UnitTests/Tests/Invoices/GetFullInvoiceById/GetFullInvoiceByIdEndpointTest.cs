@@ -25,7 +25,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.GetFullInvoiceByI
             };
             var expectedResult = Result.Ok(invoiceResponse);
 
-            _mediatorMock.Setup(m => m.Send(It.IsAny<GetFullInvoiceByIdQuery>(), It.IsAny<CancellationToken>()))
+            _ = _mediatorMock.Setup(m => m.Send(It.IsAny<GetFullInvoiceByIdQuery>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedResult);
 
             // Act
@@ -45,7 +45,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.GetFullInvoiceByI
             var invoiceId = 456;
             var expectedResult = EntityNotFound.Error();
 
-            _mediatorMock.Setup(m => m.Send(It.IsAny<GetFullInvoiceByIdQuery>(), It.IsAny<CancellationToken>()))
+            _ = _mediatorMock.Setup(m => m.Send(It.IsAny<GetFullInvoiceByIdQuery>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedResult);
 
             // Act
@@ -55,7 +55,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.GetFullInvoiceByI
                 CancellationToken.None);
 
             // Assert
-            Assert.IsType<NotFound>(result.Result);
+            _ = Assert.IsType<NotFound>(result.Result);
         }
     }
 }

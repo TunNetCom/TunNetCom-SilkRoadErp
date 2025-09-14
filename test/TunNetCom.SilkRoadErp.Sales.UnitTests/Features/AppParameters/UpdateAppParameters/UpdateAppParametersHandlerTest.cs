@@ -18,8 +18,8 @@ public class UpdateAppParametersCommandHandlerTest
             CodeTva = "TVA000",
             Tel = "00000000",
         };
-        context.Systeme.Add(existingSysteme);
-        await context.SaveChangesAsync();
+        _ = context.Systeme.Add(existingSysteme);
+        _ = await context.SaveChangesAsync();
         var loggerMock = new Mock<ILogger<UpdateAppParametersCommandHandler>>();
         var handler = new UpdateAppParametersCommandHandler(context, loggerMock.Object);
         var command = new UpdateAppParametersCommand(
@@ -40,11 +40,11 @@ public class UpdateAppParametersCommandHandlerTest
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
         // Assert
-        result.IsSuccess.Should().BeTrue();
+        _ = result.IsSuccess.Should().BeTrue();
         var updated = await context.Systeme.FirstOrDefaultAsync();
-        updated.NomSociete.Should().Be(command.NomSociete);
-        updated.Email.Should().Be(command.Email);
-        updated.EtbSecondaire.Should().Be("true");
-        updated.PourcentageRetenu.Should().Be(command.PourcentageRetenu);
+        _ = updated.NomSociete.Should().Be(command.NomSociete);
+        _ = updated.Email.Should().Be(command.Email);
+        _ = updated.EtbSecondaire.Should().Be("true");
+        _ = updated.PourcentageRetenu.Should().Be(command.PourcentageRetenu);
     }
 }

@@ -30,11 +30,11 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.DeliveryNotes.GetDeliveryN
             var cancellationToken = CancellationToken.None;
             var deliveryNotes = new List<DeliveryNoteResponse>
             {
-                new DeliveryNoteResponse { DeliveryNoteNumber = 2 },
-                new DeliveryNoteResponse { DeliveryNoteNumber = 3}
+                new() { DeliveryNoteNumber = 2 },
+                new() { DeliveryNoteNumber = 3}
             };
             var pagedList = new PagedList<DeliveryNoteResponse>(deliveryNotes, 5, 1, 2);
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.Is<GetDeliveryNoteQuery>(q =>
                     q.PageNumber == queryParams.PageNumber &&
                     q.PageSize == queryParams.PageSize &&
@@ -45,8 +45,8 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.DeliveryNotes.GetDeliveryN
             // Act
             var result = await GetDelegate()(queryParams, isFactured, _mediatorMock.Object, httpContext, cancellationToken);
             // Assert
-            result.Should().BeOfType<Microsoft.AspNetCore.Http.HttpResults.Ok<PagedList<DeliveryNoteResponse>>>();
-            httpContext.Response.Headers.Should().ContainKey("X-Pagination");
+            _ = result.Should().BeOfType<Microsoft.AspNetCore.Http.HttpResults.Ok<PagedList<DeliveryNoteResponse>>>();
+            _ = httpContext.Response.Headers.Should().ContainKey("X-Pagination");
             var expectedMetadata = new
             {
                 pagedList.TotalCount,
@@ -57,7 +57,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.DeliveryNotes.GetDeliveryN
                 pagedList.HasPrevious
             };
             var expectedHeader = JsonConvert.SerializeObject(expectedMetadata);
-            httpContext.Response.Headers["X-Pagination"].ToString().Should().Be(expectedHeader);
+            _ = httpContext.Response.Headers["X-Pagination"].ToString().Should().Be(expectedHeader);
         }
         private static Func<QueryStringParameters, bool?, IMediator, HttpContext, CancellationToken, Task<IResult>> GetDelegate()
         {

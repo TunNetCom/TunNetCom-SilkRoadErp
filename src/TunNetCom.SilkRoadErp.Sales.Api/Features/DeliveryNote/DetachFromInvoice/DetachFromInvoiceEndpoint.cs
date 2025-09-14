@@ -6,7 +6,7 @@ public class DetachFromInvoiceEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapPut("/deliveryNote/detachFromInvoice",
+        _ = app.MapPut("/deliveryNote/detachFromInvoice",
             async Task<Results<NoContent, NotFound, ValidationProblem>> (
                 IMediator mediator,
                 [FromBody] DetachFromInvoiceRequest request,

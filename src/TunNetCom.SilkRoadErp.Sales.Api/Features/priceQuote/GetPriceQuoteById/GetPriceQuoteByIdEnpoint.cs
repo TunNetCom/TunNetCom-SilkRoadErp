@@ -4,7 +4,7 @@
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapGet("/quotations/{num:int}", async Task<Results<Ok<QuotationResponse>, NotFound>> (
+            _ = app.MapGet("/quotations/{num:int}", async Task<Results<Ok<QuotationResponse>, NotFound>> (
             IMediator mediator,
             int num,
             CancellationToken cancellationToken) =>

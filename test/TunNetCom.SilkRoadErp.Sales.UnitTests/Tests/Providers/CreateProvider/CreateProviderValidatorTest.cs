@@ -34,7 +34,7 @@
         {
             var command = ValidCommand() with { Nom = "" };
             var result = _validator.TestValidate(command);
-            result.ShouldHaveValidationErrorFor(x => x.Nom)
+            _ = result.ShouldHaveValidationErrorFor(x => x.Nom)
                 .WithErrorMessage("name_is_required");
         }
 
@@ -43,7 +43,7 @@
         {
             var command = ValidCommand() with { Tel = "123" };
             var result = _validator.TestValidate(command);
-            result.ShouldHaveValidationErrorFor(x => x.Tel)
+            _ = result.ShouldHaveValidationErrorFor(x => x.Tel)
                 .WithErrorMessage("mobile_number_must_be_heigher_than_10_and_less_than_15_numbers");
         }
 
@@ -52,7 +52,7 @@
         {
             var command = ValidCommand() with { Mail = "invalid-email" };
             var result = _validator.TestValidate(command);
-            result.ShouldHaveValidationErrorFor(x => x.Mail)
+            _ = result.ShouldHaveValidationErrorFor(x => x.Mail)
                 .WithErrorMessage("mail_must_be_a_valid_email_address");
         }
 
@@ -61,7 +61,7 @@
         {
             var command = ValidCommand() with { MailDeux = "not-an-email" };
             var result = _validator.TestValidate(command);
-            result.ShouldHaveValidationErrorFor(x => x.MailDeux)
+            _ = result.ShouldHaveValidationErrorFor(x => x.MailDeux)
                 .WithErrorMessage("mail_must_be_a_valid_email_address");
         }
 
@@ -70,7 +70,7 @@
         {
             var command = ValidCommand() with { Adresse = new string('a', 51) };
             var result = _validator.TestValidate(command);
-            result.ShouldHaveValidationErrorFor(x => x.Adresse)
+            _ = result.ShouldHaveValidationErrorFor(x => x.Adresse)
                 .WithErrorMessage("adress_must_be_less_than_50_characters");
         }
         private CreateProviderCommand ValidCommand() => new(

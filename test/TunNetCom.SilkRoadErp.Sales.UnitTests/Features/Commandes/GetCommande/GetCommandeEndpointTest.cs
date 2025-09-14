@@ -23,8 +23,7 @@ public class OrderEndpointsTest
             },
             OrderLines = new List<OrderLine>
             {
-                new OrderLine
-                {
+                new() {
                     LineId = 1,
                     ProductReference = "PROD-001",
                     ItemDescription = "Test Product",
@@ -41,10 +40,10 @@ public class OrderEndpointsTest
             NetToPay = 119
         };
         var mediatorMock = new Mock<IMediator>();
-        mediatorMock.Setup(m => m.Send(It.IsAny<GetFullOrderQuery>(), It.IsAny<CancellationToken>()))
+        _ = mediatorMock.Setup(m => m.Send(It.IsAny<GetFullOrderQuery>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(Result.Ok(expectedResponse));
         var services = new ServiceCollection();
-        services.AddSingleton(mediatorMock.Object);
+        _ = services.AddSingleton(mediatorMock.Object);
         var provider = services.BuildServiceProvider();
         var context = new DefaultHttpContext
         {
@@ -70,7 +69,7 @@ public class OrderEndpointsTest
         };
         // Act
         await handler(context);
-        context.Response.Body.Seek(0, SeekOrigin.Begin);
+        _ = context.Response.Body.Seek(0, SeekOrigin.Begin);
         var responseBody = await new StreamReader(context.Response.Body).ReadToEndAsync();
         // Assert
         Assert.Equal(200, context.Response.StatusCode);

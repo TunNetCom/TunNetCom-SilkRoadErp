@@ -40,8 +40,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Products
 
             var products = new List<ProductResponse>
             {
-                new ProductResponse
-                {
+                new() {
                     Reference = "Ref1",
                     Name = "Product 1",
                     Qte = 10,
@@ -53,8 +52,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Products
                     PurchasingPrice = 80m,
                     Visibility = true
                 },
-                new ProductResponse
-                {
+                new() {
                     Reference = "Ref2",
                     Name = "Product 2",
                     Qte = 20,
@@ -74,7 +72,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Products
                 pageNumber: 1,
                 pageSize: 2);
 
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.IsAny<GetProductQuery>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(pagedList);
 
@@ -85,9 +83,9 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Products
 
             // Assert
             var okResult = Assert.IsType<Ok<PagedList<ProductResponse>>>(result);
-            okResult.Value.Should().BeEquivalentTo(pagedList);
+            _ = okResult.Value.Should().BeEquivalentTo(pagedList);
 
-            httpContext.Response.Headers.Should().ContainKey("X-Pagination");
+            _ = httpContext.Response.Headers.Should().ContainKey("X-Pagination");
             var paginationHeader = httpContext.Response.Headers["X-Pagination"];
             var metadata = JsonConvert.DeserializeObject<dynamic>(paginationHeader);
 

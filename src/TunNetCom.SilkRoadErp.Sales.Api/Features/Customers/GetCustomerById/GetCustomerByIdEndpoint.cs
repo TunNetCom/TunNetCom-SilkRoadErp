@@ -4,7 +4,7 @@ public class GetCustomerByIdEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapGet("/customers/{id:int}", HandleGetCustomerByIdAsync);
+        _ = app.MapGet("/customers/{id:int}", HandleGetCustomerByIdAsync);
     }
 
     public static async Task<Results<Ok<CustomerResponse>, NotFound>> HandleGetCustomerByIdAsync(

@@ -44,7 +44,7 @@ public class SilkPdfOptions
         };
     }
 
-    public static SilkPdfOptions Default => new SilkPdfOptions
+    public static SilkPdfOptions Default => new()
     {
         Format = "A4",
         DisplayHeaderFooter = true,

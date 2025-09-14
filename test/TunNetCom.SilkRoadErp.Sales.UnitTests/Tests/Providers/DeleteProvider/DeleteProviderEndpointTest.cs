@@ -15,14 +15,14 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Providers
         {
             // Arrange
             int providerId = 1;
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.Is<DeleteProviderCommand>(c => c.Id == providerId), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Ok());
             var handler = GetEndpointHandler();
             // Act
             var result = await handler(_mediatorMock.Object, providerId, CancellationToken.None);
             // Assert
-            result.Result.Should().BeOfType<NoContent>();
+            _ = result.Result.Should().BeOfType<NoContent>();
         }
 
         [Fact]
@@ -31,7 +31,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Providers
             // Arrange
             int providerId = 999;
             var resultWithError = Result.Fail(EntityNotFound.Error());
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.Is<DeleteProviderCommand>(c => c.Id == providerId), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(resultWithError);
             var handler = GetEndpointHandler();
@@ -39,10 +39,10 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Providers
             var result = await handler(_mediatorMock.Object, providerId, CancellationToken.None);
             // Assert
             var typedResult = result as Results<NoContent, NotFound>;
-            typedResult.Should().NotBeNull();
+            _ = typedResult.Should().NotBeNull();
             // Then check the actual result type
             var actualResult = typedResult.Result;
-            actualResult.Should().BeOfType<NotFound>();
+            _ = actualResult.Should().BeOfType<NotFound>();
         }
         private static Func<IMediator, int, CancellationToken, Task<Results<NoContent, NotFound>>> GetEndpointHandler()
         {

@@ -8,7 +8,7 @@
     [Fact]
     public void Should_Have_Error_When_Nom_Is_Null_Or_Empty()
     {
-        _validator.TestValidate(new CreateProviderCommand(
+        _ = _validator.TestValidate(new CreateProviderCommand(
             Nom: "",
             Tel: "+12345678901",
             Fax: null,
@@ -28,7 +28,7 @@
     public void Should_Have_Error_When_Nom_Too_Long()
     {
         var longName = new string('a', 51);
-        _validator.TestValidate(new CreateProviderCommand(
+        _ = _validator.TestValidate(new CreateProviderCommand(
             Nom: longName,
             Tel: "+12345678901",
             Fax: null,
@@ -49,7 +49,7 @@
     [InlineData("")]
     public void Should_Have_Error_When_Tel_Is_Null_Or_Empty(string tel)
     {
-        _validator.TestValidate(new CreateProviderCommand(
+        _ = _validator.TestValidate(new CreateProviderCommand(
             Nom: "ValidName",
             Tel: tel,
             Fax: null,
@@ -71,7 +71,7 @@
     [InlineData("+123456789")]
     public void Should_Have_Error_When_Tel_Is_Invalid(string tel)
     {
-        _validator.TestValidate(new CreateProviderCommand(
+        _ = _validator.TestValidate(new CreateProviderCommand(
             Nom: "ValidName",
             Tel: tel,
             Fax: null,
@@ -90,7 +90,7 @@
     [Fact]
     public void Should_Have_Error_When_Mail_Is_Invalid()
     {
-        _validator.TestValidate(new CreateProviderCommand(
+        _ = _validator.TestValidate(new CreateProviderCommand(
             Nom: "ValidName",
             Tel: "+12345678901",
             Fax: null,
@@ -105,7 +105,7 @@
             .ShouldHaveValidationErrorFor(x => x.Mail)
             .WithErrorMessage("mail_must_be_a_valid_email_address");
 
-        _validator.TestValidate(new CreateProviderCommand(
+        _ = _validator.TestValidate(new CreateProviderCommand(
             Nom: "ValidName",
             Tel: "+12345678901",
             Fax: null,

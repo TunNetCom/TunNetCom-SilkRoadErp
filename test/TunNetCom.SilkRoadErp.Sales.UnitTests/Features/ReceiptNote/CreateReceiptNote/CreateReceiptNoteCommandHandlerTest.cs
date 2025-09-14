@@ -52,7 +52,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes
                 EtbSec = "Sec01",
                 Mail = "fournisseur@example.com"
             };
-            context.Fournisseur.Add(fournisseur);
+            _ = context.Fournisseur.Add(fournisseur);
             var existingNote = BonDeReception.CreateReceiptNote(
                 num: 1,
                 numBonFournisseur: 123,
@@ -61,8 +61,8 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes
                 date: DateTime.Today,
                 numFactureFournisseur: null
             );
-            context.BonDeReception.Add(existingNote);
-            await context.SaveChangesAsync();
+            _ = context.BonDeReception.Add(existingNote);
+            _ = await context.SaveChangesAsync();
             var command = new CreateReceiptNoteCommand(
                 Num: 1,
                 NumBonFournisseur: 123,
@@ -93,8 +93,8 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes
                 EtbSec = "E1",
                 Mail = "test@provider.com"
             };
-           context.Fournisseur.Add(fournisseur);
-            await context.SaveChangesAsync();
+            _ = context.Fournisseur.Add(fournisseur);
+            _ = await context.SaveChangesAsync();
 
             var command = new CreateReceiptNoteCommand(
                 Num: 10,

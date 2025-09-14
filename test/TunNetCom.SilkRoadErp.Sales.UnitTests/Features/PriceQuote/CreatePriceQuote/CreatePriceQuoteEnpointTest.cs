@@ -19,7 +19,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Quotations
                 TotTva = 19,
                 TotTtc = 119
             };
-            mediatorMock.Setup(m => m.Send(It.IsAny<CreatePriceQuoteCommand>(), It.IsAny<CancellationToken>()))
+            _ = mediatorMock.Setup(m => m.Send(It.IsAny<CreatePriceQuoteCommand>(), It.IsAny<CancellationToken>()))
                         .ReturnsAsync(Result.Ok(3000));
             // Act
             var result = await CreatePriceQuoteEnpointExtensions.CreateQuotationDelegate()
@@ -45,7 +45,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Quotations
                 TotTtc = 119
             };
             var resultFail = Result.Fail<int>("quotations_num_exist");
-            mediatorMock.Setup(m => m.Send(It.IsAny<CreatePriceQuoteCommand>(), It.IsAny<CancellationToken>()))
+            _ = mediatorMock.Setup(m => m.Send(It.IsAny<CreatePriceQuoteCommand>(), It.IsAny<CancellationToken>()))
                         .ReturnsAsync(resultFail);
             // Act
             var result = await CreatePriceQuoteEnpointExtensions.CreateQuotationDelegate()

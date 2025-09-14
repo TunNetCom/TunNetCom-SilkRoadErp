@@ -4,7 +4,7 @@ public class DeleteProductEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapDelete(
+        _ = app.MapDelete(
             "/products/{refe}",
             async Task<Results<NoContent, NotFound>> (
                 IMediator mediator,
@@ -12,7 +12,7 @@ public class DeleteProductEndpoint : ICarterModule
                 CancellationToken cancellationToken) =>
         {
             var deleteProductCommand = new DeleteProductCommand(refe);
-            var deleteResult = await mediator.Send(deleteProductCommand,cancellationToken);
+            var deleteResult = await mediator.Send(deleteProductCommand, cancellationToken);
 
             if (deleteResult.IsEntityNotFound())
             {

@@ -35,7 +35,7 @@ public class UpdateProviderValidatorTest
         ValidationResult result = _validator.Validate(command);
 
         // Assert
-        result.IsValid.Should().BeTrue();
+        _ = result.IsValid.Should().BeTrue();
     }
 
     [Theory]
@@ -64,8 +64,8 @@ public class UpdateProviderValidatorTest
         var result = _validator.Validate(command);
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.ErrorMessage == expectedErrorMessage);
+        _ = result.IsValid.Should().BeFalse();
+        _ = result.Errors.Should().Contain(e => e.ErrorMessage == expectedErrorMessage);
     }
 
     [Theory]
@@ -95,8 +95,8 @@ public class UpdateProviderValidatorTest
         var result = _validator.Validate(command);
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.ErrorMessage == expectedErrorMessage);
+        _ = result.IsValid.Should().BeFalse();
+        _ = result.Errors.Should().Contain(e => e.ErrorMessage == expectedErrorMessage);
     }
 
     [Fact]
@@ -124,7 +124,7 @@ public class UpdateProviderValidatorTest
         var result = _validator.Validate(command);
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.ErrorMessage == "adress_must_be_less_than_50_characters");
+        _ = result.IsValid.Should().BeFalse();
+        _ = result.Errors.Should().Contain(e => e.ErrorMessage == "adress_must_be_less_than_50_characters");
     }
 }

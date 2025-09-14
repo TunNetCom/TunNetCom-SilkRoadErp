@@ -33,10 +33,10 @@ public class CreateReceiptNoteCommandHandler(
             createReceiptNoteCommand.Date,
             createReceiptNoteCommand.NumFactureFournisseur
 );
-         
 
-        _context.BonDeReception.Add(ReceiptNote);
-        await _context.SaveChangesAsync(cancellationToken);
+
+        _ = _context.BonDeReception.Add(ReceiptNote);
+        _ = await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogEntityCreatedSuccessfully(nameof(BonDeReception), ReceiptNote.Num);
 

@@ -61,8 +61,8 @@ public class UpdateProviderCommandHandlerTests
             constructeur: true,
             adresse: "adresse");
 
-        _context.Fournisseur.Add(provider);
-        await _context.SaveChangesAsync();
+        _ = _context.Fournisseur.Add(provider);
+        _ = await _context.SaveChangesAsync();
 
         var command = new UpdateProviderCommand(
             Id: provider.Id,

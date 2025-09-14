@@ -13,11 +13,11 @@
             Remise: 0, RemiseAchat: 0, Tva: 0,
             Prix: 1, PrixAchat: 1, Visibilite: true);
         var result = _validator.TestValidate(model);
-        result.ShouldHaveValidationErrorFor(x => x.Refe)
+        _ = result.ShouldHaveValidationErrorFor(x => x.Refe)
               .WithErrorMessage("reference_required");
         model = model with { Refe = "" };
         result = _validator.TestValidate(model);
-        result.ShouldHaveValidationErrorFor(x => x.Refe);
+        _ = result.ShouldHaveValidationErrorFor(x => x.Refe);
     }
 
     [Fact]
@@ -28,11 +28,11 @@
             Remise: 0, RemiseAchat: 0, Tva: 0,
             Prix: 1, PrixAchat: 1, Visibilite: true);
         var result = _validator.TestValidate(model);
-        result.ShouldHaveValidationErrorFor(x => x.Nom)
+        _ = result.ShouldHaveValidationErrorFor(x => x.Nom)
               .WithErrorMessage("nom_required");
         model = model with { Nom = "" };
         result = _validator.TestValidate(model);
-        result.ShouldHaveValidationErrorFor(x => x.Nom);
+        _ = result.ShouldHaveValidationErrorFor(x => x.Nom);
     }
 
     [Fact]
@@ -43,7 +43,7 @@
             Remise: 0, RemiseAchat: 0, Tva: 0,
             Prix: 1, PrixAchat: 1, Visibilite: true);
         var result = _validator.TestValidate(model);
-        result.ShouldHaveValidationErrorFor(x => x.Qte)
+        _ = result.ShouldHaveValidationErrorFor(x => x.Qte)
               .WithErrorMessage("quantite_must_be_non_negative");
     }
 
@@ -55,11 +55,11 @@
             Remise: -1, RemiseAchat: 0, Tva: 0,
             Prix: 1, PrixAchat: 1, Visibilite: true);
         var result = _validator.TestValidate(model);
-        result.ShouldHaveValidationErrorFor(x => x.Remise)
+        _ = result.ShouldHaveValidationErrorFor(x => x.Remise)
               .WithErrorMessage("remise_must_be_between_0_and_100");
         model = model with { Remise = 101 };
         result = _validator.TestValidate(model);
-        result.ShouldHaveValidationErrorFor(x => x.Remise);
+        _ = result.ShouldHaveValidationErrorFor(x => x.Remise);
     }
 
     [Fact]

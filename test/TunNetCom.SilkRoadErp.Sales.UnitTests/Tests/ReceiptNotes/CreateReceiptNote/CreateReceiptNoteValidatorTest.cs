@@ -25,7 +25,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes
                 NumFactureFournisseur: null
             );
             var result = _validator.TestValidate(command);
-            result.ShouldHaveValidationErrorFor(x => x.Num)
+            _ = result.ShouldHaveValidationErrorFor(x => x.Num)
                 .WithErrorMessage("number_is_required");
         }
 
@@ -56,7 +56,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes
                 NumFactureFournisseur: null
             );
             var result = _validator.TestValidate(command);
-            result.ShouldHaveValidationErrorFor(x => x.IdFournisseur)
+            _ = result.ShouldHaveValidationErrorFor(x => x.IdFournisseur)
                 .WithErrorMessage("providerid_must_be_greater_than_or_equal_to_0");
         }
 
@@ -72,7 +72,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes
                 NumFactureFournisseur: -10 // erreur attendue
             );
             var result = _validator.TestValidate(command);
-            result.ShouldHaveValidationErrorFor(x => x.NumFactureFournisseur)
+            _ = result.ShouldHaveValidationErrorFor(x => x.NumFactureFournisseur)
                 .WithErrorMessage("invoice_number_must_be_greater_than_or_equal_to_0");
         }
     }

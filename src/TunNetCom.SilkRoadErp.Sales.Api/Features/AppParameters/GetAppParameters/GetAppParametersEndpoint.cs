@@ -13,7 +13,7 @@ public class GetAppParametersEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapGet("/appParameters", Handle)
+        _ = app.MapGet("/appParameters", Handle)
            .WithName("GetAppParameters")
            .Produces<GetAppParametersResponse>(StatusCodes.Status200OK)
            .Produces(StatusCodes.Status400BadRequest);

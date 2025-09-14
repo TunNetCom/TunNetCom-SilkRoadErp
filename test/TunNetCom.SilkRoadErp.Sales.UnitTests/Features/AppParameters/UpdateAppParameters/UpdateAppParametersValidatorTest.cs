@@ -25,7 +25,7 @@ public class UpdateAppParametersValidatorTest
             AdresseRetenu: null,
             PourcentageRetenu: 0);
         var result = _validator.TestValidate(command);
-        result.ShouldHaveValidationErrorFor(x => x.NomSociete)
+        _ = result.ShouldHaveValidationErrorFor(x => x.NomSociete)
               .WithErrorMessage("app_name_is_required");
     }
 
@@ -47,7 +47,7 @@ public class UpdateAppParametersValidatorTest
             AdresseRetenu: null,
             PourcentageRetenu: 0);
         var result = _validator.TestValidate(command);
-        result.ShouldHaveValidationErrorFor(x => x.NomSociete)
+        _ = result.ShouldHaveValidationErrorFor(x => x.NomSociete)
               .WithErrorMessage("app_name_must_be_less_than_50_characters");
     }
 
@@ -69,7 +69,7 @@ public class UpdateAppParametersValidatorTest
             AdresseRetenu: null,
             PourcentageRetenu: 0);
         var result = _validator.TestValidate(command);
-        result.ShouldHaveValidationErrorFor(x => x.Tel)
+        _ = result.ShouldHaveValidationErrorFor(x => x.Tel)
               .WithErrorMessage("tel_is_required");
     }
 
@@ -91,7 +91,7 @@ public class UpdateAppParametersValidatorTest
             AdresseRetenu: null,
             PourcentageRetenu: 0);
         var result = _validator.TestValidate(command);
-        result.ShouldHaveValidationErrorFor(x => x.Adresse)
+        _ = result.ShouldHaveValidationErrorFor(x => x.Adresse)
               .WithErrorMessage("adresse_is_required");
     }
 
@@ -113,7 +113,7 @@ public class UpdateAppParametersValidatorTest
             AdresseRetenu: null,
             PourcentageRetenu: 0);
         var result = _validator.TestValidate(command);
-        result.ShouldHaveValidationErrorFor(x => x.Email)
+        _ = result.ShouldHaveValidationErrorFor(x => x.Email)
               .WithErrorMessage("email_must_be_a_valid_email_address");
     }
 
@@ -136,7 +136,7 @@ public class UpdateAppParametersValidatorTest
             PourcentageRetenu: 0);
 
         var result = _validator.TestValidate(command);
-        result.ShouldHaveValidationErrorFor(x => x.Adresse)
+        _ = result.ShouldHaveValidationErrorFor(x => x.Adresse)
               .WithErrorMessage("adresse_must_be_less_than_50_characters");
     }
 

@@ -10,7 +10,7 @@ public class GetDeliveryNoteQueryHandlerTest
             .Options;
         _context = new SalesContext(options);
         _context.BonDeLivraison.RemoveRange(_context.BonDeLivraison);
-        _context.SaveChanges();
+        _ = _context.SaveChanges();
         _context.BonDeLivraison.AddRange(new[]
         {
             new BonDeLivraison
@@ -47,7 +47,7 @@ public class GetDeliveryNoteQueryHandlerTest
                 ClientId = 1003
             }
         });
-        _context.SaveChanges();
+        _ = _context.SaveChanges();
     }
 
     [Fact]
@@ -60,9 +60,9 @@ public class GetDeliveryNoteQueryHandlerTest
             SearchKeyword: null,
             IsFactured: null);
         var result = await handler.Handle(query, CancellationToken.None);
-        result.Should().NotBeNull();
-        result.Items.Should().HaveCount(2);
-        result.TotalCount.Should().Be(3);
+        _ = result.Should().NotBeNull();
+        _ = result.Items.Should().HaveCount(2);
+        _ = result.TotalCount.Should().Be(3);
     }
 
     [Fact]
@@ -75,8 +75,8 @@ public class GetDeliveryNoteQueryHandlerTest
             SearchKeyword: null,
             IsFactured: true);
         var result = await handler.Handle(query, CancellationToken.None);
-        result.Items.Should().OnlyContain(d => d.InvoiceNumber != null);
-        result.Items.Should().HaveCount(2);
+        _ = result.Items.Should().OnlyContain(d => d.InvoiceNumber != null);
+        _ = result.Items.Should().HaveCount(2);
     }
 
     [Fact]
@@ -89,8 +89,8 @@ public class GetDeliveryNoteQueryHandlerTest
             SearchKeyword: null,
             IsFactured: false);
         var result = await handler.Handle(query, CancellationToken.None);
-        result.Items.Should().OnlyContain(d => d.InvoiceNumber == null);
-        result.Items.Should().HaveCount(1);
+        _ = result.Items.Should().OnlyContain(d => d.InvoiceNumber == null);
+        _ = result.Items.Should().HaveCount(1);
     }
 
     [Fact]
@@ -106,8 +106,8 @@ public class GetDeliveryNoteQueryHandlerTest
         var filteredItems = allItems.Items
             .Where(d => d.DeliveryNoteNumber == 2)
             .ToList();
-        filteredItems.Should().HaveCount(1);
-        filteredItems[0].DeliveryNoteNumber.Should().Be(2);
+        _ = filteredItems.Should().HaveCount(1);
+        _ = filteredItems[0].DeliveryNoteNumber.Should().Be(2);
     }
 
 }

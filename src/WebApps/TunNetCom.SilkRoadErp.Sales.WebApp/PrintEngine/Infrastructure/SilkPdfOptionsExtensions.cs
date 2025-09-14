@@ -6,10 +6,7 @@ public static class SilkPdfOptionsExtensions
 {
     public static PagePdfOptions ToPlaywrightOptions(this SilkPdfOptions options)
     {
-        if (options == null)
-        {
-            throw new ArgumentNullException(nameof(options));
-        }
+        ArgumentNullException.ThrowIfNull(options);
 
         return new PagePdfOptions
         {

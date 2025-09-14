@@ -26,14 +26,14 @@ public class GetProductEndpointTest
         var pagedList = new PagedList<ProductResponse>(
             items: new List<ProductResponse>
             {
-                new ProductResponse { Reference = "P001", Name = "Produit 1" },
-                new ProductResponse { Reference = "P002", Name = "Produit 2" }
+                new() { Reference = "P001", Name = "Produit 1" },
+                new() { Reference = "P002", Name = "Produit 2" }
             },
             count: 10,
             pageNumber: 2,
             pageSize: 5
             );
-        _mediatorMock
+        _ = _mediatorMock
             .Setup(m => m.Send(It.Is<GetProductQuery>(q =>
                 q.PageNumber == paginationParams.PageNumber &&
                 q.PageSize == paginationParams.PageSize &&
@@ -52,8 +52,8 @@ public class GetProductEndpointTest
             CancellationToken.None);
         // Assert
         var okResult = Assert.IsType<Microsoft.AspNetCore.Http.HttpResults.Ok<PagedList<ProductResponse>>>(result);
-        okResult.StatusCode.Should().Be(StatusCodes.Status200OK);
-        okResult.Value.Should().BeEquivalentTo(pagedList);      
+        _ = okResult.StatusCode.Should().Be(StatusCodes.Status200OK);
+        _ = okResult.Value.Should().BeEquivalentTo(pagedList);      
         Assert.True(httpContext.Response.Headers.ContainsKey("X-Pagination"));
         var headerValue = httpContext.Response.Headers["X-Pagination"];
         var metadata = JsonConvert.DeserializeObject<dynamic>(headerValue);

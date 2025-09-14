@@ -4,7 +4,7 @@ public class CreatePriceQuoteEnpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapPost(
+        _ = app.MapPost(
            "/quotations",
            async Task<Results<Created<CreateQuotationRequest>, ValidationProblem>> (
                IMediator mediator,

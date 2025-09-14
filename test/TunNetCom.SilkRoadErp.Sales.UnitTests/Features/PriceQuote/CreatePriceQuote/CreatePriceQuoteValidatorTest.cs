@@ -22,7 +22,7 @@ public class CreatePriceQuoteValidatorTest
         // Act
         var result = _validator.Validate(command);
         // Assert
-        result.IsValid.Should().BeTrue();
+        _ = result.IsValid.Should().BeTrue();
     }
 
     [Theory]
@@ -42,8 +42,8 @@ public class CreatePriceQuoteValidatorTest
         // Act
         var result = _validator.Validate(command);
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e => e.ErrorMessage == expectedErrorMessage);
+        _ = result.IsValid.Should().BeFalse();
+        _ = result.Errors.Should().ContainSingle(e => e.ErrorMessage == expectedErrorMessage);
     }
 
     [Fact]
@@ -61,8 +61,8 @@ public class CreatePriceQuoteValidatorTest
         // Act
         var result = _validator.Validate(command);
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e => e.ErrorMessage == "invalid_date_format");
+        _ = result.IsValid.Should().BeFalse();
+        _ = result.Errors.Should().ContainSingle(e => e.ErrorMessage == "invalid_date_format");
     }
 
     [Theory]
@@ -83,9 +83,9 @@ public class CreatePriceQuoteValidatorTest
         var result = _validator.Validate(command);
         // Assert
         if (expectedErrorMessage == null)
-            result.IsValid.Should().BeTrue();
+            _ = result.IsValid.Should().BeTrue();
         else
-            result.Errors.Should().ContainSingle(e => e.ErrorMessage == expectedErrorMessage);
+            _ = result.Errors.Should().ContainSingle(e => e.ErrorMessage == expectedErrorMessage);
     }
 
     [Theory]
@@ -106,9 +106,9 @@ public class CreatePriceQuoteValidatorTest
         var result = _validator.Validate(command);
         // Assert
         if (expectedErrorMessage == null)
-            result.IsValid.Should().BeTrue();
+            _ = result.IsValid.Should().BeTrue();
         else
-            result.Errors.Should().ContainSingle(e => e.ErrorMessage == expectedErrorMessage);
+            _ = result.Errors.Should().ContainSingle(e => e.ErrorMessage == expectedErrorMessage);
     }
 
     [Theory]
@@ -129,8 +129,8 @@ public class CreatePriceQuoteValidatorTest
         var result = _validator.Validate(command);
         // Assert
         if (expectedErrorMessage == null)
-            result.IsValid.Should().BeTrue();
+            _ = result.IsValid.Should().BeTrue();
         else
-            result.Errors.Should().ContainSingle(e => e.ErrorMessage == expectedErrorMessage);
+            _ = result.Errors.Should().ContainSingle(e => e.ErrorMessage == expectedErrorMessage);
     }
 }

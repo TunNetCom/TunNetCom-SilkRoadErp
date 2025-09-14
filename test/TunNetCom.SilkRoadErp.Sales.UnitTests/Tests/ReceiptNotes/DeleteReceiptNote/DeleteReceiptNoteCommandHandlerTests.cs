@@ -45,8 +45,8 @@ public class DeleteReceiptNoteCommandHandlerTests
             date: new DateTime(2020, 3, 20),
             numFactureFournisseur: 12345);
 
-        _context.BonDeReception.Add(receiptnote);
-        await _context.SaveChangesAsync();
+        _ = _context.BonDeReception.Add(receiptnote);
+        _ = await _context.SaveChangesAsync();
         var command = new DeleteReceiptNoteCommand(Num: receiptnote.Num);
 
         // Act
@@ -70,8 +70,8 @@ public class DeleteReceiptNoteCommandHandlerTests
              date: new DateTime(2020, 2, 20),
              numFactureFournisseur: 12345);
 
-        _context.BonDeReception.Add(receiptnote);
-        await _context.SaveChangesAsync();
+        _ = _context.BonDeReception.Add(receiptnote);
+        _ = await _context.SaveChangesAsync();
 
         var command = new DeleteReceiptNoteCommand(Num: receiptnote.Num);
 

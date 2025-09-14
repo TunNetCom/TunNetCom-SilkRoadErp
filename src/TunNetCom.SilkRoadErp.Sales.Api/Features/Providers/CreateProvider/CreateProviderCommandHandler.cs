@@ -28,8 +28,8 @@ public class CreateProviderCommandHandler(SalesContext _context, ILogger<CreateP
 
          );
 
-        _context.Fournisseur.Add(provider);
-        await _context.SaveChangesAsync(cancellationToken);
+        _ = _context.Fournisseur.Add(provider);
+        _ = await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogEntityCreatedSuccessfully(nameof(Fournisseur), provider.Id);
         return provider.Id;

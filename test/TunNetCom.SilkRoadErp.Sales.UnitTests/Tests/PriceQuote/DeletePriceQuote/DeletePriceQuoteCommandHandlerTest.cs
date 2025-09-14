@@ -16,8 +16,8 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.PriceQuotes
                 totHTva: 100,
                 totTva: 20,
                 totTtc: 120);
-            context.Devis.Add(devis);
-            context.SaveChanges();
+            _ = context.Devis.Add(devis);
+            _ = context.SaveChanges();
             return context;
         }
 
@@ -32,8 +32,8 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.PriceQuotes
             // Act
             var result = await handler.Handle(command, CancellationToken.None);
             // Assert
-            result.IsSuccess.Should().BeTrue();
-            (await context.Devis.FindAsync(123)).Should().BeNull();
+            _ = result.IsSuccess.Should().BeTrue();
+            _ = (await context.Devis.FindAsync(123)).Should().BeNull();
         }
 
         [Fact]
@@ -50,8 +50,8 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.PriceQuotes
             // Act
             var result = await handler.Handle(command, CancellationToken.None);
             // Assert
-            result.IsFailed.Should().BeTrue();
-            result.Errors[0].Message.Should().Be("not_found");
+            _ = result.IsFailed.Should().BeTrue();
+            _ = result.Errors[0].Message.Should().Be("not_found");
         }
 
     }

@@ -20,8 +20,8 @@ public class DeleteCustomerCommandHandler(SalesContext _context,
             return Result.Fail(EntityNotFound.Error());
         }
 
-        _context.Client.Remove(client);
-        await _context.SaveChangesAsync(cancellationToken);
+        _ = _context.Client.Remove(client);
+        _ = await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogEntityDeleted(
             nameof(Client),

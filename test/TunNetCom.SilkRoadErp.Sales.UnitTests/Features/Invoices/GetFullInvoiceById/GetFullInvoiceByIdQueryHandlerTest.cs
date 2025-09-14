@@ -36,8 +36,7 @@ public class GetFullInvoiceByIdQueryHandlerTest
             IdClientNavigation = client,
             BonDeLivraison = new List<BonDeLivraison>
             {
-                new BonDeLivraison
-                {
+                new() {
                     Num = 200,
                     Date = DateTime.Today,
                     TotHTva = 100,
@@ -47,8 +46,7 @@ public class GetFullInvoiceByIdQueryHandlerTest
                     ClientId = client.Id,
                     LigneBl = new List<LigneBl>
                     {
-                        new LigneBl
-                        {
+                        new() {
                             IdLi = 1,
                             RefProduit = "PRD01",
                             DesignationLi = "Produit 1",
@@ -63,9 +61,9 @@ public class GetFullInvoiceByIdQueryHandlerTest
                 }
             }
         };
-        _context.Client.Add(client);
-        _context.Facture.Add(facture);
-        await _context.SaveChangesAsync();
+        _ = _context.Client.Add(client);
+        _ = _context.Facture.Add(facture);
+        _ = await _context.SaveChangesAsync();
         var query = new GetFullInvoiceByIdQuery(facture.Num);
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);

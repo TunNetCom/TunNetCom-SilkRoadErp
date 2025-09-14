@@ -3,7 +3,7 @@ public class CreateProductEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapPost(
+        _ = app.MapPost(
          "/products",
          async Task<Results<Created<CreateProductRequest>, ValidationProblem>>
          (IMediator mediator,

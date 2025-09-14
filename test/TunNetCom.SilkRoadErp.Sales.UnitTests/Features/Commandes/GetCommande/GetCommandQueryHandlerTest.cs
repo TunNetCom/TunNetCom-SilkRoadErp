@@ -48,8 +48,7 @@ public class GetFullOrderQueryHandlerTest
             Fournisseur = fournisseur,
             LigneCommandes = new List<LigneCommandes>
     {
-        new LigneCommandes
-        {
+        new() {
             IdLi = 1,
             NumCommande = 1,
             RefProduit = "PROD1",
@@ -63,9 +62,9 @@ public class GetFullOrderQueryHandlerTest
         }
     }
         };
-        await context.Fournisseur.AddAsync(fournisseur);
-        await context.Commandes.AddAsync(commande);
-        await context.SaveChangesAsync();
+        _ = await context.Fournisseur.AddAsync(fournisseur);
+        _ = await context.Commandes.AddAsync(commande);
+        _ = await context.SaveChangesAsync();
         var loggerMock = new Mock<ILogger<GetFullOrderQueryHandler>>();
         var handler = new GetFullOrderQueryHandler(context, loggerMock.Object);
         var query = new GetFullOrderQuery(1);
@@ -78,7 +77,7 @@ public class GetFullOrderQueryHandlerTest
         Assert.Equal(20, response.TotalExcludingVat);
         Assert.Equal(24, response.NetToPay);
         Assert.Equal(4, response.TotalVat);
-        Assert.Single(response.OrderLines);
+        _ = Assert.Single(response.OrderLines);
         Assert.Equal("Fournisseur Test", response.Supplier.Name);
     }
 }

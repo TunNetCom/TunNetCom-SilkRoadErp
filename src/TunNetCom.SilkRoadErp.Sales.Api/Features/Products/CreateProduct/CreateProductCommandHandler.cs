@@ -30,8 +30,8 @@ public class CreateProductCommandHandler(
             createProductCommand.Visibilite
         );
 
-        _context.Produit.Add(product);
-        await _context.SaveChangesAsync(cancellationToken);
+        _ = _context.Produit.Add(product);
+        _ = await _context.SaveChangesAsync(cancellationToken);
         _logger.LogEntityCreatedSuccessfully(nameof(Produit), product.Refe);
         return product.Refe;
     }

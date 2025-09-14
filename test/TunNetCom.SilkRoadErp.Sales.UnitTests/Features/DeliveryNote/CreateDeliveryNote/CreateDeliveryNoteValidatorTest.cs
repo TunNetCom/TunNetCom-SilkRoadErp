@@ -38,7 +38,7 @@ public class CreateDeliveryNoteValidatorTest
             DeliveryNoteDetails: Array.Empty<LigneBlSubCommand>()
         );
         var result = _validator.TestValidate(command);
-        result.ShouldHaveValidationErrorFor(c => c.Date)
+        _ = result.ShouldHaveValidationErrorFor(c => c.Date)
             .WithErrorMessage("date_is_required");
     }
 
@@ -58,7 +58,7 @@ public class CreateDeliveryNoteValidatorTest
             DeliveryNoteDetails: Array.Empty<LigneBlSubCommand>()
         );
         var result = _validator.TestValidate(command);
-        result.ShouldHaveValidationErrorFor(c => c.TotHTva)
+        _ = result.ShouldHaveValidationErrorFor(c => c.TotHTva)
             .WithErrorMessage("tothtva_must_be_greater_than_or_equal_to_0");
     }
 
@@ -76,7 +76,7 @@ public class CreateDeliveryNoteValidatorTest
             DeliveryNoteDetails: Array.Empty<LigneBlSubCommand>()
         );
         var result = _validator.TestValidate(command);
-        result.ShouldHaveValidationErrorFor(c => c.TempBl)
+        _ = result.ShouldHaveValidationErrorFor(c => c.TempBl)
             .WithErrorMessage("tempbl_is_required");
     }
 
@@ -94,7 +94,7 @@ public class CreateDeliveryNoteValidatorTest
             DeliveryNoteDetails: Array.Empty<LigneBlSubCommand>()
         );
         var result = _validator.TestValidate(command);
-        result.ShouldHaveValidationErrorFor(c => c.NumFacture)
+        _ = result.ShouldHaveValidationErrorFor(c => c.NumFacture)
             .WithErrorMessage("numfacture_must_be_greater_than_or_equal_to_0");
     }
 
@@ -112,7 +112,7 @@ public class CreateDeliveryNoteValidatorTest
             DeliveryNoteDetails: Array.Empty<LigneBlSubCommand>()
         );
         var result = _validator.TestValidate(command);
-        result.ShouldHaveValidationErrorFor(c => c.ClientId)
+        _ = result.ShouldHaveValidationErrorFor(c => c.ClientId)
             .WithErrorMessage("clientid_must_be_greater_than_or_equal_to_0");
     }
 }

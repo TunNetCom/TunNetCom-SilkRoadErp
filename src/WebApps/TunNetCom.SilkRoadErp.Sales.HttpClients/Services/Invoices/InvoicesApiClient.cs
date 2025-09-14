@@ -119,7 +119,7 @@ public class InvoicesApiClient : IInvoicesApiClient
             return Result.Fail("invoice_not_found");
         }
 
-        response.EnsureSuccessStatusCode();
+        _ = response.EnsureSuccessStatusCode();
 
         var invoice = await response.Content.ReadFromJsonAsync<FullInvoiceResponse>(
             cancellationToken: cancellationToken);

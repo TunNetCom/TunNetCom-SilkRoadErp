@@ -60,13 +60,13 @@ public class AttachToInvoiceCommandHandler(
             return Result.Fail("customer_invoice_doesnt_match_customer_delivery_note");
         }
 
-        await _context.BonDeLivraison
+        _ = await _context.BonDeLivraison
             .Where(d => attachToInvoiceCommand.DeliveryNoteIds.Contains(d.Num))
             .ExecuteUpdateAsync(
                 updates => updates.SetProperty(d => d.NumFacture, attachToInvoiceCommand.InvoiceId),
                 cancellationToken);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        _ = await _context.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("Successfully attached delivery notes {DeliveryNoteIds} to invoice {InvoiceId}",
             string.Join(", ", attachToInvoiceCommand.DeliveryNoteIds), attachToInvoiceCommand.InvoiceId);
 

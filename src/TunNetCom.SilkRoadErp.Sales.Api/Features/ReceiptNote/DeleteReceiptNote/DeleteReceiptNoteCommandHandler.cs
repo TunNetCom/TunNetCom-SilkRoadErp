@@ -15,8 +15,8 @@ public class DeleteReceiptNoteCommandHandler(SalesContext _context, ILogger<Dele
             return Result.Fail(EntityNotFound.Error());
         }
 
-        _context.BonDeReception.Remove(receiptnote);
-        await _context.SaveChangesAsync(cancellationToken);
+        _ = _context.BonDeReception.Remove(receiptnote);
+        _ = await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogEntityDeleted(nameof(BonDeReception),deleteReceiptNoteCommand.Num);
 

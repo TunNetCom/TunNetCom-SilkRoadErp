@@ -29,13 +29,13 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes
         {
             // Arrange
             var command = new AttachReceiptNotesToInvoiceCommand(new List<int> { 1, 2 }, 100);
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.IsAny<AttachReceiptNotesToInvoiceCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Ok());
             // Act
             var result = await InvokeEndpoint(command, _mediatorMock);
             // Assert
-            Assert.IsType<NoContent>(result);
+            _ = Assert.IsType<NoContent>(result);
         }
 
         [Fact]
@@ -44,13 +44,13 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes
             // Arrange
             var command = new AttachReceiptNotesToInvoiceCommand(new List<int> { 99 }, 999);
             var failedResult = Result.Fail(EntityNotFound.Error("Invoice or receipt notes not found"));
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.IsAny<AttachReceiptNotesToInvoiceCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(failedResult);
             // Act
             var result = await InvokeEndpoint(command, _mediatorMock);
             // Assert
-            Assert.IsType<NotFound>(result);
+            _ = Assert.IsType<NotFound>(result);
         }
 
         [Fact]
@@ -59,7 +59,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes
             // Arrange
             var command = new AttachReceiptNotesToInvoiceCommand(new List<int>(), 0);
             var failedResult = Result.Fail("Validation error");
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.IsAny<AttachReceiptNotesToInvoiceCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(failedResult);
             // Act

@@ -28,8 +28,8 @@
                 "EtbSec",
                 "mail@example.com"
             );
-            _context.Client.Add(existingCustomer);
-            await _context.SaveChangesAsync();
+            _ = _context.Client.Add(existingCustomer);
+            _ = await _context.SaveChangesAsync();
             var command = new CreateCustomerCommand(
                 Nom: "ExistingCustomer",
                 Tel: "00000000",
@@ -43,8 +43,8 @@
            // Act
             var result = await _handler.Handle(command, CancellationToken.None);
             // Assert
-            result.IsFailed.Should().BeTrue();
-            result.Errors.Should().Contain(e => e.Message == "customer_name_exist");
+            _ = result.IsFailed.Should().BeTrue();
+            _ = result.Errors.Should().Contain(e => e.Message == "customer_name_exist");
         }
 
         [Fact]
@@ -64,11 +64,11 @@
             // Act
             var result = await _handler.Handle(command, CancellationToken.None);
             // Assert
-            result.IsSuccess.Should().BeTrue();
-            result.Value.Should().BeGreaterThan(0);
+            _ = result.IsSuccess.Should().BeTrue();
+            _ = result.Value.Should().BeGreaterThan(0);
             var createdClient = await _context.Client.FirstOrDefaultAsync(c => c.Id == result.Value);
-            createdClient.Should().NotBeNull();
-            createdClient!.Nom.Should().Be(command.Nom);
+            _ = createdClient.Should().NotBeNull();
+            _ = createdClient!.Nom.Should().Be(command.Nom);
         }
     }
 }

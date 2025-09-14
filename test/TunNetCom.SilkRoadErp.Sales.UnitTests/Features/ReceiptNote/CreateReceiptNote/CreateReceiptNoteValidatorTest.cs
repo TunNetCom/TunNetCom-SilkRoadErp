@@ -15,7 +15,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Validators.ReceiptNote
         {
             var model = new CreateReceiptNoteCommand(0, 123, DateTime.Today, 1, DateTime.Today, null);
             var result = _validator.TestValidate(model);
-            result.ShouldHaveValidationErrorFor(x => x.Num)
+            _ = result.ShouldHaveValidationErrorFor(x => x.Num)
                   .WithErrorMessage("number_is_required");
         }
 
@@ -24,7 +24,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Validators.ReceiptNote
         {
             var model = new CreateReceiptNoteCommand(1, 0, DateTime.Today, 1, DateTime.Today, null);
             var result = _validator.TestValidate(model);
-            result.ShouldHaveValidationErrorFor(x => x.NumBonFournisseur)
+            _ = result.ShouldHaveValidationErrorFor(x => x.NumBonFournisseur)
                   .WithErrorMessage("provider_receipt_number_is_required");
         }
 
@@ -33,7 +33,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Validators.ReceiptNote
         {
             var model = new CreateReceiptNoteCommand(1, 123, default, 1, DateTime.Today, null);
             var result = _validator.TestValidate(model);
-            result.ShouldHaveValidationErrorFor(x => x.DateLivraison)
+            _ = result.ShouldHaveValidationErrorFor(x => x.DateLivraison)
                   .WithErrorMessage("delivery_date_is_required");
         }
 
@@ -42,7 +42,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Validators.ReceiptNote
         {
             var model = new CreateReceiptNoteCommand(1, 123, DateTime.Today, -1, DateTime.Today, null);
             var result = _validator.TestValidate(model);
-            result.ShouldHaveValidationErrorFor(x => x.IdFournisseur)
+            _ = result.ShouldHaveValidationErrorFor(x => x.IdFournisseur)
                   .WithErrorMessage("providerid_must_be_greater_than_or_equal_to_0");
         }
 
@@ -51,7 +51,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Validators.ReceiptNote
         {
             var model = new CreateReceiptNoteCommand(1, 123, DateTime.Today, 1, default, null);
             var result = _validator.TestValidate(model);
-            result.ShouldHaveValidationErrorFor(x => x.Date)
+            _ = result.ShouldHaveValidationErrorFor(x => x.Date)
                   .WithErrorMessage("date_is_required");
         }
 
@@ -60,7 +60,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Validators.ReceiptNote
         {
             var model = new CreateReceiptNoteCommand(1, 123, DateTime.Today, 1, DateTime.Today, -5);
             var result = _validator.TestValidate(model);
-            result.ShouldHaveValidationErrorFor(x => x.NumFactureFournisseur)
+            _ = result.ShouldHaveValidationErrorFor(x => x.NumFactureFournisseur)
                   .WithErrorMessage("invoice_number_must_be_greater_than_or_equal_to_0");
         }
 

@@ -26,14 +26,14 @@ public class DeleteDeliveryNoteCommandHandlerTests
             tempBl: System.TimeOnly.FromDateTime(System.DateTime.Now),
             numFacture: null,
             clientId: 1);
-        _context.BonDeLivraison.Add(deliveryNote);
-        await _context.SaveChangesAsync();
+        _ = _context.BonDeLivraison.Add(deliveryNote);
+        _ = await _context.SaveChangesAsync();
         var command = new DeleteDeliveryNoteCommand(deliveryNote.Num);
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        _context.BonDeLivraison.Find(deliveryNote.Num).Should().BeNull();
+        _ = result.IsSuccess.Should().BeTrue();
+        _ = _context.BonDeLivraison.Find(deliveryNote.Num).Should().BeNull();
     }
 
     [Fact]
@@ -44,8 +44,8 @@ public class DeleteDeliveryNoteCommandHandlerTests
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
         // Assert
-        result.IsFailed.Should().BeTrue();
-        result.Errors.Should().ContainSingle(e => e.Message == "not_found");
+        _ = result.IsFailed.Should().BeTrue();
+        _ = result.Errors.Should().ContainSingle(e => e.Message == "not_found");
     }
 
 

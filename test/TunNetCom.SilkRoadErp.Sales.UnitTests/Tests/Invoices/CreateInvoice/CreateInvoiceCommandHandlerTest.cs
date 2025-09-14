@@ -40,8 +40,8 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.CreateInvoice
                 etbSec: "001",
                 mail: "test@example.com");
 
-            _context.Client.Add(client);
-            await _context.SaveChangesAsync();
+            _ = _context.Client.Add(client);
+            _ = await _context.SaveChangesAsync();
             var command = new CreateInvoiceCommand(DateTime.Now, client.Id);
             // Act
             var result = await _createInvoiceCommandhandler.Handle(command, CancellationToken.None);
@@ -62,8 +62,8 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.CreateInvoice
                 codeCat: "Y1",
                 etbSec: "003",
                 mail: "success@example.com");
-            _context.Client.Add(client);
-            await _context.SaveChangesAsync();
+            _ = _context.Client.Add(client);
+            _ = await _context.SaveChangesAsync();
             var command = new CreateInvoiceCommand(DateTime.Today, client.Id);
             // Act
             var result = await _createInvoiceCommandhandler.Handle(command, CancellationToken.None);

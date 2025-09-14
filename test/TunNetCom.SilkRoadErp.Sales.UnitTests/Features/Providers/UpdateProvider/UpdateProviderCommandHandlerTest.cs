@@ -46,7 +46,7 @@ public class UpdateProviderCommandHandlerTest
         var provider1 = Fournisseur.CreateProvider("Dup Name", "1", "fax", "m", "c", "cat", "e", "m1", "m2", true, "adr");
         var provider2 = Fournisseur.CreateProvider("Other", "2", "fax", "m", "c", "cat", "e", "m1", "m2", true, "adr");
         _context.Fournisseur.AddRange(provider1, provider2);
-        await _context.SaveChangesAsync();
+        _ = await _context.SaveChangesAsync();
         var command = new UpdateProviderCommand(
             Id: provider2.Id,
             Nom: "Dup Name", // Même nom que provider1
@@ -72,8 +72,8 @@ public class UpdateProviderCommandHandlerTest
     {
         // Arrange
         var provider = Fournisseur.CreateProvider("Original", "1", "fax", "m", "c", "cat", "e", "m1", "m2", true, "adr");
-        _context.Fournisseur.Add(provider);
-        await _context.SaveChangesAsync();
+        _ = _context.Fournisseur.Add(provider);
+        _ = await _context.SaveChangesAsync();
         var command = new UpdateProviderCommand(
             Id: provider.Id,
             Nom: "Updated Name",

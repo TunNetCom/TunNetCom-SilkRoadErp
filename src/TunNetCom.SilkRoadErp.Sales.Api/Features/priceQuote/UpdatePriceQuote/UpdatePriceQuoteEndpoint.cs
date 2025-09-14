@@ -4,7 +4,7 @@ public class UpdatePriceQuoteEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapPut("/quotations/{num:int}",
+        _ = app.MapPut("/quotations/{num:int}",
         async Task<Results<NoContent, NotFound, ValidationProblem>> (
             IMediator mediator, int num,
             UpdateQuotationRequest request,
@@ -13,10 +13,10 @@ public class UpdatePriceQuoteEndpoint : ICarterModule
             var updatePriceQuoteCommand = new UpdatePriceQuoteCommand(
                 Num: num,
                 IdClient: request.IdClient,
-                Date : request.Date,
+                Date: request.Date,
                 TotHTva: request.TotHTva,
                 TotTva: request.TotTva,
-                TotTtc : request.TotTtc);
+                TotTtc: request.TotTtc);
 
             var updateQuotationResult = await mediator.Send(updatePriceQuoteCommand, cancellationToken);
 

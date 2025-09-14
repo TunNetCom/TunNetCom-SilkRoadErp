@@ -60,8 +60,8 @@ public class UpdateCustomerCommandHandlerTests
             etbSec: "EtbSec",
             mail: "email@example.com");
 
-        _context.Client.Add(existingCustomer);
-        await _context.SaveChangesAsync();
+        _ = _context.Client.Add(existingCustomer);
+        _ = await _context.SaveChangesAsync();
 
         var command = new UpdateCustomerCommand(
             Id: existingCustomer.Id,

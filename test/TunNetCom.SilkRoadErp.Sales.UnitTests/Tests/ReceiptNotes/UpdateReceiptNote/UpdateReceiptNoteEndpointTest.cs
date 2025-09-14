@@ -23,13 +23,13 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes
                 Date = DateTime.Today.AddDays(-1),
                 NumFactureFournisseur = 300
             };
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.IsAny<UpdateReceiptNoteCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Ok());
             // Act
             var result = await InvokeEndpoint(request.Num, request);
             // Assert
-            result.Result.Should().BeOfType<NoContent>();
+            _ = result.Result.Should().BeOfType<NoContent>();
         }
 
         [Fact]
@@ -45,13 +45,13 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes
                 Date = DateTime.Today.AddDays(-2),
                 NumFactureFournisseur = 301
             };
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.IsAny<UpdateReceiptNoteCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Fail(EntityNotFound.Error()));
             // Act
             var result = await InvokeEndpoint(request.Num, request);
             // Assert
-            result.Result.Should().BeOfType<NotFound>();
+            _ = result.Result.Should().BeOfType<NotFound>();
         }
 
         [Fact]
@@ -68,13 +68,13 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes
                 NumFactureFournisseur = 302
             };
             var error = new Error("validation error").WithMetadata("field", "NumBonFournisseur");
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.IsAny<UpdateReceiptNoteCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Fail(error));
             // Act
             var result = await InvokeEndpoint(request.Num, request);
             // Assert
-            result.Result.Should().BeOfType<ValidationProblem>();
+            _ = result.Result.Should().BeOfType<ValidationProblem>();
         }
 
         private async Task<Results<NoContent, NotFound, ValidationProblem>> InvokeEndpoint(int num, UpdateReceiptNoteRequest request)

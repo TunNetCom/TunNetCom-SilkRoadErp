@@ -4,10 +4,10 @@ public class CreateInvoiceValidator : AbstractValidator<CreateInvoiceCommand>
 {
     public CreateInvoiceValidator()
     {
-        RuleFor(x => x.Date)
+        _ = RuleFor(x => x.Date)
             .NotEmpty().WithMessage("date_is_required");
 
-        RuleFor(x => x.ClientId)
+        _ = RuleFor(x => x.ClientId)
             .NotEmpty().WithMessage("client_id_is_required");
     }
 }

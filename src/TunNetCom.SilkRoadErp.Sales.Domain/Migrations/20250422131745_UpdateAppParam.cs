@@ -10,14 +10,14 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<decimal>(
+            _ = migrationBuilder.AddColumn<decimal>(
                 name: "DiscountPercentage",
                 table: "Systeme",
                 type: "decimal(18,2)",
                 nullable: false,
                 defaultValue: 0m);
 
-            migrationBuilder.AddColumn<decimal>(
+            _ = migrationBuilder.AddColumn<decimal>(
                 name: "VatAmount",
                 table: "Systeme",
                 type: "decimal(18,2)",
@@ -28,11 +28,11 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
+            _ = migrationBuilder.DropColumn(
                 name: "DiscountPercentage",
                 table: "Systeme");
 
-            migrationBuilder.DropColumn(
+            _ = migrationBuilder.DropColumn(
                 name: "VatAmount",
                 table: "Systeme");
         }

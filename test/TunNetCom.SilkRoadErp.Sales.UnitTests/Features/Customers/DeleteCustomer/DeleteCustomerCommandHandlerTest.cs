@@ -27,15 +27,15 @@
                 "CAT01",
                 "ETB01",
                 "alice@test.com");
-            _context.Client.Add(client);
-            await _context.SaveChangesAsync();
+            _ = _context.Client.Add(client);
+            _ = await _context.SaveChangesAsync();
             var command = new DeleteCustomerCommand(client.Id);
             // Act
             var result = await _handler.Handle(command, CancellationToken.None);
-           // Assert
-            result.IsSuccess.Should().BeTrue();
+            // Assert
+            _ = result.IsSuccess.Should().BeTrue();
             var deletedClient = await _context.Client.FindAsync(client.Id);
-            deletedClient.Should().BeNull("le client doit être supprimé");
+            _ = deletedClient.Should().BeNull("le client doit être supprimé");
         }
 
         [Fact]
@@ -47,13 +47,13 @@
             // Act
             var result = await _handler.Handle(command, CancellationToken.None);
             // Assert
-            result.IsFailed.Should().BeTrue();
-            result.Errors.Should().Contain(e => e.Message == "not_found");
+            _ = result.IsFailed.Should().BeTrue();
+            _ = result.Errors.Should().Contain(e => e.Message == "not_found");
         }
 
         public void Dispose()
         {
-            _context.Database.EnsureDeleted();
+            _ = _context.Database.EnsureDeleted();
             _context.Dispose();
         }
     }

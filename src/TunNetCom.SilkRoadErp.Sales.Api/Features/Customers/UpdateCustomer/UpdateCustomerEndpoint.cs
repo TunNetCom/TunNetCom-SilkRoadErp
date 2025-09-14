@@ -4,7 +4,7 @@ public class UpdateCustomerEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapPut("/customers/{id:int}", HandleUpdateCustomerAsync);
+        _ = app.MapPut("/customers/{id:int}", HandleUpdateCustomerAsync);
     }
 
     public static async Task<Results<NoContent, NotFound, ValidationProblem>> HandleUpdateCustomerAsync(

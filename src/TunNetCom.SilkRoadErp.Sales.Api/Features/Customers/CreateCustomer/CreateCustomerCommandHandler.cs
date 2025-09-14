@@ -9,7 +9,7 @@ public class CreateCustomerCommandHandler(
     {
         _logger.LogEntityCreated(nameof(Client),createCustomerCommand);
 
-        var isCustomerNameExist = await _context.Client.AnyAsync(
+        var isCustomerNameExist = await _context.Client.AsNoTracking().AnyAsync(
             cus => cus.Nom == createCustomerCommand.Nom,
             cancellationToken);
 

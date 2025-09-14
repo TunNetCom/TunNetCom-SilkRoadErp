@@ -22,22 +22,22 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.DeliveryNote.GetUninvoiced
         {
             // Arrange
             int clientId = 1;
-            _context.BonDeLivraison.Add(new BonDeLivraison
+            _ = _context.BonDeLivraison.Add(new BonDeLivraison
             {
                 Num = 1,
                 ClientId = clientId,
                 NumFacture = 123, // déjà facturé
                 Date = DateTime.Today
             });
-            await _context.SaveChangesAsync();
+            _ = await _context.SaveChangesAsync();
             var query = new GetUninvoicedDeliveryNotesQuery(clientId);
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
             // Assert
-            result.IsSuccess.Should().BeTrue();
-            result.Value.Should().BeEmpty();
-            _testLogger.Logs.Should().Contain(log => log.Contains($"Getting BonDeLivraisons with customer id {clientId}"));
-            _testLogger.Logs.Should().Contain(log => log.Contains("Fetched 0 BonDeLivraison"));
+            _ = result.IsSuccess.Should().BeTrue();
+            _ = result.Value.Should().BeEmpty();
+            _ = _testLogger.Logs.Should().Contain(log => log.Contains($"Getting BonDeLivraisons with customer id {clientId}"));
+            _ = _testLogger.Logs.Should().Contain(log => log.Contains("Fetched 0 BonDeLivraison"));
         }
 
         [Fact]
@@ -49,14 +49,14 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.DeliveryNote.GetUninvoiced
                 new BonDeLivraison { Num = 2, ClientId = clientId, NumFacture = null, Date = DateTime.Today },
                 new BonDeLivraison { Num = 3, ClientId = clientId, NumFacture = null, Date = DateTime.Today }
             );
-            await _context.SaveChangesAsync();
+            _ = await _context.SaveChangesAsync();
             var query = new GetUninvoicedDeliveryNotesQuery(clientId);
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
             // Assert
-            result.IsSuccess.Should().BeTrue();
-            result.Value.Should().HaveCount(2);
-            result.Value.Should().AllBeOfType<DeliveryNoteResponse>();
+            _ = result.IsSuccess.Should().BeTrue();
+            _ = result.Value.Should().HaveCount(2);
+            _ = result.Value.Should().AllBeOfType<DeliveryNoteResponse>();
         }
 
         [Fact]
@@ -64,21 +64,21 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.DeliveryNote.GetUninvoiced
         {
             // Arrange
             int clientId = 5;
-            _context.BonDeLivraison.Add(new BonDeLivraison
+            _ = _context.BonDeLivraison.Add(new BonDeLivraison
             {
                 Num = 5,
                 ClientId = clientId,
                 NumFacture = null,
                 Date = DateTime.Today
             });
-            await _context.SaveChangesAsync();
+            _ = await _context.SaveChangesAsync();
             var query = new GetUninvoicedDeliveryNotesQuery(clientId);
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
             // Assert
-            result.IsSuccess.Should().BeTrue();
-            _testLogger.Logs.Should().Contain(log => log.Contains($"Getting BonDeLivraisons with customer id {clientId}"));
-            _testLogger.Logs.Should().Contain(log => log.Contains("Fetched 1 BonDeLivraison"));
+            _ = result.IsSuccess.Should().BeTrue();
+            _ = _testLogger.Logs.Should().Contain(log => log.Contains($"Getting BonDeLivraisons with customer id {clientId}"));
+            _ = _testLogger.Logs.Should().Contain(log => log.Contains("Fetched 1 BonDeLivraison"));
         }
     }
 }

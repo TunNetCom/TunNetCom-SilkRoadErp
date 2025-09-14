@@ -48,8 +48,8 @@ public class DeleteProductCommandHandlerTests
             prixAchat: 535,
             visibilite: true);
 
-        _context.Produit.Add(product);
-        await _context.SaveChangesAsync();
+        _ = _context.Produit.Add(product);
+        _ = await _context.SaveChangesAsync();
 
         var command = new DeleteProductCommand(Refe: product.Refe);
 
@@ -77,8 +77,8 @@ public class DeleteProductCommandHandlerTests
             prixAchat: 535,
             visibilite: true);
 
-        _context.Produit.Add(product);
-        await _context.SaveChangesAsync();
+        _ = _context.Produit.Add(product);
+        _ = await _context.SaveChangesAsync();
 
         var command = new DeleteProductCommand(Refe: product.Refe);
 

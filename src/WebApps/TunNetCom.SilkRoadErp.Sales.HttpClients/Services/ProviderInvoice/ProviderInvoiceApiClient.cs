@@ -73,7 +73,7 @@ public class ProviderInvoiceApiClient : IProviderInvoiceApiClient
         var response = await _httpClient.PostAsync("provider-invoices/byids", content, cancellationToken);
 
         // Ensure the response is successful
-        response.EnsureSuccessStatusCode();
+        _ = response.EnsureSuccessStatusCode();
 
         // Deserialize the response
         var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -96,7 +96,7 @@ public class ProviderInvoiceApiClient : IProviderInvoiceApiClient
             return Result.Fail("invoice_not_found");
         }
 
-        response.EnsureSuccessStatusCode();
+        _ = response.EnsureSuccessStatusCode();
 
         var invoice = await response.Content.ReadFromJsonAsync<FullProviderInvoiceResponse>(
             cancellationToken: cancellationToken);

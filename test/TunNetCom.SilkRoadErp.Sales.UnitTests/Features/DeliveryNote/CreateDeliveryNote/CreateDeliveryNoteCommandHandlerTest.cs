@@ -25,8 +25,7 @@ public class CreateDeliveryNoteCommandHandlerTest
             ClientId: 1,
             DeliveryNoteDetails: new List<LigneBlSubCommand>
             {
-                new LigneBlSubCommand
-                {
+                new() {
                     RefProduit = "P001",
                     DesignationLi = "Produit 1",
                     QteLi = 2,
@@ -40,11 +39,11 @@ public class CreateDeliveryNoteCommandHandlerTest
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().BeGreaterThan(0);
+        _ = result.IsSuccess.Should().BeTrue();
+        _ = result.Value.Should().BeGreaterThan(0);
         var saved = await context.BonDeLivraison.Include(b => b.LigneBl).FirstOrDefaultAsync();
-        saved.Should().NotBeNull();
-        saved!.LigneBl.Should().HaveCount(1);
+        _ = saved.Should().NotBeNull();
+        _ = saved!.LigneBl.Should().HaveCount(1);
         
     }
 }

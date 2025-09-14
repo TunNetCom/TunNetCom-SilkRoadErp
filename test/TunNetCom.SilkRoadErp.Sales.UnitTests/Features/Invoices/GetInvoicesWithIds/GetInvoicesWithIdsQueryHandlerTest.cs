@@ -31,25 +31,25 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices
                 IdClient = 101,
                 BonDeLivraison = new List<BonDeLivraison>
                 {
-                    new BonDeLivraison { TotHTva = 100, TotTva = 19, NetPayer = 119 },
-                    new BonDeLivraison { TotHTva = 50, TotTva = 9.5m, NetPayer = 59.5m }
+                    new() { TotHTva = 100, TotTva = 19, NetPayer = 119 },
+                    new() { TotHTva = 50, TotTva = 9.5m, NetPayer = 59.5m }
                 }
             };
-            context.Facture.Add(invoice);
-            await context.SaveChangesAsync();
+            _ = context.Facture.Add(invoice);
+            _ = await context.SaveChangesAsync();
             var handler = new GetInvoicesWithIdsQueryHandler(context, _mockLogger.Object);
             var query = new GetInvoicesWithIdsQuery(new List<int> { 1 });
             // Act
             var result = await handler.Handle(query, CancellationToken.None);
             // Assert
-            result.IsSuccess.Should().BeTrue();
-            result.Value.Should().HaveCount(1);
+            _ = result.IsSuccess.Should().BeTrue();
+            _ = result.Value.Should().HaveCount(1);
             var response = result.Value.First();
-            response.Number.Should().Be(1);
-            response.CustomerId.Should().Be(101);
-            response.TotalExcludingTaxAmount.Should().Be(150);
-            response.TotalVATAmount.Should().Be(28.5m);
-            response.TotalIncludingTaxAmount.Should().Be(178.5m);
+            _ = response.Number.Should().Be(1);
+            _ = response.CustomerId.Should().Be(101);
+            _ = response.TotalExcludingTaxAmount.Should().Be(150);
+            _ = response.TotalVATAmount.Should().Be(28.5m);
+            _ = response.TotalIncludingTaxAmount.Should().Be(178.5m);
         }
 
         [Fact]
@@ -62,8 +62,8 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices
             // Act
             var result = await handler.Handle(query, CancellationToken.None);
             // Assert
-            result.IsSuccess.Should().BeTrue();
-            result.Value.Should().BeEmpty();
+            _ = result.IsSuccess.Should().BeTrue();
+            _ = result.Value.Should().BeEmpty();
         }
     }
 }

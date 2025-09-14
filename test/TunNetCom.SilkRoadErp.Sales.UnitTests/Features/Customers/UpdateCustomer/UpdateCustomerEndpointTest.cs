@@ -46,14 +46,14 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers
                 EtbSec = "ETB",
                 Mail = "john@doe.com"
             };
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.IsAny<UpdateCustomerCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Fail(EntityNotFound.Error()));
             // Act
             var response = await _handler(_mediatorMock.Object, 999, request, CancellationToken.None);
             // Assert
             var notFoundResult = Assert.IsType<NotFound>(response.Result);
-            notFoundResult.Should().NotBeNull();
+            _ = notFoundResult.Should().NotBeNull();
         }
 
         [Fact]
@@ -72,16 +72,16 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers
                 Mail = null
             };
             var errors = new List<IError> { new Error("customer_name_exist") };
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.IsAny<UpdateCustomerCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Fail(errors));
             // Act
             var response = await _handler(_mediatorMock.Object, 1, request, CancellationToken.None);
             // Assert
             var validationResult = Assert.IsType<ValidationProblem>(response.Result);
-            validationResult.Should().NotBeNull();
-            validationResult.ProblemDetails.Errors.Should().ContainKey("errors");
-            validationResult.ProblemDetails.Errors["errors"].Should().Contain("customer_name_exist");
+            _ = validationResult.Should().NotBeNull();
+            _ = validationResult.ProblemDetails.Errors.Should().ContainKey("errors");
+            _ = validationResult.ProblemDetails.Errors["errors"].Should().Contain("customer_name_exist");
         }
         [Fact]
         public async Task Endpoint_ReturnsNoContent_WhenUpdateSucceeds()
@@ -98,14 +98,14 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers
                 EtbSec = "ETB987",
                 Mail = "updated@mail.com"
             };
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.IsAny<UpdateCustomerCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Ok());
             // Act
             var response = await _handler(_mediatorMock.Object, 1, request, CancellationToken.None);
             // Assert
             var noContentResult = Assert.IsType<NoContent>(response.Result);
-            noContentResult.Should().NotBeNull();
+            _ = noContentResult.Should().NotBeNull();
         }
     }
 }

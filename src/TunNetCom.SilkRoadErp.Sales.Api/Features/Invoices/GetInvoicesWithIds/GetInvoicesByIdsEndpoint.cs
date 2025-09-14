@@ -6,7 +6,7 @@ public class GetInvoicesByIdsEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapPost(
+        _ = app.MapPost(
                 "/invoices/byids",
                 async Task<IResult> (
                     IMediator mediator,

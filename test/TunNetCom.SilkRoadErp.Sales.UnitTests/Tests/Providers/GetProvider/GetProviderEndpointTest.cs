@@ -17,12 +17,12 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Providers
                 SearchKeyword = "test"
             };
             var pagedListMock = new PagedList<ProviderResponse>(
-                new List<ProviderResponse> { new ProviderResponse { Id = 1, Nom = "Test Provider" } },
+                new List<ProviderResponse> { new() { Id = 1, Nom = "Test Provider" } },
                 count: 1,
                 pageNumber: 1,
                 pageSize: 10);
             var mediatorMock = new Mock<IMediator>();
-            mediatorMock
+            _ = mediatorMock
                 .Setup(m => m.Send(It.IsAny<GetProviderQuery>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(pagedListMock);
             var context = new DefaultHttpContext();
@@ -51,8 +51,8 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Providers
             // Act
             var result = await handler(paginationParams, mediatorMock.Object, context, cancellationToken);
             // Assert
-            result.Should().BeOfType<Ok<PagedList<ProviderResponse>>>();
-            context.Response.Headers.Should().ContainKey("X-Pagination");
+            _ = result.Should().BeOfType<Ok<PagedList<ProviderResponse>>>();
+            _ = context.Response.Headers.Should().ContainKey("X-Pagination");
         }
     }
 }

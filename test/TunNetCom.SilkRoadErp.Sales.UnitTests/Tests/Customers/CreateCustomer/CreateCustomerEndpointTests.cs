@@ -30,7 +30,7 @@ public class CreateCustomerEndpointTests
             Mail = "john@example.com"
         };
 
-        _mediatorMock
+        _ = _mediatorMock
             .Setup(m => m.Send(It.Is<CreateCustomerCommand>(cmd =>
                 cmd.Nom == request.Nom &&
                 cmd.Tel == request.Tel &&
@@ -50,11 +50,11 @@ public class CreateCustomerEndpointTests
             CancellationToken.None);
 
         // Assert
-        result.Should().BeOfType<Results<Created<CreateCustomerRequest>, ValidationProblem>>();
+        _ = result.Should().BeOfType<Results<Created<CreateCustomerRequest>, ValidationProblem>>();
         var createdResult = result.Result as Created<CreateCustomerRequest>;
-        createdResult.Should().NotBeNull();
-        createdResult!.Location.Should().Be("/customers/1");
-        createdResult.Value.Should().BeEquivalentTo(request);
+        _ = createdResult.Should().NotBeNull();
+        _ = createdResult!.Location.Should().Be("/customers/1");
+        _ = createdResult.Value.Should().BeEquivalentTo(request);
         _mediatorMock.Verify(m => m.Send(It.IsAny<CreateCustomerCommand>(), It.IsAny<CancellationToken>()), Times.Once());
     }
 
@@ -75,7 +75,7 @@ public class CreateCustomerEndpointTests
         };
 
         var error = new Error("Invalid email format").WithMetadata("errorCode", "Email.Invalid");
-        _mediatorMock
+        _ = _mediatorMock
             .Setup(m => m.Send(It.IsAny<CreateCustomerCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Fail<int>(error));
 
@@ -86,11 +86,11 @@ public class CreateCustomerEndpointTests
             CancellationToken.None);
 
         // Assert
-        result.Should().BeOfType<Results<Created<CreateCustomerRequest>, ValidationProblem>>();
+        _ = result.Should().BeOfType<Results<Created<CreateCustomerRequest>, ValidationProblem>>();
         var validationProblem = result.Result as ValidationProblem;
-        validationProblem.Should().NotBeNull();
-        validationProblem!.StatusCode.Should().Be(400);
-        validationProblem.ProblemDetails.Errors.First().Value.Should().Contain("Invalid email format");
+        _ = validationProblem.Should().NotBeNull();
+        _ = validationProblem!.StatusCode.Should().Be(400);
+        _ = validationProblem.ProblemDetails.Errors.First().Value.Should().Contain("Invalid email format");
         _mediatorMock.Verify(m => m.Send(It.IsAny<CreateCustomerCommand>(), It.IsAny<CancellationToken>()), Times.Once());
     }
 
@@ -117,7 +117,7 @@ public class CreateCustomerEndpointTests
             new Error("Invalid email format").WithMetadata("errorCode", "Mail.Invalid")
         };
 
-        _mediatorMock
+        _ = _mediatorMock
             .Setup(m => m.Send(It.IsAny<CreateCustomerCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Fail<int>(errors));
 
@@ -128,14 +128,14 @@ public class CreateCustomerEndpointTests
             CancellationToken.None);
 
         // Assert
-        result.Should().BeOfType<Results<Created<CreateCustomerRequest>, ValidationProblem>>();
+        _ = result.Should().BeOfType<Results<Created<CreateCustomerRequest>, ValidationProblem>>();
         var validationProblem = result.Result as ValidationProblem;
-        validationProblem.Should().NotBeNull();
-        validationProblem!.StatusCode.Should().Be(400);
-        validationProblem.ProblemDetails.Errors.First().Value.Should().HaveCount(3);
-        validationProblem.ProblemDetails.Errors.First().Value.Should().Contain("Name is required");
-        validationProblem.ProblemDetails.Errors.First().Value.Should().Contain("Invalid phone format");
-        validationProblem.ProblemDetails.Errors.First().Value.Should().Contain("Invalid email format");
+        _ = validationProblem.Should().NotBeNull();
+        _ = validationProblem!.StatusCode.Should().Be(400);
+        _ = validationProblem.ProblemDetails.Errors.First().Value.Should().HaveCount(3);
+        _ = validationProblem.ProblemDetails.Errors.First().Value.Should().Contain("Name is required");
+        _ = validationProblem.ProblemDetails.Errors.First().Value.Should().Contain("Invalid phone format");
+        _ = validationProblem.ProblemDetails.Errors.First().Value.Should().Contain("Invalid email format");
         _mediatorMock.Verify(m => m.Send(It.IsAny<CreateCustomerCommand>(), It.IsAny<CancellationToken>()), Times.Once());
     }
 
@@ -158,12 +158,12 @@ public class CreateCustomerEndpointTests
         var cts = new CancellationTokenSource();
         cts.Cancel();
 
-        _mediatorMock
+        _ = _mediatorMock
             .Setup(m => m.Send(It.IsAny<CreateCustomerCommand>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new OperationCanceledException());
 
         // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(() =>
+        _ = await Assert.ThrowsAsync<OperationCanceledException>(() =>
             _endpoint.HandleCreateCustomerAsync(
                 _mediatorMock.Object,
                 request,

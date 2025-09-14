@@ -24,14 +24,14 @@
         {
             // Arrange
             var productRef = "nonexistent";
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.IsAny<DeleteProductCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Fail("not_found")); // Simule produit non trouvé
             // Act
             var response = await _handler(_mediatorMock.Object, productRef, CancellationToken.None);
             // Assert
             var notFoundResult = Assert.IsType<NotFound>(response.Result);
-            notFoundResult.Should().NotBeNull();
+            _ = notFoundResult.Should().NotBeNull();
         }
 
         [Fact]
@@ -39,14 +39,14 @@
         {
             // Arrange
             var productRef = "toDelete";
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.IsAny<DeleteProductCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Ok());
             // Act
             var response = await _handler(_mediatorMock.Object, productRef, CancellationToken.None);
             // Assert
             var noContentResult = Assert.IsType<NoContent>(response.Result);
-            noContentResult.Should().NotBeNull();
+            _ = noContentResult.Should().NotBeNull();
         }
     }
 }

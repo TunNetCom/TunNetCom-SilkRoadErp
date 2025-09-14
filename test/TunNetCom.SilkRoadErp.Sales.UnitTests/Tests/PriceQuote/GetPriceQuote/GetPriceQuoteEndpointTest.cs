@@ -29,8 +29,7 @@ public class GetPriceQuoteEndpointTests
 
         var quotations = new List<QuotationResponse>
         {
-            new QuotationResponse
-            {
+            new() {
                 Num = 1,
                 IdClient = 10,
                 Date = System.DateTime.UtcNow,
@@ -38,8 +37,7 @@ public class GetPriceQuoteEndpointTests
                 TotTva = 20m,
                 TotTtc = 120m
             },
-            new QuotationResponse
-            {
+            new() {
                 Num = 2,
                 IdClient = 20,
                 Date = System.DateTime.UtcNow,
@@ -55,7 +53,7 @@ public class GetPriceQuoteEndpointTests
             pageNumber: 1,
             pageSize: 2);
 
-        _mediatorMock
+        _ = _mediatorMock
             .Setup(m => m.Send(It.IsAny<GetPriceQuoteQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedList);
 
@@ -70,25 +68,25 @@ public class GetPriceQuoteEndpointTests
             CancellationToken.None);
 
         // Assert : on vérifie le type de retour
-        result.Should().BeOfType<Ok<PagedList<QuotationResponse>>>();
+        _ = result.Should().BeOfType<Ok<PagedList<QuotationResponse>>>();
 
         var okResult = result as Ok<PagedList<QuotationResponse>>;
-        okResult!.Value.Should().BeEquivalentTo(pagedList);
+        _ = okResult!.Value.Should().BeEquivalentTo(pagedList);
 
         // Vérification de l'en-tête X-Pagination
-        httpContext.Response.Headers.Should().ContainKey("X-Pagination");
+        _ = httpContext.Response.Headers.Should().ContainKey("X-Pagination");
 
         var paginationHeader = httpContext.Response.Headers["X-Pagination"].ToString();
-        paginationHeader.Should().NotBeNullOrEmpty();
+        _ = paginationHeader.Should().NotBeNullOrEmpty();
 
         var metadata = JsonConvert.DeserializeObject<dynamic>(paginationHeader);
 
-        ((int)metadata.TotalCount).Should().Be(pagedList.TotalCount);
-        ((int)metadata.PageSize).Should().Be(pagedList.PageSize);
-        ((int)metadata.CurrentPage).Should().Be(pagedList.CurrentPage);
-        ((int)metadata.TotalPages).Should().Be(pagedList.TotalPages);
-        ((bool)metadata.HasNext).Should().Be(pagedList.HasNext);
-        ((bool)metadata.HasPrevious).Should().Be(pagedList.HasPrevious);
+        _ = ((int)metadata.TotalCount).Should().Be(pagedList.TotalCount);
+        _ = ((int)metadata.PageSize).Should().Be(pagedList.PageSize);
+        _ = ((int)metadata.CurrentPage).Should().Be(pagedList.CurrentPage);
+        _ = ((int)metadata.TotalPages).Should().Be(pagedList.TotalPages);
+        _ = ((bool)metadata.HasNext).Should().Be(pagedList.HasNext);
+        _ = ((bool)metadata.HasPrevious).Should().Be(pagedList.HasPrevious);
     }
 }
 

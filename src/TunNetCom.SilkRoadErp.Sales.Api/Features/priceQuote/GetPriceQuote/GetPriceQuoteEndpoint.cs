@@ -4,7 +4,7 @@ public class GetPriceQuoteEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapGet("/quotations", async (
+        _ = app.MapGet("/quotations", async (
              [AsParameters] QueryStringParameters paginationQueryParams,
              IMediator mediator,
              HttpContext httpContext,

@@ -28,7 +28,7 @@ public class DetachFromInvoiceCommandHandler(
             note.NumFacture = null;
         }
 
-        await context.SaveChangesAsync(cancellationToken);
+        _ = await context.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation(
             "Successfully detached {Count} delivery notes from invoice {InvoiceId}",

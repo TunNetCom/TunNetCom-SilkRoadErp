@@ -19,7 +19,7 @@ public class DeleteCustomerEndpointTests
     {
         // Arrange
         int customerId = 1;
-        _mediatorMock.Setup(
+        _ = _mediatorMock.Setup(
             m => m.Send(It.Is<DeleteCustomerCommand>(c => c.Id == customerId), It.IsAny<CancellationToken>()))
                      .ReturnsAsync(Result.Ok());
 
@@ -28,7 +28,7 @@ public class DeleteCustomerEndpointTests
 
         // Assert
         var typedResult = Assert.IsType<Results<NoContent, ValidationProblem, NotFound>>(result);
-        Assert.IsType<NoContent>(typedResult.Result);
+        _ = Assert.IsType<NoContent>(typedResult.Result);
     }
 
     [Fact]
@@ -36,7 +36,7 @@ public class DeleteCustomerEndpointTests
     {
         // Arrange
         int customerId = 1;
-        _mediatorMock.Setup(
+        _ = _mediatorMock.Setup(
             m => m.Send(It.Is<DeleteCustomerCommand>(c => c.Id == customerId), It.IsAny<CancellationToken>()))
                      .ReturnsAsync(Result.Fail(EntityNotFound.Error()));
 
@@ -46,7 +46,7 @@ public class DeleteCustomerEndpointTests
 
         // Assert
         var typedResult = Assert.IsType<Results<NoContent, ValidationProblem, NotFound>>(result);
-        Assert.IsType<NotFound>(typedResult.Result);
+        _ = Assert.IsType<NotFound>(typedResult.Result);
     }
 
     [Fact]
@@ -54,7 +54,7 @@ public class DeleteCustomerEndpointTests
     {
         // Arrange
         int customerId = 1;
-        _mediatorMock.Setup(
+        _ = _mediatorMock.Setup(
             m => m.Send(It.Is<DeleteCustomerCommand>(c => c.Id == customerId), It.IsAny<CancellationToken>()))
                      .ReturnsAsync(Result.Fail(""));
 
@@ -64,7 +64,7 @@ public class DeleteCustomerEndpointTests
 
         // Assert
         var typedResult = Assert.IsType<Results<NoContent, ValidationProblem, NotFound>>(result);
-        Assert.IsType<ValidationProblem>(typedResult.Result);
+        _ = Assert.IsType<ValidationProblem>(typedResult.Result);
     }
 
 }

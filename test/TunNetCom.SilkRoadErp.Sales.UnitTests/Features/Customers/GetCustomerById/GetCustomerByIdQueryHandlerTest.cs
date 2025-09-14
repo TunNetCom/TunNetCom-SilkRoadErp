@@ -13,17 +13,17 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers
                 .UseInMemoryDatabase(databaseName: "GetCustomerById_Exists")
                 .Options;
             await using var context = new SalesContext(options);
-            context.Client.Add(client);
-            await context.SaveChangesAsync();
+            _ = context.Client.Add(client);
+            _ = await context.SaveChangesAsync();
             var loggerMock = new Mock<ILogger<GetCustomerByIdQueryHandler>>();
             var handler = new GetCustomerByIdQueryHandler(context, loggerMock.Object);
             var query = new GetCustomerByIdQuery(Id: 1);
             // Act
             var result = await handler.Handle(query, CancellationToken.None);
             // Assert
-            result.IsSuccess.Should().BeTrue();
-            result.Value.Id.Should().Be(1);
-            result.Value.Name.Should().Be("Ali");
+            _ = result.IsSuccess.Should().BeTrue();
+            _ = result.Value.Id.Should().Be(1);
+            _ = result.Value.Name.Should().Be("Ali");
         }
 
         [Fact]
@@ -40,8 +40,8 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers
             // Act
             var result = await handler.Handle(query, CancellationToken.None);
             // Assert
-            result.IsFailed.Should().BeTrue();
-            result.Errors.Should().Contain(e => e.Message == "not_found");
+            _ = result.IsFailed.Should().BeTrue();
+            _ = result.Errors.Should().Contain(e => e.Message == "not_found");
         }
     }
 }

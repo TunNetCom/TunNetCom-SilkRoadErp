@@ -10,18 +10,18 @@ public class UpdateAppParametersEndpoinTest
             .UseInMemoryDatabase(databaseName: "UpdateAppParamsLogicDb")
             .Options;
         var context = new SalesContext(options);
-        context.Systeme.Add(new Systeme
+        _ = context.Systeme.Add(new Systeme
         {
             NomSociete = "Société Initiale",
             Adresse = "Adresse Initiale",
             CodeTva = "TVA000",
             Tel = "00000000",
         });
-        await context.SaveChangesAsync();
+        _ = await context.SaveChangesAsync();
         var loggerMock = new Mock<ILogger<UpdateAppParametersCommandHandler>>();
         var handler = new UpdateAppParametersCommandHandler(context, loggerMock.Object);
         var mediatorMock = new Mock<IMediator>();
-        mediatorMock.Setup(m => m.Send(It.IsAny<UpdateAppParametersCommand>(), It.IsAny<CancellationToken>()))
+        _ = mediatorMock.Setup(m => m.Send(It.IsAny<UpdateAppParametersCommand>(), It.IsAny<CancellationToken>()))
                     .Returns<UpdateAppParametersCommand, CancellationToken>((cmd, token) => handler.Handle(cmd, token));
         var request = new UpdateAppParametersRequest
         {
@@ -57,11 +57,11 @@ public class UpdateAppParametersEndpoinTest
         // Act
         var result = await mediatorMock.Object.Send(command, CancellationToken.None);
         // Assert
-        result.IsSuccess.Should().BeTrue();
+        _ = result.IsSuccess.Should().BeTrue();
         var updated = await context.Systeme.FirstOrDefaultAsync();
-        updated.NomSociete.Should().Be(request.NomSociete);
-        updated.Email.Should().Be(request.Email);
-        updated.EtbSecondaire.Should().Be(request.EtbSecondaire);
-        updated.PourcentageRetenu.Should().Be(request.PourcentageRetenu);
+        _ = updated.NomSociete.Should().Be(request.NomSociete);
+        _ = updated.Email.Should().Be(request.Email);
+        _ = updated.EtbSecondaire.Should().Be(request.EtbSecondaire);
+        _ = updated.PourcentageRetenu.Should().Be(request.PourcentageRetenu);
     }
 }

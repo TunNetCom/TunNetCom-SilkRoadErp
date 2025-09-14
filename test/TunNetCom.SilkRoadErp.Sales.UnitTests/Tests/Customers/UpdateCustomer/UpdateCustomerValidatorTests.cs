@@ -16,7 +16,7 @@ public class UpdateCustomerValidatorTests
     {
         var command = new UpdateCustomerCommand(1, "", null, null, null, null, null, null, null);
         var result = _validator.TestValidate(command);
-        result.ShouldHaveValidationErrorFor(x => x.Nom)
+        _ = result.ShouldHaveValidationErrorFor(x => x.Nom)
               .WithErrorMessage("nom_is_required");
     }
 
@@ -25,7 +25,7 @@ public class UpdateCustomerValidatorTests
     {
         var command = new UpdateCustomerCommand(1, new string('A', 51), null, null, null, null, null, null, null);
         var result = _validator.TestValidate(command);
-        result.ShouldHaveValidationErrorFor(x => x.Nom)
+        _ = result.ShouldHaveValidationErrorFor(x => x.Nom)
               .WithErrorMessage("nom_must_be_less_than_50_characters");
     }
 
@@ -34,7 +34,7 @@ public class UpdateCustomerValidatorTests
     {
         var command = new UpdateCustomerCommand(1, "John", "", null, null, null, null, null, null);
         var result = _validator.TestValidate(command);
-        result.ShouldHaveValidationErrorFor(x => x.Tel)
+        _ = result.ShouldHaveValidationErrorFor(x => x.Tel)
               .WithErrorMessage("tel_is_required");
     }
 
@@ -43,7 +43,7 @@ public class UpdateCustomerValidatorTests
     {
         var command = new UpdateCustomerCommand(1, "John", "123", null, null, null, null, null, null);
         var result = _validator.TestValidate(command);
-        result.ShouldHaveValidationErrorFor(x => x.Tel)
+        _ = result.ShouldHaveValidationErrorFor(x => x.Tel)
               .WithErrorMessage("tel_must_be_heigher_than_10_and_less_than_15");
     }
 
@@ -52,7 +52,7 @@ public class UpdateCustomerValidatorTests
     {
         var command = new UpdateCustomerCommand(1, "John", null, new string('A', 51), null, null, null, null, null);
         var result = _validator.TestValidate(command);
-        result.ShouldHaveValidationErrorFor(x => x.Adresse)
+        _ = result.ShouldHaveValidationErrorFor(x => x.Adresse)
               .WithErrorMessage("adresse_must_be_less_than_50_characters");
     }
 
@@ -61,7 +61,7 @@ public class UpdateCustomerValidatorTests
     {
         var command = new UpdateCustomerCommand(1, "John", null, null, null, null, null, null, "invalid-email");
         var result = _validator.TestValidate(command);
-        result.ShouldHaveValidationErrorFor(x => x.Mail)
+        _ = result.ShouldHaveValidationErrorFor(x => x.Mail)
               .WithErrorMessage("mail_must_be_a_valid_email_address");
     }
 

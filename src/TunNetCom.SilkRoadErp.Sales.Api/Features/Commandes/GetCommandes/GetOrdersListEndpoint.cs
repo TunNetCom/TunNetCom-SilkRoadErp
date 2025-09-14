@@ -11,7 +11,7 @@ public class GetOrdersListEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/orders", async (
+        _ = app.MapGet("/api/orders", async (
                 [FromServices] IMediator mediator,
                 CancellationToken cancellationToken) =>
         {

@@ -18,7 +18,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Handlers.PriceQuote
             var num = 1;
             using (var context = new SalesContext(_dbOptions))
             {
-                context.Devis.Add(new Devis
+                _ = context.Devis.Add(new Devis
                 {
                     Num = num,
                     IdClient = 101,
@@ -27,7 +27,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Handlers.PriceQuote
                     TotTva = 19,
                     TotTtc = 119
                 });
-                context.SaveChanges();
+                _ = context.SaveChanges();
             }
             using (var context = new SalesContext(_dbOptions))
             {
@@ -37,9 +37,9 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Handlers.PriceQuote
                 // Act
                 var result = await handler.Handle(query, CancellationToken.None);
                 // Assert
-                result.IsSuccess.Should().BeTrue();
-                result.Value.Num.Should().Be(num);
-                result.Value.IdClient.Should().Be(101);
+                _ = result.IsSuccess.Should().BeTrue();
+                _ = result.Value.Num.Should().Be(num);
+                _ = result.Value.IdClient.Should().Be(101);
             }
         }
 
@@ -54,9 +54,9 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Handlers.PriceQuote
             // Act
             var result = await handler.Handle(query, CancellationToken.None);
             // Assert
-            result.IsFailed.Should().BeTrue();
-            result.Errors.Should().ContainSingle();
-            result.Errors[0].Message.Should().Be("not_found"); 
+            _ = result.IsFailed.Should().BeTrue();
+            _ = result.Errors.Should().ContainSingle();
+            _ = result.Errors[0].Message.Should().Be("not_found"); 
         }
     }
 }

@@ -58,8 +58,8 @@ public class UpdateProductCommandHandlerTests
             prixAchat: 535,
             visibilite: true);
 
-        _context.Produit.Add(existingProduct);
-        await _context.SaveChangesAsync();
+        _ = _context.Produit.Add(existingProduct);
+        _ = await _context.SaveChangesAsync();
 
         var command = new UpdateProductCommand(
             Refe: existingProduct.Refe,

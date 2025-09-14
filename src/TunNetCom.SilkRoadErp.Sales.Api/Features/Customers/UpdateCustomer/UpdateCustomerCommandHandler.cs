@@ -40,7 +40,7 @@ public class UpdateCustomerCommandHandler(
             etbSec: updateCustomerCommand.EtbSec,
             mail: updateCustomerCommand.Mail);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        _ = await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogEntityUpdated(nameof(Client), updateCustomerCommand.Id);
 

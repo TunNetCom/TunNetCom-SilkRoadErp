@@ -41,7 +41,7 @@ public class UpdateProductCommandHandler(
             visibilite: updateProductCommand.Visibilite
             );
 
-        await _context.SaveChangesAsync(cancellationToken);
+        _ = await _context.SaveChangesAsync(cancellationToken);
         _logger.LogEntityUpdated(nameof(Produit), updateProductCommand.Refe);
 
         return Result.Ok();

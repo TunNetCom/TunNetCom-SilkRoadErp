@@ -25,7 +25,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers.CreateCustomer
                 EtbSec = "Sec123",
                 Mail = "test@mail.com"
             };
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.Is<CreateCustomerCommand>(cmd =>
                         cmd.Nom == request.Nom &&
                         cmd.Tel == request.Tel &&
@@ -38,11 +38,11 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers.CreateCustomer
                 request,
                 CancellationToken.None);
             // Assert
-            result.Should().BeOfType<Results<Created<CreateCustomerRequest>, ValidationProblem>>();
+            _ = result.Should().BeOfType<Results<Created<CreateCustomerRequest>, ValidationProblem>>();
             var createdResult = result.Result as Created<CreateCustomerRequest>;
-            createdResult.Should().NotBeNull();
-            createdResult!.Location.Should().Be("/customers/1");
-            createdResult.Value.Should().BeEquivalentTo(request);
+            _ = createdResult.Should().NotBeNull();
+            _ = createdResult!.Location.Should().Be("/customers/1");
+            _ = createdResult.Value.Should().BeEquivalentTo(request);
             _mediatorMock.Verify(m => m.Send(It.IsAny<CreateCustomerCommand>(), It.IsAny<CancellationToken>()), Times.Once());
         }
 
@@ -54,7 +54,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers.CreateCustomer
             {
                 Nom = "Duplicate Customer"
             };
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.IsAny<CreateCustomerCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Fail<int>("customer_name_exist"));
             // Act
@@ -64,8 +64,8 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers.CreateCustomer
                 CancellationToken.None);
             // Assert
             var validationProblem = result.Result as ValidationProblem;
-            validationProblem.Should().NotBeNull();
-            validationProblem!.ProblemDetails.Errors.Values.Should().Contain(errors => errors.Contains("customer_name_exist"));
+            _ = validationProblem.Should().NotBeNull();
+            _ = validationProblem!.ProblemDetails.Errors.Values.Should().Contain(errors => errors.Contains("customer_name_exist"));
 
             _mediatorMock.Verify(m => m.Send(It.IsAny<CreateCustomerCommand>(), It.IsAny<CancellationToken>()), Times.Once());
         }

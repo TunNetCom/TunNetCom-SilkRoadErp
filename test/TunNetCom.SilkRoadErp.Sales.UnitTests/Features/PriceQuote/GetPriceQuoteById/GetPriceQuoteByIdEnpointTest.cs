@@ -23,7 +23,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Tests.Features.priceQuote.GetPriceQuot
                 TotTva = 200,
                 TotTtc = 1200
             };
-            _mediatorMock.Setup(m => m.Send(It.Is<GetPriceQuoteByIdQuery>(q => q.Num == quotationId), It.IsAny<CancellationToken>()))
+            _ = _mediatorMock.Setup(m => m.Send(It.Is<GetPriceQuoteByIdQuery>(q => q.Num == quotationId), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Ok(expectedResponse));
             // Act
             var result = await _endpoint.HandleRequest(_mediatorMock.Object, quotationId, CancellationToken.None);
@@ -39,12 +39,12 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Tests.Features.priceQuote.GetPriceQuot
             var quotationId = 999;
             var error = new Error("Not found");
             error.Metadata.Add("IsEntityNotFound", true);
-            _mediatorMock.Setup(m => m.Send(It.Is<GetPriceQuoteByIdQuery>(q => q.Num == quotationId), It.IsAny<CancellationToken>()))
+            _ = _mediatorMock.Setup(m => m.Send(It.Is<GetPriceQuoteByIdQuery>(q => q.Num == quotationId), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Fail<QuotationResponse>(error));
             // Act
             var result = await _endpoint.HandleRequest(_mediatorMock.Object, quotationId, CancellationToken.None);
             // Assert
-            Assert.IsType<NotFound>(result);
+            _ = Assert.IsType<NotFound>(result);
         }
 
         public class TestEndpointRouteBuilder : IEndpointRouteBuilder

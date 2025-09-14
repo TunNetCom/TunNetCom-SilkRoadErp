@@ -43,13 +43,13 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes
         {
             // Arrange
             var invoiceId = 123;
-            _context.FactureFournisseur.Add(new FactureFournisseur { Num = invoiceId });
+            _ = _context.FactureFournisseur.Add(new FactureFournisseur { Num = invoiceId });
             _context.BonDeReception.AddRange(
                 new BonDeReception { Num = 1, NumFactureFournisseur = invoiceId },
                 new BonDeReception { Num = 2, NumFactureFournisseur = invoiceId },
                 new BonDeReception { Num = 3, NumFactureFournisseur = 999 }
             );
-            await _context.SaveChangesAsync();
+            _ = await _context.SaveChangesAsync();
             var command = new DetachReceiptNotesFromInvoiceCommand(
                 InvoiceId: invoiceId,
                 ReceiptNoteIds: new List<int> { 1, 2, 3 }

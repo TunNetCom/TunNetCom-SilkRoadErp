@@ -31,7 +31,7 @@ public class DeliveryNoteApiClient(HttpClient _httpClient) : IDeliveryNoteApiCli
         }
 
         var response = await _httpClient.GetAsync(queryString);
-        response.EnsureSuccessStatusCode();
+        _ = response.EnsureSuccessStatusCode();
         var content = await response.Content.ReadFromJsonAsync<PagedList<DeliveryNoteResponse>>();
         return content!;
     }
@@ -87,7 +87,7 @@ public class DeliveryNoteApiClient(HttpClient _httpClient) : IDeliveryNoteApiCli
     public async Task<List<DeliveryNoteResponse>> GetDeliveryNotesByClientId(int clientId)
     {
         var response = await _httpClient.GetAsync($"/deliveryNote/client/{clientId}");
-        response.EnsureSuccessStatusCode();
+        _ = response.EnsureSuccessStatusCode();
         var content = await response.Content.ReadAsStringAsync();
         return System.Text.Json.JsonSerializer.Deserialize<List<DeliveryNoteResponse>>(content) ?? new List<DeliveryNoteResponse>();
     }
@@ -95,7 +95,7 @@ public class DeliveryNoteApiClient(HttpClient _httpClient) : IDeliveryNoteApiCli
     public async Task<List<DeliveryNoteResponse>> GetDeliveryNotesByInvoiceId(int invoiceId)
     {
         var response = await _httpClient.GetAsync($"/deliveryNote/facture/{invoiceId}");
-        response.EnsureSuccessStatusCode();
+        _ = response.EnsureSuccessStatusCode();
         var content = await response.Content.ReadAsStringAsync();
         return System.Text.Json.JsonSerializer.Deserialize<List<DeliveryNoteResponse>>(content) ?? new List<DeliveryNoteResponse>();
     }
@@ -123,7 +123,7 @@ public class DeliveryNoteApiClient(HttpClient _httpClient) : IDeliveryNoteApiCli
                 throw new Exception($"Validation error: {errorResponse}");
             }
 
-            response.EnsureSuccessStatusCode(); // Ensures 204 No Content
+            _ = response.EnsureSuccessStatusCode(); // Ensures 204 No Content
 
             return true; // Success
         }
@@ -145,7 +145,7 @@ public class DeliveryNoteApiClient(HttpClient _httpClient) : IDeliveryNoteApiCli
                 return new List<DeliveryNoteResponse>(); // Return an empty list if not found
             }
 
-            response.EnsureSuccessStatusCode();
+            _ = response.EnsureSuccessStatusCode();
 
             string jsonResponse = await response.Content.ReadAsStringAsync(cancellationToken);
             var deliveryNotes = System.Text.Json.JsonSerializer.Deserialize<List<DeliveryNoteResponse>>(jsonResponse);
@@ -241,7 +241,7 @@ public class DeliveryNoteApiClient(HttpClient _httpClient) : IDeliveryNoteApiCli
         {
             // Make the HTTP GET request
             var response = await _httpClient.GetAsync(requestUri, cancellationToken);
-            response.EnsureSuccessStatusCode();
+            _ = response.EnsureSuccessStatusCode();
 
             // Deserialize the response
             var summariesResponse = await response.Content.ReadFromJsonAsync<GetDeliveryNotesWithSummariesResponse>(
@@ -269,7 +269,7 @@ public class DeliveryNoteApiClient(HttpClient _httpClient) : IDeliveryNoteApiCli
                 return null;
             }
 
-            response.EnsureSuccessStatusCode();
+            _ = response.EnsureSuccessStatusCode();
 
             var deliveryNote = await response
                 .Content
@@ -291,7 +291,7 @@ public class DeliveryNoteApiClient(HttpClient _httpClient) : IDeliveryNoteApiCli
     public async Task<List<DeliveryNoteDetailResponse>> GetDeliveryNotesAsync(string productReference, CancellationToken cancellationToken = default)
     {
         var response = await _httpClient.GetAsync($"/deliveryNoteHistory/{productReference}", cancellationToken);
-        response.EnsureSuccessStatusCode();
+        _ = response.EnsureSuccessStatusCode();
 
         // Deserialize the response
         return await response.Content.ReadFromJsonAsync<List<DeliveryNoteDetailResponse>>(cancellationToken);

@@ -33,12 +33,12 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes
         public async Task Handle_SuccessfulDetach_ReturnsOkAndClearsInvoiceId()
         {
             int invoiceId = 1;
-            _context.FactureFournisseur.Add(new FactureFournisseur { Num = invoiceId });
+            _ = _context.FactureFournisseur.Add(new FactureFournisseur { Num = invoiceId });
             _context.BonDeReception.AddRange(
                 new BonDeReception { Num = 10, NumFactureFournisseur = invoiceId },
                 new BonDeReception { Num = 20, NumFactureFournisseur = invoiceId }
             );
-            await _context.SaveChangesAsync();
+            _ = await _context.SaveChangesAsync();
             var command = new DetachReceiptNotesFromInvoiceCommand(
                 InvoiceId: invoiceId,
                 ReceiptNoteIds: new List<int> { 10, 20 }

@@ -4,7 +4,7 @@ public class GetDeliveryNotesBasedOnProductReferenceEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapGet("/deliveryNoteHistory/{productReference}", async (
+        _ = app.MapGet("/deliveryNoteHistory/{productReference}", async (
                 IMediator mediator,
                 string productReference,
                 CancellationToken cancellationToken) =>

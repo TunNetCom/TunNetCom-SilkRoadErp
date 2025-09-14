@@ -5,7 +5,7 @@ public class CreateDeliveryNoteEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapPost("/deliveryNote", HandleCreateDeliveryNoteAsync);
+        _ = app.MapPost("/deliveryNote", HandleCreateDeliveryNoteAsync);
     }
 
     public async Task<Results<Created<CreateDeliveryNoteRequest>, ValidationProblem>> HandleCreateDeliveryNoteAsync(

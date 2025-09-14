@@ -48,8 +48,8 @@ public class DeleteCustomerCommandHandlerTests
              etbSec: "EtbSec",
              mail: "email@example.com");
 
-        _context.Client.Add(client);
-        await _context.SaveChangesAsync();
+        _ = _context.Client.Add(client);
+        _ = await _context.SaveChangesAsync();
 
         var command = new DeleteCustomerCommand(Id: client.Id);
 
@@ -76,8 +76,8 @@ public class DeleteCustomerCommandHandlerTests
              etbSec: "EtbSec",
              mail: "email@example.com");
 
-        _context.Client.Add(client);
-        await _context.SaveChangesAsync();
+        _ = _context.Client.Add(client);
+        _ = await _context.SaveChangesAsync();
 
         var command = new DeleteCustomerCommand(Id: client.Id);
 

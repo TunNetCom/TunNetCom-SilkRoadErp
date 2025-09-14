@@ -4,7 +4,7 @@ public class DeleteReceiptNoteEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapDelete("/receiptnotes/{num:int}", async Task<Results<NoContent, NotFound>> (IMediator mediator, int num, CancellationToken cancellationToken) =>
+        _ = app.MapDelete("/receiptnotes/{num:int}", async Task<Results<NoContent, NotFound>> (IMediator mediator, int num, CancellationToken cancellationToken) =>
         {
             var deleteReceiptNoteCommand = new DeleteReceiptNoteCommand(num);
             var deleteResult = await mediator.Send(deleteReceiptNoteCommand, cancellationToken);

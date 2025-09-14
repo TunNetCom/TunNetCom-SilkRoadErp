@@ -22,16 +22,16 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers
                 Mail = "john@example.com"
             };
             var mediatorMock = new Mock<IMediator>();
-            mediatorMock
+            _ = mediatorMock
                 .Setup(m => m.Send(It.IsAny<GetCustomerByIdQuery>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Ok(customer));
             // Act
             var result = await GetCustomerByIdEndpoint.HandleGetCustomerByIdAsync(mediatorMock.Object, 1, CancellationToken.None);
             // Assert
-            result.Should().BeOfType<Results<Ok<CustomerResponse>, NotFound>>();
+            _ = result.Should().BeOfType<Results<Ok<CustomerResponse>, NotFound>>();
             var okResult = (result as Results<Ok<CustomerResponse>, NotFound>)!.Result as Ok<CustomerResponse>;
-            okResult.Should().NotBeNull();
-            okResult!.Value.Should().BeEquivalentTo(customer);
+            _ = okResult.Should().NotBeNull();
+            _ = okResult!.Value.Should().BeEquivalentTo(customer);
         }
 
         [Fact]
@@ -39,15 +39,15 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers
         {
             // Arrange
             var mediatorMock = new Mock<IMediator>();
-            mediatorMock
+            _ = mediatorMock
                 .Setup(m => m.Send(It.IsAny<GetCustomerByIdQuery>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Fail<CustomerResponse>(EntityNotFound.Error()));
             // Act
             var result = await GetCustomerByIdEndpoint.HandleGetCustomerByIdAsync(mediatorMock.Object, 999, CancellationToken.None);
             // Assert
-            result.Should().BeOfType<Results<Ok<CustomerResponse>, NotFound>>();
+            _ = result.Should().BeOfType<Results<Ok<CustomerResponse>, NotFound>>();
             var notFoundResult = (result as Results<Ok<CustomerResponse>, NotFound>)!.Result as NotFound;
-            notFoundResult.Should().NotBeNull();
+            _ = notFoundResult.Should().NotBeNull();
         }
 
     }

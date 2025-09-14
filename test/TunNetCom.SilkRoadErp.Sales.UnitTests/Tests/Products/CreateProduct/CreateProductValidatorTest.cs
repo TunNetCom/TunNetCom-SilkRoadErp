@@ -49,15 +49,15 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Products
                 PrixAchat = 80,
                 Visibilite = true
             };
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.IsAny<CreateProductCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Ok("Ref123"));
             // Act
             var result = await _handler(_mediatorMock.Object, request, CancellationToken.None);
             // Assert
             var created = Assert.IsType<Created<CreateProductRequest>>(result.Result);
-            created.Location.Should().Be("/products/Ref123");
-            created.Value.Should().BeEquivalentTo(request);
+            _ = created.Location.Should().Be("/products/Ref123");
+            _ = created.Value.Should().BeEquivalentTo(request);
         }
 
         [Fact]
@@ -78,7 +78,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Products
                 Visibilite = true
             };
             var errorMessage = "product_refe_or_name_exist";
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.IsAny<CreateProductCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Fail<string>(errorMessage));
             // Act

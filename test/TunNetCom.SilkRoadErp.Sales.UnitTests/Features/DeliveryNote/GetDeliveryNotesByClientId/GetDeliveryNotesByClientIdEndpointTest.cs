@@ -38,7 +38,7 @@ public class GetDeliveryNotesByClientIdEndpointTest
                 }
             }
         };
-        _mediatorMock
+        _ = _mediatorMock
             .Setup(m => m.Send(It.Is<GetDeliveryNoteByClientIdQuery>(q => q.ClientId == clientId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Ok(expectedNotes));
         // Act
@@ -53,13 +53,13 @@ public class GetDeliveryNotesByClientIdEndpointTest
     {
         // Arrange
         const int clientId = 2;
-        _mediatorMock
+        _ = _mediatorMock
             .Setup(m => m.Send(It.Is<GetDeliveryNoteByClientIdQuery>(q => q.ClientId == clientId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Ok(new List<DeliveryNoteResponse>()));
         // Act
         var response = await _handler(_mediatorMock.Object, clientId, CancellationToken.None);
         // Assert
-        Assert.IsType<NotFound>(response.Result);
+        _ = Assert.IsType<NotFound>(response.Result);
     }
 
     [Fact]
@@ -67,13 +67,13 @@ public class GetDeliveryNotesByClientIdEndpointTest
     {
         // Arrange
         const int clientId = 999;
-        _mediatorMock
+        _ = _mediatorMock
             .Setup(m => m.Send(It.Is<GetDeliveryNoteByClientIdQuery>(q => q.ClientId == clientId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Fail<List<DeliveryNoteResponse>>("Client not found"));
         // Act
         var response = await _handler(_mediatorMock.Object, clientId, CancellationToken.None);
         // Assert
-        Assert.IsType<NotFound>(response.Result);
+        _ = Assert.IsType<NotFound>(response.Result);
     }
 
     [Fact]
@@ -96,7 +96,7 @@ public class GetDeliveryNotesByClientIdEndpointTest
                 }
             }
         };
-        _mediatorMock
+        _ = _mediatorMock
             .Setup(m => m.Send(It.Is<GetDeliveryNoteByClientIdQuery>(q => q.ClientId == clientId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Ok(new List<DeliveryNoteResponse> { expectedNote }));
         // Act

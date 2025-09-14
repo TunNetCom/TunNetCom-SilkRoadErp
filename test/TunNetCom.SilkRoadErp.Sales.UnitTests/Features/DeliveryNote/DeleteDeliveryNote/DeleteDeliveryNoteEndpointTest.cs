@@ -12,7 +12,7 @@ public class DeleteDeliveryNoteEndpointTests
     {
         // Arrange
         var deliveryNoteNum = 9999;
-        _mediatorMock.Setup(x => x.Send(
+        _ = _mediatorMock.Setup(x => x.Send(
                 It.IsAny<DeleteDeliveryNoteCommand>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Fail(EntityNotFound.Error()));
@@ -20,7 +20,7 @@ public class DeleteDeliveryNoteEndpointTests
         var result = await DeleteDeliveryNoteEndpoint.HandleDeleteDeliveryNoteAsync(
             _mediatorMock.Object, deliveryNoteNum, CancellationToken.None);
         // Assert
-        result.Result.Should().BeOfType<NotFound>();
+        _ = result.Result.Should().BeOfType<NotFound>();
     }
 
     [Fact]
@@ -28,7 +28,7 @@ public class DeleteDeliveryNoteEndpointTests
     {
         // Arrange
         var deliveryNoteNum = 123;
-        _mediatorMock.Setup(x => x.Send(
+        _ = _mediatorMock.Setup(x => x.Send(
                 It.IsAny<DeleteDeliveryNoteCommand>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Ok());
@@ -36,6 +36,6 @@ public class DeleteDeliveryNoteEndpointTests
         var result = await DeleteDeliveryNoteEndpoint.HandleDeleteDeliveryNoteAsync(
             _mediatorMock.Object, deliveryNoteNum, CancellationToken.None);
         // Assert
-        result.Result.Should().BeOfType<NoContent>();
+        _ = result.Result.Should().BeOfType<NoContent>();
     }
 }

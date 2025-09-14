@@ -23,7 +23,7 @@ public class GlobalExceptionHandlerTest
     }
     private static string GetResponseBody(HttpContext context)
     {
-        context.Response.Body.Seek(0, SeekOrigin.Begin);
+        _ = context.Response.Body.Seek(0, SeekOrigin.Begin);
         using var reader = new StreamReader(context.Response.Body);
         return reader.ReadToEnd();
     }
@@ -35,28 +35,28 @@ public class GlobalExceptionHandlerTest
         var context = CreateHttpContext();
         var failures = new List<ValidationFailure>
         {
-            new ValidationFailure("Name", "Name is required"),
-            new ValidationFailure("Email", "Email is invalid")
+            new("Name", "Name is required"),
+            new("Email", "Email is invalid")
         };
         var validationException = new ValidationException(failures);
         // Act
         var result = await _handler.HandleExceptionAsync(context, validationException);
         // Assert
-        result.Should().BeTrue();
-        context.Response.StatusCode.Should().Be((int)HttpStatusCode.BadRequest);
-        context.Response.ContentType.Should().Be("application/json");
+        _ = result.Should().BeTrue();
+        _ = context.Response.StatusCode.Should().Be((int)HttpStatusCode.BadRequest);
+        _ = context.Response.ContentType.Should().Be("application/json");
         var json = GetResponseBody(context);
         var problemDetails = JsonSerializer.Deserialize<GlobalExceptionHandler.ErrorsProblemDetails>(json, new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true
         });
-        problemDetails.Should().NotBeNull();
-        problemDetails.Status.Should().Be((int)HttpStatusCode.BadRequest);
-        problemDetails.Title.Should().Be("Validation Error");
-        problemDetails.Detail.Should().Be("One or more validation errors occurred.");
-        problemDetails.Instance.Should().Be("/test");
-        problemDetails.errors.Should().ContainKey("errors");
-        problemDetails.errors["errors"].Should().BeEquivalentTo("Name is required", "Email is invalid");
+        _ = problemDetails.Should().NotBeNull();
+        _ = problemDetails.Status.Should().Be((int)HttpStatusCode.BadRequest);
+        _ = problemDetails.Title.Should().Be("Validation Error");
+        _ = problemDetails.Detail.Should().Be("One or more validation errors occurred.");
+        _ = problemDetails.Instance.Should().Be("/test");
+        _ = problemDetails.errors.Should().ContainKey("errors");
+        _ = problemDetails.errors["errors"].Should().BeEquivalentTo("Name is required", "Email is invalid");
     }
 
     [Fact]
@@ -68,18 +68,18 @@ public class GlobalExceptionHandlerTest
         // Act
         var result = await _handler.HandleExceptionAsync(context, exception);
         // Assert
-        result.Should().BeTrue();
-        context.Response.StatusCode.Should().Be((int)HttpStatusCode.InternalServerError);
-        context.Response.ContentType.Should().Be("application/json");
+        _ = result.Should().BeTrue();
+        _ = context.Response.StatusCode.Should().Be((int)HttpStatusCode.InternalServerError);
+        _ = context.Response.ContentType.Should().Be("application/json");
         var json = GetResponseBody(context);
         var problemDetails = JsonSerializer.Deserialize<ProblemDetails>(json, new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true
         });
-        problemDetails.Should().NotBeNull();
-        problemDetails.Status.Should().Be((int)HttpStatusCode.InternalServerError);
-        problemDetails.Title.Should().Be("An error occurred while processing your request.");
-        problemDetails.Detail.Should().Be("Something went wrong");
-        problemDetails.Instance.Should().Be("/test");
+        _ = problemDetails.Should().NotBeNull();
+        _ = problemDetails.Status.Should().Be((int)HttpStatusCode.InternalServerError);
+        _ = problemDetails.Title.Should().Be("An error occurred while processing your request.");
+        _ = problemDetails.Detail.Should().Be("Something went wrong");
+        _ = problemDetails.Instance.Should().Be("/test");
     }
 }

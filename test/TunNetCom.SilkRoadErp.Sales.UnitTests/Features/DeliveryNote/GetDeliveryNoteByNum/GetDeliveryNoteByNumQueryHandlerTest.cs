@@ -11,12 +11,12 @@ public class GetDeliveryNoteByNumQueryHandlerTest
             .Options;
         var context = new SalesContext(options);
         context.BonDeLivraison.AddRange(data);
-        context.SaveChanges();
+        _ = context.SaveChanges();
         return context;
     }
     public GetDeliveryNoteByNumQueryHandlerTest()
     {
-        _loggerMock.Setup(l => l.IsEnabled(LogLevel.Information)).Returns(true);
+        _ = _loggerMock.Setup(l => l.IsEnabled(LogLevel.Information)).Returns(true);
     }
 
     [Fact]
@@ -36,8 +36,7 @@ public class GetDeliveryNoteByNumQueryHandlerTest
             TempBl = new TimeOnly(14, 30),
             LigneBl = new List<LigneBl>
             {
-                new LigneBl
-                {
+                new() {
                     RefProduit = "REF001",
                     DesignationLi = "Produit Test",
                     QteLi = 2,
@@ -54,11 +53,11 @@ public class GetDeliveryNoteByNumQueryHandlerTest
         var query = new GetDeliveryNoteByNumQuery(deliveryNoteNum);
         // Act
          var result = await handler.Handle(query, _defaultCancellationToken);
-       // Assert
-        result.IsSuccess.Should().BeTrue();
+        // Assert
+        _ = result.IsSuccess.Should().BeTrue();
         var value = result.Value;
-        value.DeliveryNoteNumber.Should().Be(deliveryNoteNum);
-        value.Items.Should().HaveCount(1);      
+        _ = value.DeliveryNoteNumber.Should().Be(deliveryNoteNum);
+        _ = value.Items.Should().HaveCount(1);      
         _loggerMock.Verify(
             l => l.Log(
                 LogLevel.Information,
@@ -79,8 +78,8 @@ public class GetDeliveryNoteByNumQueryHandlerTest
         // Act
         var result = await handler.Handle(query, _defaultCancellationToken);
         // Assert
-        result.IsFailed.Should().BeTrue();
-        result.Errors.Should().ContainSingle(e => e.Message == "not_found");     
+        _ = result.IsFailed.Should().BeTrue();
+        _ = result.Errors.Should().ContainSingle(e => e.Message == "not_found");     
         _loggerMock.Verify(
             l => l.Log(
                 LogLevel.Information,
@@ -101,7 +100,7 @@ public class GetDeliveryNoteByNumQueryHandlerTest
         var cts = new CancellationTokenSource();
         cts.Cancel();
         // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(() => handler.Handle(query, cts.Token));
+        _ = await Assert.ThrowsAsync<OperationCanceledException>(() => handler.Handle(query, cts.Token));
     }
 
     [Fact]
@@ -109,12 +108,12 @@ public class GetDeliveryNoteByNumQueryHandlerTest
     {
         // Arrange
         var mockContext = new Mock<SalesContext>(new DbContextOptions<SalesContext>());
-        mockContext.Setup(c => c.BonDeLivraison)
+        _ = mockContext.Setup(c => c.BonDeLivraison)
             .Throws(new Exception("Unexpected failure"));
         var handler = new GetDeliveryNoteByNumQueryHandler(mockContext.Object, _loggerMock.Object);
         var query = new GetDeliveryNoteByNumQuery(1);
         // Act & Assert
         var ex = await Assert.ThrowsAsync<Exception>(() => handler.Handle(query, _defaultCancellationToken));
-        ex.Message.Should().Be("Unexpected failure");
+        _ = ex.Message.Should().Be("Unexpected failure");
     }
 }

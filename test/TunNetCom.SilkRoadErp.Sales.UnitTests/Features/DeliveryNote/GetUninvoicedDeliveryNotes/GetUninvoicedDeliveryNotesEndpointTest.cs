@@ -12,19 +12,19 @@ public class GetUninvoicedDeliveryNotesEndpointTest
         var cancellationToken = new CancellationToken();
         var deliveryNotes = new List<DeliveryNoteResponse>
         {
-            new DeliveryNoteResponse { DeliveryNoteNumber = 1,  },
-            new DeliveryNoteResponse { DeliveryNoteNumber = 2,  }
+            new() { DeliveryNoteNumber = 1,  },
+            new() { DeliveryNoteNumber = 2,  }
         };
-        mockMediator
+        _ = mockMediator
             .Setup(m => m.Send(It.Is<GetUninvoicedDeliveryNotesQuery>(q => q.CustomerId == clientId), cancellationToken))
             .ReturnsAsync(Result.Ok(deliveryNotes));
         var endpoint = new GetUninvoicedDeliveryNotesEndpoint();
         // Act
         var result = await InvokeHandler(endpoint, clientId, mockMediator.Object, cancellationToken);
         // Assert
-        result.Result.Should().BeOfType<Ok<List<DeliveryNoteResponse>>>();
+        _ = result.Result.Should().BeOfType<Ok<List<DeliveryNoteResponse>>>();
         var okResult = result.Result as Ok<List<DeliveryNoteResponse>>;
-        okResult!.Value.Should().HaveCount(2);
+        _ = okResult!.Value.Should().HaveCount(2);
     }
 
     [Fact]
@@ -34,14 +34,14 @@ public class GetUninvoicedDeliveryNotesEndpointTest
         var clientId = 1;
         var mockMediator = new Mock<IMediator>();
         var cancellationToken = new CancellationToken();
-        mockMediator
+        _ = mockMediator
             .Setup(m => m.Send(It.Is<GetUninvoicedDeliveryNotesQuery>(q => q.CustomerId == clientId), cancellationToken))
             .ReturnsAsync(Result.Ok(new List<DeliveryNoteResponse>()));
         var endpoint = new GetUninvoicedDeliveryNotesEndpoint();
         // Act
         var result = await InvokeHandler(endpoint, clientId, mockMediator.Object, cancellationToken);
         // Assert
-        result.Result.Should().BeOfType<NotFound>();
+        _ = result.Result.Should().BeOfType<NotFound>();
     }
 
     private static async Task<Results<Ok<List<DeliveryNoteResponse>>, NotFound>> InvokeHandler(

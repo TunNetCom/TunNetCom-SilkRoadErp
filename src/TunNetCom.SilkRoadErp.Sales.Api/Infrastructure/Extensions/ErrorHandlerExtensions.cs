@@ -4,7 +4,7 @@ public static class ErrorHandlerExtensions
 {
     public static void ConfigureExceptionHandler(this IApplicationBuilder app)
     {
-        app.UseExceptionHandler(errorApp =>
+        _ = app.UseExceptionHandler(errorApp =>
         {
             errorApp.Run(async context =>
             {
@@ -14,7 +14,7 @@ public static class ErrorHandlerExtensions
                 if (exception != null)
                 {
                     var globalExceptionHandler = context.RequestServices.GetRequiredService<GlobalExceptionHandler>();
-                    await globalExceptionHandler.HandleExceptionAsync(context, exception);
+                    _ = await globalExceptionHandler.HandleExceptionAsync(context, exception);
                 }
             });
         });

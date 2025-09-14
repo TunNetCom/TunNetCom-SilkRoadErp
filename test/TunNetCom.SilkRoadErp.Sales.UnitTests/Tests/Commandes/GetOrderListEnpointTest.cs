@@ -14,10 +14,10 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Commande
             var mockMediator = new Mock<IMediator>();
             var orders = new List<OrderSummaryResponse>
             {
-                new OrderSummaryResponse { OrderNumber = 1, SupplierId = 10, TotalExcludingVat = 100, NetToPay = 120, TotalVat = 20 }
+                new() { OrderNumber = 1, SupplierId = 10, TotalExcludingVat = 100, NetToPay = 120, TotalVat = 20 }
             };
 
-            mockMediator.Setup(m => m.Send(It.IsAny<GetOrdersListQuery>(), It.IsAny<CancellationToken>()))
+            _ = mockMediator.Setup(m => m.Send(It.IsAny<GetOrdersListQuery>(), It.IsAny<CancellationToken>()))
                        .ReturnsAsync(Result.Ok(orders));
 
             // Act
@@ -27,7 +27,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Commande
             var okResult = Assert.IsType<Ok<List<OrderSummaryResponse>>>(result);
             var returnedOrders = okResult.Value;
             Assert.NotNull(returnedOrders);
-            Assert.Single(returnedOrders);
+            _ = Assert.Single(returnedOrders);
             Assert.Equal(1, returnedOrders[0].OrderNumber);
         }
 
@@ -38,7 +38,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Commande
             var mockMediator = new Mock<IMediator>();
             var errors = new List<IError> { EntityNotFound.Error() };
 
-            mockMediator.Setup(m => m.Send(It.IsAny<GetOrdersListQuery>(), It.IsAny<CancellationToken>()))
+            _ = mockMediator.Setup(m => m.Send(It.IsAny<GetOrdersListQuery>(), It.IsAny<CancellationToken>()))
                         .ReturnsAsync(Result.Fail<List<OrderSummaryResponse>>(errors));
 
             // Act
@@ -51,7 +51,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Commande
             Assert.NotNull(value);
             Assert.Equal("An error occurred", value.Message);
             Assert.NotNull(value.Errors);
-            Assert.Single(value.Errors);
+            _ = Assert.Single(value.Errors);
         }
     }
 

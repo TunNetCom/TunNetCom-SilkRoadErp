@@ -4,7 +4,7 @@ public class CreateCustomerEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapPost(
+        _ = app.MapPost(
             "/customers",
             HandleCreateCustomerAsync);
     }

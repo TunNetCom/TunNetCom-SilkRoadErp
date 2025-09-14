@@ -11,7 +11,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Providers
             // Arrange
             var providerId = 1;
             var provider = new ProviderResponse { Id = providerId, Nom = "Test Provider" };
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.Is<GetProviderByIdQuery>(q => q.Id == providerId), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Ok(provider));
             var handler = GetHandler();
@@ -19,18 +19,18 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Providers
             var result = await handler(_mediatorMock.Object, providerId, CancellationToken.None);
             // Assert
             var typedResult = result as Results<Ok<ProviderResponse>, NotFound>;
-            typedResult.Should().NotBeNull();
+            _ = typedResult.Should().NotBeNull();
             var actualResult = typedResult.Result;
-            actualResult.Should().BeOfType<Ok<ProviderResponse>>();
+            _ = actualResult.Should().BeOfType<Ok<ProviderResponse>>();
             var okResult = (Ok<ProviderResponse>)actualResult;
-            okResult.Value.Should().BeEquivalentTo(provider);
+            _ = okResult.Value.Should().BeEquivalentTo(provider);
         }
         [Fact]
         public async Task GetProviderById_ReturnsNotFound_WhenEntityNotFound()
         {
             // Arrange
             var providerId = 999;
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.Is<GetProviderByIdQuery>(q => q.Id == providerId), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Fail<ProviderResponse>(EntityNotFound.Error()));
             var handler = GetHandler();
@@ -38,9 +38,9 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Providers
             var result = await handler(_mediatorMock.Object, providerId, CancellationToken.None);
             // Assert
             var typedResult = result as Results<Ok<ProviderResponse>, NotFound>;
-            typedResult.Should().NotBeNull();
+            _ = typedResult.Should().NotBeNull();
             var actualResult = typedResult.Result;
-            actualResult.Should().BeOfType<NotFound>();
+            _ = actualResult.Should().BeOfType<NotFound>();
         }
 
         private static Func<IMediator, int, CancellationToken, Task<Results<Ok<ProviderResponse>, NotFound>>> GetHandler()

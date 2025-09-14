@@ -46,8 +46,8 @@ public class CreateProductCommandHandlerTests
             prixAchat: 535,
             visibilite: true);
 
-        _context.Produit.Add(productDuplicated);
-        await _context.SaveChangesAsync();
+        _ = _context.Produit.Add(productDuplicated);
+        _ = await _context.SaveChangesAsync();
 
         // Act
         var result = await _createProductCommandHandler.Handle(command, CancellationToken.None);
@@ -96,7 +96,7 @@ public class CreateProductCommandHandlerTests
             Visibilite: true);
 
         // Act
-        await _createProductCommandHandler.Handle(command, CancellationToken.None);
+        _ = await _createProductCommandHandler.Handle(command, CancellationToken.None);
 
         // Assert
         Assert.Contains(

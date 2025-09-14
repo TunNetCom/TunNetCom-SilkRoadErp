@@ -10,7 +10,7 @@ public class ValidationBehaviorTests
     {
         public TestCommandValidator()
         {
-            RuleFor(x => x.Name).NotEmpty().WithMessage("Name is required");
+            _ = RuleFor(x => x.Name).NotEmpty().WithMessage("Name is required");
         }
     }
 
@@ -25,7 +25,7 @@ public class ValidationBehaviorTests
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ValidationException>(() =>
             behavior.Handle(request, nextMock.Object, CancellationToken.None));
-        exception.Errors.Should().Contain(e => e.ErrorMessage == "Name is required");
+        _ = exception.Errors.Should().Contain(e => e.ErrorMessage == "Name is required");
         nextMock.Verify(n => n(), Times.Never); // next should not be called
     }
 
@@ -37,11 +37,11 @@ public class ValidationBehaviorTests
         var behavior = new ValidationBehavior<TestCommand, string>(validators);
         var request = new TestCommand { Name = "Valid Name" };
         var nextMock = new Mock<RequestHandlerDelegate<string>>();
-        nextMock.Setup(n => n()).ReturnsAsync("Success");
+        _ = nextMock.Setup(n => n()).ReturnsAsync("Success");
         // Act
         var result = await behavior.Handle(request, nextMock.Object, CancellationToken.None);
         // Assert
-        result.Should().Be("Success");
+        _ = result.Should().Be("Success");
         nextMock.Verify(n => n(), Times.Once);
     }
 }

@@ -21,7 +21,7 @@
                 Mail: null);
 
             var result = _validator.TestValidate(model);
-            result.ShouldHaveValidationErrorFor(x => x.Nom)
+            _ = result.ShouldHaveValidationErrorFor(x => x.Nom)
                   .WithErrorMessage("nom_is_required");
         }
 
@@ -39,7 +39,7 @@
                 EtbSec: null,
                 Mail: null);
             var result = _validator.TestValidate(model);
-            result.ShouldHaveValidationErrorFor(x => x.Nom)
+            _ = result.ShouldHaveValidationErrorFor(x => x.Nom)
                   .WithErrorMessage("nom_must_be_less_than_50_characters");
         }
 
@@ -58,7 +58,7 @@
                 EtbSec: null,
                 Mail: null);
             var result = _validator.TestValidate(model);
-            result.ShouldHaveValidationErrorFor(x => x.Tel)
+            _ = result.ShouldHaveValidationErrorFor(x => x.Tel)
                   .WithErrorMessage("tel_is_required");
         }
 
@@ -80,7 +80,7 @@
                 Mail: null);
 
             var result = _validator.TestValidate(model);
-            result.ShouldHaveValidationErrorFor(x => x.Tel)
+            _ = result.ShouldHaveValidationErrorFor(x => x.Tel)
                   .WithErrorMessage("tel_must_be_heigher_than_10_and_less_than_15");
         }
 
@@ -97,7 +97,7 @@
                 EtbSec: null,
                 Mail: "not-an-email");
             var result = _validator.TestValidate(model);
-            result.ShouldHaveValidationErrorFor(x => x.Mail)
+            _ = result.ShouldHaveValidationErrorFor(x => x.Mail)
                   .WithErrorMessage("mail_must_be_a_valid_email_address");
         }
 

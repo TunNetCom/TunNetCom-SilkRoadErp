@@ -42,15 +42,15 @@ public class GetDeliveryNoteByNumEndpointTest
                 }
             }
         };
-        _mediatorMock
+        _ = _mediatorMock
             .Setup(m => m.Send(It.Is<GetDeliveryNoteByNumQuery>(q => q.Num == noteNum), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Ok(expectedResponse));
         // Act
         var response = await _handler(_mediatorMock.Object, noteNum, CancellationToken.None);
         // Assert
         var okResult = Assert.IsType<Ok<DeliveryNoteResponse>>(response.Result);
-        okResult.StatusCode.Should().Be(StatusCodes.Status200OK);
-        okResult.Value.Should().BeEquivalentTo(expectedResponse);
+        _ = okResult.StatusCode.Should().Be(StatusCodes.Status200OK);
+        _ = okResult.Value.Should().BeEquivalentTo(expectedResponse);
     }
 
     [Fact]
@@ -59,7 +59,7 @@ public class GetDeliveryNoteByNumEndpointTest
         // Arrange
         const int noteNum = 999;
         var failedResult = Result.Fail<DeliveryNoteResponse>("not_found");
-        _mediatorMock
+        _ = _mediatorMock
             .Setup(m => m.Send(It.Is<GetDeliveryNoteByNumQuery>(q => q.Num == noteNum), It.IsAny<CancellationToken>()))
             .ReturnsAsync(failedResult);
         // Act

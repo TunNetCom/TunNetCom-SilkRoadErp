@@ -23,8 +23,8 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.DeliveryNotes
             // Act
             var result = await _handler.Handle(command, CancellationToken.None);
             // Assert
-            result.IsFailed.Should().BeTrue();
-            result.Errors.Should().Contain(e => e.Message == "not_found");
+            _ = result.IsFailed.Should().BeTrue();
+            _ = result.Errors.Should().Contain(e => e.Message == "not_found");
         }
     }
 }

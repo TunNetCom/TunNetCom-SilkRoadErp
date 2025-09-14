@@ -9,7 +9,7 @@ public class GetCustomerQueryHandler(
     {
         _logger.LogPaginationRequest(nameof(Client), getCustomerQuery.PageNumber, getCustomerQuery.PageSize);
 
-        var clientsQuery = _context.Client.Select(t =>
+        var clientsQuery = _context.Client.AsNoTracking().Select(t =>
             new CustomerResponse
             {
                 Name = t.Nom,
@@ -26,7 +26,7 @@ public class GetCustomerQueryHandler(
 
         if (!string.IsNullOrEmpty(getCustomerQuery.SearchKeyword))
         {
-            clientsQuery = clientsQuery.Where(
+            clientsQuery = clientsQuery.AsNoTracking().Where(
                 c => c.Id.ToString().Contains(getCustomerQuery.SearchKeyword)
                 || c.Name.Contains(getCustomerQuery.SearchKeyword)
                 || c.Tel.Contains(getCustomerQuery.SearchKeyword)

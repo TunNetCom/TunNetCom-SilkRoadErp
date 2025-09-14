@@ -4,7 +4,7 @@ public class GetFullInvoiceByIdEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapGet("/invoices/{id:int}/full", HandleGetFullInvoiceByIdAsync);
+        _ = app.MapGet("/invoices/{id:int}/full", HandleGetFullInvoiceByIdAsync);
     }
 
     public static async Task<Results<Ok<FullInvoiceResponse>, NotFound>> HandleGetFullInvoiceByIdAsync(

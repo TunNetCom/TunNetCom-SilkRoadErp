@@ -17,15 +17,15 @@ public class DeletePriceQuoteCommandHandlerTest
         // Arrange
         using var context = new SalesContext(_dbContextOptions);
         var existingDevis = Devis.CreateDevis(1, 10, DateTime.UtcNow, 100, 19, 119);
-        context.Devis.Add(existingDevis);
-        await context.SaveChangesAsync();
+        _ = context.Devis.Add(existingDevis);
+        _ = await context.SaveChangesAsync();
         var handler = new DeletePriceQuoteCommandHandler(context, _loggerMock.Object);
         var command = new DeletePriceQuoteCommand(1);
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        context.Devis.Find(1).Should().BeNull();
+        _ = result.IsSuccess.Should().BeTrue();
+        _ = context.Devis.Find(1).Should().BeNull();
     }
 
     [Fact]
@@ -38,7 +38,7 @@ public class DeletePriceQuoteCommandHandlerTest
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
         // Assert
-        result.IsFailed.Should().BeTrue();
-        result.Errors.Should().ContainSingle(e => e.Message.Contains("not_found"));
+        _ = result.IsFailed.Should().BeTrue();
+        _ = result.Errors.Should().ContainSingle(e => e.Message.Contains("not_found"));
     }
 }

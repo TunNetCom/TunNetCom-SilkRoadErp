@@ -14,12 +14,12 @@ public class GetOrdersListQueryHandlerTest
             FournisseurId = 10,
             LigneCommandes = new List<LigneCommandes>
             {
-                new LigneCommandes { RefProduit = "P1", TotHt = 100, TotTtc = 119 },
-                new LigneCommandes { RefProduit = "P2", TotHt = 50, TotTtc = 59.5m }
+                new() { RefProduit = "P1", TotHt = 100, TotTtc = 119 },
+                new() { RefProduit = "P2", TotHt = 50, TotTtc = 59.5m }
             }
         };
-        context.Commandes.Add(order1);
-        context.SaveChanges();
+        _ = context.Commandes.Add(order1);
+        _ = context.SaveChanges();
         return context;
     }
 
@@ -60,7 +60,7 @@ public class GetOrdersListQueryHandlerTest
         // Assert
         Assert.True(result.IsSuccess);
         var orders = result.Value;
-        Assert.Single(orders);
+        _ = Assert.Single(orders);
         var order = orders.First();
         Assert.Equal(1, order.OrderNumber);
         Assert.Equal(10, order.SupplierId);

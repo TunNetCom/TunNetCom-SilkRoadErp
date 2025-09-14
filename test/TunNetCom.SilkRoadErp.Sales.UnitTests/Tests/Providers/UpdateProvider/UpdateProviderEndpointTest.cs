@@ -34,7 +34,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Providers
                 Adresse = "Adresse"
             };
 
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.IsAny<UpdateProviderCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Ok());
 
@@ -43,8 +43,8 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Providers
             var result = await handler(_mediatorMock.Object, 1, request, CancellationToken.None);
 
             var typedResult = result as Results<NoContent, NotFound, ValidationProblem>;
-            typedResult.Should().NotBeNull();
-            typedResult.Result.Should().BeOfType<NoContent>();
+            _ = typedResult.Should().NotBeNull();
+            _ = typedResult.Result.Should().BeOfType<NoContent>();
         }
         [Fact]
         public async Task UpdateProvider_ReturnsValidationProblem_WhenValidationFails()
@@ -52,7 +52,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Providers
             var request = new UpdateProviderRequest();
             var validationError = Result.Fail("validation_error");
 
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.IsAny<UpdateProviderCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(validationError);
 
@@ -61,8 +61,8 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Providers
             var result = await handler(_mediatorMock.Object, 1, request, CancellationToken.None);
 
             var typedResult = result as Results<NoContent, NotFound, ValidationProblem>;
-            typedResult.Should().NotBeNull();
-            typedResult.Result.Should().BeOfType<ValidationProblem>();
+            _ = typedResult.Should().NotBeNull();
+            _ = typedResult.Result.Should().BeOfType<ValidationProblem>();
         }
 
         // **Ajoute cette méthode dans ta classe de test !**

@@ -3,7 +3,7 @@ public class UpdateProductEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapPut(
+        _ = app.MapPut(
             "/products/{refe}",
             async Task<Results<NoContent, NotFound, BadRequest<List<IError>>>> (
             IMediator mediator,
@@ -24,9 +24,9 @@ public class UpdateProductEndpoint : ICarterModule
                 Visibilite: updateProductRequest.Visibilite
             );
 
-            var result = await mediator.Send(updateProductCommand,cancellationToken);
+            var result = await mediator.Send(updateProductCommand, cancellationToken);
 
-            if(result.IsEntityNotFound())
+            if (result.IsEntityNotFound())
             {
                 return TypedResults.NotFound();
             }

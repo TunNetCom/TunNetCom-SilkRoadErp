@@ -7,7 +7,7 @@ public class UpdateAppParametersEndpoint : ICarterModule
     public void AddRoutes(IEndpointRouteBuilder app)
     {
         // Put endpoint for updating app parameters
-        app.MapPut(
+        _ = app.MapPut(
                 "/appParameters",
                 async Task<Results<NoContent, NotFound, ValidationProblem>> (
                     IMediator mediator,

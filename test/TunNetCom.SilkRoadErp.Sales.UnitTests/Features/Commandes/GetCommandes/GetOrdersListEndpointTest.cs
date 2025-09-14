@@ -28,8 +28,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Commandes.GetCommandes
             // Arrange
             var orders = new List<OrderSummaryResponse>
             {
-                new OrderSummaryResponse
-                {
+                new() {
                     OrderNumber = 100,
                     SupplierId = 1,
                     Date = System.DateTime.Today,
@@ -38,33 +37,33 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Commandes.GetCommandes
                     NetToPay = 120
                 }
             };
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.IsAny<GetOrdersListQuery>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Ok(orders));
             // Act
             var result = await CallHandlerAsync(_mediatorMock.Object, CancellationToken.None);
            // Assert
             var okResult = result as Ok<List<OrderSummaryResponse>>;
-            okResult.Should().NotBeNull();
-            okResult!.Value.Should().BeEquivalentTo(orders);
+            _ = okResult.Should().NotBeNull();
+            _ = okResult!.Value.Should().BeEquivalentTo(orders);
         }
         [Fact]
         public async Task GetOrdersList_Failure_ReturnsBadRequest()
         {
             // Arrange
             var errorMessage = "Database error";
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.IsAny<GetOrdersListQuery>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Fail<List<OrderSummaryResponse>>(errorMessage));
             // Act
             var result = await CallHandlerAsync(_mediatorMock.Object, CancellationToken.None);
             // Assert
-            result.Should().BeOfType<BadRequest<ErrorResponse>>();
+            _ = result.Should().BeOfType<BadRequest<ErrorResponse>>();
 
             var badRequest = result as BadRequest<ErrorResponse>;
-            badRequest.Should().NotBeNull();
-            badRequest!.Value.Message.Should().Contain("error");
-            badRequest.Value.Errors.Should().Contain(e => e.Message == errorMessage);
+            _ = badRequest.Should().NotBeNull();
+            _ = badRequest!.Value.Message.Should().Contain("error");
+            _ = badRequest.Value.Errors.Should().Contain(e => e.Message == errorMessage);
         }
 
         [Fact]
@@ -73,11 +72,11 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Commandes.GetCommandes
             // Arrange
             var cts = new CancellationTokenSource();
             cts.Cancel();
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.IsAny<GetOrdersListQuery>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new OperationCanceledException());
             // Act & Assert
-            await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            _ = await Assert.ThrowsAsync<OperationCanceledException>(() =>
                 CallHandlerAsync(_mediatorMock.Object, cts.Token));
         }
     }

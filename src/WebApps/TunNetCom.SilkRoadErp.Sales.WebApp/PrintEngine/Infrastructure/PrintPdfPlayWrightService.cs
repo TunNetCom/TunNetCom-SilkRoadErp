@@ -28,7 +28,7 @@ public class PrintPdfPlayWrightService<TModel, TView> : IPrintPdfService<TModel,
 
         try
         {
-            Microsoft.Playwright.Program.Main(["install"]);
+            _ = Microsoft.Playwright.Program.Main(["install"]);
 
             var html = await RenderComponentAsync(printModel);
 

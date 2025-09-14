@@ -31,7 +31,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers
             clients[1].SetId(2);
             clients[2].SetId(3);
             _context.Client.AddRange(clients);
-            _context.SaveChanges();
+            _ = _context.SaveChanges();
         }
 
         [Fact]
@@ -42,10 +42,10 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
             // Assert
-            result.Should().NotBeNull();
-            result.Items.Should().HaveCount(3);
-          
-            result.PageSize.Should().Be(10);
+            _ = result.Should().NotBeNull();
+            _ = result.Items.Should().HaveCount(3);
+
+            _ = result.PageSize.Should().Be(10);
         }
         [Fact]
         public async Task Handle_ShouldReturnFilteredCustomer_WhenSearchByName()
@@ -55,7 +55,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
             // Assert
-            result.Items.Should().ContainSingle(c => c.Name == "Bob");
+            _ = result.Items.Should().ContainSingle(c => c.Name == "Bob");
         }
 
         [Fact]
@@ -66,7 +66,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
             // Assert
-            result.Items.Should().BeEmpty();
+            _ = result.Items.Should().BeEmpty();
         }
 
         [Fact]
@@ -77,8 +77,8 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
             // Assert
-            result.Items.Should().HaveCount(2);
-            result.PageSize.Should().Be(2);
+            _ = result.Items.Should().HaveCount(2);
+            _ = result.PageSize.Should().Be(2);
         }
     }
 }

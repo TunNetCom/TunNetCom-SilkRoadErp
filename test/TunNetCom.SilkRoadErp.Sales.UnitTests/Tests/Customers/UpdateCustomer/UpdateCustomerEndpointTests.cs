@@ -30,7 +30,7 @@ public class UpdateCustomerEndpointTests
 
         var result = Result.Fail(EntityNotFound.Error());
 
-        _mediatorMock
+        _ = _mediatorMock
             .Setup(m => m.Send(It.IsAny<UpdateCustomerCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
@@ -42,7 +42,7 @@ public class UpdateCustomerEndpointTests
             CancellationToken.None);
 
         // Assert
-        response.Result.Should().BeOfType<NotFound>("Bob's gone missing, no update for him!");
+        _ = response.Result.Should().BeOfType<NotFound>("Bob's gone missing, no update for him!");
     }
 
     [Fact]
@@ -60,7 +60,7 @@ public class UpdateCustomerEndpointTests
             mail: "alice@example.com");
 
         var result = Result.Fail("customer_name_exist");
-        _mediatorMock
+        _ = _mediatorMock
             .Setup(m => m.Send(It.IsAny<UpdateCustomerCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
@@ -72,7 +72,7 @@ public class UpdateCustomerEndpointTests
             CancellationToken.None);
 
         // Assert
-        response.Result.Should().BeOfType<ValidationProblem>("Alice can't steal someone else's name!");
+        _ = response.Result.Should().BeOfType<ValidationProblem>("Alice can't steal someone else's name!");
     }
 
     [Fact]
@@ -90,7 +90,7 @@ public class UpdateCustomerEndpointTests
             mail: "charlie@example.com");
 
         var result = Result.Ok();
-        _mediatorMock
+        _ = _mediatorMock
             .Setup(m => m.Send(It.IsAny<UpdateCustomerCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
@@ -102,7 +102,7 @@ public class UpdateCustomerEndpointTests
             CancellationToken.None);
 
         // Assert
-        response.Result.Should().BeOfType<NoContent>("Charlie's update party was a smashing success!");
+        _ = response.Result.Should().BeOfType<NoContent>("Charlie's update party was a smashing success!");
     }
 
     [Fact]
@@ -120,28 +120,28 @@ public class UpdateCustomerEndpointTests
             mail: "dana@example.com");
 
         UpdateCustomerCommand capturedCommand = null;
-        _mediatorMock
+        _ = _mediatorMock
             .Setup(m => m.Send(It.IsAny<UpdateCustomerCommand>(), It.IsAny<CancellationToken>()))
             .Callback<IRequest<Result>, CancellationToken>((command, ct) => capturedCommand = (UpdateCustomerCommand)command)
             .ReturnsAsync(Result.Ok());
 
         // Act
-        await UpdateCustomerEndpoint.HandleUpdateCustomerAsync(
+        _ = await UpdateCustomerEndpoint.HandleUpdateCustomerAsync(
             _mediatorMock.Object,
             id: 1,
             request,
             CancellationToken.None);
 
         // Assert
-        capturedCommand.Should().NotBeNull("Dana's command better be there!");
-        capturedCommand.Id.Should().Be(1, "Dana's ID got lost in translation!");
-        capturedCommand.Nom.Should().Be("Dana", "Dana's name took a vacation?");
-        capturedCommand.Tel.Should().Be("101112", "Wrong number for Dana!");
-        capturedCommand.Adresse.Should().Be("Dana's Den", "Dana's moving where?");
-        capturedCommand.Matricule.Should().Be("DANA001", "Dana's matricule got scrambled!");
-        capturedCommand.Code.Should().Be("CODE004", "Dana's code got decoded!");
-        capturedCommand.CodeCat.Should().Be("CAT004", "Dana's category got uncategorized!");
-        capturedCommand.EtbSec.Should().Be("SEC004", "Dana's sector got misplaced!");
-        capturedCommand.Mail.Should().Be("dana@example.com", "Dana's email got spammed!");
+        _ = capturedCommand.Should().NotBeNull("Dana's command better be there!");
+        _ = capturedCommand.Id.Should().Be(1, "Dana's ID got lost in translation!");
+        _ = capturedCommand.Nom.Should().Be("Dana", "Dana's name took a vacation?");
+        _ = capturedCommand.Tel.Should().Be("101112", "Wrong number for Dana!");
+        _ = capturedCommand.Adresse.Should().Be("Dana's Den", "Dana's moving where?");
+        _ = capturedCommand.Matricule.Should().Be("DANA001", "Dana's matricule got scrambled!");
+        _ = capturedCommand.Code.Should().Be("CODE004", "Dana's code got decoded!");
+        _ = capturedCommand.CodeCat.Should().Be("CAT004", "Dana's category got uncategorized!");
+        _ = capturedCommand.EtbSec.Should().Be("SEC004", "Dana's sector got misplaced!");
+        _ = capturedCommand.Mail.Should().Be("dana@example.com", "Dana's email got spammed!");
     }
 }

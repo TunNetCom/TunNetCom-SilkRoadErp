@@ -46,8 +46,8 @@ public class UpdatePriceQuoteCommandHandlerTest
             TotTva = 10,
             TotTtc = 60
         };
-        context.Devis.Add(existingDevis);
-        await context.SaveChangesAsync();
+        _ = context.Devis.Add(existingDevis);
+        _ = await context.SaveChangesAsync();
         var handler = new UpdatePriceQuoteCommandHandler(context, loggerMock.Object);
         var command = new UpdatePriceQuoteCommand(
             Num: 1,

@@ -46,8 +46,8 @@ public class GetProviderByIdQueryHandlerTests
              mailDeux: "email@example.com",
              constructeur: true,
              adresse: "adresse");
-        _context.Fournisseur.Add(provider);
-        await _context.SaveChangesAsync();
+        _ = _context.Fournisseur.Add(provider);
+        _ = await _context.SaveChangesAsync();
 
         var query = new GetProviderByIdQuery(provider.Id);
 

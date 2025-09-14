@@ -11,7 +11,7 @@ public class DeleteDeliveryNoteEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapDelete("/deliveryNote/{num:int}", HandleDeleteDeliveryNoteAsync);
+        _ = app.MapDelete("/deliveryNote/{num:int}", HandleDeleteDeliveryNoteAsync);
     }
 
     // 🧪 Cette méthode publique est testable

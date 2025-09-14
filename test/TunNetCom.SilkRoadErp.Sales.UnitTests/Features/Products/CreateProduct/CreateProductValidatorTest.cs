@@ -7,7 +7,7 @@
     {
         var model = new CreateProductCommand(null, "Nom", 1, 1, 10, 10, 19, 100, 80, true);
         var result = _validator.TestValidate(model);
-        result.ShouldHaveValidationErrorFor(x => x.Refe)
+        _ = result.ShouldHaveValidationErrorFor(x => x.Refe)
             .WithErrorMessage("reference_required");
     }
     [Fact]
@@ -15,7 +15,7 @@
     {
         var model = new CreateProductCommand("REF001", "", 1, 1, 10, 10, 19, 100, 80, true);
         var result = _validator.TestValidate(model);
-        result.ShouldHaveValidationErrorFor(x => x.Nom)
+        _ = result.ShouldHaveValidationErrorFor(x => x.Nom)
             .WithErrorMessage("nom_required");
     }
     [Fact]
@@ -23,7 +23,7 @@
     {
         var model = new CreateProductCommand("REF", "Nom", -1, 0, 0, 0, 0, 1, 1, true);
         var result = _validator.TestValidate(model);
-        result.ShouldHaveValidationErrorFor(x => x.Qte)
+        _ = result.ShouldHaveValidationErrorFor(x => x.Qte)
             .WithErrorMessage("quantite_must_be_non_negative");
     }
     [Fact]
@@ -31,7 +31,7 @@
     {
         var model = new CreateProductCommand("REF", "Nom", 1, 1, 200, 0, 0, 1, 1, true);
         var result = _validator.TestValidate(model);
-        result.ShouldHaveValidationErrorFor(x => x.Remise)
+        _ = result.ShouldHaveValidationErrorFor(x => x.Remise)
             .WithErrorMessage("remise_must_be_between_0_and_100");
     }
     [Fact]
@@ -39,7 +39,7 @@
     {
         var model = new CreateProductCommand("REF", "Nom", 1, 1, 10, 10, 20, 0, 100, true);
         var result = _validator.TestValidate(model);
-        result.ShouldHaveValidationErrorFor(x => x.Prix)
+        _ = result.ShouldHaveValidationErrorFor(x => x.Prix)
             .WithErrorMessage("prix_must_be_greater_than_0");
     }
     [Fact]

@@ -24,13 +24,13 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes
         {
             // Arrange
             int numToDelete = 1;
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.Is<DeleteReceiptNoteCommand>(cmd => cmd.Num == numToDelete), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Ok());
             // Act
             var result = await InvokeEndpoint(numToDelete);
             // Assert
-            Assert.IsType<NoContent>(result);
+            _ = Assert.IsType<NoContent>(result);
         }
 
         [Fact]
@@ -38,13 +38,13 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes
         {
             // Arrange
             int numToDelete = 999;
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.Is<DeleteReceiptNoteCommand>(cmd => cmd.Num == numToDelete), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Fail(EntityNotFound.Error()));
             // Act
             var result = await InvokeEndpoint(numToDelete);
             // Assert
-            Assert.IsType<NotFound>(result);
+            _ = Assert.IsType<NotFound>(result);
         }
     }
 }

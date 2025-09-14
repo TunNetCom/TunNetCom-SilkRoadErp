@@ -12,7 +12,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Quotations
                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
                 .Options;
             _context = new SalesContext(options);
-            _context.Database.EnsureCreated();
+            _ = _context.Database.EnsureCreated();
             _loggerMock = new Mock<ILogger<CreatePriceQuoteCommandHandler>>();
         }
 
@@ -43,8 +43,8 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Quotations
         public async Task Handle_ShouldReturnFail_WhenQuotationAlreadyExists()
         {
             // Arrange: Add a quotation with Num = 2001
-            _context.Devis.Add(Devis.CreateDevis(2001, 2, DateTime.UtcNow, 100, 20, 120));
-            await _context.SaveChangesAsync();
+            _ = _context.Devis.Add(Devis.CreateDevis(2001, 2, DateTime.UtcNow, 100, 20, 120));
+            _ = await _context.SaveChangesAsync();
             var handler = new CreatePriceQuoteCommandHandler(_context, _loggerMock.Object);
             var command = new CreatePriceQuoteCommand(
                 Num: 2001, // Same number

@@ -20,8 +20,8 @@ public class CreatePriceQuoteCommandHandlerTest
     {
         // Arrange
         var existingDevis = Devis.CreateDevis(123, 1, DateTime.UtcNow, 100m, 20m, 120m);
-        _context.Devis.Add(existingDevis);
-        await _context.SaveChangesAsync();
+        _ = _context.Devis.Add(existingDevis);
+        _ = await _context.SaveChangesAsync();
         var command = new CreatePriceQuoteCommand(
             Num: 123,      // même numéro que existant
             IdClient: 1,
@@ -33,8 +33,8 @@ public class CreatePriceQuoteCommandHandlerTest
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
         // Assert
-        result.IsFailed.Should().BeTrue();
-        result.Errors.Should().ContainSingle(e => e.Message == "quotations_num_exist");
+        _ = result.IsFailed.Should().BeTrue();
+        _ = result.Errors.Should().ContainSingle(e => e.Message == "quotations_num_exist");
     }
 
     [Fact]
@@ -52,11 +52,11 @@ public class CreatePriceQuoteCommandHandlerTest
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().Be(999);
+        _ = result.IsSuccess.Should().BeTrue();
+        _ = result.Value.Should().Be(999);
         var createdDevis = await _context.Devis.FirstOrDefaultAsync(d => d.Num == 999);
-        createdDevis.Should().NotBeNull();
-        createdDevis.IdClient.Should().Be(42);
-        createdDevis.TotHTva.Should().Be(200m);
+        _ = createdDevis.Should().NotBeNull();
+        _ = createdDevis.IdClient.Should().Be(42);
+        _ = createdDevis.TotHTva.Should().Be(200m);
     }
 }

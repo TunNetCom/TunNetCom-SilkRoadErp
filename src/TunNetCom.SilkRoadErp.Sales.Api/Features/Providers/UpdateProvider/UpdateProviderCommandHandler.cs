@@ -35,7 +35,7 @@ public class UpdateProviderCommandHandler(SalesContext _context, ILogger<UpdateP
             constructeur: updateProviderCommand.Constructeur,
             adresse: updateProviderCommand.Adresse);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        _ = await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogEntityUpdated(nameof(Fournisseur), updateProviderCommand.Id);
         return Result.Ok();

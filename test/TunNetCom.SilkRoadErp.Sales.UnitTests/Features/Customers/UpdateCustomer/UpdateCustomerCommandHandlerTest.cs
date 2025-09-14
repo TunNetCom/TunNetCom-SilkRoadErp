@@ -13,12 +13,12 @@ public class UpdateCustomerCommandHandlerTests
     {
         // Arrange
         using var context = new SalesContext(_dbOptions);
-        context.Database.EnsureDeleted(); 
-        context.Database.EnsureCreated();
+        _ = context.Database.EnsureDeleted();
+        _ = context.Database.EnsureCreated();
         var existingClient = Client.CreateClient("Old Name", null, null, null, null, null, null, null);
         existingClient.SetId(1);
-        context.Client.Add(existingClient);
-        await context.SaveChangesAsync();
+        _ = context.Client.Add(existingClient);
+        _ = await context.SaveChangesAsync();
         var loggerMock = new Mock<ILogger<UpdateCustomerCommandHandler>>();
         var handler = new UpdateCustomerCommandHandler(context, loggerMock.Object);
         var command = new UpdateCustomerCommand(
@@ -35,20 +35,20 @@ public class UpdateCustomerCommandHandlerTests
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
         // Assert
-        result.IsSuccess.Should().BeTrue();
+        _ = result.IsSuccess.Should().BeTrue();
         var updated = await context.Client.FindAsync(1);
-        updated!.Nom.Should().Be("New Name");
-        updated.Tel.Should().Be("123456");
-        updated.Adresse.Should().Be("Address 123");
-        updated.Matricule.Should().Be("MAT123");
+        _ = updated!.Nom.Should().Be("New Name");
+        _ = updated.Tel.Should().Be("123456");
+        _ = updated.Adresse.Should().Be("Address 123");
+        _ = updated.Matricule.Should().Be("MAT123");
     }
     [Fact]
     public async Task Handle_ShouldReturnFail_WhenCustomerNotFound()
     {
         // Arrange
         using var context = new SalesContext(_dbOptions);
-        context.Database.EnsureDeleted();
-        context.Database.EnsureCreated();
+        _ = context.Database.EnsureDeleted();
+        _ = context.Database.EnsureCreated();
         var loggerMock = new Mock<ILogger<UpdateCustomerCommandHandler>>();
         var handler = new UpdateCustomerCommandHandler(context, loggerMock.Object);
         var command = new UpdateCustomerCommand(
@@ -65,23 +65,23 @@ public class UpdateCustomerCommandHandlerTests
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
         // Assert
-        result.IsFailed.Should().BeTrue();
-        result.Errors.Should().ContainSingle();
-        result.Errors[0].Message.Should().Be("not_found"); // <-- corrigé ici
+        _ = result.IsFailed.Should().BeTrue();
+        _ = result.Errors.Should().ContainSingle();
+        _ = result.Errors[0].Message.Should().Be("not_found"); // <-- corrigé ici
     }
 
     [Fact]
     public async Task Handle_ShouldReturnFail_WhenNameAlreadyExists()
     {
         using var context = new SalesContext(_dbOptions);
-        context.Database.EnsureDeleted();
-        context.Database.EnsureCreated();
+        _ = context.Database.EnsureDeleted();
+        _ = context.Database.EnsureCreated();
         var client1 = Client.CreateClient("Client A", null, null, null, null, null, null, null);
         client1.SetId(1);
         var client2 = Client.CreateClient("Existing Name", null, null, null, null, null, null, null);
         client2.SetId(2);
         context.Client.AddRange(client1, client2);
-        await context.SaveChangesAsync();
+        _ = await context.SaveChangesAsync();
         var loggerMock = new Mock<ILogger<UpdateCustomerCommandHandler>>();
         var handler = new UpdateCustomerCommandHandler(context, loggerMock.Object);
         var command = new UpdateCustomerCommand(
@@ -98,7 +98,7 @@ public class UpdateCustomerCommandHandlerTests
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
         // Assert
-        result.IsFailed.Should().BeTrue();
-        result.Errors[0].Message.Should().Be("customer_name_exist");
+        _ = result.IsFailed.Should().BeTrue();
+        _ = result.Errors[0].Message.Should().Be("customer_name_exist");
     }
 }

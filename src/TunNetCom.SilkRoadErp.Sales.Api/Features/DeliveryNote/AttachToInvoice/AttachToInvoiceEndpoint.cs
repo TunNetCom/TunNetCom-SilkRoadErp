@@ -13,7 +13,7 @@ public class AttachToInvoiceEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapPut("/deliveryNote/attachToInvoice",
+        _ = app.MapPut("/deliveryNote/attachToInvoice",
             async Task<Results<NoContent, NotFound, ValidationProblem>> (
                 IMediator mediator,
                 [FromBody] AttachToInvoiceRequest attachToInvoiceRequest,

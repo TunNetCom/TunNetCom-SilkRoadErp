@@ -27,8 +27,8 @@ public class CreatePriceQuoteCommandHandler(
         createPriceQuoteCommand.TotTva,
         createPriceQuoteCommand.TotTtc
         );
-        _context.Devis.Add(devis);
-        await _context.SaveChangesAsync(cancellationToken);
+        _ = _context.Devis.Add(devis);
+        _ = await _context.SaveChangesAsync(cancellationToken);
         _logger.LogEntityCreatedSuccessfully(nameof(Devis), devis.Num);
 
         return devis.Num;

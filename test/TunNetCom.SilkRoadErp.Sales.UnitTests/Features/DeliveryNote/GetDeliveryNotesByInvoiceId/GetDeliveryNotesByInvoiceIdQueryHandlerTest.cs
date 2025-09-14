@@ -38,7 +38,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.DeliveryNote
             var deliveryNote1 = new BonDeLivraison { Num = 1, NumFacture = 500, Date = DateTime.Today };
             var deliveryNote2 = new BonDeLivraison { Num = 2, NumFacture = 500, Date = DateTime.Today };
             _context.BonDeLivraison.AddRange(deliveryNote1, deliveryNote2);
-            await _context.SaveChangesAsync();
+            _ = await _context.SaveChangesAsync();
             var query = new GetDeliveryNotesByInvoiceIdQuery(500);
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
@@ -53,8 +53,8 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.DeliveryNote
         {
             // Arrange
             var deliveryNote = new BonDeLivraison { Num = 10, NumFacture = 888, Date = DateTime.Today };
-            _context.BonDeLivraison.Add(deliveryNote);
-           await _context.SaveChangesAsync();
+            _ = _context.BonDeLivraison.Add(deliveryNote);
+            _ = await _context.SaveChangesAsync();
             var query = new GetDeliveryNotesByInvoiceIdQuery(888);
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);

@@ -49,7 +49,7 @@ class ReceiptNoteApiClient : IReceiptNoteApiClient
         // Send the GET request
         var response = await _httpClient.GetAsync(requestUri, cancellationToken);
 
-        response.EnsureSuccessStatusCode();
+        _ = response.EnsureSuccessStatusCode();
         var content = await response.Content.ReadAsStringAsync(cancellationToken);
         var result = System.Text.Json.JsonSerializer.Deserialize<ReceiptNotesWithSummary>(
             content,
@@ -81,7 +81,7 @@ class ReceiptNoteApiClient : IReceiptNoteApiClient
             command,
             cancellationToken);
 
-        response.EnsureSuccessStatusCode();
+        _ = response.EnsureSuccessStatusCode();
         return true;
         //TODO : Handle the response as needed
     }
@@ -104,7 +104,7 @@ class ReceiptNoteApiClient : IReceiptNoteApiClient
             "/receipt-note/detach",
             command,
             cancellationToken);
-        response.EnsureSuccessStatusCode();
+        _ = response.EnsureSuccessStatusCode();
     }
 }
 

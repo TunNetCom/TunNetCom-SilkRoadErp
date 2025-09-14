@@ -36,7 +36,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.DeliveryNotes
         {
             using var context = CreateContext();
 
-            context.BonDeLivraison.Add(new BonDeLivraison
+            _ = context.BonDeLivraison.Add(new BonDeLivraison
             {
                 Num = 1,
                 Date = DateTime.Today,
@@ -47,16 +47,16 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.DeliveryNotes
                 TempBl = new TimeOnly(10, 0),
                 NumFacture = 5
             });
-            await context.SaveChangesAsync();
+            _ = await context.SaveChangesAsync();
 
             var handler = new GetDeliveryNotesByClientIdQueryHandler(context, _mockLogger.Object);
             var query = new GetDeliveryNoteByClientIdQuery(10);
 
             var result = await handler.Handle(query, CancellationToken.None);
 
-            result.IsSuccess.Should().BeTrue();
-            result.Value.Should().HaveCount(1);
-            result.Value.First().CustomerId.Should().Be(10);
+            _ = result.IsSuccess.Should().BeTrue();
+            _ = result.Value.Should().HaveCount(1);
+            _ = result.Value.First().CustomerId.Should().Be(10);
         }
 
         [Fact]
@@ -69,8 +69,8 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.DeliveryNotes
 
             var result = await handler.Handle(query, CancellationToken.None);
 
-            result.IsFailed.Should().BeTrue();
-            result.Errors.First().Message.Should().Be("not_found");
+            _ = result.IsFailed.Should().BeTrue();
+            _ = result.Errors.First().Message.Should().Be("not_found");
         }
     }
 }

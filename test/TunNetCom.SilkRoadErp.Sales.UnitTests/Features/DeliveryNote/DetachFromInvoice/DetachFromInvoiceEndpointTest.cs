@@ -16,14 +16,14 @@ public class DetachFromInvoiceEndpointTest
     {
         // Arrange
         var request = new DetachFromInvoiceRequest { InvoiceId = 1, DeliveryNoteIds = new List<int> { 10, 20 } };
-        _mediatorMock
+        _ = _mediatorMock
             .Setup(m => m.Send(It.IsAny<DetachFromInvoiceCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Ok());
         // Act
         var handler = GetHandler();
         var result = await handler(_mediatorMock.Object, request, CancellationToken.None);
         // Assert
-        result.Should().BeOfType<NoContent>();
+        _ = result.Should().BeOfType<NoContent>();
     }
 
     [Fact]
@@ -33,14 +33,14 @@ public class DetachFromInvoiceEndpointTest
         var request = new DetachFromInvoiceRequest { InvoiceId = 999, DeliveryNoteIds = new List<int> { 100 } };
         var error = EntityNotFound.Error();
         var resultWithError = Result.Fail(error);
-        _mediatorMock
+        _ = _mediatorMock
             .Setup(m => m.Send(It.IsAny<DetachFromInvoiceCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(resultWithError);
         // Act
         var handler = GetHandler();
         var result = await handler(_mediatorMock.Object, request, CancellationToken.None);
         // Assert
-        result.Should().BeOfType<NotFound>();
+        _ = result.Should().BeOfType<NotFound>();
     }
 
     [Fact]
@@ -49,14 +49,14 @@ public class DetachFromInvoiceEndpointTest
         // Arrange
         var request = new DetachFromInvoiceRequest { InvoiceId = 1, DeliveryNoteIds = new List<int> { 1 } };
         var result = Result.Fail("Validation failed");
-        _mediatorMock
+        _ = _mediatorMock
             .Setup(m => m.Send(It.IsAny<DetachFromInvoiceCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
         // Act
         var handler = GetHandler();
         var resultActual = await handler(_mediatorMock.Object, request, CancellationToken.None);
         // Assert
-        resultActual.Should().BeOfType<ValidationProblem>();
+        _ = resultActual.Should().BeOfType<ValidationProblem>();
     }
 
     private static Func<IMediator, DetachFromInvoiceRequest, CancellationToken, Task<IResult>> GetHandler()

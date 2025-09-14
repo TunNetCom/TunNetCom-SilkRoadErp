@@ -13,8 +13,8 @@ public class DeleteProviderCommandHandler(SalesContext _context, ILogger<DeleteP
             return Result.Fail(EntityNotFound.Error());
         }
 
-        _context.Fournisseur.Remove(provider);
-        await _context.SaveChangesAsync(cancellationToken);
+        _ = _context.Fournisseur.Remove(provider);
+        _ = await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogEntityDeleted(nameof(Fournisseur), provider.Id);
         return Result.Ok();

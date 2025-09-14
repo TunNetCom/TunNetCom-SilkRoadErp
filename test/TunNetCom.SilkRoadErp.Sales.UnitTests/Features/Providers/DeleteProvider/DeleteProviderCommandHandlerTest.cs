@@ -6,7 +6,7 @@
     {
         _loggerMock = new Mock<ILogger<DeleteProviderCommandHandler>>();
         // Important pour que les appels à Log soient bien enregistrés dans les tests
-        _loggerMock.Setup(x => x.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
+        _ = _loggerMock.Setup(x => x.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
    }
     private SalesContext CreateContextWithData(params Fournisseur[] providers)
     {
@@ -17,7 +17,7 @@
         if (providers.Length > 0)
         {
             context.Fournisseur.AddRange(providers);
-            context.SaveChanges();
+            _ = context.SaveChanges();
         }
         return context;
     }

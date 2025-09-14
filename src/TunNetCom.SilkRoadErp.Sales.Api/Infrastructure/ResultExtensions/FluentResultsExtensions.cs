@@ -7,6 +7,6 @@ public sealed class EntityNotFound : Error
         Message = message;
     }
 
-    public static EntityNotFound Error(string message = "not_found") => new EntityNotFound(message);
+    public static EntityNotFound Error(string message = "not_found") => new(message);
 }
  

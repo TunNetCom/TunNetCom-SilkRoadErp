@@ -32,7 +32,7 @@ namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Orders
                 return new FullOrderResponse();
             }
 
-            response.EnsureSuccessStatusCode();
+            _ = response.EnsureSuccessStatusCode();
             
             var order = await response.Content.ReadFromJsonAsync<FullOrderResponse>(
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true },
@@ -48,7 +48,7 @@ namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Orders
 
             var response = await _httpClient.GetAsync("api/orders", cancellationToken);
 
-            response.EnsureSuccessStatusCode();
+            _ = response.EnsureSuccessStatusCode();
             
             var orders = await response.Content.ReadFromJsonAsync<List<OrderSummaryResponse>>(
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true },

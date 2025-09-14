@@ -3,7 +3,7 @@ public class GetProductEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapGet("/products", Handle);
+        _ = app.MapGet("/products", Handle);
     }
     public async Task<IResult> Handle(
         [AsParameters] QueryStringParameters paginationQueryParams,

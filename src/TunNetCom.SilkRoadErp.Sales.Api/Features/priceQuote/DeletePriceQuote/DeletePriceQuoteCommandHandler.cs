@@ -18,8 +18,8 @@ ILogger<DeletePriceQuoteCommandHandler> _logger) : IRequestHandler<DeletePriceQu
             return Result.Fail(EntityNotFound.Error());
         }
 
-        _context.Devis.Remove(devis);
-        await _context.SaveChangesAsync(cancellationToken);
+        _ = _context.Devis.Remove(devis);
+        _ = await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogEntityDeleted(
             nameof(Devis),

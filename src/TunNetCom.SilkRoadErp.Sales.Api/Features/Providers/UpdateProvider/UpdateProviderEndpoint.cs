@@ -4,7 +4,7 @@ public class UpdateProviderEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapPut("/providers/{id:int}",
+        _ = app.MapPut("/providers/{id:int}",
             async Task<Results<NoContent, NotFound, ValidationProblem>> (
                 IMediator mediator, int id,
                 UpdateProviderRequest request,

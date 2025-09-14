@@ -29,12 +29,12 @@
             <RadzenRow>
                 <RadzenColumn Size="12" SizeMD="4" SizeXL="12">
                     <RadzenCard Variant="Variant.Outlined" Style="height: 100%;">
-                        <RadzenStack JustifyContent="JustifyContent.SpaceBetween" Style="height: 100%;" >
+                        <RadzenStack JustifyContent="JustifyContent.SpaceBetween" Style="height: 100%;">
                             <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="AlignItems.Start" JustifyContent="JustifyContent.SpaceBetween">
                                 <RadzenText TextStyle="TextStyle.H6">Progress</RadzenText>
                                 <RadzenText TextStyle="TextStyle.H2" class="rz-color-info rz-m-0">@($"{Math.Round(closeRatioPercentage)}%")</RadzenText>
                             </RadzenStack>
-                            <RadzenProgressBar ProgressBarStyle="ProgressBarStyle.Info" @bind-Value=@closeRatioPercentage ShowValue="false" Style="--rz-progressbar-background-color: var(--rz-info-lighter); --rz-progressbar-height: 1rem;"/>
+                            <RadzenProgressBar ProgressBarStyle="ProgressBarStyle.Info" @bind-Value=@closeRatioPercentage ShowValue="false" Style="--rz-progressbar-background-color: var(--rz-info-lighter); --rz-progressbar-height: 1rem;" />
                         </RadzenStack>
                     </RadzenCard>
                 </RadzenColumn>
@@ -110,9 +110,7 @@
                         <RadzenTabsItem Text="Most Active Member">
                             <div class="rz-text-align-center">
                                 <img Style="width: 120px; border-radius: 50%; margin: 20px 0;" src=@mostActiveMember?.AvatarUrl alt="Most active member avatar" />
-                                <h4>
-                                    @mostActiveMember?.Login
-                                </h4>
+                                <h4>@mostActiveMember?.Login</h4>
                             </div>
                         </RadzenTabsItem>
                     </Tabs>
@@ -143,11 +141,11 @@
                         <Template Context="issue">
                             @if (issue.State == IssueState.Open)
                             {
-                                <RadzenBadge Text="Open" IsPill="true" Variant="Variant.Flat" Shade="Shade.Light" BadgeStyle="BadgeStyle.Success" Style="width: 60px;"/>
+                                <RadzenBadge Text="Open" IsPill="true" Variant="Variant.Flat" Shade="Shade.Light" BadgeStyle="BadgeStyle.Success" Style="width: 60px;" />
                             }
                             else
                             {
-                                <RadzenBadge Text="Closed" IsPill="true" Variant="Variant.Flat" Shade="Shade.Light" BadgeStyle="BadgeStyle.Danger" Style="width: 60px;"/>
+                                <RadzenBadge Text="Closed" IsPill="true" Variant="Variant.Flat" Shade="Shade.Light" BadgeStyle="BadgeStyle.Danger" Style="width: 60px;" />
                             }
                         </Template>
                     </RadzenDataGridColumn>
@@ -164,9 +162,8 @@
                                 </Template>
                             </RadzenDropDown>
                         </FilterTemplate>
-
                         <Template Context="issue">
-                            @foreach(var label in issue.Labels)
+                            @foreach (var label in issue.Labels)
                             {
                                 <span class="rz-badge rz-badge-pill rz-me-1 rz-mb-1" Style="background-color: #@label.Color">@Regex.Replace(label.Name, ":\\w+:", "")</span>
                             }
@@ -177,7 +174,7 @@
                             <RadzenDropDown AllowClear="true" AllowFiltering="true" Data=@users TextProperty="Login" @bind-Value="selectedUser" Change=@FilterIssues>
                                 <Template Context="user">
                                     <div Style="white-space: nowrap">
-                                        <img Style="width: 24px; height: 24px; border-radius: 50%; margin-inline-end: 8px;" src=@user.AvatarUrl alt="User avatar"/>@user.Login
+                                        <img Style="width: 24px; height: 24px; border-radius: 50%; margin-inline-end: 8px;" src=@user.AvatarUrl alt="User avatar" />@user.Login
                                     </div>
                                 </Template>
                             </RadzenDropDown>
@@ -212,9 +209,9 @@
 </style>
 
 @code {
-    IEnumerable<Issue> issues;
-    IEnumerable<Issue> openIssues;
-    IEnumerable<Issue> closedIssues;
+    IEnumerable<Issue> issues = new List<Issue>();
+    IEnumerable<Issue> openIssues = new List<Issue>();
+    IEnumerable<Issue> closedIssues = new List<Issue>();
 
     class IssueGroup
     {
@@ -235,16 +232,16 @@
         public string Name { get; set; }
     }
 
-    IEnumerable<IssueGroup> openIssuesByDate;
-    IEnumerable<IssueGroup> closedIssuesByDate;
-    IEnumerable<LabelGroup> labelGroups;
-    IEnumerable<UserGroup> openByGroups;
-    IEnumerable<User> users;
-    IEnumerable<Issue> filteredIssues;
-    IEnumerable<string> labels;
-    IEnumerable<string> selectedLabels;
+    IEnumerable<IssueGroup> openIssuesByDate = new List<IssueGroup>();
+    IEnumerable<IssueGroup> closedIssuesByDate = new List<IssueGroup>();
+    IEnumerable<LabelGroup> labelGroups = new List<LabelGroup>();
+    IEnumerable<UserGroup> openByGroups = new List<UserGroup>();
+    IEnumerable<User> users = new List<User>();
+    IEnumerable<Issue> filteredIssues = new List<Issue>();
+    IEnumerable<string> labels = new List<string>();
+    IEnumerable<string> selectedLabels = new List<string>();
     IEnumerable<IssueState> issueStates = Enum.GetValues(typeof(IssueState)).Cast<IssueState>();
-    IEnumerable<string> labelColors;
+    IEnumerable<string> labelColors = new List<string>();
     IssueState selectedState = IssueState.All;
     User mostActiveMember;
     User selectedUser;
@@ -255,30 +252,18 @@
     bool fetchingData = false;
     string error = null;
 
+    private CancellationTokenSource _cts = new();
+
     class UserComparer : IEqualityComparer<User>
     {
-        public bool Equals(User x, User y)
-        {
-            return x.Login.Equals(y.Login);
-        }
-
-        public int GetHashCode(User user)
-        {
-            return user.Login.GetHashCode();
-        }
+        public bool Equals(User x, User y) => x.Login.Equals(y.Login);
+        public int GetHashCode(User user) => user.Login.GetHashCode();
     }
 
     class LabelComparer : IEqualityComparer<Label>
     {
-        public bool Equals(Label x, Label y)
-        {
-            return x.Name.Equals(y.Name);
-        }
-
-        public int GetHashCode(Label user)
-        {
-            return user.Name.GetHashCode();
-        }
+        public bool Equals(Label x, Label y) => x.Name.Equals(y.Name);
+        public int GetHashCode(Label user) => user.Name.GetHashCode();
     }
 
     void FilterIssues()
@@ -290,7 +275,7 @@
             filteredIssues = issues.Where(issue => issue.User.Login == selectedUser.Login);
         }
 
-        if (selectedLabels != null)
+        if (selectedLabels != null && selectedLabels.Any())
         {
             foreach (var selectedLabel in selectedLabels)
             {
@@ -308,8 +293,8 @@
     {
         currentPage = args.Current;
         totalPages = args.Total;
-
-        StateHasChanged();
+        if (!_cts.IsCancellationRequested)
+            StateHasChanged();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -320,7 +305,11 @@
             fetchingData = true;
             try
             {
-                issues = await GitHub.GetIssues(DateTime.Now);
+                var cts = _cts;
+                issues = await GitHub.GetIssues(DateTime.Now); // optionally pass cts.Token if supported
+
+                if (cts.IsCancellationRequested) return;
+
                 filteredIssues = issues.OrderByDescending(issue => issue.CreatedAt);
                 openIssues = issues.Where(issue => issue.State == IssueState.Open);
                 closedIssues = issues.Where(issue => issue.State == IssueState.Closed);
@@ -329,18 +318,12 @@
                 closeRatioPercentage = closeRatio * 100;
 
                 openIssuesByDate = openIssues.GroupBy(issue => issue.CreatedAt.EndOfWeek())
-                        .Select(group => new IssueGroup
-                        {
-                            Week = group.Key,
-                            Count = group.Count()
-                        });
+                                    .Select(g => new IssueGroup { Week = g.Key, Count = g.Count() }) ?? Enumerable.Empty<IssueGroup>();
 
-                closedIssuesByDate = closedIssues.GroupBy(issue => issue.ClosedAt.Value.EndOfWeek())
-                        .Select(group => new IssueGroup
-                        {
-                            Week = group.Key,
-                            Count = group.Count()
-                        });
+                closedIssuesByDate = closedIssues
+                                    .Where(issue => issue.ClosedAt.HasValue)
+                                    .GroupBy(issue => issue.ClosedAt.Value.EndOfWeek())
+                                    .Select(g => new IssueGroup { Week = g.Key, Count = g.Count() }) ?? Enumerable.Empty<IssueGroup>();
 
                 labels = issues.SelectMany(issue => issue.Labels).Select(label => label.Name).Distinct();
 
@@ -369,14 +352,27 @@
                             .Distinct(new UserComparer());
 
                 error = null;
-                fetchingData = false;
+
             }
+            catch (TaskCanceledException) { }
             catch (Exception ex)
             {
                 error = ex.Message;
             }
 
-            StateHasChanged();
+            fetchingData = false;
+
+            if (!_cts.IsCancellationRequested)
+            {
+                StateHasChanged();
+            }
         }
+    }
+
+    public void Dispose()
+    {
+        _cts.Cancel();
+        _cts.Dispose();
+        GitHub.OnProgress -= OnProgress;
     }
 }

@@ -91,7 +91,7 @@ public class RetenuSourceFournisseurPrintService(
 
         if (appParametersResult.IsT1)
         {
-            Result.Fail("failed_to_retrieve_app_parameters");
+            _ = Result.Fail("failed_to_retrieve_app_parameters");
         }
 
         var getAppParametersResponse = appParametersResult.AsT0;

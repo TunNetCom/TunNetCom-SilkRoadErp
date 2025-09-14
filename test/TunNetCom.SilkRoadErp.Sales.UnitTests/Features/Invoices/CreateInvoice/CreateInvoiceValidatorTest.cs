@@ -16,7 +16,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.CreateInvoice
             // Act
             var result = _validator.TestValidate(command);
             // Assert
-            result.ShouldHaveValidationErrorFor(x => x.Date)
+            _ = result.ShouldHaveValidationErrorFor(x => x.Date)
                   .WithErrorMessage("date_is_required");
         }
 
@@ -28,7 +28,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.CreateInvoice
             // Act
             var result = _validator.TestValidate(command);
             // Assert
-            result.ShouldHaveValidationErrorFor(x => x.ClientId)
+            _ = result.ShouldHaveValidationErrorFor(x => x.ClientId)
                   .WithErrorMessage("client_id_is_required");
         }
 

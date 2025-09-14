@@ -23,7 +23,7 @@ public class UpdateReceiptNoteCommandHandler(
             date: updateReceiptNoteCommand.Date,
             numFactureFournisseur: updateReceiptNoteCommand.NumFactureFournisseur
             );
-        await _context.SaveChangesAsync(cancellationToken);
+        _ = await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogEntityUpdated(nameof(BonDeReception), updateReceiptNoteCommand.Num);
 

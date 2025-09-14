@@ -8,7 +8,7 @@ public class GetDeliveryNotesWithSummariesEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapGet(
+        _ = app.MapGet(
             "/deliverynotes/summaries",
             async Task<Results<Ok<GetDeliveryNotesWithSummariesResponse>, BadRequest<ProblemDetails>>> (
             IMediator mediator,
@@ -19,11 +19,11 @@ public class GetDeliveryNotesWithSummariesEndpoint : ICarterModule
                 PageNumber: queryParams.PageNumber ?? 1,
                 PageSize: queryParams.PageSize ?? 10,
                 IsInvoiced: queryParams.IsInvoiced,
-                SortOrder : queryParams.SortOrder,
+                SortOrder: queryParams.SortOrder,
                 SortProperty: queryParams.SortProperty,
                 CustomerId: queryParams.CustomerId,
                 InvoiceId: queryParams.InvoiceId,
-                SearchKeyword:queryParams.SearchKeyword,
+                SearchKeyword: queryParams.SearchKeyword,
                 StartDate: queryParams.StartDate,
                 EndDate: queryParams.EndDate
             );

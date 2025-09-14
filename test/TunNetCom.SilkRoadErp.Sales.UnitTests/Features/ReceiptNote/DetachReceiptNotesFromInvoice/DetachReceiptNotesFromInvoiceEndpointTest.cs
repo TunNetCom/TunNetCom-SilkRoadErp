@@ -23,7 +23,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes
             // Arrange
             var mediatorMock = new Mock<IMediator>();
             var command = new DetachReceiptNotesFromInvoiceCommand(123, new List<int> { 1, 2 });
-            mediatorMock
+            _ = mediatorMock
                 .Setup(m => m.Send(command, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Fail(EntityNotFound.Error("not_found")));
             // Act
@@ -39,7 +39,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes
             // Arrange
             var mediatorMock = new Mock<IMediator>();
             var command = new DetachReceiptNotesFromInvoiceCommand(123, new List<int> { 1, 2 });
-            mediatorMock
+            _ = mediatorMock
                 .Setup(m => m.Send(command, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Fail("SomeError"));
             // Act
@@ -55,7 +55,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes
             // Arrange
             var mediatorMock = new Mock<IMediator>();
             var command = new DetachReceiptNotesFromInvoiceCommand(123, new List<int> { 1, 2 });
-            mediatorMock
+            _ = mediatorMock
                 .Setup(m => m.Send(command, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Ok());
             // Act

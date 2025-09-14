@@ -21,44 +21,44 @@ public static class SalesHttpClients
     /// <param name="baseUrl"></param>
     public static void AddSalesHttpClients(this IServiceCollection services, string baseUrl)
     {
-        services.AddHttpClient<ICustomersApiClient, CustomersApiClient>(client =>
+        _ = services.AddHttpClient<ICustomersApiClient, CustomersApiClient>(client =>
         {
             client.BaseAddress = new Uri(baseUrl);
         });
 
-        services.AddHttpClient<IDeliveryNoteApiClient, DeliveryNoteApiClient>(deliverynote =>
+        _ = services.AddHttpClient<IDeliveryNoteApiClient, DeliveryNoteApiClient>(deliverynote =>
         {
             deliverynote.BaseAddress = new Uri(baseUrl);
         });
 
-        services.AddHttpClient<IInvoicesApiClient, InvoicesApiClient>(invoice =>
+        _ = services.AddHttpClient<IInvoicesApiClient, InvoicesApiClient>(invoice =>
         {
             invoice.BaseAddress = new Uri(baseUrl);
         });
 
-        services.AddHttpClient<IProductsApiClient, ProductsApiClient>(product =>
+        _ = services.AddHttpClient<IProductsApiClient, ProductsApiClient>(product =>
         {
             product.BaseAddress = new Uri(baseUrl);
         });
 
-        services.AddHttpClient<IProvidersApiClient, ProvidersApiClient>(provider =>
+        _ = services.AddHttpClient<IProvidersApiClient, ProvidersApiClient>(provider =>
         {
             provider.BaseAddress = new Uri($"{baseUrl}/providers/");
         });
 
-        services.AddHttpClient<IAppParametersClient, AppParametersClient>(provider =>
+        _ = services.AddHttpClient<IAppParametersClient, AppParametersClient>(provider =>
         {
             provider.BaseAddress = new Uri($"{baseUrl}/");
         });
-        services.AddHttpClient<IReceiptNoteApiClient, ReceiptNoteApiClient>(receipt =>
+        _ = services.AddHttpClient<IReceiptNoteApiClient, ReceiptNoteApiClient>(receipt =>
         {
             receipt.BaseAddress = new Uri(baseUrl);
         });
-        services.AddHttpClient<IProviderInvoiceApiClient, ProviderInvoiceApiClient>(invoice =>
+        _ = services.AddHttpClient<IProviderInvoiceApiClient, ProviderInvoiceApiClient>(invoice =>
         {
             invoice.BaseAddress = new Uri(baseUrl);
         });
-        services.AddHttpClient<IOrderApiClient, OrderApiClient>(order =>
+        _ = services.AddHttpClient<IOrderApiClient, OrderApiClient>(order =>
         {
             order.BaseAddress = new Uri(baseUrl);
         });

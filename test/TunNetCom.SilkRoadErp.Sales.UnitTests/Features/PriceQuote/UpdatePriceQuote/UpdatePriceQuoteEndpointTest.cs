@@ -22,12 +22,12 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Tests.Features.priceQuote.UpdatePriceQ
                 TotTva = 19,
                 TotTtc = 119
             };
-            _mediatorMock.Setup(m => m.Send(It.IsAny<UpdatePriceQuoteCommand>(), It.IsAny<CancellationToken>()))
+            _ = _mediatorMock.Setup(m => m.Send(It.IsAny<UpdatePriceQuoteCommand>(), It.IsAny<CancellationToken>()))
                          .ReturnsAsync(Result.Ok());
             // Act
             var result = await InvokeEndpointAsync(123, request);
             // Assert
-            Assert.IsType<NoContent>(result);
+            _ = Assert.IsType<NoContent>(result);
         }
 
         [Fact]
@@ -41,10 +41,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Tests.Features.priceQuote.UpdatePriceQ
                 TotTva = 25,
                 TotTtc = 175
             };
-            _mediatorMock.Setup(m => m.Send(It.IsAny<UpdatePriceQuoteCommand>(), It.IsAny<CancellationToken>()))
+            _ = _mediatorMock.Setup(m => m.Send(It.IsAny<UpdatePriceQuoteCommand>(), It.IsAny<CancellationToken>()))
                          .ReturnsAsync(Result.Fail(EntityNotFound.Error()));
             var result = await InvokeEndpointAsync(222, request);
-            Assert.IsType<NotFound>(result);
+            _ = Assert.IsType<NotFound>(result);
         }
 
         [Fact]
@@ -59,7 +59,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Tests.Features.priceQuote.UpdatePriceQ
                 TotTtc = 238
             };
             var error = new Error("quotation_num_exist");
-            _mediatorMock.Setup(m => m.Send(It.IsAny<UpdatePriceQuoteCommand>(), It.IsAny<CancellationToken>()))
+            _ = _mediatorMock.Setup(m => m.Send(It.IsAny<UpdatePriceQuoteCommand>(), It.IsAny<CancellationToken>()))
                          .ReturnsAsync(Result.Fail(error));
             var result = await InvokeEndpointAsync(333, request);
             var problemResult = Assert.IsType<ValidationProblem>(result);

@@ -9,7 +9,7 @@ public class OrderEndpoints : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/orders/{id}", async (
+        _ = app.MapGet("/api/orders/{id}", async (
                 [FromRoute] int id,
                 [FromServices] IMediator mediator,
                 CancellationToken cancellationToken) =>

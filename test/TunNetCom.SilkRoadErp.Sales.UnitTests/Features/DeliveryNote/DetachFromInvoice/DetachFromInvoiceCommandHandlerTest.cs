@@ -7,13 +7,13 @@ public class DetachFromInvoiceCommandHandlerTest
             .UseInMemoryDatabase(databaseName: $"SalesDb_{System.Guid.NewGuid()}")
             .Options;
         var context = new SalesContext(options);
-        context.Facture.Add(new Facture { Num = 1 }); 
+        _ = context.Facture.Add(new Facture { Num = 1 }); 
         context.BonDeLivraison.AddRange(
             new BonDeLivraison { Num = 101, NumFacture = 1 },
             new BonDeLivraison { Num = 102, NumFacture = 1 },
             new BonDeLivraison { Num = 103, NumFacture = 2 } 
         );
-        context.SaveChanges();
+        _ = context.SaveChanges();
         return context;
     }
 
@@ -31,10 +31,10 @@ public class DetachFromInvoiceCommandHandlerTest
         // Act
         var result = await handler.Handle(request, CancellationToken.None);
         // Assert
-        result.IsSuccess.Should().BeTrue();
+        _ = result.IsSuccess.Should().BeTrue();
         var detachedNotes = await context.BonDeLivraison
             .ToListAsync();
-        detachedNotes
+        _ = detachedNotes
             .FindAll(n => request.DeliveryNoteIds.Contains(n.Num))
             .Should()
             .OnlyContain(n => n.NumFacture == null);
@@ -53,7 +53,7 @@ public class DetachFromInvoiceCommandHandlerTest
         // Act
         var result = await handler.Handle(request, CancellationToken.None);
         // Assert
-        result.IsFailed.Should().BeTrue();
-        result.Errors[0].Message.Should().Be("invoice_not_found");
+        _ = result.IsFailed.Should().BeTrue();
+        _ = result.Errors[0].Message.Should().Be("invoice_not_found");
     }
 }

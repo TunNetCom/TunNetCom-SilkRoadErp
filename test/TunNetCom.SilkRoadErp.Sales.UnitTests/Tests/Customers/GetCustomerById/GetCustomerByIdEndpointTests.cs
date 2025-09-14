@@ -21,7 +21,7 @@ public class GetCustomerByIdEndpointTests
         var customerResponse = new CustomerResponse { Id = customerId, Name = "John Doe" };
         var expectedResult = Result.Ok(customerResponse);
 
-        _mediatorMock.Setup(m => m.Send(It.IsAny<GetCustomerByIdQuery>(), It.IsAny<CancellationToken>()))
+        _ = _mediatorMock.Setup(m => m.Send(It.IsAny<GetCustomerByIdQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResult);
 
         // Act
@@ -43,7 +43,7 @@ public class GetCustomerByIdEndpointTests
         var customerId = 1;
         var expectedResult = EntityNotFound.Error();
 
-        _mediatorMock.Setup(m => m.Send(It.IsAny<GetCustomerByIdQuery>(), It.IsAny<CancellationToken>()))
+        _ = _mediatorMock.Setup(m => m.Send(It.IsAny<GetCustomerByIdQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResult);
 
         // Act
@@ -53,7 +53,7 @@ public class GetCustomerByIdEndpointTests
             CancellationToken.None);
 
         // Assert
-        Assert.IsType<NotFound>(result.Result);
+        _ = Assert.IsType<NotFound>(result.Result);
     }
 
 }

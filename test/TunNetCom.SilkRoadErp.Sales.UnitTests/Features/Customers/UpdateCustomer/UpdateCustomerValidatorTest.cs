@@ -39,7 +39,7 @@ public class UpdateCustomerValidatorTest
             Mail: null
         );
         var result = _validator.TestValidate(command);
-        result.ShouldHaveValidationErrorFor(c => c.Nom)
+        _ = result.ShouldHaveValidationErrorFor(c => c.Nom)
               .WithErrorMessage("nom_is_required");
     }
 
@@ -58,7 +58,7 @@ public class UpdateCustomerValidatorTest
             Mail: null
         );
         var result = _validator.TestValidate(command);
-        result.ShouldHaveValidationErrorFor(c => c.Tel)
+        _ = result.ShouldHaveValidationErrorFor(c => c.Tel)
               .WithErrorMessage("tel_must_be_heigher_than_10_and_less_than_15");
     }
 
@@ -77,7 +77,7 @@ public class UpdateCustomerValidatorTest
             Mail: "invalid-email"
         );
         var result = _validator.TestValidate(command);
-        result.ShouldHaveValidationErrorFor(c => c.Mail)
+        _ = result.ShouldHaveValidationErrorFor(c => c.Mail)
               .WithErrorMessage("mail_must_be_a_valid_email_address");
     }
 
@@ -97,17 +97,17 @@ public class UpdateCustomerValidatorTest
             Mail: "john.doe@mail.com"
         );
         var result = _validator.TestValidate(command);
-        result.ShouldHaveValidationErrorFor(c => c.Nom)
+        _ = result.ShouldHaveValidationErrorFor(c => c.Nom)
               .WithErrorMessage("nom_must_be_less_than_50_characters");
-        result.ShouldHaveValidationErrorFor(c => c.Adresse)
+        _ = result.ShouldHaveValidationErrorFor(c => c.Adresse)
               .WithErrorMessage("adresse_must_be_less_than_50_characters");
-        result.ShouldHaveValidationErrorFor(c => c.Matricule)
+        _ = result.ShouldHaveValidationErrorFor(c => c.Matricule)
               .WithErrorMessage("matricule_must_be_less_than_50_characters");
-        result.ShouldHaveValidationErrorFor(c => c.Code)
+        _ = result.ShouldHaveValidationErrorFor(c => c.Code)
               .WithErrorMessage("code_must_be_less_than_50_characters");
-        result.ShouldHaveValidationErrorFor(c => c.CodeCat)
+        _ = result.ShouldHaveValidationErrorFor(c => c.CodeCat)
               .WithErrorMessage("codeCat_must_be_less_than_50_characters");
-        result.ShouldHaveValidationErrorFor(c => c.EtbSec)
+        _ = result.ShouldHaveValidationErrorFor(c => c.EtbSec)
               .WithErrorMessage("etbSec_must_be_less_than_50_characters");
     }
 }

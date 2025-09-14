@@ -7,10 +7,10 @@ public class GetDeliveryNotesBaseInfosWithSummariesValidator : AbstractValidator
         //RuleFor(x => x.CustomerId)
         //    .NotEmpty().WithMessage("customer_id_is_required");
 
-        RuleFor(x => x.PageNumber)
+        _ = RuleFor(x => x.PageNumber)
             .GreaterThan(0).WithMessage("page_number_must_be_greater_than_0");
 
-        RuleFor(x => x.PageSize)
+        _ = RuleFor(x => x.PageSize)
             .GreaterThan(0).WithMessage("page_size_must_be_greater_than_0")
             .LessThanOrEqualTo(50).WithMessage("page_size_cannot_exceed_50");
 

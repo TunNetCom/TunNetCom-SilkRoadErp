@@ -47,8 +47,8 @@ public class CreateProviderCommandHandlerTest
             constructeur: true,
             adresse: "adresse");
 
-        _context.Fournisseur.Add(provider);
-        await _context.SaveChangesAsync();
+        _ = _context.Fournisseur.Add(provider);
+        _ = await _context.SaveChangesAsync();
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);

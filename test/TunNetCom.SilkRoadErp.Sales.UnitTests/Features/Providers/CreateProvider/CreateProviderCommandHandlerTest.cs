@@ -30,8 +30,8 @@
             constructeur: false,
             adresse: null
         );
-        _context.Fournisseur.Add(existingProvider);
-        await _context.SaveChangesAsync();
+        _ = _context.Fournisseur.Add(existingProvider);
+        _ = await _context.SaveChangesAsync();
         var command = new CreateProviderCommand(
             Nom: "ProviderExists",
             Tel: "987654321",

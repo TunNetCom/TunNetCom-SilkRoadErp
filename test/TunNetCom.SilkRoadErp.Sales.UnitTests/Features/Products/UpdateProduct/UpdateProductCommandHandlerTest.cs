@@ -50,8 +50,8 @@
             prix: 50m,
             prixAchat: 40m,
             visibilite: true);
-        await _context.Produit.AddAsync(product);
-        await _context.SaveChangesAsync();
+        _ = await _context.Produit.AddAsync(product);
+        _ = await _context.SaveChangesAsync();
         var command = new UpdateProductCommand(
             Refe: "P001",
             Nom: "Nouveau Nom",

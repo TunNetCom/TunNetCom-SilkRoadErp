@@ -4,7 +4,7 @@ public class DeleteCustomerEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapDelete("/customers/{id:int}", HandleDeleteCustomerAsync);
+        _ = app.MapDelete("/customers/{id:int}", HandleDeleteCustomerAsync);
     }
 
     public async Task<Results<NoContent, ValidationProblem, NotFound>> HandleDeleteCustomerAsync(

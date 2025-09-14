@@ -24,8 +24,8 @@
             // Act
             var result = await _handler.Handle(command, CancellationToken.None);
             // Assert
-            result.IsFailed.Should().BeTrue();
-            result.Errors[0].Message.Should().Be("not_found");
+            _ = result.IsFailed.Should().BeTrue();
+            _ = result.Errors[0].Message.Should().Be("not_found");
         }
 
         [Fact]
@@ -43,15 +43,15 @@
                 prix: 100,
                 prixAchat: 80,
                 visibilite: true);
-            await _context.Produit.AddAsync(product);
-            await _context.SaveChangesAsync();
+            _ = await _context.Produit.AddAsync(product);
+            _ = await _context.SaveChangesAsync();
             var command = new DeleteProductCommand("P001");
             // Act
             var result = await _handler.Handle(command, CancellationToken.None);
             // Assert
-            result.IsSuccess.Should().BeTrue();
+            _ = result.IsSuccess.Should().BeTrue();
             var deletedProduct = await _context.Produit.FindAsync("P001");
-            deletedProduct.Should().BeNull();
+            _ = deletedProduct.Should().BeNull();
         }
     }
 }

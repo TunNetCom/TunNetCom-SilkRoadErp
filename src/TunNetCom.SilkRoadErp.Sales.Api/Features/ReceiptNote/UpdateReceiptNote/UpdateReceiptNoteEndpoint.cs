@@ -4,7 +4,7 @@ public class UpdateReceiptNoteEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapPut("/receiptnotes/{num:int}",
+        _ = app.MapPut("/receiptnotes/{num:int}",
             async Task<Results<NoContent, NotFound, ValidationProblem>> (
                 IMediator mediator, int num,
                 UpdateReceiptNoteRequest request,

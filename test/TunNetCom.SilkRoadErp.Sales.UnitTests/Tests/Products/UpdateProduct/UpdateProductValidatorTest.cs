@@ -27,8 +27,8 @@ public class UpdateProductValidatorTests
         // Act
         var result = _validator.Validate(command);
         // Assert
-        result.IsValid.Should().BeTrue();
-        result.Errors.Should().BeEmpty();
+        _ = result.IsValid.Should().BeTrue();
+        _ = result.Errors.Should().BeEmpty();
     }
 
     [Theory]
@@ -52,8 +52,8 @@ public class UpdateProductValidatorTests
         // Act
         var result = _validator.Validate(command);
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e => e.ErrorMessage == expectedErrorMessage);
+        _ = result.IsValid.Should().BeFalse();
+        _ = result.Errors.Should().ContainSingle(e => e.ErrorMessage == expectedErrorMessage);
     }
 
     [Fact]
@@ -71,9 +71,9 @@ public class UpdateProductValidatorTests
             PrixAchat: 80,
             Visibilite: true);
         var result = _validator.Validate(command);
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.ErrorMessage == "quantite_must_be_non_negative");
-        result.Errors.Should().Contain(e => e.ErrorMessage == "quantite_limit_must_be_non_negative");
+        _ = result.IsValid.Should().BeFalse();
+        _ = result.Errors.Should().Contain(e => e.ErrorMessage == "quantite_must_be_non_negative");
+        _ = result.Errors.Should().Contain(e => e.ErrorMessage == "quantite_limit_must_be_non_negative");
     }
     [Theory]
     [InlineData(-1, "remise_must_be_between_0_and_100")]
@@ -92,8 +92,8 @@ public class UpdateProductValidatorTests
             PrixAchat: 80,
             Visibilite: true);
         var result = _validator.Validate(command);
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.ErrorMessage == expectedErrorMessage);
+        _ = result.IsValid.Should().BeFalse();
+        _ = result.Errors.Should().Contain(e => e.ErrorMessage == expectedErrorMessage);
     }
 
     [Fact]
@@ -111,9 +111,9 @@ public class UpdateProductValidatorTests
             PrixAchat: 0,
             Visibilite: true);
         var result = _validator.Validate(command);
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.ErrorMessage == "prix_must_be_greater_than_0");
-        result.Errors.Should().Contain(e => e.ErrorMessage == "prix_achat_must_be_greater_than_0");
+        _ = result.IsValid.Should().BeFalse();
+        _ = result.Errors.Should().Contain(e => e.ErrorMessage == "prix_must_be_greater_than_0");
+        _ = result.Errors.Should().Contain(e => e.ErrorMessage == "prix_achat_must_be_greater_than_0");
     }
 
     [Fact]

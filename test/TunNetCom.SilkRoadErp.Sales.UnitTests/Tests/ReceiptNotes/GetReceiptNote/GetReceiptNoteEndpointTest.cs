@@ -21,8 +21,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes
             var expectedResult = new PagedList<ReceiptNoteResponse>(
                 items: new List<ReceiptNoteResponse>
                 {
-                new ReceiptNoteResponse
-                {
+                new() {
                     Num = 1,
                     NumBonFournisseur = 123456789,
                     DateLivraison = DateTime.Today,
@@ -35,7 +34,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes
                 pageNumber: 1,
                 pageSize: 10
             );
-            mediatorMock
+            _ = mediatorMock
                 .Setup(m => m.Send(It.IsAny<GetReceiptNoteQuery>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedResult);
             var context = new DefaultHttpContext();
@@ -67,7 +66,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes
             var result = await handler(queryParams, mediatorMock.Object, context, CancellationToken.None);
             // Assert
             var okResult = Assert.IsType<Ok<PagedList<ReceiptNoteResponse>>>(result);
-            Assert.Single(okResult.Value.Items);
+            _ = Assert.Single(okResult.Value.Items);
             Assert.Equal(1, okResult.Value.Items[0].Num);
             Assert.Equal(123456789, okResult.Value.Items[0].NumBonFournisseur);
             Assert.Equal(101, okResult.Value.Items[0].IdFournisseur);

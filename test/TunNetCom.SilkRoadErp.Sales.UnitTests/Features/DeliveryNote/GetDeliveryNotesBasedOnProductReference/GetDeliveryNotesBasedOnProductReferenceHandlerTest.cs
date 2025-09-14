@@ -45,18 +45,18 @@ public class GetDeliveryNotesBasedOnProductReferenceHandlerTest
             TotHt = 950,
             Tva = 19,
             TotTtc = 1130.5m
-        };     
-        context.Fournisseur.Add(fournisseur);
-        context.BonDeReception.Add(bonReception);
-        context.LigneBonReception.Add(ligne);
-        await context.SaveChangesAsync();
+        };
+        _ = context.Fournisseur.Add(fournisseur);
+        _ = context.BonDeReception.Add(bonReception);
+        _ = context.LigneBonReception.Add(ligne);
+        _ = await context.SaveChangesAsync();
         var logger = LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Warning)).CreateLogger<GetDeliveryNotesBasedOnProductReferenceHandler>();
         var handler = new GetDeliveryNotesBasedOnProductReferenceHandler(context, logger);
         var query = new GetDeliveryNotesBasedOnProductReferenceQuery("REF123");
         // Act
         var result = await handler.Handle(query, CancellationToken.None);
         // Assert
-        Assert.Single(result);
+        _ = Assert.Single(result);
         var detail = result[0];
         Assert.Equal("REF123", detail.ProductReference);
         Assert.Equal("Produit Test", detail.Description);
@@ -65,7 +65,7 @@ public class GetDeliveryNotesBasedOnProductReferenceHandlerTest
         Assert.Equal("Fournisseur 1", detail.Provider);
         Assert.Equal(new DateTime(2025, 7, 20), detail.Date);
         Assert.True(detail.NetTtcUnitaire > 0);
-        Assert.NotNull(detail.PrixHtFodec);
+        _ = Assert.NotNull(detail.PrixHtFodec);
     }
 
     [Fact]

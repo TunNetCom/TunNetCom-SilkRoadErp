@@ -43,7 +43,7 @@ public class GetFullProviderInvoiceQueryHandlerTests
             Mail = "supplier@mail.com"
         };
 
-        _context.Fournisseur.Add(fournisseur);
+        _ = _context.Fournisseur.Add(fournisseur);
 
         var ligne1 = new LigneBonReception
         {
@@ -66,7 +66,7 @@ public class GetFullProviderInvoiceQueryHandlerTests
             LigneBonReception = new List<LigneBonReception> { ligne1 }
         };
 
-        _context.BonDeReception.Add(bonReception);
+        _ = _context.BonDeReception.Add(bonReception);
 
         var facture = new FactureFournisseur
         {
@@ -76,9 +76,9 @@ public class GetFullProviderInvoiceQueryHandlerTests
             BonDeReception = new List<BonDeReception> { bonReception }
         };
 
-        _context.FactureFournisseur.Add(facture);
+        _ = _context.FactureFournisseur.Add(facture);
 
-        _context.SaveChanges();
+        _ = _context.SaveChanges();
     }
 
     [Fact]
@@ -94,7 +94,7 @@ public class GetFullProviderInvoiceQueryHandlerTests
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
         Assert.Equal(999, result.Value.ProviderInvoiceNumber);
-        Assert.Single(result.Value.ReceiptNotes);
+        _ = Assert.Single(result.Value.ReceiptNotes);
         Assert.Equal("P001", result.Value.ReceiptNotes.First().Lines.First().ProductReference);
     }
 

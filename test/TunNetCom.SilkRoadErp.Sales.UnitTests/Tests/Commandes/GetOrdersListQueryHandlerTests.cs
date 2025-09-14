@@ -54,8 +54,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Commande
                 FournisseurId = 1,
                 LigneCommandes = new List<TunNetCom.SilkRoadErp.Sales.Domain.Entites.LigneCommandes>
     {
-        new TunNetCom.SilkRoadErp.Sales.Domain.Entites.LigneCommandes
-        {
+        new() {
             NumCommande = 100,
             RefProduit = "P001",
             QteLi = 2,
@@ -67,8 +66,8 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Commande
     }
             };
 
-            _context.Commandes.Add(commande);
-            await _context.SaveChangesAsync();
+            _ = _context.Commandes.Add(commande);
+            _ = await _context.SaveChangesAsync();
 
             var query = new GetOrdersListQuery();
 
@@ -86,7 +85,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Commande
 
         public void Dispose()
         {
-            _context.Database.EnsureDeleted();
+            _ = _context.Database.EnsureDeleted();
             _context.Dispose();
         }
 

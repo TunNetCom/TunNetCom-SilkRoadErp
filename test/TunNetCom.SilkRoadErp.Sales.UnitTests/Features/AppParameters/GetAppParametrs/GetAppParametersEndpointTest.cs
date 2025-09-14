@@ -19,29 +19,29 @@ public class GetAppParametersEndpointTest
             DiscountPercentage = 10,
             VatAmount = 19
         };
-        mediatorMock
+        _ = mediatorMock
             .Setup(m => m.Send(It.IsAny<GetAppParametersQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Ok(expected));
         var endpoint = new GetAppParametersEndpoint();
         // Act
         var result = await endpoint.Handle(mediatorMock.Object, CancellationToken.None);
         // Assert
-        result.Should().BeOfType<Ok<GetAppParametersResponse>>();
+        _ = result.Should().BeOfType<Ok<GetAppParametersResponse>>();
         var okResult = (Ok<GetAppParametersResponse>)result;
-        okResult.Value.Should().BeEquivalentTo(expected);
+        _ = okResult.Value.Should().BeEquivalentTo(expected);
     }
     [Fact]
     public async Task Handle_ReturnsBadRequest_WhenMediatorReturnsFailure()
     {
         // Arrange
         var mediatorMock = new Mock<IMediator>();
-        mediatorMock
+        _ = mediatorMock
             .Setup(m => m.Send(It.IsAny<GetAppParametersQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Fail(new List<IError> { new Error("Some error") }));
         var endpoint = new GetAppParametersEndpoint();
         // Act
         var result = await endpoint.Handle(mediatorMock.Object, CancellationToken.None);
         // Assert
-        result.Should().BeOfType<BadRequest<List<IReason>>>();
+        _ = result.Should().BeOfType<BadRequest<List<IReason>>>();
     }
 }

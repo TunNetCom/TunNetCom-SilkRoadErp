@@ -38,7 +38,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.PriceQuotes
                     TotTtc = 960
                 }
             );
-            _context.SaveChanges();
+            _ = _context.SaveChanges();
         }
 
         [Fact]
@@ -49,8 +49,8 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.PriceQuotes
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
             // Assert
-            result.Should().NotBeNull();
-            result.Items.Should().HaveCount(2);
+            _ = result.Should().NotBeNull();
+            _ = result.Items.Should().HaveCount(2);
         }
 
         [Fact]
@@ -61,9 +61,9 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.PriceQuotes
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
             // Assert
-            result.Should().NotBeNull();
-            result.Items.Should().ContainSingle();
-            result.Items[0].IdClient.Should().Be(100);
+            _ = result.Should().NotBeNull();
+            _ = result.Items.Should().ContainSingle();
+            _ = result.Items[0].IdClient.Should().Be(100);
         }
         [Fact]
         public async Task Handle_ShouldReturnEmptyList_WhenSearchDoesNotMatch()
@@ -73,8 +73,8 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.PriceQuotes
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
             // Assert
-            result.Should().NotBeNull();
-            result.Items.Should().BeEmpty();
+            _ = result.Should().NotBeNull();
+            _ = result.Items.Should().BeEmpty();
         }
     }
 }

@@ -16,7 +16,7 @@ public class GetAppParametersQueryHandler(
 
         if (appParametersLines == 0)
         {
-            await _context.Systeme.AddAsync(new Systeme(), cancellationToken);
+            _ = await _context.Systeme.AddAsync(new Systeme(), cancellationToken);
             _logger.LogInformation(
                 "No app sales parameters found in table {SalesAppParameterTable}, then an empty line was created.",
                 nameof(Systeme));
@@ -29,7 +29,7 @@ public class GetAppParametersQueryHandler(
             throw new InvalidOperationException("There should be only one line in the app parameters table.");
         }
 
-        var appParameters = await _context.Systeme.FirstOrDefaultAsync(cancellationToken);
+        var appParameters = await _context.Systeme.AsNoTracking().FirstOrDefaultAsync(cancellationToken);
 
         if (appParameters is null)
         {

@@ -50,8 +50,8 @@ public class UpdateReceiptNoteCommandHandlerTests
             date: new DateTime(2020, 1, 20),
             numFactureFournisseur: 12345);
 
-        _context.BonDeReception.Add(receiptnote);
-        await _context.SaveChangesAsync();
+        _ = _context.BonDeReception.Add(receiptnote);
+        _ = await _context.SaveChangesAsync();
 
         var command = new UpdateReceiptNoteCommand(
             receiptnote.Num,

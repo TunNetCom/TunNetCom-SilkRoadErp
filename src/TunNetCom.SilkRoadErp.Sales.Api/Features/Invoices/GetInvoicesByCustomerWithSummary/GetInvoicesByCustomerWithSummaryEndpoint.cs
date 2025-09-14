@@ -4,7 +4,7 @@ public class GetInvoicesByCustomerWithSummaryEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapGet(
+        _ = app.MapGet(
                 "/invoices/client/{clientId}",
                 async Task<IResult> (
                     IMediator mediator,

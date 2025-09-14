@@ -4,7 +4,7 @@ public class DetachReceiptNotesFromInvoiceEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapPut(
+        _ = app.MapPut(
                 "/receipt-note/detach",
                 async Task<IResult> (
                     IMediator mediator,

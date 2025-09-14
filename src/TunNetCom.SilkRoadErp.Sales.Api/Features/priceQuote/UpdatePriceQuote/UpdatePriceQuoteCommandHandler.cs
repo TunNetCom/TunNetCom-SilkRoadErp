@@ -45,7 +45,7 @@ public class UpdatePriceQuoteCommandHandler : IRequestHandler<UpdatePriceQuoteCo
             totTva: updatePriceQuoteCommand.TotTva,
             totTtc: updatePriceQuoteCommand.TotTtc);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        _ = await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogEntityUpdated(nameof(Devis), updatePriceQuoteCommand.Num);
 

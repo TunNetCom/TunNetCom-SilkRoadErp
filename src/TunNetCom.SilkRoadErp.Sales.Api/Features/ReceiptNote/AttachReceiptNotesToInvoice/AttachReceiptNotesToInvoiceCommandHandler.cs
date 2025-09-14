@@ -37,7 +37,7 @@ public class AttachReceiptNotesToInvoiceCommandHandler(
                 string.Join(" ,", alreadyAttachedReceiptNotes));
             return Result.Fail("receipt_notes_already_attached");
         }
-        await context.BonDeReception
+        _ = await context.BonDeReception
             .Where(r => command.ReceiptNotesIds.Contains(r.Num))
             .ExecuteUpdateAsync(
                 updates => updates.SetProperty(r => r.NumFactureFournisseur, command.InvoiceId),

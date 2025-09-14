@@ -49,14 +49,14 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Products
                 PrixAchat = 80,
                 Visibilite = true
             };
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.IsAny<UpdateProductCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Fail(new List<IError> { EntityNotFound.Error() }));
             // Act
             var response = await _handler(_mediatorMock.Object, refe, request, CancellationToken.None);
             // Assert
             var notFoundResult = Assert.IsType<NotFound>(response.Result);
-            notFoundResult.Should().NotBeNull();
+            _ = notFoundResult.Should().NotBeNull();
         }
 
         [Fact]
@@ -78,14 +78,14 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Products
                 Visibilite = true
             };
             var errors = new List<IError> { new FluentResults.Error("invalid_data") };
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.IsAny<UpdateProductCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Fail(errors));
             // Act
             var response = await _handler(_mediatorMock.Object, refe, request, CancellationToken.None);
             // Assert
             var badRequestResult = Assert.IsType<BadRequest<List<IError>>>(response.Result);
-            badRequestResult.Should().NotBeNull();
+            _ = badRequestResult.Should().NotBeNull();
             Assert.Contains(badRequestResult.Value, e => e.Message == "invalid_data");
         }
 
@@ -107,14 +107,14 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Products
                 PrixAchat = 80,
                 Visibilite = true
             };
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.IsAny<UpdateProductCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Ok());
             // Act
             var response = await _handler(_mediatorMock.Object, refe, request, CancellationToken.None);
             // Assert
             var noContentResult = Assert.IsType<NoContent>(response.Result);
-            noContentResult.Should().NotBeNull();
+            _ = noContentResult.Should().NotBeNull();
         }
     }
 }

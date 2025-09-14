@@ -18,7 +18,7 @@
                 .Options;
             await using var context = new SalesContext(options);
             context.Client.AddRange(clients);
-            await context.SaveChangesAsync();
+            _ = await context.SaveChangesAsync();
             var loggerMock = new Mock<ILogger<GetCustomerQueryHandler>>();
             var handler = new GetCustomerQueryHandler(context, loggerMock.Object);
             var query = new GetCustomerQuery(
@@ -29,9 +29,9 @@
             // Act
             var result = await handler.Handle(query, CancellationToken.None);
             // Assert
-            result.Items.Should().HaveCount(2);
-            result.TotalCount.Should().Be(2);
-            result.PageSize.Should().Be(2);     
+            _ = result.Items.Should().HaveCount(2);
+            _ = result.TotalCount.Should().Be(2);
+            _ = result.PageSize.Should().Be(2);     
         }
     }
 }

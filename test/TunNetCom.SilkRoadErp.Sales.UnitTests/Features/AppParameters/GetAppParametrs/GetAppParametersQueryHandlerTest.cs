@@ -29,8 +29,8 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.AppParameters
                 DiscountPercentage = 10,
                 VatAmount = 19
             };
-            await context.Systeme.AddAsync(systeme);
-            await context.SaveChangesAsync();
+            _ = await context.Systeme.AddAsync(systeme);
+            _ = await context.SaveChangesAsync();
             var loggerMock = new Mock<ILogger<CreateCustomerCommandHandler>>();
             var handler = new GetAppParametersQueryHandler(context, loggerMock.Object);
             var request = new GetAppParametersQuery();

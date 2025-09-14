@@ -2,7 +2,7 @@
 
 public class TestLogger<T> : ILogger<T>
 {
-    public List<string> Logs = new List<string>();
+    public List<string> Logs = new();
 
     public IDisposable BeginScope<TState>(TState state) => null;
 

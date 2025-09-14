@@ -50,9 +50,9 @@
                 idFournisseur: 1,
                 date: new DateTime(2020, 1, 20),
                 numFactureFournisseur: 12345);
-            _context.BonDeReception.Add(receiptnote1);
-            _context.BonDeReception.Add(receiptnote2);
-            await _context.SaveChangesAsync();
+            _ = _context.BonDeReception.Add(receiptnote1);
+            _ = _context.BonDeReception.Add(receiptnote2);
+            _ = await _context.SaveChangesAsync();
             var query = new GetReceiptNoteQuery(
                PageNumber: 1,
                PageSize: 10,
@@ -83,7 +83,7 @@
                 date: new DateTime(2023, 7, 1),
                 numFactureFournisseur: 666);
             _context.BonDeReception.AddRange(receiptnote1, receiptnote2);
-            await _context.SaveChangesAsync();
+            _ = await _context.SaveChangesAsync();
 
             var query = new GetReceiptNoteQuery(
                 PageNumber: 1,
@@ -92,8 +92,8 @@
             );
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
-           // Assert
-            Assert.Single(result.Items);
+            // Assert
+            _ = Assert.Single(result.Items);
             Assert.Equal(111, result.Items.First().Num);
 
         }

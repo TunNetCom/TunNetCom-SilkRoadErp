@@ -11,7 +11,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "Client",
                 columns: table => new
                 {
@@ -28,10 +28,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_dbo.Client", x => x.Id);
+                    _ = table.PrimaryKey("PK_dbo.Client", x => x.Id);
                 });
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "Fournisseur",
                 columns: table => new
                 {
@@ -51,10 +51,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_dbo.Fournisseur", x => x.id);
+                    _ = table.PrimaryKey("PK_dbo.Fournisseur", x => x.id);
                 });
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "Produit",
                 columns: table => new
                 {
@@ -71,10 +71,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_dbo.Produit", x => x.refe);
+                    _ = table.PrimaryKey("PK_dbo.Produit", x => x.refe);
                 });
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "ProviderInvoiceView",
                 columns: table => new
                 {
@@ -90,7 +90,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 {
                 });
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "ReceiptNoteView",
                 columns: table => new
                 {
@@ -107,7 +107,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 {
                 });
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "Systeme",
                 columns: table => new
                 {
@@ -128,10 +128,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_dbo.Systeme", x => x.Id);
+                    _ = table.PrimaryKey("PK_dbo.Systeme", x => x.Id);
                 });
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "Avoirs",
                 columns: table => new
                 {
@@ -142,15 +142,15 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_dbo.Avoirs", x => x.Num);
-                    table.ForeignKey(
+                    _ = table.PrimaryKey("PK_dbo.Avoirs", x => x.Num);
+                    _ = table.ForeignKey(
                         name: "FK_dbo.Avoirs_dbo.Client_clientId",
                         column: x => x.clientId,
                         principalTable: "Client",
                         principalColumn: "Id");
                 });
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "Devis",
                 columns: table => new
                 {
@@ -164,8 +164,8 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_dbo.Devis", x => x.Num);
-                    table.ForeignKey(
+                    _ = table.PrimaryKey("PK_dbo.Devis", x => x.Num);
+                    _ = table.ForeignKey(
                         name: "FK_dbo.Devis_dbo.Client_id_client",
                         column: x => x.id_client,
                         principalTable: "Client",
@@ -173,7 +173,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "Facture",
                 columns: table => new
                 {
@@ -184,15 +184,15 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_dbo.Facture", x => x.Num);
-                    table.ForeignKey(
+                    _ = table.PrimaryKey("PK_dbo.Facture", x => x.Num);
+                    _ = table.ForeignKey(
                         name: "FK_dbo.Facture_dbo.Client_id_client",
                         column: x => x.id_client,
                         principalTable: "Client",
                         principalColumn: "Id");
                 });
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "Commandes",
                 columns: table => new
                 {
@@ -203,15 +203,15 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_dbo.Commandes", x => x.Num);
-                    table.ForeignKey(
+                    _ = table.PrimaryKey("PK_dbo.Commandes", x => x.Num);
+                    _ = table.ForeignKey(
                         name: "FK_dbo.Commandes_dbo.Fournisseur_fournisseurId",
                         column: x => x.fournisseurId,
                         principalTable: "Fournisseur",
                         principalColumn: "id");
                 });
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "EcheanceDesFournisseurs",
                 columns: table => new
                 {
@@ -224,15 +224,15 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_dbo.EcheanceDesFournisseurs", x => x.id);
-                    table.ForeignKey(
+                    _ = table.PrimaryKey("PK_dbo.EcheanceDesFournisseurs", x => x.id);
+                    _ = table.ForeignKey(
                         name: "FK_dbo.EcheanceDesFournisseurs_dbo.Fournisseur_fournisseur_id",
                         column: x => x.fournisseur_id,
                         principalTable: "Fournisseur",
                         principalColumn: "id");
                 });
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "FactureFournisseur",
                 columns: table => new
                 {
@@ -246,15 +246,15 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_dbo.FactureFournisseur", x => x.Num);
-                    table.ForeignKey(
+                    _ = table.PrimaryKey("PK_dbo.FactureFournisseur", x => x.Num);
+                    _ = table.ForeignKey(
                         name: "FK_dbo.FactureFournisseur_dbo.Fournisseur_id_fournisseur",
                         column: x => x.id_fournisseur,
                         principalTable: "Fournisseur",
                         principalColumn: "id");
                 });
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "LigneAvoirs",
                 columns: table => new
                 {
@@ -272,20 +272,20 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_dbo.LigneAvoirs", x => x.Id_li);
-                    table.ForeignKey(
+                    _ = table.PrimaryKey("PK_dbo.LigneAvoirs", x => x.Id_li);
+                    _ = table.ForeignKey(
                         name: "FK_dbo.LigneAvoirs_dbo.Avoirs_Num_avoir",
                         column: x => x.Num_avoir,
                         principalTable: "Avoirs",
                         principalColumn: "Num");
-                    table.ForeignKey(
+                    _ = table.ForeignKey(
                         name: "FK_dbo.LigneAvoirs_dbo.Produit_Ref_Produit",
                         column: x => x.Ref_Produit,
                         principalTable: "Produit",
                         principalColumn: "refe");
                 });
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "LigneDevis",
                 columns: table => new
                 {
@@ -303,20 +303,20 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_dbo.LigneDevis", x => x.Id_li);
-                    table.ForeignKey(
+                    _ = table.PrimaryKey("PK_dbo.LigneDevis", x => x.Id_li);
+                    _ = table.ForeignKey(
                         name: "FK_dbo.LigneDevis_dbo.Devis_Num_devis",
                         column: x => x.Num_devis,
                         principalTable: "Devis",
                         principalColumn: "Num");
-                    table.ForeignKey(
+                    _ = table.ForeignKey(
                         name: "FK_dbo.LigneDevis_dbo.Produit_Ref_produit",
                         column: x => x.Ref_produit,
                         principalTable: "Produit",
                         principalColumn: "refe");
                 });
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "BonDeLivraison",
                 columns: table => new
                 {
@@ -332,13 +332,13 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_dbo.BonDeLivraison", x => x.Num);
-                    table.ForeignKey(
+                    _ = table.PrimaryKey("PK_dbo.BonDeLivraison", x => x.Num);
+                    _ = table.ForeignKey(
                         name: "FK_dbo.BonDeLivraison_dbo.Client_clientId",
                         column: x => x.clientId,
                         principalTable: "Client",
                         principalColumn: "Id");
-                    table.ForeignKey(
+                    _ = table.ForeignKey(
                         name: "FK_dbo.BonDeLivraison_dbo.Facture_Num_Facture",
                         column: x => x.Num_Facture,
                         principalTable: "Facture",
@@ -346,7 +346,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "LigneCommandes",
                 columns: table => new
                 {
@@ -364,20 +364,20 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_dbo.LigneCommandes", x => x.Id_li);
-                    table.ForeignKey(
+                    _ = table.PrimaryKey("PK_dbo.LigneCommandes", x => x.Id_li);
+                    _ = table.ForeignKey(
                         name: "FK_dbo.LigneCommandes_dbo.Commandes_Num_commande",
                         column: x => x.Num_commande,
                         principalTable: "Commandes",
                         principalColumn: "Num");
-                    table.ForeignKey(
+                    _ = table.ForeignKey(
                         name: "FK_dbo.LigneCommandes_dbo.Produit_Ref_Produit",
                         column: x => x.Ref_Produit,
                         principalTable: "Produit",
                         principalColumn: "refe");
                 });
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "AvoirFinancierFournisseurs",
                 columns: table => new
                 {
@@ -389,8 +389,8 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_dbo.AvoirFinancierFournisseurs", x => x.Num);
-                    table.ForeignKey(
+                    _ = table.PrimaryKey("PK_dbo.AvoirFinancierFournisseurs", x => x.Num);
+                    _ = table.ForeignKey(
                         name: "FK_dbo.AvoirFinancierFournisseurs_dbo.FactureFournisseur_Num",
                         column: x => x.Num,
                         principalTable: "FactureFournisseur",
@@ -398,7 +398,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "BonDeReception",
                 columns: table => new
                 {
@@ -412,21 +412,21 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_dbo.BonDeReception", x => x.Num);
-                    table.ForeignKey(
+                    _ = table.PrimaryKey("PK_dbo.BonDeReception", x => x.Num);
+                    _ = table.ForeignKey(
                         name: "FK_dbo.BonDeReception_dbo.FactureFournisseur_Num_Facture_fournisseur",
                         column: x => x.Num_Facture_fournisseur,
                         principalTable: "FactureFournisseur",
                         principalColumn: "Num",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
+                    _ = table.ForeignKey(
                         name: "FK_dbo.BonDeReception_dbo.Fournisseur_id_fournisseur",
                         column: x => x.id_fournisseur,
                         principalTable: "Fournisseur",
                         principalColumn: "id");
                 });
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "FactureAvoirFournisseur",
                 columns: table => new
                 {
@@ -439,21 +439,21 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_dbo.FactureAvoirFournisseur", x => x.Num);
-                    table.ForeignKey(
+                    _ = table.PrimaryKey("PK_dbo.FactureAvoirFournisseur", x => x.Num);
+                    _ = table.ForeignKey(
                         name: "FK_dbo.FactureAvoirFournisseur_dbo.FactureFournisseur_Num_FactureFournisseur",
                         column: x => x.Num_FactureFournisseur,
                         principalTable: "FactureFournisseur",
                         principalColumn: "Num",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
+                    _ = table.ForeignKey(
                         name: "FK_dbo.FactureAvoirFournisseur_dbo.Fournisseur_id_fournisseur",
                         column: x => x.id_fournisseur,
                         principalTable: "Fournisseur",
                         principalColumn: "id");
                 });
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "LigneBL",
                 columns: table => new
                 {
@@ -471,21 +471,21 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_dbo.LigneBL", x => x.Id_li);
-                    table.ForeignKey(
+                    _ = table.PrimaryKey("PK_dbo.LigneBL", x => x.Id_li);
+                    _ = table.ForeignKey(
                         name: "FK_dbo.LigneBL_dbo.BonDeLivraison_Num_BL",
                         column: x => x.Num_BL,
                         principalTable: "BonDeLivraison",
                         principalColumn: "Num",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
+                    _ = table.ForeignKey(
                         name: "FK_dbo.LigneBL_dbo.Produit_Ref_Produit",
                         column: x => x.Ref_Produit,
                         principalTable: "Produit",
                         principalColumn: "refe");
                 });
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "Transaction",
                 columns: table => new
                 {
@@ -496,15 +496,15 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_dbo.Transaction", x => x.Num_BL);
-                    table.ForeignKey(
+                    _ = table.PrimaryKey("PK_dbo.Transaction", x => x.Num_BL);
+                    _ = table.ForeignKey(
                         name: "FK_dbo.Transaction_dbo.BonDeLivraison_Num_BL",
                         column: x => x.Num_BL,
                         principalTable: "BonDeLivraison",
                         principalColumn: "Num");
                 });
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "LigneBonReception",
                 columns: table => new
                 {
@@ -522,21 +522,21 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_dbo.LigneBonReception", x => x.Id_ligne);
-                    table.ForeignKey(
+                    _ = table.PrimaryKey("PK_dbo.LigneBonReception", x => x.Id_ligne);
+                    _ = table.ForeignKey(
                         name: "FK_dbo.LigneBonReception_dbo.BonDeReception_Num_BonRec",
                         column: x => x.Num_BonRec,
                         principalTable: "BonDeReception",
                         principalColumn: "Num",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
+                    _ = table.ForeignKey(
                         name: "FK_dbo.LigneBonReception_dbo.Produit_Ref_Produit",
                         column: x => x.Ref_Produit,
                         principalTable: "Produit",
                         principalColumn: "refe");
                 });
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "AvoirFournisseur",
                 columns: table => new
                 {
@@ -549,21 +549,21 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_dbo.AvoirFournisseur", x => x.Num);
-                    table.ForeignKey(
+                    _ = table.PrimaryKey("PK_dbo.AvoirFournisseur", x => x.Num);
+                    _ = table.ForeignKey(
                         name: "FK_dbo.AvoirFournisseur_dbo.FactureAvoirFournisseur_Num_FactureAvoirFournisseur",
                         column: x => x.Num_FactureAvoirFournisseur,
                         principalTable: "FactureAvoirFournisseur",
                         principalColumn: "Num",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
+                    _ = table.ForeignKey(
                         name: "FK_dbo.AvoirFournisseur_dbo.Fournisseur_fournisseurId",
                         column: x => x.fournisseurId,
                         principalTable: "Fournisseur",
                         principalColumn: "id");
                 });
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "LigneAvoirFournisseur",
                 columns: table => new
                 {
@@ -581,146 +581,146 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_dbo.LigneAvoirFournisseur", x => x.Id_li);
-                    table.ForeignKey(
+                    _ = table.PrimaryKey("PK_dbo.LigneAvoirFournisseur", x => x.Id_li);
+                    _ = table.ForeignKey(
                         name: "FK_dbo.LigneAvoirFournisseur_dbo.AvoirFournisseur_Num_AvoirFr",
                         column: x => x.Num_AvoirFr,
                         principalTable: "AvoirFournisseur",
                         principalColumn: "Num",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
+                    _ = table.ForeignKey(
                         name: "FK_dbo.LigneAvoirFournisseur_dbo.Produit_Ref_Produit",
                         column: x => x.Ref_Produit,
                         principalTable: "Produit",
                         principalColumn: "refe");
                 });
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_AvoirFournisseur_fournisseurId",
                 table: "AvoirFournisseur",
                 column: "fournisseurId");
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_AvoirFournisseur_Num_FactureAvoirFournisseur",
                 table: "AvoirFournisseur",
                 column: "Num_FactureAvoirFournisseur");
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_Avoirs_clientId",
                 table: "Avoirs",
                 column: "clientId");
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_BonDeLivraison_clientId",
                 table: "BonDeLivraison",
                 column: "clientId");
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_BonDeLivraison_Num_Facture",
                 table: "BonDeLivraison",
                 column: "Num_Facture");
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_BonDeReception_id_fournisseur",
                 table: "BonDeReception",
                 column: "id_fournisseur");
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_BonDeReception_Num_Facture_fournisseur",
                 table: "BonDeReception",
                 column: "Num_Facture_fournisseur");
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_Commandes_fournisseurId",
                 table: "Commandes",
                 column: "fournisseurId");
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_Devis_id_client",
                 table: "Devis",
                 column: "id_client");
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_EcheanceDesFournisseurs_fournisseur_id",
                 table: "EcheanceDesFournisseurs",
                 column: "fournisseur_id");
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_Facture_id_client",
                 table: "Facture",
                 column: "id_client");
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_FactureAvoirFournisseur_id_fournisseur",
                 table: "FactureAvoirFournisseur",
                 column: "id_fournisseur");
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_FactureAvoirFournisseur_Num_FactureFournisseur",
                 table: "FactureAvoirFournisseur",
                 column: "Num_FactureFournisseur");
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_FactureFournisseur_id_fournisseur",
                 table: "FactureFournisseur",
                 column: "id_fournisseur");
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_LigneAvoirFournisseur_Num_AvoirFr",
                 table: "LigneAvoirFournisseur",
                 column: "Num_AvoirFr");
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_LigneAvoirFournisseur_Ref_Produit",
                 table: "LigneAvoirFournisseur",
                 column: "Ref_Produit");
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_LigneAvoirs_Num_avoir",
                 table: "LigneAvoirs",
                 column: "Num_avoir");
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_LigneAvoirs_Ref_Produit",
                 table: "LigneAvoirs",
                 column: "Ref_Produit");
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_LigneBL_Num_BL",
                 table: "LigneBL",
                 column: "Num_BL");
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_LigneBL_Ref_Produit",
                 table: "LigneBL",
                 column: "Ref_Produit");
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_LigneBonReception_Num_BonRec",
                 table: "LigneBonReception",
                 column: "Num_BonRec");
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_LigneBonReception_Ref_Produit",
                 table: "LigneBonReception",
                 column: "Ref_Produit");
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_LigneCommandes_Num_commande",
                 table: "LigneCommandes",
                 column: "Num_commande");
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_LigneCommandes_Ref_Produit",
                 table: "LigneCommandes",
                 column: "Ref_Produit");
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_LigneDevis_Num_devis",
                 table: "LigneDevis",
                 column: "Num_devis");
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_LigneDevis_Ref_produit",
                 table: "LigneDevis",
                 column: "Ref_produit");
@@ -729,76 +729,76 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "AvoirFinancierFournisseurs");
 
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "EcheanceDesFournisseurs");
 
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "LigneAvoirFournisseur");
 
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "LigneAvoirs");
 
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "LigneBL");
 
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "LigneBonReception");
 
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "LigneCommandes");
 
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "LigneDevis");
 
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "ProviderInvoiceView");
 
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "ReceiptNoteView");
 
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "Systeme");
 
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "Transaction");
 
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "AvoirFournisseur");
 
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "Avoirs");
 
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "BonDeReception");
 
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "Commandes");
 
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "Devis");
 
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "Produit");
 
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "BonDeLivraison");
 
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "FactureAvoirFournisseur");
 
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "Facture");
 
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "FactureFournisseur");
 
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "Client");
 
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "Fournisseur");
         }
     }

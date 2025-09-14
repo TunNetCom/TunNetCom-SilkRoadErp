@@ -22,7 +22,7 @@
         // Assert
         Assert.True(result.IsSuccess);
         Assert.Equal("REF001", result.Value);
-        Assert.Single(context.Produit);
+        _ = Assert.Single(context.Produit);
     }
 
     [Fact]
@@ -31,8 +31,8 @@
         // Arrange
         var context = GetInMemoryContext();
         var existingProduct = Produit.CreateProduct("REF001", "Product A", 5, 1, 0, 0, 19, 50m, 40m, true);
-        context.Produit.Add(existingProduct);
-        await context.SaveChangesAsync();
+        _ = context.Produit.Add(existingProduct);
+        _ = await context.SaveChangesAsync();
         var logger = new Mock<ILogger<CreateProductCommandHandler>>();
         var handler = new CreateProductCommandHandler(context, logger.Object);
         var command = new CreateProductCommand(

@@ -11,8 +11,8 @@ public class GetDeliveryNotesBasedOnProductReferenceEndpointUnitTest
         var endpoint = CreateEndpoint();
         var response1 = await InvokeAsync(endpoint, _mediatorMock.Object, null!, CancellationToken.None);
         var response2 = await InvokeAsync(endpoint, _mediatorMock.Object, "   ", CancellationToken.None);
-        response1.Should().BeOfType<BadRequest<string>>();
-        response2.Should().BeOfType<BadRequest<string>>();
+        _ = response1.Should().BeOfType<BadRequest<string>>();
+        _ = response2.Should().BeOfType<BadRequest<string>>();
     }
 
     [Fact]
@@ -22,17 +22,17 @@ public class GetDeliveryNotesBasedOnProductReferenceEndpointUnitTest
         var productReference = "REF123";
         var expectedList = new List<DeliveryNoteDetailResponse>
         {
-            new DeliveryNoteDetailResponse { ProductReference = productReference }
+            new() { ProductReference = productReference }
         };
-        _mediatorMock.Setup(m => m.Send(It.IsAny<GetDeliveryNotesBasedOnProductReferenceQuery>(), It.IsAny<CancellationToken>()))
+        _ = _mediatorMock.Setup(m => m.Send(It.IsAny<GetDeliveryNotesBasedOnProductReferenceQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedList);
         var endpoint = CreateEndpoint();
         // Act
         var response = await InvokeAsync(endpoint, _mediatorMock.Object, productReference, CancellationToken.None);
         // Assert
         var okResult = response as Ok<List<DeliveryNoteDetailResponse>>;
-        okResult.Should().NotBeNull();
-        okResult!.Value.Should().BeEquivalentTo(expectedList);
+        _ = okResult.Should().NotBeNull();
+        _ = okResult!.Value.Should().BeEquivalentTo(expectedList);
     }
 
     private static Task<IResult> InvokeAsync(

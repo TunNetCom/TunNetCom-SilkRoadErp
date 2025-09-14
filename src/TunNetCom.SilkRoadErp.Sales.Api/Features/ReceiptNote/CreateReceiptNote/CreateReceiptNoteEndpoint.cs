@@ -3,7 +3,7 @@
     {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapPost(
+        _ = app.MapPost(
            "/receiptnotes",
            async Task<Results<Created<CreateReceiptNoteRequest>, ValidationProblem>> (
                IMediator mediator,
@@ -15,7 +15,7 @@
                    Num: request.Num,
                    NumBonFournisseur: request.NumBonFournisseur,
                    DateLivraison: request.DateLivraison,
-                   IdFournisseur:request.IdFournisseur,
+                   IdFournisseur: request.IdFournisseur,
                    Date: request.Date,
                    NumFactureFournisseur: request.NumFactureFournisseur
                   );

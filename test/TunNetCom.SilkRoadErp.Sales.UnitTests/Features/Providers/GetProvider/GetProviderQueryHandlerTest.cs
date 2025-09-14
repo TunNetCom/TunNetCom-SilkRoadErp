@@ -5,7 +5,7 @@
     public GetProviderQueryHandlerTest()
     {
         _loggerMock = new Mock<ILogger<GetProviderQueryHandler>>();
-        _loggerMock.Setup(x => x.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
+        _ = _loggerMock.Setup(x => x.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
     }
     private SalesContext CreateContextWithData(params Fournisseur[] providers)
     {
@@ -16,7 +16,7 @@
         if (providers.Length > 0)
         {
             context.Fournisseur.AddRange(providers);
-            context.SaveChanges();
+            _ = context.SaveChanges();
        }
         return context;
     }
@@ -26,9 +26,9 @@
         // Arrange
         var providers = new List<Fournisseur>
     {
-        new Fournisseur { Id = 1, Nom = "Alpha", Tel = "1111111111" },
-        new Fournisseur { Id = 2, Nom = "Beta", Tel = "2222222222" },
-        new Fournisseur { Id = 3, Nom = "Gamma", Tel = "3333333333" }
+        new() { Id = 1, Nom = "Alpha", Tel = "1111111111" },
+        new() { Id = 2, Nom = "Beta", Tel = "2222222222" },
+        new() { Id = 3, Nom = "Gamma", Tel = "3333333333" }
     };
         using var context = CreateContextWithData(providers.ToArray());
         var handler = new GetProviderQueryHandler(context, _loggerMock.Object);
@@ -65,9 +65,9 @@
         // Arrange
         var providers = new List<Fournisseur>
         {
-            new Fournisseur { Id = 1, Nom = "Alpha", Tel = "1111111111" },
-            new Fournisseur { Id = 2, Nom = "Beta", Tel = "2222222222" },
-            new Fournisseur { Id = 3, Nom = "Gamma", Tel = "3333333333" }
+            new() { Id = 1, Nom = "Alpha", Tel = "1111111111" },
+            new() { Id = 2, Nom = "Beta", Tel = "2222222222" },
+            new() { Id = 3, Nom = "Gamma", Tel = "3333333333" }
         };
         using var context = CreateContextWithData(providers.ToArray());
         var handler = new GetProviderQueryHandler(context, _loggerMock.Object);
@@ -79,7 +79,7 @@
         var result = await handler.Handle(query, CancellationToken.None);
         // Assert
         Assert.NotNull(result);
-        Assert.Single(result.Items);
+        _ = Assert.Single(result.Items);
         Assert.Equal("Beta", result.Items.First().Nom);
     }
 }

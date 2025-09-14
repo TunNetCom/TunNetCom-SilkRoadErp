@@ -6,7 +6,7 @@ public class GetDeliveryNoteByNumEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapGet("/deliveryNote/{num:int}",
+        _ = app.MapGet("/deliveryNote/{num:int}",
             async Task<Results<Ok<DeliveryNoteResponse>, NotFound>> (
                 IMediator mediator,
                 int num,

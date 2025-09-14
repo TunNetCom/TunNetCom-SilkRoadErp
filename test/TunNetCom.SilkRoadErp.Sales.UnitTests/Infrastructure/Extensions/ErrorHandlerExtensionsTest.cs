@@ -21,13 +21,13 @@ public class GlobalExceptionHandlerTests
         var result = await handler.HandleExceptionAsync(context, exception);
 
         // Assert
-        result.Should().BeTrue();
-        context.Response.StatusCode.Should().Be((int)HttpStatusCode.InternalServerError);
+        _ = result.Should().BeTrue();
+        _ = context.Response.StatusCode.Should().Be((int)HttpStatusCode.InternalServerError);
 
-        context.Response.Body.Seek(0, SeekOrigin.Begin);
+        _ = context.Response.Body.Seek(0, SeekOrigin.Begin);
         var reader = new StreamReader(context.Response.Body);
         var body = await reader.ReadToEndAsync();
 
-        body.Should().Contain("Test exception");
+        _ = body.Should().Contain("Test exception");
     }
 }

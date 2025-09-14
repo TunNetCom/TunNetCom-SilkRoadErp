@@ -14,13 +14,13 @@
         {
             // Arrange
             int id = 1;
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.IsAny<DeleteCustomerCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Ok());
             // Act
             var result = await _endpoint.HandleDeleteCustomerAsync(_mediatorMock.Object, id, CancellationToken.None);
             // Assert
-            Assert.IsType<NoContent>(result.Result);
+            _ = Assert.IsType<NoContent>(result.Result);
         }
 
         [Fact]
@@ -29,13 +29,13 @@
             // Arrange
             int id = 3;
             var failedResult = Result.Fail("Validation failed");
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.IsAny<DeleteCustomerCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(failedResult);
             // Act
             var result = await _endpoint.HandleDeleteCustomerAsync(_mediatorMock.Object, id, CancellationToken.None);
-           // Assert
-            Assert.IsType<ValidationProblem>(result.Result);
+            // Assert
+            _ = Assert.IsType<ValidationProblem>(result.Result);
         }
     }
 }

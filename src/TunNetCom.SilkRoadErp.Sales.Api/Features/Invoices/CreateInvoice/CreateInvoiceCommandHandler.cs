@@ -22,8 +22,8 @@
                 Date = command.Date,
                 IdClient = command.ClientId
             };
-            _context.Facture.Add(invoice);
-            await _context.SaveChangesAsync(cancellationToken);
+            _ = _context.Facture.Add(invoice);
+            _ = await _context.SaveChangesAsync(cancellationToken);
             _logger.LogInformation("Facture created successfully with Num {Num}", invoice.Num);
             return Result.Ok(invoice.Num);
         }

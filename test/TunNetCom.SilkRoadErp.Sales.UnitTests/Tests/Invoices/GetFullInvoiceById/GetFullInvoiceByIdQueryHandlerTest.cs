@@ -23,8 +23,8 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.GetFullInvoiceByl
         {
             // Arrange
             var client = Client.CreateClient("Test", "123", "Rue X", "MAT", "CODE", "CAT", "ETB", "mail@test.com");
-            _context.Client.Add(client);
-            await _context.SaveChangesAsync();
+            _ = _context.Client.Add(client);
+            _ = await _context.SaveChangesAsync();
 
             var invoice = new Facture
             {
@@ -32,8 +32,8 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.GetFullInvoiceByl
                 IdClient = client.Id,
                 IdClientNavigation = client
             };
-            _context.Facture.Add(invoice);
-            await _context.SaveChangesAsync();
+            _ = _context.Facture.Add(invoice);
+            _ = await _context.SaveChangesAsync();
 
             var query = new GetFullInvoiceByIdQuery(invoice.Num);
 

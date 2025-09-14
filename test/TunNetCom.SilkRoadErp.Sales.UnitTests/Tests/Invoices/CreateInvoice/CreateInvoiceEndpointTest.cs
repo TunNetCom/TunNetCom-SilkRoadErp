@@ -35,7 +35,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.CreateInvoice
                 ClientId = 1
             };
 
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.Is<CreateInvoiceCommand>(cmd =>
                         cmd.Date == request.Date &&
                         cmd.ClientId == request.ClientId),
@@ -49,11 +49,11 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.CreateInvoice
                 CancellationToken.None);
 
             // Assert
-            result.Should().BeOfType<Results<Created<CreateInvoiceRequest>, ValidationProblem>>();
+            _ = result.Should().BeOfType<Results<Created<CreateInvoiceRequest>, ValidationProblem>>();
             var createdResult = result.Result as Created<CreateInvoiceRequest>;
-            createdResult.Should().NotBeNull();
-            createdResult!.Location.Should().Be("/invoices/1");
-            createdResult.Value.Should().BeEquivalentTo(request);
+            _ = createdResult.Should().NotBeNull();
+            _ = createdResult!.Location.Should().Be("/invoices/1");
+            _ = createdResult.Value.Should().BeEquivalentTo(request);
 
             _mediatorMock.Verify(m => m.Send(It.IsAny<CreateInvoiceCommand>(), It.IsAny<CancellationToken>()), Times.Once);
         }
@@ -68,7 +68,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.CreateInvoice
                 ClientId = 999 // client non existant
             };
 
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.IsAny<CreateInvoiceCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Fail<int>("not_found"));
 
@@ -80,15 +80,15 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.CreateInvoice
 
             // Assert
             var validationProblem = result.Result as ValidationProblem;
-            validationProblem.Should().NotBeNull();
+            _ = validationProblem.Should().NotBeNull();
 
             // Le dictionnaire Errors contient une erreur avec la valeur "not_found"
-            validationProblem!.ProblemDetails.Errors.Values
+            _ = validationProblem!.ProblemDetails.Errors.Values
                 .SelectMany(errors => errors)
                 .Should()
                 .Contain(e => e.Contains("not_found"));
 
-            validationProblem.StatusCode.Should().Be(400);
+            _ = validationProblem.StatusCode.Should().Be(400);
 
             _mediatorMock.Verify(m => m.Send(It.IsAny<CreateInvoiceCommand>(), It.IsAny<CancellationToken>()), Times.Once);
         }
@@ -106,12 +106,12 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.CreateInvoice
             var cts = new CancellationTokenSource();
             cts.Cancel();
 
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.IsAny<CreateInvoiceCommand>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new OperationCanceledException());
 
             // Act & Assert
-            await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            _ = await Assert.ThrowsAsync<OperationCanceledException>(() =>
                 _endpoint.HandleCreateInvoiceAsync(_mediatorMock.Object, request, cts.Token));
 
             _mediatorMock.Verify(m => m.Send(It.IsAny<CreateInvoiceCommand>(), It.IsAny<CancellationToken>()), Times.Once);

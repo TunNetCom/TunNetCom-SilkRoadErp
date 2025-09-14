@@ -43,14 +43,14 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Products
                 PurchasingPrice = 80,
                 Visibility = true
             };
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.IsAny<GetProductByRefQuery>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Ok(productResponse));
             // Act
             var response = await _handler(_mediatorMock.Object, refe, CancellationToken.None);
             // Assert
             var okResult = response.Result.Should().BeOfType<Ok<ProductResponse>>().Subject;
-            okResult.Value.Should().BeEquivalentTo(productResponse);
+            _ = okResult.Value.Should().BeEquivalentTo(productResponse);
         }
 
         [Fact]
@@ -58,13 +58,13 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Products
         {
             // Arrange
             var productRef = "nonexistent";
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.IsAny<GetProductByRefQuery>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Fail<ProductResponse>(EntityNotFound.Error()));
             // Act
             var response = await _handler(_mediatorMock.Object, productRef, CancellationToken.None);
             // Assert
-            response.Result.Should().BeOfType<NotFound>();
+            _ = response.Result.Should().BeOfType<NotFound>();
         }
     }
 }

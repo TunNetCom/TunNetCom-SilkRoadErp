@@ -18,8 +18,8 @@ public class DeleteDeliveryNoteCommandHandler(SalesContext _context,
             return Result.Fail(EntityNotFound.Error());
         }
 
-        _context.BonDeLivraison.Remove(deliveryNote);
-        await _context.SaveChangesAsync(cancellationToken);
+        _ = _context.BonDeLivraison.Remove(deliveryNote);
+        _ = await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogEntityDeleted(
             nameof(BonDeLivraison),

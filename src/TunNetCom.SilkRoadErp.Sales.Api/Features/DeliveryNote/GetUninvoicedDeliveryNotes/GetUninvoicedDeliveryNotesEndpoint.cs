@@ -6,7 +6,7 @@ public class GetUninvoicedDeliveryNotesEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapGet(
+        _ = app.MapGet(
             "/deliveryNote/uninvoiced/{clientId:int}",
             async Task<Results<Ok<List<DeliveryNoteResponse>>, NotFound>> (
             IMediator mediator,

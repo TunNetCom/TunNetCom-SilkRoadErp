@@ -6,9 +6,9 @@ public class GetDeliveryNotesByInvoiceIdEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapGet(
+        _ = app.MapGet(
             "/deliveryNote/facture/{NumFacture:int}",
-            async Task<Results<Ok<List<DeliveryNoteResponse>>, NotFound>> 
+            async Task<Results<Ok<List<DeliveryNoteResponse>>, NotFound>>
             (
                 IMediator mediator,
                 int NumFacture,

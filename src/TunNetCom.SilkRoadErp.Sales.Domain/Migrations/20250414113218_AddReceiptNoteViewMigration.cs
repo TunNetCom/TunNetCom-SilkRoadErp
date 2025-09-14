@@ -10,7 +10,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql(@"CREATE VIEW [dbo].[ReceiptNoteView]
+            _ = migrationBuilder.Sql(@"CREATE VIEW [dbo].[ReceiptNoteView]
 AS
 SELECT dbo.BonDeReception.Num, dbo.BonDeReception.date AS Date, SUM(dbo.LigneBonReception.tot_TTC) AS TotalTTC, dbo.BonDeReception.Num_Bon_fournisseur AS NumBonFournisseur, 
                   dbo.BonDeReception.date_livraison AS DateLivraison, dbo.BonDeReception.id_fournisseur AS IdFournisseur, dbo.BonDeReception.Num_Facture_fournisseur AS NumFactureFournisseur, SUM(dbo.LigneBonReception.tot_HT) 
@@ -23,7 +23,7 @@ GROUP BY dbo.BonDeReception.Num, dbo.BonDeReception.date, dbo.BonDeReception.Num
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql("DROP VIEW [dbo].[ReceiptNoteView]");
+            _ = migrationBuilder.Sql("DROP VIEW [dbo].[ReceiptNoteView]");
         }
     }
 }

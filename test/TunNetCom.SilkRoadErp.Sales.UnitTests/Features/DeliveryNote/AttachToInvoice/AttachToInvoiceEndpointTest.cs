@@ -21,13 +21,13 @@ public class AttachToInvoiceEndpointTest
             InvoiceId = 1,
             DeliveryNoteIds = new List<int> { 10, 20 }
         };
-        _mediatorMock
+        _ = _mediatorMock
             .Setup(m => m.Send(It.IsAny<AttachToInvoiceCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Ok());
         // Act
         var result = await _endpoint.HandleAttachToInvoiceAsync(_mediatorMock.Object, request, CancellationToken.None);
         // Assert
-        result.Result.Should().BeOfType<NoContent>();
+        _ = result.Result.Should().BeOfType<NoContent>();
     }
 
     [Fact]
@@ -40,13 +40,13 @@ public class AttachToInvoiceEndpointTest
             DeliveryNoteIds = new List<int> { 10, 20 }
         };
         var resultWithError = Result.Fail(EntityNotFound.Error("Invoice not found"));
-        _mediatorMock
+        _ = _mediatorMock
             .Setup(m => m.Send(It.IsAny<AttachToInvoiceCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(resultWithError);
         // Act
         var result = await _endpoint.HandleAttachToInvoiceAsync(_mediatorMock.Object, request, CancellationToken.None);
         // Assert
-        result.Result.Should().BeOfType<NotFound>();
+        _ = result.Result.Should().BeOfType<NotFound>();
     }
 
     [Fact]
@@ -59,12 +59,12 @@ public class AttachToInvoiceEndpointTest
             DeliveryNoteIds = new List<int> { 10, 20 }
         };
         var resultWithError = Result.Fail("invalid_data");
-        _mediatorMock
+        _ = _mediatorMock
             .Setup(m => m.Send(It.IsAny<AttachToInvoiceCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(resultWithError);
         // Act
         var result = await _endpoint.HandleAttachToInvoiceAsync(_mediatorMock.Object, request, CancellationToken.None);
         // Assert
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Http.HttpResults.ValidationProblem>();
+        _ = result.Result.Should().BeOfType<Microsoft.AspNetCore.Http.HttpResults.ValidationProblem>();
     }
 }

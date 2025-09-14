@@ -3,34 +3,34 @@ public class UpdateProductValidator : AbstractValidator<UpdateProductCommand>
 {
     public UpdateProductValidator()
     {
-        RuleFor(x => x.Refe)
+        _ = RuleFor(x => x.Refe)
             .NotEmpty().WithMessage("reference_required")
             .MaximumLength(50).WithMessage("reference_must_be_less_than_50_characters");
-        RuleFor(x => x.Nom)
+        _ = RuleFor(x => x.Nom)
             .NotEmpty().WithMessage("nom_required")
             .MaximumLength(50).WithMessage("nom_must_be_less_than_50_characters");
-        RuleFor(x => x.Qte)
+        _ = RuleFor(x => x.Qte)
             .GreaterThanOrEqualTo(0).WithMessage("quantite_must_be_non_negative");
 
-        RuleFor(x => x.QteLimite)
+        _ = RuleFor(x => x.QteLimite)
             .GreaterThanOrEqualTo(0).WithMessage("quantite_limit_must_be_non_negative");
 
-        RuleFor(x => x.Remise)
+        _ = RuleFor(x => x.Remise)
             .InclusiveBetween(0f, 100f).WithMessage("remise_must_be_between_0_and_100");
 
-        RuleFor(x => x.RemiseAchat)
+        _ = RuleFor(x => x.RemiseAchat)
             .InclusiveBetween(0f, 100f).WithMessage("remise_achat_must_be_between_0_and_100");
 
-        RuleFor(x => x.Tva)
+        _ = RuleFor(x => x.Tva)
             .InclusiveBetween(0f, 100f).WithMessage("tva_must_be_between_0_and_100");
 
-        RuleFor(x => x.Prix)
+        _ = RuleFor(x => x.Prix)
             .GreaterThan(0).WithMessage("prix_must_be_greater_than_0");
 
-        RuleFor(x => x.PrixAchat)
+        _ = RuleFor(x => x.PrixAchat)
             .GreaterThan(0).WithMessage("prix_achat_must_be_greater_than_0");
 
-        RuleFor(x => x.Visibilite)
+        _ = RuleFor(x => x.Visibilite)
             .NotNull().WithMessage("visibilite_must_be_specified");
     }
 }

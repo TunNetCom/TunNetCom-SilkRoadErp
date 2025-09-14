@@ -38,7 +38,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Providers
                 MailDeux: request.MailDeux,
                 Constructeur: request.Constructeur,
                 Adresse: request.Adresse);
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.Is<CreateProviderCommand>(c =>
                     c.Nom == request.Nom && c.Tel == request.Tel), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Ok(1)); // Simulate created with ID = 1
@@ -48,9 +48,9 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Providers
                 .HandleRequest(_mediatorMock.Object, request);
             // Assert
             var createdResult = result.Result as Created<CreateProviderRequest>;
-            createdResult.Should().NotBeNull();
-            createdResult!.Location.Should().Be("/providers/1");
-            createdResult.Value.Should().BeEquivalentTo(request);
+            _ = createdResult.Should().NotBeNull();
+            _ = createdResult!.Location.Should().Be("/providers/1");
+            _ = createdResult.Value.Should().BeEquivalentTo(request);
         }
 
         [Fact]
@@ -64,7 +64,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Providers
                 Constructeur = true
             };
             var errors = new List<IError> { new Error("nom_invalid") };
-            _mediatorMock
+            _ = _mediatorMock
                 .Setup(m => m.Send(It.IsAny<CreateProviderCommand>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Result.Fail<int>(errors));
             // Act
@@ -72,8 +72,8 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Providers
                 .HandleRequest(_mediatorMock.Object, request);
             // Assert
             var badRequest = result.Result as BadRequest<List<IError>>;
-            badRequest.Should().NotBeNull();
-            badRequest!.Value.Should().ContainSingle(e => e.Message == "nom_invalid");
+            _ = badRequest.Should().NotBeNull();
+            _ = badRequest!.Value.Should().ContainSingle(e => e.Message == "nom_invalid");
         }
     }
     public static class CreateProviderEndPointExtensions

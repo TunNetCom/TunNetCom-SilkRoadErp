@@ -4,7 +4,7 @@ public class GetReceiptNoteByIdEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapGet(
+        _ = app.MapGet(
            "/receiptnotes/{num:int}", async Task<Results<Ok<ReceiptNoteResponse>, NotFound>> (
                IMediator mediator,
                int num,
