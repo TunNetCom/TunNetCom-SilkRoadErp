@@ -50,4 +50,9 @@
     </EmbeddedResource>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Components\Layout\Sidebar\" />
+    <Folder Include="wwwroot\css\" />
+  </ItemGroup>
+
 </Project>

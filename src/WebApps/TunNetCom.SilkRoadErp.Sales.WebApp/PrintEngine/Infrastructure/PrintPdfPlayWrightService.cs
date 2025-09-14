@@ -1,9 +1,9 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure;
-
+﻿
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Playwright;
 
+namespace TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure;
 public class PrintPdfPlayWrightService<TModel, TView> : IPrintPdfService<TModel, TView> where TView : IComponent
 {
     private readonly ILogger<PrintPdfPlayWrightService<TModel, TView>> _logger;
