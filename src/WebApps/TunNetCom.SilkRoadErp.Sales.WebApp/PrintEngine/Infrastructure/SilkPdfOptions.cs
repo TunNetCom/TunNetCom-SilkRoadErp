@@ -1,5 +1,6 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure;
-using Microsoft.Playwright;
+﻿using Microsoft.Playwright;
+
+namespace TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure;
 
 public class SilkPdfOptions
 {

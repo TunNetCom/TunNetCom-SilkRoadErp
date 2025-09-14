@@ -44,7 +44,7 @@ public static class AmountHelper
             if (y != 0)
             {
                 centaine = y / 100;
-                dizaine = (y - centaine * 100) / 10;
+                dizaine = (y - (centaine * 100)) / 10;
                 unite = y - (centaine * 100) - (dizaine * 10);
                 switch (centaine)
                 {
