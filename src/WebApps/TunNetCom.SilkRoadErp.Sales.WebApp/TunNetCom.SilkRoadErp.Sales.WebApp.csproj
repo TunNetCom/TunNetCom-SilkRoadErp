@@ -37,6 +37,16 @@
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
     </Compile>
+    <Compile Update="Locales\SharedResource.fr.Designer.cs">
+      <DependentUpon>SharedResource.fr.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Locales\SharedResource.ar.Designer.cs">
+      <DependentUpon>SharedResource.ar.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>
@@ -46,6 +56,10 @@
     </EmbeddedResource>
     <EmbeddedResource Update="Locales\SharedResource.fr.resx">
       <LastGenOutput>SharedResource.fr.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Locales\SharedResource.ar.resx">
+      <LastGenOutput>SharedResource.ar.Designer.cs</LastGenOutput>
       <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
   </ItemGroup>
