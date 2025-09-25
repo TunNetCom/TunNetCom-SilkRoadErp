@@ -1,6 +1,4 @@
-﻿using FluentResults;
-
-namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices;
+﻿namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices;
 
 public class InvoicesApiClient : IInvoicesApiClient
 {
@@ -82,7 +80,7 @@ public class InvoicesApiClient : IInvoicesApiClient
     {
         _logger.LogInformation("Fetching invoices by IDs from the API /invoices/byids");
 
-        var request = new HttpRequestMessage(HttpMethod.Get, "/invoices/byids")
+        var request = new HttpRequestMessage(HttpMethod.Post, "/invoices/byids")
         {
             Content = JsonContent.Create(invoiceIds)
         };

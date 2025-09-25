@@ -284,8 +284,8 @@
                 SelectedInvoiceId = _minValueId;
                 SelectedInvoice = new List<ProviderInvoiceResponse>();
                 _invoicesList = new GetProviderInvoicesWithSummary();
-                _uninvoicedReceiptNotesWithSummary = new ReceiptNotesWithSummary();
-                _invoicedReceiptNotesWithSummary = new ReceiptNotesWithSummary();
+                _uninvoicedReceiptNotesWithSummary = new ReceiptNotesWithSummaryResponse();
+                _invoicedReceiptNotesWithSummary = new ReceiptNotesWithSummaryResponse();
                 if (value > _minValueId)
                 {
                     _ = LoadUninvoicedReceiptNote(value);
@@ -306,8 +306,8 @@
                 SelectedInvoiceId = _minValueId;
                 SelectedInvoice = new List<ProviderInvoiceResponse>();
                 _invoicesList = new GetProviderInvoicesWithSummary();
-                _uninvoicedReceiptNotesWithSummary = new ReceiptNotesWithSummary();
-                _invoicedReceiptNotesWithSummary = new ReceiptNotesWithSummary();
+                _uninvoicedReceiptNotesWithSummary = new ReceiptNotesWithSummaryResponse();
+                _invoicedReceiptNotesWithSummary = new ReceiptNotesWithSummaryResponse();
                 if (value > _minValueId)
                 {
                     _ = LoadUninvoicedReceiptNote(value);
@@ -354,8 +354,8 @@
     private RadzenDataGrid<ReceiptNoteDetailsResponse> _receiptNoteGrid;
     private RadzenDataGrid<ProviderInvoiceResponse> ProviderInvoiceGrid;
     private GetProviderInvoicesWithSummary _invoicesList = new GetProviderInvoicesWithSummary();
-    private ReceiptNotesWithSummary _uninvoicedReceiptNotesWithSummary = new ReceiptNotesWithSummary();
-    private ReceiptNotesWithSummary _invoicedReceiptNotesWithSummary = new ReceiptNotesWithSummary();
+    private ReceiptNotesWithSummaryResponse _uninvoicedReceiptNotesWithSummary = new ReceiptNotesWithSummaryResponse();
+    private ReceiptNotesWithSummaryResponse _invoicedReceiptNotesWithSummary = new ReceiptNotesWithSummaryResponse();
 
     private IList<ReceiptNoteDetailsResponse> _selectedReceiptNotesToDetach
     {
@@ -439,8 +439,10 @@
                 SortOrder = _sortOrder,
                 SortProprety = _sortProperty
             };
-        var repi = await receiptNoteService.GetReceiptNote(SelectedProviderId, false, null, parameters, _cancellationTokenSource.Token);
-        _uninvoicedReceiptNotesWithSummary = repi;
+        var repi = await receiptNoteService.GetReceiptNoteWithSummaries(SelectedProviderId, false, null, parameters, _cancellationTokenSource.Token);
+
+		if (repi.IsSuccess)
+            _uninvoicedReceiptNotesWithSummary = repi.Value;
         await InvokeAsync(StateHasChanged);
     }
     private async Task LoadInvoicedReceiptNote(LoadDataArgs args)
@@ -461,8 +463,9 @@
                 SortOrder = _sortOrder,
                 SortProprety = _sortProperty
             };
-        var repi = await receiptNoteService.GetReceiptNote(SelectedProviderId, false, null, parameters, _cancellationTokenSource.Token);
-        _uninvoicedReceiptNotesWithSummary = repi;
+        var repi = await receiptNoteService.GetReceiptNoteWithSummaries(SelectedProviderId, false, null, parameters, _cancellationTokenSource.Token);
+		if (repi.IsSuccess)
+            _uninvoicedReceiptNotesWithSummary = repi.Value;
         await InvokeAsync(StateHasChanged);
     }
     private async Task LoadUninvoicedReceiptNote(int _provider)
@@ -473,8 +476,9 @@
 				PageSize = _defaultPageSize,
 				SearchKeyword = null
 			};
-        var repi = await receiptNoteService.GetReceiptNote(_provider, false, null, parameters, _cancellationTokenSource.Token);
-        _uninvoicedReceiptNotesWithSummary = repi;
+        var repi = await receiptNoteService.GetReceiptNoteWithSummaries(_provider, false, null, parameters, _cancellationTokenSource.Token);
+		if (repi.IsSuccess)
+            _uninvoicedReceiptNotesWithSummary = repi.Value;
         await InvokeAsync(StateHasChanged);
     }
 
@@ -543,8 +547,12 @@
                 PageSize = _defaultPageSize,
                 SearchKeyword = null
             };
-        var repi = await receiptNoteService.GetReceiptNote(SelectedProviderId, true, invoiceNum, parameters, _cancellationTokenSource.Token);
-        _invoicedReceiptNotesWithSummary = repi;
+        var repi = await receiptNoteService.GetReceiptNoteWithSummaries(SelectedProviderId, true, invoiceNum, parameters, _cancellationTokenSource.Token);
+        if(repi.IsSuccess)
+        {
+            _invoicedReceiptNotesWithSummary = repi.Value;
+        }
+
         await InvokeAsync(StateHasChanged);
     }
 
@@ -566,8 +574,9 @@
                 SortOrder = _sortOrder,
                 SortProprety = _sortProperty
             };
-        var repi = await receiptNoteService.GetReceiptNote(SelectedProviderId, true, SelectedInvoiceId, parameters, _cancellationTokenSource.Token);
-        _invoicedReceiptNotesWithSummary = repi;
+        var repi = await receiptNoteService.GetReceiptNoteWithSummaries(SelectedProviderId, true, SelectedInvoiceId, parameters, _cancellationTokenSource.Token);
+		if (repi.IsSuccess)
+            _invoicedReceiptNotesWithSummary = repi.Value;
         await InvokeAsync(StateHasChanged);
     }
 

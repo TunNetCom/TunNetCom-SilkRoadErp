@@ -14,6 +14,8 @@ public class ReceiptNoteResponse
     [JsonPropertyName("IdFournisseur")]
     public int IdFournisseur { get; set; }
 
+    public string NomFournisseur { get; set; }
+
     [JsonPropertyName("Date")]
     public DateTime Date { get; set; }
 

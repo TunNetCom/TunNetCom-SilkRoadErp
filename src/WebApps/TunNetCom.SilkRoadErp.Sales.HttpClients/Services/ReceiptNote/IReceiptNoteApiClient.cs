@@ -1,14 +1,20 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.RecieptNotes;
-
-namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote;
+﻿namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote;
 
 public interface IReceiptNoteApiClient
 {
-    Task<ReceiptNotesWithSummary> GetReceiptNote(
-        int providerId,
-        bool IsInvoiced,
+    Task<Result<ReceiptNotesWithSummaryResponse>> GetReceiptNoteWithSummaries(
+        int? providerId,
+        bool? IsInvoiced,
         int? InvoiceId,
         QueryStringParameters queryParameters,
+        CancellationToken cancellationToken);
+
+    Task <Result<ReceiptNotesResponse>> GetReceiptNotes(
+        int PageNumber,
+        string SearchKeyword,
+        int PageSize,
+        string SortProprety,
+        string SortOrder,
         CancellationToken cancellationToken);
 
     Task<bool> AttachReceiptNotesToInvoiceAsync(

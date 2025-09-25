@@ -2,15 +2,11 @@
 
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers;
 
-public class ProvidersApiClient : IProvidersApiClient
+public class ProvidersApiClient(
+    HttpClient _httpClient,
+    ILogger<ProvidersApiClient> _logger) 
+    : IProvidersApiClient
 {
-    private readonly HttpClient _httpClient;
-    private readonly ILogger<ProvidersApiClient> _logger;
-    public ProvidersApiClient(HttpClient httpClient, ILogger<ProvidersApiClient> logger)
-    {
-        _httpClient = httpClient;
-        _logger = logger;
-    }
 
     public async Task<OneOf<ResponseTypes, BadRequestResponse>> UpdateAsync(
         UpdateProviderRequest request,

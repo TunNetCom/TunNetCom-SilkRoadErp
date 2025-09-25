@@ -1,6 +1,4 @@
-﻿using FluentResults;
-
-namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices;
+﻿namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices;
 
 public interface IInvoicesApiClient
 {

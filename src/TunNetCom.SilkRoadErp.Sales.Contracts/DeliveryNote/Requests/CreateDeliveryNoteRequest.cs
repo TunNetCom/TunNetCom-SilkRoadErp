@@ -1,5 +1,6 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
+
+namespace TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
 
 public class CreateDeliveryNoteRequest
 {

@@ -1,11 +1,18 @@
-﻿@page "/delivery-notes"
+﻿@page "/reciption_notes"
+
+@using TunNetCom.SilkRoadErp.Sales.Contracts.RecieptNotes
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote
 @using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
-@inject IDeliveryNoteApiClient DeliveryNoteService
+
+@inject IReceiptNoteApiClient receiptNoteService
 @inject ICustomersApiClient CustomersService
+@inject IProvidersApiClient ProviderService
 @inject IStringLocalizer<SharedResource> Localizer
+
 @using Radzen.Blazor
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
@@ -29,23 +36,24 @@
                           class="w-100 " />
     </div>
     <div class="search-field">
-        <label for="customer">Client</label>
+        <label for="customer">Fournisseur</label>
         <RadzenDropDownDataGrid id="customer"
                                 AllowClear="true"
-                                @bind-Value="@searchCriteria.SelectedCustomerId"
-                                LoadData="@LoadCustomers"
+                                @bind-Value="@searchCriteria.SelectedProviderId"
+                                LoadData="@LoadProviders"
                                 AllowFiltering="true"
                                 class="w-100 search-input"
-                                Data="@_filteredCustomers"
-                                TextProperty="@nameof(CustomerResponse.Name)"
-                                ValueProperty="@nameof(CustomerResponse.Id)"
+                                Data="@_filteredProviders"
+                                TextProperty="@nameof(ProviderResponse.Nom)"
+                                ValueProperty="@nameof(ProviderResponse.Id)"
                                 Placeholder="Selectionner un fournisseur">
             <Columns>
-                <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Id)" Title="ID" Width="80px" />
-                <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Name)" Title="@Localizer["name"]" Width="220px" />
+                <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Id)" Title="ID" Width="80px" />
+                <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Nom)" Title="@Localizer["name"]" Width="220px" />
             </Columns>
         </RadzenDropDownDataGrid>
     </div>
+
     <div class="search-button">
         <RadzenButton Text="@Localizer["search"]"
                       Icon="search"
@@ -57,35 +65,35 @@
 <div class="delivery-notes-list-container">
     <RadzenCard class="list-card">
         <h2>Commandes</h2>
-        <RadzenDataGrid Data="@deliveryNotes.GetDeliveryNoteBaseInfos.Items"
+        <RadzenDataGrid Data="@(receiptNotesResponse.ReceiptNotes.Items)"
                         LoadData="@Callback"
-                        TItem="GetDeliveryNoteBaseInfos"
+                        TItem="ReceiptNoteDetailsResponse"
                         AllowSorting="true"
                         AllowFiltering="true"
                         AllowPaging="true"
-                        PageSize="15"
-                        Count="@deliveryNotes.GetDeliveryNoteBaseInfos.TotalCount"
+                        PageSize="10"
+                        Count="@receiptNotesResponse.ReceiptNotes.TotalCount"
                         AllowColumnResize="true"
-                        RowSelect="@(args => ViewDeliveryNote(args.Number.ToString()))">
+                        RowSelect="@(args => ViewDeliveryNote(args.Num.ToString()))">
             <EmptyTemplate>
                 <p style="color: lightgrey; font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
             </EmptyTemplate>
             <Columns>
-                <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos"
-                                      Property="@nameof(GetDeliveryNoteBaseInfos.Number)"
+                <RadzenDataGridColumn TItem="ReceiptNoteDetailsResponse"
+                                      Property="@nameof(ReceiptNoteDetailsResponse.Num)"
                                       Title="Numéro"
                                       Width="150px" />
-                <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos"
-                                      Property="@nameof(GetDeliveryNoteBaseInfos.Date)"
+                <RadzenDataGridColumn TItem="ReceiptNoteDetailsResponse"
+                                      Property="@nameof(ReceiptNoteDetailsResponse.Date)"
                                       Title="@Localizer["date"]"
                                       Width="150px"
                                       FormatString="{0:d MMMM yyyy}" />
-                <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos"
-                                      Property="@nameof(GetDeliveryNoteBaseInfos.CustomerName)"
-                                      Title="Client"
+                <RadzenDataGridColumn TItem="ReceiptNoteDetailsResponse"
+                                      Property="@nameof(ReceiptNoteDetailsResponse.NomFournisseur)"
+                                      Title="Fournisseur"
                                       Width="200px" />
-                <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos"
-                                      Property="@nameof(GetDeliveryNoteBaseInfos.GrossAmount)"
+                <RadzenDataGridColumn TItem="ReceiptNoteDetailsResponse"
+                                      Property="@nameof(ReceiptNoteDetailsResponse.TotTTC)"
                                       Title="@Localizer["total_gross"]"
                                       Width="200px" />
             </Columns>
@@ -96,13 +104,13 @@
                          JustifyContent="JustifyContent.End"
                          class="summary-stack">
                 <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                    @Localizer["total_net"]: <strong>@deliveryNotes.TotalNetAmount.FormatAmount()</strong>
+                    @Localizer["total_net"]: <strong>@receiptNotesResponse.TotalNetAmount.FormatAmount()</strong>
                 </RadzenText>
                 <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                    @Localizer["total_gross"]: <strong>@deliveryNotes.TotalGrossAmount.FormatAmount()</strong>
+                    @Localizer["total_gross"]: <strong>@receiptNotesResponse.TotalGrossAmount.FormatAmount()</strong>
                 </RadzenText>
                 <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                    @Localizer["total_vat"]: <strong>@deliveryNotes.TotalVatAmount.FormatAmount()</strong>
+                    @Localizer["total_vat"]: <strong>@receiptNotesResponse.TotalVATAmount.FormatAmount()</strong>
                 </RadzenText>
             </RadzenStack>
         </RadzenCard>
@@ -302,34 +310,36 @@
 </style>
 
 @code {
-    private GetDeliveryNotesWithSummariesResponse deliveryNotes = new GetDeliveryNotesWithSummariesResponse();
+    private ReceiptNotesWithSummaryResponse receiptNotesResponse = new();
     private const int DefaultPageSize = 10;
+    private QueryStringParameters queryStringParameters = new ();
     private SearchCriteria searchCriteria = new SearchCriteria();
-    private List<CustomerResponse> _filteredCustomers = new();
-    private int? selectedCustomerId;
+    private List<ProviderResponse> _filteredProviders = new();
+    private int? selectedProviderId;
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadCustomers(new LoadDataArgs { Filter = string.Empty });
+        await LoadProviders(new LoadDataArgs { Filter = string.Empty });
 
-        deliveryNotes = await DeliveryNoteService.GetDeliveryNotesWithSummariesAsync(
-            pageNumber: 1,
-            pageSize: DefaultPageSize,
-            customerId: null,
-            invoiceId: null,
-            isInvoiced: null,
-            sortOrder: null,
-            sortProperty: null,
-            searchKeyword: null,
-            startDate: null,
-            EndDate: null,
+        var result  = await receiptNoteService.GetReceiptNoteWithSummaries(
+            providerId: null,
+            InvoiceId: null,
+            IsInvoiced: null,
+            queryParameters: new QueryStringParameters
+            {
+				PageNumber = 1,
+                PageSize = DefaultPageSize
+            },
             cancellationToken: default
         );
+
+        if(result.IsSuccess)
+            receiptNotesResponse = result.Value;
 
         await InvokeAsync(StateHasChanged);
     }
 
-    async Task LoadCustomers(LoadDataArgs args)
+    async Task LoadProviders(LoadDataArgs args)
     {
         var parameters = new QueryStringParameters
         {
@@ -340,12 +350,12 @@
 
         try
         {
-            var pagedCustomers = await CustomersService.SearchCustomers(parameters, default);
-            _filteredCustomers = pagedCustomers.Items.ToList();
+            var pagedProviders = await ProviderService.GetPagedAsync(parameters, default);
+            _filteredProviders = pagedProviders.Items.ToList();
         }
         catch (Exception ex)
         {
-            _filteredCustomers = new List<CustomerResponse>();
+            _filteredProviders = new List<ProviderResponse>();
         }
 
         await InvokeAsync(StateHasChanged);
@@ -358,24 +368,20 @@
 
     private async Task SearchDeliveryNotes()
     {
-        deliveryNotes = await DeliveryNoteService.GetDeliveryNotesWithSummariesAsync(
-            pageNumber: 1,
-            pageSize: DefaultPageSize,
-            customerId: searchCriteria.SelectedCustomerId,
-            invoiceId: null,
-            isInvoiced: searchCriteria.InvoiceStatus switch
+        var result = await receiptNoteService.GetReceiptNoteWithSummaries(
+            providerId: searchCriteria.SelectedProviderId,
+            InvoiceId: null,
+            IsInvoiced: searchCriteria.InvoiceStatus switch
             {
                 "Facturé" => true,
                 "Non Facturé" => false,
                 _ => null
             },
-            sortOrder: null,
-            sortProperty: null,
-            searchKeyword: null,
-            startDate: searchCriteria.StartDate,
-            EndDate: searchCriteria.EndDate,
+            queryParameters : queryStringParameters,
             cancellationToken: default
         );
+        if (result.IsSuccess)
+            receiptNotesResponse = result.Value;
 
         await InvokeAsync(StateHasChanged);
     }
@@ -396,24 +402,25 @@
             sortOrder = sortParts.Length > 1 && sortParts[1].ToLower() == "desc" ? "Descending" : "Ascending";
         }
 
-        deliveryNotes = await DeliveryNoteService.GetDeliveryNotesWithSummariesAsync(
-            pageNumber: pageNumber,
-            pageSize: pageSize,
-            customerId: searchCriteria.SelectedCustomerId,
-            invoiceId: null,
-            isInvoiced: searchCriteria.InvoiceStatus switch
-            {
-                "Facturé" => true,
-                "Non Facturé" => false,
-                _ => null
-            },
-            sortOrder: sortOrder,
-            sortProperty: sortProperty,
-            searchKeyword: filter,
-            startDate: searchCriteria.StartDate,
-            EndDate: searchCriteria.EndDate,
-            cancellationToken: default
-        );
+        var result = await receiptNoteService.GetReceiptNoteWithSummaries(
+                                providerId: searchCriteria.SelectedProviderId,
+                                InvoiceId: null,
+                                IsInvoiced: null,
+                                queryParameters: new()
+                                {
+                                    SearchKeyword = filter,
+                                    EndDate = searchCriteria.EndDate,
+                                    StartDate = searchCriteria.StartDate,
+                                    SortOrder = sortOrder,
+                                    SortProprety = sortProperty,
+                                    PageNumber = pageNumber,
+                                    PageSize = pageSize,
+                                },
+                                cancellationToken: default
+                            );
+
+        if (result.IsSuccess)
+            receiptNotesResponse = result.Value;
 
         await InvokeAsync(StateHasChanged);
     }
@@ -422,7 +429,7 @@
     {
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
-        public int? SelectedCustomerId { get; set; }
+        public int? SelectedProviderId { get; set; }
         public string InvoiceStatus { get; set; } = "Tous";
     }
 }

@@ -175,7 +175,7 @@
     <value>Search...</value>
   </data>
   <data name="SilkRoadErp" xml:space="preserve">
-    <value>Silk Road Erp</value>
+    <value>Silk Road ERP</value>
   </data>
   <data name="Tel" xml:space="preserve">
     <value>Phone</value>
@@ -184,115 +184,115 @@
     <value>Customer</value>
   </data>
   <data name="delete_message" xml:space="preserve">
-    <value>Voulez-vous supprimer le</value>
+    <value>Do you want to delete</value>
   </data>
   <data name="delete_title" xml:space="preserve">
-    <value>Suppression</value>
+    <value>Delete</value>
   </data>
   <data name="select_customer" xml:space="preserve">
-    <value />
+    <value>Select a customer</value>
   </data>
   <data name="customer_id" xml:space="preserve">
-    <value />
+    <value>Customer ID</value>
   </data>
   <data name="company_name" xml:space="preserve">
-    <value />
+    <value>Company Name</value>
   </data>
   <data name="invoice_number" xml:space="preserve">
-    <value />
+    <value>Invoice Number</value>
   </data>
   <data name="date" xml:space="preserve">
-    <value />
+    <value>Date</value>
   </data>
   <data name="total_incl_tax" xml:space="preserve">
-    <value />
+    <value>Total Incl. Tax</value>
   </data>
   <data name="delivery_notes_details" xml:space="preserve">
-    <value />
+    <value>Delivery Notes Details</value>
   </data>
   <data name="number" xml:space="preserve">
-    <value />
+    <value>Number</value>
   </data>
   <data name="total_ex_tax" xml:space="preserve">
-    <value />
+    <value>Total Excl. Tax</value>
   </data>
   <data name="net_payer" xml:space="preserve">
-    <value />
+    <value>Net to Pay</value>
   </data>
   <data name="total_net" xml:space="preserve">
-    <value />
+    <value>Total Net</value>
   </data>
   <data name="total_gross" xml:space="preserve">
-    <value />
+    <value>Total Gross</value>
   </data>
   <data name="total_vat" xml:space="preserve">
-    <value />
+    <value>Total VAT</value>
   </data>
   <data name="detach_from_invoice" xml:space="preserve">
-    <value />
+    <value>Detach from Invoice</value>
   </data>
   <data name="manage_invoices" xml:space="preserve">
-    <value />
+    <value>Manage Invoices</value>
   </data>
   <data name="customer_invoice_details" xml:space="preserve">
-    <value />
+    <value>Customer Invoice Details</value>
   </data>
   <data name="uninvoiced_delivery_notes_details" xml:space="preserve">
-    <value />
+    <value>Uninvoiced Delivery Notes Details</value>
   </data>
   <data name="attach_delivery_note_to_invoice" xml:space="preserve">
-    <value />
+    <value>Attach to Invoice</value>
   </data>
   <data name="delivery_note_number" xml:space="preserve">
-    <value />
+    <value>Delivery Note Number</value>
   </data>
   <data name="manage_providers_invoices" xml:space="preserve">
-    <value />
+    <value>Manage Provider Invoices</value>
   </data>
   <data name="select_provider" xml:space="preserve">
-    <value />
+    <value>Select a Provider</value>
   </data>
   <data name="provider_invoice_details" xml:space="preserve">
-    <value />
+    <value>Provider Invoice Details</value>
   </data>
   <data name="receipt_notes_details" xml:space="preserve">
-    <value />
+    <value>Receipt Notes Details</value>
   </data>
   <data name="uninvoiced_receipt_notes_details" xml:space="preserve">
-    <value />
+    <value>Uninvoiced Receipt Notes Details</value>
   </data>
   <data name="attach_receipt_note_to_invoice" xml:space="preserve">
-    <value />
+    <value>Attach Receipt Notes to Invoice</value>
   </data>
   <data name="discount_percentage" xml:space="preserve">
-    <value />
+    <value>Discount %</value>
   </data>
   <data name="unit_price_required" xml:space="preserve">
-    <value />
+    <value>Unit Price</value>
   </data>
   <data name="quantity" xml:space="preserve">
-    <value />
+    <value>Quantity</value>
   </data>
   <data name="product" xml:space="preserve">
-    <value />
+    <value>Product</value>
   </data>
   <data name="total_including_tax" xml:space="preserve">
-    <value />
+    <value>Total Including Tax</value>
   </data>
   <data name="total_excluding_tax" xml:space="preserve">
-    <value />
+    <value>Total Excluding Tax</value>
   </data>
   <data name="unit_price_ht" xml:space="preserve">
-    <value />
+    <value>Unit Price</value>
   </data>
   <data name="vat_percentage" xml:space="preserve">
-    <value />
+    <value>VAT %</value>
   </data>
   <data name="customer_name" xml:space="preserve">
-    <value>Client Name</value>
+    <value>Customer Name</value>
   </data>
   <data name="customer_phone" xml:space="preserve">
-    <value>Client Phone</value>
+    <value>Customer Phone</value>
   </data>
   <data name="customer_address" xml:space="preserve">
     <value>Customer Address</value>
@@ -301,52 +301,70 @@
     <value>Customer Registration Number</value>
   </data>
   <data name="customer_email" xml:space="preserve">
-    <value>Client Email</value>
+    <value>Customer Email</value>
   </data>
   <data name="save_label" xml:space="preserve">
     <value>Save</value>
   </data>
   <data name="delivery_notes" xml:space="preserve">
-    <value />
+    <value>Delivery Notes</value>
   </data>
   <data name="invoiced" xml:space="preserve">
-    <value />
+    <value>Invoiced</value>
   </data>
   <data name="not_invoiced" xml:space="preserve">
-    <value />
+    <value>Not Invoiced</value>
   </data>
   <data name="start_date" xml:space="preserve">
-    <value />
+    <value>Start Date</value>
   </data>
   <data name="end_date" xml:space="preserve">
-    <value />
+    <value>End Date</value>
   </data>
   <data name="delivery_note_status" xml:space="preserve">
-    <value />
+    <value>Delivery Note Status</value>
   </data>
   <data name="select_invoice" xml:space="preserve">
-    <value />
+    <value>Select an Invoice</value>
   </data>
   <data name="delivery_note_saved_successfully" xml:space="preserve">
-    <value />
+    <value>Delivery Note Saved Successfully</value>
   </data>
   <data name="add_new_order" xml:space="preserve">
-    <value />
+    <value>Add New Line</value>
   </data>
   <data name="print" xml:space="preserve">
-    <value />
+    <value>Print</value>
   </data>
   <data name="failed_to_save_delivery_note" xml:space="preserve">
-    <value />
+    <value>Failed to Save Delivery Note</value>
   </data>
   <data name="input_error" xml:space="preserve">
-    <value />
+    <value>Input Error</value>
   </data>
   <data name="manage_customer_invoices" xml:space="preserve">
-    <value />
+    <value>Manage Customer Invoices</value>
   </data>
   <data name="pourcentage_retenu" xml:space="preserve">
-    <value>Retained percentage</value>
+    <value>Retained Percentage</value>
+  </data>
+  <data name="CustomerPreview" xml:space="preserve">
+    <value>Customer Overview</value>
+  </data>
+  <data name="UnableToLoadCustomer" xml:space="preserve">
+    <value>Unable to Load Customer Information</value>
+  </data>
+  <data name="NotAvailable" xml:space="preserve">
+    <value>Not Available</value>
+  </data>
+  <data name="customer_code" xml:space="preserve">
+    <value>Customer Code</value>
+  </data>
+  <data name="customer_codeCat" xml:space="preserve">
+    <value>Customer Category Code</value>
+  </data>
+  <data name="customer_etbSec" xml:space="preserve">
+    <value>Secondary Establishment</value>
   </data>
   <data name="actions_label" xml:space="preserve">
     <value>Actions</value>
@@ -354,22 +372,148 @@
   <data name="cancel_label" xml:space="preserve">
     <value>Cancel</value>
   </data>
-  <data name="CustomerPreview" xml:space="preserve">
-    <value />
+  <data name="add_product" xml:space="preserve">
+    <value>Add Product</value>
   </data>
-  <data name="UnableToLoadCustomer" xml:space="preserve">
-    <value />
+  <data name="products" xml:space="preserve">
+    <value>Products</value>
   </data>
-  <data name="NotAvailable" xml:space="preserve">
-    <value />
+  <data name="delete_button_label" xml:space="preserve">
+    <value>Delete</value>
   </data>
-  <data name="customer_code" xml:space="preserve">
-    <value />
+  <data name="edit_button_label" xml:space="preserve">
+    <value>Edit</value>
   </data>
-  <data name="customer_codeCat" xml:space="preserve">
-    <value />
+  <data name="edit_product" xml:space="preserve">
+    <value>Edit Product</value>
   </data>
-  <data name="customer_etbSec" xml:space="preserve">
-    <value />
+  <data name="product_name" xml:space="preserve">
+    <value>Product Name</value>
+  </data>
+  <data name="product_prix" xml:space="preserve">
+    <value>Product Price</value>
+  </data>
+  <data name="product_prixAchat" xml:space="preserve">
+    <value>Purchase Price</value>
+  </data>
+  <data name="product_qte" xml:space="preserve">
+    <value>Product Quantity</value>
+  </data>
+  <data name="product_qteLimite" xml:space="preserve">
+    <value>Limited Product Quantity</value>
+  </data>
+  <data name="product_refe" xml:space="preserve">
+    <value>Product Reference</value>
+  </data>
+  <data name="add_provider" xml:space="preserve">
+    <value>Add Provider</value>
+  </data>
+  <data name="edit_provider" xml:space="preserve">
+    <value>Edit Provider</value>
+  </data>
+  <data name="provider_adress" xml:space="preserve">
+    <value>Address</value>
+  </data>
+  <data name="provider_code" xml:space="preserve">
+    <value>Code</value>
+  </data>
+  <data name="provider_code_cat" xml:space="preserve">
+    <value>Category Code</value>
+  </data>
+  <data name="provider_constructor" xml:space="preserve">
+    <value>Constructor</value>
+  </data>
+  <data name="provider_email" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="provider_etb_sec" xml:space="preserve">
+    <value>Secondary Establishment</value>
+  </data>
+  <data name="provider_fax" xml:space="preserve">
+    <value>Fax</value>
+  </data>
+  <data name="provider_matricule" xml:space="preserve">
+    <value>Registration Number</value>
+  </data>
+  <data name="provider_name" xml:space="preserve">
+    <value>Provider Name</value>
+  </data>
+  <data name="provider_phone" xml:space="preserve">
+    <value>Phone Number</value>
+  </data>
+  <data name="provider_second_email" xml:space="preserve">
+    <value>Second Email</value>
+  </data>
+  <data name="product_remise" xml:space="preserve">
+    <value>Product Discount</value>
+  </data>
+  <data name="product_remiseAchat" xml:space="preserve">
+    <value>Purchase Discount</value>
+  </data>
+  <data name="product_tva" xml:space="preserve">
+    <value>VAT</value>
+  </data>
+  <data name="product_visibilite" xml:space="preserve">
+    <value>Visibility</value>
+  </data>
+  <data name="providers" xml:space="preserve">
+    <value>Providers</value>
+  </data>
+  <data name="Timbre" xml:space="preserve">
+    <value>Stamp</value>
+  </data>
+  <data name="Adresse_retenu" xml:space="preserve">
+    <value>Withholding Address</value>
+  </data>
+  <data name="matricule_fiscale" xml:space="preserve">
+    <value>Tax Registration Number</value>
+  </data>
+  <data name="pourcentage_fodec" xml:space="preserve">
+    <value>FODEC Percentage %</value>
+  </data>
+  <data name="Fax" xml:space="preserve">
+    <value>Fax</value>
+  </data>
+  <data name="CodeTva" xml:space="preserve">
+    <value>VAT Code</value>
+  </data>
+  <data name="created_with_success" xml:space="preserve">
+    <value>created successfully</value>
+  </data>
+  <data name="updated_with_success" xml:space="preserve">
+    <value>updated successfully</value>
+  </data>
+  <data name="provider" xml:space="preserve">
+    <value>Provider</value>
+  </data>
+  <data name="Overview" xml:space="preserve">
+    <value>Overview</value>
+  </data>
+  <data name="Dashboard" xml:space="preserve">
+    <value>Dashboard</value>
+  </data>
+  <data name="Accounts" xml:space="preserve">
+    <value>Accounts</value>
+  </data>
+  <data name="Manage_Invoices" xml:space="preserve">
+    <value>Manage Invoices</value>
+  </data>
+  <data name="Delivery_Note" xml:space="preserve">
+    <value>Delivery Note</value>
+  </data>
+  <data name="Delivery_Notes_List" xml:space="preserve">
+    <value>Delivery Notes List</value>
+  </data>
+  <data name="Receipt_Note" xml:space="preserve">
+    <value>Receipt Note</value>
+  </data>
+  <data name="Receipt_Notes_List" xml:space="preserve">
+    <value>Receipt Notes List</value>
+  </data>
+  <data name="Stock" xml:space="preserve">
+    <value>Stock</value>
+  </data>
+  <data name="Articles" xml:space="preserve">
+    <value>Articles</value>
   </data>
 </root>

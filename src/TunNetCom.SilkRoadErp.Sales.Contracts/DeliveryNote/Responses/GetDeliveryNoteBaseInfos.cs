@@ -24,5 +24,5 @@ public class GetDeliveryNoteBaseInfos
     public int? CustomerId { get; set; }
 
     [JsonPropertyName("customerName")]
-    public string? CustomerName { get; set; } = "SOPAL";
+    public string? CustomerName { get; set; }
 }

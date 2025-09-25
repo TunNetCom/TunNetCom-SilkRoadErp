@@ -53,3 +53,50 @@ h1:focus {
     font-size: 1.5rem;
     font-weight: bold;
 }*/
+
+/* RTL Support for Arabic */
+[dir="rtl"] {
+    text-align: right;
+}
+
+[dir="rtl"] .rz-sidebar {
+    left: auto;
+    right: 0;
+}
+
+[dir="rtl"] .rz-sidebar-toggle {
+    transform: scaleX(-1);
+}
+
+[dir="rtl"] .rz-panelmenu-item-icon {
+    margin-left: 8px;
+    margin-right: 0;
+}
+
+/* Arabic font support */
+html[lang="ar"] {
+    font-family: 'Segoe UI', Tahoma, Arial, 'Helvetica Neue', sans-serif;
+}
+
+/* Language selector RTL support */
+[dir="rtl"] .rz-dropdown {
+    text-align: right;
+}
+
+/* Ensure proper alignment for form elements in RTL */
+[dir="rtl"] .rz-textbox,
+[dir="rtl"] .rz-numeric,
+[dir="rtl"] .rz-dropdown {
+    text-align: right;
+}
+
+/* Icon positioning for RTL */
+[dir="rtl"] .rz-button .rz-button-icon-left {
+    margin-left: 4px;
+    margin-right: 0;
+}
+
+[dir="rtl"] .rz-button .rz-button-icon-right {
+    margin-right: 4px;
+    margin-left: 0;
+}
