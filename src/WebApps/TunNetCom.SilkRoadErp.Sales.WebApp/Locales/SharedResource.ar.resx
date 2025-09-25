@@ -118,405 +118,405 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="AddClient" xml:space="preserve">
-    <value>Add Client</value>
+    <value>إضافة عميل</value>
   </data>
   <data name="Adresse" xml:space="preserve">
-    <value>Address</value>
+    <value>العنوان</value>
   </data>
   <data name="Cancel" xml:space="preserve">
-    <value>Cancel</value>
+    <value>إلغاء</value>
   </data>
   <data name="Clients" xml:space="preserve">
-    <value>Customers</value>
+    <value>العملاء</value>
   </data>
   <data name="Code" xml:space="preserve">
-    <value>Code</value>
+    <value>الكود</value>
   </data>
   <data name="CodeCat" xml:space="preserve">
-    <value>Category Code</value>
+    <value>كود الفئة</value>
   </data>
   <data name="Delete" xml:space="preserve">
-    <value>Delete</value>
+    <value>حذف</value>
   </data>
   <data name="Edit" xml:space="preserve">
-    <value>Edit</value>
+    <value>تعديل</value>
   </data>
   <data name="EditClient" xml:space="preserve">
-    <value>Edit Client</value>
+    <value>تعديل العميل</value>
   </data>
   <data name="EtbSec" xml:space="preserve">
-    <value>Secondary Establishment</value>
+    <value>المؤسسة الثانوية</value>
   </data>
   <data name="Home" xml:space="preserve">
-    <value>Home</value>
+    <value>الرئيسية</value>
   </data>
   <data name="Loading" xml:space="preserve">
-    <value>Loading...</value>
+    <value>جاري التحميل...</value>
   </data>
   <data name="Mail" xml:space="preserve">
-    <value>Email</value>
+    <value>البريد الإلكتروني</value>
   </data>
   <data name="Matricule" xml:space="preserve">
-    <value>Registration Number</value>
+    <value>رقم التسجيل</value>
   </data>
   <data name="Next" xml:space="preserve">
-    <value>Next</value>
+    <value>التالي</value>
   </data>
   <data name="Nom" xml:space="preserve">
-    <value>Name</value>
+    <value>الاسم</value>
   </data>
   <data name="Previous" xml:space="preserve">
-    <value>Previous</value>
+    <value>السابق</value>
   </data>
   <data name="save" xml:space="preserve">
-    <value>Save</value>
+    <value>حفظ</value>
   </data>
   <data name="search" xml:space="preserve">
-    <value>Search...</value>
+    <value>بحث...</value>
   </data>
   <data name="SilkRoadErp" xml:space="preserve">
-    <value>Silk Road ERP</value>
+    <value>نظام إدارة طريق الحرير</value>
   </data>
   <data name="Tel" xml:space="preserve">
-    <value>Phone</value>
+    <value>الهاتف</value>
   </data>
   <data name="customer" xml:space="preserve">
-    <value>Customer</value>
+    <value>العميل</value>
   </data>
   <data name="delete_message" xml:space="preserve">
-    <value>Do you want to delete</value>
+    <value>هل تريد حذف</value>
   </data>
   <data name="delete_title" xml:space="preserve">
-    <value>Delete</value>
+    <value>حذف</value>
   </data>
   <data name="select_customer" xml:space="preserve">
-    <value>Select a customer</value>
+    <value>اختر عميل</value>
   </data>
   <data name="customer_id" xml:space="preserve">
-    <value>Customer ID</value>
+    <value>معرف العميل</value>
   </data>
   <data name="company_name" xml:space="preserve">
-    <value>Company Name</value>
+    <value>اسم الشركة</value>
   </data>
   <data name="invoice_number" xml:space="preserve">
-    <value>Invoice Number</value>
+    <value>رقم الفاتورة</value>
   </data>
   <data name="date" xml:space="preserve">
-    <value>Date</value>
+    <value>التاريخ</value>
   </data>
   <data name="total_incl_tax" xml:space="preserve">
-    <value>Total Incl. Tax</value>
+    <value>المجموع شامل الضريبة</value>
   </data>
   <data name="delivery_notes_details" xml:space="preserve">
-    <value>Delivery Notes Details</value>
+    <value>تفاصيل بوالص التسليم</value>
   </data>
   <data name="number" xml:space="preserve">
-    <value>Number</value>
+    <value>الرقم</value>
   </data>
   <data name="total_ex_tax" xml:space="preserve">
-    <value>Total Excl. Tax</value>
+    <value>المجموع بدون ضريبة</value>
   </data>
   <data name="net_payer" xml:space="preserve">
-    <value>Net to Pay</value>
+    <value>صافي المدفوع</value>
   </data>
   <data name="total_net" xml:space="preserve">
-    <value>Total Net</value>
+    <value>المجموع الصافي</value>
   </data>
   <data name="total_gross" xml:space="preserve">
-    <value>Total Gross</value>
+    <value>المجموع الإجمالي</value>
   </data>
   <data name="total_vat" xml:space="preserve">
-    <value>Total VAT</value>
+    <value>مجموع ضريبة القيمة المضافة</value>
   </data>
   <data name="detach_from_invoice" xml:space="preserve">
-    <value>Detach from Invoice</value>
+    <value>فصل عن الفاتورة</value>
   </data>
   <data name="manage_invoices" xml:space="preserve">
-    <value>Manage Invoices</value>
+    <value>إدارة الفواتير</value>
   </data>
   <data name="customer_invoice_details" xml:space="preserve">
-    <value>Customer Invoice Details</value>
+    <value>تفاصيل فاتورة العميل</value>
   </data>
   <data name="uninvoiced_delivery_notes_details" xml:space="preserve">
-    <value>Uninvoiced Delivery Notes Details</value>
+    <value>تفاصيل بوالص التسليم غير المفوترة</value>
   </data>
   <data name="attach_delivery_note_to_invoice" xml:space="preserve">
-    <value>Attach to Invoice</value>
+    <value>إرفاق إلى الفاتورة</value>
   </data>
   <data name="delivery_note_number" xml:space="preserve">
-    <value>Delivery Note Number</value>
+    <value>رقم بوليصة التسليم</value>
   </data>
   <data name="manage_providers_invoices" xml:space="preserve">
-    <value>Manage Provider Invoices</value>
+    <value>إدارة فواتير الموردين</value>
   </data>
   <data name="select_provider" xml:space="preserve">
-    <value>Select a Provider</value>
+    <value>اختر مورد</value>
   </data>
   <data name="provider_invoice_details" xml:space="preserve">
-    <value>Provider Invoice Details</value>
+    <value>تفاصيل فاتورة المورد</value>
   </data>
   <data name="receipt_notes_details" xml:space="preserve">
-    <value>Receipt Notes Details</value>
+    <value>تفاصيل بوالص الاستلام</value>
   </data>
   <data name="uninvoiced_receipt_notes_details" xml:space="preserve">
-    <value>Uninvoiced Receipt Notes Details</value>
+    <value>تفاصيل بوالص الاستلام غير المفوترة</value>
   </data>
   <data name="attach_receipt_note_to_invoice" xml:space="preserve">
-    <value>Attach Receipt Notes to Invoice</value>
+    <value>إرفاق بوالص الاستلام إلى الفاتورة</value>
   </data>
   <data name="discount_percentage" xml:space="preserve">
-    <value>Discount %</value>
+    <value>نسبة الخصم %</value>
   </data>
   <data name="unit_price_required" xml:space="preserve">
-    <value>Unit Price</value>
+    <value>السعر للوحدة</value>
   </data>
   <data name="quantity" xml:space="preserve">
-    <value>Quantity</value>
+    <value>الكمية</value>
   </data>
   <data name="product" xml:space="preserve">
-    <value>Product</value>
+    <value>المنتج</value>
   </data>
   <data name="total_including_tax" xml:space="preserve">
-    <value>Total Including Tax</value>
+    <value>المجموع شامل الضريبة</value>
   </data>
   <data name="total_excluding_tax" xml:space="preserve">
-    <value>Total Excluding Tax</value>
+    <value>المجموع بدون ضريبة</value>
   </data>
   <data name="unit_price_ht" xml:space="preserve">
-    <value>Unit Price</value>
+    <value>السعر للوحدة</value>
   </data>
   <data name="vat_percentage" xml:space="preserve">
-    <value>VAT %</value>
+    <value>نسبة الضريبة %</value>
   </data>
   <data name="customer_name" xml:space="preserve">
-    <value>Customer Name</value>
+    <value>اسم العميل</value>
   </data>
   <data name="customer_phone" xml:space="preserve">
-    <value>Customer Phone</value>
+    <value>هاتف العميل</value>
   </data>
   <data name="customer_address" xml:space="preserve">
-    <value>Customer Address</value>
+    <value>عنوان العميل</value>
   </data>
   <data name="customer_matricule" xml:space="preserve">
-    <value>Customer Registration Number</value>
+    <value>رقم تسجيل العميل</value>
   </data>
   <data name="customer_email" xml:space="preserve">
-    <value>Customer Email</value>
+    <value>بريد العميل الإلكتروني</value>
   </data>
   <data name="save_label" xml:space="preserve">
-    <value>Save</value>
+    <value>حفظ</value>
   </data>
   <data name="delivery_notes" xml:space="preserve">
-    <value>Delivery Notes</value>
+    <value>بوالص التسليم</value>
   </data>
   <data name="invoiced" xml:space="preserve">
-    <value>Invoiced</value>
+    <value>مفوتر</value>
   </data>
   <data name="not_invoiced" xml:space="preserve">
-    <value>Not Invoiced</value>
+    <value>غير مفوتر</value>
   </data>
   <data name="start_date" xml:space="preserve">
-    <value>Start Date</value>
+    <value>تاريخ البداية</value>
   </data>
   <data name="end_date" xml:space="preserve">
-    <value>End Date</value>
+    <value>تاريخ النهاية</value>
   </data>
   <data name="delivery_note_status" xml:space="preserve">
-    <value>Delivery Note Status</value>
+    <value>حالة بوليصة التسليم</value>
   </data>
   <data name="select_invoice" xml:space="preserve">
-    <value>Select an Invoice</value>
+    <value>اختر فاتورة</value>
   </data>
   <data name="delivery_note_saved_successfully" xml:space="preserve">
-    <value>Delivery Note Saved Successfully</value>
+    <value>تم حفظ بوليصة التسليم بنجاح</value>
   </data>
   <data name="add_new_order" xml:space="preserve">
-    <value>Add New Line</value>
+    <value>إضافة سطر جديد</value>
   </data>
   <data name="print" xml:space="preserve">
-    <value>Print</value>
+    <value>طباعة</value>
   </data>
   <data name="failed_to_save_delivery_note" xml:space="preserve">
-    <value>Failed to Save Delivery Note</value>
+    <value>فشل في حفظ بوليصة التسليم</value>
   </data>
   <data name="input_error" xml:space="preserve">
-    <value>Input Error</value>
+    <value>خطأ في الإدخال</value>
   </data>
   <data name="manage_customer_invoices" xml:space="preserve">
-    <value>Manage Customer Invoices</value>
+    <value>إدارة فواتير العملاء</value>
   </data>
   <data name="pourcentage_retenu" xml:space="preserve">
-    <value>Retained Percentage</value>
+    <value>النسبة المحتجزة</value>
   </data>
   <data name="CustomerPreview" xml:space="preserve">
-    <value>Customer Overview</value>
+    <value>نظرة عامة على العميل</value>
   </data>
   <data name="UnableToLoadCustomer" xml:space="preserve">
-    <value>Unable to Load Customer Information</value>
+    <value>تعذر تحميل معلومات العميل</value>
   </data>
   <data name="NotAvailable" xml:space="preserve">
-    <value>Not Available</value>
+    <value>غير متاح</value>
   </data>
   <data name="customer_code" xml:space="preserve">
-    <value>Customer Code</value>
+    <value>كود العميل</value>
   </data>
   <data name="customer_codeCat" xml:space="preserve">
-    <value>Customer Category Code</value>
+    <value>كود فئة العميل</value>
   </data>
   <data name="customer_etbSec" xml:space="preserve">
-    <value>Secondary Establishment</value>
+    <value>المؤسسة الثانوية</value>
   </data>
   <data name="actions_label" xml:space="preserve">
-    <value>Actions</value>
+    <value>الإجراءات</value>
   </data>
   <data name="cancel_label" xml:space="preserve">
-    <value>Cancel</value>
+    <value>إلغاء</value>
   </data>
   <data name="add_product" xml:space="preserve">
-    <value>Add Product</value>
+    <value>إضافة منتج</value>
   </data>
   <data name="products" xml:space="preserve">
-    <value>Products</value>
+    <value>المنتجات</value>
   </data>
   <data name="delete_button_label" xml:space="preserve">
-    <value>Delete</value>
+    <value>حذف</value>
   </data>
   <data name="edit_button_label" xml:space="preserve">
-    <value>Edit</value>
+    <value>تعديل</value>
   </data>
   <data name="edit_product" xml:space="preserve">
-    <value>Edit Product</value>
+    <value>تعديل المنتج</value>
   </data>
   <data name="product_name" xml:space="preserve">
-    <value>Product Name</value>
+    <value>اسم المنتج</value>
   </data>
   <data name="product_prix" xml:space="preserve">
-    <value>Product Price</value>
+    <value>سعر المنتج</value>
   </data>
   <data name="product_prixAchat" xml:space="preserve">
-    <value>Purchase Price</value>
+    <value>سعر الشراء</value>
   </data>
   <data name="product_qte" xml:space="preserve">
-    <value>Product Quantity</value>
+    <value>كمية المنتج</value>
   </data>
   <data name="product_qteLimite" xml:space="preserve">
-    <value>Limited Product Quantity</value>
+    <value>الكمية المحدودة للمنتج</value>
   </data>
   <data name="product_refe" xml:space="preserve">
-    <value>Product Reference</value>
+    <value>مرجع المنتج</value>
   </data>
   <data name="add_provider" xml:space="preserve">
-    <value>Add Provider</value>
+    <value>إضافة مورد</value>
   </data>
   <data name="edit_provider" xml:space="preserve">
-    <value>Edit Provider</value>
+    <value>تعديل المورد</value>
   </data>
   <data name="provider_adress" xml:space="preserve">
-    <value>Address</value>
+    <value>العنوان</value>
   </data>
   <data name="provider_code" xml:space="preserve">
-    <value>Code</value>
+    <value>الكود</value>
   </data>
   <data name="provider_code_cat" xml:space="preserve">
-    <value>Category Code</value>
+    <value>كود الفئة</value>
   </data>
   <data name="provider_constructor" xml:space="preserve">
-    <value>Constructor</value>
+    <value>المنشئ</value>
   </data>
   <data name="provider_email" xml:space="preserve">
-    <value>Email</value>
+    <value>البريد الإلكتروني</value>
   </data>
   <data name="provider_etb_sec" xml:space="preserve">
-    <value>Secondary Establishment</value>
+    <value>المؤسسة الثانوية</value>
   </data>
   <data name="provider_fax" xml:space="preserve">
-    <value>Fax</value>
+    <value>الفاكس</value>
   </data>
   <data name="provider_matricule" xml:space="preserve">
-    <value>Registration Number</value>
+    <value>رقم التسجيل</value>
   </data>
   <data name="provider_name" xml:space="preserve">
-    <value>Provider Name</value>
+    <value>اسم المورد</value>
   </data>
   <data name="provider_phone" xml:space="preserve">
-    <value>Phone Number</value>
+    <value>رقم الهاتف</value>
   </data>
   <data name="provider_second_email" xml:space="preserve">
-    <value>Second Email</value>
+    <value>البريد الإلكتروني الثاني</value>
   </data>
   <data name="product_remise" xml:space="preserve">
-    <value>Product Discount</value>
+    <value>خصم المنتج</value>
   </data>
   <data name="product_remiseAchat" xml:space="preserve">
-    <value>Purchase Discount</value>
+    <value>خصم الشراء</value>
   </data>
   <data name="product_tva" xml:space="preserve">
-    <value>VAT</value>
+    <value>ضريبة القيمة المضافة</value>
   </data>
   <data name="product_visibilite" xml:space="preserve">
-    <value>Visibility</value>
+    <value>الرؤية</value>
   </data>
   <data name="providers" xml:space="preserve">
-    <value>Providers</value>
+    <value>الموردون</value>
   </data>
   <data name="Timbre" xml:space="preserve">
-    <value>Stamp</value>
+    <value>الطابع الجبائي</value>
   </data>
   <data name="Adresse_retenu" xml:space="preserve">
-    <value>Withholding Address</value>
+    <value>عنوان المقتطع</value>
   </data>
   <data name="matricule_fiscale" xml:space="preserve">
-    <value>Tax Registration Number</value>
+    <value>المطبق الجبائي</value>
   </data>
   <data name="pourcentage_fodec" xml:space="preserve">
-    <value>FODEC Percentage %</value>
+    <value>نسبة الفوديك %</value>
   </data>
   <data name="Fax" xml:space="preserve">
-    <value>Fax</value>
+    <value>الفاكس</value>
   </data>
   <data name="CodeTva" xml:space="preserve">
-    <value>VAT Code</value>
+    <value>كود ضريبة القيمة المضافة</value>
   </data>
   <data name="created_with_success" xml:space="preserve">
-    <value>created successfully</value>
+    <value>تم الإنشاء بنجاح</value>
   </data>
   <data name="updated_with_success" xml:space="preserve">
-    <value>updated successfully</value>
+    <value>تم التحديث بنجاح</value>
   </data>
   <data name="provider" xml:space="preserve">
-    <value>Provider</value>
+    <value>المورد</value>
   </data>
   <data name="Overview" xml:space="preserve">
-    <value>Overview</value>
+    <value>نظرة عامة</value>
   </data>
   <data name="Dashboard" xml:space="preserve">
-    <value>Dashboard</value>
+    <value>لوحة التحكم</value>
   </data>
   <data name="Accounts" xml:space="preserve">
-    <value>Accounts</value>
+    <value>الحسابات</value>
   </data>
   <data name="Manage_Invoices" xml:space="preserve">
-    <value>Manage Invoices</value>
+    <value>إدارة الفواتير</value>
   </data>
   <data name="Delivery_Note" xml:space="preserve">
-    <value>Delivery Note</value>
+    <value>بوليصة التسليم</value>
   </data>
   <data name="Delivery_Notes_List" xml:space="preserve">
-    <value>Delivery Notes List</value>
+    <value>قائمة بوالص التسليم</value>
   </data>
   <data name="Receipt_Note" xml:space="preserve">
-    <value>Receipt Note</value>
+    <value>بوليصة الاستلام</value>
   </data>
   <data name="Receipt_Notes_List" xml:space="preserve">
-    <value>Receipt Notes List</value>
+    <value>قائمة بوالص الاستلام</value>
   </data>
   <data name="Stock" xml:space="preserve">
-    <value>Stock</value>
+    <value>المخزون</value>
   </data>
   <data name="Articles" xml:space="preserve">
-    <value>Articles</value>
+    <value>المقالات</value>
   </data>
   <data name="Silk_Road_ERP" xml:space="preserve">
-    <value>Silk Road ERP</value>
+    <value>نظام إدارة طريق الحرير</value>
   </data>
 </root>

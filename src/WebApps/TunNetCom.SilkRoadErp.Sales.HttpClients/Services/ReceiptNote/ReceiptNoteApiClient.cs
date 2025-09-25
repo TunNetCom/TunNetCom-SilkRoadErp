@@ -1,6 +1,4 @@
-﻿using System.Text.Json;
-using TunNetCom.SilkRoadErp.Sales.Contracts.RecieptNotes;
-namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote;
+﻿namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote;
 
 class ReceiptNoteApiClient : IReceiptNoteApiClient
 {
@@ -11,23 +9,22 @@ class ReceiptNoteApiClient : IReceiptNoteApiClient
         _httpClient = httpClient;
         _logger = logger;
     }
-    public async Task<ReceiptNotesWithSummary> GetReceiptNote(
-            int providerId,
-            bool IsInvoiced,
+    public async Task<Result<ReceiptNotesWithSummaryResponse>> GetReceiptNoteWithSummaries(
+            int? providerId,
+            bool? IsInvoiced,
             int? InvoiceId,
             QueryStringParameters queryParameters,
             CancellationToken cancellationToken)
     {
 
-        var queryParams = new Dictionary<string, string>
+        var queryParams = new Dictionary<string, string?>
         {
             { "PageNumber", queryParameters.PageNumber.ToString() },
             { "PageSize", queryParameters.PageSize.ToString() },
-            { "ProviderId", providerId.ToString() },
-            { "IsInvoiced", IsInvoiced.ToString() }
+            { "ProviderId", providerId?.ToString() },
+            { "IsInvoiced", IsInvoiced?.ToString()?.ToLower() }
         };
 
-        // Add optional parameters if they are provided
         if (!string.IsNullOrEmpty(queryParameters.SortProprety) && !string.IsNullOrEmpty(queryParameters.SortOrder))
         {
             queryParams.Add("SortProprety", queryParameters.SortProprety);
@@ -42,20 +39,22 @@ class ReceiptNoteApiClient : IReceiptNoteApiClient
             queryParams.Add("InvoiceId", InvoiceId.Value.ToString());
         }
 
-        // Build the query string
-        var queryString = string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
-        var requestUri = $"/receipt-note?{queryString}";
+        var queryString = string.Join("&",
+            queryParams.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Value))
+            .Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
 
-        // Send the GET request
+        var requestUri = $"/receipt_note/summaries?{queryString}";
+
         var response = await _httpClient.GetAsync(requestUri, cancellationToken);
 
         _ = response.EnsureSuccessStatusCode();
         var content = await response.Content.ReadAsStringAsync(cancellationToken);
-        var result = System.Text.Json.JsonSerializer.Deserialize<ReceiptNotesWithSummary>(
+
+        var result = System.Text.Json.JsonSerializer.Deserialize<ReceiptNotesWithSummaryResponse>(
             content,
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-        return result;
+        return Result.Ok(result);
         
     }
 
@@ -106,6 +105,43 @@ class ReceiptNoteApiClient : IReceiptNoteApiClient
             cancellationToken);
         _ = response.EnsureSuccessStatusCode();
     }
-}
 
-  
+    public async Task<Result<ReceiptNotesResponse>> GetReceiptNotes(int PageNumber,
+        string SearchKeyword,
+        int PageSize,
+        string SortProprety,
+        string SortOrder,
+        CancellationToken cancellationToken)
+    {
+        var queryParams = new Dictionary<string, string>
+        {
+            { "PageNumber", PageNumber.ToString() },
+            { "PageSize", PageSize.ToString() }
+        };
+
+        // Add optional parameters if they are provided
+        if (!string.IsNullOrEmpty(SortProprety) && !string.IsNullOrEmpty(SortOrder))
+        {
+            queryParams.Add("SortProprety", SortProprety);
+            queryParams.Add("SortOrder", SortOrder);
+        }
+        if (!string.IsNullOrEmpty(SearchKeyword))
+        {
+            queryParams.Add("SearchKeyword", SearchKeyword);
+        }
+
+        var queryString = string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
+        var requestUri = $"/receiptnotes?{queryString}";
+
+        var response = await _httpClient.GetAsync(requestUri, cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return Result.Fail("cannot get recipt notes");
+        }
+
+        ReceiptNotesResponse receiptNotesResponse = await response.Content.ReadFromJsonAsync<ReceiptNotesResponse>();
+
+        return Result.Ok(receiptNotesResponse);
+    }
+}

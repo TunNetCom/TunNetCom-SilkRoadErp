@@ -1,6 +1,6 @@
 ﻿namespace TunNetCom.SilkRoadErp.Sales.Contracts.RecieptNotes;
 
-public class ReceiptNotesWithSummary
+public class ReceiptNotesWithSummaryResponse
 {
     [JsonPropertyName("totalGrossAmount")]
     public decimal TotalGrossAmount { get; set; }

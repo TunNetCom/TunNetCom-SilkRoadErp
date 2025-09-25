@@ -9,17 +9,19 @@ public class GetReceiptNoteQueryHandler(SalesContext _context, ILogger<GetReceip
     {
         _logger.LogPaginationRequest(nameof(BonDeReception), getReceiptNoteQuery.PageNumber, getReceiptNoteQuery.PageSize);
 
-        IQueryable<ReceiptNoteResponse> ReceiptNoteQuery = _context.BonDeReception.Select(R =>
-            new ReceiptNoteResponse
-            {
-                Num = R.Num,
-                NumBonFournisseur = R.NumBonFournisseur,
-                DateLivraison = R.DateLivraison,
-                IdFournisseur = R.IdFournisseur,
-                Date = R.Date,
-                NumFactureFournisseur = R.NumFactureFournisseur
-            })
-            .AsQueryable();
+        IQueryable<ReceiptNoteResponse> ReceiptNoteQuery =
+            (from bdr in _context.BonDeReception
+             join f in _context.Fournisseur on bdr.IdFournisseur equals f.Id
+             select new ReceiptNoteResponse
+             {
+                 NumBonFournisseur = bdr.NumBonFournisseur,
+                 DateLivraison = bdr.DateLivraison,
+                 IdFournisseur = bdr.IdFournisseur,
+                 NomFournisseur = f.Nom,
+                 NumFactureFournisseur = bdr.NumFactureFournisseur
+             })
+             .AsNoTracking()
+             .AsQueryable();
 
         if (!string.IsNullOrEmpty(getReceiptNoteQuery.SearchKeyword))
         {
@@ -29,7 +31,7 @@ public class GetReceiptNoteQueryHandler(SalesContext _context, ILogger<GetReceip
                 || R.DateLivraison.Equals(getReceiptNoteQuery.SearchKeyword)
                 || R.IdFournisseur.Equals(getReceiptNoteQuery.SearchKeyword)
                 || R.Date.Equals(getReceiptNoteQuery.SearchKeyword)
-                || R.NumFactureFournisseur.Equals(getReceiptNoteQuery.SearchKeyword));
+                || R.NumFactureFournisseur.Equals(getReceiptNoteQuery.SearchKeyword)).AsNoTracking();
         }
 
         PagedList<ReceiptNoteResponse> pagedReceipts = await PagedList<ReceiptNoteResponse>.ToPagedListAsync(

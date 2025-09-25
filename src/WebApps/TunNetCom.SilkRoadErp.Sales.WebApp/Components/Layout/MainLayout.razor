@@ -11,7 +11,7 @@
             <!-- Left side -->
             <div style="display: flex; align-items: center; gap: 0;">
                 <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
-                <RadzenLabel Text="Silk Road" Style="margin-left: 10px" />
+                <RadzenLabel Text="@Localizer["Silk_Road_ERP"]" Style="margin-left: 10px" />
             </div>
 
             <!-- Right side -->
@@ -23,20 +23,22 @@
     </RadzenHeader>
     <RadzenSidebar Responsive="false" Style="width: max-content">
         <RadzenPanelMenu DisplayStyle="@(sidebarExpanded? MenuItemDisplayStyle.IconAndText: MenuItemDisplayStyle.Icon)" ShowArrow="false">
-            <RadzenPanelMenuItem Text="Overview" Icon="home" />
-            <RadzenPanelMenuItem Text="Dashboard" Icon="dashboard" />
-            <RadzenPanelMenuItem Text="Clients" Icon="account_circle">
-                <RadzenPanelMenuItem Text="Comptes" Icon="description" Path="/customers_list" />
-                <RadzenPanelMenuItem Text="Gestion Factures" Icon="chrome_reader_mode" Path="/manage-invoice" />
-                <RadzenPanelMenuItem Text="Bon de livraison" Icon="add_shopping_cart" Path="/AddOrUpdateDeliveryNote" />
-                <RadzenPanelMenuItem Text="Bon de livraison List" Icon="pageview" Path="/delivery-notes" />
+            <RadzenPanelMenuItem Text="@Localizer["Overview"]" Icon="home" />
+            <RadzenPanelMenuItem Text="@Localizer["Dashboard"]" Icon="dashboard" />
+            <RadzenPanelMenuItem Text="@Localizer["Clients"]" Icon="account_circle">
+                <RadzenPanelMenuItem Text="@Localizer["Accounts"]" Icon="description" Path="/customers_list" />
+                <RadzenPanelMenuItem Text="@Localizer["Manage_Invoices"]" Icon="chrome_reader_mode" Path="/manage-invoice" />
+                <RadzenPanelMenuItem Text="@Localizer["Delivery_Note"]" Icon="add_shopping_cart" Path="/AddOrUpdateDeliveryNote" />
+                <RadzenPanelMenuItem Text="@Localizer["Delivery_Notes_List"]" Icon="pageview" Path="/delivery-notes" />
             </RadzenPanelMenuItem>
-            <RadzenPanelMenuItem Text="Fournisseurs" Icon="card_travel">
-                <RadzenPanelMenuItem Text="Comptes" Icon="description" Path="/providers_list" />
-                <RadzenPanelMenuItem Text="Gestion Factures" Icon="chrome_reader_mode" Path="/manage-providers-invoices" />
+            <RadzenPanelMenuItem Text="@Localizer["providers"]" Icon="card_travel">
+                <RadzenPanelMenuItem Text="@Localizer["Accounts"]" Icon="description" Path="/providers_list" />
+                <RadzenPanelMenuItem Text="@Localizer["Manage_Invoices"]" Icon="chrome_reader_mode" Path="/manage-providers-invoices" />
+                <RadzenPanelMenuItem Text="@Localizer["Receipt_Note"]" Icon="add_shopping_cart" Path="/AddOrUpdateReciptionNote" />
+                <RadzenPanelMenuItem Text="@Localizer["Receipt_Notes_List"]" Icon="pageview" Path="/reciption_notes" />
             </RadzenPanelMenuItem>
-            <RadzenPanelMenuItem Text="Stock" Icon="event_seat">
-                <RadzenPanelMenuItem Text="Articles" Icon="description" Path="/products_list" />
+            <RadzenPanelMenuItem Text="@Localizer["Stock"]" Icon="event_seat">
+                <RadzenPanelMenuItem Text="@Localizer["Articles"]" Icon="description" Path="/products_list" />
             </RadzenPanelMenuItem>
         </RadzenPanelMenu>
     </RadzenSidebar>

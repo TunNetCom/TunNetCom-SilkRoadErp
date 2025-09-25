@@ -1,6 +1,7 @@
 ﻿using FluentResults;
 using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
 using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
+using JsonException = System.Text.Json.JsonException;
 
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote;
 
@@ -201,7 +202,7 @@ public class DeliveryNoteApiClient(HttpClient _httpClient) : IDeliveryNoteApiCli
                 int pageSize,
                 string? searchKeyword,
                 DateTime? startDate,
-                DateTime? endDate, // Fixed naming convention
+                DateTime? endDate,
                 CancellationToken cancellationToken)
     {
         // Validate pagination parameters

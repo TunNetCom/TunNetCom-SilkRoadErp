@@ -459,4 +459,64 @@
   <data name="providers" xml:space="preserve">
     <value>Fournisseurs</value>
   </data>
+  <data name="Timbre" xml:space="preserve">
+    <value>Timbre</value>
+  </data>
+  <data name="Adresse_retenu" xml:space="preserve">
+    <value>Adresse retenue</value>
+  </data>
+  <data name="matricule_fiscale" xml:space="preserve">
+    <value>Matricule fiscale</value>
+  </data>
+  <data name="pourcentage_fodec" xml:space="preserve">
+    <value>Pourcentage FODEC %</value>
+  </data>
+  <data name="Fax" xml:space="preserve">
+    <value>Fax</value>
+  </data>
+  <data name="CodeTva" xml:space="preserve">
+    <value>Code TVA</value>
+  </data>
+  <data name="created_with_success" xml:space="preserve">
+    <value>créé avec succès</value>
+  </data>
+  <data name="updated_with_success" xml:space="preserve">
+    <value>mis à jour avec succès</value>
+  </data>
+  <data name="provider" xml:space="preserve">
+    <value>Fournisseur</value>
+  </data>
+  <data name="Overview" xml:space="preserve">
+    <value>Vue d'ensemble</value>
+  </data>
+  <data name="Dashboard" xml:space="preserve">
+    <value>Tableau de bord</value>
+  </data>
+  <data name="Accounts" xml:space="preserve">
+    <value>Comptes</value>
+  </data>
+  <data name="Manage_Invoices" xml:space="preserve">
+    <value>Gestion Factures</value>
+  </data>
+  <data name="Delivery_Note" xml:space="preserve">
+    <value>Bon de livraison</value>
+  </data>
+  <data name="Delivery_Notes_List" xml:space="preserve">
+    <value>Liste des bons de livraison</value>
+  </data>
+  <data name="Receipt_Note" xml:space="preserve">
+    <value>Bon de réception</value>
+  </data>
+  <data name="Receipt_Notes_List" xml:space="preserve">
+    <value>Liste des bons de réception</value>
+  </data>
+  <data name="Stock" xml:space="preserve">
+    <value>Stock</value>
+  </data>
+  <data name="Articles" xml:space="preserve">
+    <value>Articles</value>
+  </data>
+  <data name="Silk_Road_ERP" xml:space="preserve">
+    <value>ERP Route de la Soie</value>
+  </data>
 </root>

@@ -2,8 +2,8 @@
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNoteWithDetails;
 
-public record GetReceiptNoteWithDetailsQuery(
+public record GetReceiptNotesWithSummaryQuery(
     QueryStringParameters queryStringParameters,
-    int IdFournisseur,
-    bool IsInvoiced,
-    int? InvoiceId) : IRequest<ReceiptNotesWithSummary>;
+    int? IdFournisseur,
+    bool? IsInvoiced,
+    int? InvoiceId) : IRequest<ReceiptNotesWithSummaryResponse>;

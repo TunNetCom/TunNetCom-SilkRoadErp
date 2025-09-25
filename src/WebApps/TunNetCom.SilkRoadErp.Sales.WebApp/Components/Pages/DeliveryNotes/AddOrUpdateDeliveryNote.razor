@@ -380,15 +380,6 @@ else
                 <Template Context="order">
                     @order.VatPercentage
                 </Template>
-                @* <EditTemplate Context="order"> *@
-                @*     <RadzenNumeric TValue="double" *@
-                @*     Value="order.VatPercentage" *@
-                @*     Change="@(args => OnValueChanged(order, args, nameof(order.VatPercentage)))" *@
-                @*     Style="width:100%;" *@
-                @*     FormatString="{0:N2}%" *@
-                @*     Name="VatPercentage" /> *@
-                @*     <RadzenRequiredValidator Text="@Localizer["vat_required"]" Component="VatPercentage" Popup="true" /> *@
-                @* </EditTemplate> *@
             </RadzenDataGridColumn>
 
             <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.TotalIncludingTax)" Title="@Localizer["total_including_tax"]">
@@ -548,9 +539,7 @@ else
                     Description = o.Description,
                     Quantity = o.Quantity,
                     UnitPriceExcludingTax = o.UnitPriceExcludingTax,
-                    // DiscountPercentage = o.DiscountPercentage,
                     TotalExcludingTax = o.TotalExcludingTax,
-                    // VatPercentage = o.VatPercentage,
                     TotalIncludingTax = o.TotalIncludingTax
                 }).ToList()
             };
@@ -566,7 +555,6 @@ else
                     Detail = Localizer["delivery_note_saved_successfully"]
                 });
 
-                // Update the delivery note number if this is a new note
                 if (string.IsNullOrEmpty(deliveryNoteNumber))
                 {
                     deliveryNoteNumber = response.ValueOrDefault.ToString();
@@ -717,7 +705,7 @@ else
         }
 
         UpdateTotals();
-        StateHasChanged(); // Refresh totals
+        StateHasChanged();
     }
 
     async Task InsertRow()
@@ -739,27 +727,16 @@ else
     {
         if (!string.IsNullOrEmpty(currentOrder.ProductReference))
         {
-            // Find the product in the searchList that matches the current ProductReference
             var currentProduct = searchList.FirstOrDefault(p => p.ProductReference == currentOrder.ProductReference);
             if (currentProduct != null)
             {
-                // Create a new list starting with the current product
                 var list = new List<DeliveryNoteDetailResponse> { currentProduct };
-                // Add other products from searchList, excluding the current one
                 list.AddRange(searchList.Where(p => p.ProductReference != currentOrder.ProductReference));
                 return list;
             }
         }
         return searchList;
     }
-
-    // protected override async Task OnAfterRenderAsync(bool firstRender)
-    // {
-    //     if (firstRender)
-    //     {
-    //         await LoadData(new LoadDataArgs());
-    //     }
-    // }
 
     async Task LoadData(LoadDataArgs args)
     {
@@ -844,11 +821,11 @@ else
     {
         if (!selectedCustomerId.HasValue)
         {
-            // NotificationService.Notify(new NotificationMessage
-            // {
-            //     Severity = NotificationSeverity.Warning,
-            //     Summary = Localizer["select_a_customer_before"],
-            // });
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["select_a_customer_before"],
+            });
             return;
         }
 
@@ -888,7 +865,6 @@ else
     {
         if (value != null && value is string productReference)
         {
-            // Fetch the product details based on the selected productReference
             var selectedProduct = GetCurrentProductList(order)
                 .FirstOrDefault(p => p.ProductReference == productReference);
 
@@ -897,13 +873,11 @@ else
                 // Update the unit price
                 order.Description = selectedProduct.Description;
                 order.ProductReference = selectedProduct.ProductReference;
-                order.UnitPriceExcludingTax = selectedProduct.UnitPriceExcludingTax; // Assuming UnitPriceExcludingTax is a property in DeliveryNoteDetailResponse
+                order.UnitPriceExcludingTax = selectedProduct.UnitPriceExcludingTax;
                 order.DiscountPercentage = getAppParametersResponse.DiscountPercentage;
                 order.VatPercentage = getAppParametersResponse.VatAmount;
-                // Recalculate totals (if necessary)
                 CalculateTotals(order);
                 UpdateTotals();
-                // Notify the grid to refresh
                 await InvokeAsync(StateHasChanged);
             }
         }
@@ -929,7 +903,7 @@ else
 
         CalculateTotals(order);
         UpdateTotals();
-        await InvokeAsync(StateHasChanged); // Update UI and totals immediately
+        await InvokeAsync(StateHasChanged);
     }
 
     private void CalculateTotals(DeliveryNoteDetailResponse order)
@@ -968,7 +942,7 @@ else
         }
         orders.Add(order);
         UpdateTotals();
-        StateHasChanged(); // Refresh totals
+        StateHasChanged();
     }
 
     void OnCreateRow(DeliveryNoteDetailResponse order)
@@ -977,21 +951,8 @@ else
         orders.Add(order);
         ordersToInsert.Remove(order);
         UpdateTotals();
-        StateHasChanged(); // Refresh totals
+        StateHasChanged();
     }
-
-    // Method to show the dialog
-    // private async Task ShowDialog(decimal unitPrice)
-    // {
-    //     await DialogService.OpenAsync("Unit Price Details");
-    //     ds =>
-    //         <div>
-    //             <p> Unit Price(ExcludingTax): @unitPrice.FormatAmount()</p>
-    //             <RadzenButton Text ="Close" Click ="() => ds.Close()"/>
-    //         </div>,
-    //         new DialogOptions { Width = "400px", Height = "200px" });
-    
-    // }
 
     public async Task ShowDialog(string ProductReference)
     {

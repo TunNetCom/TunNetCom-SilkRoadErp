@@ -1,46 +1,52 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNoteWithDetails;
-public class GetReceiptNoteWithDetailsEndpoint : ICarterModule
+﻿using System;
+using TunNetCom.SilkRoadErp.Sales.Contracts.RecieptNotes.Request;
+
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNoteWithDetails
 {
-    public void AddRoutes(IEndpointRouteBuilder app)
+    public class GetReceiptNoteWithDetailsEndpoint : ICarterModule
     {
-        _ = app.MapGet(
-            "/receipt-note",
-            static async Task<Results<Ok<ReceiptNotesWithSummary>, BadRequest<ProblemDetails>>> (
-                IMediator mediator,
-                [FromQuery] int PageNumber,
-                [FromQuery] int PageSize,
-                [FromQuery] string? SortProprety,
-                [FromQuery] string? SortOrder,
-                [FromQuery] string? SearchKeyword,
-                [FromQuery] int ProviderId,
-                [FromQuery] bool IsInvoiced,
-                [FromQuery] int? InvoiceId,
-                CancellationToken cancellationToken) =>
-            {
-                var queryStringParams = new QueryStringParameters
+        public void AddRoutes(IEndpointRouteBuilder app)
+        {
+            _ = app.MapGet(
+                "/receipt_note/summaries",
+                static async Task<Results<Ok<ReceiptNotesWithSummaryResponse>, BadRequest<ProblemDetails>>> (
+                    IMediator mediator,
+                    [AsParameters] GetReceipNotesQueryParams getReceipNotesQueryParams,
+                    CancellationToken cancellationToken) =>
                 {
-                    PageNumber = PageNumber,
-                    PageSize = PageSize,
-                    SortProprety = SortProprety,
-                    SortOrder = SortOrder,
-                    SearchKeyword = SearchKeyword
-                };
+                    var queryStringParams = new QueryStringParameters
+                    {
+                        PageNumber = getReceipNotesQueryParams.PageNumber,
+                        PageSize = getReceipNotesQueryParams.PageSize,
+                        SortProprety = getReceipNotesQueryParams.SortProprety,
+                        SortOrder = getReceipNotesQueryParams.SortOrder,
+                        SearchKeyword = getReceipNotesQueryParams.SearchKeyword,
+                        StartDate = getReceipNotesQueryParams.StartDate,
+                        EndDate = getReceipNotesQueryParams.EndDate
+                    };
 
-                var query = new GetReceiptNoteWithDetailsQuery(
-                    queryStringParameters: queryStringParams,
-                    IdFournisseur: ProviderId,
-                    IsInvoiced: IsInvoiced,
-                    InvoiceId: InvoiceId);
+                    int? providerIdValue = null;
+                    if (!string.IsNullOrWhiteSpace(getReceipNotesQueryParams.ProviderId) && int.TryParse(getReceipNotesQueryParams.ProviderId, out var parsedId))
+                    {
+                        providerIdValue = parsedId;
+                    }
 
-                var response = await mediator.Send(query, cancellationToken);
+                    var query = new GetReceiptNotesWithSummaryQuery(
+                        queryStringParameters: queryStringParams,
+                        IdFournisseur: providerIdValue,
+                        IsInvoiced: getReceipNotesQueryParams.IsInvoiced,
+                        InvoiceId: getReceipNotesQueryParams.InvoiceId);
 
-                return TypedResults.Ok(response);
+                    var response = await mediator.Send(query, cancellationToken);
 
-            })
-        .WithName("GetReceiptNote")
-        .Produces<ReceiptNotesWithSummary>(StatusCodes.Status200OK)
-        .ProducesProblem(StatusCodes.Status400BadRequest, "application/problem+json")
-        .ProducesProblem(StatusCodes.Status500InternalServerError, "application/problem+json")
-        .WithDescription("Gets a paginated list of receipt notes with details and summary totals.");
+                    return TypedResults.Ok(response);
+
+                })
+            .WithName("GetReceiptNote")
+            .Produces<ReceiptNotesWithSummaryResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest, "application/problem+json")
+            .ProducesProblem(StatusCodes.Status500InternalServerError, "application/problem+json")
+            .WithDescription("Gets a paginated list of receipt notes with details and summary totals.");
+        }
     }
 }

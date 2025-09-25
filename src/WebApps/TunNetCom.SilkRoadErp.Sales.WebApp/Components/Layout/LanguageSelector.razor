@@ -6,18 +6,19 @@
 @inject IJSRuntime JSRuntime
 
 <RadzenDropDown @bind-Value="SelectedCulture" 
-                Data="@AvailableCultures" 
+                Data="@LanguageOptions" 
                 TextProperty="DisplayName" 
-                ValueProperty="Name" 
+                ValueProperty="Code" 
                 Style="width: 150px"
                 Change="@OnCultureChanged">
 </RadzenDropDown>
 
 @code {
-    private List<CultureInfo> AvailableCultures = new List<CultureInfo>
+    private List<LanguageOption> LanguageOptions = new List<LanguageOption>
     {
-        new CultureInfo("en"),
-        new CultureInfo("fr")
+        new LanguageOption { Code = "en", DisplayName = "English" },
+        new LanguageOption { Code = "fr", DisplayName = "Français" },
+        new LanguageOption { Code = "ar", DisplayName = "العربية" }
     };
 
     private string SelectedCulture { get; set; }
@@ -38,5 +39,11 @@
 
             Navigation.NavigateTo($"Culture/Set?culture={cultureEscaped}&redirectUri={uriEscaped}", forceLoad: true);
         }
+    }
+
+    public class LanguageOption
+    {
+        public string Code { get; set; } = string.Empty;
+        public string DisplayName { get; set; } = string.Empty;
     }
 }

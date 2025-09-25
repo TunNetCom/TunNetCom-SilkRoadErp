@@ -14,7 +14,7 @@ builder.Services.AddPrintEngine();
 builder.Services.AddLocalization();
 builder.Services.AddControllers();
 builder.Services.AddScoped<GitHubService>();
-string[] supportedCultures = ["en", "fr"];
+string[] supportedCultures = ["en", "fr", "ar"];
 var localizationOptions = new RequestLocalizationOptions()
     .SetDefaultCulture(supportedCultures[0])
     .AddSupportedCultures(supportedCultures)

@@ -16,18 +16,21 @@ public class GetDeliveryNotesBaseInfosWithSummariesQueryHandler(
         CancellationToken cancellationToken)
     {
         _logger.LogPaginationRequest(nameof(BonDeLivraison), request.PageNumber, request.PageSize);
-        var deliveryNoteQuery = _context.BonDeLivraison
-            .Select(t => new GetDeliveryNoteBaseInfos
-            {
-                Number = t.Num,
-                Date = t.Date,
-                NetAmount = t.NetPayer,
-                GrossAmount = t.TotHTva,
-                VatAmount = t.TotTva,
-                NumFacture = t.NumFacture,
-                CustomerId = t.ClientId,
-            })
-            .AsQueryable();
+        var deliveryNoteQuery = (from bdl in _context.BonDeLivraison
+                                join c in _context.Client on bdl.ClientId equals c.Id
+                                select new GetDeliveryNoteBaseInfos
+                                {
+                                    Number = bdl.Num,
+                                    Date = bdl.Date,
+                                    NetAmount = bdl.NetPayer,
+                                    CustomerName = c.Nom,
+                                    GrossAmount = bdl.TotHTva,
+                                    VatAmount = bdl.TotTva,
+                                    NumFacture = bdl.NumFacture,
+                                    CustomerId = bdl.ClientId
+                                }).AsNoTracking()
+                                .AsQueryable();
+
         if (request.CustomerId.HasValue)
         {
             deliveryNoteQuery = deliveryNoteQuery.Where(d => d.CustomerId == request.CustomerId);

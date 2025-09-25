@@ -6,3 +6,8 @@ global using Newtonsoft.Json;
 global using System.Net;
 global using System.Net.Http.Json;
 global using TunNetCom.SilkRoadErp.Sales.Contracts.Products;
+global using FluentResults;
+global using System.Text.Json;
+global using TunNetCom.SilkRoadErp.Sales.Contracts.RecieptNotes;
+
+
