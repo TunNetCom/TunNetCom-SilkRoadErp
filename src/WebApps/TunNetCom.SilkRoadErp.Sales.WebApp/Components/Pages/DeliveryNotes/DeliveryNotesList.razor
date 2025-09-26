@@ -11,50 +11,51 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @inject NavigationManager NavigationManager
 
-<div class="search-header">
-    <div class="search-field" style="margin-right: 15px;">
-        <label for="startDate">@Localizer["start_date"]</label>
-        <RadzenDatePicker id="startDate"
-                          @bind-Value="searchCriteria.StartDate"
-                          DateFormat="dd/MM/yyyy"
-                          Placeholder="@Localizer["start_date"]"
-                          class="w-100 " />
-    </div>
-    <div class="search-field" style="margin-right: 15px;">
-        <label for="endDate">@Localizer["end_date"]</label>
-        <RadzenDatePicker id="endDate"
-                          @bind-Value="searchCriteria.EndDate"
-                          DateFormat="dd/MM/yyyy"
-                          Placeholder="@Localizer["end_date"]"
-                          class="w-100 " />
-    </div>
-    <div class="search-field">
-        <label for="customer">Client</label>
-        <RadzenDropDownDataGrid id="customer"
-                                AllowClear="true"
-                                @bind-Value="@searchCriteria.SelectedCustomerId"
-                                LoadData="@LoadCustomers"
-                                AllowFiltering="true"
-                                class="w-100 search-input"
-                                Data="@_filteredCustomers"
-                                TextProperty="@nameof(CustomerResponse.Name)"
-                                ValueProperty="@nameof(CustomerResponse.Id)"
-                                Placeholder="Selectionner un fournisseur">
-            <Columns>
-                <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Id)" Title="ID" Width="80px" />
-                <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Name)" Title="@Localizer["name"]" Width="220px" />
-            </Columns>
-        </RadzenDropDownDataGrid>
-    </div>
-    <div class="search-button">
-        <RadzenButton Text="@Localizer["search"]"
-                      Icon="search"
-                      ButtonStyle="ButtonStyle.Primary"
-                      Click="@SearchDeliveryNotes"
-                      class="action-button" />
-    </div>
-</div>
+
 <div class="delivery-notes-list-container">
+    <div class="search-header">
+        <div class="search-field" style="margin-right: 15px;">
+            <label for="startDate">@Localizer["start_date"]</label>
+            <RadzenDatePicker id="startDate"
+                              @bind-Value="searchCriteria.StartDate"
+                              DateFormat="dd/MM/yyyy"
+                              Placeholder="@Localizer["start_date"]"
+                              class="w-100 " />
+        </div>
+        <div class="search-field" style="margin-right: 15px;">
+            <label for="endDate">@Localizer["end_date"]</label>
+            <RadzenDatePicker id="endDate"
+                              @bind-Value="searchCriteria.EndDate"
+                              DateFormat="dd/MM/yyyy"
+                              Placeholder="@Localizer["end_date"]"
+                              class="w-100 " />
+        </div>
+        <div class="search-field">
+            <label for="customer">Client</label>
+            <RadzenDropDownDataGrid id="customer"
+                                    AllowClear="true"
+                                    @bind-Value="@searchCriteria.SelectedCustomerId"
+                                    LoadData="@LoadCustomers"
+                                    AllowFiltering="true"
+                                    class="w-100 search-input"
+                                    Data="@_filteredCustomers"
+                                    TextProperty="@nameof(CustomerResponse.Name)"
+                                    ValueProperty="@nameof(CustomerResponse.Id)"
+                                    Placeholder="Selectionner un fournisseur">
+                <Columns>
+                    <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Id)" Title="ID" Width="80px" />
+                    <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Name)" Title="@Localizer["name"]" Width="220px" />
+                </Columns>
+            </RadzenDropDownDataGrid>
+        </div>
+        <div class="search-button">
+            <RadzenButton Text="@Localizer["search"]"
+                          Icon="search"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Click="@SearchDeliveryNotes"
+                          class="action-button" />
+        </div>
+    </div>
     <RadzenCard class="list-card">
         <h2>Commandes</h2>
         <RadzenDataGrid Data="@deliveryNotes.GetDeliveryNoteBaseInfos.Items"
@@ -68,7 +69,7 @@
                         AllowColumnResize="true"
                         RowSelect="@(args => ViewDeliveryNote(args.Number.ToString()))">
             <EmptyTemplate>
-                <p style="color: lightgrey; font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
+                <p style="font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
             </EmptyTemplate>
             <Columns>
                 <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos"
@@ -118,7 +119,6 @@
     }
 
     .list-card {
-        background-color: #ffffff;
         border: 1px solid #e5e7eb;
         border-radius: 6px;
         padding: 16px;
@@ -130,7 +130,6 @@
     h2 {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         font-size: 20px;
-        color: #1f2937;
         margin-bottom: 16px;
     }
 
@@ -142,7 +141,6 @@
         padding: 6px 12px;
         border-radius: 6px;
         background-color: #3b82f6;
-        color: #ffffff;
         border: none;
         transition: background-color 0.2s, box-shadow 0.2s;
     }
@@ -154,7 +152,6 @@
 
         .action-button:disabled {
             background-color: #d1d5db;
-            color: #6b7280;
             cursor: not-allowed;
         }
 
@@ -165,7 +162,6 @@
         gap: 16px;
         margin-bottom: 20px;
         align-items: end;
-        background-color: #ffffff;
         padding: 16px;
         border-radius: 6px;
         border: 1px solid #e5e7eb;
@@ -181,13 +177,11 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             font-size: 13px;
             font-weight: 500;
-            color: #374151;
             margin-bottom: 6px;
         }
 
     .search-input {
         width: 100% !important;
-        background-color: #f9fafb;
         border: 1px solid #d1d5db;
         border-radius: 4px;
         padding: 8px;
@@ -258,7 +252,6 @@
         border: 1px solid #e5e7eb;
         border-radius: 6px;
         padding: 8px 16px;
-        background-color: #f8fafc;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         flex: 0 0 auto;
     }
@@ -270,13 +263,11 @@
     .summary-text {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         font-size: 13px;
-        color: #1f2937;
         line-height: 1.5;
     }
 
         .summary-text strong {
             font-weight: 600;
-            color: #111827;
         }
 
     @@media (min-width: 769px) and (max-width: 1024px) {

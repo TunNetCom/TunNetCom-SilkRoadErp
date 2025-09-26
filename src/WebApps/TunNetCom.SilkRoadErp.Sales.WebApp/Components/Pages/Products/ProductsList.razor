@@ -45,7 +45,7 @@
                         Responsive="true"
                         RowRender="OnRowRender">
             <EmptyTemplate>
-                <p style="color: lightgrey; font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
+                <p style="font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
             </EmptyTemplate>
             <Columns>
                 <RadzenDataGridColumn TItem="ProductResponse" Property="@nameof(ProductResponse.Reference)" Title="@Localizer["product_refe"]" Width="200px">
@@ -109,7 +109,6 @@
     }
 
     .products-card {
-        background: var(--card-bg);
         border-radius: var(--border-radius);
         box-shadow: var(--card-shadow);
         padding: 1.5rem;
@@ -124,7 +123,6 @@
     }
 
     .products-title {
-        color: var(--text-color);
         font-weight: 600;
         margin: 0;
         font-size: 2rem;
@@ -138,27 +136,22 @@
         padding: 0.75rem 1rem;
         margin-bottom: 1.25rem;
         font-size: 0.95rem;
-        color: var(--text-color);
-        background: #fafafa;
     }
 
         .products-search:focus {
             border-color: var(--primary-color);
             box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
             outline: none;
-            background: #ffffff;
         }
 
     .products-grid {
         border-radius: var(--border-radius);
         overflow: hidden;
-        background: var(--card-bg);
         border: none;
     }
 
         .products-grid .rz-datatable thead {
             background: var(--grid-header-bg);
-            color: var(--grid-header-color);
             border-bottom: 1px solid var(--border-color);
         }
 
@@ -186,13 +179,11 @@
     .grid-cell {
         padding: 0.75rem 1rem;
         font-size: 0.95rem;
-        color: var(--text-color);
         line-height: 1.5;
     }
 
     /* Custom row styling for low quantity */
     .rz-datatable-tbody > tr[style*="background-color: var(--rz-success)"] {
-        background-color: var(--success-light) !important;
     }
 
         .rz-datatable-tbody > tr[style*="background-color: var(--rz-success)"]:hover {

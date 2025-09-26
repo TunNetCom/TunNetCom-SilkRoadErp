@@ -17,7 +17,6 @@
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProviderInvoice
-
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine
@@ -25,6 +24,7 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Invoices.ProviderInvoices
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Invoices.RetenueSource
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Invoices.RetenueSourceFournisseur
+
 @inject IReceiptNoteApiClient receiptNoteService
 @inject IProvidersApiClient providersService
 @inject ICustomersApiClient customerService
@@ -41,9 +41,9 @@
 @inject PrintFullInvoiceService PrintFullInvoiceService
 @inject IJSRuntime JS
 
-<div style="padding: 1.5rem; background-color: #f5f6f8; min-height: 100vh;">
+<div style="padding: 1.5rem; min-height: 100vh;">
     <!-- Header -->
-    <h3 style="font-size: 1.75rem; font-weight: 600; color: #1a1a1a; margin-bottom: 1.5rem;">
+    <h3 style="font-size: 1.75rem; font-weight: 600; margin-bottom: 1.5rem;">
         @Localizer["manage_providers_invoices"]
     </h3>
 
@@ -52,7 +52,7 @@
     <div style="display: flex; justify-content: center; margin-bottom: 1.5rem;">
         <div style="width: 100%; max-width: 800px;">
             <RadzenCard Variant="Variant.Flat"
-                        Style="background: #ffffff;
+                        Style="
                            padding: 1.25rem;
                            border-radius: 12px;
                            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
@@ -61,7 +61,6 @@
                     <RadzenColumn Size="12" SizeMD="8" SizeLG="6">
                         <div style="display: flex; flex-direction: column; gap: 0.75rem;">
                             <label style="font-weight: 600;
-                                  color: #333;
                                   font-size: 0.9rem;
                                   text-align: center;">
                                 @Localizer["select_provider"]
@@ -100,7 +99,7 @@
     <RadzenRow Gap="1.5rem">
 	    <!-- Invoices Section -->
 	    <RadzenColumn Size="12" SizeMD="6" SizeLG="6">
-		    <RadzenCard Variant="Variant.Flat" Style="background-color: #ffffff; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+		    <RadzenCard Variant="Variant.Flat" Style="padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
 			    <RadzenDataGrid @ref="ProviderInvoiceGrid"
 			                    AllowFiltering="true"
 			                    AllowPaging="true"
@@ -116,10 +115,10 @@
 			                    Style="border: none;"
 			                    Class="custom-grid">
 				    <EmptyTemplate>
-					    <p style="color: lightgrey; font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
+					    <p style="font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
 				    </EmptyTemplate>
 				    <HeaderTemplate>
-					    <div style="font-size: 1.25rem; font-weight: 600; color: #1a1a1a; padding-bottom: 1rem;">
+					    <div style="font-size: 1.25rem; font-weight: 600; padding-bottom: 1rem;">
 						    @Localizer["provider_invoice_details"]
 					    </div>
 				    </HeaderTemplate>
@@ -136,13 +135,13 @@
 			    <!-- Invoice Summary -->
 			    <div style="margin-bottom: 1.5rem;">
 				    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1.5rem" JustifyContent="JustifyContent.End" Style="margin-top: 1rem;">
-					    <RadzenText TextStyle="TextStyle.Subtitle2" Style="color: #555;">
+					    <RadzenText TextStyle="TextStyle.Subtitle2">
 						    @Localizer["total_net"]: <strong>@_invoicesList.TotalNetAmount.FormatAmount()</strong>
 					    </RadzenText>
-					    <RadzenText TextStyle="TextStyle.Subtitle2" Style="color: #555;">
+					    <RadzenText TextStyle="TextStyle.Subtitle2">
 						    @Localizer["total_gross"]: <strong>@_invoicesList.TotalGrossAmount.FormatAmount()</strong>
 					    </RadzenText>
-					    <RadzenText TextStyle="TextStyle.Subtitle2" Style="color: #555;">
+					    <RadzenText TextStyle="TextStyle.Subtitle2">
 						    @Localizer["total_vat"]: <strong>@_invoicesList.TotalVATAmount.FormatAmount()</strong>
 					    </RadzenText>
 				    </RadzenStack>
@@ -172,7 +171,7 @@
 
 	    <!-- Uninvoiced Delivery Notes Section -->
 	    <RadzenColumn Size="12" SizeMD="6" SizeLG="6">
-		    <RadzenCard Variant="Variant.Flat" Style="background-color: #ffffff; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+		    <RadzenCard Variant="Variant.Flat" Style="padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
 			    <RadzenDataGrid @ref="_receiptNoteGrid"
 			                    AllowRowSelectOnRowClick="true"
 			                    AllowFiltering="true"
@@ -192,10 +191,10 @@
 			                    Style="border: none;"
 			                    Class="custom-grid">
 				    <EmptyTemplate>
-					    <p style="color: lightgrey; font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
+					    <p style=" font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
 				    </EmptyTemplate>
 				    <HeaderTemplate>
-					    <div style="font-size: 1.25rem; font-weight: 600; color: #1a1a1a; padding-bottom: 1rem;">
+					    <div style="font-size: 1.25rem; font-weight: 600; padding-bottom: 1rem;">
 						    @Localizer["uninvoiced_receipt_notes_details"]
 					    </div>
 				    </HeaderTemplate>
@@ -215,13 +214,13 @@
 			    </RadzenDataGrid>
 			    <!-- Uninvoiced Delivery Notes Summary -->
 			    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1.5rem" JustifyContent="JustifyContent.End" Style="margin-top: 1rem;">
-				    <RadzenText TextStyle="TextStyle.Subtitle2" Style="color: #555;">
+				    <RadzenText TextStyle="TextStyle.Subtitle2">
 					    @Localizer["total_net"]: <strong>@_uninvoicedReceiptNotesWithSummary?.TotalNetAmount.FormatAmount()</strong>
 				    </RadzenText>
-				    <RadzenText TextStyle="TextStyle.Subtitle2" Style="color: #555;">
+				    <RadzenText TextStyle="TextStyle.Subtitle2">
 					    @Localizer["total_gross"]: <strong>@_uninvoicedReceiptNotesWithSummary?.TotalGrossAmount.FormatAmount()</strong>
 				    </RadzenText>
-				    <RadzenText TextStyle="TextStyle.Subtitle2" Style="color: #555;">
+				    <RadzenText TextStyle="TextStyle.Subtitle2">
 					    @Localizer["total_vat"]: <strong>@_uninvoicedReceiptNotesWithSummary?.TotalVATAmount.FormatAmount()</strong>
 				    </RadzenText>
 			    </RadzenStack>
