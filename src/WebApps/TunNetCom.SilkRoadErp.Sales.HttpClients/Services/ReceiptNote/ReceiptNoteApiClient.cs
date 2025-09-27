@@ -85,7 +85,7 @@ class ReceiptNoteApiClient : IReceiptNoteApiClient
         //TODO : Handle the response as needed
     }
 
-    public async Task DetachReceiptNotesFromInvoiceAsync(
+    public async Task<bool> DetachReceiptNotesFromInvoiceAsync(
         int invoiceId,
         List<int> receiptNotesIds,
         CancellationToken cancellationToken = default)
@@ -103,7 +103,10 @@ class ReceiptNoteApiClient : IReceiptNoteApiClient
             "/receipt-note/detach",
             command,
             cancellationToken);
-        _ = response.EnsureSuccessStatusCode();
+
+        if (response.IsSuccessStatusCode)
+            return true;
+        return false;
     }
 
     public async Task<Result<ReceiptNotesResponse>> GetReceiptNotes(int PageNumber,

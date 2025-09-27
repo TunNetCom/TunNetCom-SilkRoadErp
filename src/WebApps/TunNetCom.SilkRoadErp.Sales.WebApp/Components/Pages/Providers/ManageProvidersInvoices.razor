@@ -41,15 +41,15 @@
 @inject PrintFullInvoiceService PrintFullInvoiceService
 @inject IJSRuntime JS
 
-<div style="padding: 1rem; min-height: 100vh;">
+<div style="padding: 1rem, min-height: 100vh;">
     <!-- Header -->
-    <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1.5rem;">
+    <h3 style="font-size: 1rem, font-weight: 600, margin-bottom: 1.5rem;">
         @Localizer["manage_providers_invoices"]
     </h3>
 
 
-    <div style="display: flex; justify-content: center; margin-bottom: 1.5rem;">
-        <div style="width: 100%; max-width: 800px;">
+    <div style="display: flex, justify-content: center, margin-bottom: 1.5rem;">
+        <div style="width: 100%, max-width: 800px;">
             <RadzenCard Variant="Variant.Flat"
                         Style="
                            padding: 1rem;
@@ -58,7 +58,7 @@
                            border: 1px solid #f0f0f0;">
                 <RadzenRow JustifyContent="JustifyContent.Center">
                     <RadzenColumn Size="12" SizeMD="8" SizeLG="6">
-                        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <div style="display: flex, flex-direction: column, gap: 0.5rem;">
                             <label style="font-weight: 600;
                                   font-size: 0.9rem;
                                   text-align: center;">
@@ -156,15 +156,17 @@
                             
                             @if (_expandedInvoiceReceiptNotes != null && _expandedInvoiceReceiptNotes.Any())
                             {
-                                <RadzenDataGrid AllowFiltering="true"
+                                <RadzenDataGrid AllowFiltering="false"
                                                AllowPaging="true"
                                                PageSize="5"
                                                PagerHorizontalAlign="HorizontalAlign.Left"
                                                ShowPagingSummary="true"
                                                AllowSorting="true"
                                                SelectionMode="DataGridSelectionMode.Multiple"
-                                                @bind-Value="@_selectedReceiptNotesIdsToDetach"
+                                               AllowRowSelectOnRowClick="true"
+                                               @bind-Value="@_selectedReceiptNotesIdsToDetach"
                                                Data="@_expandedInvoiceReceiptNotes"
+                                               TItem="ReceiptNoteDetailsResponse"
                                                Count="_expandedInvoiceReceiptNotes.Count"
                                                Style="border: none; font-size: 0.9rem;"
                                                Class="custom-grid">
@@ -204,7 +206,6 @@
                                                 <strong>@receiptNote.TotTTC.FormatAmount()</strong>
                                             </Template>
                                         </RadzenDataGridColumn>
-                                        
                                     </Columns>
                                 </RadzenDataGrid>
 
@@ -240,7 +241,7 @@
 					    </RadzenText>
 				    </RadzenStack>
 			    </div>
-			    <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1.5rem; margin-bottom: 1rem;">
+			    <div style="display: flex, gap: 1rem, flex-wrap: wrap, margin-top: 1.5rem, margin-bottom: 1rem;">
 				    <RadzenButton ButtonStyle="ButtonStyle.Light"
 				                  Size="ButtonSize.Small"
 				                  Style="padding: 0.25rem 0.75rem; border-radius: 4px;"
@@ -387,9 +388,7 @@
             }
         }
     }
-    void Change(object value, string name, string action)
-    {
-    }
+
     private int _selectedProviderId;
     private int SelectedProviderId
     {
@@ -470,11 +469,20 @@
     async Task OnRowExpand(ProviderInvoiceResponse invoice) 
     {
         Console.WriteLine($"Row expanded → Invoice: {invoice.Num}, Provider: {invoice.ProviderId}");
-        
+
+        // Set the expanded invoice and select it in the main grid
         _expandedInvoice = invoice;
+
+        // Ensure the main invoice is selected
+        _selectedInvoices = new List<ProviderInvoiceResponse> { invoice };
+        SelectedInvoiceId = invoice.Num;
+
+        // Clear any previously selected receipt notes for detachment
+        _selectedReceiptNotesIdsToDetach = new List<ReceiptNoteDetailsResponse>();
+
         _isLoadingExpandedData = true;
         await InvokeAsync(StateHasChanged);
-        
+
         try
         {
             // Load receipt notes for the expanded invoice
@@ -496,37 +504,40 @@
             await InvokeAsync(StateHasChanged);
         }
     }
-    
+
     Task OnRowCollapse(ProviderInvoiceResponse invoice)
     {
         Console.WriteLine($"Row collapsed → Invoice: {invoice.Num}");
-        
+
         _expandedInvoice = null;
         _expandedInvoiceReceiptNotes.Clear();
         _expandedReceiptNotesSummary = new ReceiptNotesWithSummaryResponse();
         _isLoadingExpandedData = false;
-        
+
+        // Clear receipt note selections when collapsing
+        _selectedReceiptNotesIdsToDetach = new List<ReceiptNoteDetailsResponse>();
+
         return Task.CompletedTask;
     }
-    
+
     private async Task LoadReceiptNotesForExpandedInvoice(int invoiceNum)
     {
         if (SelectedProviderId <= 0) return;
-        
+
         var parameters = new QueryStringParameters
         {
             PageNumber = 1,
             PageSize = 10,
             SearchKeyword = null
         };
-        
+
         var result = await receiptNoteService.GetReceiptNoteWithSummaries(
             providerId: SelectedProviderId,
             IsInvoiced: true,
             invoiceNum,
             parameters,
             _cancellationTokenSource.Token);
-        
+
         if (result.IsSuccess)
         {
             _expandedReceiptNotesSummary = result.Value;
@@ -617,7 +628,7 @@
             };
         var repi = await receiptNoteService.GetReceiptNoteWithSummaries(SelectedProviderId, false, null, parameters, _cancellationTokenSource.Token);
 
-		if (repi.IsSuccess)
+        if (repi.IsSuccess)
             _uninvoicedReceiptNotesWithSummary = repi.Value;
         await InvokeAsync(StateHasChanged);
     }
@@ -640,7 +651,7 @@
                 SortProprety = _sortProperty
             };
         var repi = await receiptNoteService.GetReceiptNoteWithSummaries(SelectedProviderId, false, null, parameters, _cancellationTokenSource.Token);
-		if (repi.IsSuccess)
+        if (repi.IsSuccess)
             _uninvoicedReceiptNotesWithSummary = repi.Value;
         await InvokeAsync(StateHasChanged);
     }
@@ -653,7 +664,7 @@
 				SearchKeyword = null
 			};
         var repi = await receiptNoteService.GetReceiptNoteWithSummaries(_provider, false, null, parameters, _cancellationTokenSource.Token);
-		if (repi.IsSuccess)
+        if (repi.IsSuccess)
             _uninvoicedReceiptNotesWithSummary = repi.Value;
         await InvokeAsync(StateHasChanged);
     }
@@ -751,7 +762,7 @@
                 SortProprety = _sortProperty
             };
         var repi = await receiptNoteService.GetReceiptNoteWithSummaries(SelectedProviderId, true, SelectedInvoiceId, parameters, _cancellationTokenSource.Token);
-		if (repi.IsSuccess)
+        if (repi.IsSuccess)
             _invoicedReceiptNotesWithSummary = repi.Value;
         await InvokeAsync(StateHasChanged);
     }
@@ -763,7 +774,10 @@
         {
             var deliveryNoteIds = _selectedReceiptNotesIdsToDetach.Select(dn => dn.Num).ToList();
 
-            var result = receiptNoteService.DetachReceiptNotesFromInvoiceAsync(SelectedInvoiceId, deliveryNoteIds, _cancellationTokenSource.Token);
+            var result =await receiptNoteService.DetachReceiptNotesFromInvoiceAsync(SelectedInvoiceId, deliveryNoteIds, _cancellationTokenSource.Token);
+
+            if (result)
+                updateInvoiceGridLineAttachmentRecpiet(SelectedInvoiceId, false);
 
             NotificationService.Notify(new NotificationMessage
                 {
@@ -771,11 +785,16 @@
                     Summary = Localizer["success"],
                     Detail = Localizer["receipt_notes_detached"]
                 });
-            await LoadInvoices(SelectedProviderId);
+
+            _selectedReceiptNotesIdsToDetach = new List<ReceiptNoteDetailsResponse>();
+
             await LoadUninvoicedReceiptNote(SelectedProviderId);
             await LoadReceiptNotesForSelectedInvoice(SelectedInvoiceId);
 
-            _selectedReceiptNotesIdsToDetach = new List<ReceiptNoteDetailsResponse>();
+            if (_expandedInvoice != null)
+            {
+                await LoadReceiptNotesForExpandedInvoice(_expandedInvoice.Num);
+            }
         }
         catch (Exception ex)
         {
@@ -788,6 +807,43 @@
             Console.WriteLine($"Error detaching receipt notes from invoice: {ex.Message}");
         }
     }
+
+    private void updateInvoiceGridLineAttachmentRecpiet(int invoiceId,bool isAttach)
+    {
+        var invoiceline = _invoicesList.Invoices.Items.Where(i => i.Num == invoiceId).FirstOrDefault();
+        decimal totHtV;
+        decimal totHTTC;
+        decimal totTVA;
+        decimal sumAmount;
+        if(invoiceline is null)
+            return;
+
+
+        if (isAttach)
+        {
+            sumAmount = _selectedReceiptNotesToAttach.Sum(m => m.TotTTC);
+            invoiceline.TotTTC = invoiceline.TotTTC + sumAmount;
+            totHtV = _invoicesList.TotalNetAmount + _selectedReceiptNotesToAttach.Sum(x => x.TotHTva);
+            totHTTC = _invoicesList.TotalGrossAmount + _selectedReceiptNotesToAttach.Sum(x => x.TotTTC);
+            totTVA = _invoicesList.TotalVATAmount + _selectedReceiptNotesToAttach.Sum(x => x.TotTva);
+
+        }
+        else
+        {
+            sumAmount = _selectedReceiptNotesIdsToDetach.Sum(m => m.TotTTC);
+            invoiceline.TotTTC = invoiceline.TotTTC - sumAmount;
+            totHtV = _invoicesList.TotalNetAmount - _selectedReceiptNotesIdsToDetach.Sum(x => x.TotHTva);
+            totHTTC = _invoicesList.TotalGrossAmount - _selectedReceiptNotesIdsToDetach.Sum(x => x.TotTTC);
+            totTVA = _invoicesList.TotalVATAmount - _selectedReceiptNotesIdsToDetach.Sum(x => x.TotTva);
+        }
+
+
+        _invoicesList.Invoices.Items.Where(i => i.Num == invoiceId).FirstOrDefault().TotTTC = invoiceline.TotTTC;
+        _invoicesList.TotalGrossAmount = totHTTC;
+        _invoicesList.TotalNetAmount = totHtV;
+        _invoicesList.TotalVATAmount = totTVA;
+    }
+
     private async Task AttachReceiptNotesToInvoiceClick(string text)
     {
         if (SelectedInvoiceId > _minValueId && _selectedReceiptNotesToAttach?.Any() == true)
@@ -810,9 +866,10 @@
                         Detail = Localizer["receipt_notes_attached"]
                     });
 
+                updateInvoiceGridLineAttachmentRecpiet(SelectedInvoiceId, true);
                 _selectedReceiptNotesToAttach = new List<ReceiptNoteDetailsResponse>();
 
-                await LoadInvoices(SelectedProviderId);
+                await LoadReceiptNotesForExpandedInvoice(SelectedInvoiceId);
                 await LoadUninvoicedReceiptNote(SelectedProviderId);
                 await LoadReceiptNotesForSelectedInvoice(SelectedInvoiceId);
 
