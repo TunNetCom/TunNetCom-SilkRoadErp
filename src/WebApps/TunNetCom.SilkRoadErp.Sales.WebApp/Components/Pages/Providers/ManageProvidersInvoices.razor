@@ -146,6 +146,12 @@
                                 {
                                     <RadzenProgressBarCircular ShowValue="false" Size="ProgressBarCircularSize.Small" />
                                 }
+                                <RadzenButton Click="@(args => DetachReceiptNotesFromInvoice())"
+                                              Icon="delete"
+                                              Disabled="@(_selectedReceiptNotesIdsToDetach.Count() == 0 || !_selectedReceiptNotesIdsToDetach.Any())"
+                                              ButtonStyle="ButtonStyle.Primary"
+                                              Size="ButtonSize.ExtraSmall"
+                                              Style="margin-top: 1rem; border-radius: 6px; padding: 0.5rem 1rem; font-weight: 500;" />
                             </div>
                             
                             @if (_expandedInvoiceReceiptNotes != null && _expandedInvoiceReceiptNotes.Any())
@@ -198,6 +204,7 @@
                                                 <strong>@receiptNote.TotTTC.FormatAmount()</strong>
                                             </Template>
                                         </RadzenDataGridColumn>
+                                        
                                     </Columns>
                                 </RadzenDataGrid>
 
