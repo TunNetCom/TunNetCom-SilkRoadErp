@@ -518,6 +518,12 @@
     <value />
   </data>
   <data name="Silk_Road_ERP" xml:space="preserve">
-    <value />
+    <value>Silk Road ERP</value>
+  </data>
+  <data name="no_records_to_display" xml:space="preserve">
+    <value>No records to display</value>
+  </data>
+  <data name="no_receipt_notes_found" xml:space="preserve">
+    <value>No Receipt Notes Found for this Invoice</value>
   </data>
 </root>
