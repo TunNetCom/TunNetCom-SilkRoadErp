@@ -39,7 +39,6 @@
         align-items: center;
         justify-content: space-between;
         padding: 12px 24px;
-        background-color: #ffffff;
         border-bottom: 1px solid #e5e7eb;
         width: 100%;
     }
@@ -60,7 +59,6 @@
         padding: 8px 12px;
         border-radius: 6px;
         transition: background-color 0.2s, box-shadow 0.2s;
-        color: #ffffff;
         background-color: #3b82f6;
         border: none;
     }
@@ -72,7 +70,6 @@
 
         .action-button:disabled {
             background-color: #d1d5db;
-            color: #6b7280;
             cursor: not-allowed;
         }
 
@@ -91,7 +88,6 @@
         border: 1px solid #e5e7eb;
         border-radius: 6px;
         padding: 8px 16px;
-        background-color: #f8fafc;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         flex: 0 0 auto;
     }
@@ -105,13 +101,11 @@
     .summary-text {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         font-size: 13px;
-        color: #1f2937;
         line-height: 1.5;
     }
 
         .summary-text strong {
             font-weight: 600;
-            color: #111827;
         }
 
     /* Responsive design */
@@ -171,28 +165,6 @@
     flex-wrap: wrap;
     flex-grow: 1;
     }
-
-    /* .header-actions { */
-    /* display: flex; */
-    /* gap: 10px; */
-    /* align-items: center; */
-    /* justify-content: space-between; */
-    /* width: 100%; */
-    /* } */
-
-    /* .summary-card { */
-    /* background-color: #f8f9fa; */
-    /* padding: 10px 20px; */
-    /* border-radius: 5px; */
-    /* margin-left: auto; /* This pushes it to the right */ */
-    /* border-left: 1px solid #ddd; /* Optional: adds a separator line */ */
-    /* } */
-
-    /* .action-buttons { */
-    /* display: flex; */
-    /* gap: 10px; */
-    /* align-items: center; */
-    /* } */
 </style>
 
 <!-- Loading Indicator -->
@@ -343,15 +315,6 @@ else
                 <Template Context="order">
                     <div @onclick="() => ShowDialog(order.ProductReference)">@order.UnitPriceExcludingTax.FormatAmount()</div>
                 </Template>
-                @* <EditTemplate Context="order"> *@
-                @*     <RadzenNumeric TValue="decimal" *@
-                @*                    Value="order.UnitPriceExcludingTax" *@
-                @*                    Change="@(args => OnValueChanged(order, args, nameof(order.UnitPriceExcludingTax)))" *@
-                @*                    Style="width:100%;" *@
-                @*                    Format="n0" *@
-                @*                    Name="UnitPriceExcludingTax" /> *@
-                @*     <RadzenRequiredValidator Text="@Localizer["unit_price_required"]" Component="UnitPriceExcludingTax" Popup="true" /> *@
-                @* </EditTemplate> *@
             </RadzenDataGridColumn>
 
 
@@ -360,14 +323,6 @@ else
                 <Template Context="order">
                     @order.DiscountPercentage
                 </Template>
-                @* <EditTemplate Context="order"> *@
-                @*     <RadzenNumeric TValue="double" *@
-                @*     Value="order.DiscountPercentage" *@
-                @*     Change="@(args => OnValueChanged(order, args, nameof(order.DiscountPercentage)))" *@
-                @*     Style="width:100%;" *@
-                @*     FormatString="{0:N2}%" *@
-                @*     Name="DiscountPercentage" /> *@
-                @* </EditTemplate> *@
             </RadzenDataGridColumn>
 
             <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.TotalExcludingTax)" Title="@Localizer["total_excluding_tax"]">

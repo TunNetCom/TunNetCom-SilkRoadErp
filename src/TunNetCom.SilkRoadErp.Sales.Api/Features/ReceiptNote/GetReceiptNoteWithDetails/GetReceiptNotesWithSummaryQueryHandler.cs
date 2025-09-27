@@ -49,10 +49,10 @@ public class GetReceiptNotesWithSummaryQueryHandler(
             receiptNotesQuery = receiptNotesQuery
                 .Where(d => d.IdFournisseur == query.IdFournisseur);
         }
-        if (query.IsInvoiced.Equals(true) && !query.InvoiceId.HasValue)
+        if (query.IsInvoiced.Equals(true) && query.InvoiceId.HasValue)
         {
             receiptNotesQuery = receiptNotesQuery
-                .Where(d => d.NumFactureFournisseur.HasValue);
+                .Where(d => d.NumFactureFournisseur == query.InvoiceId);
         }
         if (query.IsInvoiced.Equals(false))
         {

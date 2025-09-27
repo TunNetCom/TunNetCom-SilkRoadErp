@@ -519,4 +519,10 @@
   <data name="Silk_Road_ERP" xml:space="preserve">
     <value>نظام إدارة طريق الحرير</value>
   </data>
+  <data name="no_records_to_display" xml:space="preserve">
+    <value>لا توجد سجلات للعرض</value>
+  </data>
+  <data name="no_receipt_notes_found" xml:space="preserve">
+    <value>لم يتم العثور على بوالص استلام لهذه الفاتورة</value>
+  </data>
 </root>

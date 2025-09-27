@@ -1,4 +1,6 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderInvoice.GetProvidersInvoices;
+﻿using Azure.Core;
+
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderInvoice.GetProvidersInvoices;
 
 public class GetProvidersInvoicesQueryHandler(
     SalesContext _context,
@@ -12,18 +14,30 @@ public class GetProvidersInvoicesQueryHandler(
     GetProvidersInvoicesQuery query,
     CancellationToken cancellationToken)
     {
-        var invoiceQuery = _context.ProviderInvoiceView
-    .Where(f => f.ProviderId == query.IdFournisseur)
-    .Select(f => new ProviderInvoiceResponse
-    {
-        Num = f.Num,
-        ProviderId = f.ProviderId,
-        Date = f.Date,
-        TotTTC = f.TotalTTC,
-        TotHTva = f.TotalHT,
-        TotTva = f.TotTva,
-    })
-    .AsQueryable();
+
+        var invoiceQuery = (from ff in _context.FactureFournisseur
+                              join br in _context.BonDeReception on ff.Num equals br.NumFactureFournisseur into brGroup
+                              from br in brGroup.DefaultIfEmpty()
+                              join lbr in _context.LigneBonReception on br.Num equals lbr.NumBonRec into lbrGroup
+                              from lbr in lbrGroup.DefaultIfEmpty()
+                              where ff.IdFournisseur == query.IdFournisseur
+                              group lbr by new
+                              {
+                                  ff.Num,
+                                  ff.IdFournisseur,
+                                  ff.Date
+                              } into g
+                              select new ProviderInvoiceResponse
+                              {
+                                  Num = g.Key.Num,
+                                  ProviderId = g.Key.IdFournisseur,
+                                  Date = g.Key.Date,
+                                  TotHTva = g.Sum(x => x.TotHt),
+                                  TotTTC = g.Sum(x => x.TotTtc),
+                                  TotTva = g.Sum(x => x.TotTtc) - g.Sum(x => x.TotHt)
+                              })
+        .AsNoTracking().AsQueryable();
+
 
         if (query.SortOrder != null && query.SortProperty != null)
         {

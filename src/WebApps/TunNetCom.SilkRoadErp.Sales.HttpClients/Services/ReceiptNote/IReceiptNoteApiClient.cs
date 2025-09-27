@@ -22,7 +22,7 @@ public interface IReceiptNoteApiClient
         List<int> receiptNotesIds,
         CancellationToken cancellationToken = default);
 
-    Task DetachReceiptNotesFromInvoiceAsync(
+    Task<bool> DetachReceiptNotesFromInvoiceAsync(
         int invoiceId,
         List<int> receiptNotesIds,
         CancellationToken cancellationToken = default);

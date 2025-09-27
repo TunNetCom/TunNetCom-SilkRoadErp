@@ -519,4 +519,10 @@
   <data name="Silk_Road_ERP" xml:space="preserve">
     <value>ERP Route de la Soie</value>
   </data>
+  <data name="no_records_to_display" xml:space="preserve">
+    <value>Aucun enregistrement à afficher</value>
+  </data>
+  <data name="no_receipt_notes_found" xml:space="preserve">
+    <value>Aucun bon de réception trouvé pour cette facture</value>
+  </data>
 </root>

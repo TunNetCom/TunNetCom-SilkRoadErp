@@ -7,7 +7,7 @@ public class AttachReceiptNotesToInvoiceCommandHandler(
     {
         logger.LogInformation("Attaching receipt notes {receipt-notes} to invoice {invoice}",
             string.Join(" ,", command.ReceiptNotesIds), command.InvoiceId);
-        var invoiceExist = await context.ProviderInvoiceView
+        var invoiceExist = await context.FactureFournisseur
             .AnyAsync(f => f.Num == command.InvoiceId);
 
         if (!invoiceExist)
