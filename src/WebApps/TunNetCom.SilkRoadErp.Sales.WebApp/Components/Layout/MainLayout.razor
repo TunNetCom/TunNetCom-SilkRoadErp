@@ -2,6 +2,7 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @inherits LayoutComponentBase
 @inject IStringLocalizer<SharedResource> Localizer
+@inject NavigationManager NavigationManager
 
 <RadzenComponents @rendermode="InteractiveAuto" />
 
@@ -18,6 +19,7 @@
             <div style="display: flex; align-items: center; gap: 20px;">
                 <LanguageSelector />
                 <RadzenAppearanceToggle />
+                <RadzenButton Click="OpenAccountSettings" Icon="manage_accounts"  Size="ButtonSize.Medium" />
             </div>
         </div>
     </RadzenHeader>
@@ -53,6 +55,10 @@
 
 @code {
     bool sidebarExpanded = true;
+    void OpenAccountSettings()
+    {
+        NavigationManager.NavigateTo($"/app_parameters");
+    }
 }
 
 

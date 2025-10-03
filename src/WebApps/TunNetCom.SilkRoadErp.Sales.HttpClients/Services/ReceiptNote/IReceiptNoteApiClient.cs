@@ -1,4 +1,7 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Request;
+using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Response;
+
+namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote;
 
 public interface IReceiptNoteApiClient
 {
@@ -25,5 +28,20 @@ public interface IReceiptNoteApiClient
     Task<bool> DetachReceiptNotesFromInvoiceAsync(
         int invoiceId,
         List<int> receiptNotesIds,
+        CancellationToken cancellationToken = default);
+    Task<Result<long>> CreateReceiptNote(
+        CreateReceiptNoteRequest request,
+        CancellationToken cancellationToken = default);
+    Task<Result<List<int>>> CreateReceiptNoteLines(
+        CreateReceiptNoteLineRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<Result<ReceiptNoteResponse>> GetReceiptNoteById(
+        int id,
+        CancellationToken cancellationToken = default);
+
+    Task<Result<GetReceiptNoteLinesByReceiptNoteIdResponse>> GetReceiptNoteLines(
+        int id,
+        GetReceiptNoteLinesWithSummariesQueryParams queryParams,
         CancellationToken cancellationToken = default);
 }

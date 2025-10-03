@@ -53,6 +53,8 @@
 
   <ItemGroup>
     <Folder Include="Features\AppParameters\InitOrUpdateAppParameters\" />
+    <Folder Include="Features\ProviderReceiptNoteLine\GetReceiptNoteLine\" />
+    <Folder Include="Features\ProviderReceiptNoteLine\DeleteReceiptNotes\" />
   </ItemGroup>
 
 </Project>

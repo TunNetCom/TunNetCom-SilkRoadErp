@@ -38,7 +38,10 @@ public class UpdateAppParametersCommandHandler(
             adresseRetenu: updateAppParametersCommand.AdresseRetenu,
             pourcentageRetenu: (double)updateAppParametersCommand.PourcentageRetenu);
 
+        _ = _context.Update(appParametersToUpdate);
+
         _ = await _context.SaveChangesAsync(cancellationToken);
+
         _logger.LogEntityUpdated(nameof(Systeme), 1);
 
         return Result.Ok();
