@@ -5,13 +5,12 @@ using Microsoft.JSInterop;
 using Radzen.Blazor;
 using System.Text.Json;
 using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters;
-using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;
 using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Request;
+using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Response;
 using TunNetCom.SilkRoadErp.Sales.Contracts.RecieptNotes;
 using TunNetCom.SilkRoadErp.Sales.Contracts.Sorting;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters;
-using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProviderInvoice;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers;
@@ -32,15 +31,15 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
     [Inject] public IJSRuntime JSRuntime { get; set; } = default!;
     [Inject] public IReceiptNoteApiClient receiptNoteApiClient { get; set; } = default!;
     [Inject] public IProductsApiClient productsApiClient { get; set; } = default!;
-    [Inject] public IProviderInvoiceApiClient invoicesApiClient { get; set; } = default!;
+    [Inject] public IProviderInvoiceApiClient providerInvoicesApiClient { get; set; } = default!;
     [Inject] public IProvidersApiClient providerApiClient { get; set; } = default!;
     [Inject] public IAppParametersClient appParametersClient { get; set; } = default!;
     [Inject] public ILogger<AddOrUpdateRecipietNote> logger { get; set; } = default!;
     [Inject] public DialogService DialogService { get; set; } = default!;
 
-    RadzenDataGrid<DeliveryNoteDetailResponse> ordersGrid;
-    List<DeliveryNoteDetailResponse> orders;
-    List<DeliveryNoteDetailResponse> searchList;
+    RadzenDataGrid<ReceiptLineWrapper> receiptLinesGrid = default!;
+    List<ReceiptLineWrapper> receiptLines = new();
+    List<ReceiptLineWrapper> searchList = new();
     int count;
     private const int DefaultPageSize = 7;
     private CancellationTokenSource _cancellationTokenSource = new();
@@ -48,29 +47,30 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
     private List<ProviderInvoiceResponse> _filteredInvoices { get; set; } = new();
     List<KeyValuePair<int, string>> editedFields = new();
     DataGridEditMode editMode = DataGridEditMode.Single;
-    List<DeliveryNoteDetailResponse> ordersToInsert = new();
-    List<DeliveryNoteDetailResponse> ordersToUpdate = new();
+    List<ReceiptLineWrapper> linesToInsert = new();
+    List<ReceiptLineWrapper> linesToUpdate = new();
     private bool isLoading = true;
-    bool isLoadingCustomers = false;
+    bool isLoadingProvider = false;
     bool isLoadingInvoices = false;
     decimal totalHt;
     decimal totalVat;
     decimal totalTtc;
-    string deliveryNoteNumber;
-    DateTime deliveryNoteDate = DateTime.Now;
-    private GetAppParametersResponse getAppParametersResponse;
-    private int? selectedProviderId;
-    int? selectedCustomerId
+    string receiptNoteNumber = string.Empty;
+    DateTime receiptNoteDate = DateTime.Now;
+    private GetAppParametersResponse getAppParametersResponse = default!;
+    
+    private int? _selectedProviderId;
+    int? selectedProviderId
     {
-        get => selectedProviderId;
+        get => _selectedProviderId;
         set
         {
-            if (selectedProviderId != value)
+            if (_selectedProviderId != value)
             {
-                selectedProviderId = value;
+                _selectedProviderId = value;
                 selectedInvoiceId = null;
                 _filteredInvoices = new List<ProviderInvoiceResponse>();
-                _ = LoadCustomerInvoices(new LoadDataArgs());
+                _ = LoadProviderInvoices(new LoadDataArgs());
                 StateHasChanged();
             }
         }
@@ -92,26 +92,25 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
 
     void Reset()
     {
-        ordersToInsert.Clear();
-        ordersToUpdate.Clear();
+        linesToInsert.Clear();
+        linesToUpdate.Clear();
     }
 
-    void Reset(DeliveryNoteDetailResponse order)
+    void Reset(ReceiptLineWrapper line)
     {
-        _ = ordersToInsert.Remove(order);
-        _ = ordersToUpdate.Remove(order);
+        _ = linesToInsert.Remove(line);
+        _ = linesToUpdate.Remove(line);
     }
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
 
-        searchList = new List<DeliveryNoteDetailResponse>();
         var param = await appParametersClient.GetAppParametersAsync(_cancellationTokenSource.Token);
         getAppParametersResponse = param.AsT0;
-        await LoadCustomers(null);
-        await FetchReciptionNote();
-        await LoadCustomerInvoices(null);
+        await LoadProviders(null);
+        await FetchReciptNote();
+        await LoadProviderInvoices(null);
         isLoading = false;
     }
 
@@ -129,22 +128,13 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
                 });
                 return;
             }
-            if (!selectedProviderId.HasValue)
-            {
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Error,
-                    Summary = Localizer["error"],
-                    Detail = $"{Localizer["select_customer"]}"
-                });
-                return;
-            }
+            
             isLoading = true;
             StateHasChanged();
 
             var request = new CreateReceiptNoteRequest
             {
-                Date = deliveryNoteDate,
+                Date = receiptNoteDate,
                 NumBonFournisseur = 1,
                 DateLivraison = DateTime.Now,
                 IdFournisseur = selectedProviderId ?? 0,
@@ -162,9 +152,9 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
                     Detail = Localizer["delivery_note_saved_successfully"]
                 });
 
-                if (string.IsNullOrEmpty(deliveryNoteNumber))
+                if (string.IsNullOrEmpty(receiptNoteNumber))
                 {
-                    deliveryNoteNumber = response.ValueOrDefault.ToString();
+                    receiptNoteNumber = response.ValueOrDefault.ToString();
                 }
             }
             else
@@ -194,11 +184,11 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
         }
     }
 
-    private async Task FetchReciptionNote()
+    private async Task FetchReciptNote()
     {
         if (string.IsNullOrEmpty(num))
         {
-            orders = new List<DeliveryNoteDetailResponse>();
+            receiptLines = new List<ReceiptLineWrapper>();
             totalHt = 0;
             totalVat = 0;
             totalTtc = 0;
@@ -233,6 +223,10 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
                 return;
             }
 
+            selectedInvoiceId = recipietNote.Value.NumFactureFournisseur;
+            selectedProviderId = recipietNote.Value.IdFournisseur;
+            receiptNoteNumber = recipietNote.Value.Num.ToString();
+
             var recipietNoteLignes = await receiptNoteApiClient.GetReceiptNoteLines(
                 numAsInt,
                 new GetReceiptNoteLinesWithSummariesQueryParams()
@@ -241,6 +235,35 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
                     PageSize = 5
                 },
                 _cancellationTokenSource.Token);
+
+            if (recipietNoteLignes.IsFailed)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = $"{Localizer["failed_to_fetch_delivery_note"]}: {recipietNoteLignes.Errors.First().Message}"
+                });
+                return;
+            }
+
+            receiptLines = recipietNoteLignes.ValueOrDefault.ReceiptLinesBaseInfos.Items
+                .Select(l => new ReceiptLineWrapper
+                {
+                    LineId = l.LineId,
+                    ProductReference = l.ProductReference,
+                    ItemDescription = l.ItemDescription,
+                    ItemQuantity = l.ItemQuantity,
+                    UnitPriceExcludingTax = l.UnitPriceExcludingTax,
+                    Discount = l.Discount,
+                    TotalExcludingTax = l.TotalExcludingTax,
+                    VatRate = l.VatRate,
+                    TotalIncludingTax = l.TotalIncludingTax
+                }).ToList();
+
+            totalHt = recipietNoteLignes.ValueOrDefault.TotalNetAmount ;
+            totalVat = recipietNoteLignes.ValueOrDefault.TotalVatAmount;
+            totalTtc = recipietNoteLignes.ValueOrDefault.TotalGrossAmount;
 
             await InvokeAsync(StateHasChanged);
         }
@@ -258,20 +281,20 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
         }
     }
 
-    async Task EditRow(DeliveryNoteDetailResponse order)
+    async Task EditRow(ReceiptLineWrapper line)
     {
-        if (editMode == DataGridEditMode.Single && ordersToInsert.Count() > 0)
+        if (editMode == DataGridEditMode.Single && linesToInsert.Count() > 0)
         {
             Reset();
         }
 
-        ordersToUpdate.Add(order);
-        await ordersGrid.EditRow(order);
+        linesToUpdate.Add(line);
+        await receiptLinesGrid.EditRow(line);
     }
 
-    async Task SaveRow(DeliveryNoteDetailResponse order)
+    async Task SaveRow(ReceiptLineWrapper line)
     {
-        if (order.ProductReference == "" || order.Quantity < 1)
+        if (line.ProductReference == "" || line.ItemQuantity < 1)
         {
             NotificationService.Notify(new NotificationMessage
             {
@@ -283,7 +306,7 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
         }
         try
         {
-            await ordersGrid.UpdateRow(order);
+            await receiptLinesGrid.UpdateRow(line);
         }
         catch (Exception e)
         {
@@ -297,25 +320,25 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
         }
     }
 
-    void CancelEdit(DeliveryNoteDetailResponse order)
+    void CancelEdit(ReceiptLineWrapper line)
     {
-        Reset(order);
-        ordersGrid.CancelEditRow(order);
+        Reset(line);
+        receiptLinesGrid.CancelEditRow(line);
     }
 
-    async Task DeleteRow(DeliveryNoteDetailResponse order)
+    async Task DeleteRow(ReceiptLineWrapper line)
     {
-        Reset(order);
+        Reset(line);
 
-        if (orders.Contains(order))
+        if (receiptLines.Contains(line))
         {
-            _ = orders.Remove(order);
-            await ordersGrid.Reload();
+            _ = receiptLines.Remove(line);
+            await receiptLinesGrid.Reload();
         }
         else
         {
-            ordersGrid.CancelEditRow(order);
-            await ordersGrid.Reload();
+            receiptLinesGrid.CancelEditRow(line);
+            await receiptLinesGrid.Reload();
         }
 
         UpdateTotals();
@@ -329,23 +352,23 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
             Reset();
         }
 
-        var order = new DeliveryNoteDetailResponse
+        var line = new ReceiptLineWrapper
         {
-            Quantity = 1
+            ItemQuantity = 1
         };
-        ordersToInsert.Add(order);
-        await ordersGrid.InsertRow(order);
+        linesToInsert.Add(line);
+        await receiptLinesGrid.InsertRow(line);
     }
 
-    private List<DeliveryNoteDetailResponse> GetCurrentProductList(DeliveryNoteDetailResponse currentOrder)
+    private List<ReceiptLineWrapper> GetCurrentProductList(ReceiptLineWrapper currentLine)
     {
-        if (!string.IsNullOrEmpty(currentOrder.ProductReference))
+        if (!string.IsNullOrEmpty(currentLine.ProductReference))
         {
-            var currentProduct = searchList.FirstOrDefault(p => p.ProductReference == currentOrder.ProductReference);
+            var currentProduct = searchList.FirstOrDefault(p => p.ProductReference == currentLine.ProductReference);
             if (currentProduct != null)
             {
-                var list = new List<DeliveryNoteDetailResponse> { currentProduct };
-                list.AddRange(searchList.Where(p => p.ProductReference != currentOrder.ProductReference));
+                var list = new List<ReceiptLineWrapper> { currentProduct };
+                list.AddRange(searchList.Where(p => p.ProductReference != currentLine.ProductReference));
                 return list;
             }
         }
@@ -375,12 +398,12 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
         {
             var pagedProducts = await productsApiClient.GetPagedAsync(parameters, _cancellationTokenSource.Token);
             searchList = pagedProducts.Items.Select(
-                p => new DeliveryNoteDetailResponse
+                p => new ReceiptLineWrapper
                 {
                     ProductReference = p.Reference,
-                    Description = p.Name,
+                    ItemDescription = p.Name,
                     UnitPriceExcludingTax = p.Price,
-                    Quantity = 1,
+                    ItemQuantity = 1,
                 }).ToList();
 
             count = pagedProducts.TotalCount;
@@ -394,16 +417,16 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
                 Summary = Localizer["error"],
                 Detail = $"{Localizer["failed_to_load_products"]}: {ex.Message}"
             });
-            searchList = new List<DeliveryNoteDetailResponse>();
+            searchList = new List<ReceiptLineWrapper>();
             count = 0;
         }
 
         await InvokeAsync(StateHasChanged);
     }
 
-    async Task LoadCustomers(LoadDataArgs args)
+    async Task LoadProviders(LoadDataArgs args)
     {
-        isLoadingCustomers = true;
+        isLoadingProvider = true;
         var parameters = new QueryStringParameters
         {
             PageNumber = 1,
@@ -431,40 +454,39 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
             {
                 Severity = NotificationSeverity.Error,
                 Summary = Localizer["error"],
-                Detail = $"{Localizer["failed_to_load_customers"]}: {ex.Message}"
+                Detail = $"{Localizer["failed_to_load_providers"]}: {ex.Message}"
             });
             _filteredProviders = new List<ProviderResponse>();
         }
 
-        isLoadingCustomers = false;
+        isLoadingProvider = false;
         await InvokeAsync(StateHasChanged);
     }
 
-    async Task LoadCustomerInvoices(LoadDataArgs args)
+    async Task LoadProviderInvoices(LoadDataArgs args)
     {
-        if (!selectedCustomerId.HasValue)
+        if (!selectedProviderId.HasValue)
         {
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Warning,
-                Summary = Localizer["select_a_customer_before"],
+                Summary = Localizer["select_a_provider_before"],
             });
             return;
         }
 
-        isLoadingCustomers = true;
-        var parameters = new QueryStringParameters
-        {
-            PageNumber = 1,
-            PageSize = 10,
-            SearchKeyword = null
-        };
+        isLoadingProvider = true;
 
         try
         {
-            var pagedProviderInvoices = await invoicesApiClient.GetProvidersInvoicesAsync(
-                selectedCustomerId.Value,
-                parameters,
+            var pagedProviderInvoices = await providerInvoicesApiClient.GetProvidersInvoicesAsync(
+                selectedProviderId.Value,
+                new QueryStringParameters
+                {
+                    PageNumber = 1,
+                    PageSize = 5,
+                    SearchKeyword = null
+                },
                 _cancellationTokenSource.Token);
 
             _filteredInvoices = pagedProviderInvoices.AsT0.Invoices.Items.ToList();
@@ -480,96 +502,98 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
             _filteredProviders = new List<ProviderResponse>();
         }
 
-        isLoadingCustomers = false;
+        isLoadingProvider = false;
         await InvokeAsync(StateHasChanged);
     }
 
-    async Task OnProductSelected(DeliveryNoteDetailResponse order, object value)
+    async Task OnProductSelected(ReceiptLineWrapper line, object value)
     {
         if (value is not null and string productReference)
         {
-            var selectedProduct = GetCurrentProductList(order)
+            var selectedProduct = GetCurrentProductList(line)
                 .FirstOrDefault(p => p.ProductReference == productReference);
 
             if (selectedProduct != null)
             {
-                order.Description = selectedProduct.Description;
-                order.ProductReference = selectedProduct.ProductReference;
-                order.UnitPriceExcludingTax = selectedProduct.UnitPriceExcludingTax;
-                order.DiscountPercentage = getAppParametersResponse.DiscountPercentage;
-                order.VatPercentage = getAppParametersResponse.VatAmount;
-                CalculateTotals(order);
+                line.ItemDescription = selectedProduct.ItemDescription;
+                line.ProductReference = selectedProduct.ProductReference;
+                line.UnitPriceExcludingTax = selectedProduct.UnitPriceExcludingTax;
+                line.Discount = getAppParametersResponse.DiscountPercentage;
+                line.VatRate = getAppParametersResponse.VatAmount;
+                CalculateTotals(line);
                 UpdateTotals();
                 await InvokeAsync(StateHasChanged);
             }
         }
     }
 
-    private async Task OnValueChanged(DeliveryNoteDetailResponse order, object value, string propertyName)
+    private async Task OnValueChanged(ReceiptLineWrapper line, object value, string propertyName)
     {
         switch (propertyName)
         {
-            case nameof(order.Quantity):
-                order.Quantity = Convert.ToInt16(value);
+            case nameof(line.ItemQuantity):
+                line.ItemQuantity = Convert.ToInt16(value);
                 break;
-            case nameof(order.UnitPriceExcludingTax):
-                order.UnitPriceExcludingTax = Convert.ToDecimal(value);
+            case nameof(line.UnitPriceExcludingTax):
+                line.UnitPriceExcludingTax = Convert.ToDecimal(value);
                 break;
-            case nameof(order.DiscountPercentage):
+            case nameof(line.Discount):
+                line.Discount = Convert.ToDouble(value);
                 break;
-            case nameof(order.VatPercentage):
+            case nameof(line.VatRate):
+                line.VatRate = Convert.ToDouble(value);
                 break;
         }
 
-        CalculateTotals(order);
+        CalculateTotals(line);
         UpdateTotals();
         await InvokeAsync(StateHasChanged);
     }
 
-    private void CalculateTotals(DeliveryNoteDetailResponse order)
+    private void CalculateTotals(ReceiptLineWrapper line)
     {
-        if (order.Quantity > 0 && order.UnitPriceExcludingTax > 0)
+        if (line.ItemQuantity > 0 && line.UnitPriceExcludingTax > 0)
         {
-            decimal totalBeforeDiscount = order.Quantity * order.UnitPriceExcludingTax;
-            decimal discountAmount = totalBeforeDiscount * (decimal)(order.DiscountPercentage / 100);
-            order.TotalExcludingTax = totalBeforeDiscount - discountAmount;
-            decimal vatAmount = order.TotalExcludingTax * (decimal)(order.VatPercentage / 100);
-            order.TotalIncludingTax = order.TotalExcludingTax + vatAmount;
+            decimal totalBeforeDiscount = line.ItemQuantity * line.UnitPriceExcludingTax;
+            decimal discountAmount = totalBeforeDiscount * (decimal)(line.Discount / 100);
+            line.TotalExcludingTax = totalBeforeDiscount - discountAmount;
+            decimal vatAmount = line.TotalExcludingTax * (decimal)(line.VatRate / 100);
+            line.TotalIncludingTax = line.TotalExcludingTax + vatAmount;
         }
         else
         {
-            order.TotalExcludingTax = 0;
-            order.TotalIncludingTax = 0;
+            line.TotalExcludingTax = 0;
+            line.TotalIncludingTax = 0;
         }
     }
 
     private void UpdateTotals()
     {
-        totalHt = orders.Sum(o => o.TotalExcludingTax);
-        totalVat = orders.Sum(o => o.TotalIncludingTax - o.TotalExcludingTax);
-        totalTtc = orders.Sum(o => o.TotalIncludingTax);
+        totalHt = receiptLines.Sum(l => l.TotalExcludingTax);
+        totalVat = receiptLines.Sum(l => l.TotalIncludingTax - l.TotalExcludingTax);
+        totalTtc = receiptLines.Sum(l => l.TotalIncludingTax);
     }
 
-    void OnUpdateRow(DeliveryNoteDetailResponse order)
+    void OnUpdateRow(ReceiptLineWrapper line)
     {
-        CalculateTotals(order);
-        Reset(order);
+        CalculateTotals(line);
+        Reset(line);
 
-        var toremv = orders.FirstOrDefault(t => t.Id == order.Id);
+        var toremv = receiptLines.FirstOrDefault(t => t.LineId == line.LineId);
         if (toremv != null)
         {
-            _ = orders.Remove(toremv);
+            _ = receiptLines.Remove(toremv);
         }
-        orders.Add(order);
+        receiptLines.Add(line);
         UpdateTotals();
         StateHasChanged();
     }
 
-    void OnCreateRow(DeliveryNoteDetailResponse order)
+    void OnCreateRow(ReceiptLineWrapper line)
     {
-        CalculateTotals(order);
-        orders.Add(order);
-        _ = ordersToInsert.Remove(order);
+        CalculateTotals(line);
+        receiptLines.Add(line);
+        _ = linesToInsert.Remove(line);
         UpdateTotals();
         StateHasChanged();
     }
@@ -619,7 +643,7 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
         _ = InvokeAsync(SaveStateAsync);
     }
 
-    DialogSettings _settings;
+    DialogSettings _settings = default!;
     public DialogSettings Settings
     {
         get
@@ -656,9 +680,9 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
 
     public class DialogSettings
     {
-        public string Left { get; set; }
-        public string Top { get; set; }
-        public string Width { get; set; }
-        public string Height { get; set; }
+        public string Left { get; set; } = string.Empty;
+        public string Top { get; set; } = string.Empty;
+        public string Width { get; set; } = string.Empty;
+        public string Height { get; set; } = string.Empty;
     }
 }
