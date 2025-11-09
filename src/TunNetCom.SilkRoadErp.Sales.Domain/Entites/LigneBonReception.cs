@@ -30,4 +30,31 @@ public partial class LigneBonReception
     public virtual BonDeReception NumBonRecNavigation { get; set; } = null!;
 
     public virtual Produit RefProduitNavigation { get; set; } = null!;
+
+    public static LigneBonReception CreateReceiptNoteLine(
+        int receiptNoteNumber,
+        string productRef,
+        string designationLigne,
+        int quantity,
+        decimal unitPrice,
+        double discount,
+        double tax)
+    {
+        var subtotalBeforeDiscount = quantity * unitPrice;
+        var discountAmount = subtotalBeforeDiscount * (decimal)(discount / 100);
+        var subtotalAfterDiscount = subtotalBeforeDiscount - discountAmount;
+        
+        return new LigneBonReception
+        {
+            RefProduit = productRef,
+            DesignationLi = designationLigne,
+            QteLi = quantity,
+            PrixHt = unitPrice,
+            Remise = discount,
+            TotHt = subtotalAfterDiscount,
+            Tva = tax,
+            TotTtc = subtotalAfterDiscount * (1 + (decimal)(tax / 100)),
+            NumBonRec = receiptNoteNumber
+        };
+    }
 }

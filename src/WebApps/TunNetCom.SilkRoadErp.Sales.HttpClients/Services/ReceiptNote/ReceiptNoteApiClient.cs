@@ -1,4 +1,8 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote;
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.CreateReceiptNote;
+using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Request;
+using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Response;
+
+namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote;
 
 class ReceiptNoteApiClient : IReceiptNoteApiClient
 {
@@ -146,5 +150,75 @@ class ReceiptNoteApiClient : IReceiptNoteApiClient
         ReceiptNotesResponse receiptNotesResponse = await response.Content.ReadFromJsonAsync<ReceiptNotesResponse>();
 
         return Result.Ok(receiptNotesResponse);
+    }
+
+    public async Task<Result<long>> CreateReceiptNote(CreateReceiptNoteRequest CreateReceiptNoteLineRequest, CancellationToken cancellationToken = default)
+    {
+
+        var response = await _httpClient.PostAsJsonAsync("/receiptnotes", CreateReceiptNoteLineRequest, cancellationToken);
+
+        if (!response.IsSuccessStatusCode) 
+        { 
+            return Result.Fail("failed_to_create_receipt_note");
+        }
+
+        var receipId = await response.Content.ReadFromJsonAsync<long>(cancellationToken: cancellationToken);
+
+        return Result.Ok(receipId);
+    }
+
+    public async Task<Result<List<int>>> CreateReceiptNoteLines(List<CreateReceiptNoteLineRequest> request, CancellationToken cancellationToken = default)
+    {
+        var response =await _httpClient.PostAsJsonAsync("/receipt_note_lines", request, cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return Result.Fail("failed_to_create_receipt_note_line");
+        }
+
+        var receiptLineIds = await response.Content.ReadFromJsonAsync<List<int>>(cancellationToken: cancellationToken);
+
+        return Result.Ok(receiptLineIds);
+    }
+
+    public async Task<Result<ReceiptNoteResponse>> GetReceiptNoteById(int id, CancellationToken cancellationToken = default)
+    {
+        var response = await  _httpClient.GetAsync($"/receiptnotes/{id}", cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            return Result.Fail("receipt_note_not_found");
+        }
+        var receiptNote = await response.Content.ReadFromJsonAsync<ReceiptNoteResponse>(cancellationToken: cancellationToken);
+
+        return Result.Ok(receiptNote);
+    }
+
+    public async Task<Result<GetReceiptNoteLinesByReceiptNoteIdResponse>> GetReceiptNoteLines(int id, GetReceiptNoteLinesWithSummariesQueryParams queryParams, CancellationToken cancellationToken = default)
+    {
+        var response = await _httpClient.GetAsync($"/receipt_note/lines/{id}{queryParams.GetQuery()}", cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return Result.Fail("receipt_note_not_found");
+        }
+        var receiptNote = await response.Content.ReadFromJsonAsync<GetReceiptNoteLinesByReceiptNoteIdResponse>(cancellationToken: cancellationToken);
+
+        return Result.Ok(receiptNote);
+    }
+
+    public async Task<Result<int>> CreateReceiptNoteWithLinesRequestTemplate(CreateReceiptNoteWithLinesRequest createReceiptNoteWithLinesRequest, CancellationToken cancellationToken = default)
+    {
+        var response =await _httpClient.PostAsJsonAsync("/receipt_note_with_lines", createReceiptNoteWithLinesRequest, cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            _logger.LogError("Failed to create receipt note with lines. Status Code: {StatusCode}, Reason: {ReasonPhrase}",
+                response.StatusCode, response.ReasonPhrase);
+
+            return Result.Fail<int>("failed_to_create_receipt_note_with_lines");
+        }
+        var receiptId = await response.Content.ReadFromJsonAsync<int>(cancellationToken: cancellationToken);
+
+        return Result.Ok(receiptId);
     }
 }

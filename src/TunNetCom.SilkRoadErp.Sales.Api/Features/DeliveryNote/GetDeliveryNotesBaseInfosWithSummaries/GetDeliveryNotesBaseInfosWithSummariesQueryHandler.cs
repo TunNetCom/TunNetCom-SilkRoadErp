@@ -95,6 +95,7 @@ public class GetDeliveryNotesBaseInfosWithSummariesQueryHandler(
     {
         return SortQuery(deliveryNoteQuery, sortProperty, sortOrder);
     }
+
     private IQueryable<GetDeliveryNoteBaseInfos> SortQuery(
         IQueryable<GetDeliveryNoteBaseInfos> query,
         string property,
