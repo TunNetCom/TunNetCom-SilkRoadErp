@@ -78,9 +78,7 @@ else
         }
         catch (HttpRequestException)
         {
-            // Handle API errors (e.g., network issues, 500 errors)
             deliveryNoteDetails = new List<DeliveryNoteDetailResponse>();
-            // Optionally notify user (e.g., via NotificationService)
         }
     }
 }

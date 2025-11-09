@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using Radzen.Blazor;
-using System.Text.Json;
+using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.CreateReceiptNote;
 using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters;
 using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;
 using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Request;
@@ -15,18 +15,17 @@ using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProviderInvoice;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote;
+using TunNetCom.SilkRoadErp.Sales.WebApp.Components.SharedHelper;
 using TunNetCom.SilkRoadErp.Sales.WebApp.Locales;
-
 
 namespace TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.ReciptionNotes;
 
 public partial class AddOrUpdateRecipietNote : ComponentBase
 {
+    #region Parameters and Dependencies
     [Parameter] public string? num { get; set; }
 
-    [Inject] public NavigationManager NavigationManager { get; set; } = default!;
     [Inject] public IStringLocalizer<SharedResource> Localizer { get; set; } = default!;
-    [Inject] public ToastService toastService { get; set; } = default!;
     [Inject] public NotificationService NotificationService { get; set; } = default!;
     [Inject] public IJSRuntime JSRuntime { get; set; } = default!;
     [Inject] public IReceiptNoteApiClient receiptNoteApiClient { get; set; } = default!;
@@ -36,29 +35,21 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
     [Inject] public IAppParametersClient appParametersClient { get; set; } = default!;
     [Inject] public ILogger<AddOrUpdateRecipietNote> logger { get; set; } = default!;
     [Inject] public DialogService DialogService { get; set; } = default!;
+    #endregion
 
+    #region State Management
+    private readonly ReceiptNoteState _state = new();
+    private readonly GridState _gridState = new();
+    private readonly LoadingState _loadingState = new();
+    private readonly CancellationTokenSource _cancellationTokenSource = new();
+    private GetAppParametersResponse _appParameters = default!;
+    #endregion
+
+    #region UI References
     RadzenDataGrid<ReceiptLineWrapper> receiptLinesGrid = default!;
-    List<ReceiptLineWrapper> receiptLines = new();
-    List<ReceiptLineWrapper> searchList = new();
-    int count;
-    private const int DefaultPageSize = 7;
-    private CancellationTokenSource _cancellationTokenSource = new();
-    private List<ProviderResponse> _filteredProviders { get; set; } = new();
-    private List<ProviderInvoiceResponse> _filteredInvoices { get; set; } = new();
-    List<KeyValuePair<int, string>> editedFields = new();
-    DataGridEditMode editMode = DataGridEditMode.Single;
-    List<ReceiptLineWrapper> linesToInsert = new();
-    List<ReceiptLineWrapper> linesToUpdate = new();
-    private bool isLoading = true;
-    bool isLoadingProvider = false;
-    bool isLoadingInvoices = false;
-    decimal totalHt;
-    decimal totalVat;
-    decimal totalTtc;
-    string receiptNoteNumber = string.Empty;
-    DateTime receiptNoteDate = DateTime.Now;
-    private GetAppParametersResponse getAppParametersResponse = default!;
-    
+    #endregion
+
+    #region Properties
     private int? _selectedProviderId;
     int? selectedProviderId
     {
@@ -69,8 +60,8 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
             {
                 _selectedProviderId = value;
                 selectedInvoiceId = null;
-                _filteredInvoices = new List<ProviderInvoiceResponse>();
-                _ = LoadProviderInvoices(new LoadDataArgs());
+                _state.ClearInvoices();
+                _ = LoadProviderInvoicesAsync(new LoadDataArgs());
                 StateHasChanged();
             }
         }
@@ -90,164 +81,592 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
         }
     }
 
-    void Reset()
+    bool isLoading => _loadingState.IsPageLoading;
+    bool isLoadingProvider => _loadingState.IsLoadingProviders;
+    bool isLoadingInvoices => _loadingState.IsLoadingInvoices;
+    List<ReceiptLineWrapper> receiptLines => _state.ReceiptLines;
+    List<ReceiptLineWrapper> searchList => _gridState.ProductSearchList;
+    int count => _gridState.ProductCount;
+    DataGridEditMode editMode => _gridState.EditMode;
+    List<ReceiptLineWrapper> linesToInsert => _gridState.LinesToInsert;
+    List<ReceiptLineWrapper> linesToUpdate => _gridState.LinesToUpdate;
+    List<ProviderResponse> _filteredProviders => _state.FilteredProviders;
+    List<ProviderInvoiceResponse> _filteredInvoices => _state.FilteredInvoices;
+    decimal totalHt => _state.TotalHt;
+    decimal totalVat => _state.TotalVat;
+    decimal totalTtc => _state.TotalTtc;
+    string receiptNoteNumber
     {
-        linesToInsert.Clear();
-        linesToUpdate.Clear();
+        get => _state.ReceiptNoteNumber;
+        set => _state.SetReceiptNoteNumber(value);
     }
-
-    void Reset(ReceiptLineWrapper line)
+    DateTime receiptNoteDate
     {
-        _ = linesToInsert.Remove(line);
-        _ = linesToUpdate.Remove(line);
+        get => _state.ReceiptNoteDate;
+        set => _state.ReceiptNoteDate = value;
     }
+    #endregion
 
+    #region Lifecycle Methods
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-
-        var param = await appParametersClient.GetAppParametersAsync(_cancellationTokenSource.Token);
-        getAppParametersResponse = param.AsT0;
-        await LoadProviders(null);
-        await FetchReciptNote();
-        await LoadProviderInvoices(null);
-        isLoading = false;
+        await InitializeComponentAsync();
     }
 
-    private async Task SaveDeliveryNote()
+    private async Task InitializeComponentAsync()
     {
         try
         {
-            if (!selectedProviderId.HasValue)
-            {
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Error,
-                    Summary = Localizer["error"],
-                    Detail = $"{Localizer["select_customer"]}"
-                });
-                return;
-            }
-            
-            isLoading = true;
-            StateHasChanged();
-
-            var request = new CreateReceiptNoteRequest
-            {
-                Date = receiptNoteDate,
-                NumBonFournisseur = 1,
-                DateLivraison = DateTime.Now,
-                IdFournisseur = selectedProviderId ?? 0,
-                NumFactureFournisseur = null,
-            };
-
-            var response = await receiptNoteApiClient.CreateReceiptNote(request, _cancellationTokenSource.Token);
-
-            if (response.IsSuccess)
-            {
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Success,
-                    Summary = Localizer["success"],
-                    Detail = Localizer["delivery_note_saved_successfully"]
-                });
-
-                if (string.IsNullOrEmpty(receiptNoteNumber))
-                {
-                    receiptNoteNumber = response.ValueOrDefault.ToString();
-                }
-            }
-            else
-            {
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Error,
-                    Summary = Localizer["error"],
-                    Detail = $"{Localizer["failed_to_save_delivery_note"]}: {response.Errors.First().Message}"
-                });
-            }
-        }
-        catch (Exception ex)
-        {
-            NotificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Error,
-                Summary = Localizer["error"],
-                Detail = $"{Localizer["failed_to_save_delivery_note"]}: {ex.Message}"
-            });
-            logger.LogError(ex, "Failed to save delivery note");
+            _appParameters = await LoadAppParametersAsync();
+            await LoadProvidersAsync(null);
+            await LoadReceiptNoteAsync();
+            await LoadProviderInvoicesAsync(null);
         }
         finally
         {
-            isLoading = false;
+            _loadingState.SetPageLoading(false);
+        }
+    }
+    #endregion
+
+    #region Data Loading Methods
+    private async Task<GetAppParametersResponse> LoadAppParametersAsync()
+    {
+        var result = await appParametersClient.GetAppParametersAsync(_cancellationTokenSource.Token);
+        return result.AsT0;
+    }
+ 
+
+    public async Task AddReceiptNoteWithLine()
+    {
+        if(receiptNoteNumber != string.Empty)
+        {
+            ShowErrorNotification(Localizer["receipt_note_already_exists"]);
+            return;
+        }
+
+        _loadingState.SetPageLoading(true);
+        StateHasChanged();
+        try
+        {
+            var request = new CreateReceiptNoteWithLinesRequest
+            {
+                Date = _state.ReceiptNoteDate,
+                NumBonFournisseur = 0,
+                DateLivraison = DateTime.Now,
+                IdFournisseur = selectedProviderId ?? 0,
+                NumFactureFournisseur = selectedInvoiceId,
+                ReceiptNoteLines = linesToInsert.Select(line => new ReceiptNoteLineRequest(
+                
+                    ProductRef : line.ProductReference,
+                    ProductDescription : line.ItemDescription,
+                    Quantity : line.ItemQuantity,
+                    UnitPrice : line.UnitPriceExcludingTax,
+                    Discount : line.Discount,
+                    Tax : line.VatRate
+                    
+                )).ToList()
+            };
+            var response = await receiptNoteApiClient.CreateReceiptNoteWithLinesRequestTemplate(request);
+
+            if (!response.IsSuccess)
+            {
+                ShowErrorNotification($"{Localizer["failed_to_save_delivery_note"]}: {response.Errors.First().Message}");
+            }
+
+            ShowSuccessNotification(Localizer["delivery_note_saved_successfully"]);
+            receiptNoteNumber = response.Value.ToString();
+            _state.SetReceiptNoteNumber(response.ValueOrDefault.ToString());
+            linesToInsert.Clear();
+            await LoadReceiptNoteAsync();
+
+        }
+        catch (Exception ex)
+        {
+            HandleSaveError(ex);
+        }
+        finally
+        {
+            _loadingState.SetPageLoading(false);
             StateHasChanged();
         }
     }
 
-    private async Task FetchReciptNote()
+    public async Task AddOrUpdateReceiptNote()
     {
-        if (string.IsNullOrEmpty(num))
+        if (!string.IsNullOrWhiteSpace(receiptNoteNumber) && !linesToInsert.Any() && !linesToUpdate.Any())
         {
-            receiptLines = new List<ReceiptLineWrapper>();
-            totalHt = 0;
-            totalVat = 0;
-            totalTtc = 0;
+            ShowErrorNotification(Localizer["no_changes_to_save"]);
             return;
         }
 
+        if (!string.IsNullOrEmpty(receiptNoteNumber) && linesToUpdate.Any())
+        {
+            await UpdateReceiptNoteLines();
+        }
+
+        if (linesToInsert.Any() && !string.IsNullOrWhiteSpace(receiptNoteNumber))
+        {
+            await AddReceiptNoteLines();
+        }
+    }
+
+
+    private async Task UpdateReceiptNoteLines()
+    {
+
+    }
+
+    private async Task AddReceiptNoteLines()
+    {
+        var lines = linesToInsert.Select(x => new CreateReceiptNoteLineRequest(
+            RecipetNoteNumber: int.Parse(receiptNoteNumber),
+            ProductRef: x.ProductReference,
+            ProductDescription: x.ItemDescription,
+            Quantity: x.ItemQuantity,
+            UnitPrice: x.UnitPriceExcludingTax,
+            Discount: x.Discount,
+            Tax: x.VatRate)).ToList();
+
+        var response = await receiptNoteApiClient.CreateReceiptNoteLines(lines);
+
+        if (!response.IsSuccess)
+        {
+            ShowErrorNotification($"{Localizer["failed_to_save_delivery_note"]}: {response.Errors.First().Message}");
+            return;
+        }
+    }
+
+    private async Task LoadReceiptNoteAsync()
+    {
+        if (string.IsNullOrEmpty(num))
+        {
+            _state.ClearReceiptNote();
+            return;
+        }
+
+        if (!int.TryParse(num, out var numAsInt))
+        {
+            ShowErrorNotification(Localizer["receipt_note_not_found"]);
+            return;
+        }
+
+        var result = await receiptNoteApiClient.GetReceiptNoteById(numAsInt, _cancellationTokenSource.Token);
+        
+        if (result.IsFailed)
+        {
+            ShowErrorNotification($"{Localizer["receipt_note_not_found"]}: {result.Errors.First().Message}");
+            return;
+        }
+
+        await PopulateReceiptNoteDataAsync(result.Value, numAsInt);
+    }
+
+    private async Task PopulateReceiptNoteDataAsync(ReceiptNoteResponse receiptNote, int receiptNoteId)
+    {
+        _selectedProviderId = receiptNote.IdFournisseur;
+        _state.SetReceiptNoteNumber(receiptNote.Num.ToString());
+        
+        await LoadProviderInvoicesAsync(new LoadDataArgs());
+        
+        LogInvoiceDebugInfo(receiptNote.NumFactureFournisseur);
+        
+        _selectedInvoiceId = receiptNote.NumFactureFournisseur;
+        
+        await LoadReceiptNoteLinesAsync(receiptNoteId);
+        
+        StateHasChanged();
+    }
+
+    private async Task LoadReceiptNoteLinesAsync(int receiptNoteId)
+    {
+        var linesResult = await receiptNoteApiClient.GetReceiptNoteLines(
+            receiptNoteId,
+            new GetReceiptNoteLinesWithSummariesQueryParams { PageNumber = 1, PageSize = 5 },
+            _cancellationTokenSource.Token);
+
+        if (linesResult.IsFailed)
+        {
+            ShowErrorNotification($"{Localizer["failed_to_fetch_delivery_note"]}: {linesResult.Errors.First().Message}");
+            return;
+        }
+
+        _state.SetReceiptLines(linesResult.ValueOrDefault);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    // Wrapper methods for Razor binding (without Async suffix)
+    Task LoadProviders(LoadDataArgs args) => LoadProvidersAsync(args);
+    Task LoadProviderInvoices(LoadDataArgs args) => LoadProviderInvoicesAsync(args);
+
+    async Task LoadProvidersAsync(LoadDataArgs args)
+    {
+        _loadingState.SetLoadingProviders(true);
+        
         try
         {
-            if (!int.TryParse(num, out var numAsInt))
+            var parameters = CreateQueryParameters(1, 10, args?.Filter);
+            var result = await providerApiClient.GetPagedAsync(parameters, _cancellationTokenSource.Token);
+            
+            if (result.TotalCount == 0)
             {
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Error,
-                    Summary = Localizer["error"],
-                    Detail = $"{Localizer["receipt_note_not_found"]}"
-                });
-
-                return;
+                ShowWarningNotification(Localizer["no_customers_found"], Localizer["try_different_search_criteria"]);
             }
-            var recipietNote = await receiptNoteApiClient.GetReceiptNoteById(
-                numAsInt,
-                _cancellationTokenSource.Token);
+            
+            _state.SetProviders(result.Items);
+        }
+        catch (Exception ex)
+        {
+            HandleLoadError("failed_to_load_providers", ex);
+        }
+        finally
+        {
+            _loadingState.SetLoadingProviders(false);
+            await InvokeAsync(StateHasChanged);
+        }
+    }
 
-            if (recipietNote.IsFailed)
+    async Task LoadProviderInvoicesAsync(LoadDataArgs args)
+    {
+        if (!_selectedProviderId.HasValue) return;
+
+        _loadingState.SetLoadingInvoices(true);
+
+        try
+        {
+            var parameters = CreateQueryParameters(1, 100);
+            var result = await providerInvoicesApiClient.GetProvidersInvoicesAsync(
+                _selectedProviderId.Value, parameters, _cancellationTokenSource.Token);
+
+            _state.SetInvoices(result.AsT0.Invoices.Items.ToList());
+        }
+        catch (Exception ex)
+        {
+            HandleLoadError("failed_to_load_invoices", ex);
+        }
+        finally
+        {
+            _loadingState.SetLoadingInvoices(false);
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    async Task LoadData(LoadDataArgs args)
+    {
+        var (sortProperty, sortOrder) = ExtractSortParameters(args);
+        var parameters = CreateQueryParameters(
+            (args.Skip.Value / ReceiptNoteState.DefaultPageSize) + 1,
+            ReceiptNoteState.DefaultPageSize,
+            args.Filter,
+            sortProperty,
+            sortOrder);
+
+        try
+        {
+            var pagedProducts = await productsApiClient.GetPagedAsync(parameters, _cancellationTokenSource.Token);
+            _gridState.SetProductSearchResults(pagedProducts);
+        }
+        catch (Exception ex)
+        {
+            HandleLoadError("failed_to_load_products", ex);
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+    #endregion
+
+    #region Receipt Note Operations
+    private async Task SaveDeliveryNote()
+    {
+        if (!ValidateProvider()) return;
+
+        _loadingState.SetPageLoading(true);
+        StateHasChanged();
+
+        try
+        {
+            var request = CreateReceiptNoteRequest();
+            var response = await receiptNoteApiClient.CreateReceiptNote(request, _cancellationTokenSource.Token);
+
+            HandleSaveResponse(response);
+        }
+        catch (Exception ex)
+        {
+            HandleSaveError(ex);
+        }
+        finally
+        {
+            _loadingState.SetPageLoading(false);
+            StateHasChanged();
+        }
+    }
+
+    private bool ValidateProvider()
+    {
+        if (selectedProviderId.HasValue) return true;
+        
+        ShowErrorNotification(Localizer["select_customer"]);
+        return false;
+    }
+
+    private CreateReceiptNoteRequest CreateReceiptNoteRequest()
+    {
+        return new CreateReceiptNoteRequest
+        {
+            Date = _state.ReceiptNoteDate,
+            NumBonFournisseur = 1,
+            DateLivraison = DateTime.Now,
+            IdFournisseur = selectedProviderId ?? 0,
+            NumFactureFournisseur = null,
+        };
+    }
+
+    private void HandleSaveResponse(FluentResults.Result<long> response)
+    {
+        if (response.IsSuccess)
+        {
+            ShowSuccessNotification(Localizer["delivery_note_saved_successfully"]);
+            
+            if (string.IsNullOrEmpty(_state.ReceiptNoteNumber))
             {
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Error,
-                    Summary = Localizer["error"],
-                    Detail = $"{Localizer["receipt_note_not_found"]}: {recipietNote.Errors.First().Message}"
-                });
-                return;
+                _state.SetReceiptNoteNumber(response.ValueOrDefault.ToString());
             }
+        }
+        else
+        {
+            ShowErrorNotification($"{Localizer["failed_to_save_delivery_note"]}: {response.Errors.First().Message}");
+        }
+    }
+    #endregion
 
-            selectedInvoiceId = recipietNote.Value.NumFactureFournisseur;
-            selectedProviderId = recipietNote.Value.IdFournisseur;
-            receiptNoteNumber = recipietNote.Value.Num.ToString();
+    #region Grid Operations
+    async Task EditRow(ReceiptLineWrapper line) => await _gridState.EditRowAsync(receiptLinesGrid, line);
+    void CancelEdit(ReceiptLineWrapper line) => _gridState.CancelEdit(receiptLinesGrid, line);
+    async Task InsertRow() => await _gridState.InsertRowAsync(receiptLinesGrid);
+    
+    async Task SaveRow(ReceiptLineWrapper line)
+    {
+        if (!ValidateReceiptLine(line)) return;
 
-            var recipietNoteLignes = await receiptNoteApiClient.GetReceiptNoteLines(
-                numAsInt,
-                new GetReceiptNoteLinesWithSummariesQueryParams()
-                {
-                    PageNumber = 1,
-                    PageSize = 5
-                },
-                _cancellationTokenSource.Token);
+        try
+        {
+            await receiptLinesGrid.UpdateRow(line);
+        }
+        catch (Exception e)
+        {
+            HandleSaveError(e);
+        }
+    }
 
-            if (recipietNoteLignes.IsFailed)
+    async Task DeleteRow(ReceiptLineWrapper line)
+    {
+        _gridState.ResetLineTracking(line);
+
+        if (_state.ReceiptLines.Contains(line))
+        {
+            _state.RemoveLine(line);
+            await receiptLinesGrid.Reload();
+        }
+        else
+        {
+            receiptLinesGrid.CancelEditRow(line);
+            await receiptLinesGrid.Reload();
+        }
+
+        _state.UpdateTotals();
+        StateHasChanged();
+    }
+
+    void OnUpdateRow(ReceiptLineWrapper line)
+    {
+        ReceiptLineCalculator.CalculateTotals(line);
+        _gridState.ResetLineTracking(line);
+        _state.UpdateLine(line);
+        StateHasChanged();
+    }
+
+    void OnCreateRow(ReceiptLineWrapper line)
+    {
+        ReceiptLineCalculator.CalculateTotals(line);
+        _state.AddLine(line);
+        _gridState.RemoveFromInsertTracking(line);
+        StateHasChanged();
+    }
+
+    void Reset() => _gridState.ResetAll();
+    #endregion
+
+    #region Product Selection
+    async Task OnProductSelected(ReceiptLineWrapper line, object value)
+    {
+        if (value is not string productReference) return;
+
+        var selectedProduct = _gridState.FindProduct(productReference, line);
+        if (selectedProduct == null) return;
+
+        ProductLinePopulator.PopulateLineFromProduct(line, selectedProduct, _appParameters);
+        _state.UpdateTotals();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnValueChanged(ReceiptLineWrapper line, object value, string propertyName)
+    {
+        ReceiptLineUpdater.UpdateProperty(line, value, propertyName);
+        ReceiptLineCalculator.CalculateTotals(line);
+        _state.UpdateTotals();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private List<ReceiptLineWrapper> GetCurrentProductList(ReceiptLineWrapper currentLine) =>
+        _gridState.GetProductListWithCurrent(currentLine);
+    #endregion
+
+    #region Dialog Management
+    public async Task ShowDialog(string ProductReference)
+    {
+        var settings = await DialogSettingsManager.LoadSettingsAsync(JSRuntime);
+        
+        await DialogService.OpenAsync<DialogHistory>(
+            $"ProductReference {ProductReference}",
+            new Dictionary<string, object> { { "ProductReference", ProductReference } },
+            DialogSettingsManager.CreateDialogOptions(settings, OnResize, OnDrag));
+
+        await DialogSettingsManager.SaveSettingsAsync(JSRuntime, settings);
+    }
+
+    void OnDrag(System.Drawing.Point point) => 
+        DialogSettingsManager.OnDrag(JSRuntime, point, ref _settings);
+
+    void OnResize(System.Drawing.Size size) => 
+        DialogSettingsManager.OnResize(JSRuntime, size, ref _settings);
+
+    DialogSettings _settings = default!;
+    public DialogSettings Settings
+    {
+        get => _settings;
+        set
+        {
+            if (_settings != value)
             {
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Error,
-                    Summary = Localizer["error"],
-                    Detail = $"{Localizer["failed_to_fetch_delivery_note"]}: {recipietNoteLignes.Errors.First().Message}"
-                });
-                return;
+                _settings = value;
+                _ = DialogSettingsManager.SaveSettingsAsync(JSRuntime, value);
             }
+        }
+    }
+    #endregion
 
-            receiptLines = recipietNoteLignes.ValueOrDefault.ReceiptLinesBaseInfos.Items
+    #region Helper Methods
+    private bool ValidateReceiptLine(ReceiptLineWrapper line)
+    {
+        if (string.IsNullOrEmpty(line.ProductReference) || line.ItemQuantity < 1)
+        {
+            ShowErrorNotification(Localizer["input_error"]);
+            return false;
+        }
+        return true;
+    }
+
+    private QueryStringParameters CreateQueryParameters(
+        int pageNumber, 
+        int pageSize, 
+        string? searchKeyword = null,
+        string? sortProperty = null,
+        string? sortOrder = null)
+    {
+        return new QueryStringParameters
+        {
+            PageNumber = pageNumber,
+            PageSize = pageSize,
+            SearchKeyword = searchKeyword,
+            SortProprety = sortProperty,
+            SortOrder = sortOrder
+        };
+    }
+
+    private (string? property, string? order) ExtractSortParameters(LoadDataArgs args)
+    {
+        if (args.Sorts == null || !args.Sorts.Any()) 
+            return (null, null);
+
+        var sort = args.Sorts.First();
+        var sortOrder = sort.SortOrder == SortOrder.Ascending 
+            ? SortConstants.Ascending 
+            : SortConstants.Descending;
+        
+        return (sort.Property, sortOrder);
+    }
+
+    private void LogInvoiceDebugInfo(int? invoiceId)
+    {
+        logger.LogInformation($"Receipt Note Invoice ID: {invoiceId}");
+        logger.LogInformation($"Loaded {_state.FilteredInvoices.Count} invoices");
+        
+        if (_state.FilteredInvoices.Any())
+        {
+            logger.LogInformation($"Invoice IDs in list: {string.Join(", ", _state.FilteredInvoices.Select(i => i.Num))}");
+        }
+    }
+
+    private void ShowSuccessNotification(string detail) =>
+        NotificationService.Notify(new NotificationMessage
+        {
+            Severity = NotificationSeverity.Success,
+            Summary = Localizer["success"],
+            Detail = detail
+        });
+
+    private void ShowErrorNotification(string detail) =>
+        NotificationService.Notify(new NotificationMessage
+        {
+            Severity = NotificationSeverity.Error,
+            Summary = Localizer["error"],
+            Detail = detail
+        });
+
+    private void ShowWarningNotification(string summary, string detail) =>
+        NotificationService.Notify(new NotificationMessage
+        {
+            Severity = NotificationSeverity.Warning,
+            Summary = summary,
+            Detail = detail
+        });
+
+    private void HandleLoadError(string errorKey, Exception ex)
+    {
+        ShowErrorNotification($"{Localizer[errorKey]}: {ex.Message}");
+        logger.LogError(ex, errorKey);
+    }
+
+    private void HandleSaveError(Exception ex)
+    {
+        ShowErrorNotification($"{Localizer["failed_to_save_delivery_note"]}: {ex.Message}");
+        logger.LogError(ex, "Failed to save delivery note");
+    }
+    #endregion
+
+    #region Nested Classes - State Management (SRP)
+    private class ReceiptNoteState
+    {
+        public const int DefaultPageSize = 7;
+        
+        public List<ReceiptLineWrapper> ReceiptLines { get; private set; } = new();
+        public List<ProviderResponse> FilteredProviders { get; private set; } = new();
+        public List<ProviderInvoiceResponse> FilteredInvoices { get; private set; } = new();
+        public string ReceiptNoteNumber { get; private set; } = string.Empty;
+        public DateTime ReceiptNoteDate { get; set; } = DateTime.Now;
+        public decimal TotalHt { get; private set; }
+        public decimal TotalVat { get; private set; }
+        public decimal TotalTtc { get; private set; }
+
+        public void SetProviders(List<ProviderResponse> providers) => FilteredProviders = providers;
+        public void SetInvoices(List<ProviderInvoiceResponse> invoices) => FilteredInvoices = invoices;
+        public void ClearInvoices() => FilteredInvoices = new List<ProviderInvoiceResponse>();
+        public void SetReceiptNoteNumber(string number) => ReceiptNoteNumber = number;
+        
+        public void SetReceiptLines(GetReceiptNoteLinesByReceiptNoteIdResponse response)
+        {
+            ReceiptLines = response.ReceiptLinesBaseInfos.Items
                 .Select(l => new ReceiptLineWrapper
                 {
                     LineId = l.LineId,
@@ -261,421 +680,196 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
                     TotalIncludingTax = l.TotalIncludingTax
                 }).ToList();
 
-            totalHt = recipietNoteLignes.ValueOrDefault.TotalNetAmount ;
-            totalVat = recipietNoteLignes.ValueOrDefault.TotalVatAmount;
-            totalTtc = recipietNoteLignes.ValueOrDefault.TotalGrossAmount;
-
-            await InvokeAsync(StateHasChanged);
+            TotalHt = response.TotalNetAmount;
+            TotalVat = response.TotalVatAmount;
+            TotalTtc = response.TotalGrossAmount;
         }
-        catch (Exception e)
+
+        public void ClearReceiptNote()
         {
-            NotificationService.Notify(new NotificationMessage
+            ReceiptLines = new List<ReceiptLineWrapper>();
+            TotalHt = TotalVat = TotalTtc = 0;
+        }
+
+        public void UpdateTotals()
+        {
+            TotalHt = ReceiptLines.Sum(l => l.TotalExcludingTax);
+            TotalVat = ReceiptLines.Sum(l => l.TotalIncludingTax - l.TotalExcludingTax);
+            TotalTtc = ReceiptLines.Sum(l => l.TotalIncludingTax);
+        }
+
+        public void AddLine(ReceiptLineWrapper line)
+        {
+            ReceiptLines.Add(line);
+            UpdateTotals();
+        }
+
+        public void RemoveLine(ReceiptLineWrapper line)
+        {
+            _ = ReceiptLines.Remove(line);
+            UpdateTotals();
+        }
+
+        public void UpdateLine(ReceiptLineWrapper line)
+        {
+            var existing = ReceiptLines.FirstOrDefault(l => l.LineId == line.LineId);
+            if (existing != null)
             {
-                Severity = NotificationSeverity.Error,
-                Summary = Localizer["error"],
-                Detail = $"{Localizer["failed_to_fetch_delivery_note"]}: {e.Message}"
-            });
-
-            logger.LogError(e, "Failed to save delivery note");
-            await InvokeAsync(StateHasChanged);
-        }
-    }
-
-    async Task EditRow(ReceiptLineWrapper line)
-    {
-        if (editMode == DataGridEditMode.Single && linesToInsert.Count() > 0)
-        {
-            Reset();
-        }
-
-        linesToUpdate.Add(line);
-        await receiptLinesGrid.EditRow(line);
-    }
-
-    async Task SaveRow(ReceiptLineWrapper line)
-    {
-        if (line.ProductReference == "" || line.ItemQuantity < 1)
-        {
-            NotificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Error,
-                Summary = Localizer["error"],
-                Detail = $"{Localizer["input_error"]}"
-            });
-            return;
-        }
-        try
-        {
-            await receiptLinesGrid.UpdateRow(line);
-        }
-        catch (Exception e)
-        {
-            NotificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Error,
-                Summary = Localizer["error"],
-                Detail = $"{Localizer["failed_to_save_delivery_note"]}"
-            });
-            logger.LogError(e, "Failed to save delivery note");
-        }
-    }
-
-    void CancelEdit(ReceiptLineWrapper line)
-    {
-        Reset(line);
-        receiptLinesGrid.CancelEditRow(line);
-    }
-
-    async Task DeleteRow(ReceiptLineWrapper line)
-    {
-        Reset(line);
-
-        if (receiptLines.Contains(line))
-        {
-            _ = receiptLines.Remove(line);
-            await receiptLinesGrid.Reload();
-        }
-        else
-        {
-            receiptLinesGrid.CancelEditRow(line);
-            await receiptLinesGrid.Reload();
-        }
-
-        UpdateTotals();
-        StateHasChanged();
-    }
-
-    async Task InsertRow()
-    {
-        if (editMode == DataGridEditMode.Single)
-        {
-            Reset();
-        }
-
-        var line = new ReceiptLineWrapper
-        {
-            ItemQuantity = 1
-        };
-        linesToInsert.Add(line);
-        await receiptLinesGrid.InsertRow(line);
-    }
-
-    private List<ReceiptLineWrapper> GetCurrentProductList(ReceiptLineWrapper currentLine)
-    {
-        if (!string.IsNullOrEmpty(currentLine.ProductReference))
-        {
-            var currentProduct = searchList.FirstOrDefault(p => p.ProductReference == currentLine.ProductReference);
-            if (currentProduct != null)
-            {
-                var list = new List<ReceiptLineWrapper> { currentProduct };
-                list.AddRange(searchList.Where(p => p.ProductReference != currentLine.ProductReference));
-                return list;
+                _ = ReceiptLines.Remove(existing);
             }
+            ReceiptLines.Add(line);
+            UpdateTotals();
         }
-        return searchList;
     }
 
-    async Task LoadData(LoadDataArgs args)
+    private class GridState
     {
-        string _sortProperty = null;
-        string _sortOrder = null;
-        if (args.Sorts != null && args.Sorts.Any())
-        {
-            var sort = args.Sorts.First();
-            _sortProperty = sort.Property;
-            _sortOrder = sort.SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending;
-        }
-        var parameters = new QueryStringParameters
-        {
-            PageNumber = (args.Skip.Value / DefaultPageSize) + 1,
-            PageSize = DefaultPageSize,
-            SearchKeyword = args.Filter,
-            SortOrder = _sortOrder,
-            SortProprety = _sortProperty
-        };
+        public DataGridEditMode EditMode { get; } = DataGridEditMode.Single;
+        public List<ReceiptLineWrapper> ProductSearchList { get; private set; } = new();
+        public int ProductCount { get; private set; }
+        public List<ReceiptLineWrapper> LinesToInsert { get; } = new();
+        public List<ReceiptLineWrapper> LinesToUpdate { get; } = new();
 
-        try
+        public void SetProductSearchResults(PagedList<ProductResponse> pagedProducts)
         {
-            var pagedProducts = await productsApiClient.GetPagedAsync(parameters, _cancellationTokenSource.Token);
-            searchList = pagedProducts.Items.Select(
-                p => new ReceiptLineWrapper
-                {
-                    ProductReference = p.Reference,
-                    ItemDescription = p.Name,
-                    UnitPriceExcludingTax = p.Price,
-                    ItemQuantity = 1,
-                }).ToList();
-
-            count = pagedProducts.TotalCount;
-
-        }
-        catch (Exception ex)
-        {
-            NotificationService.Notify(new NotificationMessage
+            ProductSearchList = pagedProducts.Items.Select(p => new ReceiptLineWrapper
             {
-                Severity = NotificationSeverity.Error,
-                Summary = Localizer["error"],
-                Detail = $"{Localizer["failed_to_load_products"]}: {ex.Message}"
-            });
-            searchList = new List<ReceiptLineWrapper>();
-            count = 0;
+                ProductReference = p.Reference,
+                ItemDescription = p.Name,
+                UnitPriceExcludingTax = p.Price,
+                ItemQuantity = 1,
+            }).ToList();
+            ProductCount = pagedProducts.TotalCount;
         }
 
-        await InvokeAsync(StateHasChanged);
-    }
-
-    async Task LoadProviders(LoadDataArgs args)
-    {
-        isLoadingProvider = true;
-        var parameters = new QueryStringParameters
+        public async Task EditRowAsync(RadzenDataGrid<ReceiptLineWrapper> grid, ReceiptLineWrapper line)
         {
-            PageNumber = 1,
-            PageSize = 10,
-            SearchKeyword = args?.Filter ?? string.Empty
-        };
-
-        try
-        {
-            var providerResult = await providerApiClient.GetPagedAsync(parameters, _cancellationTokenSource.Token);
-            if (providerResult.TotalCount == 0)
+            if (EditMode == DataGridEditMode.Single && LinesToInsert.Any())
             {
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Warning,
-                    Summary = Localizer["no_customers_found"],
-                    Detail = Localizer["try_different_search_criteria"]
-                });
+                ResetAll();
             }
-            _filteredProviders = providerResult.Items;
+            LinesToUpdate.Add(line);
+            await grid.EditRow(line);
         }
-        catch (Exception ex)
+
+        public void CancelEdit(RadzenDataGrid<ReceiptLineWrapper> grid, ReceiptLineWrapper line)
         {
-            NotificationService.Notify(new NotificationMessage
+            ResetLineTracking(line);
+            grid.CancelEditRow(line);
+        }
+
+        public async Task InsertRowAsync(RadzenDataGrid<ReceiptLineWrapper> grid)
+        {
+            if (EditMode == DataGridEditMode.Single)
             {
-                Severity = NotificationSeverity.Error,
-                Summary = Localizer["error"],
-                Detail = $"{Localizer["failed_to_load_providers"]}: {ex.Message}"
-            });
-            _filteredProviders = new List<ProviderResponse>();
-        }
-
-        isLoadingProvider = false;
-        await InvokeAsync(StateHasChanged);
-    }
-
-    async Task LoadProviderInvoices(LoadDataArgs args)
-    {
-        if (!selectedProviderId.HasValue)
-        {
-            NotificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Warning,
-                Summary = Localizer["select_a_provider_before"],
-            });
-            return;
-        }
-
-        isLoadingProvider = true;
-
-        try
-        {
-            var pagedProviderInvoices = await providerInvoicesApiClient.GetProvidersInvoicesAsync(
-                selectedProviderId.Value,
-                new QueryStringParameters
-                {
-                    PageNumber = 1,
-                    PageSize = 5,
-                    SearchKeyword = null
-                },
-                _cancellationTokenSource.Token);
-
-            _filteredInvoices = pagedProviderInvoices.AsT0.Invoices.Items.ToList();
-        }
-        catch (Exception ex)
-        {
-            NotificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Error,
-                Summary = Localizer["error"],
-                Detail = $"{Localizer["failed_to_load_customers"]}: {ex.Message}"
-            });
-            _filteredProviders = new List<ProviderResponse>();
-        }
-
-        isLoadingProvider = false;
-        await InvokeAsync(StateHasChanged);
-    }
-
-    async Task OnProductSelected(ReceiptLineWrapper line, object value)
-    {
-        if (value is not null and string productReference)
-        {
-            var selectedProduct = GetCurrentProductList(line)
-                .FirstOrDefault(p => p.ProductReference == productReference);
-
-            if (selectedProduct != null)
-            {
-                line.ItemDescription = selectedProduct.ItemDescription;
-                line.ProductReference = selectedProduct.ProductReference;
-                line.UnitPriceExcludingTax = selectedProduct.UnitPriceExcludingTax;
-                line.Discount = getAppParametersResponse.DiscountPercentage;
-                line.VatRate = getAppParametersResponse.VatAmount;
-                CalculateTotals(line);
-                UpdateTotals();
-                await InvokeAsync(StateHasChanged);
+                ResetAll();
             }
+
+            var line = new ReceiptLineWrapper { ItemQuantity = 1 };
+            LinesToInsert.Add(line);
+            await grid.InsertRow(line);
+        }
+
+        public void ResetLineTracking(ReceiptLineWrapper line)
+        {
+            _ = LinesToInsert.Remove(line);
+            _ = LinesToUpdate.Remove(line);
+        }
+
+        public void ResetAll()
+        {
+            LinesToInsert.Clear();
+            LinesToUpdate.Clear();
+        }
+
+        public void RemoveFromInsertTracking(ReceiptLineWrapper line) => LinesToInsert.Remove(line);
+
+        public ReceiptLineWrapper? FindProduct(string productReference, ReceiptLineWrapper currentLine) =>
+            GetProductListWithCurrent(currentLine).FirstOrDefault(p => p.ProductReference == productReference);
+
+        public List<ReceiptLineWrapper> GetProductListWithCurrent(ReceiptLineWrapper currentLine)
+        {
+            if (string.IsNullOrEmpty(currentLine.ProductReference))
+                return ProductSearchList;
+
+            var currentProduct = ProductSearchList.FirstOrDefault(p => p.ProductReference == currentLine.ProductReference);
+            if (currentProduct == null)
+                return ProductSearchList;
+
+            var list = new List<ReceiptLineWrapper> { currentProduct };
+            list.AddRange(ProductSearchList.Where(p => p.ProductReference != currentLine.ProductReference));
+            return list;
         }
     }
 
-    private async Task OnValueChanged(ReceiptLineWrapper line, object value, string propertyName)
+    private class LoadingState
     {
-        switch (propertyName)
-        {
-            case nameof(line.ItemQuantity):
-                line.ItemQuantity = Convert.ToInt16(value);
-                break;
-            case nameof(line.UnitPriceExcludingTax):
-                line.UnitPriceExcludingTax = Convert.ToDecimal(value);
-                break;
-            case nameof(line.Discount):
-                line.Discount = Convert.ToDouble(value);
-                break;
-            case nameof(line.VatRate):
-                line.VatRate = Convert.ToDouble(value);
-                break;
-        }
+        public bool IsPageLoading { get; private set; } = true;
+        public bool IsLoadingProviders { get; private set; }
+        public bool IsLoadingInvoices { get; private set; }
 
-        CalculateTotals(line);
-        UpdateTotals();
-        await InvokeAsync(StateHasChanged);
+        public void SetPageLoading(bool isLoading) => IsPageLoading = isLoading;
+        public void SetLoadingProviders(bool isLoading) => IsLoadingProviders = isLoading;
+        public void SetLoadingInvoices(bool isLoading) => IsLoadingInvoices = isLoading;
     }
+    #endregion
 
-    private void CalculateTotals(ReceiptLineWrapper line)
+    #region Nested Classes - Business Logic (SRP)
+    private static class ReceiptLineCalculator
     {
-        if (line.ItemQuantity > 0 && line.UnitPriceExcludingTax > 0)
+        public static void CalculateTotals(ReceiptLineWrapper line)
         {
-            decimal totalBeforeDiscount = line.ItemQuantity * line.UnitPriceExcludingTax;
-            decimal discountAmount = totalBeforeDiscount * (decimal)(line.Discount / 100);
+            if (line.ItemQuantity <= 0 || line.UnitPriceExcludingTax <= 0)
+            {
+                line.TotalExcludingTax = 0;
+                line.TotalIncludingTax = 0;
+                return;
+            }
+
+            var totalBeforeDiscount = line.ItemQuantity * line.UnitPriceExcludingTax;
+            var discountAmount = totalBeforeDiscount * (decimal)(line.Discount / 100);
             line.TotalExcludingTax = totalBeforeDiscount - discountAmount;
-            decimal vatAmount = line.TotalExcludingTax * (decimal)(line.VatRate / 100);
+            var vatAmount = line.TotalExcludingTax * (decimal)(line.VatRate / 100);
             line.TotalIncludingTax = line.TotalExcludingTax + vatAmount;
         }
-        else
+    }
+
+    private static class ReceiptLineUpdater
+    {
+        public static void UpdateProperty(ReceiptLineWrapper line, object value, string propertyName)
         {
-            line.TotalExcludingTax = 0;
-            line.TotalIncludingTax = 0;
-        }
-    }
-
-    private void UpdateTotals()
-    {
-        totalHt = receiptLines.Sum(l => l.TotalExcludingTax);
-        totalVat = receiptLines.Sum(l => l.TotalIncludingTax - l.TotalExcludingTax);
-        totalTtc = receiptLines.Sum(l => l.TotalIncludingTax);
-    }
-
-    void OnUpdateRow(ReceiptLineWrapper line)
-    {
-        CalculateTotals(line);
-        Reset(line);
-
-        var toremv = receiptLines.FirstOrDefault(t => t.LineId == line.LineId);
-        if (toremv != null)
-        {
-            _ = receiptLines.Remove(toremv);
-        }
-        receiptLines.Add(line);
-        UpdateTotals();
-        StateHasChanged();
-    }
-
-    void OnCreateRow(ReceiptLineWrapper line)
-    {
-        CalculateTotals(line);
-        receiptLines.Add(line);
-        _ = linesToInsert.Remove(line);
-        UpdateTotals();
-        StateHasChanged();
-    }
-
-    public async Task ShowDialog(string ProductReference)
-    {
-        await LoadStateAsync();
-
-        await DialogService.OpenAsync<DialogHistory>($"ProductReference {ProductReference}",
-               new Dictionary<string, object>() { { "ProductReference", ProductReference } },
-               new DialogOptions()
-               {
-                   Resizable = true,
-                   Draggable = true,
-                   Resize = OnResize,
-                   Drag = OnDrag,
-                   Width = Settings != null ? Settings.Width : "700px",
-                   Height = Settings != null ? Settings.Height : "512px",
-                   Left = Settings != null ? Settings.Left : null,
-                   Top = Settings != null ? Settings.Top : null
-               });
-
-        await SaveStateAsync();
-    }
-
-    void OnDrag(System.Drawing.Point point)
-    {
-        _ = JSRuntime.InvokeVoidAsync("eval", $"console.log('Dialog drag. Left:{point.X}, Top:{point.Y}')");
-
-        Settings ??= new DialogSettings();
-
-        Settings.Left = $"{point.X}px";
-        Settings.Top = $"{point.Y}px";
-
-        _ = InvokeAsync(SaveStateAsync);
-    }
-
-    void OnResize(System.Drawing.Size size)
-    {
-        _ = JSRuntime.InvokeVoidAsync("eval", $"console.log('Dialog resize. Width:{size.Width}, Height:{size.Height}')");
-
-        Settings ??= new DialogSettings();
-
-        Settings.Width = $"{size.Width}px";
-        Settings.Height = $"{size.Height}px";
-
-        _ = InvokeAsync(SaveStateAsync);
-    }
-
-    DialogSettings _settings = default!;
-    public DialogSettings Settings
-    {
-        get
-        {
-            return _settings;
-        }
-        set
-        {
-            if (_settings != value)
+            switch (propertyName)
             {
-                _settings = value;
-                _ = InvokeAsync(SaveStateAsync);
+                case nameof(line.ItemQuantity):
+                    line.ItemQuantity = Convert.ToInt16(value);
+                    break;
+                case nameof(line.UnitPriceExcludingTax):
+                    line.UnitPriceExcludingTax = Convert.ToDecimal(value);
+                    break;
+                case nameof(line.Discount):
+                    line.Discount = Convert.ToDouble(value);
+                    break;
+                case nameof(line.VatRate):
+                    line.VatRate = Convert.ToDouble(value);
+                    break;
             }
         }
     }
 
-    private async Task LoadStateAsync()
+    private static class ProductLinePopulator
     {
-        await Task.CompletedTask;
-
-        var result = await JSRuntime.InvokeAsync<string>("window.localStorage.getItem", "DialogSettings");
-        if (!string.IsNullOrEmpty(result))
+        public static void PopulateLineFromProduct(
+            ReceiptLineWrapper line, 
+            ReceiptLineWrapper product, 
+            GetAppParametersResponse appParameters)
         {
-            _settings = JsonSerializer.Deserialize<DialogSettings>(result);
+            line.ItemDescription = product.ItemDescription;
+            line.ProductReference = product.ProductReference;
+            line.UnitPriceExcludingTax = product.UnitPriceExcludingTax;
+            line.Discount = appParameters.DiscountPercentage;
+            line.VatRate = appParameters.VatAmount;
+            ReceiptLineCalculator.CalculateTotals(line);
         }
-    }
-
-    private async Task SaveStateAsync()
-    {
-        await Task.CompletedTask;
-
-        await JSRuntime.InvokeVoidAsync("window.localStorage.setItem", "DialogSettings", JsonSerializer.Serialize<DialogSettings>(Settings));
     }
 
     public class DialogSettings
@@ -685,4 +879,5 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
         public string Width { get; set; } = string.Empty;
         public string Height { get; set; } = string.Empty;
     }
+    #endregion
 }

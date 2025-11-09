@@ -1,4 +1,5 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Request;
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.CreateReceiptNote;
+using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Request;
 using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Response;
 
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote;
@@ -33,7 +34,7 @@ public interface IReceiptNoteApiClient
         CreateReceiptNoteRequest request,
         CancellationToken cancellationToken = default);
     Task<Result<List<int>>> CreateReceiptNoteLines(
-        CreateReceiptNoteLineRequest request,
+        List<CreateReceiptNoteLineRequest> request,
         CancellationToken cancellationToken = default);
 
     Task<Result<ReceiptNoteResponse>> GetReceiptNoteById(
@@ -44,4 +45,8 @@ public interface IReceiptNoteApiClient
         int id,
         GetReceiptNoteLinesWithSummariesQueryParams queryParams,
         CancellationToken cancellationToken = default);
+
+    Task<Result<int>> CreateReceiptNoteWithLinesRequestTemplate(CreateReceiptNoteWithLinesRequest createReceiptNoteWithLinesRequest,
+        CancellationToken cancellationToken = default);
+    
 }

@@ -1,4 +1,5 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Request;
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.CreateReceiptNote;
+using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Request;
 using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Response;
 
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote;
@@ -166,7 +167,7 @@ class ReceiptNoteApiClient : IReceiptNoteApiClient
         return Result.Ok(receipId);
     }
 
-    public async Task<Result<List<int>>> CreateReceiptNoteLines(CreateReceiptNoteLineRequest request, CancellationToken cancellationToken = default)
+    public async Task<Result<List<int>>> CreateReceiptNoteLines(List<CreateReceiptNoteLineRequest> request, CancellationToken cancellationToken = default)
     {
         var response =await _httpClient.PostAsJsonAsync("/receipt_note_lines", request, cancellationToken);
 
@@ -194,7 +195,6 @@ class ReceiptNoteApiClient : IReceiptNoteApiClient
 
     public async Task<Result<GetReceiptNoteLinesByReceiptNoteIdResponse>> GetReceiptNoteLines(int id, GetReceiptNoteLinesWithSummariesQueryParams queryParams, CancellationToken cancellationToken = default)
     {
-        var query = queryParams.GetQuery();
         var response = await _httpClient.GetAsync($"/receipt_note/lines/{id}{queryParams.GetQuery()}", cancellationToken);
 
         if (!response.IsSuccessStatusCode)
@@ -204,5 +204,21 @@ class ReceiptNoteApiClient : IReceiptNoteApiClient
         var receiptNote = await response.Content.ReadFromJsonAsync<GetReceiptNoteLinesByReceiptNoteIdResponse>(cancellationToken: cancellationToken);
 
         return Result.Ok(receiptNote);
+    }
+
+    public async Task<Result<int>> CreateReceiptNoteWithLinesRequestTemplate(CreateReceiptNoteWithLinesRequest createReceiptNoteWithLinesRequest, CancellationToken cancellationToken = default)
+    {
+        var response =await _httpClient.PostAsJsonAsync("/receipt_note_with_lines", createReceiptNoteWithLinesRequest, cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            _logger.LogError("Failed to create receipt note with lines. Status Code: {StatusCode}, Reason: {ReasonPhrase}",
+                response.StatusCode, response.ReasonPhrase);
+
+            return Result.Fail<int>("failed_to_create_receipt_note_with_lines");
+        }
+        var receiptId = await response.Content.ReadFromJsonAsync<int>(cancellationToken: cancellationToken);
+
+        return Result.Ok(receiptId);
     }
 }
