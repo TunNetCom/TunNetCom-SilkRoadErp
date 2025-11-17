@@ -19,7 +19,8 @@
                 }
 
                 return TypedResults.Ok(result.Value);
-            });
+            })
+            .WithTags(SwaggerTags.PriceQuotes);
         }
     }
 }

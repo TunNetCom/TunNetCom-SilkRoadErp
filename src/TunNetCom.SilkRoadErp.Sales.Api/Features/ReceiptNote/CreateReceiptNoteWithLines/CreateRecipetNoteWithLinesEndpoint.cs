@@ -48,7 +48,7 @@ public class CreateRecipetNoteWithLinesEndpoint : ICarterModule
             return Results.Created($"/receipt_note_with_lines", result.Value);
 
         })
-        .WithTags("Receipt Note with Lines")
+        .WithTags(SwaggerTags.ReceiptNotes)
         .WithName("CreateReceiptNoteWithLines")
         .WithSummary("Create a new receipt note with lines")
         .Produces<List<int>>(StatusCodes.Status201Created)

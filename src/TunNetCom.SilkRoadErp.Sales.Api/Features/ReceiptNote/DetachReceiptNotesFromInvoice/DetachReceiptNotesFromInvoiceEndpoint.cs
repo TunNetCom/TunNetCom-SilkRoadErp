@@ -26,6 +26,7 @@ public class DetachReceiptNotesFromInvoiceEndpoint : ICarterModule
                     return TypedResults.NoContent();
                 })
             .WithName("DetachReceiptNotesFromInvoice")
+            .WithTags(SwaggerTags.ReceiptNotes)
             .Produces<ReceiptNoteResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest, "application/problem+json")
             .ProducesProblem(StatusCodes.Status500InternalServerError, "application/problem+json")

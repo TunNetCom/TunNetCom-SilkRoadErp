@@ -20,6 +20,7 @@ public class GetInvoicesByCustomerWithSummaryEndpoint : ICarterModule
                     var result = await mediator.Send(query, cancellationToken);
 
                     return Results.Ok(result.Value);
-                });
+                })
+                .WithTags(SwaggerTags.Invoices);
     }
 }

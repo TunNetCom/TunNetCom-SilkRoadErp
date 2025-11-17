@@ -30,7 +30,8 @@ public class GetPriceQuoteEndpoint : ICarterModule
             httpContext.Response.Headers["X-Pagination"] = JsonConvert.SerializeObject(metadata);
 
             return Results.Ok(pagedCustomers);
-        });
+        })
+        .WithTags(SwaggerTags.PriceQuotes);
     }
 }
 

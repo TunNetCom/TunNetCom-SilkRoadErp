@@ -39,6 +39,7 @@ public class UpdateAppParametersEndpoint : ICarterModule
                     return TypedResults.NoContent();
                 })
             .WithName("UpdateAppParameters")
+            .WithTags(SwaggerTags.AppParameters)
             .Produces(StatusCodes.Status204NoContent)
             .Produces<ValidationProblem>(StatusCodes.Status400BadRequest);
     }

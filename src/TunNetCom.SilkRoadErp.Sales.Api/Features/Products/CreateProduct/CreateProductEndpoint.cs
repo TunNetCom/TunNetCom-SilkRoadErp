@@ -29,6 +29,7 @@ public class CreateProductEndpoint : ICarterModule
                  return result.ToValidationProblem();
              }
              return TypedResults.Created($"/products/{result.Value}", request);
-         });
+         })
+         .WithTags(SwaggerTags.Products);
     }
 }

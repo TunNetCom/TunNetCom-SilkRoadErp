@@ -33,6 +33,7 @@ public class GetDeliveryNotesWithSummariesEndpoint : ICarterModule
             return TypedResults.Ok(response);
         })
         .WithName("GetDeliveryNotesWithSummaries")
+        .WithTags(SwaggerTags.DeliveryNotes)
         .Produces<GetDeliveryNotesWithSummariesResponse>(StatusCodes.Status200OK)
         .ProducesProblem(StatusCodes.Status400BadRequest, "application/problem+json")
         .ProducesProblem(StatusCodes.Status500InternalServerError, "application/problem+json")

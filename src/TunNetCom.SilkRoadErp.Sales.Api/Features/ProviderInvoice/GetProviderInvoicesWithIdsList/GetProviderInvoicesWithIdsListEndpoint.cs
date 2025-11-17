@@ -19,6 +19,7 @@ public class GetProviderInvoicesWithIdsListEndpoint : ICarterModule
                     return result;
                 })
             .WithName("GetProviderInvoicesByIds")
+            .WithTags(SwaggerTags.ProviderInvoices)
             .Produces<List<ProviderInvoiceResponse>>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest);
     }

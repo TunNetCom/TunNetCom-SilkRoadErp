@@ -23,6 +23,7 @@ public class GetDeliveryNotesByClientIdEndpoint : ICarterModule
             }
 
             return TypedResults.Ok(result.Value);
-        });
+        })
+        .WithTags(SwaggerTags.DeliveryNotes);
     }
 }

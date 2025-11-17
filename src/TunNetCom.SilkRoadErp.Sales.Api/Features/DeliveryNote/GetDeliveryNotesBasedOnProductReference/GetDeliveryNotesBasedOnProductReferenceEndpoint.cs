@@ -20,7 +20,7 @@ public class GetDeliveryNotesBasedOnProductReferenceEndpoint : ICarterModule
             return Results.Ok(deliveryNote);
         })
             .WithName("GetDeliveryNotesByProductReference")
-            .WithTags("DeliveryNotes")
+            .WithTags(SwaggerTags.DeliveryNotes)
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest);
     }

@@ -1,4 +1,6 @@
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Mvc;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,7 +46,54 @@ builder.Services.AddValidatorsFromAssembly(assembly);
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    // Extract tags from endpoint metadata
+    // WithTags() in minimal APIs stores tags in endpoint metadata
+    options.TagActionsBy(api =>
+    {
+        var tags = new List<string>();
+        
+        // Try to get tags from the endpoint metadata
+        // The tags are stored when using .WithTags() extension method
+        foreach (var metadata in api.ActionDescriptor.EndpointMetadata)
+        {
+            var metadataType = metadata.GetType();
+            
+            // Check for Tags property (case-insensitive to be safe)
+            var tagsProperty = metadataType.GetProperty("Tags", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+            
+            if (tagsProperty != null)
+            {
+                var tagValue = tagsProperty.GetValue(metadata);
+                if (tagValue != null)
+                {
+                    if (tagValue is IEnumerable<string> tagEnumerable)
+                    {
+                        tags.AddRange(tagEnumerable);
+                    }
+                    else if (tagValue is string[] tagArray)
+                    {
+                        tags.AddRange(tagArray);
+                    }
+                    else if (tagValue is string singleTag)
+                    {
+                        tags.Add(singleTag);
+                    }
+                }
+            }
+        }
+        
+        // If no tags found, fall back to GroupName or Default
+        if (!tags.Any())
+        {
+            tags.Add(api.GroupName ?? "Default");
+        }
+        
+        return tags.Distinct().ToList();
+    });
+    options.DocInclusionPredicate((name, api) => true);
+});
 
 // Register the exception handler
 builder.Services.AddSingleton<IExceptionHandler, GlobalExceptionHandler>();
@@ -63,7 +112,10 @@ app.UseRateLimiter();
 //{
 app.UseDeveloperExceptionPage();
 app.UseSwagger();
-app.UseSwaggerUI();
+app.UseSwaggerUI(c =>
+{
+    c.InjectStylesheet("/swagger-dark.css");
+});
 //}
 
 app.UseSerilogRequestLogging();
@@ -71,6 +123,7 @@ app.UseSerilogRequestLogging();
 // Use the exception handler
 app.ConfigureExceptionHandler();
 
+app.UseStaticFiles();
 app.UseHttpsRedirection();
 
 app.MapCarter();

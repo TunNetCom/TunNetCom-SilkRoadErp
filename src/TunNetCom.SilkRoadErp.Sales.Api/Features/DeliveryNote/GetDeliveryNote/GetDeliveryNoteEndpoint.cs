@@ -32,6 +32,7 @@ public class GetDeliveryNoteEndpoint : ICarterModule
             httpContext.Response.Headers["X-Pagination"] = JsonConvert.SerializeObject(metadata);
 
             return Results.Ok(pagedDeliveryNote);
-        });
+        })
+        .WithTags(SwaggerTags.DeliveryNotes);
     }
 }

@@ -29,6 +29,7 @@
             httpContext.Response.Headers["X-Pagination"] = JsonConvert.SerializeObject(metadata);
 
             return Results.Ok(pagedProviders);
-        });
+        })
+        .WithTags(SwaggerTags.Providers);
     }
 }

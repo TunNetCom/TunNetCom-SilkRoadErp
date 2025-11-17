@@ -43,6 +43,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNoteWit
 
                 })
             .WithName("GetReceiptNote")
+            .WithTags(SwaggerTags.ReceiptNotes)
             .Produces<ReceiptNotesWithSummaryResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest, "application/problem+json")
             .ProducesProblem(StatusCodes.Status500InternalServerError, "application/problem+json")

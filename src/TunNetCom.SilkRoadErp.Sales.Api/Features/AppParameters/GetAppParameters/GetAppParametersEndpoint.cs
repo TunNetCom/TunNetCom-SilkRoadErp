@@ -15,6 +15,7 @@ public class GetAppParametersEndpoint : ICarterModule
     {
         _ = app.MapGet("/appParameters", Handle)
            .WithName("GetAppParameters")
+           .WithTags(SwaggerTags.AppParameters)
            .Produces<GetAppParametersResponse>(StatusCodes.Status200OK)
            .Produces(StatusCodes.Status400BadRequest);
     }

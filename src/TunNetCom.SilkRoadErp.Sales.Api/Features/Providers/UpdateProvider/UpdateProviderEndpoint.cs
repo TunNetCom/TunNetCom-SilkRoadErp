@@ -37,6 +37,7 @@ public class UpdateProviderEndpoint : ICarterModule
                 }
 
                 return TypedResults.NoContent();
-            });
+            })
+            .WithTags(SwaggerTags.Providers);
     }
 }

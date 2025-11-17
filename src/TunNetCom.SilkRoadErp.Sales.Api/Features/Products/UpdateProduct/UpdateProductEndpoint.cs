@@ -37,6 +37,7 @@ public class UpdateProductEndpoint : ICarterModule
             }
 
             return TypedResults.NoContent();
-        });
+        })
+        .WithTags(SwaggerTags.Products);
     }
 }

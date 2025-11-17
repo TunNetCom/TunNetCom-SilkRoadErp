@@ -22,6 +22,7 @@ public class GetInvoicesByIdsEndpoint : ICarterModule
                     return Results.Ok(result.Value);
                 })
             .WithName("GetInvoicesByIds")
+            .WithTags(SwaggerTags.Invoices)
             .Produces<IList<InvoiceResponse>>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest);
     }

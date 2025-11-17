@@ -18,6 +18,7 @@ public class GetUninvoicedDeliveryNotesEndpoint : ICarterModule
             var result = await mediator.Send(query, cancellationToken);
 
             return TypedResults.Ok(result.Value);
-        });
+        })
+        .WithTags(SwaggerTags.DeliveryNotes);
     }
 }

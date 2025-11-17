@@ -29,6 +29,7 @@ public class GetReceiptNoteEndpoint : ICarterModule
             httpContext.Response.Headers["X-Pagination"] = JsonConvert.SerializeObject(metadata);
 
             return Results.Ok(pagedReceipts);
-        });
+        })
+        .WithTags(SwaggerTags.ReceiptNotes);
     }
 }

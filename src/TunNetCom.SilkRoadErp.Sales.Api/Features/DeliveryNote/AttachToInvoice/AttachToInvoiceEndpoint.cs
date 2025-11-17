@@ -20,7 +20,8 @@ public class AttachToInvoiceEndpoint : ICarterModule
                 CancellationToken cancellationToken) =>
             {
                 return await HandleAttachToInvoiceAsync(mediator, attachToInvoiceRequest, cancellationToken);
-            });
+            })
+            .WithTags(SwaggerTags.DeliveryNotes);
     }
 
     // ✅ Méthode publique à appeler depuis le test

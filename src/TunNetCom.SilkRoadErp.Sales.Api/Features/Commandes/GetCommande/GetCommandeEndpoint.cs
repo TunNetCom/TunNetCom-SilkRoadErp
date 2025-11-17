@@ -30,6 +30,7 @@ public class OrderEndpoints : ICarterModule
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status400BadRequest)
             .WithName("GetFullOrder")
+            .WithTags(SwaggerTags.Orders)
             .WithOpenApi(operation => new(operation)
             {
                 Summary = "Retrieves a full order by its ID, including supplier details and order lines.",

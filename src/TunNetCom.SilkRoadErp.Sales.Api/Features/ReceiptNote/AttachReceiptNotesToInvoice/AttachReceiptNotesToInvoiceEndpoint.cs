@@ -27,6 +27,7 @@ public class AttachReceiptNotesToInvoiceEndpoint : ICarterModule
                     return TypedResults.NoContent();
                 })
             .WithName("AttachReceiptNotesToInvoice")
+            .WithTags(SwaggerTags.ReceiptNotes)
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status400BadRequest, "application/problem+json")
             .ProducesProblem(StatusCodes.Status500InternalServerError, "application/problem+json")
