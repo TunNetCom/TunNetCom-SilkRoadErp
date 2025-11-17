@@ -128,10 +128,10 @@ app.MapScalarApiReference(options =>
 {
     options
         .WithTitle("SilkRoad ERP Sales API")
-        .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
-    
-    // Set dark mode as default
-    options.DarkMode = true;
+        .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient)
+        .WithTheme(ScalarTheme.DeepSpace)
+        .WithDarkMode(true);
+    options.ForceThemeMode = ThemeMode.Dark;
 });
 //}
 
