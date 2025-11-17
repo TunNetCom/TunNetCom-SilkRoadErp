@@ -1,0 +1,19 @@
+<Project>
+  <PropertyGroup>
+    <!-- Unified .NET Target Framework -->
+    <TargetFramework>net8.0</TargetFramework>
+    
+    <!-- Common Language Features -->
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    
+    <!-- Code Analysis -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+    <WarningsNotAsErrors />
+    
+    <!-- Enable Central Package Management -->
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+</Project>
+
