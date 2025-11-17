@@ -1,6 +1,7 @@
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
 using System.Reflection;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -46,8 +47,18 @@ builder.Services.AddValidatorsFromAssembly(assembly);
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddOpenApi(); // Add built-in OpenAPI support for Scalar
 builder.Services.AddSwaggerGen(options =>
 {
+    // Configure Swagger document with OpenAPI info
+    // Swashbuckle 10.0.1 will automatically generate OpenAPI 3.0 spec with the openapi version field
+    options.SwaggerDoc("v1", new Microsoft.OpenApi.OpenApiInfo
+    {
+        Title = "SilkRoad ERP Sales API",
+        Version = "v1",
+        Description = "API for SilkRoad ERP Sales Management System"
+    });
+    
     // Extract tags from endpoint metadata
     // WithTags() in minimal APIs stores tags in endpoint metadata
     options.TagActionsBy(api =>
@@ -112,9 +123,15 @@ app.UseRateLimiter();
 //{
 app.UseDeveloperExceptionPage();
 app.UseSwagger();
-app.UseSwaggerUI(c =>
+app.MapOpenApi(); // Map OpenAPI endpoint for Scalar
+app.MapScalarApiReference(options =>
 {
-    c.InjectStylesheet("/swagger-dark.css");
+    options
+        .WithTitle("SilkRoad ERP Sales API")
+        .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
+    
+    // Set dark mode as default
+    options.DarkMode = true;
 });
 //}
 
