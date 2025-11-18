@@ -14,7 +14,7 @@ public class UpdateAppParametersCommandHandler(
         _logger.LogEntityUpdateAttempt(nameof(Systeme), 1);
 
         // Check if the app parameters exist in the database
-        var appParametersToUpdate = await _context.Systeme.AsNoTracking().FirstOrDefaultAsync(cancellationToken);
+        var appParametersToUpdate = await _context.Systeme.FirstOrDefaultAsync(cancellationToken);
 
         if (appParametersToUpdate is null)
         {
@@ -25,20 +25,18 @@ public class UpdateAppParametersCommandHandler(
         // Update the app parameters with the provided values
         appParametersToUpdate.UpdateSysteme(
             nomSociete: updateAppParametersCommand.NomSociete,
-            timbre: (decimal)updateAppParametersCommand.Timbre,
-            adresse: updateAppParametersCommand.Adresse,
-            tel: updateAppParametersCommand.Tel,
+            timbre: updateAppParametersCommand.Timbre ?? appParametersToUpdate.Timbre,
+            adresse: updateAppParametersCommand.Adresse ?? appParametersToUpdate.Adresse,
+            tel: updateAppParametersCommand.Tel ?? appParametersToUpdate.Tel,
             fax: updateAppParametersCommand.Fax,
             email: updateAppParametersCommand.Email,
             matriculeFiscale: updateAppParametersCommand.MatriculeFiscale,
-            codeTva: updateAppParametersCommand.CodeTva,
+            codeTva: updateAppParametersCommand.CodeTva ?? appParametersToUpdate.CodeTva,
             codeCategorie: updateAppParametersCommand.CodeCategorie,
             etbSecondaire: updateAppParametersCommand.EtbSecondaire,
-            pourcentageFodec: (decimal)updateAppParametersCommand.PourcentageFodec,
+            pourcentageFodec: updateAppParametersCommand.PourcentageFodec ?? appParametersToUpdate.PourcentageFodec,
             adresseRetenu: updateAppParametersCommand.AdresseRetenu,
-            pourcentageRetenu: (double)updateAppParametersCommand.PourcentageRetenu);
-
-        _ = _context.Update(appParametersToUpdate);
+            pourcentageRetenu: updateAppParametersCommand.PourcentageRetenu ?? appParametersToUpdate.PourcentageRetenu);
 
         _ = await _context.SaveChangesAsync(cancellationToken);
 
