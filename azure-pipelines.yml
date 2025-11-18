@@ -53,12 +53,12 @@ steps:
 #     --out "$(Build.ArtifactStagingDirectory)\odc-report"
 #   displayName: 'Scan dependencies with OWASP Dependency-Check (JSON format)'
 
-- task: PublishBuildArtifacts@1
-  inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)\odc-report'
-    ArtifactName: 'OWASP-Dependency-Report'
-    publishLocation: 'Container'
-  displayName: 'Publish the vulnerability report'
+# - task: PublishBuildArtifacts@1
+#   inputs:
+#     PathtoPublish: '$(Build.ArtifactStagingDirectory)\odc-report'
+#     ArtifactName: 'OWASP-Dependency-Report'
+#     publishLocation: 'Container'
+#   displayName: 'Publish the vulnerability report'
 
 - task: VSTest@2
   inputs:
