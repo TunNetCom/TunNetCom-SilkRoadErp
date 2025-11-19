@@ -21,6 +21,6 @@ public class GetReceiptNoteByIdEndpoint : ICarterModule
 
                return TypedResults.Ok(result.Value);
            })
-           .WithTags(SwaggerTags.ReceiptNotes);
+           .WithTags(EndpointTags.ReceiptNotes);
     }
 }

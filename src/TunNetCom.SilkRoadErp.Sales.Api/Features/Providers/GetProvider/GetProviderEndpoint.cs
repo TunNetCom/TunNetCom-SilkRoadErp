@@ -30,6 +30,6 @@
 
             return Results.Ok(pagedProviders);
         })
-        .WithTags(SwaggerTags.Providers);
+        .WithTags(EndpointTags.Providers);
     }
 }

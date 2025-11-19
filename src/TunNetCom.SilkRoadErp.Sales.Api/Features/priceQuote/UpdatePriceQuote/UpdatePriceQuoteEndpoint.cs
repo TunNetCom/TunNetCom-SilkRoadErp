@@ -32,6 +32,6 @@ public class UpdatePriceQuoteEndpoint : ICarterModule
 
             return TypedResults.NoContent();
         })
-        .WithTags(SwaggerTags.PriceQuotes);
+        .WithTags(EndpointTags.PriceQuotes);
     }
 }

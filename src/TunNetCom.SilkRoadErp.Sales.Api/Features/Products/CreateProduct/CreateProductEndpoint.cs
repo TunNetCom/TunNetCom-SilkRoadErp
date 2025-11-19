@@ -30,6 +30,6 @@ public class CreateProductEndpoint : ICarterModule
              }
              return TypedResults.Created($"/products/{result.Value}", request);
          })
-         .WithTags(SwaggerTags.Products);
+         .WithTags(EndpointTags.Products);
     }
 }

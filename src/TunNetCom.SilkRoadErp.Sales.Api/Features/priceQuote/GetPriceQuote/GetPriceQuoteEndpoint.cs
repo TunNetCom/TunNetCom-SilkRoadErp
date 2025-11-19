@@ -31,7 +31,7 @@ public class GetPriceQuoteEndpoint : ICarterModule
 
             return Results.Ok(pagedCustomers);
         })
-        .WithTags(SwaggerTags.PriceQuotes);
+        .WithTags(EndpointTags.PriceQuotes);
     }
 }
 

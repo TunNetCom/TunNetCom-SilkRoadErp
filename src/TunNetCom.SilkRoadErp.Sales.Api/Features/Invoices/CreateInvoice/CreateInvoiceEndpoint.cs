@@ -5,7 +5,7 @@ public class CreateInvoiceEndpoint : ICarterModule
     public void AddRoutes(IEndpointRouteBuilder app)
     {
         _ = app.MapPost("/invoices", HandleCreateInvoiceAsync)
-            .WithTags(SwaggerTags.Invoices);
+            .WithTags(EndpointTags.Invoices);
     }
     public async Task<Results<Created<CreateInvoiceRequest>, ValidationProblem>> HandleCreateInvoiceAsync(
         IMediator mediator,

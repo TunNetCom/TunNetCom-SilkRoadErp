@@ -17,6 +17,6 @@ public class GetProductByRefEndpoint : ICarterModule
             }
             return TypedResults.Ok(result.Value);
         })
-        .WithTags(SwaggerTags.Products);
+        .WithTags(EndpointTags.Products);
     }
 }

@@ -47,7 +47,7 @@ public class GetRecepitNotesLinesWithSummariesEndpoint : ICarterModule
             return Results.Created($"/receipt_note_lines", result.Value);
 
         })
-        .WithTags(SwaggerTags.ProviderReceiptNoteLines)
+        .WithTags(EndpointTags.ProviderReceiptNoteLines)
         .WithName("CreateReceiptNoteLines")
         .WithSummary("Create a new receipt note lines")
         .Produces<List<int>>(StatusCodes.Status201Created)

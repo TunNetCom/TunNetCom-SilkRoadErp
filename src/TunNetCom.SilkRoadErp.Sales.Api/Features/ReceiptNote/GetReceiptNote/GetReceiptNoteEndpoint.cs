@@ -30,6 +30,6 @@ public class GetReceiptNoteEndpoint : ICarterModule
 
             return Results.Ok(pagedReceipts);
         })
-        .WithTags(SwaggerTags.ReceiptNotes);
+        .WithTags(EndpointTags.ReceiptNotes);
     }
 }

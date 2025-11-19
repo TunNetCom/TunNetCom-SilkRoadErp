@@ -27,7 +27,7 @@ public class CreateProviderEndPoint : ICarterModule
             return TypedResults.Created($"/providers/{result.Value}", request);
 
         })
-        .WithTags(SwaggerTags.Providers);
+        .WithTags(EndpointTags.Providers);
     }
 
 }

@@ -7,7 +7,7 @@ public class CreateCustomerEndpoint : ICarterModule
         _ = app.MapPost(
             "/customers",
             HandleCreateCustomerAsync)
-            .WithTags(SwaggerTags.Customers);
+            .WithTags(EndpointTags.Customers);
     }
 
     public async Task<Results<Created<CreateCustomerRequest>, ValidationProblem>> HandleCreateCustomerAsync(

@@ -16,6 +16,6 @@ public class DeleteProviderEndpoint : ICarterModule
 
             return TypedResults.NoContent();
         })
-        .WithTags(SwaggerTags.Providers);
+        .WithTags(EndpointTags.Providers);
     }
 }

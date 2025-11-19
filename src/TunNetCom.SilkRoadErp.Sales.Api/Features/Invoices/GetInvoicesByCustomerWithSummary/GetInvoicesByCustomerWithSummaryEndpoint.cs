@@ -21,6 +21,6 @@ public class GetInvoicesByCustomerWithSummaryEndpoint : ICarterModule
 
                     return Results.Ok(result.Value);
                 })
-                .WithTags(SwaggerTags.Invoices);
+                .WithTags(EndpointTags.Invoices);
     }
 }

@@ -16,6 +16,6 @@ public class DeleteReceiptNoteEndpoint : ICarterModule
 
             return TypedResults.NoContent();
         })
-        .WithTags(SwaggerTags.ReceiptNotes);
+        .WithTags(EndpointTags.ReceiptNotes);
     }
 }

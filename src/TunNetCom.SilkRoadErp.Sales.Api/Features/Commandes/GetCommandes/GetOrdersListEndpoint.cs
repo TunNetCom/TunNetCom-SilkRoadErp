@@ -28,7 +28,7 @@ public class GetOrdersListEndpoint : ICarterModule
             .Produces<List<OrderSummaryResponse>>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
             .WithName("GetOrdersList")
-            .WithTags(SwaggerTags.Orders)
+            .WithTags(EndpointTags.Orders)
             .WithOpenApi(operation => new(operation)
             {
                 Summary = "Retrieves a list of orders with summary information.",

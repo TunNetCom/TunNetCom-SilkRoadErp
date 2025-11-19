@@ -20,6 +20,6 @@ public class DeletePriceQuoteEndpoint : ICarterModule
 
             return TypedResults.NoContent();
         })
-        .WithTags(SwaggerTags.PriceQuotes);
+        .WithTags(EndpointTags.PriceQuotes);
     }
 }

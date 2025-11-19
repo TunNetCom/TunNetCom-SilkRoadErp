@@ -40,7 +40,7 @@ public class GetReceiptNotesLinesWithSummariesEndpoint : ICarterModule
             return Results.Ok(result.Value);
 
         })
-        .WithTags(SwaggerTags.ProviderReceiptNoteLines)
+        .WithTags(EndpointTags.ProviderReceiptNoteLines)
         .WithName("Get receipt note lines by receipt note id")
         .WithSummary("Get receipt note lines by receipt note id")
         .Produces<object>(StatusCodes.Status200OK)

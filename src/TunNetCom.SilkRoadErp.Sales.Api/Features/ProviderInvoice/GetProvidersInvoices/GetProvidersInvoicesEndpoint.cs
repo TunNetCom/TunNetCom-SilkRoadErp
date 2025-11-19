@@ -23,7 +23,7 @@ public class GetProvidersInvoicesEndpoint : ICarterModule
                 return TypedResults.Ok(response);
             })
             .WithName("GetProvidersInvoices")
-            .WithTags(SwaggerTags.ProviderInvoices)
+            .WithTags(EndpointTags.ProviderInvoices)
             .Produces<GetProviderInvoicesWithSummary>(StatusCodes.Status200OK)
             .WithDescription("Gets a paginated list of provider invoices,  provider invoice status, and search keyword.");
         //TODO : Add problem details for 400 and 500 status codes

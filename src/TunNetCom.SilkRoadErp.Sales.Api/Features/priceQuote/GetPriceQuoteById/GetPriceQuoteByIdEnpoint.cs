@@ -20,7 +20,7 @@
 
                 return TypedResults.Ok(result.Value);
             })
-            .WithTags(SwaggerTags.PriceQuotes);
+            .WithTags(EndpointTags.PriceQuotes);
         }
     }
 }

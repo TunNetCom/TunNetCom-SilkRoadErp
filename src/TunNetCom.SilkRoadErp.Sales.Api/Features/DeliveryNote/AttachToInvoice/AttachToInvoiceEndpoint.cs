@@ -21,7 +21,7 @@ public class AttachToInvoiceEndpoint : ICarterModule
             {
                 return await HandleAttachToInvoiceAsync(mediator, attachToInvoiceRequest, cancellationToken);
             })
-            .WithTags(SwaggerTags.DeliveryNotes);
+            .WithTags(EndpointTags.DeliveryNotes);
     }
 
     // ✅ Méthode publique à appeler depuis le test

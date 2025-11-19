@@ -24,6 +24,6 @@ public class GetDeliveryNotesByInvoiceIdEndpoint : ICarterModule
                 }
                 return TypedResults.Ok(result.Value);
             })
-            .WithTags(SwaggerTags.DeliveryNotes);
+            .WithTags(EndpointTags.DeliveryNotes);
     }
 }

@@ -7,7 +7,7 @@ public class GetFullProviderInvoiceEndpoint : ICarterModule
     public void AddRoutes(IEndpointRouteBuilder app)
     {
         _ = app.MapGet("/provider-invoices/{id:int}/full", HandleGetFullProviderInvoiceByIdAsync)
-            .WithTags(SwaggerTags.ProviderInvoices);
+            .WithTags(EndpointTags.ProviderInvoices);
     }
     public static async Task<Results<Ok<FullProviderInvoiceResponse>, NotFound>> HandleGetFullProviderInvoiceByIdAsync(
         IMediator mediator, int id, CancellationToken cancellationToken)

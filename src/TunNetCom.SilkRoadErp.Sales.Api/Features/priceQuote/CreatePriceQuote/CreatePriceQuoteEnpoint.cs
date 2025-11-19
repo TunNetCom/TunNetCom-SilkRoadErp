@@ -30,6 +30,6 @@ public class CreatePriceQuoteEnpoint : ICarterModule
 
                return TypedResults.Created($"/quotations/{result.Value}", request);
            })
-           .WithTags(SwaggerTags.PriceQuotes);
+           .WithTags(EndpointTags.PriceQuotes);
     }
 }

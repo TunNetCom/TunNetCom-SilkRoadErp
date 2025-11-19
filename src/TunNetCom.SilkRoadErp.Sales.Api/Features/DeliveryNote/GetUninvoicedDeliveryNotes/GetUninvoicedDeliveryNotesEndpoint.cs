@@ -19,6 +19,6 @@ public class GetUninvoicedDeliveryNotesEndpoint : ICarterModule
 
             return TypedResults.Ok(result.Value);
         })
-        .WithTags(SwaggerTags.DeliveryNotes);
+        .WithTags(EndpointTags.DeliveryNotes);
     }
 }

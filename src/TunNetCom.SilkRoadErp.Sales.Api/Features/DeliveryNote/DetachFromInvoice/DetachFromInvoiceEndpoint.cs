@@ -27,6 +27,6 @@ public class DetachFromInvoiceEndpoint : ICarterModule
 
                 return TypedResults.NoContent();
             })
-            .WithTags(SwaggerTags.DeliveryNotes);
+            .WithTags(EndpointTags.DeliveryNotes);
     }
 }

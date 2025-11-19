@@ -21,7 +21,7 @@ public class GetProviderByIdEndpoint : ICarterModule
 
             return TypedResults.Ok(result.Value);
         })
-        .WithTags(SwaggerTags.Providers);
+        .WithTags(EndpointTags.Providers);
     }
 }
 

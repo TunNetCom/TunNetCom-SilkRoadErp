@@ -32,6 +32,6 @@ public class UpdateReceiptNoteEndpoint : ICarterModule
 
                 return TypedResults.NoContent();
             })
-            .WithTags(SwaggerTags.ReceiptNotes);
+            .WithTags(EndpointTags.ReceiptNotes);
     }
 }

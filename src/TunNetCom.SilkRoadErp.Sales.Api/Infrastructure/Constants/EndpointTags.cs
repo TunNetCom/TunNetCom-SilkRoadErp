@@ -1,6 +1,6 @@
 namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Constants;
 
-public static class SwaggerTags
+public static class EndpointTags
 {
     public const string Customers = "Customers";
     public const string Products = "Products";
@@ -14,6 +14,7 @@ public static class SwaggerTags
     public const string ProviderReceiptNoteLines = "ProviderReceiptNoteLines";
     public const string AppParameters = "AppParameters";
 }
+
 
 
 

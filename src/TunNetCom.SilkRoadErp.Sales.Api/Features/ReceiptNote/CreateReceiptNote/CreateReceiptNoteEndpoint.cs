@@ -29,6 +29,6 @@
 
                return TypedResults.Created($"/receiptnotes/{result.Value}", request);
            })
-           .WithTags(SwaggerTags.ReceiptNotes);
+           .WithTags(EndpointTags.ReceiptNotes);
     }
 }
