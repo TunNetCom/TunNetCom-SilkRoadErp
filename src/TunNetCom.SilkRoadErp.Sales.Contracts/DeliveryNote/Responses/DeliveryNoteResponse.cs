@@ -1,4 +1,6 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.Common;
+
+namespace TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 
 public class DeliveryNoteResponse
 {
@@ -30,7 +32,7 @@ public class DeliveryNoteResponse
     public List<DeliveryNoteDetailResponse> Items { get; set; } = new();
 }
 
-public class DeliveryNoteDetailResponse
+public class DeliveryNoteDetailResponse : ILineItem
 {
     [JsonPropertyName("Provider")]
     public string Provider { get; set; }
