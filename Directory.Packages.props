@@ -43,9 +43,10 @@
     <PackageVersion Include="Microsoft.Extensions.Localization" Version="10.0.0" />
     <!-- Blazor UI -->
     <PackageVersion Include="Blazor.Bootstrap" Version="2.2.0" />
-    <PackageVersion Include="Radzen.Blazor" Version="5.0.6" />
+    <PackageVersion Include="Radzen.Blazor" Version="8.3.2" />
     <!-- Testing -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
+    <PackageVersion Include="System.Linq.Dynamic.Core" Version="1.6.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.abstractions" Version="2.0.3" />
     <PackageVersion Include="xunit.runner.console" Version="2.9.3" />

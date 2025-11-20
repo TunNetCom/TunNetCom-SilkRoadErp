@@ -8,11 +8,11 @@
     <PackageReference Include="Blazor.Bootstrap" />
     <PackageReference Include="FluentResults" />
     <PackageReference Include="Mapster" />
-    <PackageReference Include="Microsoft.Extensions.Localization" />
     <PackageReference Include="Microsoft.Playwright" />
     <PackageReference Include="Newtonsoft.Json" />
     <PackageReference Include="OneOf" />
     <PackageReference Include="Radzen.Blazor" />
+    <PackageReference Include="System.Linq.Dynamic.Core" />
     <PackageReference Include="xunit.runner.console">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

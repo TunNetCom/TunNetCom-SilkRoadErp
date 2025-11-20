@@ -16,7 +16,7 @@ builder.Services.AddControllers();
 builder.Services.AddScoped<GitHubService>();
 string[] supportedCultures = ["en", "fr", "ar"];
 var localizationOptions = new RequestLocalizationOptions()
-    .SetDefaultCulture(supportedCultures[0])
+    .SetDefaultCulture("fr")
     .AddSupportedCultures(supportedCultures)
     .AddSupportedUICultures(supportedCultures);
 
