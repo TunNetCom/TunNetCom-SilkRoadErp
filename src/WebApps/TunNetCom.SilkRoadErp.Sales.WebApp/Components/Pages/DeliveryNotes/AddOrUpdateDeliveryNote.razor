@@ -584,6 +584,8 @@ else
                     Description = p.Name,
                     UnitPriceExcludingTax = p.Price,
                     Quantity = 1,
+                    DiscountPercentage = p.DiscountPourcentage,
+                    VatPercentage = p.VatRate,
                 }).ToList();
 
             count = pagedProducts.TotalCount;

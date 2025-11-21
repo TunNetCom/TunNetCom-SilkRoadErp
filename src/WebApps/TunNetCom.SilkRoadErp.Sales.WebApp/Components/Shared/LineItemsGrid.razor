@@ -148,6 +148,8 @@
                                Style="width:100%;"
                                Min="0"
                                Max="50"
+                               Step="0.01"
+                               Format="N2"
                                Name="Discount"/>
             </Template>
         </RadzenDataGridColumn>
@@ -167,6 +169,8 @@
                                Style="width:100%;"
                                Min="0"
                                Max="50"
+                               Step="0.01"
+                               Format="N2"
                                Name="Vat"/>
             </Template>
         </RadzenDataGridColumn>
@@ -447,11 +451,14 @@
                 }
                 order.UnitPriceExcludingTax = selectedProduct.UnitPriceExcludingTax;
                 
-                if (AppParameters != null)
-                {
-                    order.DiscountPercentage = AppParameters.DiscountPercentage;
-                    order.VatPercentage = AppParameters.VatAmount;
-                }
+                // Always use product's discount and VAT values (they come from the product data)
+                // If product values are 0, use app parameters as fallback
+                order.DiscountPercentage = selectedProduct.DiscountPercentage > 0 
+                    ? selectedProduct.DiscountPercentage 
+                    : (AppParameters?.DiscountPercentage ?? 0);
+                order.VatPercentage = selectedProduct.VatPercentage > 0 
+                    ? selectedProduct.VatPercentage 
+                    : (AppParameters?.VatAmount ?? 0);
                 
                 LineItemCalculator.CalculateTotals(order);
                 await NotifyItemsChanged();
