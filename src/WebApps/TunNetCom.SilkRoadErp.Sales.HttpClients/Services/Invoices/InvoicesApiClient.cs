@@ -58,14 +58,24 @@ public class InvoicesApiClient : IInvoicesApiClient
         return pagedInvoices;
     }
 
-    public async Task<OneOf<CreateInvoiceRequest, BadRequestResponse>> CreateInvoice(
+    public async Task<OneOf<int, BadRequestResponse>> CreateInvoice(
         CreateInvoiceRequest request,
         CancellationToken cancellationToken)
     {
         var response = await _httpClient.PostAsJsonAsync("invoices", request, cancellationToken: cancellationToken);
         if (response.StatusCode == HttpStatusCode.Created)
         {
-            return await response.ReadJsonAsync<CreateInvoiceRequest>();
+            // Extract invoice number from Location header (format: /invoices/{number})
+            if (response.Headers.Location != null)
+            {
+                var locationPath = response.Headers.Location.ToString();
+                var segments = locationPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+                if (segments.Length >= 2 && int.TryParse(segments[segments.Length - 1], out var invoiceNumber))
+                {
+                    return invoiceNumber;
+                }
+            }
+            throw new Exception($"Invoices: Unable to extract invoice number from Location header: {response.Headers.Location}");
         }
         if (response.StatusCode == HttpStatusCode.BadRequest)
         {

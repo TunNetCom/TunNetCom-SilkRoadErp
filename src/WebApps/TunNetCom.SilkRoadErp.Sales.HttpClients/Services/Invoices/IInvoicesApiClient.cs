@@ -9,7 +9,7 @@ public interface IInvoicesApiClient
     Task<PagedList<InvoiceResponse>> GetInvoices(
         QueryStringParameters queryParameters,
         CancellationToken cancellationToken);
-    Task<OneOf<CreateInvoiceRequest, BadRequestResponse>> CreateInvoice(
+    Task<OneOf<int, BadRequestResponse>> CreateInvoice(
         CreateInvoiceRequest request,
         CancellationToken cancellationToken);
 

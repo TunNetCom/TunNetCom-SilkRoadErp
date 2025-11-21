@@ -1,0 +1,46 @@
+@using Radzen
+@using Radzen.Blazor
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@inject DialogService DialogService
+@inject IStringLocalizer<SharedResource> Localizer
+
+<RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
+    <RadzenText TextStyle="TextStyle.Body1">
+        @Localizer["create_new_invoice"]
+    </RadzenText>
+    
+    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+        <RadzenLabel Text="@Localizer["date"]" />
+        <RadzenDatePicker @bind-Value="InvoiceDate" 
+                          DateFormat="d MMMM yyyy" 
+                          ShowTime="false"
+                          Style="width: 100%;" />
+    </RadzenStack>
+
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End" Style="margin-top: 1rem;">
+        <RadzenButton Text="@Localizer["Cancel"]" 
+                      ButtonStyle="ButtonStyle.Light" 
+                      Click="@(() => DialogService.Close(false))" />
+        <RadzenButton Text="@Localizer["yes"]" 
+                      ButtonStyle="ButtonStyle.Success" 
+                      Click="@OnConfirm" />
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    [Parameter] public DateTime InitialDate { get; set; } = DateTime.Now.Date;
+    
+    private DateTime InvoiceDate { get; set; }
+
+    protected override void OnInitialized()
+    {
+        InvoiceDate = InitialDate;
+    }
+
+    private void OnConfirm()
+    {
+        DialogService.Close(InvoiceDate);
+    }
+}
+

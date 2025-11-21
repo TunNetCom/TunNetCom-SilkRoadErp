@@ -9,6 +9,7 @@
 @using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters
 @using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests
 @using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Invoice
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Sorting
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
@@ -199,23 +200,33 @@ else
                 </Columns>
             </RadzenDropDownDataGrid>
 
-            <RadzenLabel Text="@Localizer["invoice_number"]" />
-            <RadzenDropDownDataGrid AllowClear="true"
-                                    IsLoading="@isLoadingInvoices"
-                                    @bind-Value="@_selectedInvoiceId"
-                                    LoadData="@LoadCustomerInvoices"
-                                    AllowFiltering="true"
-                                    Style="width: 350px;"
-                                    Data="@_filteredInvoices"
-                                    TextProperty="@nameof(InvoiceResponse.Number)"
-                                    ValueProperty="@nameof(InvoiceResponse.Number)"
-                                    Placeholder="@Localizer["select_invoice"]">
-                <Columns>
-                    <RadzenDropDownDataGridColumn Property="@nameof(InvoiceResponse.Number)" Title="Num" Width="100px" />
-                    <RadzenDropDownDataGridColumn Property="@nameof(InvoiceResponse.Date)" Title="Date" Width="100px" />
-                    <RadzenDropDownDataGridColumn Property="@nameof(InvoiceResponse.TotalIncludingTaxAmount)" Title="@Localizer["tot_ttc"]" Width="200px" />
-                </Columns>
-            </RadzenDropDownDataGrid>
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" AlignItems="Radzen.AlignItems.End">
+                <RadzenLabel Text="@Localizer["invoice_number"]" />
+                <RadzenDropDownDataGrid AllowClear="true"
+                                        IsLoading="@isLoadingInvoices"
+                                        @bind-Value="@_selectedInvoiceId"
+                                        LoadData="@LoadCustomerInvoices"
+                                        AllowFiltering="true"
+                                        Style="width: 350px;"
+                                        Data="@_filteredInvoices"
+                                        TextProperty="@nameof(InvoiceResponse.Number)"
+                                        ValueProperty="@nameof(InvoiceResponse.Number)"
+                                        Placeholder="@Localizer["select_invoice"]">
+                    <Columns>
+                        <RadzenDropDownDataGridColumn Property="@nameof(InvoiceResponse.Number)" Title="Num" Width="100px" />
+                        <RadzenDropDownDataGridColumn Property="@nameof(InvoiceResponse.Date)" Title="Date" Width="100px" />
+                        <RadzenDropDownDataGridColumn Property="@nameof(InvoiceResponse.TotalIncludingTaxAmount)" Title="@Localizer["tot_ttc"]" Width="200px" />
+                    </Columns>
+                </RadzenDropDownDataGrid>
+                <RadzenButton Icon="add" 
+                              ButtonStyle="ButtonStyle.Success" 
+                              Variant="Variant.Flat"
+                              Size="ButtonSize.Medium"
+                              Disabled="@(!selectedCustomerId.HasValue)"
+                              Click="@CreateNewInvoice"
+                              Title="@Localizer["create_new_invoice"]"
+                              AriaLabel="@Localizer["create_new_invoice"]" />
+            </RadzenStack>
         </div>
     </div>
 
@@ -623,6 +634,98 @@ else
 
         isLoadingInvoices = false;
         await InvokeAsync(StateHasChanged);
+    }
+
+    async Task CreateNewInvoice()
+    {
+        if (!selectedCustomerId.HasValue)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["error"],
+                Detail = Localizer["select_a_customer_before"]
+            });
+            return;
+        }
+
+        var result = await DialogService.OpenAsync<CreateInvoiceDialog>(
+            Localizer["create_new_invoice"],
+            new Dictionary<string, object> { { "InitialDate", DateTime.Now.Date } },
+            new DialogOptions()
+            {
+                Width = "400px",
+                Resizable = false,
+                Draggable = true
+            });
+
+        if (result is DateTime selectedDate)
+        {
+            await CreateInvoiceWithDate(selectedDate);
+        }
+    }
+
+    async Task CreateInvoiceWithDate(DateTime invoiceDate)
+    {
+        isLoadingInvoices = true;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            var request = new CreateInvoiceRequest
+            {
+                Date = invoiceDate,
+                ClientId = selectedCustomerId!.Value
+            };
+
+            var result = await invoicesApiClient.CreateInvoice(request, _cancellationTokenSource.Token);
+
+            if (result.IsT0) // Succès
+            {
+                var invoiceNumber = result.AsT0;
+                
+                // Recharger la liste des factures
+                await LoadCustomerInvoices(new LoadDataArgs());
+                
+                // Sélectionner automatiquement la nouvelle facture
+                _selectedInvoiceId = invoiceNumber;
+                
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = Localizer["success"],
+                    Detail = $"{Localizer["invoice_created_successfully"]}: {invoiceNumber}"
+                });
+            }
+            else // Erreur
+            {
+                var badRequest = result.AsT1;
+                var errorMessage = badRequest.errors?.Any() == true
+                    ? string.Join(", ", badRequest.errors.SelectMany(e => e.Value))
+                    : (badRequest.Detail ?? Localizer["failed_to_create_invoice"]);
+
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = errorMessage
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"{Localizer["failed_to_create_invoice"]}: {ex.Message}"
+            });
+        }
+        finally
+        {
+            isLoadingInvoices = false;
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     async Task OnProductSelectedHandler(DeliveryNoteDetailResponse order)

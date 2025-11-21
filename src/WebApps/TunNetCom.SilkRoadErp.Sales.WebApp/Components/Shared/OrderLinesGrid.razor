@@ -1,10 +1,13 @@
 @using Radzen.Blazor
 @using Microsoft.Extensions.Localization
+@using Microsoft.JSInterop
 @using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses
 @using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@inject IJSRuntime JSRuntime
 
+<div id="@componentId">
 <RadzenDataGrid @ref="ordersGrid" 
                 AllowAlternatingRows="false"
                 AllowPaging="true"
@@ -17,7 +20,7 @@
                 <RadzenButton ButtonStyle="ButtonStyle.Success" 
                               Icon="add_circle" 
                               Text="@Localizer["add_new_order"]"
-                              Click="@InsertRow" 
+                              Click="@(async () => await InsertRow())" 
                               class="action-button success-button"
                               AriaLabel="@Localizer["add_new_order"]" />
 
@@ -82,6 +85,10 @@
                               Property="@nameof(DeliveryNoteDetailResponse.ProductReferenceAndDescription)"
                               Title="@Localizer["product"]">
             <Template Context="order">
+                @{
+                    var rowIndex = Items.IndexOf(order);
+                    var dropdownId = $"product-dropdown-{rowIndex}";
+                }
                 <RadzenDropDownDataGrid Style="width: 100%; max-width: 600px;"
                                         AllowClear="true"
                                         @bind-Value="order.ProductReference"
@@ -92,7 +99,7 @@
                                         Change="@(args => OnProductSelected(order, args))"
                                         TextProperty="@nameof(DeliveryNoteDetailResponse.ProductReferenceAndDescription)"
                                         ValueProperty="@nameof(DeliveryNoteDetailResponse.ProductReference)"
-                                        Name="DropDownDataGridFilteringLoadData" />
+                                        Name="@dropdownId" />
             </Template>
         </RadzenDataGridColumn>
 
@@ -109,7 +116,7 @@
             </Template>
         </RadzenDataGridColumn>
 
-        <RadzenDataGridColumn Width="150px" 
+        <RadzenDataGridColumn Width="200px" 
                               Property="@nameof(DeliveryNoteDetailResponse.UnitPriceExcludingTax)" 
                               Title="@Localizer["unit_price_ht"]">
             <Template Context="order">
@@ -118,6 +125,7 @@
                                    Value="order.UnitPriceExcludingTax"
                                    Change="@(args => OnUnitPriceChanged(order, args))"
                                    Style="width:100%;"
+                                   Format="@GetPriceFormat()"
                                    Name="UnitPrice"/>
                     @if (ShowPriceHistoryDialog && !string.IsNullOrEmpty(order.ProductReference))
                     {
@@ -132,7 +140,7 @@
             </Template>
         </RadzenDataGridColumn>
 
-        <RadzenDataGridColumn Width="100px" 
+        <RadzenDataGridColumn Width="150px" 
                               Property="@nameof(DeliveryNoteDetailResponse.DiscountPercentage)"
                               Title="@Localizer["discount_percentage"]">
             <Template Context="order">
@@ -140,6 +148,8 @@
                                Value="order.DiscountPercentage"
                                Change="@(args => OnDiscountChanged(order, args))"
                                Style="width:100%;"
+                               Min="0"
+                               Max="50"
                                Name="Discount"/>
             </Template>
         </RadzenDataGridColumn>
@@ -159,6 +169,8 @@
                                Value="order.VatPercentage"
                                Change="@(args => OnVatChanged(order, args))"
                                Style="width:100%;"
+                               Min="0"
+                               Max="50"
                                Name="Vat"/>
             </Template>
         </RadzenDataGridColumn>
@@ -171,6 +183,7 @@
         </RadzenDataGridColumn>
 
         <RadzenDataGridColumn Context="order" 
+                              Width="80px"
                               Filterable="false" 
                               Sortable="false" 
                               TextAlign="TextAlign.Right"
@@ -191,6 +204,7 @@
         </RadzenDataGridColumn>
     </Columns>
 </RadzenDataGrid>
+</div>
 
 <style>
     .header-actions {
@@ -323,6 +337,33 @@
     [Parameter] public IStringLocalizer<SharedResource> Localizer { get; set; }
 
     RadzenDataGrid<DeliveryNoteDetailResponse> ordersGrid;
+    private DotNetObjectReference<OrderLinesGrid>? objRef;
+    private string componentId = Guid.NewGuid().ToString();
+
+    private string GetPriceFormat()
+    {
+        // Format with thousands separator and 2 decimal places (e.g., 1,234.56)
+        // Using "N2" format: Number with 2 decimal places and thousands separator
+        return "N2";
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            objRef = DotNetObjectReference.Create(this);
+            var dotNetRefId = $"orderLinesGridDotNetRef_{componentId}";
+            
+            // Use the helper function from site.js
+            await JSRuntime.InvokeVoidAsync("setupOrderLinesGridKeyboard", dotNetRefId, objRef);
+        }
+    }
+
+    [JSInvokable]
+    public async Task HandleKeyboardInsert()
+    {
+        await InsertRow();
+    }
 
     private async Task OnQuantityChanged(DeliveryNoteDetailResponse order, object value)
     {
@@ -348,6 +389,15 @@
     {
         if (value != null && double.TryParse(value.ToString(), out double discount))
         {
+            // Limit discount to 50%
+            if (discount > 50)
+            {
+                discount = 50;
+            }
+            if (discount < 0)
+            {
+                discount = 0;
+            }
             order.DiscountPercentage = discount;
             LineItemCalculator.CalculateTotals(order);
             await NotifyItemsChanged();
@@ -358,6 +408,15 @@
     {
         if (value != null && double.TryParse(value.ToString(), out double vat))
         {
+            // Limit VAT to 50%
+            if (vat > 50)
+            {
+                vat = 50;
+            }
+            if (vat < 0)
+            {
+                vat = 0;
+            }
             order.VatPercentage = vat;
             LineItemCalculator.CalculateTotals(order);
             await NotifyItemsChanged();
@@ -405,20 +464,121 @@
 
     async Task InsertRow()
     {
-        var order = new DeliveryNoteDetailResponse
+        try
         {
-            Quantity = 1
-        };
-        
-        if (AppParameters != null)
-        {
-            order.DiscountPercentage = AppParameters.DiscountPercentage;
-            order.VatPercentage = AppParameters.VatAmount;
+            var order = new DeliveryNoteDetailResponse
+            {
+                Quantity = 1
+            };
+            
+            if (AppParameters != null)
+            {
+                order.DiscountPercentage = AppParameters.DiscountPercentage;
+                order.VatPercentage = AppParameters.VatAmount;
+            }
+            
+            Items.Add(order);
+            await NotifyItemsChanged();
+            await ordersGrid.Reload();
+            
+            // Focus on the product dropdown of the newly added row
+            await Task.Delay(300); // Increased delay to ensure DOM is fully updated
+            var newRowIndex = Items.Count - 1;
+            await FocusProductDropdown(newRowIndex);
+            
+            // Ensure the button remains clickable by removing focus from dropdown if needed
+            await Task.Delay(100);
         }
-        
-        Items.Add(order);
-        await NotifyItemsChanged();
-        await ordersGrid.Reload();
+        catch (Exception ex)
+        {
+            // Log error if needed
+            System.Diagnostics.Debug.WriteLine($"Error in InsertRow: {ex.Message}");
+        }
+    }
+
+
+    private async Task FocusProductDropdown(int rowIndex)
+    {
+        try
+        {
+            var dropdownName = $"product-dropdown-{rowIndex}";
+            await JSRuntime.InvokeVoidAsync("eval", $@"
+                (function() {{
+                    setTimeout(function() {{
+                        // Try to find the input by name attribute first
+                        var input = document.querySelector('input[name=""{dropdownName}""]');
+                        
+                        // If not found, find the last row in the grid and get its product dropdown
+                        if (!input) {{
+                            var rows = document.querySelectorAll('tbody tr');
+                            if (rows.length > 0) {{
+                                var lastRow = rows[rows.length - 1];
+                                var cells = lastRow.querySelectorAll('td');
+                                // Product column is typically the second column (index 1)
+                                if (cells.length > 1) {{
+                                    var productCell = cells[1];
+                                    input = productCell.querySelector('input[type=""text""]');
+                                }}
+                            }}
+                        }}
+                        
+                        if (input) {{
+                            // Focus the input first
+                            input.focus();
+                            
+                            // Wait a bit then open the dropdown by clicking the trigger button
+                            setTimeout(function() {{
+                                var dropdown = input.closest('.rz-dropdown');
+                                if (dropdown) {{
+                                    // Find the dropdown trigger button
+                                    var trigger = dropdown.querySelector('.rz-dropdown-trigger');
+                                    if (!trigger) {{
+                                        // Alternative: find button with dropdown icon
+                                        trigger = dropdown.querySelector('button[aria-haspopup=""listbox""]');
+                                    }}
+                                    if (!trigger) {{
+                                        // Last resort: find any button in the dropdown
+                                        trigger = dropdown.querySelector('button');
+                                    }}
+                                    
+                                    if (trigger) {{
+                                        // Check if dropdown is already open
+                                        var isOpen = dropdown.classList.contains('rz-dropdown-open') || 
+                                                     dropdown.querySelector('.rz-dropdown-panel') ||
+                                                     dropdown.querySelector('.rz-dropdown-list');
+                                        
+                                        if (!isOpen) {{
+                                            // Use mousedown and mouseup instead of click to avoid double-trigger
+                                            var mouseDownEvent = new MouseEvent('mousedown', {{
+                                                bubbles: true,
+                                                cancelable: true,
+                                                view: window
+                                            }});
+                                            var mouseUpEvent = new MouseEvent('mouseup', {{
+                                                bubbles: true,
+                                                cancelable: true,
+                                                view: window
+                                            }});
+                                            trigger.dispatchEvent(mouseDownEvent);
+                                            setTimeout(function() {{
+                                                trigger.dispatchEvent(mouseUpEvent);
+                                            }}, 10);
+                                        }}
+                                    }} else {{
+                                        // Fallback: just focus the input, don't click
+                                        input.focus();
+                                    }}
+                                }}
+                            }}, 250);
+                        }}
+                    }}, 200);
+                }})();
+            ");
+        }
+        catch
+        {
+            // Silently fail if focus cannot be set
+        }
     }
 
     private async Task HandleDeleteItem(DeliveryNoteDetailResponse order)
