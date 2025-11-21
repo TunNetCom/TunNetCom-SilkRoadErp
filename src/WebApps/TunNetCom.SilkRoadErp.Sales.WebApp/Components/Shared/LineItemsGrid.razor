@@ -1,10 +1,11 @@
 @using Radzen.Blazor
 @using Microsoft.Extensions.Localization
 @using Microsoft.JSInterop
-@using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Common
 @using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@typeparam TItem where TItem : class, ILineItem
 @inject IJSRuntime JSRuntime
 
 <div id="@componentId">
@@ -12,7 +13,7 @@
                 AllowAlternatingRows="false"
                 AllowPaging="true"
                 Data="@Items" 
-                TItem="DeliveryNoteDetailResponse"
+                TItem="TItem"
                 ColumnWidth="200px">
     <HeaderTemplate>
         <div class="header-actions">
@@ -71,7 +72,7 @@
     </HeaderTemplate>
     <Columns>
         <RadzenDataGridColumn Width="60px" 
-                              TItem="DeliveryNoteDetailResponse"
+                              TItem="TItem"
                               Title="#"
                               Frozen="true"
                               FrozenPosition="FrozenColumnPosition.Left">
@@ -81,8 +82,7 @@
         </RadzenDataGridColumn>
 
         <RadzenDataGridColumn Width="600px" 
-                              TItem="DeliveryNoteDetailResponse"
-                              Property="@nameof(DeliveryNoteDetailResponse.ProductReferenceAndDescription)"
+                              TItem="TItem"
                               Title="@Localizer["product"]">
             <Template Context="order">
                 @{
@@ -91,20 +91,19 @@
                 }
                 <RadzenDropDownDataGrid Style="width: 100%; max-width: 600px;"
                                         AllowClear="true"
-                                        @bind-Value="order.ProductReference"
+                                        Value="@(GetProductReference != null ? GetProductReference(order) : string.Empty)"
                                         LoadData="@LoadProducts"
                                         AllowFiltering="true"
                                         Data="@(GetProductList(order))"
                                         Count="@ProductCount"
                                         Change="@(args => OnProductSelected(order, args))"
-                                        TextProperty="@nameof(DeliveryNoteDetailResponse.ProductReferenceAndDescription)"
-                                        ValueProperty="@nameof(DeliveryNoteDetailResponse.ProductReference)"
+                                        TextProperty="@ProductTextProperty"
+                                        ValueProperty="@ProductValueProperty"
                                         Name="@dropdownId" />
             </Template>
         </RadzenDataGridColumn>
 
         <RadzenDataGridColumn Width="120px" 
-                              Property="@nameof(DeliveryNoteDetailResponse.Quantity)"
                               Title="@Localizer["quantity"]">
             <Template Context="order">
                 <RadzenNumeric TValue="int"
@@ -117,7 +116,6 @@
         </RadzenDataGridColumn>
 
         <RadzenDataGridColumn Width="200px" 
-                              Property="@nameof(DeliveryNoteDetailResponse.UnitPriceExcludingTax)" 
                               Title="@Localizer["unit_price_ht"]">
             <Template Context="order">
                 <div style="display: flex; align-items: center; gap: 4px;">
@@ -127,13 +125,13 @@
                                    Style="width:100%;"
                                    Format="@GetPriceFormat()"
                                    Name="UnitPrice"/>
-                    @if (ShowPriceHistoryDialog && !string.IsNullOrEmpty(order.ProductReference))
+                    @if (ShowPriceHistoryDialog && !string.IsNullOrEmpty(GetProductReference?.Invoke(order)))
                     {
                         <RadzenButton Icon="history" 
                                       ButtonStyle="ButtonStyle.Light" 
                                       Variant="Variant.Flat"
                                       Size="ButtonSize.Small" 
-                                      Click="@(() => OnShowPriceHistory.InvokeAsync(order.ProductReference))" 
+                                      Click="@(() => OnShowPriceHistory.InvokeAsync(GetProductReference(order)))" 
                                       Title="@Localizer["price_history"]" />
                     }
                 </div>
@@ -141,7 +139,6 @@
         </RadzenDataGridColumn>
 
         <RadzenDataGridColumn Width="150px" 
-                              Property="@nameof(DeliveryNoteDetailResponse.DiscountPercentage)"
                               Title="@Localizer["discount_percentage"]">
             <Template Context="order">
                 <RadzenNumeric TValue="double"
@@ -154,15 +151,13 @@
             </Template>
         </RadzenDataGridColumn>
 
-        <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.TotalExcludingTax)" 
-                              Title="@Localizer["total_excluding_tax"]">
+        <RadzenDataGridColumn Title="@Localizer["total_excluding_tax"]">
             <Template Context="order">
                 @order.TotalExcludingTax.FormatAmount()
             </Template>
         </RadzenDataGridColumn>
 
         <RadzenDataGridColumn Width="100px" 
-                              Property="@nameof(DeliveryNoteDetailResponse.VatPercentage)" 
                               Title="@Localizer["vat_percentage"]">
             <Template Context="order">
                 <RadzenNumeric TValue="double"
@@ -175,8 +170,7 @@
             </Template>
         </RadzenDataGridColumn>
 
-        <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.TotalIncludingTax)" 
-                              Title="@Localizer["total_including_tax"]">
+        <RadzenDataGridColumn Title="@Localizer["total_including_tax"]">
             <Template Context="order">
                 @order.TotalIncludingTax.FormatAmount()
             </Template>
@@ -317,12 +311,12 @@
 </style>
 
 @code {
-    [Parameter] public List<DeliveryNoteDetailResponse> Items { get; set; } = new();
-    [Parameter] public EventCallback<List<DeliveryNoteDetailResponse>> ItemsChanged { get; set; }
-    [Parameter] public EventCallback<DeliveryNoteDetailResponse> OnDeleteItem { get; set; }
-    [Parameter] public EventCallback<DeliveryNoteDetailResponse> OnProductSelectedCallback { get; set; }
+    [Parameter] public List<TItem> Items { get; set; } = new();
+    [Parameter] public EventCallback<List<TItem>> ItemsChanged { get; set; }
+    [Parameter] public EventCallback<TItem> OnDeleteItem { get; set; }
+    [Parameter] public EventCallback<TItem> OnProductSelectedCallback { get; set; }
     [Parameter] public Func<LoadDataArgs, Task> LoadProducts { get; set; }
-    [Parameter] public Func<DeliveryNoteDetailResponse, List<DeliveryNoteDetailResponse>> GetProductList { get; set; }
+    [Parameter] public Func<TItem, List<TItem>> GetProductList { get; set; }
     [Parameter] public int ProductCount { get; set; }
     [Parameter] public GetAppParametersResponse AppParameters { get; set; }
     [Parameter] public EventCallback<string> OnShowPriceHistory { get; set; }
@@ -335,9 +329,18 @@
     [Parameter] public decimal TotalVat { get; set; }
     [Parameter] public decimal TotalTtc { get; set; }
     [Parameter] public IStringLocalizer<SharedResource> Localizer { get; set; }
+    
+    // Product-related properties accessors
+    [Parameter] public Func<TItem, string> GetProductReference { get; set; }
+    [Parameter] public Action<TItem, string> SetProductReference { get; set; }
+    [Parameter] public Func<TItem, string> GetProductDescription { get; set; }
+    [Parameter] public Action<TItem, string> SetProductDescription { get; set; }
+    [Parameter] public string ProductTextProperty { get; set; } = "ProductReferenceAndDescription";
+    [Parameter] public string ProductValueProperty { get; set; } = "ProductReference";
+    [Parameter] public Func<TItem> CreateNewItem { get; set; }
 
-    RadzenDataGrid<DeliveryNoteDetailResponse> ordersGrid;
-    private DotNetObjectReference<OrderLinesGrid>? objRef;
+    RadzenDataGrid<TItem> ordersGrid;
+    private DotNetObjectReference<LineItemsGrid<TItem>>? objRef;
     private string componentId = Guid.NewGuid().ToString();
 
     private string GetPriceFormat()
@@ -352,7 +355,7 @@
         if (firstRender)
         {
             objRef = DotNetObjectReference.Create(this);
-            var dotNetRefId = $"orderLinesGridDotNetRef_{componentId}";
+            var dotNetRefId = $"lineItemsGridDotNetRef_{componentId}";
             
             // Use the helper function from site.js
             await JSRuntime.InvokeVoidAsync("setupOrderLinesGridKeyboard", dotNetRefId, objRef);
@@ -365,7 +368,7 @@
         await InsertRow();
     }
 
-    private async Task OnQuantityChanged(DeliveryNoteDetailResponse order, object value)
+    private async Task OnQuantityChanged(TItem order, object value)
     {
         if (value != null && int.TryParse(value.ToString(), out int quantity))
         {
@@ -375,7 +378,7 @@
         }
     }
 
-    private async Task OnUnitPriceChanged(DeliveryNoteDetailResponse order, object value)
+    private async Task OnUnitPriceChanged(TItem order, object value)
     {
         if (value != null && decimal.TryParse(value.ToString(), out decimal price))
         {
@@ -385,7 +388,7 @@
         }
     }
 
-    private async Task OnDiscountChanged(DeliveryNoteDetailResponse order, object value)
+    private async Task OnDiscountChanged(TItem order, object value)
     {
         if (value != null && double.TryParse(value.ToString(), out double discount))
         {
@@ -404,7 +407,7 @@
         }
     }
 
-    private async Task OnVatChanged(DeliveryNoteDetailResponse order, object value)
+    private async Task OnVatChanged(TItem order, object value)
     {
         if (value != null && double.TryParse(value.ToString(), out double vat))
         {
@@ -423,17 +426,23 @@
         }
     }
 
-    private async Task OnProductSelected(DeliveryNoteDetailResponse order, object value)
+    private async Task OnProductSelected(TItem order, object value)
     {
         if (value != null && value is string productReference)
         {
             var selectedProduct = GetProductList(order)
-                .FirstOrDefault(p => p.ProductReference == productReference);
+                .FirstOrDefault(p => GetProductReference(p) == productReference);
 
             if (selectedProduct != null)
             {
-                order.Description = selectedProduct.Description;
-                order.ProductReference = selectedProduct.ProductReference;
+                if (SetProductDescription != null)
+                {
+                    SetProductDescription(order, GetProductDescription(selectedProduct));
+                }
+                if (SetProductReference != null)
+                {
+                    SetProductReference(order, productReference);
+                }
                 order.UnitPriceExcludingTax = selectedProduct.UnitPriceExcludingTax;
                 
                 if (AppParameters != null)
@@ -466,10 +475,12 @@
     {
         try
         {
-            var order = new DeliveryNoteDetailResponse
+            if (CreateNewItem == null)
             {
-                Quantity = 1
-            };
+                throw new InvalidOperationException("CreateNewItem parameter must be provided");
+            }
+
+            var order = CreateNewItem();
             
             if (AppParameters != null)
             {
@@ -495,7 +506,6 @@
             System.Diagnostics.Debug.WriteLine($"Error in InsertRow: {ex.Message}");
         }
     }
-
 
     private async Task FocusProductDropdown(int rowIndex)
     {
@@ -581,20 +591,33 @@
         }
     }
 
-    private async Task HandleDeleteItem(DeliveryNoteDetailResponse order)
+    private async Task HandleDeleteItem(TItem order)
     {
         // Try to remove by reference first (most reliable for exact match)
         if (Items.Contains(order))
         {
             Items.Remove(order);
         }
-        else if (order.Id > 0)
+        else
         {
-            // If reference match fails but item has Id, find by Id
-            var itemToRemove = Items.FirstOrDefault(t => t.Id == order.Id && t.Id > 0);
-            if (itemToRemove != null)
+            // Try to find by Id if the item has an Id property
+            var itemType = order.GetType();
+            var idProperty = itemType.GetProperty("Id");
+            if (idProperty != null)
             {
-                Items.Remove(itemToRemove);
+                var orderId = idProperty.GetValue(order);
+                if (orderId != null && Convert.ToInt32(orderId) > 0)
+                {
+                    var itemToRemove = Items.FirstOrDefault(t =>
+                    {
+                        var tId = idProperty.GetValue(t);
+                        return tId != null && Convert.ToInt32(tId) == Convert.ToInt32(orderId) && Convert.ToInt32(tId) > 0;
+                    });
+                    if (itemToRemove != null)
+                    {
+                        Items.Remove(itemToRemove);
+                    }
+                }
             }
         }
 
@@ -610,6 +633,5 @@
             await OnDeleteItem.InvokeAsync(order);
         }
     }
-
 }
 
