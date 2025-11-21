@@ -180,7 +180,7 @@ else
     <div class="delivery-note-container">
         <div class="delivery-note-form">
             <RadzenLabel Text="@Localizer["delivery_note_number"]" Component="DeliveryNoteNumber" AriaLabel="@Localizer["delivery_note_number"]" />
-            <RadzenTextBox @bind-Value="deliveryNoteNumber" Name="DeliveryNoteNumber" Style="width: 200px;" ReadOnly="true" AriaReadOnly="true" />
+            <RadzenTextBox @bind-Value="deliveryNoteNumber" Name="DeliveryNoteNumber" Style="width: 120px;" ReadOnly="true" AriaReadOnly="true" />
 
             <RadzenLabel Text="@Localizer["date"]" />
             <RadzenDatePicker @bind-Value="deliveryNoteDate" Name="DeliveryNoteDate" Style="width: 200px;" DateFormat="d MMMM yyyy" ShowTime="false" />
