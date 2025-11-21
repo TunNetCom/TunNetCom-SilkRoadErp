@@ -32,6 +32,7 @@
                                   Text="@Localizer["print"]"
                                   Variant="Variant.Flat"
                                   Disabled="@(!Items.Any())"
+                                  Click="@OnPrint"
                                   class="action-button"
                                   AriaLabel="@Localizer["print"]" />
                 }
@@ -325,6 +326,7 @@
     [Parameter] public bool ShowSaveButton { get; set; } = true;
     [Parameter] public bool ShowSummary { get; set; } = true;
     [Parameter] public EventCallback OnSave { get; set; }
+    [Parameter] public EventCallback OnPrint { get; set; }
     [Parameter] public decimal TotalHt { get; set; }
     [Parameter] public decimal TotalVat { get; set; }
     [Parameter] public decimal TotalTtc { get; set; }

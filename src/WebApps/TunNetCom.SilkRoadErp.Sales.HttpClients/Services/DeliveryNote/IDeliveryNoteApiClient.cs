@@ -55,4 +55,9 @@ public interface IDeliveryNoteApiClient
     Task<List<DeliveryNoteDetailResponse>> GetDeliveryNotesAsync(
         string productReference,
         CancellationToken cancellationToken = default);
+
+    Task<Result> UpdateDeliveryNoteAsync(
+        int num,
+        CreateDeliveryNoteRequest request,
+        CancellationToken cancellationToken);
 }

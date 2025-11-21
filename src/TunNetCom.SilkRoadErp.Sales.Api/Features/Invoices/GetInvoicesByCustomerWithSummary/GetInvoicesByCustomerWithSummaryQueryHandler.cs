@@ -9,6 +9,7 @@ public class GetInvoicesByCustomerWithSummaryQueryHandler(
     : IRequestHandler<GetInvoicesByCustomerWithSummaryQuery, Result<GetInvoiceListWithSummary>>
 {
     private const string _numberColumnName = nameof(InvoiceResponse.Number);
+    private const string _dateColumnName = nameof(InvoiceResponse.Date);
     private const string _grossAmountColumnName = nameof(InvoiceResponse.TotalExcludingTaxAmount);
     private const string _netAmountColumnName = nameof(InvoiceResponse.TotalIncludingTaxAmount);
 
@@ -77,6 +78,8 @@ public class GetInvoicesByCustomerWithSummaryQueryHandler(
         {
             (_numberColumnName, SortConstants.Ascending) => query.OrderBy(d => d.Number),
             (_numberColumnName, SortConstants.Descending) => query.OrderByDescending(d => d.Number),
+            (_dateColumnName, SortConstants.Ascending) => query.OrderBy(d => d.Date),
+            (_dateColumnName, SortConstants.Descending) => query.OrderByDescending(d => d.Date),
             (_netAmountColumnName, SortConstants.Ascending) => query.OrderBy(d => d.TotalIncludingTaxAmount),
             (_netAmountColumnName, SortConstants.Descending) => query.OrderByDescending(d => d.TotalIncludingTaxAmount),
             (_grossAmountColumnName, SortConstants.Ascending) => query.OrderBy(d => d.TotalExcludingTaxAmount),

@@ -1,0 +1,128 @@
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.DeliveryNotes.PrintDeliveryNote
+
+@code {
+    [Parameter] public PrintDeliveryNoteModel Model { get; set; } = null!;
+}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            font-size: 12px;
+            margin: 0;
+            padding: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            border: 1px solid #000;
+            padding: 5px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+
+        .text-left {
+            text-align: left;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-bold {
+            font-weight: bold;
+        }
+
+        .footer-container {
+            display: flex;
+            margin-top: 20px;
+            justify-content: space-between;
+        }
+
+        .totals {
+            width: 50%;
+            margin-left: auto;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .footer {
+            margin-top: 10px;
+            text-align: center;
+            font-style: italic;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <table>
+        <thead>
+            <tr>
+                <th>Code</th>
+                <th class="text-left">Désignation</th>
+                <th>Qte</th>
+                <th>P.H.T</th>
+                <th>Rem %</th>
+                <th>TOT H.T</th>
+                <th>TVA</th>
+                <th>TOT TTC</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var line in Model.Lines)
+            {
+                <tr>
+                    <td>@line.RefProduit</td>
+                    <td class="text-left">@line.DesignationLi</td>
+                    <td>@line.QteLi</td>
+                    <td class="text-right">@line.PrixHt.ToString("N3", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</td>
+                    <td class="text-right">@line.Remise.ToString("N2", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</td>
+                    <td class="text-right">@line.TotHt.ToString("N3", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</td>
+                    <td class="text-right">@line.Tva.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))%</td>
+                    <td class="text-right">@line.TotTtc.ToString("N3", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="footer-container">
+        <div class="totals">
+            <div class="total-row">
+                <span class="text-bold">Total HT:</span>
+                <span class="text-bold text-right">@Model.TotalExcludingTax.ToString("N3", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</span>
+            </div>
+            <div class="total-row">
+                <span class="text-bold">Total TVA:</span>
+                <span class="text-bold text-right">@Model.TotalVat.ToString("N3", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</span>
+            </div>
+            <div class="total-row">
+                <span class="text-bold">Total TTC:</span>
+                <span class="text-bold text-right">@Model.TotalAmount.ToString("N3", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Bon de Livraison N° @Model.Num - Date: @Model.Date.ToString("dd/MM/yyyy")</p>
+    </div>
+</body>
+</html>
+

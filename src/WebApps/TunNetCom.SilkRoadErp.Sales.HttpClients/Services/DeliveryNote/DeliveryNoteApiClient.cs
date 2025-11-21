@@ -297,4 +297,52 @@ public class DeliveryNoteApiClient(HttpClient _httpClient) : IDeliveryNoteApiCli
         // Deserialize the response
         return await response.Content.ReadFromJsonAsync<List<DeliveryNoteDetailResponse>>(cancellationToken);
     }
+
+    public async Task<Result> UpdateDeliveryNoteAsync(
+        int num,
+        CreateDeliveryNoteRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var response = await _httpClient.PutAsJsonAsync(
+                $"/deliveryNote/{num}",
+                request,
+                cancellationToken);
+
+            if (response.IsSuccessStatusCode)
+            {
+                return Result.Ok();
+            }
+
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return Result.Fail("Delivery note not found");
+            }
+
+            if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+            {
+                var problemDetails = await response.Content.ReadFromJsonAsync<BadRequestResponse>(
+                    cancellationToken);
+
+                if (problemDetails?.errors != null)
+                {
+                    var errors = problemDetails.errors
+                        .SelectMany(kvp => kvp.Value.Select(v => $"{kvp.Key}: {v}"));
+                    return Result.Fail(errors);
+                }
+                return Result.Fail("Validation failed but no error details provided");
+            }
+
+            return Result.Fail($"Failed to update delivery note: {response.StatusCode}");
+        }
+        catch (HttpRequestException ex)
+        {
+            return Result.Fail($"Network error occurred: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            return Result.Fail($"Unexpected error: {ex.Message}");
+        }
+    }
 }

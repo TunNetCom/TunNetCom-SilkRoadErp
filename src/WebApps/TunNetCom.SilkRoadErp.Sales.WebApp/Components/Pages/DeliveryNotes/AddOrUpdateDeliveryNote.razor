@@ -19,6 +19,7 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.DeliveryNotes.PrintDeliveryNote
 
 @inject IStringLocalizer<SharedResource> Localizer
 @inject ToastService toastService
@@ -31,6 +32,7 @@
 @inject IAppParametersClient appParametersClient
 @inject ILogger<AddOrUpdateDeliveryNote> logger
 @inject DialogService DialogService
+@inject PrintDeliveryNoteService PrintDeliveryNoteService
 
 <style>
     /* Header actions container */
@@ -246,6 +248,7 @@ else
                    ShowSaveButton="true"
                    ShowSummary="true"
                    OnSave="@SaveDeliveryNote"
+                   OnPrint="@PrintDeliveryNote"
                    TotalHt="@totalHt"
                    TotalVat="@totalVat"
                    TotalTtc="@totalTtc"
@@ -360,30 +363,58 @@ else
                 }).ToList()
             };
 
-            var response = await deliveryNoteApiClient.CreateDeliveryNoteAsync(request, _cancellationTokenSource.Token);
-
-            if (response.IsSuccess)
+            // Check if we're in edit mode (delivery note number exists)
+            int deliveryNoteNum = 0;
+            bool isEditMode = !string.IsNullOrEmpty(deliveryNoteNumber) && int.TryParse(deliveryNoteNumber, out deliveryNoteNum);
+            
+            if (isEditMode)
             {
-                NotificationService.Notify(new NotificationMessage
+                // Update existing delivery note
+                var updateResponse = await deliveryNoteApiClient.UpdateDeliveryNoteAsync(deliveryNoteNum, request, _cancellationTokenSource.Token);
+                
+                if (updateResponse.IsSuccess)
                 {
-                    Severity = NotificationSeverity.Success,
-                    Summary = Localizer["success"],
-                    Detail = Localizer["delivery_note_saved_successfully"]
-                });
-
-                if (string.IsNullOrEmpty(deliveryNoteNumber))
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = Localizer["success"],
+                        Detail = Localizer["delivery_note_updated_successfully"] ?? Localizer["delivery_note_saved_successfully"]
+                    });
+                }
+                else
                 {
-                    deliveryNoteNumber = response.ValueOrDefault.ToString();
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = Localizer["error"],
+                        Detail = $"{Localizer["failed_to_save_delivery_note"]}: {updateResponse.Errors.First().Message}"
+                    });
                 }
             }
             else
             {
-                NotificationService.Notify(new NotificationMessage
+                // Create new delivery note
+                var createResponse = await deliveryNoteApiClient.CreateDeliveryNoteAsync(request, _cancellationTokenSource.Token);
+                
+                if (createResponse.IsSuccess)
                 {
-                    Severity = NotificationSeverity.Error,
-                    Summary = Localizer["error"],
-                    Detail = $"{Localizer["failed_to_save_delivery_note"]}: {response.Errors.First().Message}"
-                });
+                    deliveryNoteNumber = createResponse.ValueOrDefault.ToString();
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = Localizer["success"],
+                        Detail = Localizer["delivery_note_saved_successfully"]
+                    });
+                }
+                else
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = Localizer["error"],
+                        Detail = $"{Localizer["failed_to_save_delivery_note"]}: {createResponse.Errors.First().Message}"
+                    });
+                }
             }
         }
         catch (Exception ex)
@@ -613,21 +644,47 @@ else
         }
 
         isLoadingInvoices = true;
+        
+        // Extract sort parameters from LoadDataArgs
+        string sortProperty = null;
+        string sortOrder = null;
+        if (args?.Sorts != null && args.Sorts.Any())
+        {
+            var sort = args.Sorts.First();
+            sortProperty = sort.Property;
+            sortOrder = sort.SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending;
+        }
+        else
+        {
+            // Default: sort by Date descending to get the latest invoices first (most recent first)
+            sortProperty = nameof(InvoiceResponse.Date);
+            sortOrder = SortConstants.Descending;
+        }
+
         var parameters = new QueryStringParameters
         {
             PageNumber = 1,
-            PageSize = 10,
-            SearchKeyword = null
+            PageSize = 5, // Get only the last 5 invoices
+            SearchKeyword = args?.Filter,
+            SortProprety = sortProperty,
+            SortOrder = sortOrder
         };
 
         try
         {
-            var pagedCustomers = await invoicesApiClient.GetInvoicesByCustomerIdWithSummary(
+            var result = await invoicesApiClient.GetInvoicesByCustomerIdWithSummary(
                 selectedCustomerId.Value,
                 parameters,
                 _cancellationTokenSource.Token);
 
-            _filteredInvoices = pagedCustomers.AsT0.Invoices.Items;
+            if (result.IsT0)
+            {
+                _filteredInvoices = result.AsT0.Invoices.Items;
+            }
+            else
+            {
+                _filteredInvoices = new List<InvoiceResponse>();
+            }
         }
         catch (Exception ex)
         {
@@ -741,6 +798,97 @@ else
         // Product selection is handled in the component, this is just for any additional logic
         UpdateTotals();
         await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task PrintDeliveryNote()
+    {
+        try
+        {
+            if (!orders.Any())
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = Localizer["warning"],
+                    Detail = Localizer["no_items_to_print"] ?? "No items to print"
+                });
+                return;
+            }
+
+            Result<byte[]> pdfResult;
+
+            // Check if delivery note is saved (has a number)
+            if (!string.IsNullOrEmpty(deliveryNoteNumber) && int.TryParse(deliveryNoteNumber, out var deliveryNoteNum))
+            {
+                // Print saved delivery note
+                pdfResult = await PrintDeliveryNoteService.GenerateDeliveryNotePdfAsync(
+                    deliveryNoteNum,
+                    _cancellationTokenSource.Token);
+            }
+            else
+            {
+                // Print from current data (not saved yet)
+                var printModel = new PrintDeliveryNoteModel
+                {
+                    Num = 0, // Not saved yet
+                    Date = deliveryNoteDate,
+                    DeliveryTime = TimeOnly.FromDateTime(DateTime.Now),
+                    CustomerId = selectedCustomerId,
+                    InvoiceNumber = selectedInvoiceId,
+                    TotalExcludingTax = totalHt,
+                    TotalVat = totalVat,
+                    TotalAmount = totalTtc,
+                    Lines = orders.Select(o => new DeliveryNoteLineModel
+                    {
+                        Id = o.Id,
+                        RefProduit = o.ProductReference,
+                        DesignationLi = o.Description,
+                        QteLi = o.Quantity,
+                        PrixHt = o.UnitPriceExcludingTax,
+                        Remise = o.DiscountPercentage,
+                        TotHt = o.TotalExcludingTax,
+                        Tva = o.VatPercentage,
+                        TotTtc = o.TotalIncludingTax
+                    }).ToList()
+                };
+
+                pdfResult = await PrintDeliveryNoteService.GenerateDeliveryNotePdfFromDataAsync(
+                    printModel,
+                    _cancellationTokenSource.Token);
+            }
+
+            if (pdfResult.IsSuccess)
+            {
+                var fileName = string.IsNullOrEmpty(deliveryNoteNumber)
+                    ? $"Bon de Livraison - {deliveryNoteDate:yyyy-MM-dd}.pdf"
+                    : $"Bon de Livraison {deliveryNoteNumber}.pdf";
+                
+                await JSRuntime.InvokeVoidAsync(
+                    "downloadFile",
+                    fileName,
+                    Convert.ToBase64String(pdfResult.Value),
+                    "application/pdf");
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = $"{Localizer["failed_to_print_delivery_note"] ?? "Failed to print delivery note"}: {pdfResult.Errors.First().Message}"
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"{Localizer["failed_to_print_delivery_note"] ?? "Failed to print delivery note"}: {ex.Message}"
+            });
+            logger.LogError(ex, "Failed to print delivery note");
+        }
     }
 
     async Task OnItemsChanged(List<DeliveryNoteDetailResponse> items)
