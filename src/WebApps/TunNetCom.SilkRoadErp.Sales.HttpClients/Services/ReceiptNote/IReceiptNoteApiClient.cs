@@ -1,6 +1,8 @@
 ﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.CreateReceiptNote;
+using TunNetCom.SilkRoadErp.Sales.Contracts;
 using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Request;
 using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Response;
+using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNote.Responses;
 
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote;
 
@@ -48,5 +50,10 @@ public interface IReceiptNoteApiClient
 
     Task<Result<int>> CreateReceiptNoteWithLinesRequestTemplate(CreateReceiptNoteWithLinesRequest createReceiptNoteWithLinesRequest,
         CancellationToken cancellationToken = default);
-    
+
+    Task<PagedList<ReceiptNoteDetailResponse>> GetReceiptNotesByProductReferenceAsync(
+        string productReference,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default);
 }

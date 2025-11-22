@@ -1,4 +1,5 @@
 ﻿using FluentResults;
+using TunNetCom.SilkRoadErp.Sales.Contracts;
 using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
 using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 using JsonException = System.Text.Json.JsonException;
@@ -289,13 +290,19 @@ public class DeliveryNoteApiClient(HttpClient _httpClient) : IDeliveryNoteApiCli
         }
     }
 
-    public async Task<List<DeliveryNoteDetailResponse>> GetDeliveryNotesAsync(string productReference, CancellationToken cancellationToken = default)
+    public async Task<PagedList<DeliveryNoteDetailResponse>> GetDeliveryNotesAsync(
+        string productReference,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default)
     {
-        var response = await _httpClient.GetAsync($"/deliveryNoteHistory/{productReference}", cancellationToken);
+        var queryParams = $"?PageNumber={pageNumber}&PageSize={pageSize}";
+        var response = await _httpClient.GetAsync($"/deliveryNoteHistory/{Uri.EscapeDataString(productReference)}{queryParams}", cancellationToken);
         _ = response.EnsureSuccessStatusCode();
 
         // Deserialize the response
-        return await response.Content.ReadFromJsonAsync<List<DeliveryNoteDetailResponse>>(cancellationToken);
+        return await response.Content.ReadFromJsonAsync<PagedList<DeliveryNoteDetailResponse>>(cancellationToken) 
+            ?? new PagedList<DeliveryNoteDetailResponse>();
     }
 
     public async Task<Result> UpdateDeliveryNoteAsync(

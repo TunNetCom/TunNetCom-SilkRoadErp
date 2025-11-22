@@ -1,6 +1,9 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.CreateReceiptNote;
+﻿using System.Net;
+using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.CreateReceiptNote;
+using TunNetCom.SilkRoadErp.Sales.Contracts;
 using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Request;
 using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Response;
+using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNote.Responses;
 
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote;
 
@@ -220,5 +223,34 @@ class ReceiptNoteApiClient : IReceiptNoteApiClient
         var receiptId = await response.Content.ReadFromJsonAsync<int>(cancellationToken: cancellationToken);
 
         return Result.Ok(receiptId);
+    }
+
+    public async Task<PagedList<ReceiptNoteDetailResponse>> GetReceiptNotesByProductReferenceAsync(
+        string productReference,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var queryParams = $"?PageNumber={pageNumber}&PageSize={pageSize}";
+            var response = await _httpClient.GetAsync($"/receiptNoteHistory/{Uri.EscapeDataString(productReference)}{queryParams}", cancellationToken);
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return new PagedList<ReceiptNoteDetailResponse>();
+            }
+
+            _ = response.EnsureSuccessStatusCode();
+
+            var receiptNotes = await response.Content.ReadFromJsonAsync<PagedList<ReceiptNoteDetailResponse>>(cancellationToken: cancellationToken);
+
+            return receiptNotes ?? new PagedList<ReceiptNoteDetailResponse>();
+        }
+        catch (HttpRequestException)
+        {
+            // Handle API errors (e.g., network issues, 500 errors)
+            return new PagedList<ReceiptNoteDetailResponse>();
+        }
     }
 }

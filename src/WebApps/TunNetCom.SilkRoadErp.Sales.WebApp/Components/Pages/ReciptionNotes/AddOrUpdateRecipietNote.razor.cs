@@ -15,6 +15,7 @@ using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProviderInvoice;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote;
+using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared;
 using TunNetCom.SilkRoadErp.Sales.WebApp.Components.SharedHelper;
 using TunNetCom.SilkRoadErp.Sales.WebApp.Locales;
 
@@ -527,8 +528,8 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
     {
         var settings = await DialogSettingsManager.LoadSettingsAsync(JSRuntime);
         
-        await DialogService.OpenAsync<DialogHistory>(
-            $"ProductReference {ProductReference}",
+        await DialogService.OpenAsync<ProductHistoryDialog>(
+            $"{Localizer["history"]} {Localizer["article"]} {ProductReference}",
             new Dictionary<string, object> { { "ProductReference", ProductReference } },
             DialogSettingsManager.CreateDialogOptions(settings, OnResize, OnDrag));
 

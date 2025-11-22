@@ -1,5 +1,9 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts;
+using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNotesBasedOnProductReference;
 
-public record GetDeliveryNotesBasedOnProductReferenceQuery(string ProductReference) : IRequest<List<DeliveryNoteDetailResponse>>;
+public record GetDeliveryNotesBasedOnProductReferenceQuery(
+    string ProductReference,
+    int PageNumber,
+    int PageSize) : IRequest<PagedList<DeliveryNoteDetailResponse>>;

@@ -1,4 +1,5 @@
 ﻿using FluentResults;
+using TunNetCom.SilkRoadErp.Sales.Contracts;
 using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
 using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 
@@ -52,8 +53,10 @@ public interface IDeliveryNoteApiClient
         int num,
         CancellationToken cancellationToken);
 
-    Task<List<DeliveryNoteDetailResponse>> GetDeliveryNotesAsync(
+    Task<PagedList<DeliveryNoteDetailResponse>> GetDeliveryNotesAsync(
         string productReference,
+        int pageNumber,
+        int pageSize,
         CancellationToken cancellationToken = default);
 
     Task<Result> UpdateDeliveryNoteAsync(

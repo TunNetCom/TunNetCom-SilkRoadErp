@@ -1,4 +1,7 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNotesBasedOnProductReference;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts;
+using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
+
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNotesBasedOnProductReference;
 
 public class GetDeliveryNotesBasedOnProductReferenceEndpoint : ICarterModule
 {
@@ -7,6 +10,8 @@ public class GetDeliveryNotesBasedOnProductReferenceEndpoint : ICarterModule
         _ = app.MapGet("/deliveryNoteHistory/{productReference}", async (
                 IMediator mediator,
                 string productReference,
+                [AsParameters] QueryStringParameters paginationQueryParams,
+                HttpContext httpContext,
                 CancellationToken cancellationToken) =>
         {
             if (string.IsNullOrWhiteSpace(productReference))
@@ -14,14 +19,29 @@ public class GetDeliveryNotesBasedOnProductReferenceEndpoint : ICarterModule
                 return Results.BadRequest("Product reference cannot be null or empty.");
             }
 
-            var query = new GetDeliveryNotesBasedOnProductReferenceQuery(productReference.Trim());
-            var deliveryNote = await mediator.Send(query, cancellationToken);
+            var query = new GetDeliveryNotesBasedOnProductReferenceQuery(
+                productReference.Trim(),
+                paginationQueryParams.PageNumber,
+                paginationQueryParams.PageSize);
 
-            return Results.Ok(deliveryNote);
+            var pagedDeliveryNotes = await mediator.Send(query, cancellationToken);
+
+            var metadata = new
+            {
+                pagedDeliveryNotes.TotalCount,
+                pagedDeliveryNotes.PageSize,
+                pagedDeliveryNotes.CurrentPage,
+                pagedDeliveryNotes.TotalPages,
+                pagedDeliveryNotes.HasNext,
+                pagedDeliveryNotes.HasPrevious
+            };
+            httpContext.Response.Headers["X-Pagination"] = JsonConvert.SerializeObject(metadata);
+
+            return Results.Ok(pagedDeliveryNotes);
         })
             .WithName("GetDeliveryNotesByProductReference")
             .WithTags(EndpointTags.DeliveryNotes)
-            .Produces(StatusCodes.Status200OK)
+            .Produces<PagedList<DeliveryNoteDetailResponse>>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest);
     }
 }

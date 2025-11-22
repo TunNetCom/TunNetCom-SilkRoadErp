@@ -573,4 +573,10 @@
   <data name="no_receipt_notes_found" xml:space="preserve">
     <value>لم يتم العثور على بوالص استلام لهذه الفاتورة</value>
   </data>
+  <data name="history" xml:space="preserve">
+    <value>تاريخ</value>
+  </data>
+  <data name="article" xml:space="preserve">
+    <value>مقال</value>
+  </data>
 </root>

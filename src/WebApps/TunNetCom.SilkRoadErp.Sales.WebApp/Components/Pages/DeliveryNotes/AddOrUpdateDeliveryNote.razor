@@ -978,7 +978,7 @@ else
     {
         await LoadStateAsync();
 
-        await DialogService.OpenAsync<HistoryDialog>($"ProductReference {ProductReference}",
+        await DialogService.OpenAsync<ProductHistoryDialog>($"{Localizer["history"]} {Localizer["article"]} {ProductReference}",
             new Dictionary<string, object>() { { "ProductReference", ProductReference } },
             new DialogOptions()
             {

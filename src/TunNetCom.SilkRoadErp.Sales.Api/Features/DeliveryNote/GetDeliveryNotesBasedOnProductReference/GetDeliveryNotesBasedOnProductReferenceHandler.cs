@@ -1,4 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNoteByNum;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts;
 using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNotesBasedOnProductReference;
@@ -6,60 +6,59 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNotes
 public class GetDeliveryNotesBasedOnProductReferenceHandler(
     SalesContext _context,
     ILogger<GetDeliveryNotesBasedOnProductReferenceHandler> _logger)
-    : IRequestHandler<GetDeliveryNotesBasedOnProductReferenceQuery, List<DeliveryNoteDetailResponse>>
+    : IRequestHandler<GetDeliveryNotesBasedOnProductReferenceQuery, PagedList<DeliveryNoteDetailResponse>>
 {
-    public async Task<List<DeliveryNoteDetailResponse>> Handle(GetDeliveryNotesBasedOnProductReferenceQuery request, CancellationToken cancellationToken)
+    public async Task<PagedList<DeliveryNoteDetailResponse>> Handle(GetDeliveryNotesBasedOnProductReferenceQuery request, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.ProductReference))
         {
-            return new List<DeliveryNoteDetailResponse>(); // Or throw an exception, depending on your logic
+            return new PagedList<DeliveryNoteDetailResponse>(new List<DeliveryNoteDetailResponse>(), 0, request.PageNumber, request.PageSize);
         }
 
-        // Use ToLower for case-insensitive comparison (database-friendly)
-        var deliveryNotes = await _context.LigneBonReception
-    .Include(ligne => ligne.NumBonRecNavigation)
-        .ThenInclude(bon => bon.IdFournisseurNavigation)
-    .Where(ligne => ligne.RefProduit != null &&
-                   ligne.RefProduit.ToLower() == request.ProductReference.ToLower() &&
-                   ligne.NumBonRecNavigation != null &&
-                   ligne.NumBonRecNavigation.IdFournisseurNavigation != null)
-    .OrderByDescending(ligne => ligne.NumBonRecNavigation.Date)
-    .Select(ligne => new
-    {
-        ligne,
-        NetTtcUnitaire = CalculateNetTtcUnitaire(ligne),
-        PrixHtFodec = ligne.NumBonRecNavigation.IdFournisseurNavigation.Constructeur ? ligne.PrixHt * 1.01m : (decimal?)null
-    })
-    .Select(x => new DeliveryNoteDetailResponse
-    {
-        ProductReference = x.ligne.RefProduit,
-        Description = x.ligne.DesignationLi,
-        Quantity = x.ligne.QteLi,
-        UnitPriceExcludingTax = x.ligne.PrixHt,
-        DiscountPercentage = x.ligne.Remise,
-        VatPercentage = x.ligne.Tva,
-        TotalExcludingTax = x.ligne.TotHt,
-        TotalIncludingTax = x.ligne.TotTtc,
-        Provider = x.ligne.NumBonRecNavigation.IdFournisseurNavigation.Nom,
-        Date = x.ligne.NumBonRecNavigation.Date,
-        NetTtcUnitaire = x.NetTtcUnitaire,
-        PrixHtFodec = x.PrixHtFodec
-    })
-    .ToListAsync(cancellationToken); 
+        // Query LigneBl (delivery note lines) for sales history
+        var deliveryNotesQuery = _context.LigneBl
+            .Include(ligne => ligne.NumBlNavigation)
+                .ThenInclude(bon => bon.Client)
+            .Where(ligne => ligne.RefProduit != null &&
+                           ligne.RefProduit.ToLower() == request.ProductReference.ToLower() &&
+                           ligne.NumBlNavigation != null)
+            .OrderByDescending(ligne => ligne.NumBlNavigation.Date)
+            .Select(ligne => new
+            {
+                ligne,
+                NetTtcUnitaire = CalculateNetTtcUnitaire(ligne),
+                PrixHtFodec = (decimal?)null // Fodec is not applicable for sales (delivery notes)
+            })
+            .Select(x => new DeliveryNoteDetailResponse
+            {
+                Id = x.ligne.IdLi,
+                ProductReference = x.ligne.RefProduit,
+                Description = x.ligne.DesignationLi,
+                Quantity = x.ligne.QteLi,
+                UnitPriceExcludingTax = x.ligne.PrixHt,
+                DiscountPercentage = x.ligne.Remise,
+                VatPercentage = x.ligne.Tva,
+                TotalExcludingTax = x.ligne.TotHt,
+                TotalIncludingTax = x.ligne.TotTtc,
+                Provider = x.ligne.NumBlNavigation.Client != null ? x.ligne.NumBlNavigation.Client.Nom : string.Empty,
+                Date = x.ligne.NumBlNavigation.Date,
+                NetTtcUnitaire = x.NetTtcUnitaire,
+                PrixHtFodec = x.PrixHtFodec
+            });
 
-        return deliveryNotes;
+        var pagedDeliveryNotes = await PagedList<DeliveryNoteDetailResponse>.ToPagedListAsync(
+            deliveryNotesQuery,
+            request.PageNumber,
+            request.PageSize,
+            cancellationToken);
+
+        return pagedDeliveryNotes;
     }
 
-    private static decimal CalculateNetTtcUnitaire(LigneBonReception ligne)
+    private static decimal CalculateNetTtcUnitaire(LigneBl ligne)
     {
         var valeurRemise = ligne.PrixHt * (decimal)ligne.Remise / 100;
         var totTmp = ligne.PrixHt - valeurRemise;
-        if (ligne.NumBonRecNavigation?.IdFournisseurNavigation?.Constructeur == true)
-        {
-            var fodec = ligne.PrixHt * 1.01m; // prix_HT + (prix_HT / 100)
-            valeurRemise = fodec * (decimal)ligne.Remise / 100;
-            totTmp = fodec - valeurRemise;
-        }
         return Math.Round(totTmp + (totTmp * (decimal)ligne.Tva / 100));
     }
 }

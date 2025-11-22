@@ -574,4 +574,10 @@
   <data name="no_receipt_notes_found" xml:space="preserve">
     <value>No Receipt Notes Found for this Invoice</value>
   </data>
+  <data name="history" xml:space="preserve">
+    <value>History</value>
+  </data>
+  <data name="article" xml:space="preserve">
+    <value>article</value>
+  </data>
 </root>
