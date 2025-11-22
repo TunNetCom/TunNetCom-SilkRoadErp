@@ -336,6 +336,21 @@
   <data name="print" xml:space="preserve">
     <value>Print</value>
   </data>
+  <data name="apply_discount" xml:space="preserve">
+    <value>Apply discount</value>
+  </data>
+  <data name="apply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="apply_discount_to_all" xml:space="preserve">
+    <value>Apply discount to all lines</value>
+  </data>
+  <data name="apply_vat" xml:space="preserve">
+    <value>Apply VAT</value>
+  </data>
+  <data name="apply_vat_to_all" xml:space="preserve">
+    <value>Apply VAT to all lines</value>
+  </data>
   <data name="failed_to_save_delivery_note" xml:space="preserve">
     <value>Failed to Save Delivery Note</value>
   </data>

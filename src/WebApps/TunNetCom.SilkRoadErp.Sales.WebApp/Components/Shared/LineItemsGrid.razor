@@ -1,3 +1,4 @@
+@using Radzen
 @using Radzen.Blazor
 @using Microsoft.Extensions.Localization
 @using Microsoft.JSInterop
@@ -7,6 +8,7 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @typeparam TItem where TItem : class, ILineItem
 @inject IJSRuntime JSRuntime
+@inject DialogService DialogService
 
 <div id="@componentId">
 <RadzenDataGrid @ref="ordersGrid" 
@@ -24,6 +26,26 @@
                               Click="@(async () => await InsertRow())" 
                               class="action-button success-button"
                               AriaLabel="@Localizer["add_new_order"]" />
+
+                <RadzenButton ButtonStyle="ButtonStyle.Info"
+                              Icon="percent"
+                              Text="@Localizer["apply_discount"]"
+                              Variant="Variant.Flat"
+                              Size="ButtonSize.Small"
+                              Disabled="@(!Items.Any())"
+                              Click="@OpenDiscountDialog"
+                              class="action-button"
+                              AriaLabel="@Localizer["apply_discount_to_all"]" />
+
+                <RadzenButton ButtonStyle="ButtonStyle.Info"
+                              Icon="receipt"
+                              Text="@Localizer["apply_vat"]"
+                              Variant="Variant.Flat"
+                              Size="ButtonSize.Small"
+                              Disabled="@(!Items.Any())"
+                              Click="@OpenVatDialog"
+                              class="action-button"
+                              AriaLabel="@Localizer["apply_vat_to_all"]" />
 
                 @if (ShowPrintButton)
                 {
@@ -147,14 +169,14 @@
                                Change="@(args => OnDiscountChanged(order, args))"
                                Style="width:100%;"
                                Min="0"
-                               Max="50"
+                               Max="@((decimal)MaxDiscountPercentage)"
                                Step="0.01"
                                Format="N2"
                                Name="Discount"/>
             </Template>
         </RadzenDataGridColumn>
 
-        <RadzenDataGridColumn Title="@Localizer["total_excluding_tax"]">
+        <RadzenDataGridColumn Width="120px" Title="@Localizer["total_excluding_tax"]">
             <Template Context="order">
                 @order.TotalExcludingTax.FormatAmount()
             </Template>
@@ -168,7 +190,7 @@
                                Change="@(args => OnVatChanged(order, args))"
                                Style="width:100%;"
                                Min="0"
-                               Max="50"
+                               Max="@((decimal)MaxVatPercentage)"
                                Step="0.01"
                                Format="N2"
                                Name="Vat"/>
@@ -344,6 +366,8 @@
     [Parameter] public string ProductTextProperty { get; set; } = "ProductReferenceAndDescription";
     [Parameter] public string ProductValueProperty { get; set; } = "ProductReference";
     [Parameter] public Func<TItem> CreateNewItem { get; set; }
+    [Parameter] public double MaxDiscountPercentage { get; set; } = 50.0;
+    [Parameter] public double MaxVatPercentage { get; set; } = 50.0;
 
     RadzenDataGrid<TItem> ordersGrid;
     private DotNetObjectReference<LineItemsGrid<TItem>>? objRef;
@@ -398,10 +422,10 @@
     {
         if (value != null && double.TryParse(value.ToString(), out double discount))
         {
-            // Limit discount to 50%
-            if (discount > 50)
+            // Limit discount to MaxDiscountPercentage
+            if (discount > MaxDiscountPercentage)
             {
-                discount = 50;
+                discount = MaxDiscountPercentage;
             }
             if (discount < 0)
             {
@@ -417,10 +441,10 @@
     {
         if (value != null && double.TryParse(value.ToString(), out double vat))
         {
-            // Limit VAT to 50%
-            if (vat > 50)
+            // Limit VAT to MaxVatPercentage
+            if (vat > MaxVatPercentage)
             {
-                vat = 50;
+                vat = MaxVatPercentage;
             }
             if (vat < 0)
             {
@@ -478,6 +502,96 @@
             await ItemsChanged.InvokeAsync(Items);
         }
         await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OpenDiscountDialog()
+    {
+        if (!Items.Any())
+        {
+            return;
+        }
+
+        var result = await DialogService.OpenAsync<ApplyDiscountDialog>(
+            Localizer["apply_discount_to_all"],
+            new Dictionary<string, object> { { "MaxValue", MaxDiscountPercentage } },
+            new DialogOptions() 
+            { 
+                Width = "400px",
+                Resizable = false,
+                Draggable = true
+            });
+
+        if (result is double discountValue)
+        {
+            await ApplyDiscountToAll(discountValue);
+        }
+    }
+
+    private async Task OpenVatDialog()
+    {
+        if (!Items.Any())
+        {
+            return;
+        }
+
+        var result = await DialogService.OpenAsync<ApplyVatDialog>(
+            Localizer["apply_vat_to_all"],
+            new Dictionary<string, object> { { "MaxValue", MaxVatPercentage } },
+            new DialogOptions() 
+            { 
+                Width = "400px",
+                Resizable = false,
+                Draggable = true
+            });
+
+        if (result is double vatValue)
+        {
+            await ApplyVatToAll(vatValue);
+        }
+    }
+
+    private async Task ApplyDiscountToAll(double discount)
+    {
+        // Limit discount to MaxDiscountPercentage
+        if (discount > MaxDiscountPercentage)
+        {
+            discount = MaxDiscountPercentage;
+        }
+        if (discount < 0)
+        {
+            discount = 0;
+        }
+
+        // Apply discount to all items
+        foreach (var item in Items)
+        {
+            item.DiscountPercentage = discount;
+            LineItemCalculator.CalculateTotals(item);
+        }
+
+        await NotifyItemsChanged();
+    }
+
+    private async Task ApplyVatToAll(double vat)
+    {
+        // Limit VAT to MaxVatPercentage
+        if (vat > MaxVatPercentage)
+        {
+            vat = MaxVatPercentage;
+        }
+        if (vat < 0)
+        {
+            vat = 0;
+        }
+
+        // Apply VAT to all items
+        foreach (var item in Items)
+        {
+            item.VatPercentage = vat;
+            LineItemCalculator.CalculateTotals(item);
+        }
+
+        await NotifyItemsChanged();
     }
 
     async Task InsertRow()

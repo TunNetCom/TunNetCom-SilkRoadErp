@@ -10,6 +10,16 @@ public class PrintDeliveryNoteModel
     public decimal TotalExcludingTax { get; set; }
     public decimal TotalVat { get; set; }
     public decimal TotalAmount { get; set; }
+    public decimal Timbre { get; set; }
+    public decimal TotalTTC { get; set; }
+    
+    // TVA breakdown
+    public decimal Base19 { get; set; }
+    public decimal Base13 { get; set; }
+    public decimal Base7 { get; set; }
+    public decimal Tva19 { get; set; }
+    public decimal Tva13 { get; set; }
+    public decimal Tva7 { get; set; }
 
     public DeliveryNoteCustomerModel? Customer { get; set; }
     public List<DeliveryNoteLineModel> Lines { get; set; } = new();

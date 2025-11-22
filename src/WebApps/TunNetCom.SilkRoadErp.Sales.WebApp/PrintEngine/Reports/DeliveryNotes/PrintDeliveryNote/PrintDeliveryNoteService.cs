@@ -34,10 +34,9 @@ public class PrintDeliveryNoteService(
         // Load customer if available
         if (printModel.CustomerId.HasValue)
         {
-            var customers = await _customersApiClient.GetAsync(
-                new QueryStringParameters { PageNumber = 1, PageSize = 1 },
+            var customer = await _customersApiClient.GetCustomerByIdAsync(
+                printModel.CustomerId.Value,
                 cancellationToken);
-            var customer = customers.Items.FirstOrDefault(c => c.Id == printModel.CustomerId.Value);
             if (customer != null)
             {
                 printModel.Customer = new DeliveryNoteCustomerModel
@@ -57,6 +56,9 @@ public class PrintDeliveryNoteService(
         {
             return Result.Fail("Failed to retrieve app parameters");
         }
+
+        printModel.Timbre = getAppParametersResponse.Value.Timbre;
+        CalculateTotalAmounts(printModel);
 
         var printOptions = PreparePrintOptions(printModel, getAppParametersResponse.Value);
 
@@ -72,10 +74,9 @@ public class PrintDeliveryNoteService(
         // Load customer if available
         if (printModel.CustomerId.HasValue && printModel.Customer == null)
         {
-            var customers = await _customersApiClient.GetAsync(
-                new QueryStringParameters { PageNumber = 1, PageSize = 1 },
+            var customer = await _customersApiClient.GetCustomerByIdAsync(
+                printModel.CustomerId.Value,
                 cancellationToken);
-            var customer = customers.Items.FirstOrDefault(c => c.Id == printModel.CustomerId.Value);
             if (customer != null)
             {
                 printModel.Customer = new DeliveryNoteCustomerModel
@@ -96,11 +97,25 @@ public class PrintDeliveryNoteService(
             return Result.Fail("Failed to retrieve app parameters");
         }
 
+        printModel.Timbre = getAppParametersResponse.Value.Timbre;
+        CalculateTotalAmounts(printModel);
+
         var printOptions = PreparePrintOptions(printModel, getAppParametersResponse.Value);
 
         var pdfBytes = await _printService.GeneratePdfAsync(printModel, printOptions, cancellationToken);
 
         return Result.Ok(pdfBytes);
+    }
+
+    private static void CalculateTotalAmounts(PrintDeliveryNoteModel printModel)
+    {
+        printModel.Base19 = printModel.Lines.Where(l => l.Tva == 19).Sum(l => l.TotHt);
+        printModel.Base13 = printModel.Lines.Where(l => l.Tva == 13).Sum(l => l.TotHt);
+        printModel.Base7 = printModel.Lines.Where(l => l.Tva == 7).Sum(l => l.TotHt);
+        printModel.Tva19 = printModel.Lines.Where(l => l.Tva == 19).Sum(l => l.TotTtc - l.TotHt);
+        printModel.Tva13 = printModel.Lines.Where(l => l.Tva == 13).Sum(l => l.TotTtc - l.TotHt);
+        printModel.Tva7 = printModel.Lines.Where(l => l.Tva == 7).Sum(l => l.TotTtc - l.TotHt);
+        printModel.TotalTTC = printModel.TotalAmount + printModel.Timbre;
     }
 
     private static PrintDeliveryNoteModel MapToPrintModel(DeliveryNoteResponse deliveryNote)

@@ -321,7 +321,11 @@ else
         getAppParametersResponse = param.AsT0;
         await LoadCustomers(null);
         await FetchDeliveryNote();
-        await LoadCustomerInvoices(null);
+        // Only load invoices if customer is already selected (edit mode)
+        if (selectedCustomerId.HasValue)
+        {
+            await LoadCustomerInvoices(null);
+        }
         isLoading = false;
     }
 

@@ -103,25 +103,59 @@
         </tbody>
     </table>
 
-    <div class="footer-container">
-        <div class="totals">
-            <div class="total-row">
-                <span class="text-bold">Total HT:</span>
-                <span class="text-bold text-right">@Model.TotalExcludingTax.ToString("N3", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</span>
-            </div>
-            <div class="total-row">
-                <span class="text-bold">Total TVA:</span>
-                <span class="text-bold text-right">@Model.TotalVat.ToString("N3", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</span>
-            </div>
-            <div class="total-row">
-                <span class="text-bold">Total TTC:</span>
-                <span class="text-bold text-right">@Model.TotalAmount.ToString("N3", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</span>
-            </div>
+    <div class="footer-container" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 30px; margin-top: 20px;">
+        <!-- TVA Bases Section -->
+        <div class="tva-bases" style="flex: 1; min-width: 0;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th style="text-align: left; padding: 5px; border-bottom: 1px solid #ddd;">tx TVA</th>
+                    <th style="text-align: right; padding: 5px; border-bottom: 1px solid #ddd;">19%</th>
+                    <th style="text-align: right; padding: 5px; border-bottom: 1px solid #ddd;">13%</th>
+                    <th style="text-align: right; padding: 5px; border-bottom: 1px solid #ddd;">7%</th>
+                    <th style="text-align: right; padding: 5px; border-bottom: 1px solid #ddd;">Total</th>
+                </tr>
+                <tr>
+                    <td style="text-align: left; padding: 5px;">Base</td>
+                    <td style="text-align: right; padding: 5px; font-family: monospace;">@Model.Base19.FormatAmount()</td>
+                    <td style="text-align: right; padding: 5px; font-family: monospace;">@Model.Base13.FormatAmount()</td>
+                    <td style="text-align: right; padding: 5px; font-family: monospace;">@Model.Base7.FormatAmount()</td>
+                    <td style="text-align: right; padding: 5px; font-family: monospace;">@Model.TotalExcludingTax.FormatAmount()</td>
+                </tr>
+                <tr>
+                    <td style="text-align: left; padding: 5px;">Mt TVA</td>
+                    <td style="text-align: right; padding: 5px; font-family: monospace;">@Model.Tva19.FormatAmount()</td>
+                    <td style="text-align: right; padding: 5px; font-family: monospace;">@Model.Tva13.FormatAmount()</td>
+                    <td style="text-align: right; padding: 5px; font-family: monospace;">@Model.Tva7.FormatAmount()</td>
+                    <td style="text-align: right; padding: 5px; font-family: monospace;">@Model.TotalVat.FormatAmount()</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Totals Section -->
+        <div class="totals" style="flex: 0 0 auto;">
+            <table style="border-collapse: collapse; width: 100%;">
+                <tr>
+                    <td style="text-align: left; padding: 5px; border-bottom: 1px solid #eee;">Total HT:</td>
+                    <td style="text-align: right; padding: 5px; border-bottom: 1px solid #eee; font-family: monospace;">@Model.TotalExcludingTax.FormatAmount()</td>
+                </tr>
+                <tr>
+                    <td style="text-align: left; padding: 5px; border-bottom: 1px solid #eee;">Total TVA:</td>
+                    <td style="text-align: right; padding: 5px; border-bottom: 1px solid #eee; font-family: monospace;">@Model.TotalVat.FormatAmount()</td>
+                </tr>
+                <tr>
+                    <td style="text-align: left; padding: 5px; border-bottom: 1px solid #eee;">Timbre:</td>
+                    <td style="text-align: right; padding: 5px; border-bottom: 1px solid #eee; font-family: monospace;">@Model.Timbre.ToString("N2", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</td>
+                </tr>
+                <tr>
+                    <td style="text-align: left; padding: 5px; font-weight: bold;">Total TTC:</td>
+                    <td style="text-align: right; padding: 5px; font-weight: bold; background-color: #f5f5f5; font-family: monospace;">@Model.TotalTTC.FormatAmount()</td>
+                </tr>
+            </table>
         </div>
     </div>
 
     <div class="footer">
-        <p>Bon de Livraison N° @Model.Num - Date: @Model.Date.ToString("dd/MM/yyyy")</p>
+        @AmountHelper.ConvertFloatToFrenchToWords((float)Model.TotalTTC, AmountHelper.TYPE_BL)
     </div>
 </body>
 </html>
