@@ -1,6 +1,4 @@
-﻿using FluentResults;
-using TunNetCom.SilkRoadErp.Sales.Contracts;
-using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
 using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote;

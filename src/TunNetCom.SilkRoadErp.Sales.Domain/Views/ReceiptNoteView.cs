@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Views;
 

@@ -1,6 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetInvoicesByCustomerWithSummary;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetInvoicesWithIds;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetInvoicesWithIds;
 
 public class GetInvoicesByIdsEndpoint : ICarterModule
 {

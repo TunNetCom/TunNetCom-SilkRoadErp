@@ -1,13 +1,4 @@
-﻿using FluentResults;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Moq;
-using System.Threading;
-using System.Threading.Tasks;
-using TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderInvoice.GetFullProviderInvoice;
-using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;
-using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
-using Xunit;
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderInvoice.GetFullProviderInvoice;
 
 public class GetFullProviderInvoiceQueryHandlerTests
 {

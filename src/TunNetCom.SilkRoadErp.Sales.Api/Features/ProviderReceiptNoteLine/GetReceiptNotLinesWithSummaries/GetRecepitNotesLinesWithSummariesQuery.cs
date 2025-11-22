@@ -1,5 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Classes;
-using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Response;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Response;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderReceiptNoteLine.GetReceiptNotLinesWithSummaries;
 

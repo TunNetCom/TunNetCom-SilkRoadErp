@@ -1,8 +1,4 @@
-﻿using FluentAssertions;
-using FluentResults;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetInvoicesWithIds;
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetInvoicesWithIds;
 namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices
 {
     public class GetInvoicesWithIdsQueryHandlerTest

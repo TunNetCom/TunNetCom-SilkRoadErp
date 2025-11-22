@@ -1,7 +1,4 @@
-﻿using MediatR;
-
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.GetCustomerById;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.GetCustomerById;
 
 public class GetCustomerByIdQueryHandler(
     SalesContext _context,

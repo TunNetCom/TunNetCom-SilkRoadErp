@@ -1,11 +1,4 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-using Carter;
-using MediatR;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
-using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters;
-using FluentResults;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.AppParameters.GetAppParameters;
 

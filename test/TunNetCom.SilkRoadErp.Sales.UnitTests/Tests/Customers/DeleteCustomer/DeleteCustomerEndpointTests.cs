@@ -1,5 +1,4 @@
 ﻿using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.ResultExtensions;
-using Xunit;
 
 namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers.Endpoints;
 

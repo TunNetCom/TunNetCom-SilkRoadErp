@@ -1,14 +1,5 @@
-﻿using FluentAssertions;
-using FluentResults;
-using MediatR;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Moq;
-using System.Threading;
-using System.Threading.Tasks;
-using TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.UpdateProvider;
-using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.ResultExtensions;
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.ResultExtensions;
 using TunNetCom.SilkRoadErp.Sales.Contracts.Providers;
-using Xunit;
 
 namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Providers
 {

@@ -3,8 +3,6 @@ using TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNote;
 using TunNetCom.SilkRoadErp.Sales.Contracts;
 using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 
-using Xunit;
-
 namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.DeliveryNotes.GetDeliveryNote
 {
     public class GetDeliveryNoteEndpointTest

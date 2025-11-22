@@ -1,5 +1,4 @@
-﻿using Xunit;
-using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.DetachReceiptNotesFromInvoice;
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.DetachReceiptNotesFromInvoice;
 using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.ResultExtensions;
 
 namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes

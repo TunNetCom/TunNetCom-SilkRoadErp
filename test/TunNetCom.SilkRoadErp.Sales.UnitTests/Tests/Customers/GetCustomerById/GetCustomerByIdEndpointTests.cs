@@ -1,7 +1,6 @@
 ﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.GetCustomerById;
 using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.ResultExtensions;
 using TunNetCom.SilkRoadErp.Sales.Contracts.Customers;
-using Xunit;
 namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers.Endpoints;
 
 public class GetCustomerByIdEndpointTests

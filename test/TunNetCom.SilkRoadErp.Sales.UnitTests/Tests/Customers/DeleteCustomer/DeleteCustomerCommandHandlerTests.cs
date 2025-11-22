@@ -1,5 +1,4 @@
-﻿using Xunit;
-namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers.DeleteCustomer;
+﻿namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers.DeleteCustomer;
 
 public class DeleteCustomerCommandHandlerTests
 {

@@ -1,6 +1,4 @@
-﻿using FluentValidation;
-using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.CreateReceiptNote;
-using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Request;
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.CreateReceiptNote;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderReceiptNoteLine.CreateReceiptNoteWithLines;
 

@@ -1,16 +1,4 @@
-﻿using FluentAssertions;
-using FluentResults;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Moq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNotesByClientId;
-using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
-using Xunit;
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNotesByClientId;
 
 namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.DeliveryNotes
 {

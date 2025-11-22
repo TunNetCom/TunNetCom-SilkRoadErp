@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.AttachReceiptNotesToInvoice;
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.AttachReceiptNotesToInvoice;
 using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.ResultExtensions;
 
 namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes

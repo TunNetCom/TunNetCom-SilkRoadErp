@@ -1,7 +1,4 @@
-﻿using FluentAssertions;
-using TunNetCom.SilkRoadErp.Sales.Api.Features.Products.UpdateProduct;
-using Xunit;
-public class UpdateProductValidatorTests
+﻿public class UpdateProductValidatorTests
 {
     private readonly UpdateProductValidator _validator;
     public UpdateProductValidatorTests()

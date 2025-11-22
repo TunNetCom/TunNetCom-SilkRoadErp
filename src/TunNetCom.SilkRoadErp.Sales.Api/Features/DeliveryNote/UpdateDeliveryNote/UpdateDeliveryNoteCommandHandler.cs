@@ -1,6 +1,3 @@
-using Microsoft.EntityFrameworkCore;
-using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
-
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.UpdateDeliveryNote;
 
 public class UpdateDeliveryNoteCommandHandler(

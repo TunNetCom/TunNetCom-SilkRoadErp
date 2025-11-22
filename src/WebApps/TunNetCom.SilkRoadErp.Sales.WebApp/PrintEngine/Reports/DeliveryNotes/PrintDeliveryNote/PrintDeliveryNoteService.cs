@@ -1,11 +1,8 @@
-using FluentResults;
-using TunNetCom.SilkRoadErp.Sales.Contracts;
 using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters;
 using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote;
-using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure;
 
 namespace TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.DeliveryNotes.PrintDeliveryNote;
 

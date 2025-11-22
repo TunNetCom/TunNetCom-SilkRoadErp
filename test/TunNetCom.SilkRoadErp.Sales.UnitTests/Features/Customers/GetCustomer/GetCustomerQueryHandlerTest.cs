@@ -1,7 +1,4 @@
-﻿using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers
+﻿namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers
 {
     public class GetCustomerQueryHandlerTest
     {

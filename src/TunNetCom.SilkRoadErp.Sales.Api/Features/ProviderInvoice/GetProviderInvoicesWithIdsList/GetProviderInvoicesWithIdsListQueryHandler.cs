@@ -1,14 +1,4 @@
-﻿using FluentResults;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;
-using TunNetCom.SilkRoadErp.Sales.Domain.Views;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderInvoice.GetProviderInvoicesWithIdsList
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderInvoice.GetProviderInvoicesWithIdsList
 {
     public class GetProviderInvoicesWithIdsListQueryHandler
         : IRequestHandler<GetProviderInvoicesWithIdsListQuery, List<ProviderInvoiceResponse>>

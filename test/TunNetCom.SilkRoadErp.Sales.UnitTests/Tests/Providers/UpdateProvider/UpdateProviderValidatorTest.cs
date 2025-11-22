@@ -1,7 +1,4 @@
-﻿using FluentAssertions;
-using FluentValidation.Results;
-using TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.UpdateProvider;
-using Xunit;
+﻿using FluentValidation.Results;
 
 public class UpdateProviderValidatorTest
 {

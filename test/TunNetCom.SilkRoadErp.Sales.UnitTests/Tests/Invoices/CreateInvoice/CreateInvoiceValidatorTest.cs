@@ -1,6 +1,5 @@
 ﻿
 using TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.CreateInvoice;
-using Xunit;
 
 namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.CreateInvoice
 {

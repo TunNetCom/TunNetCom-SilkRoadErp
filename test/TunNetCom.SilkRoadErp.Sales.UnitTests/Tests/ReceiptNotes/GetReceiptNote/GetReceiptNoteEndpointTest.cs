@@ -1,5 +1,4 @@
-﻿using Xunit;
-using TunNetCom.SilkRoadErp.Sales.Contracts;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts;
 using TunNetCom.SilkRoadErp.Sales.Contracts.RecieptNotes;
 using System.Text.Json;
 namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes

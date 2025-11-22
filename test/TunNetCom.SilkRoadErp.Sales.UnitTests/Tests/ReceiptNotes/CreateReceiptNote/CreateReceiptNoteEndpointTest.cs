@@ -1,5 +1,4 @@
-﻿using Xunit;
-using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.CreateReceiptNote;
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.CreateReceiptNote;
 using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.ResultExtensions;
 using TunNetCom.SilkRoadErp.Sales.Contracts.RecieptNotes;
 

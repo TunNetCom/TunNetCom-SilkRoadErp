@@ -1,5 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts;
-using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNotesBasedOnProductReference;
 

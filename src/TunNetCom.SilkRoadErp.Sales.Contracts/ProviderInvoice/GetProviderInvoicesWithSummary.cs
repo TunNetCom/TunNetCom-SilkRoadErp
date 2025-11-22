@@ -1,7 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.Invoice;
-using TunNetCom.SilkRoadErp.Sales.Contracts;
-
-namespace TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;
 public class GetProviderInvoicesWithSummary
 {
     [JsonPropertyName("totalGrossAmount")]

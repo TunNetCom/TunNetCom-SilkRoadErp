@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using OneOf.Types;
-using TunNetCom.SilkRoadErp.Sales.Contracts.Commande;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.Commande;
 
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Orders;
  public interface IOrderApiClient

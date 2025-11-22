@@ -1,6 +1,4 @@
-﻿using Azure.Core;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderInvoice.GetProvidersInvoices;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderInvoice.GetProvidersInvoices;
 
 public class GetProvidersInvoicesQueryHandler(
     SalesContext _context,

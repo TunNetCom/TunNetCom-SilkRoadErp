@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.CreateReceiptNote;
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.CreateReceiptNote;
 namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes
 {
     public class CreateReceiptNoteValidatorTest

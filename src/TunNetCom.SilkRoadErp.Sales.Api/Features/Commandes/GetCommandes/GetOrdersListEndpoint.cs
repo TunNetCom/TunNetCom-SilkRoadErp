@@ -1,9 +1,4 @@
 ﻿using TunNetCom.SilkRoadErp.Sales.Contracts.Commande;
-using Carter;
-using MediatR;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Commandes.GetCommandes;
 

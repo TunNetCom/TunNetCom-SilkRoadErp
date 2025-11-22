@@ -1,7 +1,3 @@
-using Carter;
-using FluentResults;
-using MediatR;
-using TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.UpdateDeliveryNote;
 using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.UpdateDeliveryNote;

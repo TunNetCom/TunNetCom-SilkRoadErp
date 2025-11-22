@@ -1,10 +1,4 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Routing;
-using Microsoft.AspNetCore.Mvc;
-using MediatR;
-using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
 
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.AttachToInvoice;

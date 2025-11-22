@@ -1,5 +1,4 @@
 using System.Threading.RateLimiting;
-using Microsoft.AspNetCore.Mvc;
 using System.Reflection;
 using Scalar.AspNetCore;
 

@@ -1,6 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetFullInvoiceById;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderInvoice.GetFullProviderInvoice;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderInvoice.GetFullProviderInvoice;
 
 public class GetFullProviderInvoiceEndpoint : ICarterModule
 {

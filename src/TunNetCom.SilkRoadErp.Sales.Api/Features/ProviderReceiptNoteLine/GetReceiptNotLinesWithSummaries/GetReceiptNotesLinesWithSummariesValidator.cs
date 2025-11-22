@@ -1,5 +1,4 @@
-﻿using FluentValidation;
-using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Request;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Request;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderReceiptNoteLine.GetReceiptNotLinesWithSummaries;
 

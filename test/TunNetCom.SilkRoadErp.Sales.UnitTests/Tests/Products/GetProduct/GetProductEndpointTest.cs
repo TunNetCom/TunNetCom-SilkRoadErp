@@ -1,16 +1,6 @@
-﻿using FluentAssertions;
-using MediatR;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Moq;
-using Newtonsoft.Json;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using TunNetCom.SilkRoadErp.Sales.Api.Features.Products.GetProduct;
+﻿using Newtonsoft.Json;
 using TunNetCom.SilkRoadErp.Sales.Contracts;
 using TunNetCom.SilkRoadErp.Sales.Contracts.Products;
-using Xunit;
 
 namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Products
 {

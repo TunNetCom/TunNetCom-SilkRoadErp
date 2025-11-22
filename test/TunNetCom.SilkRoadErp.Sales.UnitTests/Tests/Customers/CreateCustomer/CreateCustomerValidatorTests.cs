@@ -1,5 +1,4 @@
-﻿using Xunit;
-namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers.CreateCustomer;
+﻿namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers.CreateCustomer;
 
 public class CreateCustomerValidatorTest
 {

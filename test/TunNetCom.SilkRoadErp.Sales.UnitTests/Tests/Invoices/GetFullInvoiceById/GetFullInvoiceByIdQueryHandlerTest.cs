@@ -1,6 +1,5 @@
 ﻿
 using TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetFullInvoiceById;
-using Xunit;
 
 namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.GetFullInvoiceByldTest
 {

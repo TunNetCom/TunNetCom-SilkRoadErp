@@ -1,6 +1,4 @@
-﻿using System.Security.Cryptography;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.AppParameters.UpdateAppParameters;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.AppParameters.UpdateAppParameters;
 public record UpdateAppParametersCommand(
     string NomSociete,
     decimal? Timbre,

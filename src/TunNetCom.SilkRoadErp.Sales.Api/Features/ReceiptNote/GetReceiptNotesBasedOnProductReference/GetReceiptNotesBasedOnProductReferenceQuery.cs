@@ -1,4 +1,3 @@
-using TunNetCom.SilkRoadErp.Sales.Contracts;
 using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNote.Responses;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNotesBasedOnProductReference;

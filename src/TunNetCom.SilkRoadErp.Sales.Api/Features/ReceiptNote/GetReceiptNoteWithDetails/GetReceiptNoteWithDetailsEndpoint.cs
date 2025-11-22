@@ -1,5 +1,4 @@
-﻿using System;
-using TunNetCom.SilkRoadErp.Sales.Contracts.RecieptNotes.Request;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.RecieptNotes.Request;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNoteWithDetails
 {

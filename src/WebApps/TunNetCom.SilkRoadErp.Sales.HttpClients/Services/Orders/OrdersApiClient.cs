@@ -1,11 +1,4 @@
-﻿using FluentResults;
-using Microsoft.Extensions.Logging;
-using System.Net;
-using System.Net.Http.Json;
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
-using TunNetCom.SilkRoadErp.Sales.Contracts.Commande;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.Commande;
 
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Orders
 {

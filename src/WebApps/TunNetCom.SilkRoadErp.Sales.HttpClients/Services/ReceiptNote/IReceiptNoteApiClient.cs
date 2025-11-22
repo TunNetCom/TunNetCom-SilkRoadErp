@@ -1,5 +1,4 @@
 ﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.CreateReceiptNote;
-using TunNetCom.SilkRoadErp.Sales.Contracts;
 using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Request;
 using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Response;
 using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNote.Responses;

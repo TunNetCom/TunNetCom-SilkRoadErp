@@ -1,13 +1,5 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Moq;
-using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.AttachReceiptNotesToInvoice;
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.AttachReceiptNotesToInvoice;
 using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.ResultExtensions;
-using TunNetCom.SilkRoadErp.Sales.Domain.Views;
-using Xunit;
 
 namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes
 {

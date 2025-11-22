@@ -1,5 +1,3 @@
-using System.Text.Json.Serialization;
-
 namespace TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNote.Responses;
 
 public class ReceiptNoteDetailResponse

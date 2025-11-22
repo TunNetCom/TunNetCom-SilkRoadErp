@@ -1,7 +1,6 @@
 ﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.Commandes.GetCommandes;
 using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.ResultExtensions;
 using TunNetCom.SilkRoadErp.Sales.Contracts.Commande;
-using Xunit;
 
 namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Commande
 {

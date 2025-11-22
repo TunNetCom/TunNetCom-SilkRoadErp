@@ -1,16 +1,5 @@
-﻿using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using FluentAssertions;
-using MediatR;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;
-using FluentResults;
-using Moq;
-using TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.CreateInvoice;
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.CreateInvoice;
 using TunNetCom.SilkRoadErp.Sales.Contracts.Invoice;
-using Xunit;
 
 namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.CreateInvoice
 {

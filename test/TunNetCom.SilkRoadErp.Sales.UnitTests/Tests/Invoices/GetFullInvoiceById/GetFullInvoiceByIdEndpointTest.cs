@@ -1,7 +1,6 @@
 ﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetFullInvoiceById;
 using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.ResultExtensions;
 using TunNetCom.SilkRoadErp.Sales.Contracts.Invoice;
-using Xunit;
 
 namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.GetFullInvoiceByIdTest
 {

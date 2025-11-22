@@ -1,16 +1,7 @@
-﻿using FluentAssertions;
-using MediatR;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Moq;
-using Newtonsoft.Json;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using Newtonsoft.Json;
 using TunNetCom.SilkRoadErp.Sales.Api.Features.priceQuote.GetPriceQuote;
 using TunNetCom.SilkRoadErp.Sales.Contracts;
 using TunNetCom.SilkRoadErp.Sales.Contracts.Quotations;
-using Xunit;
 
 public class GetPriceQuoteEndpointTests
 {

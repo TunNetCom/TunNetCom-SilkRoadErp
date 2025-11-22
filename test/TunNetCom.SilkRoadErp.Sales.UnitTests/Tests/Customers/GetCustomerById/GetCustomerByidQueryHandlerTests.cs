@@ -1,5 +1,4 @@
 ﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.GetCustomerById;
-using Xunit;
 
 namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Customers.GetCustomerById;
 

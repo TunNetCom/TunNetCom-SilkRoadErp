@@ -1,11 +1,4 @@
-﻿using Carter;
-using MediatR;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Routing;
-using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.ResultExtensions;
-
-namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.DeleteDeliveryNote;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.DeleteDeliveryNote;
 
 public class DeleteDeliveryNoteEndpoint : ICarterModule
 {

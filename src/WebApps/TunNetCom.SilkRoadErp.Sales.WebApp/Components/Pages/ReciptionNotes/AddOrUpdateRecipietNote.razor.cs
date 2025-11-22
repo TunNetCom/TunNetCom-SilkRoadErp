@@ -1,5 +1,4 @@
-﻿using BlazorBootstrap;
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using Radzen.Blazor;

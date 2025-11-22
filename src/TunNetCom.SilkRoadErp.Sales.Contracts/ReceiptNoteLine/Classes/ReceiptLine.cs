@@ -1,5 +1,4 @@
-﻿using System;
-namespace TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Classes;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Classes;
 
 public class ReceiptLine
 {

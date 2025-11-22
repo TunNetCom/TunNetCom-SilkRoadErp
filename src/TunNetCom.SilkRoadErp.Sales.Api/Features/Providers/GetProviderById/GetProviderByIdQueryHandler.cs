@@ -1,10 +1,4 @@
-﻿using FluentResults;
-using Mapster;
-using Microsoft.Extensions.Logging;
-using System.Threading;
-using System.Threading.Tasks;
-using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
-using TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.GetProviderById;
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.GetProviderById;
 
 public class GetProviderByIdQueryHandler : IRequestHandler<GetProviderByIdQuery, Result<ProviderResponse>>
 {

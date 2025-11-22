@@ -1,6 +1,4 @@
-﻿using Xunit;
-using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.DetachReceiptNotesFromInvoice;
-using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.ResultExtensions;
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.DetachReceiptNotesFromInvoice;
 namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes
 {
     public class DetachReceiptNotesFromInvoiceCommandHandlerTests : IDisposable
