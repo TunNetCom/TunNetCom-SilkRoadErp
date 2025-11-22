@@ -8,21 +8,21 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 public partial class BonDeReception
 {
-    public void UpdateReceiptNote(
-        int num,
-        long numBonFournisseur,
-        DateTime dateLivraison,
-        int idFournisseur,
-        DateTime date,
-        int? numFactureFournisseur
+        public void UpdateReceiptNote(
+            int num,
+            long numBonFournisseur,
+            DateTime dateLivraison,
+            int idFournisseur,
+            DateTime date,
+            int? numFactureFournisseur
         )
-    {
-          this.Num = num;
-        this.NumBonFournisseur = numBonFournisseur;
-        this.DateLivraison = dateLivraison;
-        this.IdFournisseur = idFournisseur;
-        this.Date = date;
-        this.NumFactureFournisseur = NumFactureFournisseur;
+        {
+            this.Num = num;
+            this.NumBonFournisseur = numBonFournisseur;
+            this.DateLivraison = dateLivraison;
+            this.IdFournisseur = idFournisseur;
+            this.Date = date;
+            this.NumFactureFournisseur = numFactureFournisseur;
         }
 
         public static BonDeReception CreateReceiptNote(
