@@ -1,0 +1,116 @@
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AccountingYear
+@inject IAccountingYearApiClient AccountingYearApiClient
+@inject ToastService ToastService
+@implements IDisposable
+
+<RadzenDropDown @bind-Value="@selectedYearId" 
+                Data="@accountingYears" 
+                TextProperty="Year" 
+                ValueProperty="Id"
+                Change="@OnYearChanged"
+                Placeholder="Sélectionner un exercice"
+                Style="min-width: 150px;">
+    <Template>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span>@context.Year</span>
+            @if (context.IsActive)
+            {
+                <RadzenBadge Text="Actif" BadgeStyle="BadgeStyle.Success" Size="BadgeSize.Small" />
+            }
+        </div>
+    </Template>
+</RadzenDropDown>
+
+@code {
+    private List<GetAllAccountingYearsResponse> accountingYears = new();
+    private int? selectedYearId;
+    private GetActiveAccountingYearResponse? activeYear;
+    private System.Threading.Timer? refreshTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAccountingYearsAsync();
+        await LoadActiveYearAsync();
+        
+        // Refresh every 30 seconds
+        refreshTimer = new System.Threading.Timer(async _ => 
+        {
+            await InvokeAsync(async () => await RefreshAsync());
+        }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+    }
+
+    private async Task LoadAccountingYearsAsync()
+    {
+        try
+        {
+            accountingYears = await AccountingYearApiClient.GetAllAccountingYearsAsync();
+            if (activeYear != null)
+            {
+                selectedYearId = activeYear.Id;
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            ToastService.Notify(new(ToastType.Danger, $"Erreur lors du chargement des exercices comptables: {ex.Message}"));
+        }
+    }
+
+    private async Task LoadActiveYearAsync()
+    {
+        try
+        {
+            activeYear = await AccountingYearApiClient.GetActiveAccountingYearAsync();
+            if (activeYear != null)
+            {
+                selectedYearId = activeYear.Id;
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            ToastService.Notify(new(ToastType.Danger, $"Erreur lors du chargement de l'exercice actif: {ex.Message}"));
+        }
+    }
+
+    private async Task OnYearChanged(object? value)
+    {
+        if (value is int yearId && yearId != activeYear?.Id)
+        {
+            try
+            {
+                var success = await AccountingYearApiClient.SetActiveAccountingYearAsync(yearId);
+                if (success)
+                {
+                    await LoadActiveYearAsync();
+                    var selectedYear = accountingYears.FirstOrDefault(y => y.Id == yearId);
+                    ToastService.Notify(new(ToastType.Success, $"Exercice {selectedYear?.Year ?? yearId} activé avec succès"));
+                }
+                else
+                {
+                    ToastService.Notify(new(ToastType.Danger, "Impossible d'activer l'exercice comptable"));
+                    // Revert selection
+                    selectedYearId = activeYear?.Id;
+                }
+            }
+            catch (Exception ex)
+            {
+                ToastService.Notify(new(ToastType.Danger, $"Erreur lors de l'activation de l'exercice: {ex.Message}"));
+                // Revert selection
+                selectedYearId = activeYear?.Id;
+            }
+        }
+    }
+
+    private async Task RefreshAsync()
+    {
+        await LoadActiveYearAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        refreshTimer?.Dispose();
+    }
+}
+

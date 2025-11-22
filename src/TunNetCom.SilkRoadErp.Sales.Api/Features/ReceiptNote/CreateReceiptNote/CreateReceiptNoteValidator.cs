@@ -4,8 +4,6 @@ public class CreateReceiptNoteValidator : AbstractValidator<CreateReceiptNoteCom
 {
     public CreateReceiptNoteValidator()
     {
-        _ = RuleFor(x => x.Num)
-             .NotEmpty().WithMessage("number_is_required");
         _ = RuleFor(x => x.NumBonFournisseur)
             .NotEmpty().WithMessage("provider_receipt_number_is_required");
         _ = RuleFor(x => x.DateLivraison)

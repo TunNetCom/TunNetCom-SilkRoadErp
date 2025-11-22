@@ -13,7 +13,13 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
     {
         public void Configure(EntityTypeBuilder<BonDeLivraison> entity)
         {
-            entity.HasKey(e => e.Num).HasName("PK_dbo.BonDeLivraison");
+            entity.HasKey(e => e.Id).HasName("PK_dbo.BonDeLivraison");
+            entity.Property(e => e.Id)
+                .ValueGeneratedOnAdd();
+
+            entity.HasIndex(e => e.Num)
+                .IsUnique()
+                .HasDatabaseName("IX_BonDeLivraison_Num");
 
             entity.Property(e => e.ClientId).HasColumnName("clientId");
             entity.Property(e => e.Date)
@@ -37,6 +43,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
 
             entity.HasOne(d => d.NumFactureNavigation).WithMany(p => p.BonDeLivraison)
             .HasForeignKey(d => d.NumFacture)
+            .HasPrincipalKey(p => p.Num)
             .OnDelete(DeleteBehavior.Cascade)
             .HasConstraintName("FK_dbo.BonDeLivraison_dbo.Facture_Num_Facture");
 

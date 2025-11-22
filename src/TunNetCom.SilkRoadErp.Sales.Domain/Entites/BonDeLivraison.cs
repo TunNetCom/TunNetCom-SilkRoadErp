@@ -50,6 +50,8 @@ public partial class BonDeLivraison
         this.AccountingYearId = accountingYearId;
     }
 
+    public int Id { get; set; }
+
     public int Num { get; set; }
 
     public DateTime Date { get; set; }

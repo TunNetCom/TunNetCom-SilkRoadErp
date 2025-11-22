@@ -2,6 +2,7 @@ using System.Threading.RateLimiting;
 using System.Reflection;
 using Scalar.AspNetCore;
 using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.DataSeeder;
+using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -113,6 +114,9 @@ builder.Services.AddSingleton<IExceptionHandler, GlobalExceptionHandler>();
 
 // Register DatabaseSeeder
 builder.Services.AddScoped<DatabaseSeeder>();
+
+// Register NumberGeneratorService
+builder.Services.AddScoped<INumberGeneratorService, NumberGeneratorService>();
 
 var app = builder.Build();
 

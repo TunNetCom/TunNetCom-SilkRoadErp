@@ -13,7 +13,13 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
     {
         public void Configure(EntityTypeBuilder<FactureFournisseur> entity)
         {
-            entity.HasKey(e => e.Num).HasName("PK_dbo.FactureFournisseur");
+            entity.HasKey(e => e.Id).HasName("PK_dbo.FactureFournisseur");
+            entity.Property(e => e.Id)
+                .ValueGeneratedOnAdd();
+
+            entity.HasIndex(e => e.Num)
+                .IsUnique()
+                .HasDatabaseName("IX_FactureFournisseur_Num");
 
             entity.Property(e => e.Date)
             .HasColumnType("datetime")

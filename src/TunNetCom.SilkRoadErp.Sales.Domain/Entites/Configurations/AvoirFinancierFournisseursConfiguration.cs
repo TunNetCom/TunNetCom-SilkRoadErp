@@ -25,6 +25,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
 
             entity.HasOne(d => d.NumNavigation).WithOne(p => p.AvoirFinancierFournisseurs)
             .HasForeignKey<AvoirFinancierFournisseurs>(d => d.Num)
+            .HasPrincipalKey<FactureFournisseur>(p => p.Num)
             .HasConstraintName("FK_dbo.AvoirFinancierFournisseurs_dbo.FactureFournisseur_Num");
 
             OnConfigurePartial(entity);

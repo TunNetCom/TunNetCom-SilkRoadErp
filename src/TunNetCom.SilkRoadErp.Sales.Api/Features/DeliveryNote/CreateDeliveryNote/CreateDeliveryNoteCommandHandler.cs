@@ -1,8 +1,11 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.CreateDeliveryNote;
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
+
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.CreateDeliveryNote;
 
 public class CreateDeliveryNoteCommandHandler(
     SalesContext _context,
-    ILogger<CreateDeliveryNoteCommandHandler> _logger)
+    ILogger<CreateDeliveryNoteCommandHandler> _logger,
+    INumberGeneratorService _numberGeneratorService)
     : IRequestHandler<CreateDeliveryNoteCommand, Result<int>>
 {
     public async Task<Result<int>> Handle(
@@ -22,6 +25,8 @@ public class CreateDeliveryNoteCommandHandler(
             return Result.Fail("no_active_accounting_year");
         }
 
+        var num = await _numberGeneratorService.GenerateBonDeLivraisonNumberAsync(activeAccountingYear.Id, cancellationToken);
+
         var deliveryNote = BonDeLivraison.CreateBonDeLivraison
             (
                 createDeliveryNoteCommand.Date,
@@ -33,6 +38,7 @@ public class CreateDeliveryNoteCommandHandler(
                 createDeliveryNoteCommand.ClientId,
                 activeAccountingYear.Id
             );
+        deliveryNote.Num = num;
 
         foreach(var deliveryNoteDetail in createDeliveryNoteCommand.DeliveryNoteDetails) 
         {
@@ -56,8 +62,8 @@ public class CreateDeliveryNoteCommandHandler(
         _ = _context.BonDeLivraison.Add(deliveryNote);
         _ = await _context.SaveChangesAsync(cancellationToken);
 
-        _logger.LogEntityCreatedSuccessfully(nameof(BonDeLivraison), deliveryNote.Num);
+        _logger.LogEntityCreatedSuccessfully(nameof(BonDeLivraison), deliveryNote.Id);
 
-        return deliveryNote.Num;
+        return deliveryNote.Id;
     }
 }

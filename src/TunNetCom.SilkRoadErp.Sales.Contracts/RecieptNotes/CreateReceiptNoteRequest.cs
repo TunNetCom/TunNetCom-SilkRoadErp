@@ -2,8 +2,6 @@
 
 public class CreateReceiptNoteRequest
 {
-    public int Num { get; set; }
-
     public long NumBonFournisseur { get; set; }
 
     public DateTime DateLivraison { get; set; }

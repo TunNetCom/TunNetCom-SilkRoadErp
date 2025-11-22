@@ -29,6 +29,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
 
             entity.HasOne(d => d.NumFactureFournisseurNavigation).WithMany(p => p.FactureAvoirFournisseur)
             .HasForeignKey(d => d.NumFactureFournisseur)
+            .HasPrincipalKey(p => p.Num)
             .OnDelete(DeleteBehavior.Cascade)
             .HasConstraintName("FK_dbo.FactureAvoirFournisseur_dbo.FactureFournisseur_Num_FactureFournisseur");
 

@@ -28,6 +28,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
 
             entity.HasOne(d => d.NumBlNavigation).WithOne(p => p.Transaction)
             .HasForeignKey<Transaction>(d => d.NumBl)
+            .HasPrincipalKey<BonDeLivraison>(p => p.Num)
             .OnDelete(DeleteBehavior.ClientSetNull)
             .HasConstraintName("FK_dbo.Transaction_dbo.BonDeLivraison_Num_BL");
 

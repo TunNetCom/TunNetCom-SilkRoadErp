@@ -12,7 +12,6 @@
            {
                var createReceiptNoteCommand = new CreateReceiptNoteCommand
                (
-                   Num: request.Num,
                    NumBonFournisseur: request.NumBonFournisseur,
                    DateLivraison: request.DateLivraison,
                    IdFournisseur: request.IdFournisseur,

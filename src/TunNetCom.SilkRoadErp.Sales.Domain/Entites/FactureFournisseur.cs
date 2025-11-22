@@ -7,6 +7,8 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 public partial class FactureFournisseur
 {
+    public int Id { get; set; }
+
     public int Num { get; set; }
 
     public int IdFournisseur { get; set; }

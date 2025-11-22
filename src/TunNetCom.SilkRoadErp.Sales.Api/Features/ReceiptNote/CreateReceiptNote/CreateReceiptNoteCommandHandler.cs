@@ -1,8 +1,11 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.CreateReceiptNote;
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
+
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.CreateReceiptNote;
 
 public class CreateReceiptNoteCommandHandler(
     SalesContext _context,
-    ILogger<CreateReceiptNoteCommandHandler> _logger)
+    ILogger<CreateReceiptNoteCommandHandler> _logger,
+    INumberGeneratorService _numberGeneratorService)
     : IRequestHandler<CreateReceiptNoteCommand, Result<int>>
 {
     public async Task<Result<int>> Handle(CreateReceiptNoteCommand createReceiptNoteCommand, CancellationToken cancellationToken)
@@ -15,16 +18,6 @@ public class CreateReceiptNoteCommandHandler(
             return Result.Fail("not_found");
         }
 
-
-        var isReceiptNoteExist = await _context.BonDeReception.AnyAsync(
-            Rec => Rec.Num == createReceiptNoteCommand.Num,
-            cancellationToken);
-
-        if (isReceiptNoteExist)
-        {
-            return Result.Fail("receiptnote_number_exists");
-        }
-
         // Get the active accounting year
         var activeAccountingYear = await _context.AccountingYear
             .FirstOrDefaultAsync(ay => ay.IsActive, cancellationToken);
@@ -35,8 +28,10 @@ public class CreateReceiptNoteCommandHandler(
             return Result.Fail("no_active_accounting_year");
         }
 
+        var num = await _numberGeneratorService.GenerateBonDeReceptionNumberAsync(activeAccountingYear.Id, cancellationToken);
+
         var ReceiptNote = BonDeReception.CreateReceiptNote(
-            createReceiptNoteCommand.Num,
+            num,
             createReceiptNoteCommand.NumBonFournisseur,
             createReceiptNoteCommand.DateLivraison,
             createReceiptNoteCommand.IdFournisseur,
@@ -45,12 +40,11 @@ public class CreateReceiptNoteCommandHandler(
             activeAccountingYear.Id
 );
 
-
         _ = _context.BonDeReception.Add(ReceiptNote);
         _ = await _context.SaveChangesAsync(cancellationToken);
 
-        _logger.LogEntityCreatedSuccessfully(nameof(BonDeReception), ReceiptNote.Num);
+        _logger.LogEntityCreatedSuccessfully(nameof(BonDeReception), ReceiptNote.Id);
 
-        return ReceiptNote.Num;
+        return ReceiptNote.Id;
     }
 }

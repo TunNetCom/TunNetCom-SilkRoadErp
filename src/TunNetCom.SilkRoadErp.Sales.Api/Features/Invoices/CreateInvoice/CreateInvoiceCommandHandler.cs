@@ -1,13 +1,17 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.CreateInvoice
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
+
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.CreateInvoice
 {
     public class CreateInvoiceCommandHandler : IRequestHandler<CreateInvoiceCommand, Result<int>>
     {
         private readonly SalesContext _context;
         private readonly ILogger<CreateInvoiceCommandHandler> _logger;
-        public CreateInvoiceCommandHandler(SalesContext context, ILogger<CreateInvoiceCommandHandler> logger)
+        private readonly INumberGeneratorService _numberGeneratorService;
+        public CreateInvoiceCommandHandler(SalesContext context, ILogger<CreateInvoiceCommandHandler> logger, INumberGeneratorService numberGeneratorService)
         {
             _context = context;
             _logger = logger;
+            _numberGeneratorService = numberGeneratorService;
         }
         public async Task<Result<int>> Handle(CreateInvoiceCommand command, CancellationToken cancellationToken)
         {
@@ -27,16 +31,19 @@
                 return Result.Fail("no_active_accounting_year");
             }
 
+            var num = await _numberGeneratorService.GenerateFactureNumberAsync(activeAccountingYear.Id, cancellationToken);
+
             var invoice = new Facture
             {
+                Num = num,
                 Date = command.Date,
                 IdClient = command.ClientId,
                 AccountingYearId = activeAccountingYear.Id
             };
             _ = _context.Facture.Add(invoice);
             _ = await _context.SaveChangesAsync(cancellationToken);
-            _logger.LogInformation("Facture created successfully with Num {Num}", invoice.Num);
-            return Result.Ok(invoice.Num);
+            _logger.LogInformation("Facture created successfully with Id {Id} and Num {Num}", invoice.Id, invoice.Num);
+            return Result.Ok(invoice.Id);
         }
     }
 }

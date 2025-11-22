@@ -48,6 +48,8 @@ public partial class BonDeReception
             AccountingYearId = accountingYearId
         };
     }
+    public int Id { get; set; }
+
     public int Num { get; set; }
 
     public long NumBonFournisseur { get; set; }

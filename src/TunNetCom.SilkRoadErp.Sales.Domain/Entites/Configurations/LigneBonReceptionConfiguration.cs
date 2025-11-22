@@ -36,6 +36,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
 
             entity.HasOne(d => d.NumBonRecNavigation).WithMany(p => p.LigneBonReception)
             .HasForeignKey(d => d.NumBonRec)
+            .HasPrincipalKey(p => p.Num)
             .HasConstraintName("FK_dbo.LigneBonReception_dbo.BonDeReception_Num_BonRec");
 
             entity.HasOne(d => d.RefProduitNavigation).WithMany(p => p.LigneBonReception)

@@ -1,8 +1,11 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderReceiptNoteLine.CreateReceiptNoteWithLines;
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
+
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderReceiptNoteLine.CreateReceiptNoteWithLines;
 
 internal class CreateReceiptNoteWithLinesCommandHandler(
     SalesContext salesContext,
-    ILogger<CreateReceiptNoteWithLinesCommandHandler> _logger) 
+    ILogger<CreateReceiptNoteWithLinesCommandHandler> _logger,
+    INumberGeneratorService _numberGeneratorService) 
     : IRequestHandler<CreateReceiptNoteWithLigneCommand, Result<int>>
 {
     public async Task<Result<int>> Handle(
@@ -23,8 +26,11 @@ internal class CreateReceiptNoteWithLinesCommandHandler(
                 return Result.Fail("no_active_accounting_year");
             }
 
+            var num = await _numberGeneratorService.GenerateBonDeReceptionNumberAsync(activeAccountingYear.Id, cancellationToken);
+
             var recipetNote = await salesContext.BonDeReception.AddAsync(new BonDeReception
             {
+                Num = num,
                 NumBonFournisseur = request.NumBonFournisseur,
                 DateLivraison = request.DateLivraison,
                 IdFournisseur = request.IdFournisseur,
@@ -48,7 +54,7 @@ internal class CreateReceiptNoteWithLinesCommandHandler(
 
             await transaction.CommitAsync(cancellationToken);
 
-            return Result.Ok(recipetNote.Entity.Num);
+            return Result.Ok(recipetNote.Entity.Id);
         }
         catch (Exception ex)
         {

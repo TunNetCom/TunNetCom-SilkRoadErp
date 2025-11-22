@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AccountingYear;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote;
@@ -61,6 +62,10 @@ public static class SalesHttpClients
         _ = services.AddHttpClient<IOrderApiClient, OrderApiClient>(order =>
         {
             order.BaseAddress = new Uri(baseUrl);
+        });
+        _ = services.AddHttpClient<IAccountingYearApiClient, AccountingYearApiClient>(accountingYear =>
+        {
+            accountingYear.BaseAddress = new Uri(baseUrl);
         });
     }
 }
