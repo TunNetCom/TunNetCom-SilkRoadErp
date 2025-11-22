@@ -475,14 +475,15 @@
                 }
                 order.UnitPriceExcludingTax = selectedProduct.UnitPriceExcludingTax;
                 
-                // Always use product's discount and VAT values (they come from the product data)
-                // If product values are 0, use app parameters as fallback
+                // Always use product's discount values (they come from the product data)
+                // If product discount is 0, use app parameters as fallback
                 order.DiscountPercentage = selectedProduct.DiscountPercentage > 0 
                     ? selectedProduct.DiscountPercentage 
                     : (double)(AppParameters?.DiscountPercentage ?? 0);
-                order.VatPercentage = selectedProduct.VatPercentage > 0 
-                    ? selectedProduct.VatPercentage 
-                    : (double)(AppParameters?.VatAmount ?? 0);
+                
+                // Always use AppParameters.VatAmount as default VAT value from Systeme entity
+                // Only use product VAT if it's explicitly set and different from default
+                order.VatPercentage = (double)(AppParameters?.VatAmount ?? 0);
                 
                 LineItemCalculator.CalculateTotals(order);
                 await NotifyItemsChanged();
@@ -534,9 +535,16 @@
             return;
         }
 
+        // Use AppParameters.VatAmount as default value if available
+        var initialVatValue = AppParameters?.VatAmount ?? 0;
+        
         var result = await DialogService.OpenAsync<ApplyVatDialog>(
             Localizer["apply_vat_to_all"],
-            new Dictionary<string, object> { { "MaxValue", MaxVatPercentage } },
+            new Dictionary<string, object> 
+            { 
+                { "MaxValue", MaxVatPercentage },
+                { "InitialValue", (double)initialVatValue }
+            },
             new DialogOptions() 
             { 
                 Width = "400px",
@@ -605,10 +613,17 @@
 
             var order = CreateNewItem();
             
+            // Always use AppParameters values as defaults from Systeme entity
             if (AppParameters != null)
             {
                 order.DiscountPercentage = (double)AppParameters.DiscountPercentage;
                 order.VatPercentage = (double)AppParameters.VatAmount;
+            }
+            else
+            {
+                // Fallback to 0 if AppParameters is not loaded yet
+                order.DiscountPercentage = 0;
+                order.VatPercentage = 0;
             }
             
             Items.Add(order);
