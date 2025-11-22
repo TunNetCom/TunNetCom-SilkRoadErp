@@ -15,21 +15,35 @@
 <div class="delivery-notes-list-container">
     <div class="search-header">
         <div class="search-field" style="margin-right: 15px;">
-            <label for="startDate">@Localizer["start_date"]</label>
-            <RadzenDatePicker id="startDate"
-                              @bind-Value="searchCriteria.StartDate"
-                              DateFormat="dd/MM/yyyy"
-                              Placeholder="@Localizer["start_date"]"
-                              class="w-100 " />
+            <label for="periodFilter">@Localizer["period_filter"]</label>
+            <RadzenDropDown id="periodFilter"
+                           @bind-Value="searchCriteria.PeriodFilter"
+                           Data="@periodOptions"
+                           TextProperty="Label"
+                           ValueProperty="Value"
+                           Placeholder="@Localizer["select_period"]"
+                           Change="@OnPeriodFilterChanged"
+                           class="w-100 search-input" />
         </div>
-        <div class="search-field" style="margin-right: 15px;">
-            <label for="endDate">@Localizer["end_date"]</label>
-            <RadzenDatePicker id="endDate"
-                              @bind-Value="searchCriteria.EndDate"
-                              DateFormat="dd/MM/yyyy"
-                              Placeholder="@Localizer["end_date"]"
-                              class="w-100 " />
-        </div>
+        @if (searchCriteria.PeriodFilter == "CustomPeriod")
+        {
+            <div class="search-field" style="margin-right: 15px;">
+                <label for="startDate">@Localizer["start_date"]</label>
+                <RadzenDatePicker id="startDate"
+                                  @bind-Value="searchCriteria.StartDate"
+                                  DateFormat="dd/MM/yyyy"
+                                  Placeholder="@Localizer["start_date"]"
+                                  class="w-100 " />
+            </div>
+            <div class="search-field" style="margin-right: 15px;">
+                <label for="endDate">@Localizer["end_date"]</label>
+                <RadzenDatePicker id="endDate"
+                                  @bind-Value="searchCriteria.EndDate"
+                                  DateFormat="dd/MM/yyyy"
+                                  Placeholder="@Localizer["end_date"]"
+                                  class="w-100 " />
+            </div>
+        }
         <div class="search-field">
             <label for="customer">Client</label>
             <RadzenDropDownDataGrid id="customer"
@@ -66,8 +80,7 @@
                         AllowPaging="true"
                         PageSize="15"
                         Count="@deliveryNotes.GetDeliveryNoteBaseInfos.TotalCount"
-                        AllowColumnResize="true"
-                        RowSelect="@(args => ViewDeliveryNote(args.Number.ToString()))">
+                        AllowColumnResize="true">
             <EmptyTemplate>
                 <p style="font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
             </EmptyTemplate>
@@ -86,9 +99,28 @@
                                       Title="Client"
                                       Width="200px" />
                 <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos"
-                                      Property="@nameof(GetDeliveryNoteBaseInfos.GrossAmount)"
-                                      Title="@Localizer["total_gross"]"
-                                      Width="200px" />
+                                      Property="@nameof(GetDeliveryNoteBaseInfos.NetAmount)"
+                                      Title="@Localizer["total_net"]"
+                                      Width="150px">
+                    <Template Context="item">
+                        @item.NetAmount.FormatAmount()
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos"
+                                      Title="@Localizer["actions_label"]"
+                                      Width="100px"
+                                      Sortable="false"
+                                      Filterable="false">
+                    <Template Context="item">
+                        <RadzenButton Icon="edit"
+                                      ButtonStyle="ButtonStyle.Primary"
+                                      Variant="Variant.Flat"
+                                      Size="ButtonSize.Small"
+                                      Click="@(() => ViewDeliveryNote(item.Number.ToString()))"
+                                      Title="@Localizer["Edit"]"
+                                      AriaLabel="@Localizer["Edit"]" />
+                    </Template>
+                </RadzenDataGridColumn>
             </Columns>
         </RadzenDataGrid>
         <RadzenCard class="summary-card" Variant="Variant.Outlined">
@@ -98,9 +130,6 @@
                          class="summary-stack">
                 <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
                     @Localizer["total_net"]: <strong>@deliveryNotes.TotalNetAmount.FormatAmount()</strong>
-                </RadzenText>
-                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                    @Localizer["total_gross"]: <strong>@deliveryNotes.TotalGrossAmount.FormatAmount()</strong>
                 </RadzenText>
                 <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
                     @Localizer["total_vat"]: <strong>@deliveryNotes.TotalVatAmount.FormatAmount()</strong>
@@ -303,17 +332,32 @@
     {
         await LoadCustomers(new LoadDataArgs { Filter = string.Empty });
 
+        // Initialize period options
+        periodOptions = new List<PeriodOption>
+        {
+            new PeriodOption { Value = "CurrentMonth", Label = Localizer["current_month"] },
+            new PeriodOption { Value = "LastMonth", Label = Localizer["last_month"] },
+            new PeriodOption { Value = "CustomPeriod", Label = Localizer["custom_period"] }
+        };
+
+        // Set default period to CurrentMonth and calculate dates
+        searchCriteria.PeriodFilter = "CurrentMonth";
+        var (startDate, endDate) = GetDateRangeFromPeriod();
+        searchCriteria.StartDate = startDate;
+        searchCriteria.EndDate = endDate;
+
+        // For debugging: try without date filter first to see if there's any data
         deliveryNotes = await DeliveryNoteService.GetDeliveryNotesWithSummariesAsync(
-            pageNumber: 1,
-            pageSize: DefaultPageSize,
             customerId: null,
             invoiceId: null,
             isInvoiced: null,
             sortOrder: null,
             sortProperty: null,
+            pageNumber: 1,
+            pageSize: DefaultPageSize,
             searchKeyword: null,
-            startDate: null,
-            EndDate: null,
+            startDate: startDate,
+            EndDate: endDate,
             cancellationToken: default
         );
 
@@ -349,6 +393,8 @@
 
     private async Task SearchDeliveryNotes()
     {
+        var (startDate, endDate) = GetDateRangeFromPeriod();
+
         deliveryNotes = await DeliveryNoteService.GetDeliveryNotesWithSummariesAsync(
             pageNumber: 1,
             pageSize: DefaultPageSize,
@@ -363,8 +409,8 @@
             sortOrder: null,
             sortProperty: null,
             searchKeyword: null,
-            startDate: searchCriteria.StartDate,
-            EndDate: searchCriteria.EndDate,
+            startDate: startDate,
+            EndDate: endDate,
             cancellationToken: default
         );
 
@@ -387,9 +433,9 @@
             sortOrder = sortParts.Length > 1 && sortParts[1].ToLower() == "desc" ? "Descending" : "Ascending";
         }
 
+        var (startDate, endDate) = GetDateRangeFromPeriod();
+
         deliveryNotes = await DeliveryNoteService.GetDeliveryNotesWithSummariesAsync(
-            pageNumber: pageNumber,
-            pageSize: pageSize,
             customerId: searchCriteria.SelectedCustomerId,
             invoiceId: null,
             isInvoiced: searchCriteria.InvoiceStatus switch
@@ -400,9 +446,11 @@
             },
             sortOrder: sortOrder,
             sortProperty: sortProperty,
+            pageNumber: pageNumber,
+            pageSize: pageSize,
             searchKeyword: filter,
-            startDate: searchCriteria.StartDate,
-            EndDate: searchCriteria.EndDate,
+            startDate: startDate,
+            EndDate: endDate,
             cancellationToken: default
         );
 
@@ -411,9 +459,56 @@
 
     public class SearchCriteria
     {
+        public string PeriodFilter { get; set; } = "CurrentMonth";
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public int? SelectedCustomerId { get; set; }
         public string InvoiceStatus { get; set; } = "Tous";
+    }
+
+    private List<PeriodOption> periodOptions = new();
+
+    public class PeriodOption
+    {
+        public string Value { get; set; } = string.Empty;
+        public string Label { get; set; } = string.Empty;
+    }
+
+    private (DateTime? startDate, DateTime? endDate) GetDateRangeFromPeriod()
+    {
+        var today = DateTime.Today;
+        var lastMonth = today.AddMonths(-1);
+        
+        return searchCriteria.PeriodFilter switch
+        {
+            "CurrentMonth" => (
+                new DateTime(today.Year, today.Month, 1),
+                new DateTime(today.Year, today.Month, DateTime.DaysInMonth(today.Year, today.Month), 23, 59, 59)
+            ),
+            "LastMonth" => (
+                new DateTime(lastMonth.Year, lastMonth.Month, 1),
+                new DateTime(lastMonth.Year, lastMonth.Month, DateTime.DaysInMonth(lastMonth.Year, lastMonth.Month), 23, 59, 59)
+            ),
+            "CustomPeriod" => (
+                searchCriteria.StartDate?.Date,
+                searchCriteria.EndDate?.Date.AddDays(1).AddTicks(-1)
+            ),
+            _ => (
+                new DateTime(today.Year, today.Month, 1),
+                new DateTime(today.Year, today.Month, DateTime.DaysInMonth(today.Year, today.Month), 23, 59, 59)
+            )
+        };
+    }
+
+    private void OnPeriodFilterChanged(object? value)
+    {
+        if (value != null)
+        {
+            searchCriteria.PeriodFilter = value.ToString() ?? "CurrentMonth";
+            var (startDate, endDate) = GetDateRangeFromPeriod();
+            searchCriteria.StartDate = startDate;
+            searchCriteria.EndDate = endDate;
+            StateHasChanged();
+        }
     }
 }

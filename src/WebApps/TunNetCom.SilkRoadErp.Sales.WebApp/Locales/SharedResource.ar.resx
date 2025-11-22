@@ -321,6 +321,21 @@
   <data name="end_date" xml:space="preserve">
     <value>تاريخ النهاية</value>
   </data>
+  <data name="period_filter" xml:space="preserve">
+    <value>الفترة</value>
+  </data>
+  <data name="select_period" xml:space="preserve">
+    <value>اختر الفترة</value>
+  </data>
+  <data name="current_month" xml:space="preserve">
+    <value>الشهر الحالي</value>
+  </data>
+  <data name="last_month" xml:space="preserve">
+    <value>الشهر السابق</value>
+  </data>
+  <data name="custom_period" xml:space="preserve">
+    <value>فترة مخصصة</value>
+  </data>
   <data name="delivery_note_status" xml:space="preserve">
     <value>حالة بوليصة التسليم</value>
   </data>
