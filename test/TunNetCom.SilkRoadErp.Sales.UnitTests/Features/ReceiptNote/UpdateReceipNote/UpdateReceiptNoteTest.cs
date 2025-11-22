@@ -44,13 +44,15 @@ public class UpdateReceiptNoteTest
            log => log.Contains($"{command.Num}"));
     }
 
-    [Fact]
-    public async Task Handle_ShouldUpdateEntity_WhenFound()
+    [Theory]
+    [InlineData(101, 123)]
+    [InlineData(102, 234)]
+    public async Task Handle_ShouldUpdateEntity_WhenFound(int num,int numFournisseur)
     {
         // Arrange
         var entity = new BonDeReception
         {
-            Num = 123,
+            Num = num,
             NumBonFournisseur = 44,
             NumFactureFournisseur = 55,
             IdFournisseur = 1,
@@ -62,12 +64,12 @@ public class UpdateReceiptNoteTest
         _ = await _context.SaveChangesAsync();
 
         var command = new UpdateReceiptNoteCommand(
-            Num: 123,
+            Num: num,
             NumBonFournisseur: 55,
             DateLivraison: DateTime.Today,
             IdFournisseur: 5,
             Date: DateTime.Today,
-            NumFactureFournisseur: 77
+            NumFactureFournisseur: numFournisseur
         );
 
         // Act
@@ -79,7 +81,7 @@ public class UpdateReceiptNoteTest
         var updated = await _context.BonDeReception.FindAsync(entity.Num);
         Assert.NotNull(updated);
         Assert.Equal(55, updated.NumBonFournisseur);
-        Assert.Equal(77, updated.NumFactureFournisseur);
+        Assert.Equal(numFournisseur, updated.NumFactureFournisseur);
         Assert.Equal(5, updated.IdFournisseur);
     }
 }
