@@ -1,0 +1,58 @@
+@using Radzen
+@using Radzen.Blazor
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure
+@inject DialogService DialogService
+@inject IStringLocalizer<SharedResource> Localizer
+
+@code {
+    public class PrintModeOption
+    {
+        public PrintMode Mode { get; set; }
+        public string Label { get; set; } = string.Empty;
+    }
+}
+
+<RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
+    <RadzenText TextStyle="TextStyle.Body1">
+        @Localizer["print_mode"]
+    </RadzenText>
+    
+    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+        <RadzenRadioButtonList @bind-Value="selectedMode" 
+                               Data="@printModes" 
+                               TextProperty="Label"
+                               ValueProperty="Mode"
+                               Orientation="Radzen.Orientation.Vertical" />
+    </RadzenStack>
+
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End" Style="margin-top: 1rem;">
+        <RadzenButton Text="@Localizer["Cancel"]" 
+                      ButtonStyle="ButtonStyle.Light" 
+                      Click="@(() => DialogService.Close(false))" />
+        <RadzenButton Text="@Localizer["confirm"]" 
+                      ButtonStyle="ButtonStyle.Success" 
+                      Click="@OnConfirm" />
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    private PrintMode selectedMode = PrintMode.Download;
+    
+    private List<PrintModeOption> printModes = new();
+
+    protected override void OnInitialized()
+    {
+        printModes = new()
+        {
+            new PrintModeOption { Mode = PrintMode.Download, Label = Localizer["download_pdf"] },
+            new PrintModeOption { Mode = PrintMode.DirectPrint, Label = Localizer["print_directly"] }
+        };
+    }
+
+    private void OnConfirm()
+    {
+        DialogService.Close(selectedMode);
+    }
+}

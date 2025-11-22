@@ -351,6 +351,39 @@
   <data name="apply_vat_to_all" xml:space="preserve">
     <value>Appliquer la TVA à toutes les lignes</value>
   </data>
+  <data name="select_printer" xml:space="preserve">
+    <value>Sélectionner une imprimante</value>
+  </data>
+  <data name="printer" xml:space="preserve">
+    <value>Imprimante</value>
+  </data>
+  <data name="loading_printers" xml:space="preserve">
+    <value>Chargement des imprimantes...</value>
+  </data>
+  <data name="no_printers_available" xml:space="preserve">
+    <value>Aucune imprimante disponible</value>
+  </data>
+  <data name="duplex_printing" xml:space="preserve">
+    <value>Impression recto-verso</value>
+  </data>
+  <data name="copies" xml:space="preserve">
+    <value>Copies</value>
+  </data>
+  <data name="print_mode" xml:space="preserve">
+    <value>Mode d'impression</value>
+  </data>
+  <data name="download_pdf" xml:space="preserve">
+    <value>Télécharger PDF</value>
+  </data>
+  <data name="print_directly" xml:space="preserve">
+    <value>Imprimer directement</value>
+  </data>
+  <data name="print_job_submitted" xml:space="preserve">
+    <value>Tâche d'impression soumise avec succès</value>
+  </data>
+  <data name="confirm" xml:space="preserve">
+    <value>Confirmer</value>
+  </data>
   <data name="failed_to_save_delivery_note" xml:space="preserve">
     <value>Échec de l'enregistrement du bon de livraison</value>
   </data>

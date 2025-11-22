@@ -352,6 +352,39 @@
   <data name="apply_vat_to_all" xml:space="preserve">
     <value />
   </data>
+  <data name="select_printer" xml:space="preserve">
+    <value />
+  </data>
+  <data name="printer" xml:space="preserve">
+    <value />
+  </data>
+  <data name="loading_printers" xml:space="preserve">
+    <value />
+  </data>
+  <data name="no_printers_available" xml:space="preserve">
+    <value />
+  </data>
+  <data name="duplex_printing" xml:space="preserve">
+    <value />
+  </data>
+  <data name="copies" xml:space="preserve">
+    <value />
+  </data>
+  <data name="print_mode" xml:space="preserve">
+    <value />
+  </data>
+  <data name="download_pdf" xml:space="preserve">
+    <value />
+  </data>
+  <data name="print_directly" xml:space="preserve">
+    <value />
+  </data>
+  <data name="print_job_submitted" xml:space="preserve">
+    <value />
+  </data>
+  <data name="confirm" xml:space="preserve">
+    <value />
+  </data>
   <data name="failed_to_save_delivery_note" xml:space="preserve">
     <value />
   </data>

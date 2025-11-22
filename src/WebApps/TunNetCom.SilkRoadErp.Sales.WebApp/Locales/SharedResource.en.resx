@@ -351,6 +351,39 @@
   <data name="apply_vat_to_all" xml:space="preserve">
     <value>Apply VAT to all lines</value>
   </data>
+  <data name="select_printer" xml:space="preserve">
+    <value>Select a printer</value>
+  </data>
+  <data name="printer" xml:space="preserve">
+    <value>Printer</value>
+  </data>
+  <data name="loading_printers" xml:space="preserve">
+    <value>Loading printers...</value>
+  </data>
+  <data name="no_printers_available" xml:space="preserve">
+    <value>No printers available</value>
+  </data>
+  <data name="duplex_printing" xml:space="preserve">
+    <value>Duplex printing</value>
+  </data>
+  <data name="copies" xml:space="preserve">
+    <value>Copies</value>
+  </data>
+  <data name="print_mode" xml:space="preserve">
+    <value>Print mode</value>
+  </data>
+  <data name="download_pdf" xml:space="preserve">
+    <value>Download PDF</value>
+  </data>
+  <data name="print_directly" xml:space="preserve">
+    <value>Print directly</value>
+  </data>
+  <data name="print_job_submitted" xml:space="preserve">
+    <value>Print job submitted successfully</value>
+  </data>
+  <data name="confirm" xml:space="preserve">
+    <value>Confirm</value>
+  </data>
   <data name="failed_to_save_delivery_note" xml:space="preserve">
     <value>Failed to Save Delivery Note</value>
   </data>

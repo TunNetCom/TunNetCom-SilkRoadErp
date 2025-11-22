@@ -10,7 +10,7 @@ var baseUrl = builder.Configuration.GetValue<string>("BaseUrl")
     ?? throw new ArgumentNullException("Sales base url was null!");
 
 builder.Services.AddSalesHttpClients(baseUrl);
-builder.Services.AddPrintEngine();
+builder.Services.AddPrintEngine(builder.Configuration);
 builder.Services.AddLocalization();
 builder.Services.AddControllers();
 builder.Services.AddScoped<GitHubService>();

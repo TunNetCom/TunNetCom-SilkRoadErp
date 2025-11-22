@@ -1,0 +1,123 @@
+@using Radzen
+@using Radzen.Blazor
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure
+@inject DialogService DialogService
+@inject IStringLocalizer<SharedResource> Localizer
+@inject IPrinterService PrinterService
+
+<RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
+    <RadzenText TextStyle="TextStyle.Body1">
+        @Localizer["select_printer"]
+    </RadzenText>
+    
+    @if (isLoadingPrinters)
+    {
+        <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+        <RadzenText>@Localizer["loading_printers"]</RadzenText>
+    }
+    else if (printers.Any())
+    {
+        <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+            <RadzenLabel Text="@Localizer["printer"]" />
+            <RadzenDropDown @bind-Value="selectedPrinterName"
+                           Data="@printers"
+                           TextProperty="Name"
+                           ValueProperty="Name"
+                           Placeholder="@Localizer["select_printer"]"
+                           Style="width: 100%;" />
+        </RadzenStack>
+
+        <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+            <RadzenLabel Text="@Localizer["copies"]" />
+            <RadzenNumeric @bind-Value="copies" 
+                          Min="1" 
+                          Max="99" 
+                          Style="width: 100%;" />
+        </RadzenStack>
+
+        <RadzenCheckBox @bind-Value="duplex" Name="Duplex">
+            @Localizer["duplex_printing"]
+        </RadzenCheckBox>
+    }
+    else
+    {
+        <RadzenText TextStyle="TextStyle.Body2" Style="color: #dc3545;">
+            @Localizer["no_printers_available"]
+        </RadzenText>
+    }
+
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End" Style="margin-top: 1rem;">
+        <RadzenButton Text="@Localizer["Cancel"]" 
+                      ButtonStyle="ButtonStyle.Light" 
+                      Click="@(() => DialogService.Close(false))" />
+        <RadzenButton Text="@Localizer["print"]" 
+                      ButtonStyle="ButtonStyle.Success" 
+                      Disabled="@(string.IsNullOrEmpty(selectedPrinterName) || isLoadingPrinters)"
+                      Click="@OnConfirm" />
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    [Parameter] public byte[]? PdfBytes { get; set; }
+
+    private List<PrinterInfo> printers = new();
+    private string? selectedPrinterName;
+    private int copies = 1;
+    private bool duplex = false;
+    private bool isLoadingPrinters = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPrinters();
+    }
+
+    private async Task LoadPrinters()
+    {
+        isLoadingPrinters = true;
+        try
+        {
+            printers = await PrinterService.GetAvailablePrintersAsync();
+            
+            // Select default printer if available
+            var defaultPrinter = printers.FirstOrDefault(p => p.IsDefault);
+            if (defaultPrinter != null)
+            {
+                selectedPrinterName = defaultPrinter.Name;
+            }
+            else if (printers.Any())
+            {
+                selectedPrinterName = printers.First().Name;
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log error but continue with empty list
+            Console.WriteLine($"Error loading printers: {ex.Message}");
+        }
+        finally
+        {
+            isLoadingPrinters = false;
+        }
+    }
+
+    private void OnConfirm()
+    {
+        if (!string.IsNullOrEmpty(selectedPrinterName) && PdfBytes != null)
+        {
+            var result = new PrinterSelectionResult
+            {
+                PrinterName = selectedPrinterName,
+                Copies = copies,
+                Duplex = duplex,
+                PdfBytes = PdfBytes
+            };
+            DialogService.Close(result);
+        }
+        else
+        {
+            DialogService.Close(false);
+        }
+    }
+}

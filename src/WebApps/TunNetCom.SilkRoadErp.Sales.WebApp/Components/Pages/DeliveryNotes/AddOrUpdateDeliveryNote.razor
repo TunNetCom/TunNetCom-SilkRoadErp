@@ -20,6 +20,7 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.DeliveryNotes.PrintDeliveryNote
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure
 
 @inject IStringLocalizer<SharedResource> Localizer
 @inject ToastService toastService
@@ -33,6 +34,7 @@
 @inject ILogger<AddOrUpdateDeliveryNote> logger
 @inject DialogService DialogService
 @inject PrintDeliveryNoteService PrintDeliveryNoteService
+@inject IPrintService PrintService
 
 <style>
     /* Header actions container */
@@ -842,7 +844,7 @@ else
                     Date = deliveryNoteDate,
                     DeliveryTime = TimeOnly.FromDateTime(DateTime.Now),
                     CustomerId = selectedCustomerId,
-                    InvoiceNumber = selectedInvoiceId,
+                    InvoiceNumber = _selectedInvoiceId,
                     TotalExcludingTax = totalHt,
                     TotalVat = totalVat,
                     TotalAmount = totalTtc,
@@ -870,12 +872,72 @@ else
                 var fileName = string.IsNullOrEmpty(deliveryNoteNumber)
                     ? $"Bon de Livraison - {deliveryNoteDate:yyyy-MM-dd}.pdf"
                     : $"Bon de Livraison {deliveryNoteNumber}.pdf";
-                
-                await JSRuntime.InvokeVoidAsync(
-                    "downloadFile",
-                    fileName,
-                    Convert.ToBase64String(pdfResult.Value),
-                    "application/pdf");
+
+                // Show print mode selection dialog
+                var printModeResult = await DialogService.OpenAsync<PrintModeDialog>(
+                    Localizer["print_mode"],
+                    new Dictionary<string, object>(),
+                    new DialogOptions()
+                    {
+                        Width = "400px",
+                        Resizable = false,
+                        Draggable = true
+                    });
+
+                if (printModeResult is PrintMode selectedMode)
+                {
+                    var printOptions = new PrintOptions
+                    {
+                        Mode = selectedMode,
+                        FileName = fileName
+                    };
+
+                    if (selectedMode == PrintMode.DirectPrint)
+                    {
+                        // Show printer selection dialog
+                        var printerResult = await DialogService.OpenAsync<PrinterSelectionDialog>(
+                            Localizer["select_printer"],
+                            new Dictionary<string, object> { { "PdfBytes", pdfResult.Value } },
+                            new DialogOptions()
+                            {
+                                Width = "500px",
+                                Resizable = false,
+                                Draggable = true
+                            });
+
+                        if (printerResult is PrinterSelectionResult printerSelection)
+                        {
+                            printOptions.PrinterName = printerSelection.PrinterName;
+                            printOptions.Copies = printerSelection.Copies;
+                            printOptions.Duplex = printerSelection.Duplex;
+                        }
+                        else
+                        {
+                            return; // User cancelled
+                        }
+                    }
+
+                    var printResult = await PrintService.PrintAsync(pdfResult.Value, printOptions, _cancellationTokenSource.Token);
+
+                    if (!printResult.IsSuccess)
+                    {
+                        NotificationService.Notify(new NotificationMessage
+                        {
+                            Severity = NotificationSeverity.Error,
+                            Summary = Localizer["error"],
+                            Detail = $"{Localizer["failed_to_print_delivery_note"] ?? "Failed to print delivery note"}: {printResult.ErrorMessage}"
+                        });
+                    }
+                    else if (selectedMode == PrintMode.DirectPrint)
+                    {
+                        NotificationService.Notify(new NotificationMessage
+                        {
+                            Severity = NotificationSeverity.Success,
+                            Summary = Localizer["success"],
+                            Detail = Localizer["print_job_submitted"] ?? "Print job submitted successfully"
+                        });
+                    }
+                }
             }
             else
             {
