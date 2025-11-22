@@ -17,10 +17,21 @@
             {
                 return Result.Fail("not_found");
             }
+            // Get the active accounting year
+            var activeAccountingYear = await _context.AccountingYear
+                .FirstOrDefaultAsync(ay => ay.IsActive, cancellationToken);
+
+            if (activeAccountingYear == null)
+            {
+                _logger.LogError("No active accounting year found");
+                return Result.Fail("no_active_accounting_year");
+            }
+
             var invoice = new Facture
             {
                 Date = command.Date,
-                IdClient = command.ClientId
+                IdClient = command.ClientId,
+                AccountingYearId = activeAccountingYear.Id
             };
             _ = _context.Facture.Add(invoice);
             _ = await _context.SaveChangesAsync(cancellationToken);

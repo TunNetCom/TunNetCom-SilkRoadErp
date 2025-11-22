@@ -13,7 +13,11 @@ public partial class Facture
 
     public DateTime Date { get; set; }
 
+    public int AccountingYearId { get; set; }
+
     public virtual ICollection<BonDeLivraison> BonDeLivraison { get; set; } = new List<BonDeLivraison>();
 
     public virtual Client IdClientNavigation { get; set; } = null!;
+
+    public virtual AccountingYear AccountingYear { get; set; } = null!;
 }

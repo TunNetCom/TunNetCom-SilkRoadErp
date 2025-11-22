@@ -21,6 +21,8 @@ public partial class SalesContext : DbContext
 
     public virtual DbSet<Avoirs> Avoirs { get; set; }
 
+    public virtual DbSet<AccountingYear> AccountingYear { get; set; }
+
     public virtual DbSet<BonDeLivraison> BonDeLivraison { get; set; }
 
     public virtual DbSet<BonDeReception> BonDeReception { get; set; }

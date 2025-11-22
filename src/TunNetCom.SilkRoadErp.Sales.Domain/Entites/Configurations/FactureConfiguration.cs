@@ -25,6 +25,11 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             .OnDelete(DeleteBehavior.ClientSetNull)
             .HasConstraintName("FK_dbo.Facture_dbo.Client_id_client");
 
+            entity.HasOne(d => d.AccountingYear).WithMany(p => p.Facture)
+            .HasForeignKey(d => d.AccountingYearId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .HasConstraintName("FK_dbo.Facture_dbo.AccountingYear_AccountingYearId");
+
             OnConfigurePartial(entity);
         }
 

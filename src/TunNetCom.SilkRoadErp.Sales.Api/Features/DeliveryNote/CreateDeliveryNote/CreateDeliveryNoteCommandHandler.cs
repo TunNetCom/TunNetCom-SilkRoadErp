@@ -12,6 +12,16 @@ public class CreateDeliveryNoteCommandHandler(
         _logger.LogEntityCreated(nameof(BonDeLivraison), createDeliveryNoteCommand);
 
         //TODO add checks
+        // Get the active accounting year
+        var activeAccountingYear = await _context.AccountingYear
+            .FirstOrDefaultAsync(ay => ay.IsActive, cancellationToken);
+
+        if (activeAccountingYear == null)
+        {
+            _logger.LogError("No active accounting year found");
+            return Result.Fail("no_active_accounting_year");
+        }
+
         var deliveryNote = BonDeLivraison.CreateBonDeLivraison
             (
                 createDeliveryNoteCommand.Date,
@@ -20,7 +30,8 @@ public class CreateDeliveryNoteCommandHandler(
                 createDeliveryNoteCommand.NetPayer,
                 createDeliveryNoteCommand.TempBl,
                 createDeliveryNoteCommand.NumFacture,
-                createDeliveryNoteCommand.ClientId
+                createDeliveryNoteCommand.ClientId,
+                activeAccountingYear.Id
             );
 
         foreach(var deliveryNoteDetail in createDeliveryNoteCommand.DeliveryNoteDetails) 

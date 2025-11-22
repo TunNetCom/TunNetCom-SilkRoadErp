@@ -15,13 +15,24 @@ public class UpdateReceiptNoteCommandHandler(
 
             return Result.Fail(EntityNotFound.Error());
         }
+        // Get the active accounting year
+        var activeAccountingYear = await _context.AccountingYear
+            .FirstOrDefaultAsync(ay => ay.IsActive, cancellationToken);
+
+        if (activeAccountingYear == null)
+        {
+            _logger.LogError("No active accounting year found");
+            return Result.Fail("no_active_accounting_year");
+        }
+
         receiptnote.UpdateReceiptNote(
             num: updateReceiptNoteCommand.Num,
             numBonFournisseur: updateReceiptNoteCommand.NumBonFournisseur,
             dateLivraison: updateReceiptNoteCommand.DateLivraison,
             idFournisseur: updateReceiptNoteCommand.IdFournisseur,
             date: updateReceiptNoteCommand.Date,
-            numFactureFournisseur: updateReceiptNoteCommand.NumFactureFournisseur
+            numFactureFournisseur: updateReceiptNoteCommand.NumFactureFournisseur,
+            accountingYearId: activeAccountingYear.Id
             );
         _ = await _context.SaveChangesAsync(cancellationToken);
 
