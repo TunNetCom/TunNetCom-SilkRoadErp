@@ -19,6 +19,8 @@ public partial class FactureFournisseur
 
     public DateTime Date { get; set; }
 
+    public int AccountingYearId { get; set; }
+
     public virtual AvoirFinancierFournisseurs? AvoirFinancierFournisseurs { get; set; }
 
     public virtual ICollection<BonDeReception> BonDeReception { get; set; } = new List<BonDeReception>();
@@ -26,4 +28,6 @@ public partial class FactureFournisseur
     public virtual ICollection<FactureAvoirFournisseur> FactureAvoirFournisseur { get; set; } = new List<FactureAvoirFournisseur>();
 
     public virtual Fournisseur IdFournisseurNavigation { get; set; } = null!;
+
+    public virtual AccountingYear AccountingYear { get; set; } = null!;
 }

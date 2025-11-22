@@ -25,13 +25,24 @@ public class CreateReceiptNoteCommandHandler(
             return Result.Fail("receiptnote_number_exists");
         }
 
+        // Get the active accounting year
+        var activeAccountingYear = await _context.AccountingYear
+            .FirstOrDefaultAsync(ay => ay.IsActive, cancellationToken);
+
+        if (activeAccountingYear == null)
+        {
+            _logger.LogError("No active accounting year found");
+            return Result.Fail("no_active_accounting_year");
+        }
+
         var ReceiptNote = BonDeReception.CreateReceiptNote(
             createReceiptNoteCommand.Num,
             createReceiptNoteCommand.NumBonFournisseur,
             createReceiptNoteCommand.DateLivraison,
             createReceiptNoteCommand.IdFournisseur,
             createReceiptNoteCommand.Date,
-            createReceiptNoteCommand.NumFactureFournisseur
+            createReceiptNoteCommand.NumFactureFournisseur,
+            activeAccountingYear.Id
 );
 
 

@@ -13,6 +13,16 @@ internal class CreateReceiptNoteWithLinesCommandHandler(
         try
         {
 
+            // Get the active accounting year
+            var activeAccountingYear = await salesContext.AccountingYear
+                .FirstOrDefaultAsync(ay => ay.IsActive, cancellationToken);
+
+            if (activeAccountingYear == null)
+            {
+                _logger.LogError("No active accounting year found");
+                return Result.Fail("no_active_accounting_year");
+            }
+
             var recipetNote = await salesContext.BonDeReception.AddAsync(new BonDeReception
             {
                 NumBonFournisseur = request.NumBonFournisseur,
@@ -20,6 +30,7 @@ internal class CreateReceiptNoteWithLinesCommandHandler(
                 IdFournisseur = request.IdFournisseur,
                 Date = request.Date,
                 NumFactureFournisseur = request.NumFactureFournisseur,
+                AccountingYearId = activeAccountingYear.Id
             }, cancellationToken);
 
             var receiptNoteLines = request.ReceiptNoteLines.Select(x => LigneBonReception.CreateReceiptNoteLine(

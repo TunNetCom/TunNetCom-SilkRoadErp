@@ -14,7 +14,8 @@ public partial class BonDeReception
             DateTime dateLivraison,
             int idFournisseur,
             DateTime date,
-            int? numFactureFournisseur
+            int? numFactureFournisseur,
+            int accountingYearId
         )
         {
             this.Num = num;
@@ -23,6 +24,7 @@ public partial class BonDeReception
             this.IdFournisseur = idFournisseur;
             this.Date = date;
             this.NumFactureFournisseur = numFactureFournisseur;
+            this.AccountingYearId = accountingYearId;
         }
 
         public static BonDeReception CreateReceiptNote(
@@ -31,7 +33,8 @@ public partial class BonDeReception
         DateTime dateLivraison,
         int idFournisseur,
         DateTime date,
-        int? numFactureFournisseur
+        int? numFactureFournisseur,
+        int accountingYearId
         )
     {
         return new BonDeReception
@@ -41,7 +44,8 @@ public partial class BonDeReception
             DateLivraison = dateLivraison,
             IdFournisseur= idFournisseur,
             Date = date,
-            NumFactureFournisseur= numFactureFournisseur
+            NumFactureFournisseur= numFactureFournisseur,
+            AccountingYearId = accountingYearId
         };
     }
     public int Num { get; set; }
@@ -56,9 +60,13 @@ public partial class BonDeReception
 
     public int? NumFactureFournisseur { get; set; }
 
+    public int AccountingYearId { get; set; }
+
     public virtual Fournisseur IdFournisseurNavigation { get; set; } = null!;
 
     public virtual ICollection<LigneBonReception> LigneBonReception { get; set; } = new List<LigneBonReception>();
 
     public virtual FactureFournisseur? NumFactureFournisseurNavigation { get; set; }
+
+    public virtual AccountingYear AccountingYear { get; set; } = null!;
 }

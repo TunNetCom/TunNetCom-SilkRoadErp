@@ -14,7 +14,8 @@ public partial class BonDeLivraison
         decimal netPayer,
         TimeOnly tempBl,
         int? numFacture,
-        int? clientId)
+        int? clientId,
+        int accountingYearId)
     {
         return new BonDeLivraison
         {
@@ -24,7 +25,8 @@ public partial class BonDeLivraison
             NetPayer = netPayer,
             TempBl = tempBl,
             NumFacture = numFacture,
-            ClientId = clientId
+            ClientId = clientId,
+            AccountingYearId = accountingYearId
         };
     }
 
@@ -35,7 +37,8 @@ public partial class BonDeLivraison
         decimal netPayer,
         TimeOnly tempBl,
         int? numFacture,
-        int? clientId) 
+        int? clientId,
+        int accountingYearId) 
     {
         this.Date = date;
         this.TotHTva = totHTva;
@@ -44,6 +47,7 @@ public partial class BonDeLivraison
         this.TempBl = tempBl;
         this.NumFacture = numFacture;
         this.ClientId = clientId;
+        this.AccountingYearId = accountingYearId;
     }
 
     public int Num { get; set; }
@@ -62,6 +66,8 @@ public partial class BonDeLivraison
 
     public int? ClientId { get; set; }
 
+    public int AccountingYearId { get; set; }
+
     public virtual Client? Client { get; set; }
 
     public virtual ICollection<LigneBl> LigneBl { get; set; } = new List<LigneBl>();
@@ -69,4 +75,6 @@ public partial class BonDeLivraison
     public virtual Facture? NumFactureNavigation { get; set; }
 
     public virtual Transaction? Transaction { get; set; }
+
+    public virtual AccountingYear AccountingYear { get; set; } = null!;
 }

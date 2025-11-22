@@ -21,6 +21,16 @@ public class UpdateDeliveryNoteCommandHandler(
             return Result.Fail(EntityNotFound.Error());
         }
 
+        // Get the active accounting year
+        var activeAccountingYear = await _context.AccountingYear
+            .FirstOrDefaultAsync(ay => ay.IsActive, cancellationToken);
+
+        if (activeAccountingYear == null)
+        {
+            _logger.LogError("No active accounting year found");
+            return Result.Fail("no_active_accounting_year");
+        }
+
         // Update the delivery note properties
         deliveryNote.UpdateBonDeLivraison(
             updateDeliveryNoteCommand.Date,
@@ -29,7 +39,8 @@ public class UpdateDeliveryNoteCommandHandler(
             updateDeliveryNoteCommand.NetPayer,
             updateDeliveryNoteCommand.TempBl,
             updateDeliveryNoteCommand.NumFacture,
-            updateDeliveryNoteCommand.ClientId
+            updateDeliveryNoteCommand.ClientId,
+            activeAccountingYear.Id
         );
 
         // Remove all existing lines
