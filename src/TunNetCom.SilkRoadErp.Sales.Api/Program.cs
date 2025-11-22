@@ -200,10 +200,8 @@ using (IServiceScope scope = app.Services.CreateScope())
         // Seed database if tables are empty
         logger.LogInformation("=== DÉBUT DU PROCESSUS DE SEEDING ===");
         var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
-        var forceSeed = builder.Configuration.GetValue<bool>("DataSeeder:ForceSeed", false);
-        logger.LogInformation("Configuration du seeding - ForceSeed: {ForceSeed}", forceSeed);
         logger.LogInformation("Appel du seeder...");
-        await seeder.SeedAsync(dbContext, forceSeed);
+        await seeder.SeedAsync(dbContext);
         logger.LogInformation("=== FIN DU PROCESSUS DE SEEDING ===");
     }
 

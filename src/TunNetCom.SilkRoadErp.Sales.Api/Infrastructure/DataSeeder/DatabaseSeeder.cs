@@ -34,12 +34,11 @@ public class DatabaseSeeder
         _logger.LogInformation("Le dossier existe: {Exists}", Directory.Exists(_seedDataPath));
     }
 
-    public async Task SeedAsync(SalesContext context, bool forceSeed = false)
+    public async Task SeedAsync(SalesContext context)
     {
         try
         {
             _logger.LogInformation("=== DÉBUT DU SEEDING DE LA BASE DE DONNÉES ===");
-            _logger.LogInformation("ForceSeed: {ForceSeed}", forceSeed);
             _logger.LogInformation("Chemin des données de seed: {SeedDataPath}", _seedDataPath);
             _logger.LogInformation("Vérification de l'existence du dossier: {Exists}", Directory.Exists(_seedDataPath));
             
@@ -53,10 +52,11 @@ public class DatabaseSeeder
                 }
             }
 
-            await SeedClientsAsync(context, forceSeed);
-            await SeedFournisseursAsync(context, forceSeed);
-            await SeedSystemeAsync(context, forceSeed);
-            await SeedProduitsAsync(context, forceSeed);
+            await SeedAccountingYearAsync(context);
+            await SeedClientsAsync(context);
+            await SeedFournisseursAsync(context);
+            await SeedSystemeAsync(context);
+            await SeedProduitsAsync(context);
 
             _logger.LogInformation("=== SEEDING DE LA BASE DE DONNÉES TERMINÉ AVEC SUCCÈS ===");
         }
@@ -69,25 +69,78 @@ public class DatabaseSeeder
         }
     }
 
-    private async Task SeedClientsAsync(SalesContext context, bool forceSeed = false)
+    private async Task SeedAccountingYearAsync(SalesContext context)
+    {
+        var count = await context.AccountingYear.CountAsync();
+        _logger.LogInformation("Table AccountingYear - Nombre d'enregistrements actuels: {Count}", count);
+        
+        // On insère seulement si la table est vide
+        if (count > 0)
+        {
+            _logger.LogInformation("La table AccountingYear contient déjà {Count} enregistrement(s). Seeding ignoré.", count);
+            return;
+        }
+        
+        _logger.LogInformation("Création de l'exercice comptable 2025 (actif)...");
+
+        // S'assurer qu'aucun autre exercice n'est actif avant de créer le nouveau
+        var activeYears = await context.AccountingYear
+            .Where(ay => ay.IsActive)
+            .ToListAsync();
+        
+        if (activeYears.Any())
+        {
+            _logger.LogInformation("Désactivation de {Count} exercice(s) comptable(s) actif(s) existant(s)...", activeYears.Count);
+            foreach (var year in activeYears)
+            {
+                year.SetInactive();
+            }
+            await context.SaveChangesAsync();
+        }
+
+        // Vérifier si l'exercice 2025 existe déjà
+        var existing2025 = await context.AccountingYear
+            .FirstOrDefaultAsync(ay => ay.Year == 2025);
+        
+        if (existing2025 != null)
+        {
+            _logger.LogInformation("L'exercice comptable 2025 existe déjà. Activation de cet exercice...");
+            existing2025.SetActive();
+            await context.SaveChangesAsync();
+            _logger.LogInformation("✓ Exercice comptable 2025 activé avec succès.");
+            return;
+        }
+
+        // Créer l'exercice comptable 2025 actif
+        var accountingYear2025 = AccountingYear.CreateAccountingYear(2025, isActive: true);
+
+        _logger.LogInformation("Ajout de l'exercice comptable 2025 à la base de données...");
+        try
+        {
+            await context.AccountingYear.AddAsync(accountingYear2025);
+            var saved = await context.SaveChangesAsync();
+            _logger.LogInformation("✓ Exercice comptable 2025 (actif) inséré avec succès. {Saved} changements sauvegardés.", saved);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "✗ ERREUR lors de l'insertion de l'exercice comptable 2025: {Message}", ex.Message);
+            throw;
+        }
+    }
+
+    private async Task SeedClientsAsync(SalesContext context)
     {
         var count = await context.Client.CountAsync();
         _logger.LogInformation("Table Client - Nombre d'enregistrements actuels: {Count}", count);
         
-        // Si forceSeed est true, on force toujours l'insertion
-        // Sinon, on insère seulement si la table est vide
-        if (count > 0 && !forceSeed)
+        // On insère seulement si la table est vide
+        if (count > 0)
         {
-            _logger.LogInformation("La table Client contient déjà {Count} enregistrement(s). Seeding ignoré. Utilisez forceSeed=true pour forcer le seeding.", count);
+            _logger.LogInformation("La table Client contient déjà {Count} enregistrement(s). Seeding ignoré.", count);
             return;
         }
         
-        if (count > 0 && forceSeed)
-        {
-            _logger.LogWarning("La table Client contient déjà {Count} enregistrement(s). Le seeding forcé va ajouter des données supplémentaires.", count);
-        }
-        
-        _logger.LogInformation("Tentative d'insertion des clients (forceSeed={ForceSeed}, count={Count})", forceSeed, count);
+        _logger.LogInformation("Tentative d'insertion des clients...");
 
         var jsonPath = Path.Combine(_seedDataPath, "clients.json");
         _logger.LogInformation("Recherche du fichier clients.json à: {JsonPath}", jsonPath);
@@ -178,20 +231,16 @@ public class DatabaseSeeder
         }
     }
 
-    private async Task SeedFournisseursAsync(SalesContext context, bool forceSeed = false)
+    private async Task SeedFournisseursAsync(SalesContext context)
     {
         var count = await context.Fournisseur.CountAsync();
         _logger.LogInformation("Table Fournisseur - Nombre d'enregistrements actuels: {Count}", count);
         
-        if (count > 0 && !forceSeed)
+        // On insère seulement si la table est vide
+        if (count > 0)
         {
-            _logger.LogInformation("La table Fournisseur contient déjà {Count} enregistrement(s). Seeding ignoré. Utilisez forceSeed=true pour forcer le seeding.", count);
+            _logger.LogInformation("La table Fournisseur contient déjà {Count} enregistrement(s). Seeding ignoré.", count);
             return;
-        }
-        
-        if (count > 0 && forceSeed)
-        {
-            _logger.LogWarning("La table Fournisseur contient déjà {Count} enregistrement(s). Le seeding forcé va ajouter des données supplémentaires.", count);
         }
 
         var jsonPath = Path.Combine(_seedDataPath, "fournisseurs.json");
@@ -281,29 +330,16 @@ public class DatabaseSeeder
         }
     }
 
-    private async Task SeedSystemeAsync(SalesContext context, bool forceSeed = false)
+    private async Task SeedSystemeAsync(SalesContext context)
     {
         var count = await context.Systeme.CountAsync();
         _logger.LogInformation("Table Systeme - Nombre d'enregistrements actuels: {Count}", count);
         
-        if (count > 0 && !forceSeed)
+        // On insère seulement si la table est vide
+        if (count > 0)
         {
-            _logger.LogInformation("La table Systeme contient déjà {Count} enregistrement(s). Seeding ignoré. Utilisez forceSeed=true pour forcer le seeding.", count);
+            _logger.LogInformation("La table Systeme contient déjà {Count} enregistrement(s). Seeding ignoré.", count);
             return;
-        }
-        
-        if (count > 0 && forceSeed)
-        {
-            _logger.LogWarning("La table Systeme contient déjà {Count} enregistrement(s). Le seeding forcé va remplacer les données existantes.", count);
-            // Pour Systeme, on supprime l'ancien enregistrement avant d'ajouter le nouveau
-            var existing = await context.Systeme.FirstOrDefaultAsync();
-            if (existing != null)
-            {
-                _logger.LogInformation("Suppression de l'enregistrement Systeme existant...");
-                context.Systeme.Remove(existing);
-                await context.SaveChangesAsync();
-                _logger.LogInformation("Enregistrement Systeme existant supprimé.");
-            }
         }
 
         var jsonPath = Path.Combine(_seedDataPath, "systeme.json");
@@ -381,20 +417,16 @@ public class DatabaseSeeder
         }
     }
 
-    private async Task SeedProduitsAsync(SalesContext context, bool forceSeed = false)
+    private async Task SeedProduitsAsync(SalesContext context)
     {
         var count = await context.Produit.CountAsync();
         _logger.LogInformation("Table Produit - Nombre d'enregistrements actuels: {Count}", count);
         
-        if (count > 0 && !forceSeed)
+        // On insère seulement si la table est vide
+        if (count > 0)
         {
-            _logger.LogInformation("La table Produit contient déjà {Count} enregistrement(s). Seeding ignoré. Utilisez forceSeed=true pour forcer le seeding.", count);
+            _logger.LogInformation("La table Produit contient déjà {Count} enregistrement(s). Seeding ignoré.", count);
             return;
-        }
-        
-        if (count > 0 && forceSeed)
-        {
-            _logger.LogWarning("La table Produit contient déjà {Count} enregistrement(s). Le seeding forcé va ajouter des données supplémentaires.", count);
         }
 
         var jsonPath = Path.Combine(_seedDataPath, "produits.json");
