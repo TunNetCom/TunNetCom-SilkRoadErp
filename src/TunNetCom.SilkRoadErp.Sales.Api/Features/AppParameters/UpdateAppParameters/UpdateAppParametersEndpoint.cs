@@ -28,7 +28,9 @@ public class UpdateAppParametersEndpoint : ICarterModule
                         EtbSecondaire: request.EtbSecondaire,
                         PourcentageFodec: request.PourcentageFodec,
                         AdresseRetenu: request.AdresseRetenu,
-                        PourcentageRetenu: request.PourcentageRetenu);
+                        PourcentageRetenu: request.PourcentageRetenu,
+                        VatAmount: request.VatAmount,
+                        DiscountPercentage: request.DiscountPercentage);
 
                     var updateAppParametersResult = await mediator.Send(updateAppParametersCommand, cancellationToken);
 

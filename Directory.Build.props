@@ -4,7 +4,8 @@
     <TargetFramework>net10.0</TargetFramework>
     
     <!-- Common Language Features -->
-    <Nullable>enable</Nullable>
+    <!-- Exclude SQL Database projects from nullable (they use C# 7.3) -->
+    <Nullable Condition="'$(OutputType)' != 'Database'">enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     
     <!-- Code Analysis -->

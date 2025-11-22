@@ -35,7 +35,9 @@ public class UpdateAppParametersCommandHandlerTest
           EtbSecondaire: "true",
           PourcentageFodec: 1.5m,
           AdresseRetenu: "Autre Adresse",
-          PourcentageRetenu: 3.25
+          PourcentageRetenu: 3.25,
+          VatAmount: null,
+          DiscountPercentage: null
         );
         // Act
         var result = await handler.Handle(command, CancellationToken.None);

@@ -112,6 +112,20 @@
                         <RadzenNumeric @bind-Value="system.PourcentageRetenu" Name="PourcentageRetenu" Style="width: 100%;" />
                     </ChildContent>
                 </RadzenFormField>
+
+                <RadzenFormField Text="@localizer["vat_percentage"]">
+                    <Start><RadzenIcon Icon="percent" /></Start>
+                    <ChildContent>
+                        <RadzenNumeric @bind-Value="system.VatAmount" Name="VatAmount" Style="width: 100%;" Format="N2" Step="0.01" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="@localizer["discount_percentage"]">
+                    <Start><RadzenIcon Icon="percent" /></Start>
+                    <ChildContent>
+                        <RadzenNumeric @bind-Value="system.DiscountPercentage" Name="DiscountPercentage" Style="width: 100%;" Format="N2" Step="0.01" />
+                    </ChildContent>
+                </RadzenFormField>
             </RadzenColumn>
         </RadzenRow>
 
@@ -162,7 +176,9 @@
 					AdresseRetenu = system.AdresseRetenu,
 					PourcentageFodec = system.PourcentageFodec,
 					PourcentageRetenu = system.PourcentageRetenu,
-					EtbSecondaire = system.EtbSecondaire
+					EtbSecondaire = system.EtbSecondaire,
+					VatAmount = system.VatAmount,
+					DiscountPercentage = system.DiscountPercentage
 				}, cancellationToken);
 
         if (updateAppParametersResult.IsT0)

@@ -36,7 +36,9 @@ public class UpdateAppParametersCommandHandler(
             etbSecondaire: updateAppParametersCommand.EtbSecondaire,
             pourcentageFodec: updateAppParametersCommand.PourcentageFodec ?? appParametersToUpdate.PourcentageFodec,
             adresseRetenu: updateAppParametersCommand.AdresseRetenu,
-            pourcentageRetenu: updateAppParametersCommand.PourcentageRetenu ?? appParametersToUpdate.PourcentageRetenu);
+            pourcentageRetenu: updateAppParametersCommand.PourcentageRetenu ?? appParametersToUpdate.PourcentageRetenu,
+            vatAmount: updateAppParametersCommand.VatAmount ?? appParametersToUpdate.VatAmount,
+            discountPercentage: updateAppParametersCommand.DiscountPercentage ?? appParametersToUpdate.DiscountPercentage);
 
         _ = await _context.SaveChangesAsync(cancellationToken);
 

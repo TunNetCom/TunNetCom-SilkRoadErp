@@ -14,4 +14,6 @@ public record UpdateAppParametersCommand(
     string? EtbSecondaire,
     decimal? PourcentageFodec,
     string? AdresseRetenu,
-    double? PourcentageRetenu) : IRequest<Result>;
+    double? PourcentageRetenu,
+    decimal? VatAmount,
+    decimal? DiscountPercentage) : IRequest<Result>;

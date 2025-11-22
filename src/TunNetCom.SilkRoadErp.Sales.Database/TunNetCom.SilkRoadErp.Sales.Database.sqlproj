@@ -60,8 +60,10 @@
     <Folder Include="Properties" />
     <Folder Include="dbo\" />
     <Folder Include="dbo\Tables\" />
+    <Folder Include="Pre-Deployment" />
   </ItemGroup>
   <ItemGroup>
+    <PreDeploy Include="Pre-Deployment\Script.PreDeployment.sql" />
     <Build Include="dbo\Tables\__MigrationHistory.sql" />
     <Build Include="dbo\Tables\AvoirFinancierFournisseurs.sql" />
     <Build Include="dbo\Tables\AvoirFournisseur.sql" />

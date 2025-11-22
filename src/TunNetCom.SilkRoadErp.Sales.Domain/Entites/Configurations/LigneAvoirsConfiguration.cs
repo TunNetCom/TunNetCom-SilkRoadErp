@@ -19,7 +19,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             entity.Property(e => e.DesignationLi).HasColumnName("designation_li");
             entity.Property(e => e.NumAvoir).HasColumnName("Num_avoir");
             entity.Property(e => e.PrixHt)
-            .HasColumnType("decimal(18, 2)")
+            .HasColumnType("decimal(18, 3)")
             .HasColumnName("prix_HT");
             entity.Property(e => e.QteLi).HasColumnName("qte_li");
             entity.Property(e => e.RefProduit)
@@ -27,10 +27,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             .HasColumnName("Ref_Produit");
             entity.Property(e => e.Remise).HasColumnName("remise");
             entity.Property(e => e.TotHt)
-            .HasColumnType("decimal(18, 2)")
+            .HasColumnType("decimal(18, 3)")
             .HasColumnName("tot_HT");
             entity.Property(e => e.TotTtc)
-            .HasColumnType("decimal(18, 2)")
+            .HasColumnType("decimal(18, 3)")
             .HasColumnName("tot_TTC");
             entity.Property(e => e.Tva).HasColumnName("tva");
 

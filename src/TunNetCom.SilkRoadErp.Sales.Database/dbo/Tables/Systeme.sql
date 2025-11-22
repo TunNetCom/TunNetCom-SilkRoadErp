@@ -13,6 +13,8 @@
     [pourcentageFodec]  DECIMAL (18, 2) NOT NULL,
     [adresseRetenu]     NVARCHAR (MAX)  NULL,
     [pourcentageRetenu] FLOAT (53)      NOT NULL,
+    [VatAmount]         DECIMAL (18, 2) NOT NULL DEFAULT 19,
+    [DiscountPercentage] DECIMAL (18, 2) NOT NULL DEFAULT 15.95,
     CONSTRAINT [PK_dbo.Systeme] PRIMARY KEY CLUSTERED ([Id] ASC)
 );
 

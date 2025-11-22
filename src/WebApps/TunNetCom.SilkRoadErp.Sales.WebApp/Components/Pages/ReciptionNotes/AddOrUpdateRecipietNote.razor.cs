@@ -866,8 +866,8 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
             line.ItemDescription = product.ItemDescription;
             line.ProductReference = product.ProductReference;
             line.UnitPriceExcludingTax = product.UnitPriceExcludingTax;
-            line.Discount = appParameters.DiscountPercentage;
-            line.VatRate = appParameters.VatAmount;
+            line.Discount = (double)appParameters.DiscountPercentage;
+            line.VatRate = (double)appParameters.VatAmount;
             ReceiptLineCalculator.CalculateTotals(line);
         }
     }

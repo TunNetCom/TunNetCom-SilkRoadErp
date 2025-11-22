@@ -20,7 +20,9 @@ public class UpdateAppParametersRequest
         string? etbSecondaire,
         decimal? pourcentageFodec,
         string? adresseRetenu,
-        double? pourcentageRetenu)
+        double? pourcentageRetenu,
+        decimal? vatAmount,
+        decimal? discountPercentage)
     {
         NomSociete = nomSociete;
         Timbre = (decimal)timbre;
@@ -35,6 +37,8 @@ public class UpdateAppParametersRequest
         PourcentageFodec = (decimal)pourcentageFodec;
         AdresseRetenu = adresseRetenu;
         PourcentageRetenu = (double)pourcentageRetenu;
+        VatAmount = vatAmount ?? 0;
+        DiscountPercentage = discountPercentage ?? 0;
     }
 
     public string NomSociete { get; set; } = null!;

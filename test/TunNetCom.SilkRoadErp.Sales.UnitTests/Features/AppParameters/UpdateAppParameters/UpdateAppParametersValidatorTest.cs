@@ -23,7 +23,9 @@ public class UpdateAppParametersValidatorTest
             EtbSecondaire: null,
             PourcentageFodec: 0,
             AdresseRetenu: null,
-            PourcentageRetenu: 0);
+            PourcentageRetenu: 0,
+            VatAmount: null,
+            DiscountPercentage: null);
         var result = _validator.TestValidate(command);
         _ = result.ShouldHaveValidationErrorFor(x => x.NomSociete)
               .WithErrorMessage("app_name_is_required");
@@ -45,7 +47,9 @@ public class UpdateAppParametersValidatorTest
             EtbSecondaire: null,
             PourcentageFodec: 0,
             AdresseRetenu: null,
-            PourcentageRetenu: 0);
+            PourcentageRetenu: 0,
+            VatAmount: null,
+            DiscountPercentage: null);
         var result = _validator.TestValidate(command);
         _ = result.ShouldHaveValidationErrorFor(x => x.NomSociete)
               .WithErrorMessage("app_name_must_be_less_than_50_characters");
@@ -67,7 +71,9 @@ public class UpdateAppParametersValidatorTest
             EtbSecondaire: null,
             PourcentageFodec: 0,
             AdresseRetenu: null,
-            PourcentageRetenu: 0);
+            PourcentageRetenu: 0,
+            VatAmount: null,
+            DiscountPercentage: null);
         var result = _validator.TestValidate(command);
         _ = result.ShouldHaveValidationErrorFor(x => x.Tel)
               .WithErrorMessage("tel_is_required");
@@ -89,7 +95,9 @@ public class UpdateAppParametersValidatorTest
             EtbSecondaire: null,
             PourcentageFodec: 0,
             AdresseRetenu: null,
-            PourcentageRetenu: 0);
+            PourcentageRetenu: 0,
+            VatAmount: null,
+            DiscountPercentage: null);
         var result = _validator.TestValidate(command);
         _ = result.ShouldHaveValidationErrorFor(x => x.Adresse)
               .WithErrorMessage("adresse_is_required");
@@ -111,7 +119,9 @@ public class UpdateAppParametersValidatorTest
             EtbSecondaire: null,
             PourcentageFodec: 0,
             AdresseRetenu: null,
-            PourcentageRetenu: 0);
+            PourcentageRetenu: 0,
+            VatAmount: null,
+            DiscountPercentage: null);
         var result = _validator.TestValidate(command);
         _ = result.ShouldHaveValidationErrorFor(x => x.Email)
               .WithErrorMessage("email_must_be_a_valid_email_address");
@@ -133,7 +143,9 @@ public class UpdateAppParametersValidatorTest
             EtbSecondaire: null,
             PourcentageFodec: 0,
             AdresseRetenu: null,
-            PourcentageRetenu: 0);
+            PourcentageRetenu: 0,
+            VatAmount: null,
+            DiscountPercentage: null);
 
         var result = _validator.TestValidate(command);
         _ = result.ShouldHaveValidationErrorFor(x => x.Adresse)
@@ -156,7 +168,9 @@ public class UpdateAppParametersValidatorTest
             EtbSecondaire: "ETB01",
             PourcentageFodec: 1.5m,
             AdresseRetenu: "Retenu Address",
-            PourcentageRetenu: 1.0);
+            PourcentageRetenu: 1.0,
+            VatAmount: null,
+            DiscountPercentage: null);
 
         var result = _validator.TestValidate(command);
         result.ShouldNotHaveAnyValidationErrors();

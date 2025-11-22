@@ -96,7 +96,7 @@
                 <RadzenFormField Text="@Localizer["product_prix"]">
                     <Start><RadzenIcon Icon="attach_money" /></Start>
                     <ChildContent>
-                        <RadzenNumeric @bind-Value="productModel.Price" Name="@nameof(ProductModel.Price)" Style="width: 100%;" Min="0" Step="0.01" />
+                        <RadzenNumeric @bind-Value="productModel.Price" Name="@nameof(ProductModel.Price)" Style="width: 100%;" Min="0" Step="0.001" Format="N3" />
                     </ChildContent>
                     <Helper>
                         <RadzenRangeValidator Component="Price" Min="0" Text="@Localizer["positive_number"]" />
@@ -106,7 +106,7 @@
                 <RadzenFormField Text="@Localizer["product_prixAchat"]">
                     <Start><RadzenIcon Icon="shopping_basket" /></Start>
                     <ChildContent>
-                        <RadzenNumeric @bind-Value="productModel.PurchasingPrice" Name="@nameof(ProductModel.PurchasingPrice)" Style="width: 100%;" Min="0" Step="0.01" />
+                        <RadzenNumeric @bind-Value="productModel.PurchasingPrice" Name="@nameof(ProductModel.PurchasingPrice)" Style="width: 100%;" Min="0" Step="0.001" Format="N3" />
                     </ChildContent>
                     <Helper>
                         <RadzenRangeValidator Component="PurchasingPrice" Min="0" Text="@Localizer["positive_number"]" />

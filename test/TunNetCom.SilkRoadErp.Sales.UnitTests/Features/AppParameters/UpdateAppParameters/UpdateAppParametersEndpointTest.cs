@@ -52,7 +52,9 @@ public class UpdateAppParametersEndpoinTest
             request.EtbSecondaire,
             request.PourcentageFodec,
             request.AdresseRetenu,
-            request.PourcentageRetenu
+            request.PourcentageRetenu,
+            request.VatAmount,
+            request.DiscountPercentage
         );
         // Act
         var result = await mediatorMock.Object.Send(command, CancellationToken.None);

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.0.11018.127 d18.0
+VisualStudioVersion = 18.0.11018.127
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TunNetCom.SilkRoadErp.Sales.Api", "src\TunNetCom.SilkRoadErp.Sales.Api\TunNetCom.SilkRoadErp.Sales.Api.csproj", "{94A92B37-3A57-4B4C-B5F1-858C874A0DBD}"
 EndProject
@@ -20,6 +20,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "WebApps", "WebApps", "{750EB057-7692-4776-8B56-5B4446AA0561}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TunNetCom.SilkRoadErp.Sales.HttpClients", "src\WebApps\TunNetCom.SilkRoadErp.Sales.HttpClients\TunNetCom.SilkRoadErp.Sales.HttpClients.csproj", "{A06A883D-73EC-40DD-AA67-A202CAA5F9DF}"
+EndProject
+Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "TunNetCom.SilkRoadErp.Sales.Database", "src\TunNetCom.SilkRoadErp.Sales.Database\TunNetCom.SilkRoadErp.Sales.Database.sqlproj", "{2DEA6812-E221-47BF-B6B7-3D2789997A5A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,6 +53,12 @@ Global
 		{A06A883D-73EC-40DD-AA67-A202CAA5F9DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A06A883D-73EC-40DD-AA67-A202CAA5F9DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A06A883D-73EC-40DD-AA67-A202CAA5F9DF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2DEA6812-E221-47BF-B6B7-3D2789997A5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2DEA6812-E221-47BF-B6B7-3D2789997A5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2DEA6812-E221-47BF-B6B7-3D2789997A5A}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{2DEA6812-E221-47BF-B6B7-3D2789997A5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2DEA6812-E221-47BF-B6B7-3D2789997A5A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2DEA6812-E221-47BF-B6B7-3D2789997A5A}.Release|Any CPU.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -479,10 +479,10 @@
                 // If product values are 0, use app parameters as fallback
                 order.DiscountPercentage = selectedProduct.DiscountPercentage > 0 
                     ? selectedProduct.DiscountPercentage 
-                    : (AppParameters?.DiscountPercentage ?? 0);
+                    : (double)(AppParameters?.DiscountPercentage ?? 0);
                 order.VatPercentage = selectedProduct.VatPercentage > 0 
                     ? selectedProduct.VatPercentage 
-                    : (AppParameters?.VatAmount ?? 0);
+                    : (double)(AppParameters?.VatAmount ?? 0);
                 
                 LineItemCalculator.CalculateTotals(order);
                 await NotifyItemsChanged();
@@ -607,8 +607,8 @@
             
             if (AppParameters != null)
             {
-                order.DiscountPercentage = AppParameters.DiscountPercentage;
-                order.VatPercentage = AppParameters.VatAmount;
+                order.DiscountPercentage = (double)AppParameters.DiscountPercentage;
+                order.VatPercentage = (double)AppParameters.VatAmount;
             }
             
             Items.Add(order);

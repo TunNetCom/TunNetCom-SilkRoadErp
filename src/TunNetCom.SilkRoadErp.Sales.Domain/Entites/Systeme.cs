@@ -21,7 +21,9 @@ public partial class Systeme
         string? etbSecondaire,
         decimal pourcentageFodec,
         string? adresseRetenu,
-        double pourcentageRetenu)
+        double pourcentageRetenu,
+        decimal vatAmount,
+        decimal discountPercentage)
     {
         this.NomSociete = nomSociete;
         this.Timbre = timbre;
@@ -36,6 +38,8 @@ public partial class Systeme
         this.PourcentageFodec = pourcentageFodec;
         this.AdresseRetenu = adresseRetenu;
         this.PourcentageRetenu = pourcentageRetenu;
+        this.VatAmount = vatAmount;
+        this.DiscountPercentage = discountPercentage;
     }
     public int Id { get; set; }
 

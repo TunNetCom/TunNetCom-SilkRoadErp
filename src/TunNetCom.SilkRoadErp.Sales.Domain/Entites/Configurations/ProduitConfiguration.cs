@@ -20,10 +20,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             .HasColumnName("refe");
             entity.Property(e => e.Nom).HasColumnName("nom");
             entity.Property(e => e.Prix)
-            .HasColumnType("decimal(18, 2)")
+            .HasColumnType("decimal(18, 3)")
             .HasColumnName("prix");
             entity.Property(e => e.PrixAchat)
-            .HasColumnType("decimal(18, 2)")
+            .HasColumnType("decimal(18, 3)")
             .HasColumnName("prixAchat");
             entity.Property(e => e.Qte).HasColumnName("qte");
             entity.Property(e => e.QteLimite).HasColumnName("qteLimite");
