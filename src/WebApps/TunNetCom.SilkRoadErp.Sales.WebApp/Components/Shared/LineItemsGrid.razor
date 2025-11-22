@@ -375,9 +375,9 @@
 
     private string GetPriceFormat()
     {
-        // Format with thousands separator and 2 decimal places (e.g., 1,234.56)
-        // Using "N2" format: Number with 2 decimal places and thousands separator
-        return "N2";
+        // Format with thousands separator and 3 decimal places (e.g., 1,234.567)
+        // Using "N3" format: Number with 3 decimal places and thousands separator
+        return "N3";
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

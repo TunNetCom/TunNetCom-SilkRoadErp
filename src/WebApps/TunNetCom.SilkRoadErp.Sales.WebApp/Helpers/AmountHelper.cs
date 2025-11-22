@@ -13,7 +13,7 @@ public static class AmountHelper
 
     public static string FormatAmount(this decimal value)
     {
-        return string.Format(CultureInfo.GetCultureInfo("id-ID"), "{0:n0}", value);
+        return string.Format(CultureInfo.GetCultureInfo("fr-FR"), "{0:N3}", value);
     }
 
     public static string ConvertFloatToFrenchToWords(float chiffre, string type)
