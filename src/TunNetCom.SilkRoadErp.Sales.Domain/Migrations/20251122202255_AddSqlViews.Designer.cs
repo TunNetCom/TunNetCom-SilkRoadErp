@@ -12,15 +12,15 @@ using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 {
     [DbContext(typeof(SalesContext))]
-    [Migration("20250414102406_InitMigration")]
-    partial class InitMigration
+    [Migration("20251122202255_AddSqlViews")]
+    partial class AddSqlViews
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.4")
+                .HasAnnotation("ProductVersion", "10.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -515,7 +515,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnName("Num_AvoirFr");
 
                     b.Property<decimal>("PrixHt")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("prix_HT");
 
                     b.Property<int>("QteLi")
@@ -533,11 +533,11 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnName("remise");
 
                     b.Property<decimal>("TotHt")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("tot_HT");
 
                     b.Property<decimal>("TotTtc")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("tot_TTC");
 
                     b.Property<double>("Tva")
@@ -572,7 +572,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnName("Num_avoir");
 
                     b.Property<decimal>("PrixHt")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("prix_HT");
 
                     b.Property<int>("QteLi")
@@ -590,11 +590,11 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnName("remise");
 
                     b.Property<decimal>("TotHt")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("tot_HT");
 
                     b.Property<decimal>("TotTtc")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("tot_TTC");
 
                     b.Property<double>("Tva")
@@ -630,7 +630,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnName("Num_BL");
 
                     b.Property<decimal>("PrixHt")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("prix_HT");
 
                     b.Property<int>("QteLi")
@@ -648,11 +648,11 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnName("remise");
 
                     b.Property<decimal>("TotHt")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("tot_HT");
 
                     b.Property<decimal>("TotTtc")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("tot_TTC");
 
                     b.Property<double>("Tva")
@@ -688,7 +688,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnName("Num_BonRec");
 
                     b.Property<decimal>("PrixHt")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("prix_HT");
 
                     b.Property<int>("QteLi")
@@ -706,11 +706,11 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnName("remise");
 
                     b.Property<decimal>("TotHt")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("tot_HT");
 
                     b.Property<decimal>("TotTtc")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("tot_TTC");
 
                     b.Property<double>("Tva")
@@ -745,7 +745,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnName("Num_commande");
 
                     b.Property<decimal>("PrixHt")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("prix_HT");
 
                     b.Property<int>("QteLi")
@@ -763,11 +763,11 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnName("remise");
 
                     b.Property<decimal>("TotHt")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("tot_HT");
 
                     b.Property<decimal>("TotTtc")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("tot_TTC");
 
                     b.Property<double>("Tva")
@@ -803,7 +803,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnName("Num_devis");
 
                     b.Property<decimal>("PrixHt")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("prix_HT");
 
                     b.Property<int>("QteLi")
@@ -821,11 +821,11 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnName("remise");
 
                     b.Property<decimal>("TotHt")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("tot_HT");
 
                     b.Property<decimal>("TotTtc")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("tot_TTC");
 
                     b.Property<double>("Tva")
@@ -855,11 +855,11 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnName("nom");
 
                     b.Property<decimal>("Prix")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("prix");
 
                     b.Property<decimal>("PrixAchat")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("prixAchat");
 
                     b.Property<int>("Qte")
@@ -915,6 +915,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("codeTVA");
 
+                    b.Property<decimal>("DiscountPercentage")
+                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnName("DiscountPercentage");
+
                     b.Property<string>("Email")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("email");
@@ -951,6 +955,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 
                     b.Property<decimal>("Timbre")
                         .HasColumnType("decimal(18, 2)");
+
+                    b.Property<decimal>("VatAmount")
+                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnName("VatAmount");
 
                     b.HasKey("Id")
                         .HasName("PK_dbo.Systeme");
@@ -1005,7 +1013,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Property<decimal>("TotalTTC")
                         .HasColumnType("decimal(18,2)");
 
-                    b.ToTable("ProviderInvoiceView");
+                    b.ToTable((string)null);
+
+                    b.ToView("ProviderInvoiceView", "dbo");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Views.ReceiptNoteView", b =>
@@ -1034,7 +1044,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Property<decimal>("TotalTTC")
                         .HasColumnType("decimal(18,2)");
 
-                    b.ToTable("ReceiptNoteView");
+                    b.ToTable((string)null);
+
+                    b.ToView("ReceiptNoteView", "dbo");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.AvoirFinancierFournisseurs", b =>

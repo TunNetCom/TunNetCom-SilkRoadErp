@@ -1,6 +1,7 @@
 using System.Threading.RateLimiting;
 using System.Reflection;
 using Scalar.AspNetCore;
+using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.DataSeeder;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,7 +20,9 @@ builder.Host.UseSerilog();
 builder.Services.AddCarter();
 
 builder.Services.AddDbContext<SalesContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        sqlServerOptions => sqlServerOptions.MigrationsAssembly("TunNetCom.SilkRoadErp.Sales.Domain")));
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -108,13 +111,97 @@ builder.Services.AddSwaggerGen(options =>
 // Register the exception handler
 builder.Services.AddSingleton<IExceptionHandler, GlobalExceptionHandler>();
 
+// Register DatabaseSeeder
+builder.Services.AddScoped<DatabaseSeeder>();
+
 var app = builder.Build();
 
 using (IServiceScope scope = app.Services.CreateScope())
 {
     SalesContext dbContext = scope.ServiceProvider.GetRequiredService<SalesContext>();
-    _ = dbContext.Database.EnsureCreated();
-}
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    
+    try
+    {
+        // Check if database exists and has tables
+        var canConnect = await dbContext.Database.CanConnectAsync();
+        var migrationsApplied = await dbContext.Database.GetPendingMigrationsAsync();
+        
+        if (canConnect && migrationsApplied.Any())
+        {
+            // Try to apply migrations - if it fails because tables exist, mark them as applied
+            try
+            {
+                logger.LogInformation("Application des migrations en attente...");
+                await dbContext.Database.MigrateAsync();
+                logger.LogInformation("Migrations appliquées avec succès.");
+            }
+            catch (Microsoft.Data.SqlClient.SqlException sqlEx) when (sqlEx.Number == 2714 || sqlEx.Number == 1913 || sqlEx.Message.Contains("already exists"))
+            {
+                // Table already exists error - mark migrations as applied
+                logger.LogWarning("Les tables existent déjà. Marquage des migrations comme appliquées...");
+                try
+                {
+                    // Create __EFMigrationsHistory table if it doesn't exist
+                    await dbContext.Database.ExecuteSqlRawAsync(@"
+                        IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '__EFMigrationsHistory')
+                        BEGIN
+                            CREATE TABLE [__EFMigrationsHistory] (
+                                [MigrationId] nvarchar(150) NOT NULL,
+                                [ProductVersion] nvarchar(32) NOT NULL,
+                                CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
+                            );
+                        END
+                    ");
+                    
+                    // Mark migrations as applied
+                    await dbContext.Database.ExecuteSqlRawAsync(@"
+                        IF NOT EXISTS (SELECT * FROM __EFMigrationsHistory WHERE MigrationId = '20251122202247_Init')
+                        BEGIN
+                            INSERT INTO __EFMigrationsHistory (MigrationId, ProductVersion) VALUES ('20251122202247_Init', '10.0.0');
+                        END
+                    ");
+                    await dbContext.Database.ExecuteSqlRawAsync(@"
+                        IF NOT EXISTS (SELECT * FROM __EFMigrationsHistory WHERE MigrationId = '20251122202255_AddSqlViews')
+                        BEGIN
+                            INSERT INTO __EFMigrationsHistory (MigrationId, ProductVersion) VALUES ('20251122202255_AddSqlViews', '10.0.0');
+                        END
+                    ");
+                    logger.LogInformation("Migrations marquées comme appliquées.");
+                }
+                catch (Exception ex2)
+                {
+                    logger.LogError(ex2, "Erreur lors du marquage des migrations. Continuons quand même...");
+                }
+            }
+        }
+        else if (!canConnect)
+        {
+            // Database doesn't exist, create it with migrations
+            logger.LogInformation("Création de la base de données avec migrations...");
+            await dbContext.Database.MigrateAsync();
+            logger.LogInformation("Base de données créée et migrations appliquées avec succès.");
+        }
+        else
+        {
+            logger.LogInformation("Base de données à jour, aucune migration en attente.");
+        }
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Erreur lors de l'application des migrations.");
+        throw; // Faire échouer le démarrage si les migrations échouent
+        }
+        
+        // Seed database if tables are empty
+        logger.LogInformation("=== DÉBUT DU PROCESSUS DE SEEDING ===");
+        var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
+        var forceSeed = builder.Configuration.GetValue<bool>("DataSeeder:ForceSeed", false);
+        logger.LogInformation("Configuration du seeding - ForceSeed: {ForceSeed}", forceSeed);
+        logger.LogInformation("Appel du seeder...");
+        await seeder.SeedAsync(dbContext, forceSeed);
+        logger.LogInformation("=== FIN DU PROCESSUS DE SEEDING ===");
+    }
 
 app.UseRateLimiter();
 

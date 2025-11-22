@@ -56,4 +56,10 @@
     <Folder Include="Features\ProviderReceiptNoteLine\DeleteReceiptNotes\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Update="Data\SeedData\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>
