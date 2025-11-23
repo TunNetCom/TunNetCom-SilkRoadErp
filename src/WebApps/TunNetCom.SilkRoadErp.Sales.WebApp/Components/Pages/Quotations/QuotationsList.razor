@@ -15,6 +15,8 @@
 @inject NavigationManager NavigationManager
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Common
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
+@inject ODataService ODataService
 
 <div class="quotations-list-container">
     <div class="search-header">
@@ -59,39 +61,40 @@
         <h2>Devis</h2>
         <RadzenDataGrid Data="@quotationsList"
                         LoadData="@Callback"
-                        TItem="QuotationResponse"
+                        TItem="QuotationBaseInfo"
                         AllowSorting="true"
                         AllowFiltering="true"
                         AllowPaging="true"
-                        PageSize="15"
+                        PageSize="@pageSize"
+                        PageSizeOptions="@GridPageSizeConstants.PageSizeOptions"
                         Count="@totalCount"
                         AllowColumnResize="true">
             <EmptyTemplate>
                 <p style="font-size: 24px; text-align: center; margin: 2rem;">Aucun devis à afficher.</p>
             </EmptyTemplate>
             <Columns>
-                <RadzenDataGridColumn TItem="QuotationResponse"
-                                      Property="@nameof(QuotationResponse.Num)"
+                <RadzenDataGridColumn TItem="QuotationBaseInfo"
+                                      Property="@nameof(QuotationBaseInfo.Number)"
                                       Title="@Localizer["number"]"
                                       Width="150px" />
-                <RadzenDataGridColumn TItem="QuotationResponse"
-                                      Property="@nameof(QuotationResponse.Date)"
+                <RadzenDataGridColumn TItem="QuotationBaseInfo"
+                                      Property="@nameof(QuotationBaseInfo.Date)"
                                       Title="@Localizer["date"]"
                                       Width="150px"
                                       FormatString="{0:d MMMM yyyy}" />
-                <RadzenDataGridColumn TItem="QuotationResponse"
-                                      Property="@nameof(QuotationResponse.CustomerName)"
+                <RadzenDataGridColumn TItem="QuotationBaseInfo"
+                                      Property="@nameof(QuotationBaseInfo.CustomerName)"
                                       Title="@Localizer["customer"]"
                                       Width="200px" />
-                <RadzenDataGridColumn TItem="QuotationResponse"
-                                      Property="@nameof(QuotationResponse.TotTtc)"
+                <RadzenDataGridColumn TItem="QuotationBaseInfo"
+                                      Property="@nameof(QuotationBaseInfo.TotalTtc)"
                                       Title="@Localizer["tot_ttc"]"
                                       Width="150px">
                     <Template Context="item">
-                        @item.TotTtc.FormatAmount()
+                        @item.TotalTtc.FormatAmount()
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="QuotationResponse"
+                <RadzenDataGridColumn TItem="QuotationBaseInfo"
                                       Title="@Localizer["actions_label"]"
                                       Width="100px"
                                       Sortable="false"
@@ -101,7 +104,7 @@
                                       ButtonStyle="ButtonStyle.Primary"
                                       Variant="Variant.Flat"
                                       Size="ButtonSize.Small"
-                                      Click="@(() => ViewQuotation(item.Num.ToString()))"
+                                      Click="@(() => ViewQuotation(item.Number.ToString()))"
                                       Title="@Localizer["edit"]"
                                       AriaLabel="@Localizer["edit"]" />
                     </Template>
@@ -114,7 +117,7 @@
                          JustifyContent="JustifyContent.End"
                          class="summary-stack">
                 <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                    @Localizer["tot_ttc"]: <strong>@quotationsList.Sum(q => q.TotTtc).FormatAmount()</strong>
+                    @Localizer["tot_ttc"]: <strong>@quotationsList.Sum(q => q.TotalTtc).FormatAmount()</strong>
                 </RadzenText>
             </RadzenStack>
         </RadzenCard>
@@ -263,9 +266,9 @@
 </style>
 
 @code {
-    private List<QuotationResponse> quotationsList = new();
+    private List<QuotationBaseInfo> quotationsList = new();
     private int totalCount = 0;
-    private const int DefaultPageSize = 15;
+    private int pageSize = GridPageSizeConstants.PageSize25;
     private SearchCriteria searchCriteria = new SearchCriteria();
     private List<CustomerResponse> _filteredCustomers = new();
 
@@ -286,7 +289,7 @@
 
         // Load initial data
         _logger.LogInformation("Calling Callback to load initial data");
-        await Callback(new LoadDataArgs { Skip = 0, Top = DefaultPageSize });
+        await Callback(new LoadDataArgs { Skip = 0, Top = pageSize });
     }
 
     async Task LoadCustomers(LoadDataArgs args)
@@ -323,7 +326,7 @@
 
     private async Task SearchQuotations()
     {
-        await Callback(new LoadDataArgs { Skip = 0, Top = DefaultPageSize });
+        await Callback(new LoadDataArgs { Skip = 0, Top = pageSize });
     }
 
     private async Task OnPeriodFilterChanged()
@@ -342,6 +345,12 @@
     {
         _logger.LogInformation("QuotationsList.Callback called with Skip: {Skip}, Top: {Top}", args.Skip, args.Top);
         
+        // Update pageSize if Top is provided
+        if (args.Top.HasValue)
+        {
+            pageSize = args.Top.Value;
+        }
+        
         var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
             searchCriteria.PeriodFilter,
             searchCriteria.StartDate,
@@ -351,43 +360,22 @@
 
         try
         {
-            var pageNumber = (args.Skip ?? 0) / DefaultPageSize + 1;
-            var pageSize = args.Top ?? DefaultPageSize;
+            _logger.LogInformation("Calling ODataService.QueryAsync for QuotationBaseInfos");
+            var response = await ODataService.QueryAsync<QuotationBaseInfo>(
+                entitySet: "QuotationBaseInfos",
+                args: args,
+                startDate: startDate,
+                endDate: endDate,
+                customerId: searchCriteria.SelectedCustomerId,
+                cancellationToken: default);
 
-            var parameters = new QueryStringParameters
-            {
-                PageNumber = pageNumber,
-                PageSize = pageSize,
-                SearchKeyword = args.Filter
-            };
-
-            var pagedQuotations = await QuotationService.GetQuotationsAsync(parameters, default);
-
-            // Filter by date range and customer
-            var filtered = pagedQuotations.Items.AsQueryable();
-
-            if (startDate.HasValue)
-            {
-                filtered = filtered.Where(q => q.Date >= startDate.Value);
-            }
-
-            if (endDate.HasValue)
-            {
-                filtered = filtered.Where(q => q.Date <= endDate.Value);
-            }
-
-            if (searchCriteria.SelectedCustomerId.HasValue)
-            {
-                filtered = filtered.Where(q => q.IdClient == searchCriteria.SelectedCustomerId.Value);
-            }
-
-            quotationsList = filtered.ToList();
-            totalCount = quotationsList.Count;
+            quotationsList = response.Value;
+            totalCount = response.ODataCount ?? response.Value.Count;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error loading quotations");
-            quotationsList = new List<QuotationResponse>();
+            quotationsList = new List<QuotationBaseInfo>();
             totalCount = 0;
         }
 

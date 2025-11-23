@@ -1,6 +1,9 @@
 using Microsoft.OData.Edm;
 using Microsoft.OData.ModelBuilder;
 using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
+using TunNetCom.SilkRoadErp.Sales.Contracts.RecieptNotes;
+using TunNetCom.SilkRoadErp.Sales.Contracts.Quotations;
+using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.OData;
 
@@ -31,6 +34,34 @@ public static class EdmModelBuilder
         deliveryNotesEntitySet.EntityType.Property(d => d.GrossAmount).IsRequired();
         deliveryNotesEntitySet.EntityType.Property(d => d.VatAmount).IsRequired();
         deliveryNotesEntitySet.EntityType.Property(d => d.NumFacture);
+        
+        // Configure ReceiptNoteBaseInfo entity set
+        var receiptNotesEntitySet = builder.EntitySet<ReceiptNoteBaseInfo>("ReceiptNoteBaseInfos");
+        receiptNotesEntitySet.EntityType.HasKey(r => r.Number);
+        receiptNotesEntitySet.EntityType.Property(r => r.Number).IsRequired();
+        receiptNotesEntitySet.EntityType.Property(r => r.Date).IsRequired();
+        receiptNotesEntitySet.EntityType.Property(r => r.ProviderId).IsRequired();
+        receiptNotesEntitySet.EntityType.Property(r => r.ProviderName);
+        receiptNotesEntitySet.EntityType.Property(r => r.NetAmount).IsRequired();
+        receiptNotesEntitySet.EntityType.Property(r => r.VatAmount).IsRequired();
+        
+        // Configure QuotationBaseInfo entity set
+        var quotationsEntitySet = builder.EntitySet<QuotationBaseInfo>("QuotationBaseInfos");
+        quotationsEntitySet.EntityType.HasKey(q => q.Number);
+        quotationsEntitySet.EntityType.Property(q => q.Number).IsRequired();
+        quotationsEntitySet.EntityType.Property(q => q.Date).IsRequired();
+        quotationsEntitySet.EntityType.Property(q => q.CustomerId).IsRequired();
+        quotationsEntitySet.EntityType.Property(q => q.CustomerName);
+        quotationsEntitySet.EntityType.Property(q => q.TotalTtc).IsRequired();
+        
+        // Configure ProviderInvoiceBaseInfo entity set
+        var providerInvoicesEntitySet = builder.EntitySet<ProviderInvoiceBaseInfo>("ProviderInvoiceBaseInfos");
+        providerInvoicesEntitySet.EntityType.HasKey(p => p.Number);
+        providerInvoicesEntitySet.EntityType.Property(p => p.Number).IsRequired();
+        providerInvoicesEntitySet.EntityType.Property(p => p.Date).IsRequired();
+        providerInvoicesEntitySet.EntityType.Property(p => p.ProviderId).IsRequired();
+        providerInvoicesEntitySet.EntityType.Property(p => p.NetAmount).IsRequired();
+        providerInvoicesEntitySet.EntityType.Property(p => p.VatAmount).IsRequired();
         
         return builder.GetEdmModel();
     }

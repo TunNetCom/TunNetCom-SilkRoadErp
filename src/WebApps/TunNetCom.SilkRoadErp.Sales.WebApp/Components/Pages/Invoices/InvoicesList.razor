@@ -56,7 +56,8 @@
                         AllowSorting="true"
                         AllowFiltering="true"
                         AllowPaging="true"
-                        PageSize="15"
+                        PageSize="@pageSize"
+                        PageSizeOptions="@GridPageSizeConstants.PageSizeOptions"
                         Count="@totalCount"
                         AllowColumnResize="true">
             <EmptyTemplate>
@@ -281,7 +282,7 @@
     private int totalCount = 0;
     private decimal totalNetAmount = 0;
     private decimal totalVatAmount = 0;
-    private const int DefaultPageSize = 15;
+    private int pageSize = GridPageSizeConstants.PageSize25;
     private SearchCriteria searchCriteria = new SearchCriteria();
     private List<CustomerResponse> _filteredCustomers = new();
 
@@ -302,7 +303,7 @@
 
         // Load initial data
         _logger.LogInformation("Calling Callback to load initial data");
-        await Callback(new LoadDataArgs { Skip = 0, Top = DefaultPageSize });
+        await Callback(new LoadDataArgs { Skip = 0, Top = pageSize });
     }
 
     async Task LoadCustomers(LoadDataArgs args)
@@ -335,12 +336,18 @@
     private async Task SearchInvoices()
     {
         // Trigger a refresh by calling Callback with current args
-        await Callback(new LoadDataArgs { Skip = 0, Top = DefaultPageSize });
+        await Callback(new LoadDataArgs { Skip = 0, Top = pageSize });
     }
 
     private async Task Callback(LoadDataArgs args)
     {
         _logger.LogInformation("InvoicesList.Callback called with Skip: {Skip}, Top: {Top}", args.Skip, args.Top);
+        
+        // Update pageSize if Top is provided
+        if (args.Top.HasValue)
+        {
+            pageSize = args.Top.Value;
+        }
         
         var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
             searchCriteria.PeriodFilter,
