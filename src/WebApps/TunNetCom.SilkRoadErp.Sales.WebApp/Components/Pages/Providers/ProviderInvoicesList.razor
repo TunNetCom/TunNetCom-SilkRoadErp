@@ -1,21 +1,21 @@
-﻿@page "/reciption_notes"
+@page "/provider-invoices"
 
-@using TunNetCom.SilkRoadErp.Sales.Contracts.RecieptNotes
-@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers
-@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote
 @using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProviderInvoice
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
-@inject IReceiptNoteApiClient receiptNoteService
-@inject IProvidersApiClient ProviderService
+@inject IProviderInvoiceApiClient ProviderInvoiceService
+@inject IProvidersApiClient ProvidersService
 @inject IStringLocalizer<SharedResource> Localizer
-@inject ILogger<ReciptionNotes> _logger
+@inject ILogger<ProviderInvoicesList> _logger
 @using Radzen.Blazor
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Providers
 @inject NavigationManager NavigationManager
 
-
-<div class="delivery-notes-list-container">
+<div class="invoices-list-container">
     <div class="search-header">
         <PeriodFilter @bind-SelectedPeriod="searchCriteria.PeriodFilter"
                      @bind-StartDate="searchCriteria.StartDate"
@@ -43,15 +43,15 @@
             <RadzenButton Text="@Localizer["search"]"
                           Icon="search"
                           ButtonStyle="ButtonStyle.Primary"
-                          Click="@SearchReceiptNotes"
+                          Click="@SearchProviderInvoices"
                           class="action-button" />
         </div>
     </div>
     <div class="list-card">
-        <h2>Bons de réception</h2>
-        <RadzenDataGrid Data="@receiptNotesList"
+        <h2>Factures fournisseurs</h2>
+        <RadzenDataGrid Data="@invoicesList"
                         LoadData="@Callback"
-                        TItem="ReceiptNoteDetailsResponse"
+                        TItem="ProviderInvoiceResponse"
                         AllowSorting="true"
                         AllowFiltering="true"
                         AllowPaging="true"
@@ -62,28 +62,32 @@
                 <p style="font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
             </EmptyTemplate>
             <Columns>
-                <RadzenDataGridColumn TItem="ReceiptNoteDetailsResponse"
-                                      Property="@nameof(ReceiptNoteDetailsResponse.Num)"
+                <RadzenDataGridColumn TItem="ProviderInvoiceResponse"
+                                      Property="@nameof(ProviderInvoiceResponse.Num)"
                                       Title="Numéro"
                                       Width="150px" />
-                <RadzenDataGridColumn TItem="ReceiptNoteDetailsResponse"
-                                      Property="@nameof(ReceiptNoteDetailsResponse.Date)"
+                <RadzenDataGridColumn TItem="ProviderInvoiceResponse"
+                                      Property="@nameof(ProviderInvoiceResponse.Date)"
                                       Title="@Localizer["date"]"
                                       Width="150px"
                                       FormatString="{0:d MMMM yyyy}" />
-                <RadzenDataGridColumn TItem="ReceiptNoteDetailsResponse"
-                                      Property="@nameof(ReceiptNoteDetailsResponse.NomFournisseur)"
-                                      Title="Fournisseur"
-                                      Width="200px" />
-                <RadzenDataGridColumn TItem="ReceiptNoteDetailsResponse"
-                                      Property="@nameof(ReceiptNoteDetailsResponse.TotHTva)"
+                <RadzenDataGridColumn TItem="ProviderInvoiceResponse"
+                                      Property="@nameof(ProviderInvoiceResponse.TotHTva)"
                                       Title="@Localizer["total_net"]"
                                       Width="150px">
                     <Template Context="item">
                         @item.TotHTva.FormatAmount()
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="ReceiptNoteDetailsResponse"
+                <RadzenDataGridColumn TItem="ProviderInvoiceResponse"
+                                      Property="@nameof(ProviderInvoiceResponse.TotTva)"
+                                      Title="@Localizer["total_vat"]"
+                                      Width="150px">
+                    <Template Context="item">
+                        @item.TotTva.FormatAmount()
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ProviderInvoiceResponse"
                                       Title="@Localizer["actions_label"]"
                                       Width="100px"
                                       Sortable="false"
@@ -93,7 +97,7 @@
                                       ButtonStyle="ButtonStyle.Primary"
                                       Variant="Variant.Flat"
                                       Size="ButtonSize.Small"
-                                      Click="@(() => ViewReceiptNote(item.Num.ToString()))"
+                                      Click="@(() => ViewProviderInvoice(item.Num.ToString()))"
                                       Title="@Localizer["Edit"]"
                                       AriaLabel="@Localizer["Edit"]" />
                     </Template>
@@ -117,7 +121,7 @@
 </div>
 
 <style>
-    .delivery-notes-list-container {
+    .invoices-list-container {
         padding: 0;
         min-height: 100%;
     }
@@ -134,7 +138,6 @@
         padding: 0;
     }
 
-    /* Action button styles (unchanged) */
     .action-button {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         font-size: 13px;
@@ -156,7 +159,6 @@
             cursor: not-allowed;
         }
 
-    /* Search header styles */
     .search-header {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -202,9 +204,8 @@
         align-items: flex-end;
     }
 
-    /* Responsive adjustments */
     @@media (max-width: 768px) {
-        .delivery-notes-list-container {
+        .invoices-list-container {
             padding: 0;
         }
 
@@ -248,11 +249,11 @@
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         flex: 0 0 auto;
     }
-    /* Summary stack */
+
     .summary-stack {
         gap: 1.5rem;
     }
-    /* Summary text */
+
     .summary-text {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         font-size: 13px;
@@ -286,7 +287,7 @@
 </style>
 
 @code {
-    private List<ReceiptNoteDetailsResponse> receiptNotesList = new();
+    private List<ProviderInvoiceResponse> invoicesList = new();
     private int totalCount = 0;
     private decimal totalNetAmount = 0;
     private decimal totalVatAmount = 0;
@@ -296,22 +297,25 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _logger.LogInformation("ReciptionNotes.OnInitializedAsync called");
+        _logger.LogInformation("ProviderInvoicesList.OnInitializedAsync called");
         
         await LoadProviders(new LoadDataArgs { Filter = string.Empty });
 
         // Set default period to CurrentMonth and calculate dates
         searchCriteria.PeriodFilter = "CurrentMonth";
         var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
-            searchCriteria.PeriodFilter, 
-            searchCriteria.StartDate, 
+            searchCriteria.PeriodFilter,
+            searchCriteria.StartDate,
             searchCriteria.EndDate);
         searchCriteria.StartDate = startDate;
         searchCriteria.EndDate = endDate;
 
-        // Load initial data
-        _logger.LogInformation("Calling Callback to load initial data");
-        await Callback(new LoadDataArgs { Skip = 0, Top = DefaultPageSize });
+        // Load initial data only if a provider is selected
+        if (searchCriteria.SelectedProviderId.HasValue)
+        {
+            _logger.LogInformation("Calling Callback to load initial data");
+            await Callback(new LoadDataArgs { Skip = 0, Top = DefaultPageSize });
+        }
     }
 
     async Task LoadProviders(LoadDataArgs args)
@@ -325,7 +329,7 @@
 
         try
         {
-            var pagedProviders = await ProviderService.GetPagedAsync(parameters, default);
+            var pagedProviders = await ProvidersService.GetPagedAsync(parameters, default);
             _filteredProviders = pagedProviders.Items.ToList();
         }
         catch (Exception ex)
@@ -336,20 +340,47 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    private void ViewReceiptNote(string id)
+    private void OnPeriodFilterChanged()
     {
-        NavigationManager.NavigateTo($"/add_or_update_reciption_notes/{id}");
+        StateHasChanged();
     }
 
-    private async Task SearchReceiptNotes()
+    private void ViewProviderInvoice(string id)
+    {
+        // Navigate to manage providers invoices page
+        NavigationManager.NavigateTo("/manage-providers-invoices");
+    }
+
+    private async Task SearchProviderInvoices()
     {
         // Trigger a refresh by calling Callback with current args
-        await Callback(new LoadDataArgs { Skip = 0, Top = DefaultPageSize });
+        if (searchCriteria.SelectedProviderId.HasValue)
+        {
+            await Callback(new LoadDataArgs { Skip = 0, Top = DefaultPageSize });
+        }
+        else
+        {
+            invoicesList = new List<ProviderInvoiceResponse>();
+            totalCount = 0;
+            totalNetAmount = 0;
+            totalVatAmount = 0;
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     private async Task Callback(LoadDataArgs args)
     {
-        _logger.LogInformation("ReciptionNotes.Callback called with Skip: {Skip}, Top: {Top}", args.Skip, args.Top);
+        if (!searchCriteria.SelectedProviderId.HasValue)
+        {
+            invoicesList = new List<ProviderInvoiceResponse>();
+            totalCount = 0;
+            totalNetAmount = 0;
+            totalVatAmount = 0;
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        _logger.LogInformation("ProviderInvoicesList.Callback called with Skip: {Skip}, Top: {Top}", args.Skip, args.Top);
         
         var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
             searchCriteria.PeriodFilter,
@@ -374,12 +405,10 @@
                 sortOrder = sortParts.Length > 1 && sortParts[1].ToLower() == "desc" ? "Descending" : "Ascending";
             }
 
-            _logger.LogInformation("Calling receiptNoteService.GetReceiptNoteWithSummaries");
-            var result = await receiptNoteService.GetReceiptNoteWithSummaries(
-                providerId: searchCriteria.SelectedProviderId,
-                InvoiceId: null,
-                IsInvoiced: null,
-                queryParameters: new QueryStringParameters
+            _logger.LogInformation("Calling ProviderInvoiceService.GetProvidersInvoicesAsync");
+            var response = await ProviderInvoiceService.GetProvidersInvoicesAsync(
+                idFournisseur: searchCriteria.SelectedProviderId.Value,
+                query: new QueryStringParameters
                 {
                     SearchKeyword = filter,
                     EndDate = endDate,
@@ -389,22 +418,22 @@
                     PageNumber = pageNumber,
                     PageSize = pageSize,
                 },
-                cancellationToken: default
-            );
+                cancellationToken: default);
 
-            if (result.IsSuccess)
+            if (response.IsT0)
             {
-                receiptNotesList = result.Value.ReceiptNotes.Items.ToList();
-                totalCount = result.Value.ReceiptNotes.TotalCount;
+                var result = response.AsT0;
+                invoicesList = result.Invoices.Items.ToList();
+                totalCount = result.Invoices.TotalCount;
 
                 // Calculate totals from current page (for display)
                 // Note: For accurate totals across all pages, we'd need a separate aggregation endpoint
-                totalNetAmount = receiptNotesList.Sum(r => r.TotHTva);
-                totalVatAmount = receiptNotesList.Sum(r => r.TotTva);
+                totalNetAmount = invoicesList.Sum(i => i.TotHTva);
+                totalVatAmount = invoicesList.Sum(i => i.TotTva);
             }
             else
             {
-                receiptNotesList = new List<ReceiptNoteDetailsResponse>();
+                invoicesList = new List<ProviderInvoiceResponse>();
                 totalCount = 0;
                 totalNetAmount = 0;
                 totalVatAmount = 0;
@@ -412,8 +441,8 @@
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error loading receipt notes: {Message}", ex.Message);
-            receiptNotesList = new List<ReceiptNoteDetailsResponse>();
+            _logger.LogError(ex, "Error loading provider invoices: {Message}", ex.Message);
+            invoicesList = new List<ProviderInvoiceResponse>();
             totalCount = 0;
             totalNetAmount = 0;
             totalVatAmount = 0;
@@ -429,9 +458,5 @@
         public DateTime? EndDate { get; set; }
         public int? SelectedProviderId { get; set; }
     }
-
-    private void OnPeriodFilterChanged()
-    {
-        StateHasChanged();
-    }
 }
+

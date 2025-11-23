@@ -55,4 +55,14 @@ public interface IReceiptNoteApiClient
         int pageNumber,
         int pageSize,
         CancellationToken cancellationToken = default);
+
+    Task<Result> UpdateReceiptNoteAsync(
+        int num,
+        UpdateReceiptNoteRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<Result> UpdateReceiptNoteWithLinesAsync(
+        int num,
+        CreateReceiptNoteWithLinesRequest request,
+        CancellationToken cancellationToken = default);
 }

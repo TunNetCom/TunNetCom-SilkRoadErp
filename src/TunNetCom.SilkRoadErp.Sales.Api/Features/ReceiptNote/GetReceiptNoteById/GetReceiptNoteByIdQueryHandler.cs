@@ -8,7 +8,11 @@ public class GetReceiptNoteByIdQueryHandler(
     public async Task<Result<ReceiptNoteResponse>> Handle(GetReceiptNoteByIdQuery getReceiptNoteByIdQuery, CancellationToken cancellationToken)
     {
         _logger.LogFetchingEntityById(nameof(BonDeReception), getReceiptNoteByIdQuery.Num);
-        var receiptnote = await _context.BonDeReception.FindAsync(getReceiptNoteByIdQuery.Num, cancellationToken);
+        
+        // Search by Num (receipt note number), not by Id
+        var receiptnote = await _context.BonDeReception
+            .FirstOrDefaultAsync(b => b.Num == getReceiptNoteByIdQuery.Num, cancellationToken);
+            
         if (receiptnote is null)
         {
             _logger.LogEntityNotFound(nameof(BonDeReception), getReceiptNoteByIdQuery.Num);

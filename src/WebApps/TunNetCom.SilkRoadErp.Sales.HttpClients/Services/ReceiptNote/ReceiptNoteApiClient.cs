@@ -1,7 +1,9 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.CreateReceiptNote;
+﻿using System.Net;
+using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.CreateReceiptNote;
 using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Request;
 using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Response;
 using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNote.Responses;
+using TunNetCom.SilkRoadErp.Sales.Contracts.RecieptNotes;
 
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote;
 
@@ -249,6 +251,66 @@ class ReceiptNoteApiClient : IReceiptNoteApiClient
         {
             // Handle API errors (e.g., network issues, 500 errors)
             return new PagedList<ReceiptNoteDetailResponse>();
+        }
+    }
+
+    public async Task<Result> UpdateReceiptNoteAsync(
+        int num,
+        UpdateReceiptNoteRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await _httpClient.PutAsJsonAsync($"/receiptnotes/{num}", request, cancellationToken);
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return Result.Fail("receipt_note_not_found");
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogError("Failed to update receipt note. Status Code: {StatusCode}, Reason: {ReasonPhrase}",
+                    response.StatusCode, response.ReasonPhrase);
+                return Result.Fail("failed_to_update_receipt_note");
+            }
+
+            return Result.Ok();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating receipt note");
+            return Result.Fail($"failed_to_update_receipt_note: {ex.Message}");
+        }
+    }
+
+    public async Task<Result> UpdateReceiptNoteWithLinesAsync(
+        int num,
+        CreateReceiptNoteWithLinesRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await _httpClient.PutAsJsonAsync($"/receiptnotes/{num}/with-lines", request, cancellationToken);
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return Result.Fail("receipt_note_not_found");
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogError("Failed to update receipt note with lines. Status Code: {StatusCode}, Reason: {ReasonPhrase}",
+                    response.StatusCode, response.ReasonPhrase);
+                return Result.Fail("failed_to_update_receipt_note_with_lines");
+            }
+
+            return Result.Ok();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating receipt note with lines");
+            return Result.Fail($"failed_to_update_receipt_note_with_lines: {ex.Message}");
         }
     }
 }

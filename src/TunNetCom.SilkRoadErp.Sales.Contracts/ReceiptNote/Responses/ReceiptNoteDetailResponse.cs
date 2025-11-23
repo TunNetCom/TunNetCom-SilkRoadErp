@@ -1,6 +1,8 @@
+using TunNetCom.SilkRoadErp.Sales.Contracts.Common;
+
 namespace TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNote.Responses;
 
-public class ReceiptNoteDetailResponse
+public class ReceiptNoteDetailResponse : ILineItem
 {
     [JsonPropertyName("provider")]
     public string Provider { get; set; } = string.Empty;
@@ -16,6 +18,9 @@ public class ReceiptNoteDetailResponse
 
     [JsonPropertyName("description")]
     public string Description { get; set; } = string.Empty;
+
+    [JsonPropertyName("productReferenceAndDescription")]
+    public string ProductReferenceAndDescription => $"{ProductReference} - {Description}";
 
     [JsonPropertyName("quantity")]
     public int Quantity { get; set; }

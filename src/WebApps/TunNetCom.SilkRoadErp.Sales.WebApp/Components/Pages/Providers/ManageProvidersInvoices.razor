@@ -41,100 +41,119 @@
 @inject PrintFullInvoiceService PrintFullInvoiceService
 @inject IJSRuntime JS
 
-<div style="padding: 1rem, min-height: 100vh;">
-    <!-- Header -->
-    <h3 style="font-size: 1rem, font-weight: 600, margin-bottom: 1.5rem;">
-        @Localizer["manage_providers_invoices"]
-    </h3>
-
-
-    <div style="display: flex, justify-content: center, margin-bottom: 1.5rem;">
-        <div style="width: 100%, max-width: 800px;">
-            <RadzenCard Variant="Variant.Flat"
-                        Style="
-                           padding: 1rem;
-                           border-radius: 12px;
-                           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-                           border: 1px solid #f0f0f0;">
-                <RadzenRow JustifyContent="JustifyContent.Center">
-                    <RadzenColumn Size="12" SizeMD="8" SizeLG="6">
-                        <div style="display: flex, flex-direction: column, gap: 0.5rem;">
-                            <label style="font-weight: 600;
-                                  font-size: 0.9rem;
-                                  text-align: center;">
-                                @Localizer["select_provider"]
-                            </label>
-                            <RadzenDropDownDataGrid AllowClear="true"
-                                                    IsLoading="@isLoadingProviders"
-                                                    @bind-Value="@SelectedProviderId"
-                                                    AllowFiltering="true"
-                                                    Style="width: 100%;
-                                                   border-radius: 8px;
-                                                   border: 1px solid #e0e0e0;
-                                                   transition: all 0.2s ease;"
-                                                    LoadData="LoadProviders"
-                                                    Data="@_providersList"
-                                                    TextProperty="@nameof(ProviderResponse.Nom)"
-                                                    ValueProperty="@nameof(ProviderResponse.Id)"
-                                                    Placeholder="@Localizer["select_provider"]"
-                                                    Class="custom-dropdown">
-                                <Columns>
-                                    <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Id)"
-                                                                  Title="ID"
-                                                                  Width="100px" />
-                                    <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Nom)"
-                                                                  Title="Name"
-                                                                  Width="300px" />
-                                </Columns>
-                            </RadzenDropDownDataGrid>
-                        </div>
-                    </RadzenColumn>
-                </RadzenRow>
-            </RadzenCard>
+<div style="padding: 0.5rem 1.5rem 1.5rem 1.5rem; min-height: 100vh;">
+    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+        <label style="font-weight: 600;
+                      font-size: 0.9rem;
+                      white-space: nowrap;
+                      margin: 0;">
+            @Localizer["select_provider"]
+        </label>
+        <RadzenDropDownDataGrid AllowClear="true"
+                                IsLoading="@isLoadingProviders"
+                                @bind-Value="@SelectedProviderId"
+                                LoadData="@LoadProviders"
+                                AllowFiltering="true"
+                                Style="flex: 1;
+                                       max-width: 500px;
+                                       border-radius: 8px;
+                                       border: 1px solid #e0e0e0;
+                                       transition: all 0.2s ease;"
+                                Data="@_providersList"
+                                TextProperty="@nameof(ProviderResponse.Nom)"
+                                ValueProperty="@nameof(ProviderResponse.Id)"
+                                Placeholder="@Localizer["select_provider"]"
+                                Class="custom-dropdown">
+            <Columns>
+                <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Id)"
+                                              Title="ID"
+                                              Width="100px" />
+                <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Nom)"
+                                              Title="Name"
+                                              Width="300px" />
+            </Columns>
+        </RadzenDropDownDataGrid>
+        <!-- Print Buttons -->
+        <div style="display: flex; gap: 0.75rem; margin-left: auto;">
+            <RadzenButton ButtonStyle="ButtonStyle.Light"
+                          Size="ButtonSize.Small"
+                          Style="padding: 0.25rem 0.75rem; border-radius: 4px;"
+                          Click="@PrintRetenuSourceClick">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <RadzenIcon Icon="description" Style="font-size: 14px;" />
+                    <span style="font-size: 0.85rem;">Retenu</span>
+                </div>
+            </RadzenButton>
+            <RadzenButton ButtonStyle="ButtonStyle.Light"
+                          Size="ButtonSize.Small"
+                          Style="padding: 0.25rem 0.75rem; border-radius: 4px;"
+                          Click="@PrintInvoiceClick">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <RadzenIcon Icon="get_app" Style="font-size: 14px;" />
+                    <span style="font-size: 0.85rem;">Facture</span>
+                </div>
+            </RadzenButton>
         </div>
     </div>
 
     <!-- Main Content -->
-    <RadzenRow Gap="1.5rem">
-	    <!-- Invoices Section -->
-	    <RadzenColumn Size="12" SizeMD="6" SizeLG="6">
-		    <RadzenCard Variant="Variant.Flat" Style="padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-			    <RadzenDataGrid @ref="ProviderInvoiceGrid"
-			                    AllowFiltering="true"
-			                    AllowPaging="true"
-			                    PageSize="_defaultPageSize"
-			                    PagerHorizontalAlign="HorizontalAlign.Left"
-			                    ShowPagingSummary="true"
-                                ExpandMode="DataGridExpandMode.Single"
-			                    AllowSorting="true"
-			                    Data="@_invoicesList.Invoices.Items"
-			                    LoadData="@LoadInvoices"
-                                RowExpand="@((ProviderInvoiceResponse invoice) => OnRowExpand(invoice))"
-                                RowCollapse="@((ProviderInvoiceResponse invoice) => OnRowCollapse(invoice))"
-			                    @bind-ExpandedItem="@_expandedInvoice"
-			                    @bind-Value="@SelectedInvoices"
-			                    Count="_invoicesList.Invoices.TotalCount"
-			                    SelectionMode="DataGridSelectionMode.Single"
-			                    Style="border: none;"
-			                    Class="custom-grid">
-				    <EmptyTemplate>
-					    <p style="font-size: 24px; text-align: center; margin: 2rem;">@Localizer["no_records_to_display"]</p>
-				    </EmptyTemplate>
-				    <HeaderTemplate>
-					    <div style="font-size: 1rem; font-weight: 600; padding-bottom: 0.2rem;">
-						    @Localizer["provider_invoice_details"]
-					    </div>
-				    </HeaderTemplate>
+    <RadzenRow Gap="2rem">
+       
+        <!-- Invoiced Receipt Notes Section -->
+        <RadzenColumn Size="12" SizeMD="6" SizeLG="6">
+            <RadzenCard Variant="Variant.Flat"
+                        Style="padding: 1rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                            <RadzenDataGrid @ref="ProviderInvoiceGrid"
+                                            AllowRowSelectOnRowClick="true"
+                                            AllowFiltering="true"
+                                            FilterPopupRenderMode="PopupRenderMode.OnDemand"
+                                            FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                            AllowPaging="true"
+                                            PageSize="_defaultPageSize"
+                                            PagerHorizontalAlign="HorizontalAlign.Left"
+                                            ShowPagingSummary="true"
+                                            Count="_invoicesList.Invoices.TotalCount"
+                                            AllowSorting="true"
+                                            GotoFirstPageOnSort="true"
+                                            TItem="ProviderInvoiceResponse"
+                                            Data="@_invoicesList.Invoices.Items"
+                                            LoadData="@LoadInvoices"
+                                            SelectionMode="DataGridSelectionMode.Single"
+                                            IsLoading="@isLoadingInvoices"
+                                            @bind-Value="@SelectedInvoices"
+                                            ExpandMode="DataGridExpandMode.Single"
+                                            RowExpand="@((ProviderInvoiceResponse invoice) => OnRowExpand(invoice))"
+                                            RowCollapse="@((ProviderInvoiceResponse invoice) => OnRowCollapse(invoice))"
+                                            @bind-ExpandedItem="@_expandedInvoice"
+                                            Style="border: none;"
+                                            Class="custom-grid">
+                                <EmptyTemplate>
+                                    <p style="font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
+                                </EmptyTemplate>
+                                <HeaderTemplate>
+                                    <div style="display: flex; align-items: center; margin-bottom: 0.75rem; gap: 1rem;">
+                                        <div style="font-size: 1.1rem; font-weight: 600;">
+                                            @Localizer["provider_invoice_details"]
+                                        </div>
+                                    </div>
+                                </HeaderTemplate>
 
-				    <Columns>
-					    <RadzenDataGridColumn Property="@nameof(ProviderInvoiceResponse.Num)" Title="@Localizer["invoice_number"]" Width="140px" />
-					    <RadzenDataGridColumn Property="@nameof(ProviderInvoiceResponse.Date)" Title="@Localizer["date"]" FormatString="{0:d}" Width="140px" />
-					    <RadzenDataGridColumn Property="@nameof(ProviderInvoiceResponse.TotTTC)" Title="@Localizer["total_incl_tax"]" Width="140px">
-						    <Template Context="detail">
-							    @detail.TotTTC.FormatAmount()
-						    </Template>
-					    </RadzenDataGridColumn>
-				    </Columns>
+                                <Columns>
+                                    <RadzenDataGridColumn Property="@nameof(ProviderInvoiceResponse.Num)"
+                                                          Title="@Localizer["invoice_number"]"
+                                                          Width="140px" />
+                                    <RadzenDataGridColumn Property="@nameof(ProviderInvoiceResponse.Date)"
+                                                          Title="@Localizer["date"]"
+                                                          FormatString="{0:d}"
+                                                          Width="140px" />
+                                    <RadzenDataGridColumn Property="@nameof(ProviderInvoiceResponse.TotTTC)"
+                                                          Title="@Localizer["total_incl_tax"]"
+                                                          Width="140px">
+                                        <Template Context="detail">
+                                            @detail.TotTTC.FormatAmount()
+                                        </Template>
+                                    </RadzenDataGridColumn>
+                                </Columns>
                     <Template Context="invoice">
 
                         <div class="p-3" style="border-radius: 8px; margin: 8px; border-left: 4px solid #007bff;">
@@ -226,141 +245,125 @@
                             }
                         </div>
                     </Template>
-			    </RadzenDataGrid>
-			    <!-- Invoice Summary -->
-			    <div style="margin-bottom: 1.5rem;">
-				    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1.5rem" JustifyContent="JustifyContent.End" Style="margin-top: 1rem;">
-					    <RadzenText TextStyle="TextStyle.Subtitle2">
-						    @Localizer["total_net"]: <strong>@_invoicesList.TotalNetAmount.FormatAmount()</strong>
-					    </RadzenText>
-					    <RadzenText TextStyle="TextStyle.Subtitle2">
-						    @Localizer["total_gross"]: <strong>@_invoicesList.TotalGrossAmount.FormatAmount()</strong>
-					    </RadzenText>
-					    <RadzenText TextStyle="TextStyle.Subtitle2">
-						    @Localizer["total_vat"]: <strong>@_invoicesList.TotalVATAmount.FormatAmount()</strong>
-					    </RadzenText>
-				    </RadzenStack>
-			    </div>
-			    <div style="display: flex, gap: 1rem, flex-wrap: wrap, margin-top: 1.5rem, margin-bottom: 1rem;">
-				    <RadzenButton ButtonStyle="ButtonStyle.Light"
-				                  Size="ButtonSize.Small"
-				                  Style="padding: 0.25rem 0.75rem; border-radius: 4px;"
-				                  Click="@PrintRetenuSourceClick">
-					    <div style="display: flex; align-items: center; gap: 0.5rem;">
-						    <RadzenIcon Icon="description" Style="font-size: 14px;" />
-						    <span style="font-size: 0.85rem;">Retenu</span>
-					    </div>
-				    </RadzenButton>
-				    <RadzenButton ButtonStyle="ButtonStyle.Light"
-				                  Size="ButtonSize.Small"
-				                  Style="padding: 0.25rem 0.75rem; border-radius: 4px;"
-				                  Click="@PrintInvoiceClick">
-					    <div style="display: flex; align-items: center; gap: 0.5rem;">
-						    <RadzenIcon Icon="get_app" Style="font-size: 14px;" />
-						    <span style="font-size: 0.85rem;">Facture</span>
-					    </div>
-				    </RadzenButton>
-			    </div>
-		    </RadzenCard>
-	    </RadzenColumn>
+                            </RadzenDataGrid>
+                            <!-- Receipt Notes Summary -->
+                            <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e0e0e0; flex-wrap: wrap;">
+                                <span style="font-size: 0.85rem; color: #666;">
+                                    @Localizer["total_net"]: <strong style="color: #333;">@_invoicesList?.TotalNetAmount.FormatAmount()</strong>
+                                </span>
+                                <span style="font-size: 0.85rem; color: #666;">
+                                    @Localizer["total_gross"]: <strong style="color: #333;">@_invoicesList?.TotalGrossAmount.FormatAmount()</strong>
+                                </span>
+                                <span style="font-size: 0.85rem; color: #666;">
+                                    @Localizer["total_vat"]: <strong style="color: #333;">@_invoicesList?.TotalVATAmount.FormatAmount()</strong>
+                                </span>
+                            </div>
+            </RadzenCard>
+        </RadzenColumn>
 
-	    <!-- Uninvoiced Delivery Notes Section -->
-	    <RadzenColumn Size="12" SizeMD="6" SizeLG="6">
-		    <RadzenCard Variant="Variant.Flat" Style="padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-			    <RadzenDataGrid @ref="_receiptNoteGrid"
-			                    AllowRowSelectOnRowClick="true"
-			                    AllowFiltering="true"
-			                    FilterPopupRenderMode="PopupRenderMode.OnDemand"
-			                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
-			                    AllowPaging="true"
-			                    PagerHorizontalAlign="HorizontalAlign.Left"
-			                    ShowPagingSummary="true"
-			                    PageSize="_defaultPageSize"
-			                    AllowSorting="true"
-			                    Count="@_uninvoicedReceiptNotesWithSummary.ReceiptNotes.TotalCount"
-			                    Data="@_uninvoicedReceiptNotesWithSummary.ReceiptNotes.Items"
-			                    LoadData="LoadUninvoicedReceiptNote"
-			                    IsLoading="@isLoadingUninvoicedDeliveryNotes"
-			                    SelectionMode="DataGridSelectionMode.Multiple"
-			                    @bind-Value="@_selectedReceiptNotesToAttach"
-			                    Style="border: none;"
-			                    Class="custom-grid">
-				    <EmptyTemplate>
-					    <p style=" font-size: 24px; text-align: center; margin: 2rem;">@Localizer["no_records_to_display"]</p>
-				    </EmptyTemplate>
-				    <HeaderTemplate>
-					    <div style="font-size: 1; font-weight: 600; padding-bottom: 0.2rem;">
-						    @Localizer["uninvoiced_receipt_notes_details"]
-					    </div>
-				    </HeaderTemplate>
-				    <Columns>
-					    <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailsResponse.Num)" Title="@Localizer["number"]" Width="140px" />
-					    <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailsResponse.TotHTva)" Title="@Localizer["total_ex_tax"]" Width="140px">
-						    <Template Context="detail">
-							    @detail.TotTTC.FormatAmount()
-						    </Template>
-					    </RadzenDataGridColumn>
-					    <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailsResponse.TotTTC)" Title="@Localizer["net_payer"]" Width="140px">
-						    <Template Context="detail">
-							    @detail.TotTva.FormatAmount()
-						    </Template>
-					    </RadzenDataGridColumn>
-				    </Columns>
-			    </RadzenDataGrid>
-			    <!-- Uninvoiced Delivery Notes Summary -->
-			    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1.5rem" JustifyContent="JustifyContent.End" Style="margin-top: 1rem;">
-				    <RadzenText TextStyle="TextStyle.Subtitle2">
-					    @Localizer["total_net"]: <strong>@_uninvoicedReceiptNotesWithSummary?.TotalNetAmount.FormatAmount()</strong>
-				    </RadzenText>
-				    <RadzenText TextStyle="TextStyle.Subtitle2">
-					    @Localizer["total_gross"]: <strong>@_uninvoicedReceiptNotesWithSummary?.TotalGrossAmount.FormatAmount()</strong>
-				    </RadzenText>
-				    <RadzenText TextStyle="TextStyle.Subtitle2">
-					    @Localizer["total_vat"]: <strong>@_uninvoicedReceiptNotesWithSummary?.TotalVATAmount.FormatAmount()</strong>
-				    </RadzenText>
-			    </RadzenStack>
-			    <RadzenButton Click="@(args => AttachReceiptNotesToInvoiceClick("Primary button"))"
-			                  Text="@Localizer["attach_receipt_note_to_invoice"]"
-			                  Disabled="@(SelectedInvoiceId == 0 || !_selectedReceiptNotesToAttach.Any())"
-			                  ButtonStyle="ButtonStyle.Primary"
-			                  Style="margin-top: 1rem; border-radius: 6px; padding: 0.5rem 1rem; font-weight: 500;" />
-		    </RadzenCard>
-	    </RadzenColumn>
+         <!-- Uninvoiced Receipt Notes Section -->
+        <RadzenColumn Size="12" SizeMD="6" SizeLG="6">
+            <RadzenCard Variant="Variant.Flat"
+                        Style="padding: 1rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                <RadzenDataGrid @ref="_receiptNoteGrid"
+                                AllowRowSelectOnRowClick="true"
+                                AllowFiltering="true"
+                                FilterPopupRenderMode="PopupRenderMode.OnDemand"
+                                FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                AllowPaging="true"
+                                PagerHorizontalAlign="HorizontalAlign.Left"
+                                ShowPagingSummary="true"
+                                PageSize="_defaultPageSize"
+                                Count="@_uninvoicedReceiptNotesWithSummary.ReceiptNotes.TotalCount"
+                                AllowSorting="true"
+                                Data="@_uninvoicedReceiptNotesWithSummary.ReceiptNotes.Items"
+                                LoadData="LoadUninvoicedReceiptNote"
+                                IsLoading="@isLoadingUninvoicedDeliveryNotes"
+                                SelectionMode="DataGridSelectionMode.Multiple"
+                                @bind-Value="@_selectedReceiptNotesToAttach"
+                                Style="border: none;"
+                                Class="custom-grid">
+                    <EmptyTemplate>
+                        <p style="font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
+                    </EmptyTemplate>
+                    <HeaderTemplate>
+                        <div style="display: flex; align-items: center; margin-bottom: 0.75rem; gap: 1rem;">
+                            <div style="font-size: 1.1rem; font-weight: 600;">
+                                @Localizer["uninvoiced_receipt_notes_details"]
+                            </div>
+                            <div style="margin-left: auto;">
+                                <RadzenButton Click="@(args => AttachReceiptNotesToInvoiceClick("Primary button"))"
+                                              Text="@Localizer["attach_receipt_note_to_invoice"]"
+                                              Disabled="@(SelectedInvoiceId == 0 || !_selectedReceiptNotesToAttach.Any())"
+                                              ButtonStyle="ButtonStyle.Primary"
+                                              Size="ButtonSize.Small"
+                                              Style="border-radius: 6px; padding: 0.4rem 0.8rem; font-weight: 500; font-size: 0.85rem;" />
+                            </div>
+                        </div>
+                    </HeaderTemplate>
+                    <Columns>
+                        <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailsResponse.Num)"
+                                              Title="@Localizer["number"]"
+                                              Width="140px" />
+                        <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailsResponse.TotHTva)"
+                                              Title="@Localizer["total_ex_tax"]"
+                                              Width="140px">
+                            <Template Context="detail">
+                                @detail.TotHTva.FormatAmount()
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailsResponse.TotTTC)"
+                                              Title="@Localizer["net_payer"]"
+                                              Width="140px">
+                            <Template Context="detail">
+                                @detail.TotTTC.FormatAmount()
+                            </Template>
+                        </RadzenDataGridColumn>
+                    </Columns>
+                </RadzenDataGrid>
+                <!-- Uninvoiced Receipt Notes Summary -->
+                <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e0e0e0; flex-wrap: wrap;">
+                    <span style="font-size: 0.85rem; color: #666;">
+                        @Localizer["total_net"]: <strong style="color: #333;">@_uninvoicedReceiptNotesWithSummary?.TotalNetAmount.FormatAmount()</strong>
+                    </span>
+                    <span style="font-size: 0.85rem; color: #666;">
+                        @Localizer["total_gross"]: <strong style="color: #333;">@_uninvoicedReceiptNotesWithSummary?.TotalGrossAmount.FormatAmount()</strong>
+                    </span>
+                    <span style="font-size: 0.85rem; color: #666;">
+                        @Localizer["total_vat"]: <strong style="color: #333;">@_uninvoicedReceiptNotesWithSummary?.TotalVATAmount.FormatAmount()</strong>
+                    </span>
+                </div>
+            </RadzenCard>
+        </RadzenColumn>
     </RadzenRow>
-    </div>
-    <style>
-
+</div>
+<style>
     .custom-dropdown {
         --rz-dropdown-border-hover: #4f46e5;
         --rz-dropdown-shadow: 0 2px 10px rgba(102, 126, 234, 0.1);
     }
-        .custom-dropdown .rz-dropdown-panel {
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            border: 1px solid #e5e7eb;
-        }
-
-        .custom-dropdown .rz-dropdown-item:hover {
-            background: #f9fafb;
-        }
-        .custom-dropdown:hover {
-            border-color: #007bff;
-        }
-
+    .custom-dropdown .rz-dropdown-panel {
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e5e7eb;
+    }
+    .custom-dropdown .rz-dropdown-item:hover {
+        background: #f9fafb;
+    }
+    .custom-dropdown:hover {
+        border-color: #007bff;
+    }
     .custom-grid .rz-datatable {
         border: none !important;
         background-color: transparent;
     }
-
     .custom-grid .rz-datatable-thead {
         background-color: #f8f9fa;
         border-bottom: 1px solid #e0e0e0;
     }
-
     .custom-grid .rz-datatable-tbody tr:hover {
         background-color: #f1f3f5;
     }
-
 </style>
 @code {
     #region Fields and Properties

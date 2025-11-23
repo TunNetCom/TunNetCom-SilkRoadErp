@@ -1,221 +1,227 @@
 @page "/add_or_update_reciption_notes"
 @page "/add_or_update_reciption_notes/{num?}"
-@using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice
+
+@using Radzen.Blazor
+@using Microsoft.Extensions.Localization
+@using Microsoft.JSInterop
+@using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters
+@using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNote.Responses
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Sorting
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
-@using static TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.ReciptionNotes.AddOrUpdateRecipietNote
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 
+@inject IStringLocalizer<SharedResource> Localizer
+@inject ToastService toastService
+@inject NotificationService NotificationService
+@inject IJSRuntime JSRuntime
+@inject IReceiptNoteApiClient receiptNoteApiClient
+@inject IProductsApiClient productsApiClient
+@inject IProvidersApiClient providerApiClient
+@inject IAppParametersClient appParametersClient
+@inject ILogger<AddOrUpdateRecipietNote> logger
+@inject DialogService DialogService
 
-<RadzenProgressBarCircular hidden="@(!isLoading)" ProgressBarStyle="ProgressBarStyle.Primary" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+<style>
+    /* Header actions container */
+    .header-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 24px;
+        border-bottom: 1px solid #e5e7eb;
+        width: 100%;
+    }
 
-<!-- Delivery Note Container with Form and Summary -->
-<RadzenCard Variant="Variant.Outlined">
-	<RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center">
-		<RadzenStack Orientation="Radzen.Orientation.Vertical">
-			<RadzenLabel TextStyle="TextStyle.Subtitle2" Text="@Localizer["delivery_note_number"]" Component="DeliveryNoteNumber" AriaLabel="@Localizer["delivery_note_number"]" />
-			<RadzenTextBox @bind-Value="receiptNoteNumber" Name="DeliveryNoteNumber" Style="width: 200px;" ReadOnly="true" AriaReadOnly="true" />
-		</RadzenStack>
-		<RadzenStack Orientation="Radzen.Orientation.Vertical">
-			<RadzenLabel Text="@Localizer["date"]" />
-			<RadzenDatePicker @bind-Value="receiptNoteDate" Name="DeliveryNoteDate" Style="width: 200px;" DateFormat="d MMMM yyyy" ShowTime="false" />
-		</RadzenStack>
-		<RadzenStack Orientation="Radzen.Orientation.Vertical">
-			<RadzenLabel Text="@Localizer["provider"]" />
-			<RadzenDropDownDataGrid AllowClear="true"
-									IsLoading="@isLoadingProvider"
-									@bind-Value="@selectedProviderId"
-									LoadData="@LoadProviders"
-									AllowFiltering="true"
-									Style="width: 350px;"
-									Data="@_filteredProviders"
-									TextProperty="@nameof(ProviderResponse.Nom)"
-									ValueProperty="@nameof(ProviderResponse.Id)"
-									Placeholder="@Localizer["select_provider"]">
-				<Columns>
-					<RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Id)" Title="ID" />
-					<RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Nom)" Title="@Localizer["name"]"  />
-				</Columns>
-			</RadzenDropDownDataGrid>
-		</RadzenStack>
-		<RadzenStack Orientation="Radzen.Orientation.Vertical">
-			<RadzenLabel Text="@Localizer["invoice_number"]" />
-			<RadzenDropDownDataGrid TValue="int?"
-									AllowClear="true"
-									IsLoading="@isLoadingInvoices"
-									@bind-Value="@selectedInvoiceId"
-									LoadData="@LoadProviderInvoices"
-									AllowFiltering="true"
-									Style="width: 350px;"
-									Data="@_filteredInvoices"
-									TextProperty="@nameof(ProviderInvoiceResponse.Num)"
-									ValueProperty="@nameof(ProviderInvoiceResponse.Num)"
-									Placeholder="@Localizer["select_invoice"]">
-				<Columns>
-					<RadzenDropDownDataGridColumn Property="@nameof(ProviderInvoiceResponse.Num)" Title="Num" />
-					<RadzenDropDownDataGridColumn Property="@nameof(ProviderInvoiceResponse.Date)" Title="Date" />
-					<RadzenDropDownDataGridColumn Property="@nameof(ProviderInvoiceResponse.TotTTC)" Title="@Localizer["tot_ttc"]"  />
-				</Columns>
-			</RadzenDropDownDataGrid>
-		</RadzenStack>
+    /* Action buttons container */
+    .action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+    }
 
-	</RadzenStack>
-</RadzenCard>
+    /* Button styling */
+    .action-button {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 8px 12px;
+        border-radius: 6px;
+        transition: background-color 0.2s, box-shadow 0.2s;
+        background-color: #3b82f6;
+        border: none;
+    }
 
-<RadzenDataGrid class="rz-border-radius-3" @ref="receiptLinesGrid" AllowAlternatingRows="false"
-				AllowPaging="true"
-				EditMode="@editMode"
-				Data="@receiptLines"
-				TItem="ReceiptLineWrapper"
-				RowUpdate="@OnUpdateRow"
-				RowCreate="@OnCreateRow"
-				Page="@Reset"
-				ColumnWidth="200px">
-	<HeaderTemplate>
-		<div class="header-actions">
-			<div class="action-buttons">
-				<RadzenButton ButtonStyle="ButtonStyle.Success"
-							  Icon="add_circle"
-							  Text="@Localizer["add_new_order"]"
-							  Click="@InsertRow"
-							  Disabled="@(editMode == DataGridEditMode.Single && linesToInsert.Count() > 0)"
-							  class="action-button success-button"
-							  AriaLabel="@Localizer["add_new_order"]" />
+        .action-button:hover:not(:disabled) {
+            background-color: #2563eb;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
 
-				<RadzenButton ButtonStyle="ButtonStyle.Primary"
-							  Icon="print"
-							  Text="@Localizer["print"]"
-							  Variant="Variant.Flat"
-							  Disabled="@(!receiptLines.Any())"
-							  class="action-button"
-							  AriaLabel="@Localizer["print"]" />
+        .action-button:disabled {
+            background-color: #d1d5db;
+            cursor: not-allowed;
+        }
 
-				<RadzenButton ButtonStyle="ButtonStyle.Primary"
-							  Icon="save"
-							  Text="@Localizer["save"]"
-							  Variant="Variant.Flat"
-							  Click="@AddOrUpdateReceiptNote"
-							  Disabled="@(!receiptLines.Any())"
-							  class="action-button"
-							  AriaLabel="@Localizer["save"]" />
+    /* Success button styling */
+    .success-button {
+        background-color: #10b981;
+    }
 
-			</div>
+        .success-button:hover:not(:disabled) {
+            background-color: #059669;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
 
-			<RadzenCard class="summary-card" Variant="Variant.Outlined">
-				<RadzenStack Orientation="Radzen.Orientation.Horizontal"
-							 Gap="1.5rem"
-							 JustifyContent="JustifyContent.End"
-							 class="summary-stack">
-					<RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-						@Localizer["total_net"]: <strong>@totalTtc.FormatAmount()</strong>
-					</RadzenText>
-					<RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-						@Localizer["total_gross"]: <strong>@totalHt.FormatAmount()</strong>
-					</RadzenText>
-					<RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-						@Localizer["total_vat"]: <strong>@totalVat.FormatAmount()</strong>
-					</RadzenText>
-				</RadzenStack>
-			</RadzenCard>
-		</div>
-	</HeaderTemplate>
-	<Columns>
-		<RadzenDataGridColumn Width="600px" TItem="ReceiptLineWrapper"
-							  Property="ProductReferenceAndDescription"
-							  Title="@Localizer["product"]">
-			<Template Context="line">
-				@line.ProductReferenceAndDescription
-			</Template>
-			<EditTemplate Context="line">
-				<RadzenDropDownDataGrid Style="width: 100%; max-width: 600px;"
-										AllowClear="true"
-										@bind-Value="line.ProductReference"
-										LoadData="@LoadData"
-										AllowFiltering="true"
-										Data="@(GetCurrentProductList(line))"
-										Count="@count"
-										Change="@(args => OnProductSelected(line, args))"
-										TextProperty="ProductReferenceAndDescription"
-										ValueProperty="ProductReference"
-										Name="DropDownDataGridFilteringLoadData" />
-			</EditTemplate>
-		</RadzenDataGridColumn>
+    /* Summary card styling */
+    .summary-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 8px 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        flex: 0 0 auto;
+    }
 
-		<RadzenDataGridColumn Width="100px" Property="ItemQuantity"
-							  Title="@Localizer["quantity"]">
-			<EditTemplate Context="line">
-				<RadzenNumeric TValue="int"
-							   Value="line.ItemQuantity"
-							   Change="@(args => OnValueChanged(line, args, nameof(line.ItemQuantity)))"
-							   Style="width:100%;"
-							   Name="Quantity" />
-				<RadzenRequiredValidator Text="@Localizer["quantity_required"]" Component="Quantity" Popup="true" />
-			</EditTemplate>
-		</RadzenDataGridColumn>
+    /* Summary stack */
+    .summary-stack {
+        gap: 1.5rem;
+    }
 
-		<RadzenDataGridColumn Width="150px" Property="UnitPriceExcludingTax" Title="@Localizer["unit_price_ht"]">
-			<Template Context="line">
-				<RadzenStack Orientation="Radzen.Orientation.Horizontal">
-					<RadzenStack>
-						<RadzenButton ButtonStyle="ButtonStyle.Info" Icon="history" Variant="Variant.Flat"
-									  Shade="Shade.Lighter" Size="ButtonSize.Small" class="rz-my-1 rz-ms-1"
-									  Click="@(args => ShowDialog(line.ProductReference))" aria-label="Delete">
-						</RadzenButton>
-					</RadzenStack>
-					<RadzenStack AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center">@line.UnitPriceExcludingTax.FormatAmount()</RadzenStack>
+    /* Summary text */
+    .summary-text {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 13px;
+        line-height: 1.5;
+    }
 
-				</RadzenStack>
-			</Template>
-		</RadzenDataGridColumn>
+        .summary-text strong {
+            font-weight: 600;
+        }
 
+    /* Responsive design */
+    @@media (max-width: 768px) {
+        .header-actions {
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 12px 16px;
+            gap: 12px;
+        }
 
-		<RadzenDataGridColumn Width="100px" Property="Discount"
-							  Title="@Localizer["discount_percentage"]">
-			<Template Context="line">
-				@line.Discount
-			</Template>
-		</RadzenDataGridColumn>
+        .action-buttons {
+            flex-direction: column;
+            width: 100%;
+            gap: 8px;
+        }
 
-		<RadzenDataGridColumn Property="TotalExcludingTax" Title="@Localizer["total_ex_tax"]">
-			<Template Context="line">
-				@line.TotalExcludingTax.FormatAmount()
-			</Template>
-		</RadzenDataGridColumn>
+        .action-button,
+        .success-button {
+            width: 100%;
+            text-align: center;
+            font-size: 12px;
+            padding: 10px;
+        }
 
-		<RadzenDataGridColumn Width="100px" Property="VatRate" Title="@Localizer["vat_percentage"]">
-			<Template Context="line">
-				@line.VatRate
-			</Template>
-		</RadzenDataGridColumn>
+        .summary-card {
+            width: 100%;
+            padding: 8px 12px;
+        }
 
-		<RadzenDataGridColumn Property="TotalIncludingTax" Title="@Localizer["total_incl_tax"]">
-			<Template Context="line">
-				@line.TotalIncludingTax.FormatAmount()
-			</Template>
-		</RadzenDataGridColumn>
+        .summary-stack {
+            flex-direction: column;
+            gap: 0.75rem;
+            align-items: flex-start;
+        }
 
-		<RadzenDataGridColumn Context="line" Filterable="false" Sortable="false" TextAlign="TextAlign.Center"
-							  Frozen="true" FrozenPosition="FrozenColumnPosition.Right">
-			<Template Context="line">
-				<RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat"
-							  Size="ButtonSize.Small" Click="@(args => EditRow(line))" @onclick:stopPropagation="true">
-				</RadzenButton>
-				<RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat"
-							  Shade="Shade.Lighter" Size="ButtonSize.Small" class="rz-my-1 rz-ms-1"
-							  Click="@(args => DeleteRow(line))" @onclick:stopPropagation="true">
-				</RadzenButton>
-			</Template>
-			<EditTemplate Context="line">
-				<RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat"
-							  Size="ButtonSize.Small" Click="@((args) => SaveRow(line))" aria-label="Save">
-				</RadzenButton>
-				<RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat"
-							  Size="ButtonSize.Small" class="rz-my-1 rz-ms-1"
-							  Click="@((args) => CancelEdit(line))" aria-label="Cancel">
-				</RadzenButton>
-				<RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat"
-							  Shade="Shade.Lighter" Size="ButtonSize.Small" class="rz-my-1 rz-ms-1"
-							  Click="@(args => DeleteRow(line))" aria-label="Delete">
-				</RadzenButton>
-			</EditTemplate>
-		</RadzenDataGridColumn>
-	</Columns>
-</RadzenDataGrid>
+        .summary-text {
+            font-size: 12px;
+        }
+    }
+
+    .receipt-note-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .receipt-note-form {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        flex-wrap: wrap;
+        flex-grow: 1;
+    }
+</style>
+
+<!-- Loading Indicator -->
+@if (isLoading)
+{
+    <RadzenProgressBarCircular ProgressBarStyle="ProgressBarStyle.Primary" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+}
+else
+{
+    <!-- Receipt Note Container with Form and Summary -->
+    <div class="receipt-note-container">
+        <div class="receipt-note-form">
+            <RadzenLabel Text="@Localizer["delivery_note_number"]" Component="ReceiptNoteNumber" AriaLabel="@Localizer["delivery_note_number"]" />
+            <RadzenTextBox @bind-Value="receiptNoteNumber" Name="ReceiptNoteNumber" Style="width: 120px;" ReadOnly="true" AriaReadOnly="true" />
+
+            <RadzenLabel Text="@Localizer["date"]" />
+            <RadzenDatePicker @bind-Value="receiptNoteDate" Name="ReceiptNoteDate" Style="width: 200px;" DateFormat="d MMMM yyyy" ShowTime="false" />
+
+            <RadzenLabel Text="@Localizer["provider"]" />
+            <RadzenDropDownDataGrid AllowClear="true"
+                                    IsLoading="@isLoadingProvider"
+                                    @bind-Value="@selectedProviderId"
+                                    LoadData="@LoadProviders"
+                                    AllowFiltering="true"
+                                    Style="width: 350px;"
+                                    Data="@_filteredProviders"
+                                    TextProperty="@nameof(ProviderResponse.Nom)"
+                                    ValueProperty="@nameof(ProviderResponse.Id)"
+                                    Placeholder="@Localizer["select_provider"]">
+                <Columns>
+                    <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Id)" Title="ID" Width="80px" />
+                    <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Nom)" Title="@Localizer["name"]" Width="220px" />
+                </Columns>
+            </RadzenDropDownDataGrid>
+        </div>
+    </div>
+
+    <!-- Order Lines Grid -->
+    <LineItemsGrid TItem="ReceiptNoteDetailResponse"
+                   Items="@orders"
+                   ItemsChanged="@OnItemsChanged"
+                   OnDeleteItem="@DeleteRow"
+                   OnProductSelectedCallback="@OnProductSelectedHandler"
+                   LoadProducts="@LoadData"
+                   GetProductList="@GetCurrentProductList"
+                   ProductCount="@count"
+                   AppParameters="@getAppParametersResponse"
+                   OnShowPriceHistory="@ShowDialog"
+                   ShowPriceHistoryDialog="true"
+                   ShowPrintButton="true"
+                   ShowSaveButton="true"
+                   ShowSummary="true"
+                   OnSave="@SaveReceiptNote"
+                   OnPrint="@PrintReceiptNote"
+                   TotalHt="@totalHt"
+                   TotalVat="@totalVat"
+                   TotalTtc="@totalTtc"
+                   Localizer="@Localizer"
+                   GetProductReference="@(item => item.ProductReference)"
+                   SetProductReference="@((item, value) => item.ProductReference = value)"
+                   GetProductDescription="@(item => item.Description)"
+                   SetProductDescription="@((item, value) => item.Description = value)"
+                   ProductTextProperty="ProductReferenceAndDescription"
+                   ProductValueProperty="ProductReference"
+                   CreateNewItem="@(() => new ReceiptNoteDetailResponse { Quantity = 1 })" />
+}
