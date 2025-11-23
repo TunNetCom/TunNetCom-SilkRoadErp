@@ -16,6 +16,8 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Quotations.PrintQuotation
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure
 
 @inject IStringLocalizer<SharedResource> Localizer
 @inject NotificationService NotificationService
@@ -28,6 +30,8 @@
 @inject DialogService DialogService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
+@inject PrintQuotationService PrintQuotationService
+@inject IPrintService PrintService
 
 <style>
     .quotation-container {
@@ -108,7 +112,8 @@ else
                    AppParameters="@getAppParametersResponse"
                    OnShowPriceHistory="@ShowDialog"
                    ShowPriceHistoryDialog="true"
-                   ShowPrintButton="false"
+                   ShowPrintButton="true"
+                   OnPrint="@PrintQuotation"
                    ShowSaveButton="true"
                    ShowSummary="true"
                    OnSave="@SaveQuotation"
@@ -222,6 +227,7 @@ else
                         Summary = Localizer["success"],
                         Detail = "Devis mis à jour avec succès"
                     });
+                    
                 }
                 else
                 {
@@ -247,6 +253,7 @@ else
                         Summary = Localizer["success"],
                         Detail = "Devis créé avec succès"
                     });
+                    
                 }
                 else
                 {
@@ -615,6 +622,155 @@ else
         {
             isLoading = false;
             StateHasChanged();
+        }
+    }
+
+    private async Task PrintQuotation()
+    {
+        try
+        {
+            if (orders == null || !orders.Any())
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = Localizer["warning"],
+                    Detail = Localizer["no_items_to_print"] ?? "No items to print"
+                });
+                return;
+            }
+
+            Result<byte[]> pdfResult;
+
+            // Check if quotation is saved (has a number)
+            if (!string.IsNullOrEmpty(quotationNumber) && int.TryParse(quotationNumber, out var quotationNum))
+            {
+                // Print saved quotation
+                pdfResult = await PrintQuotationService.GenerateQuotationPdfAsync(
+                    quotationNum,
+                    _cancellationTokenSource.Token);
+            }
+            else
+            {
+                // Print from current data (not saved yet)
+                var printModel = new PrintQuotationModel
+                {
+                    Num = 0, // Not saved yet
+                    Date = quotationDate,
+                    CustomerId = selectedCustomerId,
+                    TotalExcludingTax = totalHt,
+                    TotalVat = totalVat,
+                    TotalAmount = totalTtc,
+                    Lines = orders.Select(o => new QuotationLineModel
+                    {
+                        Id = o.Id,
+                        RefProduit = o.ProductReference,
+                        DesignationLi = o.Description,
+                        QteLi = o.Quantity,
+                        PrixHt = o.UnitPriceExcludingTax,
+                        Remise = o.DiscountPercentage,
+                        TotHt = o.TotalExcludingTax,
+                        Tva = o.VatPercentage,
+                        TotTtc = o.TotalIncludingTax
+                    }).ToList()
+                };
+
+                pdfResult = await PrintQuotationService.GenerateQuotationPdfFromDataAsync(
+                    printModel,
+                    _cancellationTokenSource.Token);
+            }
+
+            if (pdfResult.IsSuccess)
+            {
+                var fileName = string.IsNullOrEmpty(quotationNumber)
+                    ? $"Devis - {quotationDate:yyyy-MM-dd}.pdf"
+                    : $"Devis {quotationNumber}.pdf";
+
+                // Show print mode selection dialog
+                var printModeResult = await DialogService.OpenAsync<PrintModeDialog>(
+                    Localizer["print_mode"],
+                    new Dictionary<string, object>(),
+                    new DialogOptions()
+                    {
+                        Width = "400px",
+                        Resizable = false,
+                        Draggable = true
+                    });
+
+                if (printModeResult is PrintMode selectedMode)
+                {
+                    var printOptions = new PrintOptions
+                    {
+                        Mode = selectedMode,
+                        FileName = fileName
+                    };
+
+                    if (selectedMode == PrintMode.DirectPrint)
+                    {
+                        // Show printer selection dialog
+                        var printerResult = await DialogService.OpenAsync<PrinterSelectionDialog>(
+                            Localizer["select_printer"],
+                            new Dictionary<string, object> { { "PdfBytes", pdfResult.Value } },
+                            new DialogOptions()
+                            {
+                                Width = "500px",
+                                Resizable = false,
+                                Draggable = true
+                            });
+
+                        if (printerResult is PrinterSelectionResult printerSelection)
+                        {
+                            printOptions.PrinterName = printerSelection.PrinterName;
+                            printOptions.Copies = printerSelection.Copies;
+                            printOptions.Duplex = printerSelection.Duplex;
+                        }
+                        else
+                        {
+                            return; // User cancelled
+                        }
+                    }
+
+                    var printResult = await PrintService.PrintAsync(pdfResult.Value, printOptions, _cancellationTokenSource.Token);
+
+                    if (!printResult.IsSuccess)
+                    {
+                        NotificationService.Notify(new NotificationMessage
+                        {
+                            Severity = NotificationSeverity.Error,
+                            Summary = Localizer["error"],
+                            Detail = $"Échec de l'impression du devis: {printResult.ErrorMessage}"
+                        });
+                    }
+                    else if (selectedMode == PrintMode.DirectPrint)
+                    {
+                        NotificationService.Notify(new NotificationMessage
+                        {
+                            Severity = NotificationSeverity.Success,
+                            Summary = Localizer["success"],
+                            Detail = Localizer["print_job_submitted"] ?? "Print job submitted successfully"
+                        });
+                    }
+                }
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = $"Échec de l'impression du devis: {pdfResult.Errors.First().Message}"
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Erreur lors de l'impression du devis: {ex.Message}"
+            });
+            logger.LogError(ex, "Failed to print quotation");
         }
     }
 }

@@ -407,7 +407,12 @@ else
                 
                 if (createResponse.IsSuccess)
                 {
-                    deliveryNoteNumber = createResponse.ValueOrDefault.ToString();
+                    var newDeliveryNoteNum = createResponse.ValueOrDefault;
+                    deliveryNoteNumber = newDeliveryNoteNum.ToString();
+                    
+                    // Recharger les données du BL pour s'assurer que tout est à jour
+                    await FetchDeliveryNote();
+                    
                     NotificationService.Notify(new NotificationMessage
                     {
                         Severity = NotificationSeverity.Success,
@@ -496,7 +501,14 @@ else
         }
 
         // Si pas de données dans sessionStorage, vérifier si on est en mode édition
-        if (string.IsNullOrEmpty(num))
+        // Utiliser deliveryNoteNumber si num est vide (cas où on vient de sauvegarder)
+        var deliveryNoteNumToLoad = num;
+        if (string.IsNullOrEmpty(deliveryNoteNumToLoad) && !string.IsNullOrEmpty(deliveryNoteNumber))
+        {
+            deliveryNoteNumToLoad = deliveryNoteNumber;
+        }
+        
+        if (string.IsNullOrEmpty(deliveryNoteNumToLoad))
         {
             orders = new List<DeliveryNoteDetailResponse>();
             totalHt = 0;
@@ -507,7 +519,7 @@ else
 
         try
         {
-            if (int.TryParse(num, out var numAsInt))
+            if (int.TryParse(deliveryNoteNumToLoad, out var numAsInt))
             {
                 var deliveryNote = await deliveryNoteApiClient.GetDeliveryNoteByNumAsync(
                     numAsInt,

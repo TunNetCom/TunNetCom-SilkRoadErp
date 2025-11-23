@@ -12,23 +12,26 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.priceQuote.GetPriceQuote
         {
             _logger.LogPaginationRequest(nameof(Devis), getPriceQuoteQuery.PageNumber, getPriceQuoteQuery.PageSize);
 
-            var DevisQuery = _context.Devis.Select(t =>
-                new QuotationResponse
-                {
-                    Num = t.Num,
-                    IdClient = t.IdClient,
-                    Date = t.Date,
-                    TotHTva = t.TotHTva,
-                    TotTva = t.TotTva,
-                    TotTtc = t.TotTtc
-                })
-                .AsQueryable();
+            var DevisQuery = (from d in _context.Devis
+                             join c in _context.Client on d.IdClient equals c.Id
+                             select new QuotationResponse
+                             {
+                                 Num = d.Num,
+                                 IdClient = d.IdClient,
+                                 CustomerName = c.Nom,
+                                 Date = d.Date,
+                                 TotHTva = d.TotHTva,
+                                 TotTva = d.TotTva,
+                                 TotTtc = d.TotTtc
+                             })
+                             .AsQueryable();
 
             if (!string.IsNullOrEmpty(getPriceQuoteQuery.SearchKeyword))
             {
                 DevisQuery = DevisQuery.Where(
                     q => q.Num.ToString().Contains(getPriceQuoteQuery.SearchKeyword)
                     || q.IdClient.ToString().Contains(getPriceQuoteQuery.SearchKeyword)
+                    || q.CustomerName.Contains(getPriceQuoteQuery.SearchKeyword)
                     || q.Date.ToString("yyyy-MM-dd").Contains(getPriceQuoteQuery.SearchKeyword)
                     || q.TotHTva.ToString().Contains(getPriceQuoteQuery.SearchKeyword)
                     || q.TotTva.ToString().Contains(getPriceQuoteQuery.SearchKeyword)

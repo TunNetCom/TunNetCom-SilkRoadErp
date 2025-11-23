@@ -1,4 +1,6 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Contracts.Quotations
+﻿using System.Text.Json.Serialization;
+
+namespace TunNetCom.SilkRoadErp.Sales.Contracts.Quotations
 {
     public class QuotationResponse
     {
@@ -7,6 +9,9 @@
 
         [JsonPropertyName("idClient")]
         public int IdClient { get; set; }
+
+        [JsonPropertyName("customerName")]
+        public string CustomerName { get; set; } = string.Empty;
 
         [JsonPropertyName("date")]
         public DateTime Date { get; set; }

@@ -67,8 +67,8 @@ public class CreateDeliveryNoteCommandHandler(
         _ = _context.BonDeLivraison.Add(deliveryNote);
         _ = await _context.SaveChangesAsync(cancellationToken);
 
-        _logger.LogEntityCreatedSuccessfully(nameof(BonDeLivraison), deliveryNote.Id);
+        _logger.LogEntityCreatedSuccessfully(nameof(BonDeLivraison), deliveryNote.Num);
 
-        return deliveryNote.Id;
+        return deliveryNote.Num;
     }
 }

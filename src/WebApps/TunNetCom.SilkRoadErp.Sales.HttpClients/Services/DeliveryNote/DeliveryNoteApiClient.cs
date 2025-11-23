@@ -49,13 +49,14 @@ public class DeliveryNoteApiClient(HttpClient _httpClient) : IDeliveryNoteApiCli
 
             if (response.IsSuccessStatusCode)
             {
-                // Assuming the API returns the created delivery note ID in the Location header
+                // The API returns the created delivery note Num in the Location header
                 var location = response.Headers.Location?.ToString();
-                if (long.TryParse(location?.Split('/').Last(), out var deliveryNoteId))
+                if (int.TryParse(location?.Split('/').Last(), out var deliveryNoteNum))
                 {
-                    return Result.Ok(deliveryNoteId);
+                    // Convert int to long to match the interface signature
+                    return Result.Ok((long)deliveryNoteNum);
                 }
-                return Result.Fail("Could not extract delivery note ID from response");
+                return Result.Fail("Could not extract delivery note number from response");
             }
 
             if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)

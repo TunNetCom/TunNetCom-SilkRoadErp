@@ -72,7 +72,7 @@
             <Columns>
                 <RadzenDataGridColumn TItem="QuotationResponse"
                                       Property="@nameof(QuotationResponse.Num)"
-                                      Title="Numéro"
+                                      Title="@Localizer["number"]"
                                       Width="150px" />
                 <RadzenDataGridColumn TItem="QuotationResponse"
                                       Property="@nameof(QuotationResponse.Date)"
@@ -80,21 +80,9 @@
                                       Width="150px"
                                       FormatString="{0:d MMMM yyyy}" />
                 <RadzenDataGridColumn TItem="QuotationResponse"
-                                      Property="@nameof(QuotationResponse.TotHTva)"
-                                      Title="@Localizer["total_net"]"
-                                      Width="150px">
-                    <Template Context="item">
-                        @item.TotHTva.FormatAmount()
-                    </Template>
-                </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="QuotationResponse"
-                                      Property="@nameof(QuotationResponse.TotTva)"
-                                      Title="@Localizer["total_vat"]"
-                                      Width="150px">
-                    <Template Context="item">
-                        @item.TotTva.FormatAmount()
-                    </Template>
-                </RadzenDataGridColumn>
+                                      Property="@nameof(QuotationResponse.CustomerName)"
+                                      Title="@Localizer["customer"]"
+                                      Width="200px" />
                 <RadzenDataGridColumn TItem="QuotationResponse"
                                       Property="@nameof(QuotationResponse.TotTtc)"
                                       Title="@Localizer["tot_ttc"]"
@@ -114,8 +102,8 @@
                                       Variant="Variant.Flat"
                                       Size="ButtonSize.Small"
                                       Click="@(() => ViewQuotation(item.Num.ToString()))"
-                                      Title="Modifier"
-                                      AriaLabel="Modifier" />
+                                      Title="@Localizer["edit"]"
+                                      AriaLabel="@Localizer["edit"]" />
                     </Template>
                 </RadzenDataGridColumn>
             </Columns>
@@ -126,10 +114,7 @@
                          JustifyContent="JustifyContent.End"
                          class="summary-stack">
                 <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                    @Localizer["total_net"]: <strong>@totalNetAmount.FormatAmount()</strong>
-                </RadzenText>
-                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                    @Localizer["total_vat"]: <strong>@totalVatAmount.FormatAmount()</strong>
+                    @Localizer["tot_ttc"]: <strong>@quotationsList.Sum(q => q.TotTtc).FormatAmount()</strong>
                 </RadzenText>
             </RadzenStack>
         </RadzenCard>
@@ -280,8 +265,6 @@
 @code {
     private List<QuotationResponse> quotationsList = new();
     private int totalCount = 0;
-    private decimal totalNetAmount = 0;
-    private decimal totalVatAmount = 0;
     private const int DefaultPageSize = 15;
     private SearchCriteria searchCriteria = new SearchCriteria();
     private List<CustomerResponse> _filteredCustomers = new();
@@ -400,18 +383,12 @@
 
             quotationsList = filtered.ToList();
             totalCount = quotationsList.Count;
-
-            // Calculate totals
-            totalNetAmount = quotationsList.Sum(q => q.TotHTva);
-            totalVatAmount = quotationsList.Sum(q => q.TotTva);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error loading quotations");
             quotationsList = new List<QuotationResponse>();
             totalCount = 0;
-            totalNetAmount = 0;
-            totalVatAmount = 0;
         }
 
         await InvokeAsync(StateHasChanged);

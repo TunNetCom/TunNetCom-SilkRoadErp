@@ -279,6 +279,9 @@
   <data name="total_including_tax" xml:space="preserve">
     <value>المجموع شامل الضريبة</value>
   </data>
+  <data name="tot_ttc" xml:space="preserve">
+    <value>المجموع شامل الضريبة</value>
+  </data>
   <data name="total_excluding_tax" xml:space="preserve">
     <value>المجموع بدون ضريبة</value>
   </data>
