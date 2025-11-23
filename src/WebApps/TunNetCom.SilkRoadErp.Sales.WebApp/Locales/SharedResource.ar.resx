@@ -567,6 +567,9 @@
   <data name="Delivery_Notes_List" xml:space="preserve">
     <value>قائمة بوالص التسليم</value>
   </data>
+  <data name="Invoices_List" xml:space="preserve">
+    <value>قائمة الفواتير</value>
+  </data>
   <data name="Receipt_Note" xml:space="preserve">
     <value>بوليصة الاستلام</value>
   </data>

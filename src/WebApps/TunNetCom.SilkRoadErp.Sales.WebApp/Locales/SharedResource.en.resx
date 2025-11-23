@@ -567,6 +567,9 @@
   <data name="Delivery_Notes_List" xml:space="preserve">
     <value>Delivery Notes List</value>
   </data>
+  <data name="Invoices_List" xml:space="preserve">
+    <value>Invoices List</value>
+  </data>
   <data name="Receipt_Note" xml:space="preserve">
     <value>Receipt Note</value>
   </data>

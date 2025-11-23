@@ -560,12 +560,15 @@
     <value />
   </data>
   <data name="Manage_Invoices" xml:space="preserve">
-    <value />
+    <value>Gestion Factures</value>
   </data>
   <data name="Delivery_Note" xml:space="preserve">
     <value />
   </data>
   <data name="Delivery_Notes_List" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Invoices_List" xml:space="preserve">
     <value />
   </data>
   <data name="Receipt_Note" xml:space="preserve">

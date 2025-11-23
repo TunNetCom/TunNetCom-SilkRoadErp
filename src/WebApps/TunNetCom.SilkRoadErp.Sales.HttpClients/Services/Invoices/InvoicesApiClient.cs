@@ -136,4 +136,62 @@ public class InvoicesApiClient : IInvoicesApiClient
             ? Result.Fail<FullInvoiceResponse>("invoice_is_empty")
             : Result.Ok(invoice);
     }
+
+    public async Task<GetInvoicesWithSummariesResponse> GetInvoicesWithSummariesAsync(
+        int? customerId,
+        string? sortOrder,
+        string? sortProperty,
+        int pageNumber,
+        int pageSize,
+        string? searchKeyword,
+        DateTime? startDate,
+        DateTime? endDate,
+        CancellationToken cancellationToken)
+    {
+        // Validate pagination parameters
+        if (pageNumber < 1 || pageSize < 1)
+        {
+            throw new ArgumentException("PageNumber and PageSize must be greater than zero.");
+        }
+
+        // Build query string with only non-null parameters
+        var queryParams = new Dictionary<string, string>();
+
+        if (customerId.HasValue)
+            queryParams.Add("customerId", customerId.Value.ToString());
+        if (!string.IsNullOrEmpty(sortOrder))
+            queryParams.Add("sortOrder", sortOrder);
+        if (!string.IsNullOrEmpty(sortProperty))
+            queryParams.Add("sortProperty", sortProperty);
+        if (!string.IsNullOrEmpty(searchKeyword))
+            queryParams.Add("searchKeyword", searchKeyword);
+        if (startDate.HasValue)
+            queryParams.Add("startDate", startDate.Value.ToString("yyyy-MM-dd"));
+        if (endDate.HasValue)
+            queryParams.Add("endDate", endDate.Value.ToString("yyyy-MM-dd"));
+
+        queryParams.Add("pageNumber", pageNumber.ToString());
+        queryParams.Add("pageSize", pageSize.ToString());
+
+        // Construct query string with URL encoding
+        var queryString = string.Join("&", queryParams.Select(p => $"{p.Key}={Uri.EscapeDataString(p.Value)}"));
+        var requestUri = $"/invoices/summaries?{queryString}";
+
+        try
+        {
+            // Make the HTTP GET request
+            var response = await _httpClient.GetAsync(requestUri, cancellationToken);
+            _ = response.EnsureSuccessStatusCode();
+
+            // Deserialize the response
+            var summariesResponse = await response.Content.ReadFromJsonAsync<GetInvoicesWithSummariesResponse>(
+                cancellationToken: cancellationToken);
+
+            return summariesResponse ?? throw new InvalidOperationException("Failed to deserialize the response.");
+        }
+        catch (System.Text.Json.JsonException ex)
+        {
+            throw new InvalidOperationException("Failed to deserialize invoices summaries response.", ex);
+        }
+    }
 }

@@ -1,19 +1,19 @@
-﻿@page "/delivery-notes"
+@page "/invoices"
 @using Microsoft.Extensions.Localization
-@using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses
-@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Invoice
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
-@inject IDeliveryNoteApiClient DeliveryNoteService
+@inject IInvoicesApiClient InvoicesService
 @inject ICustomersApiClient CustomersService
 @inject IStringLocalizer<SharedResource> Localizer
 @using Radzen.Blazor
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
-@inject NavigationManager NavigationManager
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Customers
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Common
 
-
-<div class="delivery-notes-list-container">
+<div class="invoices-list-container">
     <div class="search-header">
         <PeriodFilter @bind-SelectedPeriod="searchCriteria.PeriodFilter"
                      @bind-StartDate="searchCriteria.StartDate"
@@ -30,7 +30,7 @@
                                     Data="@_filteredCustomers"
                                     TextProperty="@nameof(CustomerResponse.Name)"
                                     ValueProperty="@nameof(CustomerResponse.Id)"
-                                    Placeholder="Selectionner un fournisseur">
+                                    Placeholder="@Localizer["select_customer"]">
                 <Columns>
                     <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Id)" Title="ID" Width="80px" />
                     <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Name)" Title="@Localizer["name"]" Width="220px" />
@@ -41,59 +41,52 @@
             <RadzenButton Text="@Localizer["search"]"
                           Icon="search"
                           ButtonStyle="ButtonStyle.Primary"
-                          Click="@SearchDeliveryNotes"
+                          Click="@SearchInvoices"
                           class="action-button" />
         </div>
     </div>
     <RadzenCard class="list-card">
-        <h2>Commandes</h2>
-        <RadzenDataGrid Data="@deliveryNotes.GetDeliveryNoteBaseInfos.Items"
+        <h2>Factures</h2>
+        <RadzenDataGrid Data="@invoices.Invoices.Items"
                         LoadData="@Callback"
-                        TItem="GetDeliveryNoteBaseInfos"
+                        TItem="InvoiceBaseInfo"
                         AllowSorting="true"
                         AllowFiltering="true"
                         AllowPaging="true"
                         PageSize="15"
-                        Count="@deliveryNotes.GetDeliveryNoteBaseInfos.TotalCount"
+                        Count="@invoices.Invoices.TotalCount"
                         AllowColumnResize="true">
             <EmptyTemplate>
                 <p style="font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
             </EmptyTemplate>
             <Columns>
-                <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos"
-                                      Property="@nameof(GetDeliveryNoteBaseInfos.Number)"
+                <RadzenDataGridColumn TItem="InvoiceBaseInfo"
+                                      Property="@nameof(InvoiceBaseInfo.Number)"
                                       Title="Numéro"
                                       Width="150px" />
-                <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos"
-                                      Property="@nameof(GetDeliveryNoteBaseInfos.Date)"
+                <RadzenDataGridColumn TItem="InvoiceBaseInfo"
+                                      Property="@nameof(InvoiceBaseInfo.Date)"
                                       Title="@Localizer["date"]"
                                       Width="150px"
                                       FormatString="{0:d MMMM yyyy}" />
-                <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos"
-                                      Property="@nameof(GetDeliveryNoteBaseInfos.CustomerName)"
+                <RadzenDataGridColumn TItem="InvoiceBaseInfo"
+                                      Property="@nameof(InvoiceBaseInfo.CustomerName)"
                                       Title="Client"
                                       Width="200px" />
-                <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos"
-                                      Property="@nameof(GetDeliveryNoteBaseInfos.NetAmount)"
+                <RadzenDataGridColumn TItem="InvoiceBaseInfo"
+                                      Property="@nameof(InvoiceBaseInfo.NetAmount)"
                                       Title="@Localizer["total_net"]"
                                       Width="150px">
                     <Template Context="item">
                         @item.NetAmount.FormatAmount()
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos"
-                                      Title="@Localizer["actions_label"]"
-                                      Width="100px"
-                                      Sortable="false"
-                                      Filterable="false">
+                <RadzenDataGridColumn TItem="InvoiceBaseInfo"
+                                      Property="@nameof(InvoiceBaseInfo.VatAmount)"
+                                      Title="@Localizer["total_vat"]"
+                                      Width="150px">
                     <Template Context="item">
-                        <RadzenButton Icon="edit"
-                                      ButtonStyle="ButtonStyle.Primary"
-                                      Variant="Variant.Flat"
-                                      Size="ButtonSize.Small"
-                                      Click="@(() => ViewDeliveryNote(item.Number.ToString()))"
-                                      Title="@Localizer["Edit"]"
-                                      AriaLabel="@Localizer["Edit"]" />
+                        @item.VatAmount.FormatAmount()
                     </Template>
                 </RadzenDataGridColumn>
             </Columns>
@@ -104,20 +97,18 @@
                          JustifyContent="JustifyContent.End"
                          class="summary-stack">
                 <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                    @Localizer["total_net"]: <strong>@deliveryNotes.TotalNetAmount.FormatAmount()</strong>
+                    @Localizer["total_net"]: <strong>@invoices.TotalNetAmount.FormatAmount()</strong>
                 </RadzenText>
                 <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                    @Localizer["total_vat"]: <strong>@deliveryNotes.TotalVatAmount.FormatAmount()</strong>
+                    @Localizer["total_vat"]: <strong>@invoices.TotalVatAmount.FormatAmount()</strong>
                 </RadzenText>
             </RadzenStack>
         </RadzenCard>
-
     </RadzenCard>
 </div>
 
-@* CSS remains unchanged *@
 <style>
-    .delivery-notes-list-container {
+    .invoices-list-container {
         padding: 16px 24px;
         min-height: 100%;
     }
@@ -137,7 +128,6 @@
         margin-bottom: 16px;
     }
 
-    /* Action button styles (unchanged) */
     .action-button {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         font-size: 13px;
@@ -159,7 +149,6 @@
             cursor: not-allowed;
         }
 
-    /* Search header styles */
     .search-header {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -208,9 +197,8 @@
         align-items: flex-end;
     }
 
-    /* Responsive adjustments */
     @@media (max-width: 768px) {
-        .delivery-notes-list-container {
+        .invoices-list-container {
             padding: 12px 16px;
         }
 
@@ -259,11 +247,11 @@
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         flex: 0 0 auto;
     }
-    /* Summary stack */
+
     .summary-stack {
         gap: 1.5rem;
     }
-    /* Summary text */
+
     .summary-text {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         font-size: 13px;
@@ -297,11 +285,10 @@
 </style>
 
 @code {
-    private GetDeliveryNotesWithSummariesResponse deliveryNotes = new GetDeliveryNotesWithSummariesResponse();
-    private const int DefaultPageSize = 10;
+    private GetInvoicesWithSummariesResponse invoices = new();
+    private const int DefaultPageSize = 15;
     private SearchCriteria searchCriteria = new SearchCriteria();
     private List<CustomerResponse> _filteredCustomers = new();
-    private int? selectedCustomerId;
 
     protected override async Task OnInitializedAsync()
     {
@@ -310,28 +297,13 @@
         // Set default period to CurrentMonth and calculate dates
         searchCriteria.PeriodFilter = "CurrentMonth";
         var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
-            searchCriteria.PeriodFilter, 
-            searchCriteria.StartDate, 
+            searchCriteria.PeriodFilter,
+            searchCriteria.StartDate,
             searchCriteria.EndDate);
         searchCriteria.StartDate = startDate;
         searchCriteria.EndDate = endDate;
 
-        // For debugging: try without date filter first to see if there's any data
-        deliveryNotes = await DeliveryNoteService.GetDeliveryNotesWithSummariesAsync(
-            customerId: null,
-            invoiceId: null,
-            isInvoiced: null,
-            sortOrder: null,
-            sortProperty: null,
-            pageNumber: 1,
-            pageSize: DefaultPageSize,
-            searchKeyword: null,
-            startDate: startDate,
-            EndDate: endDate,
-            cancellationToken: default
-        );
-
-        await InvokeAsync(StateHasChanged);
+        await LoadInvoices();
     }
 
     async Task LoadCustomers(LoadDataArgs args)
@@ -356,36 +328,40 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    private void ViewDeliveryNote(string id)
+    private void OnPeriodFilterChanged()
     {
-        NavigationManager.NavigateTo($"/AddOrUpdateDeliveryNote/{id}");
+        StateHasChanged();
     }
 
-    private async Task SearchDeliveryNotes()
+    private async Task SearchInvoices()
+    {
+        await LoadInvoices();
+    }
+
+    private async Task LoadInvoices()
     {
         var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
             searchCriteria.PeriodFilter,
             searchCriteria.StartDate,
             searchCriteria.EndDate);
 
-        deliveryNotes = await DeliveryNoteService.GetDeliveryNotesWithSummariesAsync(
-            pageNumber: 1,
-            pageSize: DefaultPageSize,
-            customerId: searchCriteria.SelectedCustomerId,
-            invoiceId: null,
-            isInvoiced: searchCriteria.InvoiceStatus switch
-            {
-                "Facturé" => true,
-                "Non Facturé" => false,
-                _ => null
-            },
-            sortOrder: null,
-            sortProperty: null,
-            searchKeyword: null,
-            startDate: startDate,
-            EndDate: endDate,
-            cancellationToken: default
-        );
+        try
+        {
+            invoices = await InvoicesService.GetInvoicesWithSummariesAsync(
+                customerId: searchCriteria.SelectedCustomerId,
+                sortOrder: null,
+                sortProperty: null,
+                pageNumber: 1,
+                pageSize: DefaultPageSize,
+                searchKeyword: null,
+                startDate: startDate,
+                endDate: endDate,
+                cancellationToken: default);
+        }
+        catch (Exception ex)
+        {
+            invoices = new GetInvoicesWithSummariesResponse();
+        }
 
         await InvokeAsync(StateHasChanged);
     }
@@ -393,14 +369,14 @@
     private async Task Callback(LoadDataArgs args)
     {
         var filter = args.Filter?.ToString();
-        var sort = args.OrderBy?.ToString();
         int pageNumber = (args.Skip.Value / DefaultPageSize) + 1;
         int pageSize = DefaultPageSize;
 
         string sortProperty = null;
         string sortOrder = null;
-        if (!string.IsNullOrEmpty(sort))
+        if (!string.IsNullOrEmpty(args.OrderBy?.ToString()))
         {
+            var sort = args.OrderBy.ToString();
             var sortParts = sort.Split(' ');
             sortProperty = sortParts[0];
             sortOrder = sortParts.Length > 1 && sortParts[1].ToLower() == "desc" ? "Descending" : "Ascending";
@@ -411,24 +387,23 @@
             searchCriteria.StartDate,
             searchCriteria.EndDate);
 
-        deliveryNotes = await DeliveryNoteService.GetDeliveryNotesWithSummariesAsync(
-            customerId: searchCriteria.SelectedCustomerId,
-            invoiceId: null,
-            isInvoiced: searchCriteria.InvoiceStatus switch
-            {
-                "Facturé" => true,
-                "Non Facturé" => false,
-                _ => null
-            },
-            sortOrder: sortOrder,
-            sortProperty: sortProperty,
-            pageNumber: pageNumber,
-            pageSize: pageSize,
-            searchKeyword: filter,
-            startDate: startDate,
-            EndDate: endDate,
-            cancellationToken: default
-        );
+        try
+        {
+            invoices = await InvoicesService.GetInvoicesWithSummariesAsync(
+                customerId: searchCriteria.SelectedCustomerId,
+                sortOrder: sortOrder,
+                sortProperty: sortProperty,
+                pageNumber: pageNumber,
+                pageSize: pageSize,
+                searchKeyword: filter,
+                startDate: startDate,
+                endDate: endDate,
+                cancellationToken: default);
+        }
+        catch (Exception ex)
+        {
+            invoices = new GetInvoicesWithSummariesResponse();
+        }
 
         await InvokeAsync(StateHasChanged);
     }
@@ -439,11 +414,6 @@
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public int? SelectedCustomerId { get; set; }
-        public string InvoiceStatus { get; set; } = "Tous";
-    }
-
-    private void OnPeriodFilterChanged()
-    {
-        StateHasChanged();
     }
 }
+

@@ -20,4 +20,15 @@ public interface IInvoicesApiClient
     Task<Result<FullInvoiceResponse>> GetFullInvoiceByIdAsync(
         int id,
         CancellationToken cancellationToken);
+
+    Task<GetInvoicesWithSummariesResponse> GetInvoicesWithSummariesAsync(
+        int? customerId,
+        string? sortOrder,
+        string? sortProperty,
+        int pageNumber,
+        int pageSize,
+        string? searchKeyword,
+        DateTime? startDate,
+        DateTime? endDate,
+        CancellationToken cancellationToken);
 }

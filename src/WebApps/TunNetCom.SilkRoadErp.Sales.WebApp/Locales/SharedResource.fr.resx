@@ -567,6 +567,9 @@
   <data name="Delivery_Notes_List" xml:space="preserve">
     <value>Liste des bons de livraison</value>
   </data>
+  <data name="Invoices_List" xml:space="preserve">
+    <value>Liste des factures</value>
+  </data>
   <data name="Receipt_Note" xml:space="preserve">
     <value>Bon de réception</value>
   </data>
