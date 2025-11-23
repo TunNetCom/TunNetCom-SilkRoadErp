@@ -36,8 +36,11 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
     decimal totalHt;
     decimal totalVat;
     decimal totalTtc;
+    decimal totalFodec;
     string receiptNoteNumber;
     DateTime receiptNoteDate = DateTime.Now;
+    long numBonFournisseur = 0;
+    DateTime dateLivraison = DateTime.Now;
     private GetAppParametersResponse getAppParametersResponse;
     private int? _selectedProviderId;
     int? selectedProviderId
@@ -48,6 +51,7 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
             if (_selectedProviderId != value)
             {
                 _selectedProviderId = value;
+                UpdateTotals(); // Recalculate FODEC when provider changes
                 StateHasChanged();
             }
         }
@@ -91,8 +95,8 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
             var request = new CreateReceiptNoteWithLinesRequest
             {
                 Date = receiptNoteDate,
-                NumBonFournisseur = 0,
-                DateLivraison = DateTime.Now,
+                NumBonFournisseur = numBonFournisseur,
+                DateLivraison = dateLivraison,
                 IdFournisseur = _selectedProviderId.Value,
                 NumFactureFournisseur = null,
                 ReceiptNoteLines = orders.Select(o => new ReceiptNoteLineRequest(
@@ -216,19 +220,45 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
                 {
                     receiptNoteNumber = receiptNote.Value.Num.ToString();
                     receiptNoteDate = receiptNote.Value.Date;
+                    numBonFournisseur = receiptNote.Value.NumBonFournisseur;
+                    dateLivraison = receiptNote.Value.DateLivraison;
                     selectedProviderId = receiptNote.Value.IdFournisseur;
+
+                    // Ensure the selected provider is loaded in _filteredProviders for FODEC calculation
+                    if (selectedProviderId.HasValue && !_filteredProviders.Any(p => p.Id == selectedProviderId.Value))
+                    {
+                        try
+                        {
+                            var providerResult = await providerApiClient.GetAsync(selectedProviderId.Value, _cancellationTokenSource.Token);
+                            if (providerResult.IsT0)
+                            {
+                                var provider = providerResult.AsT0;
+                                _filteredProviders.Add(provider);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.LogWarning(ex, "Failed to load provider {ProviderId} for FODEC calculation", selectedProviderId.Value);
+                        }
+                    }
 
                     // Use Items directly from ReceiptNoteResponse (like DeliveryNote)
                     if (receiptNote.Value.Items != null && receiptNote.Value.Items.Any())
                     {
                         orders = receiptNote.Value.Items.ToList();
                         
-                        // Calculate totals from items
+                        // FODEC is already calculated and included in TotalIncludingTax by the backend
+                        // Just recalculate to ensure consistency if provider changed
+                        CalculateFodecForItems();
+                        
+                        // Calculate totals from items (after FODEC calculation)
                         totalHt = orders.Sum(o => o.TotalExcludingTax);
-                        totalVat = orders.Sum(o => o.TotalIncludingTax - o.TotalExcludingTax);
+                        totalVat = orders.Sum(o => o.TotalIncludingTax - o.TotalExcludingTax - (o.PrixHtFodec ?? 0));
+                        totalFodec = orders.Sum(o => o.PrixHtFodec ?? 0);
                         totalTtc = orders.Sum(o => o.TotalIncludingTax);
                         
-                        logger.LogInformation("Fetched receipt note {Num} with {LineCount} lines", numAsInt, orders.Count);
+                        logger.LogInformation("Fetched receipt note {Num} with {LineCount} lines, TotalTTC: {TotalTtc}, TotalFODEC: {TotalFodec}", 
+                            numAsInt, orders.Count, totalTtc, totalFodec);
                     }
                     else
                     {
@@ -396,6 +426,60 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
         await InvokeAsync(StateHasChanged);
     }
 
+    private void CalculateFodecForItems()
+    {
+        if (!_selectedProviderId.HasValue || getAppParametersResponse == null)
+        {
+            // Clear FODEC if no provider selected
+            foreach (var item in orders)
+            {
+                // Recalculate TotalIncludingTax without FODEC
+                var baseTotalIncludingTax = item.TotalExcludingTax + (item.TotalExcludingTax * (decimal)(item.VatPercentage / 100));
+                item.TotalIncludingTax = baseTotalIncludingTax;
+                item.PrixHtFodec = null;
+            }
+            return;
+        }
+
+        // Get provider to check if it's a constructor
+        var provider = _filteredProviders.FirstOrDefault(p => p.Id == _selectedProviderId.Value);
+        if (provider == null || !provider.Constructeur)
+        {
+            // Clear FODEC if provider is not a constructor
+            foreach (var item in orders)
+            {
+                // Recalculate TotalIncludingTax without FODEC
+                var baseTotalIncludingTax = item.TotalExcludingTax + (item.TotalExcludingTax * (decimal)(item.VatPercentage / 100));
+                item.TotalIncludingTax = baseTotalIncludingTax;
+                item.PrixHtFodec = null;
+            }
+            return;
+        }
+
+        // Calculate FODEC for each line item if provider is constructor
+        var fodecRate = getAppParametersResponse.PourcentageFodec;
+        foreach (var item in orders)
+        {
+            // Calculate base TotalIncludingTax (HT + VAT) without FODEC
+            var baseTotalIncludingTax = item.TotalExcludingTax + (item.TotalExcludingTax * (decimal)(item.VatPercentage / 100));
+            
+            if (item.TotalExcludingTax > 0)
+            {
+                // Calculate FODEC amount
+                var fodecAmount = item.TotalExcludingTax * (fodecRate / 100);
+                item.PrixHtFodec = fodecAmount;
+                
+                // Add FODEC to TotalIncludingTax
+                item.TotalIncludingTax = baseTotalIncludingTax + fodecAmount;
+            }
+            else
+            {
+                item.PrixHtFodec = null;
+                item.TotalIncludingTax = baseTotalIncludingTax;
+            }
+        }
+    }
+
     private async Task PrintReceiptNote()
     {
         // TODO: Implement print functionality when available
@@ -416,7 +500,17 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
 
     private void UpdateTotals()
     {
+        // First calculate base totals (HT + VAT, without FODEC)
         LineItemCalculator.UpdateTotals(orders, out totalHt, out totalVat, out totalTtc);
+        
+        // Then calculate and add FODEC if applicable
+        CalculateFodecForItems();
+        
+        // Recalculate totals after FODEC is added
+        totalHt = orders.Sum(o => o.TotalExcludingTax);
+        totalVat = orders.Sum(o => o.TotalIncludingTax - o.TotalExcludingTax - (o.PrixHtFodec ?? 0));
+        totalFodec = orders.Sum(o => o.PrixHtFodec ?? 0);
+        totalTtc = orders.Sum(o => o.TotalIncludingTax);
     }
 
     public async Task ShowDialog(string ProductReference)

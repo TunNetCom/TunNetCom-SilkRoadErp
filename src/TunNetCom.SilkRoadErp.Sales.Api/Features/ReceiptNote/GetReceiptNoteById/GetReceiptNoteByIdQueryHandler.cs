@@ -11,8 +11,16 @@ public class GetReceiptNoteByIdQueryHandler(
     {
         _logger.LogFetchingEntityById(nameof(BonDeReception), getReceiptNoteByIdQuery.Num);
         
+        // Get system parameters for FODEC rate
+        var systeme = await _context.Systeme.FirstOrDefaultAsync(cancellationToken);
+        var fodecRate = systeme?.PourcentageFodec ?? 0;
+        
         // Search by Num (receipt note number), not by Id, and load lines directly like GetDeliveryNoteByNum
+        // Include navigation properties for provider to check Constructeur
         var receiptNoteResponse = await _context.BonDeReception
+            .Include(br => br.IdFournisseurNavigation)
+            .Include(br => br.LigneBonReception)
+            .Where(b => b.Num == getReceiptNoteByIdQuery.Num)
             .Select(br => new ReceiptNoteResponse
             {
                 Num = br.Num,
@@ -32,12 +40,19 @@ public class GetReceiptNoteByIdQueryHandler(
                     DiscountPercentage = l.Remise,
                     TotalExcludingTax = l.TotHt,
                     VatPercentage = l.Tva,
-                    TotalIncludingTax = l.TotTtc,
+                    // Calculate FODEC if provider is constructor
+                    PrixHtFodec = br.IdFournisseurNavigation.Constructeur && l.TotHt > 0
+                        ? l.TotHt * (fodecRate / 100)
+                        : (decimal?)null,
+                    // Add FODEC to TotalIncludingTax if applicable
+                    TotalIncludingTax = l.TotTtc + (br.IdFournisseurNavigation.Constructeur && l.TotHt > 0
+                        ? l.TotHt * (fodecRate / 100)
+                        : 0),
                     Provider = br.IdFournisseurNavigation.Nom,
                     Date = br.Date
                 }).ToList()
             })
-            .FirstOrDefaultAsync(b => b.Num == getReceiptNoteByIdQuery.Num, cancellationToken);
+            .FirstOrDefaultAsync(cancellationToken);
             
         if (receiptNoteResponse is null)
         {

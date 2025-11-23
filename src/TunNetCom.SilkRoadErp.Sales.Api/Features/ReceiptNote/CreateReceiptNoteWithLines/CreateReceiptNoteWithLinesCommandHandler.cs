@@ -44,15 +44,36 @@ internal class CreateReceiptNoteWithLinesCommandHandler(
             // Save the receipt note first to get its Id
             await salesContext.SaveChangesAsync(cancellationToken);
 
+            // Get system parameters for FODEC rate
+            var systeme = await salesContext.Systeme.FirstOrDefaultAsync(cancellationToken);
+            var fodecRate = systeme?.PourcentageFodec ?? 0;
+
+            // Get provider to check if it's a constructor
+            var provider = await salesContext.Fournisseur
+                .FirstOrDefaultAsync(f => f.Id == request.IdFournisseur, cancellationToken);
+            var isConstructor = provider?.Constructeur ?? false;
+
             // Now create the lines with the saved receipt note's Id
-            var receiptNoteLines = request.ReceiptNoteLines.Select(x => LigneBonReception.CreateReceiptNoteLine(
-                        bonDeReceptionId: recipetNote.Id,
-                        productRef: x.ProductRef,
-                        designationLigne: x.ProductDescription,
-                        quantity: x.Quantity,
-                        unitPrice: x.UnitPrice,
-                        discount: x.Discount,
-                        tax: x.Tax)).ToList();
+            var receiptNoteLines = request.ReceiptNoteLines.Select(x =>
+            {
+                var line = LigneBonReception.CreateReceiptNoteLine(
+                    bonDeReceptionId: recipetNote.Id,
+                    productRef: x.ProductRef,
+                    designationLigne: x.ProductDescription,
+                    quantity: x.Quantity,
+                    unitPrice: x.UnitPrice,
+                    discount: x.Discount,
+                    tax: x.Tax);
+
+                // Add FODEC to TotTtc if provider is constructor
+                if (isConstructor && line.TotHt > 0)
+                {
+                    var fodecAmount = line.TotHt * (fodecRate / 100);
+                    line.TotTtc += fodecAmount;
+                }
+
+                return line;
+            }).ToList();
 
             await salesContext.LigneBonReception.AddRangeAsync(receiptNoteLines, cancellationToken);
 

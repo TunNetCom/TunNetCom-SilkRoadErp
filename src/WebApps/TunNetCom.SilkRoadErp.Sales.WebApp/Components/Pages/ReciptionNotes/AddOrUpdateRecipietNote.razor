@@ -193,6 +193,12 @@ else
                     <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Nom)" Title="@Localizer["name"]" Width="220px" />
                 </Columns>
             </RadzenDropDownDataGrid>
+
+            <RadzenLabel Text="Numéro bon fournisseur" />
+            <RadzenNumeric @bind-Value="numBonFournisseur" Name="NumBonFournisseur" Style="width: 150px;" Min="0" />
+
+            <RadzenLabel Text="Date livraison" />
+            <RadzenDatePicker @bind-Value="dateLivraison" Name="DateLivraison" Style="width: 200px;" DateFormat="d MMMM yyyy" ShowTime="false" />
         </div>
     </div>
 

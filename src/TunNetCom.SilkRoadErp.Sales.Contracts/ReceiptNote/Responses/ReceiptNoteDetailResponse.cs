@@ -39,5 +39,8 @@ public class ReceiptNoteDetailResponse : ILineItem
 
     [JsonPropertyName("totalIncludingTax")]
     public decimal TotalIncludingTax { get; set; }
+
+    [JsonPropertyName("prixHtFodec")]
+    public decimal? PrixHtFodec { get; set; } // Calculated FODEC amount, nullable
 }
 

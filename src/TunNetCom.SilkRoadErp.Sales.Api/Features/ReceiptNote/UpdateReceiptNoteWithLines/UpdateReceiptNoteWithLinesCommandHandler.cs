@@ -42,12 +42,22 @@ public class UpdateReceiptNoteWithLinesCommandHandler(
             accountingYearId: activeAccountingYear.Id
         );
 
+        // Get system parameters for FODEC rate
+        var systeme = await _context.Systeme.FirstOrDefaultAsync(cancellationToken);
+        var fodecRate = systeme?.PourcentageFodec ?? 0;
+
+        // Get provider to check if it's a constructor
+        var provider = await _context.Fournisseur
+            .FirstOrDefaultAsync(f => f.Id == command.IdFournisseur, cancellationToken);
+        var isConstructor = provider?.Constructeur ?? false;
+
         // Remove all existing lines
         _context.LigneBonReception.RemoveRange(receiptNote.LigneBonReception);
 
         // Create new lines
-        var newLines = command.ReceiptNoteLines.Select(receiptNoteLine => 
-            LigneBonReception.CreateReceiptNoteLine(
+        var newLines = command.ReceiptNoteLines.Select(receiptNoteLine =>
+        {
+            var line = LigneBonReception.CreateReceiptNoteLine(
                 bonDeReceptionId: receiptNote.Id,
                 productRef: receiptNoteLine.ProductRef,
                 designationLigne: receiptNoteLine.ProductDescription,
@@ -55,7 +65,17 @@ public class UpdateReceiptNoteWithLinesCommandHandler(
                 unitPrice: receiptNoteLine.UnitPrice,
                 discount: receiptNoteLine.Discount,
                 tax: receiptNoteLine.Tax
-            )).ToList();
+            );
+
+            // Add FODEC to TotTtc if provider is constructor
+            if (isConstructor && line.TotHt > 0)
+            {
+                var fodecAmount = line.TotHt * (fodecRate / 100);
+                line.TotTtc += fodecAmount;
+            }
+
+            return line;
+        }).ToList();
 
         // Add new lines to the context explicitly
         await _context.LigneBonReception.AddRangeAsync(newLines, cancellationToken);

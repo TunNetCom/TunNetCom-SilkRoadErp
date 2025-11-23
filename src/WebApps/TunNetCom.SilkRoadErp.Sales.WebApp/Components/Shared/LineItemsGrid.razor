@@ -4,6 +4,7 @@
 @using Microsoft.JSInterop
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Common
 @using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters
+@using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNote.Responses
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @typeparam TItem where TItem : class, ILineItem
@@ -202,6 +203,19 @@
                 @order.TotalIncludingTax.FormatAmount()
             </Template>
         </RadzenDataGridColumn>
+
+        @* FODEC column - only shown for ReceiptNoteDetailResponse when provider is constructor *@
+        @if (typeof(TItem) == typeof(ReceiptNoteDetailResponse))
+        {
+            <RadzenDataGridColumn Width="120px" Title="FODEC HT">
+                <Template Context="order">
+                    @{
+                        var receiptNoteItem = order as ReceiptNoteDetailResponse;
+                        @(receiptNoteItem?.PrixHtFodec?.FormatAmount() ?? "-")
+                    }
+                </Template>
+            </RadzenDataGridColumn>
+        }
 
         <RadzenDataGridColumn Context="order" 
                               Width="80px"

@@ -13,29 +13,44 @@ internal class CreateReceiptNoteCommandHandler(
     {
         try
         {
+            // Get system parameters for FODEC rate
+            var systeme = await salesContext.Systeme.FirstOrDefaultAsync(cancellationToken);
+            var fodecRate = systeme?.PourcentageFodec ?? 0;
+
             // Group lines by receipt note number to fetch all BonDeReception at once
             var receiptNoteNumbers = request.ReceiptNoteLines.Select(x => x.RecipetNoteNumber).Distinct().ToList();
             var receiptNotes = await salesContext.BonDeReception
+                .Include(br => br.IdFournisseurNavigation)
                 .Where(br => receiptNoteNumbers.Contains(br.Num))
-                .ToDictionaryAsync(br => br.Num, br => br.Id, cancellationToken);
+                .ToDictionaryAsync(br => br.Num, br => new { br.Id, br.IdFournisseurNavigation }, cancellationToken);
 
             var receiptNoteLines = new List<LigneBonReception>();
             foreach (var lineRequest in request.ReceiptNoteLines)
             {
-                if (!receiptNotes.TryGetValue(lineRequest.RecipetNoteNumber, out var bonDeReceptionId))
+                if (!receiptNotes.TryGetValue(lineRequest.RecipetNoteNumber, out var receiptNoteInfo))
                 {
                     _logger.LogError("Receipt note with number {Num} not found", lineRequest.RecipetNoteNumber);
                     return Result.Fail($"Receipt note with number {lineRequest.RecipetNoteNumber} not found");
                 }
 
-                receiptNoteLines.Add(LigneBonReception.CreateReceiptNoteLine(
-                    bonDeReceptionId: bonDeReceptionId,
+                var line = LigneBonReception.CreateReceiptNoteLine(
+                    bonDeReceptionId: receiptNoteInfo.Id,
                     productRef: lineRequest.ProductRef,
                     designationLigne: lineRequest.ProductDescription,
                     quantity: lineRequest.Quantity,
                     unitPrice: lineRequest.UnitPrice,
                     discount: lineRequest.Discount,
-                    tax: lineRequest.Tax));
+                    tax: lineRequest.Tax);
+
+                // Add FODEC to TotTtc if provider is constructor
+                var isConstructor = receiptNoteInfo.IdFournisseurNavigation?.Constructeur ?? false;
+                if (isConstructor && line.TotHt > 0)
+                {
+                    var fodecAmount = line.TotHt * (fodecRate / 100);
+                    line.TotTtc += fodecAmount;
+                }
+
+                receiptNoteLines.Add(line);
             }
 
             await salesContext.LigneBonReception.AddRangeAsync(receiptNoteLines, cancellationToken);
