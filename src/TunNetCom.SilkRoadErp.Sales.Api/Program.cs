@@ -1,7 +1,11 @@
 using System.Threading.RateLimiting;
 using System.Reflection;
+using Microsoft.AspNetCore.OData;
+using Microsoft.OData.Edm;
+using Microsoft.OData.ModelBuilder;
 using Scalar.AspNetCore;
 using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.DataSeeder;
+using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.OData;
 using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +23,16 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 builder.Services.AddCarter();
+
+// Add OData support
+builder.Services.AddControllers()
+    .AddOData(options => options
+        .Select()
+        .Filter()
+        .OrderBy()
+        .SetMaxTop(1000)
+        .Count()
+        .AddRouteComponents("odata", EdmModelBuilder.GetEdmModel()));
 
 builder.Services.AddDbContext<SalesContext>(options =>
     options.UseSqlServer(
@@ -230,6 +244,9 @@ app.ConfigureExceptionHandler();
 
 app.UseStaticFiles();
 app.UseHttpsRedirection();
+
+// Map OData routes
+app.MapControllers();
 
 app.MapCarter();
 

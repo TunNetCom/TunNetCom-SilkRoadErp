@@ -1,4 +1,5 @@
 using RadzenBlazorDemos.Services;
+using TunNetCom.SilkRoadErp.Sales.WebApp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,13 @@ var baseUrl = builder.Configuration.GetValue<string>("BaseUrl")
     ?? throw new ArgumentNullException("Sales base url was null!");
 
 builder.Services.AddSalesHttpClients(baseUrl);
+
+// Add OData service
+builder.Services.AddHttpClient<ODataService>(client =>
+{
+    client.BaseAddress = new Uri(baseUrl);
+});
+
 builder.Services.AddPrintEngine(builder.Configuration);
 builder.Services.AddLocalization();
 builder.Services.AddControllers();

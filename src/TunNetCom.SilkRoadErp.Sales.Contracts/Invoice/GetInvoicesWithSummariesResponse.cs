@@ -21,7 +21,7 @@ public class InvoiceBaseInfo
     public int Number { get; set; }
 
     [JsonPropertyName("date")]
-    public DateTime Date { get; set; }
+    public DateTimeOffset Date { get; set; }
 
     [JsonPropertyName("customerId")]
     public int CustomerId { get; set; }

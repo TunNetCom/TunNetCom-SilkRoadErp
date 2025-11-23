@@ -6,9 +6,12 @@
 @inject IDeliveryNoteApiClient DeliveryNoteService
 @inject ICustomersApiClient CustomersService
 @inject IStringLocalizer<SharedResource> Localizer
+@inject ODataService ODataService
+@inject ILogger<DeliveryNotesList> _logger
 @using Radzen.Blazor
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
 @inject NavigationManager NavigationManager
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 
@@ -47,14 +50,14 @@
     </div>
     <RadzenCard class="list-card">
         <h2>Commandes</h2>
-        <RadzenDataGrid Data="@deliveryNotes.GetDeliveryNoteBaseInfos.Items"
+        <RadzenDataGrid Data="@deliveryNotesList"
                         LoadData="@Callback"
                         TItem="GetDeliveryNoteBaseInfos"
                         AllowSorting="true"
                         AllowFiltering="true"
                         AllowPaging="true"
                         PageSize="15"
-                        Count="@deliveryNotes.GetDeliveryNoteBaseInfos.TotalCount"
+                        Count="@totalCount"
                         AllowColumnResize="true">
             <EmptyTemplate>
                 <p style="font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
@@ -104,10 +107,10 @@
                          JustifyContent="JustifyContent.End"
                          class="summary-stack">
                 <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                    @Localizer["total_net"]: <strong>@deliveryNotes.TotalNetAmount.FormatAmount()</strong>
+                    @Localizer["total_net"]: <strong>@totalNetAmount.FormatAmount()</strong>
                 </RadzenText>
                 <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                    @Localizer["total_vat"]: <strong>@deliveryNotes.TotalVatAmount.FormatAmount()</strong>
+                    @Localizer["total_vat"]: <strong>@totalVatAmount.FormatAmount()</strong>
                 </RadzenText>
             </RadzenStack>
         </RadzenCard>
@@ -297,14 +300,18 @@
 </style>
 
 @code {
-    private GetDeliveryNotesWithSummariesResponse deliveryNotes = new GetDeliveryNotesWithSummariesResponse();
-    private const int DefaultPageSize = 10;
+    private List<GetDeliveryNoteBaseInfos> deliveryNotesList = new();
+    private int totalCount = 0;
+    private decimal totalNetAmount = 0;
+    private decimal totalVatAmount = 0;
+    private const int DefaultPageSize = 15;
     private SearchCriteria searchCriteria = new SearchCriteria();
     private List<CustomerResponse> _filteredCustomers = new();
-    private int? selectedCustomerId;
 
     protected override async Task OnInitializedAsync()
     {
+        _logger.LogInformation("DeliveryNotesList.OnInitializedAsync called");
+        
         await LoadCustomers(new LoadDataArgs { Filter = string.Empty });
 
         // Set default period to CurrentMonth and calculate dates
@@ -316,22 +323,9 @@
         searchCriteria.StartDate = startDate;
         searchCriteria.EndDate = endDate;
 
-        // For debugging: try without date filter first to see if there's any data
-        deliveryNotes = await DeliveryNoteService.GetDeliveryNotesWithSummariesAsync(
-            customerId: null,
-            invoiceId: null,
-            isInvoiced: null,
-            sortOrder: null,
-            sortProperty: null,
-            pageNumber: 1,
-            pageSize: DefaultPageSize,
-            searchKeyword: null,
-            startDate: startDate,
-            EndDate: endDate,
-            cancellationToken: default
-        );
-
-        await InvokeAsync(StateHasChanged);
+        // Load initial data
+        _logger.LogInformation("Calling Callback to load initial data");
+        await Callback(new LoadDataArgs { Skip = 0, Top = DefaultPageSize });
     }
 
     async Task LoadCustomers(LoadDataArgs args)
@@ -363,72 +357,57 @@
 
     private async Task SearchDeliveryNotes()
     {
-        var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
-            searchCriteria.PeriodFilter,
-            searchCriteria.StartDate,
-            searchCriteria.EndDate);
-
-        deliveryNotes = await DeliveryNoteService.GetDeliveryNotesWithSummariesAsync(
-            pageNumber: 1,
-            pageSize: DefaultPageSize,
-            customerId: searchCriteria.SelectedCustomerId,
-            invoiceId: null,
-            isInvoiced: searchCriteria.InvoiceStatus switch
-            {
-                "Facturé" => true,
-                "Non Facturé" => false,
-                _ => null
-            },
-            sortOrder: null,
-            sortProperty: null,
-            searchKeyword: null,
-            startDate: startDate,
-            EndDate: endDate,
-            cancellationToken: default
-        );
-
-        await InvokeAsync(StateHasChanged);
+        // Trigger a refresh by calling Callback with current args
+        await Callback(new LoadDataArgs { Skip = 0, Top = DefaultPageSize });
     }
 
     private async Task Callback(LoadDataArgs args)
     {
-        var filter = args.Filter?.ToString();
-        var sort = args.OrderBy?.ToString();
-        int pageNumber = (args.Skip.Value / DefaultPageSize) + 1;
-        int pageSize = DefaultPageSize;
-
-        string sortProperty = null;
-        string sortOrder = null;
-        if (!string.IsNullOrEmpty(sort))
-        {
-            var sortParts = sort.Split(' ');
-            sortProperty = sortParts[0];
-            sortOrder = sortParts.Length > 1 && sortParts[1].ToLower() == "desc" ? "Descending" : "Ascending";
-        }
-
+        _logger.LogInformation("DeliveryNotesList.Callback called with Skip: {Skip}, Top: {Top}", args.Skip, args.Top);
+        
         var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
             searchCriteria.PeriodFilter,
             searchCriteria.StartDate,
             searchCriteria.EndDate);
 
-        deliveryNotes = await DeliveryNoteService.GetDeliveryNotesWithSummariesAsync(
-            customerId: searchCriteria.SelectedCustomerId,
-            invoiceId: null,
-            isInvoiced: searchCriteria.InvoiceStatus switch
+        _logger.LogInformation("Date range: StartDate: {StartDate}, EndDate: {EndDate}", startDate, endDate);
+
+        try
+        {
+            _logger.LogInformation("Calling ODataService.QueryAsync for DeliveryNoteBaseInfos");
+            var response = await ODataService.QueryAsync<GetDeliveryNoteBaseInfos>(
+                entitySet: "DeliveryNoteBaseInfos",
+                args: args,
+                startDate: startDate,
+                endDate: endDate,
+                customerId: searchCriteria.SelectedCustomerId,
+                cancellationToken: default);
+
+            deliveryNotesList = response.Value;
+            totalCount = response.ODataCount ?? response.Value.Count;
+
+            // Apply invoice status filter if needed (client-side for now)
+            if (searchCriteria.InvoiceStatus != "Tous")
             {
-                "Facturé" => true,
-                "Non Facturé" => false,
-                _ => null
-            },
-            sortOrder: sortOrder,
-            sortProperty: sortProperty,
-            pageNumber: pageNumber,
-            pageSize: pageSize,
-            searchKeyword: filter,
-            startDate: startDate,
-            EndDate: endDate,
-            cancellationToken: default
-        );
+                var isInvoiced = searchCriteria.InvoiceStatus == "Facturé";
+                deliveryNotesList = deliveryNotesList
+                    .Where(d => isInvoiced ? d.NumFacture.HasValue : !d.NumFacture.HasValue)
+                    .ToList();
+                totalCount = deliveryNotesList.Count;
+            }
+
+            // Calculate totals from current page (for display)
+            // Note: For accurate totals across all pages, we'd need a separate aggregation endpoint
+            totalNetAmount = deliveryNotesList.Sum(d => d.NetAmount);
+            totalVatAmount = deliveryNotesList.Sum(d => d.VatAmount);
+        }
+        catch (Exception ex)
+        {
+            deliveryNotesList = new List<GetDeliveryNoteBaseInfos>();
+            totalCount = 0;
+            totalNetAmount = 0;
+            totalVatAmount = 0;
+        }
 
         await InvokeAsync(StateHasChanged);
     }

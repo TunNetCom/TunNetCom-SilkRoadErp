@@ -34,6 +34,7 @@
     <PackageReference Include="Serilog.Sinks.Seq" />
     <PackageReference Include="Swashbuckle.AspNetCore" />
     <PackageReference Include="Swashbuckle.AspNetCore.Annotations" />
+    <PackageReference Include="Microsoft.AspNetCore.OData" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.console">
       <PrivateAssets>all</PrivateAssets>

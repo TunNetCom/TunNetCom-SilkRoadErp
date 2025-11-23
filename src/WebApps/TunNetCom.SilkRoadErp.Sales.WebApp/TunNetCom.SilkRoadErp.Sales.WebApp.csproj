@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\TunNetCom.SilkRoadErp.Sales.Contracts\TunNetCom.SilkRoadErp.Sales.Contracts.csproj" />
+    <ProjectReference Include="..\..\TunNetCom.SilkRoadErp.Sales.Domain\TunNetCom.SilkRoadErp.Sales.Domain.csproj" />
     <ProjectReference Include="..\TunNetCom.SilkRoadErp.Sales.HttpClients\TunNetCom.SilkRoadErp.Sales.HttpClients.csproj" />
   </ItemGroup>
 

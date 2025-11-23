@@ -6,7 +6,7 @@ public class GetDeliveryNoteBaseInfos
     public int Number { get; set; }
 
     [JsonPropertyName("date")]
-    public DateTime Date { get; set; }
+    public DateTimeOffset Date { get; set; }
 
     [JsonPropertyName("numFacture")]
     public int? NumFacture { get; set; }

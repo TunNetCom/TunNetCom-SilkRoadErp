@@ -6,10 +6,13 @@
 @inject IInvoicesApiClient InvoicesService
 @inject ICustomersApiClient CustomersService
 @inject IStringLocalizer<SharedResource> Localizer
+@inject ODataService ODataService
+@inject ILogger<InvoicesList> _logger
 @using Radzen.Blazor
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Customers
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Common
 
@@ -47,14 +50,14 @@
     </div>
     <RadzenCard class="list-card">
         <h2>Factures</h2>
-        <RadzenDataGrid Data="@invoices.Invoices.Items"
+        <RadzenDataGrid Data="@invoicesList"
                         LoadData="@Callback"
                         TItem="InvoiceBaseInfo"
                         AllowSorting="true"
                         AllowFiltering="true"
                         AllowPaging="true"
                         PageSize="15"
-                        Count="@invoices.Invoices.TotalCount"
+                        Count="@totalCount"
                         AllowColumnResize="true">
             <EmptyTemplate>
                 <p style="font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
@@ -97,10 +100,10 @@
                          JustifyContent="JustifyContent.End"
                          class="summary-stack">
                 <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                    @Localizer["total_net"]: <strong>@invoices.TotalNetAmount.FormatAmount()</strong>
+                    @Localizer["total_net"]: <strong>@totalNetAmount.FormatAmount()</strong>
                 </RadzenText>
                 <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                    @Localizer["total_vat"]: <strong>@invoices.TotalVatAmount.FormatAmount()</strong>
+                    @Localizer["total_vat"]: <strong>@totalVatAmount.FormatAmount()</strong>
                 </RadzenText>
             </RadzenStack>
         </RadzenCard>
@@ -285,13 +288,18 @@
 </style>
 
 @code {
-    private GetInvoicesWithSummariesResponse invoices = new();
+    private List<InvoiceBaseInfo> invoicesList = new();
+    private int totalCount = 0;
+    private decimal totalNetAmount = 0;
+    private decimal totalVatAmount = 0;
     private const int DefaultPageSize = 15;
     private SearchCriteria searchCriteria = new SearchCriteria();
     private List<CustomerResponse> _filteredCustomers = new();
 
     protected override async Task OnInitializedAsync()
     {
+        _logger.LogInformation("InvoicesList.OnInitializedAsync called");
+        
         await LoadCustomers(new LoadDataArgs { Filter = string.Empty });
 
         // Set default period to CurrentMonth and calculate dates
@@ -303,7 +311,9 @@
         searchCriteria.StartDate = startDate;
         searchCriteria.EndDate = endDate;
 
-        await LoadInvoices();
+        // Load initial data
+        _logger.LogInformation("Calling Callback to load initial data");
+        await Callback(new LoadDataArgs { Skip = 0, Top = DefaultPageSize });
     }
 
     async Task LoadCustomers(LoadDataArgs args)
@@ -335,74 +345,46 @@
 
     private async Task SearchInvoices()
     {
-        await LoadInvoices();
-    }
-
-    private async Task LoadInvoices()
-    {
-        var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
-            searchCriteria.PeriodFilter,
-            searchCriteria.StartDate,
-            searchCriteria.EndDate);
-
-        try
-        {
-            invoices = await InvoicesService.GetInvoicesWithSummariesAsync(
-                customerId: searchCriteria.SelectedCustomerId,
-                sortOrder: null,
-                sortProperty: null,
-                pageNumber: 1,
-                pageSize: DefaultPageSize,
-                searchKeyword: null,
-                startDate: startDate,
-                endDate: endDate,
-                cancellationToken: default);
-        }
-        catch (Exception ex)
-        {
-            invoices = new GetInvoicesWithSummariesResponse();
-        }
-
-        await InvokeAsync(StateHasChanged);
+        // Trigger a refresh by calling Callback with current args
+        await Callback(new LoadDataArgs { Skip = 0, Top = DefaultPageSize });
     }
 
     private async Task Callback(LoadDataArgs args)
     {
-        var filter = args.Filter?.ToString();
-        int pageNumber = (args.Skip.Value / DefaultPageSize) + 1;
-        int pageSize = DefaultPageSize;
-
-        string sortProperty = null;
-        string sortOrder = null;
-        if (!string.IsNullOrEmpty(args.OrderBy?.ToString()))
-        {
-            var sort = args.OrderBy.ToString();
-            var sortParts = sort.Split(' ');
-            sortProperty = sortParts[0];
-            sortOrder = sortParts.Length > 1 && sortParts[1].ToLower() == "desc" ? "Descending" : "Ascending";
-        }
-
+        _logger.LogInformation("InvoicesList.Callback called with Skip: {Skip}, Top: {Top}", args.Skip, args.Top);
+        
         var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
             searchCriteria.PeriodFilter,
             searchCriteria.StartDate,
             searchCriteria.EndDate);
 
+        _logger.LogInformation("Date range: StartDate: {StartDate}, EndDate: {EndDate}", startDate, endDate);
+
         try
         {
-            invoices = await InvoicesService.GetInvoicesWithSummariesAsync(
-                customerId: searchCriteria.SelectedCustomerId,
-                sortOrder: sortOrder,
-                sortProperty: sortProperty,
-                pageNumber: pageNumber,
-                pageSize: pageSize,
-                searchKeyword: filter,
+            _logger.LogInformation("Calling ODataService.QueryAsync for InvoiceBaseInfos");
+            var response = await ODataService.QueryAsync<InvoiceBaseInfo>(
+                entitySet: "InvoiceBaseInfos",
+                args: args,
                 startDate: startDate,
                 endDate: endDate,
+                customerId: searchCriteria.SelectedCustomerId,
                 cancellationToken: default);
+
+            invoicesList = response.Value;
+            totalCount = response.ODataCount ?? response.Value.Count;
+
+            // Calculate totals from current page (for display)
+            // Note: For accurate totals across all pages, we'd need a separate aggregation endpoint
+            totalNetAmount = invoicesList.Sum(i => i.NetAmount);
+            totalVatAmount = invoicesList.Sum(i => i.VatAmount);
         }
         catch (Exception ex)
         {
-            invoices = new GetInvoicesWithSummariesResponse();
+            invoicesList = new List<InvoiceBaseInfo>();
+            totalCount = 0;
+            totalNetAmount = 0;
+            totalVatAmount = 0;
         }
 
         await InvokeAsync(StateHasChanged);

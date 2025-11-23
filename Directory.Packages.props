@@ -7,6 +7,7 @@
     <!-- API Framework -->
     <PackageVersion Include="Carter" Version="9.0.0" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.OData" Version="8.2.5" />
     <!-- Entity Framework Core -->
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0" />
