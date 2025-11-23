@@ -16,4 +16,8 @@ public interface IProviderInvoiceApiClient
     Task<Result<FullProviderInvoiceResponse>> GetFullProviderInvoiceByIdAsync(
     int id,
     CancellationToken cancellationToken);
+
+    Task<OneOf<int, BadRequestResponse>> CreateProviderInvoice(
+        CreateProviderInvoiceRequest request,
+        CancellationToken cancellationToken = default);
 }

@@ -23,13 +23,15 @@ public class GetProvidersInvoicesQueryHandler(
                               {
                                   ff.Num,
                                   ff.IdFournisseur,
-                                  ff.Date
+                                  ff.Date,
+                                  ff.NumFactureFournisseur
                               } into g
                               select new ProviderInvoiceResponse
                               {
                                   Num = g.Key.Num,
                                   ProviderId = g.Key.IdFournisseur,
                                   Date = g.Key.Date,
+                                  ProviderInvoiceNumber = g.Key.NumFactureFournisseur,
                                   TotHTva = g.Sum(x => x.TotHt),
                                   TotTTC = g.Sum(x => x.TotTtc),
                                   TotTva = g.Sum(x => x.TotTtc) - g.Sum(x => x.TotHt)

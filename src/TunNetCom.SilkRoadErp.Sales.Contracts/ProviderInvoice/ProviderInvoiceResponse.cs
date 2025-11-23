@@ -22,4 +22,7 @@ public class ProviderInvoiceResponse
 
     [JsonPropertyName("totTva")]
     public decimal TotTva { get; set; }
+
+    [JsonPropertyName("providerInvoiceNumber")]
+    public long ProviderInvoiceNumber { get; set; }
 }

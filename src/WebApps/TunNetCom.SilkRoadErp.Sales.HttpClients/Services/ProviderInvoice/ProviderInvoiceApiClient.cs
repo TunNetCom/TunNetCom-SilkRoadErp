@@ -103,4 +103,30 @@ public class ProviderInvoiceApiClient : IProviderInvoiceApiClient
             ? Result.Fail<FullProviderInvoiceResponse>("invoice_is_empty")
             : Result.Ok(invoice);
     }
+
+    public async Task<OneOf<int, BadRequestResponse>> CreateProviderInvoice(
+        CreateProviderInvoiceRequest request,
+        CancellationToken cancellationToken)
+    {
+        var response = await _httpClient.PostAsJsonAsync("provider-invoice", request, cancellationToken: cancellationToken);
+        if (response.StatusCode == HttpStatusCode.Created)
+        {
+            // Extract invoice number from Location header (format: /provider-invoice/{number})
+            if (response.Headers.Location != null)
+            {
+                var locationPath = response.Headers.Location.ToString();
+                var segments = locationPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+                if (segments.Length >= 2 && int.TryParse(segments[segments.Length - 1], out var invoiceNumber))
+                {
+                    return invoiceNumber;
+                }
+            }
+            throw new Exception($"ProviderInvoice: Unable to extract invoice number from Location header: {response.Headers.Location}");
+        }
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            return await response.ReadJsonAsync<BadRequestResponse>();
+        }
+        throw new Exception($"ProviderInvoice: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
+    }
 }

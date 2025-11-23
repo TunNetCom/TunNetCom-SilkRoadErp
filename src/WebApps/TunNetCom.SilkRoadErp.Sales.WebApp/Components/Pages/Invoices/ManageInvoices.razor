@@ -28,7 +28,9 @@
 @inject NotificationService NotificationService
 @inject PrintRetenuSourceService PrintRetenuSourceService
 @inject PrintFullInvoiceService PrintFullInvoiceService
+@inject DialogService DialogService
 @inject IJSRuntime JS
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.DeliveryNotes
 
 <div style="padding: 0.5rem 1.5rem 1.5rem 1.5rem; min-height: 100vh;">
     <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
@@ -187,8 +189,17 @@
                         <p style="font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
                     </EmptyTemplate>
                     <HeaderTemplate>
-                        <div style="font-size: 1.1rem; font-weight: 600; padding-bottom: 0.75rem;">
-                            @Localizer["customer_invoice_details"]
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 0.75rem;">
+                            <div style="font-size: 1.1rem; font-weight: 600;">
+                                @Localizer["customer_invoice_details"]
+                            </div>
+                            <RadzenButton Icon="add"
+                                          Text="@Localizer["create_new_invoice"]"
+                                          ButtonStyle="ButtonStyle.Success"
+                                          Size="ButtonSize.Small"
+                                          Disabled="@(SelectedCustomerId <= 0)"
+                                          Click="@CreateNewInvoice"
+                                          Style="border-radius: 6px; padding: 0.4rem 0.8rem; font-weight: 500; font-size: 0.85rem;" />
                         </div>
                     </HeaderTemplate>
                     <Columns>
@@ -806,6 +817,90 @@
                 Detail = $"Failed to load uninvoiced delivery notes: {ex.Message}"
             });
             _uninvoicedDeliveryNotes = new List<GetDeliveryNoteBaseInfos>();
+        }
+    }
+    #endregion
+
+    #region Create Invoice Methods
+    async Task CreateNewInvoice()
+    {
+        if (SelectedCustomerId <= 0)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["warning"],
+                Detail = Localizer["select_a_customer_before"]
+            });
+            return;
+        }
+
+        var result = await DialogService.OpenAsync<CreateInvoiceDialog>(
+            Localizer["create_new_invoice"],
+            new Dictionary<string, object> { { "InitialDate", DateTime.Now.Date } },
+            new DialogOptions()
+            {
+                Width = "400px",
+                Resizable = false,
+                Draggable = true
+            });
+
+        if (result is DateTime selectedDate)
+        {
+            await CreateInvoiceWithDate(selectedDate);
+        }
+    }
+
+    async Task CreateInvoiceWithDate(DateTime invoiceDate)
+    {
+        isLoadingInvoices = true;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            var request = new CreateInvoiceRequest
+            {
+                Date = invoiceDate,
+                ClientId = SelectedCustomerId
+            };
+
+            var result = await invoicesService.CreateInvoice(request, _cancellationTokenSource.Token);
+
+            if (result.IsT0) // Success
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = Localizer["success"],
+                    Detail = Localizer["invoice_created_successfully"]
+                });
+
+                // Refresh invoice list
+                await LoadInvoicesForCustomers();
+            }
+            else if (result.IsT1) // BadRequestResponse
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = result.AsT1.Detail
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Failed to create invoice: {ex.Message}"
+            });
+        }
+        finally
+        {
+            isLoadingInvoices = false;
+            await InvokeAsync(StateHasChanged);
         }
     }
     #endregion

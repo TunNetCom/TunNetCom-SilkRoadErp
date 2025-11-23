@@ -39,7 +39,10 @@
 @inject PrintProviderFullInvoiceService PrintProviderFullInvoiceService
 @inject RetenuSourceFournisseurPrintService RetenuSourceFournisseurPrintService
 @inject PrintFullInvoiceService PrintFullInvoiceService
+@inject DialogService DialogService
 @inject IJSRuntime JS
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.DeliveryNotes
+@using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice
 
 <div style="padding: 0.5rem 1.5rem 1.5rem 1.5rem; min-height: 100vh;">
     <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
@@ -103,7 +106,7 @@
         <RadzenColumn Size="12" SizeMD="6" SizeLG="6">
             <RadzenCard Variant="Variant.Flat"
                         Style="padding: 1rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-                            <RadzenDataGrid @ref="ProviderInvoiceGrid"
+                            <RadzenDataGrid @ref="_invoicedReceiptNotesGrid"
                                             AllowRowSelectOnRowClick="true"
                                             AllowFiltering="true"
                                             FilterPopupRenderMode="PopupRenderMode.OnDemand"
@@ -112,19 +115,15 @@
                                             PageSize="_defaultPageSize"
                                             PagerHorizontalAlign="HorizontalAlign.Left"
                                             ShowPagingSummary="true"
-                                            Count="_invoicesList.Invoices.TotalCount"
+                                            Count="_invoicedReceiptNotesWithSummary.ReceiptNotes.TotalCount"
                                             AllowSorting="true"
                                             GotoFirstPageOnSort="true"
-                                            TItem="ProviderInvoiceResponse"
-                                            Data="@_invoicesList.Invoices.Items"
-                                            LoadData="@LoadInvoices"
-                                            SelectionMode="DataGridSelectionMode.Single"
-                                            IsLoading="@isLoadingInvoices"
-                                            @bind-Value="@SelectedInvoices"
-                                            ExpandMode="DataGridExpandMode.Single"
-                                            RowExpand="@((ProviderInvoiceResponse invoice) => OnRowExpand(invoice))"
-                                            RowCollapse="@((ProviderInvoiceResponse invoice) => OnRowCollapse(invoice))"
-                                            @bind-ExpandedItem="@_expandedInvoice"
+                                            TItem="ReceiptNoteDetailsResponse"
+                                            Data="@_invoicedReceiptNotesWithSummary.ReceiptNotes.Items"
+                                            LoadData="@LoadInvoicedReceiptNotesData"
+                                            SelectionMode="DataGridSelectionMode.Multiple"
+                                            IsLoading="@isLoadingDeliveryNotesInCurrentInvoice"
+                                            @bind-Value="@_selectedReceiptNotesToDetach"
                                             Style="border: none;"
                                             Class="custom-grid">
                                 <EmptyTemplate>
@@ -133,136 +132,127 @@
                                 <HeaderTemplate>
                                     <div style="display: flex; align-items: center; margin-bottom: 0.75rem; gap: 1rem;">
                                         <div style="font-size: 1.1rem; font-weight: 600;">
-                                            @Localizer["provider_invoice_details"]
+                                            @Localizer["receipt_notes_details"]
+                                        </div>
+                                        <div style="margin-left: auto;">
+                                            <RadzenButton Text="@Localizer["detach_from_invoice"]"
+                                                          Click="@DetachReceiptNotesFromInvoice"
+                                                          Disabled="@(SelectedInvoiceId == 0 || !_selectedReceiptNotesToDetach.Any())"
+                                                          ButtonStyle="ButtonStyle.Primary"
+                                                          Size="ButtonSize.Small"
+                                                          Style="border-radius: 6px; padding: 0.4rem 0.8rem; font-weight: 500; font-size: 0.85rem;" />
                                         </div>
                                     </div>
                                 </HeaderTemplate>
-
                                 <Columns>
-                                    <RadzenDataGridColumn Property="@nameof(ProviderInvoiceResponse.Num)"
-                                                          Title="@Localizer["invoice_number"]"
+                                    <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailsResponse.Num)"
+                                                          Title="@Localizer["number"]"
                                                           Width="140px" />
-                                    <RadzenDataGridColumn Property="@nameof(ProviderInvoiceResponse.Date)"
-                                                          Title="@Localizer["date"]"
-                                                          FormatString="{0:d}"
-                                                          Width="140px" />
-                                    <RadzenDataGridColumn Property="@nameof(ProviderInvoiceResponse.TotTTC)"
-                                                          Title="@Localizer["total_incl_tax"]"
+                                    <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailsResponse.TotHTva)"
+                                                          Title="@Localizer["total_ex_tax"]"
+                                                          Width="140px">
+                                        <Template Context="detail">
+                                            @detail.TotHTva.FormatAmount()
+                                        </Template>
+                                    </RadzenDataGridColumn>
+                                    <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailsResponse.TotTTC)"
+                                                          Title="@Localizer["net_payer"]"
                                                           Width="140px">
                                         <Template Context="detail">
                                             @detail.TotTTC.FormatAmount()
                                         </Template>
                                     </RadzenDataGridColumn>
                                 </Columns>
-                    <Template Context="invoice">
-
-                        <div class="p-3" style="border-radius: 8px; margin: 8px; border-left: 4px solid #007bff;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                                <h5 style="margin: 0; font-weight: 600;">
-                                    @Localizer["receipt_notes_details"] - @Localizer["invoice_number"]: @invoice.Num
-                                </h5>
-                                @if (_isLoadingExpandedData)
-                                {
-                                    <RadzenProgressBarCircular ShowValue="false" Size="ProgressBarCircularSize.Small" />
-                                }
-                                <RadzenButton Click="@(args => DetachReceiptNotesFromInvoice())"
-                                              Icon="delete"
-                                              Disabled="@(_selectedReceiptNotesIdsToDetach.Count() == 0 || !_selectedReceiptNotesIdsToDetach.Any())"
-                                              ButtonStyle="ButtonStyle.Primary"
-                                              Size="ButtonSize.ExtraSmall"
-                                              Style="margin-top: 1rem; border-radius: 6px; padding: 0.5rem 1rem; font-weight: 500;" />
-                            </div>
-                            
-                            @if (_expandedInvoiceReceiptNotes != null && _expandedInvoiceReceiptNotes.Any())
-                            {
-                                <RadzenDataGrid AllowFiltering="false"
-                                               AllowPaging="true"
-                                               PageSize="5"
-                                               PagerHorizontalAlign="HorizontalAlign.Left"
-                                               ShowPagingSummary="true"
-                                               AllowSorting="true"
-                                               SelectionMode="DataGridSelectionMode.Multiple"
-                                               AllowRowSelectOnRowClick="true"
-                                               @bind-Value="@_selectedReceiptNotesIdsToDetach"
-                                               Data="@_expandedInvoiceReceiptNotes"
-                                               TItem="ReceiptNoteDetailsResponse"
-                                               Count="_expandedInvoiceReceiptNotes.Count"
-                                               Style="border: none; font-size: 0.9rem;"
-                                               Class="custom-grid">
-                                    <Columns>
-                                        <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailsResponse.Num)" 
-                                                            Title="@Localizer["number"]" 
-                                                            Width="120px">
-                                            <Template Context="receiptNote">
-                                                <strong>@receiptNote.Num</strong>
-                                            </Template>
-                                        </RadzenDataGridColumn>
-                                        <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailsResponse.Date)" 
-                                                            Title="@Localizer["date"]" 
-                                                            Width="120px"
-                                                            FormatString="{0:dd/MM/yyyy}" />
-                                        <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailsResponse.TotHTva)" 
-                                                            Title="@Localizer["total_ex_tax"]" 
-                                                            Width="140px"
-                                                            TextAlign="TextAlign.Right">
-                                            <Template Context="receiptNote">
-                                                @receiptNote.TotHTva.FormatAmount()
-                                            </Template>
-                                        </RadzenDataGridColumn>
-                                        <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailsResponse.TotTva)" 
-                                                            Title="@Localizer["total_vat"]" 
-                                                            Width="140px"
-                                                            TextAlign="TextAlign.Right">
-                                            <Template Context="receiptNote">
-                                                @receiptNote.TotTva.FormatAmount()
-                                            </Template>
-                                        </RadzenDataGridColumn>
-                                        <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailsResponse.TotTTC)" 
-                                                            Title="@Localizer["total_incl_tax"]" 
-                                                            Width="140px"
-                                                            TextAlign="TextAlign.Right">
-                                            <Template Context="receiptNote">
-                                                <strong>@receiptNote.TotTTC.FormatAmount()</strong>
-                                            </Template>
-                                        </RadzenDataGridColumn>
-                                    </Columns>
-                                </RadzenDataGrid>
-
-                                <div style="margin-top: 12px; padding: 12px; border-radius: 6px; border-left: 4px solid #0056b3;">
-                                    <div style="display: flex; gap: 24px; font-size: 0.9rem; flex-wrap: wrap;">
-                                        <span style="color: #0056b3;"><strong>@Localizer["total_net"]:</strong> @_expandedReceiptNotesSummary.TotalNetAmount.FormatAmount()</span>
-                                        <span style="color: #0056b3;"><strong>@Localizer["total_vat"]:</strong> @_expandedReceiptNotesSummary.TotalVATAmount.FormatAmount()</span>
-                                        <span style="color: #0056b3;"><strong>@Localizer["total_gross"]:</strong> @_expandedReceiptNotesSummary.TotalGrossAmount.FormatAmount()</span>
-                                    </div>
-                                </div>
-                            }
-                            else if (!_isLoadingExpandedData)
-                            {
-                                <div style="text-align: center; padding: 20px;">
-                                    <RadzenIcon Icon="inbox" Style="font-size: 48px; opacity: 0.5;" />
-                                    <p style="margin-top: 8px; margin-bottom: 0;">@Localizer["no_receipt_notes_found"]</p>
-                                </div>
-                            }
-                        </div>
-                    </Template>
                             </RadzenDataGrid>
                             <!-- Receipt Notes Summary -->
                             <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e0e0e0; flex-wrap: wrap;">
                                 <span style="font-size: 0.85rem; color: #666;">
-                                    @Localizer["total_net"]: <strong style="color: #333;">@_invoicesList?.TotalNetAmount.FormatAmount()</strong>
+                                    @Localizer["total_net"]: <strong style="color: #333;">@_invoicedReceiptNotesWithSummary?.TotalNetAmount.FormatAmount()</strong>
                                 </span>
                                 <span style="font-size: 0.85rem; color: #666;">
-                                    @Localizer["total_gross"]: <strong style="color: #333;">@_invoicesList?.TotalGrossAmount.FormatAmount()</strong>
+                                    @Localizer["total_gross"]: <strong style="color: #333;">@_invoicedReceiptNotesWithSummary?.TotalGrossAmount.FormatAmount()</strong>
                                 </span>
                                 <span style="font-size: 0.85rem; color: #666;">
-                                    @Localizer["total_vat"]: <strong style="color: #333;">@_invoicesList?.TotalVATAmount.FormatAmount()</strong>
+                                    @Localizer["total_vat"]: <strong style="color: #333;">@_invoicedReceiptNotesWithSummary?.TotalVATAmount.FormatAmount()</strong>
                                 </span>
                             </div>
             </RadzenCard>
         </RadzenColumn>
-
-         <!-- Uninvoiced Receipt Notes Section -->
+         <!-- Invoices Section -->
         <RadzenColumn Size="12" SizeMD="6" SizeLG="6">
+            <RadzenCard Variant="Variant.Flat"
+                        Style="padding: 1rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                <RadzenDataGrid @ref="ProviderInvoiceGrid"
+                                AllowFiltering="true"
+                                AllowPaging="true"
+                                PageSize="_defaultPageSize"
+                                PagerHorizontalAlign="HorizontalAlign.Left"
+                                ShowPagingSummary="true"
+                                AllowSorting="true"
+                                Count="@_invoicesList.Invoices.TotalCount"
+                                Data="@_invoicesList.Invoices.Items"
+                                LoadData="@LoadInvoices"
+                                @bind-Value="@SelectedInvoices"
+                                IsLoading="@isLoadingInvoices"
+                                SelectionMode="DataGridSelectionMode.Single"
+                                Style="border: none;"
+                                Class="custom-grid">
+                    <EmptyTemplate>
+                        <p style="font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
+                    </EmptyTemplate>
+                    <HeaderTemplate>
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 0.75rem;">
+                            <div style="font-size: 1.1rem; font-weight: 600;">
+                                @Localizer["provider_invoice_details"]
+                            </div>
+                            <RadzenButton Icon="add"
+                                          Text="@Localizer["create_new_invoice"]"
+                                          ButtonStyle="ButtonStyle.Success"
+                                          Size="ButtonSize.Small"
+                                          Disabled="@(SelectedProviderId <= 0)"
+                                          Click="@CreateNewProviderInvoice"
+                                          Style="border-radius: 6px; padding: 0.4rem 0.8rem; font-weight: 500; font-size: 0.85rem;" />
+                        </div>
+                    </HeaderTemplate>
+                    <Columns>
+                        <RadzenDataGridColumn Property="@nameof(ProviderInvoiceResponse.Num)"
+                                              Title="@Localizer["invoice_number"]"
+                                              Width="140px" />
+                        <RadzenDataGridColumn Property="@nameof(ProviderInvoiceResponse.ProviderInvoiceNumber)"
+                                              Title="@Localizer["provider_invoice_number"]"
+                                              Width="180px" />
+                        <RadzenDataGridColumn Property="@nameof(ProviderInvoiceResponse.Date)"
+                                              Title="@Localizer["date"]"
+                                              FormatString="{0:d}"
+                                              Width="140px" />
+                        <RadzenDataGridColumn Property="@nameof(ProviderInvoiceResponse.TotTTC)"
+                                              Title="@Localizer["total_incl_tax"]"
+                                              Width="140px">
+                            <Template Context="detail">
+                                @detail.TotTTC.FormatAmount()
+                            </Template>
+                        </RadzenDataGridColumn>
+                    </Columns>
+                </RadzenDataGrid>
+                <!-- Invoice Summary -->
+                <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e0e0e0; flex-wrap: wrap;">
+                    <span style="font-size: 0.85rem; color: #666;">
+                        @Localizer["total_net"]: <strong style="color: #333;">@_invoicesList?.TotalNetAmount.FormatAmount()</strong>
+                    </span>
+                    <span style="font-size: 0.85rem; color: #666;">
+                        @Localizer["total_gross"]: <strong style="color: #333;">@_invoicesList?.TotalGrossAmount.FormatAmount()</strong>
+                    </span>
+                    <span style="font-size: 0.85rem; color: #666;">
+                        @Localizer["total_vat"]: <strong style="color: #333;">@_invoicesList?.TotalVATAmount.FormatAmount()</strong>
+                    </span>
+                </div>
+            </RadzenCard>
+        </RadzenColumn>
+    </RadzenRow>
+
+    <!-- Uninvoiced Receipt Notes Section -->
+    <RadzenRow Style="margin-top: 2rem;">
+        <RadzenColumn Size="12">
             <RadzenCard Variant="Variant.Flat"
                         Style="padding: 1rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
                 <RadzenDataGrid @ref="_receiptNoteGrid"
@@ -369,28 +359,6 @@
     #region Fields and Properties
     private const int _defaultPageSize = 7;
     private const int _minValueId = 0;
-    private int _selectedCustomerId;
-    private int SelectedCustomerId
-    {
-        get => _selectedCustomerId;
-        set
-        {
-            if (_selectedCustomerId != value)
-            {
-                _selectedCustomerId = value;
-                SelectedInvoiceId = _minValueId;
-                SelectedInvoice = new List<ProviderInvoiceResponse>();
-                _invoicesList = new GetProviderInvoicesWithSummary();
-                _uninvoicedReceiptNotesWithSummary = new ReceiptNotesWithSummaryResponse();
-                _invoicedReceiptNotesWithSummary = new ReceiptNotesWithSummaryResponse();
-                if (value > _minValueId)
-                {
-                    _ = LoadUninvoicedReceiptNote(value);
-                    _ = LoadInvoices(value);
-                }
-            }
-        }
-    }
 
     private int _selectedProviderId;
     private int SelectedProviderId
@@ -450,6 +418,7 @@
     private IList<ReceiptNoteDetailsResponse> _selectedReceiptNotesToAttach { get; set; } = new List<ReceiptNoteDetailsResponse>();
     private CancellationTokenSource _cancellationTokenSource = new();
     private RadzenDataGrid<ReceiptNoteDetailsResponse> _receiptNoteGrid;
+    private RadzenDataGrid<ReceiptNoteDetailsResponse> _invoicedReceiptNotesGrid;
     private RadzenDataGrid<ProviderInvoiceResponse> ProviderInvoiceGrid;
     private GetProviderInvoicesWithSummary _invoicesList = new GetProviderInvoicesWithSummary();
     private ReceiptNotesWithSummaryResponse _uninvoicedReceiptNotesWithSummary = new ReceiptNotesWithSummaryResponse();
@@ -460,99 +429,8 @@
         get => _selectedReceiptNotesIdsToDetach;
         set => _selectedReceiptNotesIdsToDetach = value;
     }
-
-    // Expanded row tracking properties
-    private ProviderInvoiceResponse? _expandedInvoice;
-    private List<ReceiptNoteDetailsResponse> _expandedInvoiceReceiptNotes = new();
-    private ReceiptNotesWithSummaryResponse _expandedReceiptNotesSummary = new();
-    private bool _isLoadingExpandedData = false;
     #endregion
 
-    #region Expand/Collapse Event Handlers
-    async Task OnRowExpand(ProviderInvoiceResponse invoice) 
-    {
-        Console.WriteLine($"Row expanded → Invoice: {invoice.Num}, Provider: {invoice.ProviderId}");
-
-        // Set the expanded invoice and select it in the main grid
-        _expandedInvoice = invoice;
-
-        // Ensure the main invoice is selected
-        _selectedInvoices = new List<ProviderInvoiceResponse> { invoice };
-        SelectedInvoiceId = invoice.Num;
-
-        // Clear any previously selected receipt notes for detachment
-        _selectedReceiptNotesIdsToDetach = new List<ReceiptNoteDetailsResponse>();
-
-        _isLoadingExpandedData = true;
-        await InvokeAsync(StateHasChanged);
-
-        try
-        {
-            // Load receipt notes for the expanded invoice
-            await LoadReceiptNotesForExpandedInvoice(invoice.Num);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error loading expanded invoice data: {ex.Message}");
-            NotificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Error,
-                Summary = "Error",
-                Detail = $"Failed to load invoice details: {ex.Message}"
-            });
-        }
-        finally
-        {
-            _isLoadingExpandedData = false;
-            await InvokeAsync(StateHasChanged);
-        }
-    }
-
-    Task OnRowCollapse(ProviderInvoiceResponse invoice)
-    {
-        Console.WriteLine($"Row collapsed → Invoice: {invoice.Num}");
-
-        _expandedInvoice = null;
-        _expandedInvoiceReceiptNotes.Clear();
-        _expandedReceiptNotesSummary = new ReceiptNotesWithSummaryResponse();
-        _isLoadingExpandedData = false;
-
-        // Clear receipt note selections when collapsing
-        _selectedReceiptNotesIdsToDetach = new List<ReceiptNoteDetailsResponse>();
-
-        return Task.CompletedTask;
-    }
-
-    private async Task LoadReceiptNotesForExpandedInvoice(int invoiceNum)
-    {
-        if (SelectedProviderId <= 0) return;
-
-        var parameters = new QueryStringParameters
-        {
-            PageNumber = 1,
-            PageSize = 10,
-            SearchKeyword = null
-        };
-
-        var result = await receiptNoteService.GetReceiptNoteWithSummaries(
-            providerId: SelectedProviderId,
-            IsInvoiced: true,
-            invoiceNum,
-            parameters,
-            _cancellationTokenSource.Token);
-
-        if (result.IsSuccess)
-        {
-            _expandedReceiptNotesSummary = result.Value;
-            _expandedInvoiceReceiptNotes = result.Value.ReceiptNotes.Items.ToList();
-        }
-        else
-        {
-            _expandedInvoiceReceiptNotes.Clear();
-            _expandedReceiptNotesSummary = new ReceiptNotesWithSummaryResponse();
-        }
-    }
-    #endregion
 
     #region Lifecycle Methods
     protected override async Task OnInitializedAsync()
@@ -730,7 +608,7 @@
 
     private async Task LoadReceiptNotesForSelectedInvoice(int invoiceNum)
     {
-
+        SelectedInvoiceId = invoiceNum;
         var parameters = new QueryStringParameters
             {
                 PageNumber =  1,
@@ -746,17 +624,26 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task LoadReceiptNotesForSelectedInvoice(LoadDataArgs args)
+    private async Task LoadInvoicedReceiptNotesData(LoadDataArgs args)
     {
-        string _sortProperty = null;
-        string _sortOrder = null;
-        if (args.Sorts != null && args.Sorts.Any())
+        if (SelectedProviderId <= 0 || SelectedInvoiceId <= 0)
         {
-            var sort = args.Sorts.First();
-            _sortProperty = sort.Property;
-            _sortOrder = sort.SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending;
+            return;
         }
-        var parameters = new QueryStringParameters
+
+        try
+        {
+            string _sortProperty = null;
+            string _sortOrder = null;
+            if (args.Sorts != null && args.Sorts.Any())
+            {
+                var sort = args.Sorts.First();
+                _sortProperty = sort.Property;
+                _sortOrder = sort.SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending;
+            }
+
+            isLoadingDeliveryNotesInCurrentInvoice = true;
+            var parameters = new QueryStringParameters
             {
                 PageNumber = (args.Skip.Value / _defaultPageSize) + 1,
                 PageSize = _defaultPageSize,
@@ -764,10 +651,25 @@
                 SortOrder = _sortOrder,
                 SortProprety = _sortProperty
             };
-        var repi = await receiptNoteService.GetReceiptNoteWithSummaries(SelectedProviderId, true, SelectedInvoiceId, parameters, _cancellationTokenSource.Token);
-        if (repi.IsSuccess)
-            _invoicedReceiptNotesWithSummary = repi.Value;
-        await InvokeAsync(StateHasChanged);
+            var repi = await receiptNoteService.GetReceiptNoteWithSummaries(SelectedProviderId, true, SelectedInvoiceId, parameters, _cancellationTokenSource.Token);
+            if (repi.IsSuccess)
+            {
+                _invoicedReceiptNotesWithSummary = repi.Value;
+            }
+
+            isLoadingDeliveryNotesInCurrentInvoice = false;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Failed to load invoiced receipt notes: {ex.Message}"
+            });
+            _invoicedReceiptNotesWithSummary = new ReceiptNotesWithSummaryResponse();
+        }
     }
 
 
@@ -793,11 +695,7 @@
 
             await LoadUninvoicedReceiptNote(SelectedProviderId);
             await LoadReceiptNotesForSelectedInvoice(SelectedInvoiceId);
-
-            if (_expandedInvoice != null)
-            {
-                await LoadReceiptNotesForExpandedInvoice(_expandedInvoice.Num);
-            }
+            await LoadInvoices(SelectedProviderId);
         }
         catch (Exception ex)
         {
@@ -872,9 +770,9 @@
                 updateInvoiceGridLineAttachmentRecpiet(SelectedInvoiceId, true);
                 _selectedReceiptNotesToAttach = new List<ReceiptNoteDetailsResponse>();
 
-                await LoadReceiptNotesForExpandedInvoice(SelectedInvoiceId);
                 await LoadUninvoicedReceiptNote(SelectedProviderId);
                 await LoadReceiptNotesForSelectedInvoice(SelectedInvoiceId);
+                await LoadInvoices(SelectedProviderId);
 
             }
             else
@@ -897,6 +795,90 @@
         }
     }
 
+    #endregion
+
+    #region Create Invoice Methods
+    async Task CreateNewProviderInvoice()
+    {
+        if (SelectedProviderId <= 0)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["warning"],
+                Detail = Localizer["select_a_provider_before"]
+            });
+            return;
+        }
+
+        var result = await DialogService.OpenAsync<CreateInvoiceDialog>(
+            Localizer["create_new_invoice"],
+            new Dictionary<string, object> { { "InitialDate", DateTime.Now.Date } },
+            new DialogOptions()
+            {
+                Width = "400px",
+                Resizable = false,
+                Draggable = true
+            });
+
+        if (result is DateTime selectedDate)
+        {
+            await CreateProviderInvoiceWithDate(selectedDate);
+        }
+    }
+
+    async Task CreateProviderInvoiceWithDate(DateTime invoiceDate)
+    {
+        isLoadingInvoices = true;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            var request = new CreateProviderInvoiceRequest
+            {
+                Date = invoiceDate,
+                ProviderId = SelectedProviderId
+            };
+
+            var result = await providerInvoiceService.CreateProviderInvoice(request, _cancellationTokenSource.Token);
+
+            if (result.IsT0) // Success
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = Localizer["success"],
+                    Detail = Localizer["invoice_created_successfully"]
+                });
+
+                // Refresh invoice list
+                await LoadInvoices(SelectedProviderId);
+            }
+            else if (result.IsT1) // BadRequestResponse
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = result.AsT1.Detail
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Failed to create provider invoice: {ex.Message}"
+            });
+        }
+        finally
+        {
+            isLoadingInvoices = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
     #endregion
 
     #region Print methods
