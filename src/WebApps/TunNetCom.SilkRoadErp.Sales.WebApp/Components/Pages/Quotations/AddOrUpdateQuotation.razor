@@ -5,11 +5,13 @@
 @using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Quotations
+@using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Sorting
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Quotations
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
@@ -20,8 +22,10 @@
 @inject IProductsApiClient productsApiClient
 @inject ICustomersApiClient customersApiClient
 @inject IAppParametersClient appParametersClient
+@inject IDeliveryNoteApiClient deliveryNoteApiClient
 @inject ILogger<AddOrUpdateQuotation> logger
 @inject DialogService DialogService
+@inject NavigationManager NavigationManager
 
 <style>
     .quotation-container {
@@ -74,6 +78,19 @@ else
                     <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Name)" Title="@Localizer["name"]" Width="220px" />
                 </Columns>
             </RadzenDropDownDataGrid>
+
+            @if (!string.IsNullOrEmpty(quotationNumber))
+            {
+                <RadzenButton Text="Transformer en bon de livraison"
+                              Icon="shopping_cart"
+                              ButtonStyle="ButtonStyle.Success"
+                              Variant="Variant.Flat"
+                              Size="ButtonSize.Medium"
+                              Click="@ConvertToDeliveryNote"
+                              Disabled="@(isLoading || !selectedCustomerId.HasValue || !orders.Any())"
+                              Title="Transformer ce devis en bon de livraison"
+                              AriaLabel="Transformer en bon de livraison" />
+            }
         </div>
     </div>
 
@@ -108,8 +125,8 @@ else
 
 @code {
     [Parameter] public string? num { get; set; }
-    List<QuotationDetailResponse> orders;
-    List<QuotationDetailResponse> searchList;
+    List<QuotationDetailResponse> orders = new();
+    List<QuotationDetailResponse> searchList = new();
     int count;
     private const int DefaultPageSize = 7;
     private CancellationTokenSource _cancellationTokenSource = new();
@@ -119,7 +136,7 @@ else
     decimal totalHt;
     decimal totalVat;
     decimal totalTtc;
-    string quotationNumber;
+    string quotationNumber = string.Empty;
     DateTime quotationDate = DateTime.Now;
     private GetAppParametersResponse getAppParametersResponse;
     private int? selectedCustomerId;
@@ -475,6 +492,117 @@ else
                 Width = "700px",
                 Height = "512px"
             });
+    }
+
+    private async Task ConvertToDeliveryNote()
+    {
+        try
+        {
+            // Vérifier que le devis est sauvegardé
+            if (string.IsNullOrEmpty(quotationNumber))
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = Localizer["warning"],
+                    Detail = "Veuillez d'abord sauvegarder le devis"
+                });
+                return;
+            }
+
+            // Vérifier qu'il y a un client
+            if (!selectedCustomerId.HasValue)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = "Un client doit être sélectionné"
+                });
+                return;
+            }
+
+            // Vérifier qu'il y a des lignes de produits
+            if (!orders.Any())
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = "Le devis doit contenir au moins une ligne de produit"
+                });
+                return;
+            }
+
+            isLoading = true;
+            StateHasChanged();
+
+            // Créer la requête pour le bon de livraison à partir des données du devis
+            var deliveryNoteRequest = new CreateDeliveryNoteRequest
+            {
+                Date = quotationDate,
+                TotalExcludingTax = totalHt,
+                TotalVat = totalVat,
+                TotalAmount = totalTtc,
+                DeliveryTime = TimeOnly.FromDateTime(DateTime.Now),
+                InvoiceNumber = null, // Pas de facture associée lors de la création depuis un devis
+                CustomerId = selectedCustomerId.Value,
+                Items = orders.Select(o => new DeliveryNoteItemRequest
+                {
+                    Id = 0, // Nouveau item, pas d'ID
+                    ProductReference = o.ProductReference,
+                    Description = o.Description,
+                    Quantity = o.Quantity,
+                    UnitPriceExcludingTax = o.UnitPriceExcludingTax,
+                    DiscountPercentage = o.DiscountPercentage,
+                    TotalExcludingTax = o.TotalExcludingTax,
+                    VatPercentage = o.VatPercentage,
+                    TotalIncludingTax = o.TotalIncludingTax
+                }).ToList()
+            };
+
+            // Créer le bon de livraison
+            var createResponse = await deliveryNoteApiClient.CreateDeliveryNoteAsync(deliveryNoteRequest, _cancellationTokenSource.Token);
+
+            if (createResponse.IsSuccess)
+            {
+                var deliveryNoteNum = createResponse.ValueOrDefault;
+                
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = Localizer["success"],
+                    Detail = $"Bon de livraison créé avec succès (n° {deliveryNoteNum})"
+                });
+
+                // Rediriger vers la page de création/édition du bon de livraison
+                NavigationManager.NavigateTo($"/AddOrUpdateDeliveryNote/{deliveryNoteNum}");
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = $"Échec de la création du bon de livraison: {createResponse.Errors.First().Message}"
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Erreur lors de la transformation en bon de livraison: {ex.Message}"
+            });
+            logger.LogError(ex, "Failed to convert quotation to delivery note");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
     }
 }
 
