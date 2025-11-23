@@ -9,7 +9,7 @@ public partial class LigneBonReception
 {
     public int IdLigne { get; set; }
 
-    public int NumBonRec { get; set; }
+    public int BonDeReceptionId { get; set; }
 
     public string RefProduit { get; set; } = null!;
 
@@ -32,7 +32,7 @@ public partial class LigneBonReception
     public virtual Produit RefProduitNavigation { get; set; } = null!;
 
     public static LigneBonReception CreateReceiptNoteLine(
-        int receiptNoteNumber,
+        int bonDeReceptionId,
         string productRef,
         string designationLigne,
         int quantity,
@@ -54,7 +54,7 @@ public partial class LigneBonReception
             TotHt = subtotalAfterDiscount,
             Tva = tax,
             TotTtc = subtotalAfterDiscount * (1 + (decimal)(tax / 100)),
-            NumBonRec = receiptNoteNumber
+            BonDeReceptionId = bonDeReceptionId
         };
     }
 }

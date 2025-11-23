@@ -59,6 +59,7 @@ public class UpdateDeliveryNoteCommandHandler(
                 TotHt = deliveryNoteDetail.TotHt,
                 Tva = deliveryNoteDetail.Tva,
                 TotTtc = deliveryNoteDetail.TotTtc,
+                BonDeLivraisonId = deliveryNote.Id,
                 NumBlNavigation = deliveryNote
             };
 

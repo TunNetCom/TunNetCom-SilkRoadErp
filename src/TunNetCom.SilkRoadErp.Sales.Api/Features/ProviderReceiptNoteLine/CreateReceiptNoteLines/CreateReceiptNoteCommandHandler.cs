@@ -1,4 +1,6 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderReceiptNoteLine.CreateReceiptNoteLines;
+﻿using Microsoft.EntityFrameworkCore;
+
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderReceiptNoteLine.CreateReceiptNoteLines;
 
 internal class CreateReceiptNoteCommandHandler(
     SalesContext salesContext,
@@ -11,14 +13,30 @@ internal class CreateReceiptNoteCommandHandler(
     {
         try
         {
-            var receiptNoteLines = request.ReceiptNoteLines.Select(x => LigneBonReception.CreateReceiptNoteLine(
-                                                receiptNoteNumber: x.RecipetNoteNumber,
-                                                productRef: x.ProductRef,
-                                                designationLigne: x.ProductDescription,
-                                                quantity: x.Quantity,
-                                                unitPrice: x.UnitPrice,
-                                                discount: x.Discount,
-                                                tax: x.Tax)).ToList();
+            // Group lines by receipt note number to fetch all BonDeReception at once
+            var receiptNoteNumbers = request.ReceiptNoteLines.Select(x => x.RecipetNoteNumber).Distinct().ToList();
+            var receiptNotes = await salesContext.BonDeReception
+                .Where(br => receiptNoteNumbers.Contains(br.Num))
+                .ToDictionaryAsync(br => br.Num, br => br.Id, cancellationToken);
+
+            var receiptNoteLines = new List<LigneBonReception>();
+            foreach (var lineRequest in request.ReceiptNoteLines)
+            {
+                if (!receiptNotes.TryGetValue(lineRequest.RecipetNoteNumber, out var bonDeReceptionId))
+                {
+                    _logger.LogError("Receipt note with number {Num} not found", lineRequest.RecipetNoteNumber);
+                    return Result.Fail($"Receipt note with number {lineRequest.RecipetNoteNumber} not found");
+                }
+
+                receiptNoteLines.Add(LigneBonReception.CreateReceiptNoteLine(
+                    bonDeReceptionId: bonDeReceptionId,
+                    productRef: lineRequest.ProductRef,
+                    designationLigne: lineRequest.ProductDescription,
+                    quantity: lineRequest.Quantity,
+                    unitPrice: lineRequest.UnitPrice,
+                    discount: lineRequest.Discount,
+                    tax: lineRequest.Tax));
+            }
 
             await salesContext.LigneBonReception.AddRangeAsync(receiptNoteLines, cancellationToken);
             _ = await salesContext.SaveChangesAsync(cancellationToken);

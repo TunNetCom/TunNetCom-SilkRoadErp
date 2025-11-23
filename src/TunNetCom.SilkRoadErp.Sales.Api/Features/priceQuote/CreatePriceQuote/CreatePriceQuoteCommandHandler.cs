@@ -20,6 +20,12 @@ public class CreatePriceQuoteCommandHandler(
         totTtc: createPriceQuoteCommand.TotTtc
         );
 
+        _ = _context.Devis.Add(devis);
+        
+        // Save the devis first to get its Num (which is the primary key)
+        await _context.SaveChangesAsync(cancellationToken);
+
+        // Now create the lines with the saved devis's Num
         foreach (var quotationLine in createPriceQuoteCommand.QuotationLines)
         {
             var ligneDevis = new LigneDevis
@@ -32,13 +38,14 @@ public class CreatePriceQuoteCommandHandler(
                 TotHt = quotationLine.TotHt,
                 Tva = quotationLine.Tva,
                 TotTtc = quotationLine.TotTtc,
+                DevisId = devis.Num,
                 NumDevisNavigation = devis
             };
 
             devis.LigneDevis.Add(ligneDevis);
         }
 
-        _ = _context.Devis.Add(devis);
+        // Save the lines
         _ = await _context.SaveChangesAsync(cancellationToken);
         _logger.LogEntityCreatedSuccessfully(nameof(Devis), devis.Num);
 

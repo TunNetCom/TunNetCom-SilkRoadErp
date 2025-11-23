@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
@@ -11,9 +12,11 @@ using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 {
     [DbContext(typeof(SalesContext))]
-    partial class SalesContextModelSnapshot : ModelSnapshot
+    [Migration("20251123190444_ChangeForeignKeysToUseIdInsteadOfNum")]
+    partial class ChangeForeignKeysToUseIdInsteadOfNum
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -871,9 +874,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("Designation_li");
 
-                    b.Property<int>("DevisId")
+                    b.Property<int>("NumDevis")
                         .HasColumnType("int")
-                        .HasColumnName("DevisId");
+                        .HasColumnName("Num_devis");
 
                     b.Property<decimal>("PrixHt")
                         .HasColumnType("decimal(18, 3)")
@@ -908,7 +911,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.HasKey("IdLi")
                         .HasName("PK_dbo.LigneDevis");
 
-                    b.HasIndex("DevisId");
+                    b.HasIndex("NumDevis");
 
                     b.HasIndex("RefProduit");
 
@@ -1415,10 +1418,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 {
                     b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Devis", "NumDevisNavigation")
                         .WithMany("LigneDevis")
-                        .HasForeignKey("DevisId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("NumDevis")
                         .IsRequired()
-                        .HasConstraintName("FK_dbo.LigneDevis_dbo.Devis_DevisId");
+                        .HasConstraintName("FK_dbo.LigneDevis_dbo.Devis_Num_devis");
 
                     b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Produit", "RefProduitNavigation")
                         .WithMany("LigneDevis")

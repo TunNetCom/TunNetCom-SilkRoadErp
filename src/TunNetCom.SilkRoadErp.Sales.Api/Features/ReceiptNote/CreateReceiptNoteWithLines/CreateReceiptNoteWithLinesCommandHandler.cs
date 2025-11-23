@@ -28,7 +28,7 @@ internal class CreateReceiptNoteWithLinesCommandHandler(
 
             var num = await _numberGeneratorService.GenerateBonDeReceptionNumberAsync(activeAccountingYear.Id, cancellationToken);
 
-            var recipetNote = await salesContext.BonDeReception.AddAsync(new BonDeReception
+            var recipetNote = new BonDeReception
             {
                 Num = num,
                 NumBonFournisseur = request.NumBonFournisseur,
@@ -37,10 +37,16 @@ internal class CreateReceiptNoteWithLinesCommandHandler(
                 Date = request.Date,
                 NumFactureFournisseur = request.NumFactureFournisseur,
                 AccountingYearId = activeAccountingYear.Id
-            }, cancellationToken);
+            };
 
+            await salesContext.BonDeReception.AddAsync(recipetNote, cancellationToken);
+            
+            // Save the receipt note first to get its Id
+            await salesContext.SaveChangesAsync(cancellationToken);
+
+            // Now create the lines with the saved receipt note's Id
             var receiptNoteLines = request.ReceiptNoteLines.Select(x => LigneBonReception.CreateReceiptNoteLine(
-                        receiptNoteNumber: recipetNote.Entity.Num,
+                        bonDeReceptionId: recipetNote.Id,
                         productRef: x.ProductRef,
                         designationLigne: x.ProductDescription,
                         quantity: x.Quantity,
@@ -48,13 +54,14 @@ internal class CreateReceiptNoteWithLinesCommandHandler(
                         discount: x.Discount,
                         tax: x.Tax)).ToList();
 
-             await salesContext.LigneBonReception.AddRangeAsync(receiptNoteLines, cancellationToken);
+            await salesContext.LigneBonReception.AddRangeAsync(receiptNoteLines, cancellationToken);
 
+            // Save the lines
             _ = await salesContext.SaveChangesAsync(cancellationToken);
 
             await transaction.CommitAsync(cancellationToken);
 
-            return Result.Ok(recipetNote.Entity.Id);
+            return Result.Ok(recipetNote.Id);
         }
         catch (Exception ex)
         {

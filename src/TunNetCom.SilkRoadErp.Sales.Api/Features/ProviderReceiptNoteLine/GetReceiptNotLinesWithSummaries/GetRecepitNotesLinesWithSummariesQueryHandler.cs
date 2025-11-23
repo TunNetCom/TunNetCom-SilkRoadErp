@@ -15,7 +15,7 @@ internal class GetRecepitNotesLinesWithSummariesQueryHandler(
         try
         {
             var query = (from rnl in salesContext.LigneBonReception
-                         where rnl.NumBonRec == request.IdReceiptNote
+                         where rnl.BonDeReceptionId == request.IdReceiptNote
                          select new ReceiptLine
                          { 
                              Discount = rnl.Remise,

@@ -16,7 +16,7 @@ public class GetProvidersInvoicesQueryHandler(
         var invoiceQuery = (from ff in _context.FactureFournisseur
                               join br in _context.BonDeReception on ff.Num equals br.NumFactureFournisseur into brGroup
                               from br in brGroup.DefaultIfEmpty()
-                              join lbr in _context.LigneBonReception on br.Num equals lbr.NumBonRec into lbrGroup
+                              join lbr in _context.LigneBonReception on br.Id equals lbr.BonDeReceptionId into lbrGroup
                               from lbr in lbrGroup.DefaultIfEmpty()
                               where ff.IdFournisseur == query.IdFournisseur
                               group lbr by new

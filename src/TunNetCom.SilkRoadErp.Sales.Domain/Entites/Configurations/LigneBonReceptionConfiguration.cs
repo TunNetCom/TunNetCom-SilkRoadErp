@@ -17,7 +17,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
 
             entity.Property(e => e.IdLigne).HasColumnName("Id_ligne");
             entity.Property(e => e.DesignationLi).HasColumnName("designation_li");
-            entity.Property(e => e.NumBonRec).HasColumnName("Num_BonRec");
+            entity.Property(e => e.BonDeReceptionId).HasColumnName("BonDeReceptionId");
             entity.Property(e => e.PrixHt)
             .HasColumnType("decimal(18, 3)")
             .HasColumnName("prix_HT");
@@ -35,9 +35,8 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             entity.Property(e => e.Tva).HasColumnName("tva");
 
             entity.HasOne(d => d.NumBonRecNavigation).WithMany(p => p.LigneBonReception)
-            .HasForeignKey(d => d.NumBonRec)
-            .HasPrincipalKey(p => p.Num)
-            .HasConstraintName("FK_dbo.LigneBonReception_dbo.BonDeReception_Num_BonRec");
+            .HasForeignKey(d => d.BonDeReceptionId)
+            .HasConstraintName("FK_dbo.LigneBonReception_dbo.BonDeReception_BonDeReceptionId");
 
             entity.HasOne(d => d.RefProduitNavigation).WithMany(p => p.LigneBonReception)
             .HasForeignKey(d => d.RefProduit)

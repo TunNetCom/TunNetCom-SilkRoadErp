@@ -218,29 +218,15 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
                     receiptNoteDate = receiptNote.Value.Date;
                     selectedProviderId = receiptNote.Value.IdFournisseur;
 
-                    var linesResult = await receiptNoteApiClient.GetReceiptNoteLines(
-                        numAsInt,
-                        new GetReceiptNoteLinesWithSummariesQueryParams { PageNumber = 1, PageSize = 100 },
-                        _cancellationTokenSource.Token);
-
-                    if (linesResult.IsSuccess && linesResult.Value != null)
+                    // Use Items directly from ReceiptNoteResponse (like DeliveryNote)
+                    if (receiptNote.Value.Items != null && receiptNote.Value.Items.Any())
                     {
-                        orders = linesResult.Value.ReceiptLinesBaseInfos.Items.Select(l => new ReceiptNoteDetailResponse
-                        {
-                            Id = l.LineId,
-                            ProductReference = l.ProductReference,
-                            Description = l.ItemDescription,
-                            Quantity = l.ItemQuantity,
-                            UnitPriceExcludingTax = l.UnitPriceExcludingTax,
-                            DiscountPercentage = l.Discount,
-                            TotalExcludingTax = l.TotalExcludingTax,
-                            VatPercentage = l.VatRate,
-                            TotalIncludingTax = l.TotalIncludingTax
-                        }).ToList();
-
-                        totalHt = linesResult.Value.TotalNetAmount;
-                        totalVat = linesResult.Value.TotalVatAmount;
-                        totalTtc = linesResult.Value.TotalGrossAmount;
+                        orders = receiptNote.Value.Items.ToList();
+                        
+                        // Calculate totals from items
+                        totalHt = orders.Sum(o => o.TotalExcludingTax);
+                        totalVat = orders.Sum(o => o.TotalIncludingTax - o.TotalExcludingTax);
+                        totalTtc = orders.Sum(o => o.TotalIncludingTax);
                         
                         logger.LogInformation("Fetched receipt note {Num} with {LineCount} lines", numAsInt, orders.Count);
                     }
@@ -250,7 +236,7 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
                         totalHt = 0;
                         totalVat = 0;
                         totalTtc = 0;
-                        logger.LogWarning("Failed to fetch lines for receipt note {Num}", numAsInt);
+                        logger.LogInformation("Receipt note {Num} has no lines", numAsInt);
                     }
                 }
             }

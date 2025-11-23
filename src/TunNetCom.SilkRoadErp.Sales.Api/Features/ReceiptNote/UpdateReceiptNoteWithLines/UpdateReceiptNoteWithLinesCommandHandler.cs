@@ -48,7 +48,7 @@ public class UpdateReceiptNoteWithLinesCommandHandler(
         // Create new lines
         var newLines = command.ReceiptNoteLines.Select(receiptNoteLine => 
             LigneBonReception.CreateReceiptNoteLine(
-                receiptNoteNumber: receiptNote.Num,
+                bonDeReceptionId: receiptNote.Id,
                 productRef: receiptNoteLine.ProductRef,
                 designationLigne: receiptNoteLine.ProductDescription,
                 quantity: receiptNoteLine.Quantity,

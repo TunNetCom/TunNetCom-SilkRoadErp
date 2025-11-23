@@ -1,4 +1,6 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNoteById;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNote.Responses;
+
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNoteById;
 
 public class GetReceiptNoteByIdQueryHandler(
     SalesContext _context,
@@ -9,17 +11,41 @@ public class GetReceiptNoteByIdQueryHandler(
     {
         _logger.LogFetchingEntityById(nameof(BonDeReception), getReceiptNoteByIdQuery.Num);
         
-        // Search by Num (receipt note number), not by Id
-        var receiptnote = await _context.BonDeReception
+        // Search by Num (receipt note number), not by Id, and load lines directly like GetDeliveryNoteByNum
+        var receiptNoteResponse = await _context.BonDeReception
+            .Select(br => new ReceiptNoteResponse
+            {
+                Num = br.Num,
+                NumBonFournisseur = br.NumBonFournisseur,
+                DateLivraison = br.DateLivraison,
+                IdFournisseur = br.IdFournisseur,
+                NomFournisseur = br.IdFournisseurNavigation.Nom,
+                Date = br.Date,
+                NumFactureFournisseur = br.NumFactureFournisseur,
+                Items = br.LigneBonReception.Select(l => new ReceiptNoteDetailResponse
+                {
+                    Id = l.IdLigne,
+                    ProductReference = l.RefProduit,
+                    Description = l.DesignationLi,
+                    Quantity = l.QteLi,
+                    UnitPriceExcludingTax = l.PrixHt,
+                    DiscountPercentage = l.Remise,
+                    TotalExcludingTax = l.TotHt,
+                    VatPercentage = l.Tva,
+                    TotalIncludingTax = l.TotTtc,
+                    Provider = br.IdFournisseurNavigation.Nom,
+                    Date = br.Date
+                }).ToList()
+            })
             .FirstOrDefaultAsync(b => b.Num == getReceiptNoteByIdQuery.Num, cancellationToken);
             
-        if (receiptnote is null)
+        if (receiptNoteResponse is null)
         {
             _logger.LogEntityNotFound(nameof(BonDeReception), getReceiptNoteByIdQuery.Num);
 
             return Result.Fail(EntityNotFound.Error());
         }
         _logger.LogEntityFetchedById(nameof(BonDeReception), getReceiptNoteByIdQuery.Num);
-        return receiptnote.Adapt<ReceiptNoteResponse>();
+        return receiptNoteResponse;
     }
 }

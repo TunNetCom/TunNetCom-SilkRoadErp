@@ -7,7 +7,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 public partial class Transaction
 {
-    public int NumBl { get; set; }
+    public int BonDeLivraisonId { get; set; }
 
     public int Type { get; set; }
 

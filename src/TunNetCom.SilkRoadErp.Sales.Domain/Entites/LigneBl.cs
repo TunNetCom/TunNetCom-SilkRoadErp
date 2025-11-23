@@ -9,7 +9,7 @@ public partial class LigneBl
 {
     public int IdLi { get; set; }
 
-    public int NumBl { get; set; }
+    public int BonDeLivraisonId { get; set; }
 
     public string RefProduit { get; set; } = null!;
 

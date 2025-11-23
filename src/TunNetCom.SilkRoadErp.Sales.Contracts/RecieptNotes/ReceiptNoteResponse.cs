@@ -1,4 +1,6 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Contracts.RecieptNotes;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNote.Responses;
+
+namespace TunNetCom.SilkRoadErp.Sales.Contracts.RecieptNotes;
 
 public class ReceiptNoteResponse
 {
@@ -22,4 +24,6 @@ public class ReceiptNoteResponse
     [JsonPropertyName("NumFactureFournisseur")]
     public int? NumFactureFournisseur { get; set; }
 
+    [JsonPropertyName("items")]
+    public List<ReceiptNoteDetailResponse> Items { get; set; } = new();
 }

@@ -53,6 +53,7 @@ public class UpdatePriceQuoteCommandHandler : IRequestHandler<UpdatePriceQuoteCo
                 TotHt = quotationLine.TotHt,
                 Tva = quotationLine.Tva,
                 TotTtc = quotationLine.TotTtc,
+                DevisId = quotationToUpdate.Num,
                 NumDevisNavigation = quotationToUpdate
             };
 

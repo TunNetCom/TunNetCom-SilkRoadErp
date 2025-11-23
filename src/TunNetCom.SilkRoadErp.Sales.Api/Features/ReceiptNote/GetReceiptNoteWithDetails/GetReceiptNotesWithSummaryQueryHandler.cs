@@ -17,7 +17,7 @@ public class GetReceiptNotesWithSummaryQueryHandler(
         var receiptNotesQuery = (
             from rn in _context.BonDeReception
             join f in _context.Fournisseur on rn.IdFournisseur equals f.Id
-            join lbr in _context.LigneBonReception on rn.Num equals lbr.NumBonRec
+            join lbr in _context.LigneBonReception on rn.Id equals lbr.BonDeReceptionId
             group new { rn, lbr, f } by new
             {
                 rn.Num,

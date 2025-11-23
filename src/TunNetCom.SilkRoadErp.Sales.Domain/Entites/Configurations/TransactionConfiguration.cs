@@ -13,11 +13,11 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
     {
         public void Configure(EntityTypeBuilder<Transaction> entity)
         {
-            entity.HasKey(e => e.NumBl).HasName("PK_dbo.Transaction");
+            entity.HasKey(e => e.BonDeLivraisonId).HasName("PK_dbo.Transaction");
 
-            entity.Property(e => e.NumBl)
+            entity.Property(e => e.BonDeLivraisonId)
             .ValueGeneratedNever()
-            .HasColumnName("Num_BL");
+            .HasColumnName("BonDeLivraisonId");
             entity.Property(e => e.DateTr)
             .HasColumnType("datetime")
             .HasColumnName("date_tr");
@@ -27,10 +27,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             entity.Property(e => e.Type).HasColumnName("type");
 
             entity.HasOne(d => d.NumBlNavigation).WithOne(p => p.Transaction)
-            .HasForeignKey<Transaction>(d => d.NumBl)
-            .HasPrincipalKey<BonDeLivraison>(p => p.Num)
+            .HasForeignKey<Transaction>(d => d.BonDeLivraisonId)
             .OnDelete(DeleteBehavior.ClientSetNull)
-            .HasConstraintName("FK_dbo.Transaction_dbo.BonDeLivraison_Num_BL");
+            .HasConstraintName("FK_dbo.Transaction_dbo.BonDeLivraison_BonDeLivraisonId");
 
             OnConfigurePartial(entity);
         }
