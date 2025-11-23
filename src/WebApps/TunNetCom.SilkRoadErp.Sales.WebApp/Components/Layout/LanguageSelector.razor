@@ -10,22 +10,44 @@
                 TextProperty="DisplayName" 
                 ValueProperty="Code" 
                 Style="width: 150px"
-                Change="@OnCultureChanged">
+                Change="@OnCultureChanged"
+                 >
 </RadzenDropDown>
 
 @code {
     private List<LanguageOption> LanguageOptions = new List<LanguageOption>
     {
-        new LanguageOption { Code = "en", DisplayName = "English" },
         new LanguageOption { Code = "fr", DisplayName = "Français" },
+        new LanguageOption { Code = "en", DisplayName = "English" },        
         new LanguageOption { Code = "ar", DisplayName = "العربية" }
     };
 
     private string SelectedCulture { get; set; }
+    private bool _hasCheckedDefaultCulture = false;
 
     protected override void OnInitialized()
     {
-        SelectedCulture = CultureInfo.CurrentCulture.Name;
+        var currentCulture = CultureInfo.CurrentCulture.Name;
+        SelectedCulture = currentCulture;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_hasCheckedDefaultCulture)
+        {
+            _hasCheckedDefaultCulture = true;
+            var currentCulture = CultureInfo.CurrentCulture.Name;
+            
+            // Si la culture actuelle n'est pas "fr", changer automatiquement vers "fr"
+            if (currentCulture != "fr")
+            {
+                SelectedCulture = "fr";
+                var uri = new Uri(Navigation.Uri).GetComponents(UriComponents.PathAndQuery, UriFormat.Unescaped);
+                var cultureEscaped = Uri.EscapeDataString("fr");
+                var uriEscaped = Uri.EscapeDataString(uri);
+                Navigation.NavigateTo($"Culture/Set?culture={cultureEscaped}&redirectUri={uriEscaped}", forceLoad: true);
+            }
+        }
     }
 
     private void OnCultureChanged()
