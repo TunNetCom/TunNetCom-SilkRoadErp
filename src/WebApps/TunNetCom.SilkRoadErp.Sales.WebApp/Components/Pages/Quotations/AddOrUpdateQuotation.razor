@@ -1,0 +1,480 @@
+@page "/AddOrUpdateQuotation"
+@page "/AddOrUpdateQuotation/{num?}"
+
+@using Radzen.Blazor
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Quotations
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Sorting
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Quotations
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
+
+@inject IStringLocalizer<SharedResource> Localizer
+@inject NotificationService NotificationService
+@inject IQuotationApiClient quotationApiClient
+@inject IProductsApiClient productsApiClient
+@inject ICustomersApiClient customersApiClient
+@inject IAppParametersClient appParametersClient
+@inject ILogger<AddOrUpdateQuotation> logger
+@inject DialogService DialogService
+
+<style>
+    .quotation-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .quotation-form {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        flex-wrap: wrap;
+        flex-grow: 1;
+    }
+</style>
+
+<!-- Loading Indicator -->
+@if (isLoading)
+{
+    <RadzenProgressBarCircular ProgressBarStyle="ProgressBarStyle.Primary" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+}
+else
+{
+    <!-- Quotation Container with Form -->
+    <div class="quotation-container">
+        <div class="quotation-form">
+            <RadzenLabel Text="Numéro" Component="QuotationNumber" AriaLabel="Numéro" />
+            <RadzenTextBox @bind-Value="quotationNumber" Name="QuotationNumber" Style="width: 120px;" ReadOnly="true" AriaReadOnly="true" />
+
+            <RadzenLabel Text="@Localizer["date"]" />
+            <RadzenDatePicker @bind-Value="quotationDate" Name="QuotationDate" Style="width: 200px;" DateFormat="d MMMM yyyy" ShowTime="false" />
+
+            <RadzenLabel Text="@Localizer["customer"]" />
+            <RadzenDropDownDataGrid AllowClear="true"
+                                    IsLoading="@isLoadingCustomers"
+                                    @bind-Value="@selectedCustomerId"
+                                    LoadData="@LoadCustomers"
+                                    AllowFiltering="true"
+                                    Style="width: 350px;"
+                                    Data="@_filteredCustomers"
+                                    TextProperty="@nameof(CustomerResponse.Name)"
+                                    ValueProperty="@nameof(CustomerResponse.Id)"
+                                    Placeholder="@Localizer["select_customer"]">
+                <Columns>
+                    <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Id)" Title="ID" Width="80px" />
+                    <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Name)" Title="@Localizer["name"]" Width="220px" />
+                </Columns>
+            </RadzenDropDownDataGrid>
+        </div>
+    </div>
+
+    <!-- Order Lines Grid -->
+    <LineItemsGrid TItem="QuotationDetailResponse"
+                   Items="@orders"
+                   ItemsChanged="@OnItemsChanged"
+                   OnDeleteItem="@DeleteRow"
+                   OnProductSelectedCallback="@OnProductSelectedHandler"
+                   LoadProducts="@LoadData"
+                   GetProductList="@GetCurrentProductList"
+                   ProductCount="@count"
+                   AppParameters="@getAppParametersResponse"
+                   OnShowPriceHistory="@ShowDialog"
+                   ShowPriceHistoryDialog="true"
+                   ShowPrintButton="false"
+                   ShowSaveButton="true"
+                   ShowSummary="true"
+                   OnSave="@SaveQuotation"
+                   TotalHt="@totalHt"
+                   TotalVat="@totalVat"
+                   TotalTtc="@totalTtc"
+                   Localizer="@Localizer"
+                   GetProductReference="@(item => item.ProductReference)"
+                   SetProductReference="@((item, value) => item.ProductReference = value)"
+                   GetProductDescription="@(item => item.Description)"
+                   SetProductDescription="@((item, value) => item.Description = value)"
+                   ProductTextProperty="ProductReferenceAndDescription"
+                   ProductValueProperty="ProductReference"
+                   CreateNewItem="@(() => new QuotationDetailResponse { Quantity = 1 })" />
+}
+
+@code {
+    [Parameter] public string? num { get; set; }
+    List<QuotationDetailResponse> orders;
+    List<QuotationDetailResponse> searchList;
+    int count;
+    private const int DefaultPageSize = 7;
+    private CancellationTokenSource _cancellationTokenSource = new();
+    private List<CustomerResponse> _filteredCustomers { get; set; } = new();
+    private bool isLoading = true;
+    bool isLoadingCustomers = false;
+    decimal totalHt;
+    decimal totalVat;
+    decimal totalTtc;
+    string quotationNumber;
+    DateTime quotationDate = DateTime.Now;
+    private GetAppParametersResponse getAppParametersResponse;
+    private int? selectedCustomerId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        searchList = new List<QuotationDetailResponse>();
+        var param = await appParametersClient.GetAppParametersAsync(_cancellationTokenSource.Token);
+        getAppParametersResponse = param.AsT0;
+        await LoadCustomers(null);
+        await FetchQuotation();
+        isLoading = false;
+    }
+
+    private async Task SaveQuotation()
+    {
+        try
+        {
+            if (!selectedCustomerId.HasValue)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = $"{Localizer["select_customer"]}"
+                });
+                return;
+            }
+            isLoading = true;
+            StateHasChanged();
+
+            var request = new CreateQuotationRequest
+            {
+                IdClient = selectedCustomerId.Value,
+                Date = quotationDate,
+                TotHTva = totalHt,
+                TotTva = totalVat,
+                TotTtc = totalTtc,
+                Items = orders.Select(o => new QuotationItemRequest
+                {
+                    Id = o.Id,
+                    ProductReference = o.ProductReference,
+                    Description = o.Description,
+                    Quantity = o.Quantity,
+                    UnitPriceExcludingTax = o.UnitPriceExcludingTax,
+                    DiscountPercentage = o.DiscountPercentage,
+                    TotalExcludingTax = o.TotalExcludingTax,
+                    VatPercentage = o.VatPercentage,
+                    TotalIncludingTax = o.TotalIncludingTax
+                }).ToList()
+            };
+
+            // Check if we're in edit mode (quotation number exists)
+            int quotationNum = 0;
+            bool isEditMode = !string.IsNullOrEmpty(quotationNumber) && int.TryParse(quotationNumber, out quotationNum);
+            
+            if (isEditMode)
+            {
+                // Update existing quotation
+                var updateRequest = new UpdateQuotationRequest
+                {
+                    Num = quotationNum,
+                    IdClient = selectedCustomerId.Value,
+                    Date = quotationDate,
+                    TotHTva = totalHt,
+                    TotTva = totalVat,
+                    TotTtc = totalTtc,
+                    Items = request.Items
+                };
+
+                var updateResponse = await quotationApiClient.UpdateQuotationAsync(quotationNum, updateRequest, _cancellationTokenSource.Token);
+                
+                if (updateResponse.IsSuccess)
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = Localizer["success"],
+                        Detail = "Devis mis à jour avec succès"
+                    });
+                }
+                else
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = Localizer["error"],
+                        Detail = $"Échec de la mise à jour du devis: {updateResponse.Errors.First().Message}"
+                    });
+                }
+            }
+            else
+            {
+                // Create new quotation
+                var createResponse = await quotationApiClient.CreateQuotationAsync(request, _cancellationTokenSource.Token);
+                
+                if (createResponse.IsSuccess)
+                {
+                    quotationNumber = createResponse.ValueOrDefault.ToString();
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = Localizer["success"],
+                        Detail = "Devis créé avec succès"
+                    });
+                }
+                else
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = Localizer["error"],
+                        Detail = $"Échec de la création du devis: {createResponse.Errors.First().Message}"
+                    });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Échec de l'enregistrement du devis: {ex.Message}"
+            });
+            logger.LogError(ex, "Failed to save quotation");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task FetchQuotation()
+    {
+        if (string.IsNullOrEmpty(num))
+        {
+            orders = new List<QuotationDetailResponse>();
+            totalHt = 0;
+            totalVat = 0;
+            totalTtc = 0;
+            return;
+        }
+
+        try
+        {
+            if (int.TryParse(num, out var numAsInt))
+            {
+                var quotationResult = await quotationApiClient.GetQuotationByIdAsync(
+                    numAsInt,
+                    _cancellationTokenSource.Token);
+
+                if (quotationResult.IsSuccess && quotationResult.Value != null)
+                {
+                    var quotation = quotationResult.Value;
+                    quotationNumber = quotation.Num.ToString();
+                    quotationDate = quotation.Date;
+                    selectedCustomerId = quotation.CustomerId;
+
+                    if (quotation.Items != null && quotation.Items.Any())
+                    {
+                        orders = quotation.Items;
+                    }
+                    else
+                    {
+                        orders = new List<QuotationDetailResponse>();
+                    }
+
+                    totalHt = quotation.TotalExcludingTax;
+                    totalVat = quotation.TotalVat;
+                    totalTtc = quotation.TotalAmount;
+                }
+            }
+
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception e)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Échec du chargement du devis: {e.Message}"
+            });
+
+            logger.LogError(e, "Failed to fetch quotation");
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    async Task DeleteRow(QuotationDetailResponse order)
+    {
+        if (orders.Contains(order))
+        {
+            orders.Remove(order);
+        }
+        else if (order.Id > 0)
+        {
+            var itemToRemove = orders.FirstOrDefault(t => t.Id == order.Id && t.Id > 0);
+            if (itemToRemove != null)
+            {
+                orders.Remove(itemToRemove);
+            }
+        }
+
+        UpdateTotals();
+        await OnItemsChanged(orders);
+        StateHasChanged();
+    }
+
+    private List<QuotationDetailResponse> GetCurrentProductList(QuotationDetailResponse currentOrder)
+    {
+        var resultList = new List<QuotationDetailResponse>();
+        
+        if (!string.IsNullOrEmpty(currentOrder.ProductReference))
+        {
+            var currentProduct = searchList.FirstOrDefault(p => p.ProductReference == currentOrder.ProductReference);
+            
+            if (currentProduct != null)
+            {
+                resultList.Add(currentProduct);
+            }
+            else
+            {
+                resultList.Add(new QuotationDetailResponse
+                {
+                    ProductReference = currentOrder.ProductReference,
+                    Description = currentOrder.Description,
+                    UnitPriceExcludingTax = currentOrder.UnitPriceExcludingTax,
+                    Quantity = 1
+                });
+            }
+            
+            resultList.AddRange(searchList.Where(p => p.ProductReference != currentOrder.ProductReference));
+        }
+        else
+        {
+            resultList.AddRange(searchList);
+        }
+        
+        return resultList;
+    }
+
+    async Task LoadData(LoadDataArgs args)
+    {
+        string _sortProperty = null;
+        string _sortOrder = null;
+        if (args.Sorts != null && args.Sorts.Any())
+        {
+            var sort = args.Sorts.First();
+            _sortProperty = sort.Property;
+            _sortOrder = sort.SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending;
+        }
+        var parameters = new QueryStringParameters
+        {
+            PageNumber = (args.Skip.Value / DefaultPageSize) + 1,
+            PageSize = DefaultPageSize,
+            SearchKeyword = args.Filter,
+            SortOrder = _sortOrder,
+            SortProprety = _sortProperty
+        };
+
+        try
+        {
+            var pagedProducts = await productsApiClient.GetPagedAsync(parameters, _cancellationTokenSource.Token);
+            searchList = pagedProducts.Items.Select(
+                p => new QuotationDetailResponse
+                {
+                    ProductReference = p.Reference,
+                    Description = p.Name,
+                    UnitPriceExcludingTax = p.Price,
+                    Quantity = 1,
+                    DiscountPercentage = p.DiscountPourcentage,
+                    VatPercentage = p.VatRate,
+                }).ToList();
+
+            count = pagedProducts.TotalCount;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"{Localizer["failed_to_load_products"]}: {ex.Message}"
+            });
+            searchList = new List<QuotationDetailResponse>();
+            count = 0;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task LoadCustomers(LoadDataArgs args)
+    {
+        isLoadingCustomers = true;
+        var parameters = new QueryStringParameters
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            SearchKeyword = args?.Filter ?? string.Empty
+        };
+
+        try
+        {
+            var pagedCustomers = await customersApiClient.GetAsync(parameters, _cancellationTokenSource.Token);
+            _filteredCustomers = pagedCustomers.Items;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"{Localizer["failed_to_load_customers"]}: {ex.Message}"
+            });
+            _filteredCustomers = new List<CustomerResponse>();
+        }
+
+        isLoadingCustomers = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task OnProductSelectedHandler(QuotationDetailResponse order)
+    {
+        UpdateTotals();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task OnItemsChanged(List<QuotationDetailResponse> items)
+    {
+        orders = items;
+        UpdateTotals();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void UpdateTotals()
+    {
+        LineItemCalculator.UpdateTotals(orders, out totalHt, out totalVat, out totalTtc);
+    }
+
+    public async Task ShowDialog(string ProductReference)
+    {
+        await DialogService.OpenAsync<ProductHistoryDialog>($"{Localizer["history"]} {Localizer["article"]} {ProductReference}",
+            new Dictionary<string, object>() { { "ProductReference", ProductReference } },
+            new DialogOptions()
+            {
+                Resizable = true,
+                Draggable = true,
+                Width = "700px",
+                Height = "512px"
+            });
+    }
+}
+

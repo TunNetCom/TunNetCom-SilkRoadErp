@@ -10,13 +10,26 @@ public class UpdatePriceQuoteEndpoint : ICarterModule
             UpdateQuotationRequest request,
             CancellationToken cancellationToken) =>
         {
+            var quotationLines = request.Items.Select(item => new CreatePriceQuote.LigneDevisSubCommand
+            {
+                RefProduit = item.ProductReference,
+                DesignationLi = item.Description,
+                QteLi = item.Quantity,
+                PrixHt = item.UnitPriceExcludingTax,
+                Remise = item.DiscountPercentage,
+                TotHt = item.TotalExcludingTax,
+                Tva = item.VatPercentage,
+                TotTtc = item.TotalIncludingTax
+            });
+
             var updatePriceQuoteCommand = new UpdatePriceQuoteCommand(
                 Num: num,
                 IdClient: request.IdClient,
                 Date: request.Date,
                 TotHTva: request.TotHTva,
                 TotTva: request.TotTva,
-                TotTtc: request.TotTtc);
+                TotTtc: request.TotTtc,
+                QuotationLines: quotationLines);
 
             var updateQuotationResult = await mediator.Send(updatePriceQuoteCommand, cancellationToken);
 

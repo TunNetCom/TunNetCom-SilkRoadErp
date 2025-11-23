@@ -1,11 +1,7 @@
-﻿
-namespace TunNetCom.SilkRoadErp.Sales.Contracts.Quotations;
+﻿namespace TunNetCom.SilkRoadErp.Sales.Contracts.Quotations;
 
 public class CreateQuotationRequest
 {
-    [JsonPropertyName("num")]
-    public int Num { get; set; }
-
     [JsonPropertyName("idClient")]
     public int IdClient { get; set; }
 
@@ -20,4 +16,7 @@ public class CreateQuotationRequest
 
     [JsonPropertyName("TotTtc")]
     public decimal TotTtc { get; set; }
+
+    [JsonPropertyName("items")]
+    public List<QuotationItemRequest> Items { get; set; } = new();
 }

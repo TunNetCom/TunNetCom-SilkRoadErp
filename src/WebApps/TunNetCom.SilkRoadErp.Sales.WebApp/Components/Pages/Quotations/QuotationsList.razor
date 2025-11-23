@@ -1,0 +1,428 @@
+@page "/quotations"
+@page "/devis"
+
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Quotations
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Quotations
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@inject IQuotationApiClient QuotationService
+@inject ICustomersApiClient CustomersService
+@inject IStringLocalizer<SharedResource> Localizer
+@inject ILogger<QuotationsList> _logger
+@using Radzen.Blazor
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@inject NavigationManager NavigationManager
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Common
+
+<div class="quotations-list-container">
+    <div class="search-header">
+        <PeriodFilter @bind-SelectedPeriod="searchCriteria.PeriodFilter"
+                     @bind-StartDate="searchCriteria.StartDate"
+                     @bind-EndDate="searchCriteria.EndDate"
+                     OnPeriodChanged="@OnPeriodFilterChanged" />
+        <div class="search-field">
+            <label for="customer">Client</label>
+            <RadzenDropDownDataGrid id="customer"
+                                    AllowClear="true"
+                                    @bind-Value="@searchCriteria.SelectedCustomerId"
+                                    LoadData="@LoadCustomers"
+                                    AllowFiltering="true"
+                                    class="w-100 search-input"
+                                    Data="@_filteredCustomers"
+                                    TextProperty="@nameof(CustomerResponse.Name)"
+                                    ValueProperty="@nameof(CustomerResponse.Id)"
+                                    Placeholder="Sélectionner un client">
+                <Columns>
+                    <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Id)" Title="ID" Width="80px" />
+                    <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Name)" Title="@Localizer["name"]" Width="220px" />
+                </Columns>
+            </RadzenDropDownDataGrid>
+        </div>
+        <div class="search-button">
+            <RadzenButton Text="@Localizer["search"]"
+                          Icon="search"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Click="@SearchQuotations"
+                          class="action-button" />
+        </div>
+        <div class="search-button">
+            <RadzenButton Text="Nouveau devis"
+                          Icon="add"
+                          ButtonStyle="ButtonStyle.Success"
+                          Click="@CreateNewQuotation"
+                          class="action-button" />
+        </div>
+    </div>
+    <div class="list-card">
+        <h2>Devis</h2>
+        <RadzenDataGrid Data="@quotationsList"
+                        LoadData="@Callback"
+                        TItem="QuotationResponse"
+                        AllowSorting="true"
+                        AllowFiltering="true"
+                        AllowPaging="true"
+                        PageSize="15"
+                        Count="@totalCount"
+                        AllowColumnResize="true">
+            <EmptyTemplate>
+                <p style="font-size: 24px; text-align: center; margin: 2rem;">Aucun devis à afficher.</p>
+            </EmptyTemplate>
+            <Columns>
+                <RadzenDataGridColumn TItem="QuotationResponse"
+                                      Property="@nameof(QuotationResponse.Num)"
+                                      Title="Numéro"
+                                      Width="150px" />
+                <RadzenDataGridColumn TItem="QuotationResponse"
+                                      Property="@nameof(QuotationResponse.Date)"
+                                      Title="@Localizer["date"]"
+                                      Width="150px"
+                                      FormatString="{0:d MMMM yyyy}" />
+                <RadzenDataGridColumn TItem="QuotationResponse"
+                                      Property="@nameof(QuotationResponse.TotHTva)"
+                                      Title="@Localizer["total_net"]"
+                                      Width="150px">
+                    <Template Context="item">
+                        @item.TotHTva.FormatAmount()
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="QuotationResponse"
+                                      Property="@nameof(QuotationResponse.TotTva)"
+                                      Title="@Localizer["total_vat"]"
+                                      Width="150px">
+                    <Template Context="item">
+                        @item.TotTva.FormatAmount()
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="QuotationResponse"
+                                      Property="@nameof(QuotationResponse.TotTtc)"
+                                      Title="@Localizer["tot_ttc"]"
+                                      Width="150px">
+                    <Template Context="item">
+                        @item.TotTtc.FormatAmount()
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="QuotationResponse"
+                                      Title="@Localizer["actions_label"]"
+                                      Width="100px"
+                                      Sortable="false"
+                                      Filterable="false">
+                    <Template Context="item">
+                        <RadzenButton Icon="edit"
+                                      ButtonStyle="ButtonStyle.Primary"
+                                      Variant="Variant.Flat"
+                                      Size="ButtonSize.Small"
+                                      Click="@(() => ViewQuotation(item.Num.ToString()))"
+                                      Title="Modifier"
+                                      AriaLabel="Modifier" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+        <RadzenCard class="summary-card" Variant="Variant.Outlined">
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal"
+                         Gap="1.5rem"
+                         JustifyContent="JustifyContent.End"
+                         class="summary-stack">
+                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                    @Localizer["total_net"]: <strong>@totalNetAmount.FormatAmount()</strong>
+                </RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                    @Localizer["total_vat"]: <strong>@totalVatAmount.FormatAmount()</strong>
+                </RadzenText>
+            </RadzenStack>
+        </RadzenCard>
+    </div>
+</div>
+
+<style>
+    .quotations-list-container {
+        padding: 0;
+        min-height: 100%;
+    }
+
+    .list-card {
+        width: 100%;
+        margin: 0;
+    }
+
+    h2 {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 20px;
+        margin: 0 0 16px 0;
+        padding: 0;
+    }
+
+    .action-button {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 6px 12px;
+        border-radius: 6px;
+        background-color: #3b82f6;
+        border: none;
+        transition: background-color 0.2s, box-shadow 0.2s;
+    }
+
+        .action-button:hover:not(:disabled) {
+            background-color: #2563eb;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .action-button:disabled {
+            background-color: #d1d5db;
+            cursor: not-allowed;
+        }
+
+    .search-header {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+        margin: 0 0 16px 0;
+        align-items: end;
+        padding: 0;
+    }
+
+    .search-field {
+        display: flex;
+        flex-direction: column;
+    }
+
+        .search-field label {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+
+    .search-input {
+        width: 100% !important;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        padding: 8px;
+        font-size: 14px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+        .search-input:hover {
+            border-color: #9ca3af;
+        }
+
+        .search-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            outline: none;
+        }
+
+    .search-button {
+        display: flex;
+        align-items: flex-end;
+    }
+
+    .summary-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 8px 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        flex: 0 0 auto;
+    }
+
+    .summary-stack {
+        gap: 1.5rem;
+    }
+
+    .summary-text {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+        .summary-text strong {
+            font-weight: 600;
+        }
+
+    @@media (max-width: 768px) {
+        .quotations-list-container {
+            padding: 8px 12px;
+        }
+
+        h2 {
+            font-size: 18px;
+        }
+
+        .action-button {
+            font-size: 12px;
+            padding: 6px 10px;
+        }
+
+        .search-header {
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .search-field {
+            min-width: 100%;
+        }
+
+            .search-field label {
+                font-size: 12px;
+            }
+
+        .search-input {
+            font-size: 13px;
+            padding: 6px;
+        }
+    }
+</style>
+
+@code {
+    private List<QuotationResponse> quotationsList = new();
+    private int totalCount = 0;
+    private decimal totalNetAmount = 0;
+    private decimal totalVatAmount = 0;
+    private const int DefaultPageSize = 15;
+    private SearchCriteria searchCriteria = new SearchCriteria();
+    private List<CustomerResponse> _filteredCustomers = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _logger.LogInformation("QuotationsList.OnInitializedAsync called");
+        
+        await LoadCustomers(new LoadDataArgs { Filter = string.Empty });
+
+        // Set default period to CurrentMonth and calculate dates
+        searchCriteria.PeriodFilter = "CurrentMonth";
+        var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
+            searchCriteria.PeriodFilter, 
+            searchCriteria.StartDate, 
+            searchCriteria.EndDate);
+        searchCriteria.StartDate = startDate;
+        searchCriteria.EndDate = endDate;
+
+        // Load initial data
+        _logger.LogInformation("Calling Callback to load initial data");
+        await Callback(new LoadDataArgs { Skip = 0, Top = DefaultPageSize });
+    }
+
+    async Task LoadCustomers(LoadDataArgs args)
+    {
+        var parameters = new QueryStringParameters
+        {
+            PageNumber = 1,
+            PageSize = 7,
+            SearchKeyword = args?.Filter ?? string.Empty
+        };
+
+        try
+        {
+            var pagedCustomers = await CustomersService.SearchCustomers(parameters, default);
+            _filteredCustomers = pagedCustomers.Items.ToList();
+        }
+        catch (Exception ex)
+        {
+            _filteredCustomers = new List<CustomerResponse>();
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void ViewQuotation(string id)
+    {
+        NavigationManager.NavigateTo($"/AddOrUpdateQuotation/{id}");
+    }
+
+    private void CreateNewQuotation()
+    {
+        NavigationManager.NavigateTo("/AddOrUpdateQuotation");
+    }
+
+    private async Task SearchQuotations()
+    {
+        await Callback(new LoadDataArgs { Skip = 0, Top = DefaultPageSize });
+    }
+
+    private async Task OnPeriodFilterChanged()
+    {
+        var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
+            searchCriteria.PeriodFilter,
+            searchCriteria.StartDate,
+            searchCriteria.EndDate);
+        searchCriteria.StartDate = startDate;
+        searchCriteria.EndDate = endDate;
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task Callback(LoadDataArgs args)
+    {
+        _logger.LogInformation("QuotationsList.Callback called with Skip: {Skip}, Top: {Top}", args.Skip, args.Top);
+        
+        var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
+            searchCriteria.PeriodFilter,
+            searchCriteria.StartDate,
+            searchCriteria.EndDate);
+
+        _logger.LogInformation("Date range: StartDate: {StartDate}, EndDate: {EndDate}", startDate, endDate);
+
+        try
+        {
+            var pageNumber = (args.Skip ?? 0) / DefaultPageSize + 1;
+            var pageSize = args.Top ?? DefaultPageSize;
+
+            var parameters = new QueryStringParameters
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                SearchKeyword = args.Filter
+            };
+
+            var pagedQuotations = await QuotationService.GetQuotationsAsync(parameters, default);
+
+            // Filter by date range and customer
+            var filtered = pagedQuotations.Items.AsQueryable();
+
+            if (startDate.HasValue)
+            {
+                filtered = filtered.Where(q => q.Date >= startDate.Value);
+            }
+
+            if (endDate.HasValue)
+            {
+                filtered = filtered.Where(q => q.Date <= endDate.Value);
+            }
+
+            if (searchCriteria.SelectedCustomerId.HasValue)
+            {
+                filtered = filtered.Where(q => q.IdClient == searchCriteria.SelectedCustomerId.Value);
+            }
+
+            quotationsList = filtered.ToList();
+            totalCount = quotationsList.Count;
+
+            // Calculate totals
+            totalNetAmount = quotationsList.Sum(q => q.TotHTva);
+            totalVatAmount = quotationsList.Sum(q => q.TotTva);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading quotations");
+            quotationsList = new List<QuotationResponse>();
+            totalCount = 0;
+            totalNetAmount = 0;
+            totalVatAmount = 0;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private class SearchCriteria
+    {
+        public string PeriodFilter { get; set; } = "CurrentMonth";
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public int? SelectedCustomerId { get; set; }
+    }
+}
+

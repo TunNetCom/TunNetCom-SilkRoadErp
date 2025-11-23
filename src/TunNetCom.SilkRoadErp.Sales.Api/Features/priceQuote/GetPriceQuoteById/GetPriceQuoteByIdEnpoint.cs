@@ -1,10 +1,12 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.priceQuote.GetPriceQuoteById
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.Quotations;
+
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.priceQuote.GetPriceQuoteById
 {
     public class GetPriceQuoteByIdEnpoint : ICarterModule
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            _ = app.MapGet("/quotations/{num:int}", async Task<Results<Ok<QuotationResponse>, NotFound>> (
+            _ = app.MapGet("/quotations/{num:int}", async Task<Results<Ok<FullQuotationResponse>, NotFound>> (
             IMediator mediator,
             int num,
             CancellationToken cancellationToken) =>

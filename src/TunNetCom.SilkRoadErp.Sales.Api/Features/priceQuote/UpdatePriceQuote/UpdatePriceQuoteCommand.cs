@@ -6,5 +6,6 @@ public record UpdatePriceQuoteCommand(
     DateTime Date,
     decimal TotHTva,
     decimal TotTva,
-    decimal TotTtc
+    decimal TotTtc,
+    IEnumerable<CreatePriceQuote.LigneDevisSubCommand> QuotationLines
  ) : IRequest<Result>;

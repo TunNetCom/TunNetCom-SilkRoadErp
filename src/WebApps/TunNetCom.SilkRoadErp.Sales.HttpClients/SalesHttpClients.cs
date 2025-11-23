@@ -8,6 +8,7 @@ using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Orders;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProviderInvoice;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Quotations;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote;
 
 
@@ -66,6 +67,10 @@ public static class SalesHttpClients
         _ = services.AddHttpClient<IAccountingYearApiClient, AccountingYearApiClient>(accountingYear =>
         {
             accountingYear.BaseAddress = new Uri(baseUrl);
+        });
+        _ = services.AddHttpClient<IQuotationApiClient, QuotationApiClient>(quotation =>
+        {
+            quotation.BaseAddress = new Uri(baseUrl);
         });
     }
 }

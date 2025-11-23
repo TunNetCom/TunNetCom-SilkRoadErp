@@ -4,8 +4,6 @@ public class CreatePriceQuoteValidator : AbstractValidator<CreatePriceQuoteComma
 {
     public CreatePriceQuoteValidator()
     {
-        _ = RuleFor(x => x.Num)
-            .NotEmpty().WithMessage("num_is_required");
 
         _ = RuleFor(x => x.IdClient)
             .NotEmpty().WithMessage("client_id_is_required");

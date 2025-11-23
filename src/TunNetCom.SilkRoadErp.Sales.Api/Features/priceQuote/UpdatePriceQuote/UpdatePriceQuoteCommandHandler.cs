@@ -17,23 +17,15 @@ public class UpdatePriceQuoteCommandHandler : IRequestHandler<UpdatePriceQuoteCo
     {
         _logger.LogEntityUpdateAttempt(nameof(Devis), updatePriceQuoteCommand.Num);
 
-        // Chercher le devis à mettre à jour
-        var quotationToUpdate = await _context.Devis.FindAsync(new object[] { updatePriceQuoteCommand.Num }, cancellationToken);
+        // Chercher le devis à mettre à jour avec ses lignes
+        var quotationToUpdate = await _context.Devis
+            .Include(d => d.LigneDevis)
+            .FirstOrDefaultAsync(d => d.Num == updatePriceQuoteCommand.Num, cancellationToken);
 
         if (quotationToUpdate is null)
         {
             _logger.LogEntityNotFound(nameof(Devis), updatePriceQuoteCommand.Num);
             return Result.Fail(EntityNotFound.Error());
-        }
-
-        // Vérifier qu’aucun autre devis (différent) n’a le même numéro
-        var isQuotationNumExist = await _context.Devis.AnyAsync(
-            quo => quo.Num == updatePriceQuoteCommand.Num && quo.Num != quotationToUpdate.Num,
-            cancellationToken);
-
-        if (isQuotationNumExist)
-        {
-            return Result.Fail("quotation_num_exist");
         }
 
         // Mettre à jour les propriétés
@@ -44,6 +36,28 @@ public class UpdatePriceQuoteCommandHandler : IRequestHandler<UpdatePriceQuoteCo
             totHTva: updatePriceQuoteCommand.TotHTva,
             totTva: updatePriceQuoteCommand.TotTva,
             totTtc: updatePriceQuoteCommand.TotTtc);
+
+        // Supprimer les anciennes lignes
+        _context.LigneDevis.RemoveRange(quotationToUpdate.LigneDevis);
+
+        // Ajouter les nouvelles lignes
+        foreach (var quotationLine in updatePriceQuoteCommand.QuotationLines)
+        {
+            var ligneDevis = new LigneDevis
+            {
+                RefProduit = quotationLine.RefProduit,
+                DesignationLi = quotationLine.DesignationLi,
+                QteLi = quotationLine.QteLi,
+                PrixHt = quotationLine.PrixHt,
+                Remise = quotationLine.Remise,
+                TotHt = quotationLine.TotHt,
+                Tva = quotationLine.Tva,
+                TotTtc = quotationLine.TotTtc,
+                NumDevisNavigation = quotationToUpdate
+            };
+
+            quotationToUpdate.LigneDevis.Add(ligneDevis);
+        }
 
         _ = await _context.SaveChangesAsync(cancellationToken);
 

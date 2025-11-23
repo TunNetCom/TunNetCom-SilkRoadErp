@@ -19,4 +19,7 @@ public class UpdateQuotationRequest
 
     [JsonPropertyName("TotTtc")]
     public decimal TotTtc { get; set; }
+
+    [JsonPropertyName("items")]
+    public List<QuotationItemRequest> Items { get; set; } = new();
 }

@@ -11,14 +11,26 @@ public class CreatePriceQuoteEnpoint : ICarterModule
                CreateQuotationRequest request,
                CancellationToken cancellationToken) =>
            {
+               var quotationLines = request.Items.Select(item => new LigneDevisSubCommand
+               {
+                   RefProduit = item.ProductReference,
+                   DesignationLi = item.Description,
+                   QteLi = item.Quantity,
+                   PrixHt = item.UnitPriceExcludingTax,
+                   Remise = item.DiscountPercentage,
+                   TotHt = item.TotalExcludingTax,
+                   Tva = item.VatPercentage,
+                   TotTtc = item.TotalIncludingTax
+               });
+
                var createPriceQuoteCommand = new CreatePriceQuoteCommand
                (
-                   Num: request.Num,
                    IdClient: request.IdClient,
                    Date: request.Date,
-                   TotHTva: request.TotTva,
+                   TotHTva: request.TotHTva,
                    TotTva: request.TotTva,
-                   TotTtc: request.TotTtc
+                   TotTtc: request.TotTtc,
+                   QuotationLines: quotationLines
                    );
 
                var result = await mediator.Send(createPriceQuoteCommand, cancellationToken);

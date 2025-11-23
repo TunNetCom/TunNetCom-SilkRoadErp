@@ -1,6 +1,8 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.priceQuote.GetPriceQuoteById;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.Quotations;
 
-public class GetPriceQuoteByIdQuery : IRequest<Result<QuotationResponse>>
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.priceQuote.GetPriceQuoteById;
+
+public class GetPriceQuoteByIdQuery : IRequest<Result<FullQuotationResponse>>
 {
     public int Num { get; set; }
 
