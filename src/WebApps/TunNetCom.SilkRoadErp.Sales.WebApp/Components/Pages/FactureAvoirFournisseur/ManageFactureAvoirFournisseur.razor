@@ -1,0 +1,21 @@
+@page "/manage-facture-avoir-fournisseur"
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using Radzen.Blazor
+@inject IStringLocalizer<SharedResource> Localizer
+@inject NavigationManager NavigationManager
+
+<RadzenCard>
+    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
+        <RadzenText TextStyle="TextStyle.H3">Gérer les factures avoir fournisseur</RadzenText>
+        <RadzenText TextStyle="TextStyle.Body1">
+            Créer et modifier les factures avoir fournisseur.
+        </RadzenText>
+        <RadzenButton Text="Ajouter facture avoir fournisseur" 
+                      Icon="add" 
+                      ButtonStyle="ButtonStyle.Primary" 
+                      Click="@(() => NavigationManager.NavigateTo("/AddOrUpdateFactureAvoirFournisseur"))"
+                      Size="ButtonSize.Large" />
+    </RadzenStack>
+</RadzenCard>
+

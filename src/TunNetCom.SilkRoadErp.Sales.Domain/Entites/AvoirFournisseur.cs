@@ -7,6 +7,35 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 public partial class AvoirFournisseur
 {
+    public static AvoirFournisseur CreateAvoirFournisseur(
+        DateTime date,
+        int? fournisseurId,
+        int? numFactureAvoirFournisseur,
+        int accountingYearId)
+    {
+        return new AvoirFournisseur
+        {
+            Date = date,
+            FournisseurId = fournisseurId,
+            NumFactureAvoirFournisseur = numFactureAvoirFournisseur,
+            AccountingYearId = accountingYearId
+        };
+    }
+
+    public void UpdateAvoirFournisseur(
+        DateTime date,
+        int? fournisseurId,
+        int? numFactureAvoirFournisseur,
+        int accountingYearId)
+    {
+        this.Date = date;
+        this.FournisseurId = fournisseurId;
+        this.NumFactureAvoirFournisseur = numFactureAvoirFournisseur;
+        this.AccountingYearId = accountingYearId;
+    }
+
+    public int Id { get; set; }
+
     public int Num { get; set; }
 
     public DateTime Date { get; set; }
@@ -17,7 +46,11 @@ public partial class AvoirFournisseur
 
     public int NumAvoirFournisseur { get; set; }
 
+    public int AccountingYearId { get; set; }
+
     public virtual Fournisseur? Fournisseur { get; set; }
+
+    public virtual AccountingYear AccountingYear { get; set; } = null!;
 
     public virtual ICollection<LigneAvoirFournisseur> LigneAvoirFournisseur { get; set; } = new List<LigneAvoirFournisseur>();
 

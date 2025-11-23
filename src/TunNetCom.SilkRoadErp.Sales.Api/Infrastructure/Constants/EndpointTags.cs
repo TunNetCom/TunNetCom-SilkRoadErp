@@ -13,6 +13,9 @@ public static class EndpointTags
     public const string ProviderInvoices = "ProviderInvoices";
     public const string ProviderReceiptNoteLines = "ProviderReceiptNoteLines";
     public const string AppParameters = "AppParameters";
+    public const string Avoirs = "Avoirs";
+    public const string AvoirFournisseur = "AvoirFournisseur";
+    public const string FactureAvoirFournisseur = "FactureAvoirFournisseur";
 }
 
 

@@ -1,0 +1,534 @@
+@page "/AddOrUpdateAvoirFournisseur"
+@page "/AddOrUpdateAvoirFournisseur/{num?}"
+
+@using Radzen.Blazor
+@using Microsoft.Extensions.Localization
+@using Microsoft.JSInterop
+@using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters
+@using TunNetCom.SilkRoadErp.Sales.Contracts.AvoirFournisseur
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Sorting
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AvoirFournisseur
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.FactureAvoirFournisseur
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.AvoirFournisseur
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Providers
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Common
+
+@inject IStringLocalizer<SharedResource> Localizer
+@inject NotificationService NotificationService
+@inject IJSRuntime JSRuntime
+@inject IAvoirFournisseurApiClient avoirFournisseurApiClient
+@inject IProductsApiClient productsApiClient
+@inject IProvidersApiClient providersApiClient
+@inject IAppParametersClient appParametersClient
+@inject ILogger<AddOrUpdateAvoirFournisseur> logger
+@inject DialogService DialogService
+
+<style>
+    .header-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 24px;
+        border-bottom: 1px solid #e5e7eb;
+        width: 100%;
+    }
+
+    .action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .action-button {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 8px 12px;
+        border-radius: 6px;
+        transition: background-color 0.2s, box-shadow 0.2s;
+        background-color: #3b82f6;
+        border: none;
+    }
+
+        .action-button:hover:not(:disabled) {
+            background-color: #2563eb;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .action-button:disabled {
+            background-color: #d1d5db;
+            cursor: not-allowed;
+        }
+
+    .summary-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 8px 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        flex: 0 0 auto;
+    }
+
+    .summary-stack {
+        gap: 1.5rem;
+    }
+
+    .summary-text {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+        .summary-text strong {
+            font-weight: 600;
+        }
+
+    .avoir-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .avoir-form {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        flex-wrap: wrap;
+        flex-grow: 1;
+    }
+</style>
+
+<!-- Loading Indicator -->
+@if (isLoading)
+{
+    <RadzenProgressBarCircular ProgressBarStyle="ProgressBarStyle.Primary" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+}
+else
+{
+    <!-- Avoir Fournisseur Container with Form and Summary -->
+    <div class="avoir-container">
+        <div class="avoir-form">
+            <RadzenLabel Text="Numéro avoir fournisseur" Component="AvoirFournisseurNumber" AriaLabel="Numéro avoir fournisseur" />
+            <RadzenTextBox @bind-Value="avoirFournisseurNumber" Name="AvoirFournisseurNumber" Style="width: 120px;" ReadOnly="true" AriaReadOnly="true" />
+
+            <RadzenLabel Text="@Localizer["date"]" />
+            <RadzenDatePicker @bind-Value="avoirFournisseurDate" Name="AvoirFournisseurDate" Style="width: 200px;" DateFormat="d MMMM yyyy" ShowTime="false" />
+
+            <RadzenLabel Text="Fournisseur" />
+            <RadzenDropDownDataGrid AllowClear="true"
+                                    IsLoading="@isLoadingProviders"
+                                    @bind-Value="@selectedFournisseurId"
+                                    LoadData="@LoadProviders"
+                                    AllowFiltering="true"
+                                    Style="width: 350px;"
+                                    Data="@_filteredProviders"
+                                    TextProperty="@nameof(ProviderResponse.Nom)"
+                                    ValueProperty="@nameof(ProviderResponse.Id)"
+                                    Placeholder="Sélectionner un fournisseur">
+                <Columns>
+                    <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Id)" Title="ID" Width="80px" />
+                    <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Nom)" Title="@Localizer["name"]" Width="220px" />
+                </Columns>
+            </RadzenDropDownDataGrid>
+        </div>
+    </div>
+
+    <!-- Order Lines Grid -->
+    <LineItemsGrid TItem="AvoirFournisseurLineWrapper"
+                   Items="@orders"
+                   ItemsChanged="@OnItemsChanged"
+                   OnDeleteItem="@DeleteRow"
+                   OnProductSelectedCallback="@OnProductSelectedHandler"
+                   LoadProducts="@LoadData"
+                   GetProductList="@GetCurrentProductList"
+                   ProductCount="@count"
+                   AppParameters="@getAppParametersResponse"
+                   OnShowPriceHistory="@ShowDialog"
+                   ShowPriceHistoryDialog="true"
+                   ShowPrintButton="false"
+                   ShowSaveButton="true"
+                   ShowSummary="true"
+                   OnSave="@SaveAvoirFournisseur"
+                   TotalHt="@totalHt"
+                   TotalVat="@totalVat"
+                   TotalTtc="@totalTtc"
+                   Localizer="@Localizer"
+                   GetProductReference="@(item => item.ProductReference)"
+                   SetProductReference="@((item, value) => item.ProductReference = value)"
+                   GetProductDescription="@(item => item.Description)"
+                   SetProductDescription="@((item, value) => item.Description = value)"
+                   ProductTextProperty="ProductReferenceAndDescription"
+                   ProductValueProperty="ProductReference"
+                   CreateNewItem="@(() => new AvoirFournisseurLineWrapper { Quantity = 1 })" />
+}
+
+@code {
+    [Parameter] public string? num { get; set; }
+    List<AvoirFournisseurLineWrapper> orders;
+    List<AvoirFournisseurLineWrapper> searchList;
+    int count;
+    private const int DefaultPageSize = 7;
+    private CancellationTokenSource _cancellationTokenSource = new();
+    private List<ProviderResponse> _filteredProviders { get; set; } = new();
+    private bool isLoading = true;
+    bool isLoadingProviders = false;
+    decimal totalHt;
+    decimal totalVat;
+    decimal totalTtc;
+    string avoirFournisseurNumber;
+    DateTime avoirFournisseurDate = DateTime.Now;
+    private GetAppParametersResponse getAppParametersResponse;
+    private int? selectedFournisseurId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        searchList = new List<AvoirFournisseurLineWrapper>();
+        orders = new List<AvoirFournisseurLineWrapper>();
+        var param = await appParametersClient.GetAppParametersAsync(_cancellationTokenSource.Token);
+        getAppParametersResponse = param.AsT0;
+        await LoadProviders(null);
+        await FetchAvoirFournisseur();
+        isLoading = false;
+    }
+
+    private async Task SaveAvoirFournisseur()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            var request = new CreateAvoirFournisseurRequest
+            {
+                Date = avoirFournisseurDate,
+                FournisseurId = selectedFournisseurId,
+                NumFactureAvoirFournisseur = null, // Not set from UI
+                Lines = orders.Select(o => o.ToRequest()).ToList()
+            };
+
+            // Check if we're in edit mode (avoir fournisseur number exists)
+            int avoirFournisseurNum = 0;
+            bool isEditMode = !string.IsNullOrEmpty(avoirFournisseurNumber) && int.TryParse(avoirFournisseurNumber, out avoirFournisseurNum);
+            
+            if (isEditMode)
+            {
+                var updateRequest = new UpdateAvoirFournisseurRequest
+                {
+                    Date = avoirFournisseurDate,
+                    FournisseurId = selectedFournisseurId,
+                    NumFactureAvoirFournisseur = null, // Not set from UI
+                    Lines = orders.Select(o => o.ToRequest()).ToList()
+                };
+
+                var updateResponse = await avoirFournisseurApiClient.UpdateAvoirFournisseurAsync(avoirFournisseurNum, updateRequest, _cancellationTokenSource.Token);
+                
+                if (updateResponse.IsSuccess)
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = Localizer["success"],
+                        Detail = "Avoir fournisseur mis à jour avec succès"
+                    });
+                }
+                else
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = Localizer["error"],
+                        Detail = $"Échec de la mise à jour: {updateResponse.Errors.First().Message}"
+                    });
+                }
+            }
+            else
+            {
+                var createResponse = await avoirFournisseurApiClient.CreateAvoirFournisseur(request, _cancellationTokenSource.Token);
+                
+                if (createResponse.IsT0)
+                {
+                    var newAvoirFournisseurNum = createResponse.AsT0;
+                    avoirFournisseurNumber = newAvoirFournisseurNum.ToString();
+                    
+                    await FetchAvoirFournisseur();
+                    
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = Localizer["success"],
+                        Detail = "Avoir fournisseur créé avec succès"
+                    });
+                }
+                else
+                {
+                    var badRequest = createResponse.AsT1;
+                    var errorMessage = badRequest.errors?.Any() == true
+                        ? string.Join(", ", badRequest.errors.SelectMany(e => e.Value))
+                        : (badRequest.Detail ?? "Échec de la création");
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = Localizer["error"],
+                        Detail = errorMessage
+                    });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Échec de la sauvegarde: {ex.Message}"
+            });
+            logger.LogError(ex, "Failed to save avoir fournisseur");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task FetchAvoirFournisseur()
+    {
+        var avoirFournisseurNumToLoad = num;
+        if (string.IsNullOrEmpty(avoirFournisseurNumToLoad) && !string.IsNullOrEmpty(avoirFournisseurNumber))
+        {
+            avoirFournisseurNumToLoad = avoirFournisseurNumber;
+        }
+        
+        if (string.IsNullOrEmpty(avoirFournisseurNumToLoad))
+        {
+            orders = new List<AvoirFournisseurLineWrapper>();
+            totalHt = 0;
+            totalVat = 0;
+            totalTtc = 0;
+            return;
+        }
+
+        try
+        {
+            if (int.TryParse(avoirFournisseurNumToLoad, out var numAsInt))
+            {
+                var avoirFournisseur = await avoirFournisseurApiClient.GetFullAvoirFournisseurAsync(numAsInt, _cancellationTokenSource.Token);
+
+                if (avoirFournisseur.IsSuccess && avoirFournisseur.Value != null)
+                {
+                    var avoirFournisseurData = avoirFournisseur.Value;
+                    avoirFournisseurNumber = avoirFournisseurData.Num.ToString();
+                    avoirFournisseurDate = avoirFournisseurData.Date;
+                    selectedFournisseurId = avoirFournisseurData.FournisseurId;
+                    // NumFactureAvoirFournisseur is not displayed/edited in UI
+
+                    if (avoirFournisseurData.Lines != null && avoirFournisseurData.Lines.Any())
+                    {
+                        orders = avoirFournisseurData.Lines.Select(l => AvoirFournisseurLineWrapper.FromResponse(l)).ToList();
+                    }
+                    else
+                    {
+                        orders = new List<AvoirFournisseurLineWrapper>();
+                    }
+
+                    totalHt = avoirFournisseurData.TotalExcludingTaxAmount;
+                    totalVat = avoirFournisseurData.TotalVATAmount;
+                    totalTtc = avoirFournisseurData.TotalIncludingTaxAmount;
+                }
+            }
+
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception e)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Échec du chargement: {e.Message}"
+            });
+
+            logger.LogError(e, "Failed to fetch avoir fournisseur");
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    async Task DeleteRow(AvoirFournisseurLineWrapper order)
+    {
+        if (orders.Contains(order))
+        {
+            orders.Remove(order);
+        }
+        else if (order.Id > 0)
+        {
+            var itemToRemove = orders.FirstOrDefault(t => t.Id == order.Id && t.Id > 0);
+            if (itemToRemove != null)
+            {
+                orders.Remove(itemToRemove);
+            }
+        }
+
+        UpdateTotals();
+        await OnItemsChanged(orders);
+        StateHasChanged();
+    }
+
+    private List<AvoirFournisseurLineWrapper> GetCurrentProductList(AvoirFournisseurLineWrapper currentOrder)
+    {
+        var resultList = new List<AvoirFournisseurLineWrapper>();
+        
+        if (!string.IsNullOrEmpty(currentOrder.ProductReference))
+        {
+            var currentProduct = searchList.FirstOrDefault(p => p.ProductReference == currentOrder.ProductReference);
+            
+            if (currentProduct != null)
+            {
+                resultList.Add(currentProduct);
+            }
+            else
+            {
+                resultList.Add(new AvoirFournisseurLineWrapper
+                {
+                    ProductReference = currentOrder.ProductReference,
+                    Description = currentOrder.Description,
+                    UnitPriceExcludingTax = currentOrder.UnitPriceExcludingTax,
+                    Quantity = 1
+                });
+            }
+            
+            resultList.AddRange(searchList.Where(p => p.ProductReference != currentOrder.ProductReference));
+        }
+        else
+        {
+            resultList.AddRange(searchList);
+        }
+        
+        return resultList;
+    }
+
+    async Task LoadData(LoadDataArgs args)
+    {
+        string _sortProperty = null;
+        string _sortOrder = null;
+        if (args.Sorts != null && args.Sorts.Any())
+        {
+            var sort = args.Sorts.First();
+            _sortProperty = sort.Property;
+            _sortOrder = sort.SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending;
+        }
+        var parameters = new QueryStringParameters
+        {
+            PageNumber = (args.Skip.Value / DefaultPageSize) + 1,
+            PageSize = DefaultPageSize,
+            SearchKeyword = args.Filter,
+            SortOrder = _sortOrder,
+            SortProprety = _sortProperty
+        };
+
+        try
+        {
+            var pagedProducts = await productsApiClient.GetPagedAsync(parameters, _cancellationTokenSource.Token);
+            searchList = pagedProducts.Items.Select(
+                p => new AvoirFournisseurLineWrapper
+                {
+                    ProductReference = p.Reference,
+                    Description = p.Name,
+                    UnitPriceExcludingTax = p.Price,
+                    Quantity = 1,
+                    DiscountPercentage = p.DiscountPourcentage,
+                    VatPercentage = p.VatRate,
+                }).ToList();
+
+            count = pagedProducts.TotalCount;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Échec du chargement des produits: {ex.Message}"
+            });
+            searchList = new List<AvoirFournisseurLineWrapper>();
+            count = 0;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task LoadProviders(LoadDataArgs args)
+    {
+        isLoadingProviders = true;
+        var parameters = new QueryStringParameters
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            SearchKeyword = args?.Filter ?? string.Empty
+        };
+
+        try
+        {
+            var pagedProviders = await providersApiClient.GetPagedAsync(parameters, _cancellationTokenSource.Token);
+            _filteredProviders = pagedProviders.Items;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Échec du chargement des fournisseurs: {ex.Message}"
+            });
+            _filteredProviders = new List<ProviderResponse>();
+        }
+
+        isLoadingProviders = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+    async Task OnProductSelectedHandler(AvoirFournisseurLineWrapper order)
+    {
+        UpdateTotals();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task OnItemsChanged(List<AvoirFournisseurLineWrapper> items)
+    {
+        orders = items;
+        UpdateTotals();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void UpdateTotals()
+    {
+        LineItemCalculator.UpdateTotals(orders, out totalHt, out totalVat, out totalTtc);
+    }
+
+    public async Task ShowDialog(string ProductReference)
+    {
+        await DialogService.OpenAsync<ProductHistoryDialog>($"{Localizer["history"]} {Localizer["article"]} {ProductReference}",
+            new Dictionary<string, object>() { { "ProductReference", ProductReference } },
+            new DialogOptions()
+            {
+                Resizable = true,
+                Draggable = true,
+                Width = "700px",
+                Height = "512px"
+            });
+    }
+}
+

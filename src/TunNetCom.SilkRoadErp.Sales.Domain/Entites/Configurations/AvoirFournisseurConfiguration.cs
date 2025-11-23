@@ -13,7 +13,13 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
     {
         public void Configure(EntityTypeBuilder<AvoirFournisseur> entity)
         {
-            entity.HasKey(e => e.Num).HasName("PK_dbo.AvoirFournisseur");
+            entity.HasKey(e => e.Id).HasName("PK_dbo.AvoirFournisseur");
+            entity.Property(e => e.Id)
+                .ValueGeneratedOnAdd();
+
+            entity.HasIndex(e => e.Num)
+                .IsUnique()
+                .HasDatabaseName("IX_AvoirFournisseur_Num");
 
             entity.Property(e => e.Date)
             .HasColumnType("datetime")
@@ -30,6 +36,11 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             .HasForeignKey(d => d.NumFactureAvoirFournisseur)
             .OnDelete(DeleteBehavior.Cascade)
             .HasConstraintName("FK_dbo.AvoirFournisseur_dbo.FactureAvoirFournisseur_Num_FactureAvoirFournisseur");
+
+            entity.HasOne(d => d.AccountingYear).WithMany(p => p.AvoirFournisseur)
+            .HasForeignKey(d => d.AccountingYearId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .HasConstraintName("FK_dbo.AvoirFournisseur_dbo.AccountingYear_AccountingYearId");
 
             OnConfigurePartial(entity);
         }

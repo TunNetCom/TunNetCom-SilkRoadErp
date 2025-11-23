@@ -9,7 +9,7 @@ public partial class LigneAvoirs
 {
     public int IdLi { get; set; }
 
-    public int NumAvoir { get; set; }
+    public int AvoirsId { get; set; }
 
     public string RefProduit { get; set; } = null!;
 
@@ -27,7 +27,7 @@ public partial class LigneAvoirs
 
     public decimal TotTtc { get; set; }
 
-    public virtual Avoirs NumAvoirNavigation { get; set; } = null!;
+    public virtual Avoirs AvoirsNavigation { get; set; } = null!;
 
     public virtual Produit RefProduitNavigation { get; set; } = null!;
 }

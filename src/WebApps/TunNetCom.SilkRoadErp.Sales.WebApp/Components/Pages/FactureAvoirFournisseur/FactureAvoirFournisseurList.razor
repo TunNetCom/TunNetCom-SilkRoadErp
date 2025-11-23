@@ -1,0 +1,446 @@
+@page "/facture-avoir-fournisseur"
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.FactureAvoirFournisseur
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.FactureAvoirFournisseur
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@inject IFactureAvoirFournisseurApiClient FactureAvoirFournisseurService
+@inject IProvidersApiClient ProvidersService
+@inject IStringLocalizer<SharedResource> Localizer
+@inject ILogger<FactureAvoirFournisseurList> _logger
+@using Radzen.Blazor
+@using Radzen
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Providers
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Common
+@inject NavigationManager NavigationManager
+
+<div class="invoices-list-container">
+    <div class="search-header">
+        <PeriodFilter @bind-SelectedPeriod="searchCriteria.PeriodFilter"
+                     @bind-StartDate="searchCriteria.StartDate"
+                     @bind-EndDate="searchCriteria.EndDate"
+                     OnPeriodChanged="@OnPeriodFilterChanged" />
+        <div class="search-field">
+            <label for="provider">Fournisseur</label>
+            <RadzenDropDownDataGrid id="provider"
+                                    AllowClear="true"
+                                    @bind-Value="@searchCriteria.SelectedFournisseurId"
+                                    LoadData="@LoadProviders"
+                                    AllowFiltering="true"
+                                    class="w-100 search-input"
+                                    Data="@_filteredProviders"
+                                    TextProperty="@nameof(ProviderResponse.Nom)"
+                                    ValueProperty="@nameof(ProviderResponse.Id)"
+                                    Placeholder="Sélectionner un fournisseur">
+                <Columns>
+                    <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Id)" Title="ID" Width="80px" />
+                    <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Nom)" Title="@Localizer["name"]" Width="220px" />
+                </Columns>
+            </RadzenDropDownDataGrid>
+        </div>
+        <div class="search-button">
+            <RadzenButton Text="@Localizer["search"]"
+                          Icon="search"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Click="@SearchFacturesAvoirFournisseur"
+                          class="action-button" />
+        </div>
+    </div>
+    <div class="list-card">
+        <h2>Factures avoir fournisseur</h2>
+        <RadzenDataGrid Data="@facturesAvoirFournisseurList"
+                        LoadData="@Callback"
+                        TItem="FactureAvoirFournisseurBaseInfo"
+                        AllowSorting="true"
+                        AllowFiltering="true"
+                        AllowPaging="true"
+                        PageSize="@pageSize"
+                        PageSizeOptions="@GridPageSizeConstants.PageSizeOptions"
+                        Count="@totalCount"
+                        AllowColumnResize="true">
+            <EmptyTemplate>
+                <p style="font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
+            </EmptyTemplate>
+            <Columns>
+                <RadzenDataGridColumn TItem="FactureAvoirFournisseurBaseInfo"
+                                      Property="@nameof(FactureAvoirFournisseurBaseInfo.Num)"
+                                      Title="Numéro"
+                                      Width="150px" />
+                <RadzenDataGridColumn TItem="FactureAvoirFournisseurBaseInfo"
+                                      Property="@nameof(FactureAvoirFournisseurBaseInfo.Date)"
+                                      Title="@Localizer["date"]"
+                                      Width="150px"
+                                      FormatString="{0:d MMMM yyyy}" />
+                <RadzenDataGridColumn TItem="FactureAvoirFournisseurBaseInfo"
+                                      Property="@nameof(FactureAvoirFournisseurBaseInfo.FournisseurName)"
+                                      Title="Fournisseur"
+                                      Width="200px" />
+                <RadzenDataGridColumn TItem="FactureAvoirFournisseurBaseInfo"
+                                      Property="@nameof(FactureAvoirFournisseurBaseInfo.TotalExcludingTaxAmount)"
+                                      Title="@Localizer["total_net"]"
+                                      Width="150px">
+                    <Template Context="item">
+                        @item.TotalExcludingTaxAmount.FormatAmount()
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="FactureAvoirFournisseurBaseInfo"
+                                      Property="@nameof(FactureAvoirFournisseurBaseInfo.TotalVATAmount)"
+                                      Title="@Localizer["total_vat"]"
+                                      Width="150px">
+                    <Template Context="item">
+                        @item.TotalVATAmount.FormatAmount()
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="FactureAvoirFournisseurBaseInfo"
+                                      Property="@nameof(FactureAvoirFournisseurBaseInfo.TotalIncludingTaxAmount)"
+                                      Title="Total TTC"
+                                      Width="150px">
+                    <Template Context="item">
+                        @item.TotalIncludingTaxAmount.FormatAmount()
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="FactureAvoirFournisseurBaseInfo"
+                                      Title="@Localizer["actions_label"]"
+                                      Width="100px"
+                                      Sortable="false"
+                                      Filterable="false">
+                    <Template Context="item">
+                        <RadzenButton Icon="edit"
+                                      ButtonStyle="ButtonStyle.Primary"
+                                      Variant="Variant.Flat"
+                                      Size="ButtonSize.Small"
+                                      Click="@(() => EditFactureAvoirFournisseur(item.Num))"
+                                      Title="@Localizer["Edit"]"
+                                      AriaLabel="@Localizer["Edit"]" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+        <RadzenCard class="summary-card" Variant="Variant.Outlined">
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal"
+                         Gap="1.5rem"
+                         JustifyContent="JustifyContent.End"
+                         class="summary-stack">
+                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                    @Localizer["total_net"]: <strong>@totalNetAmount.FormatAmount()</strong>
+                </RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                    @Localizer["total_vat"]: <strong>@totalVatAmount.FormatAmount()</strong>
+                </RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                    Total TTC: <strong>@totalIncludingTaxAmount.FormatAmount()</strong>
+                </RadzenText>
+            </RadzenStack>
+        </RadzenCard>
+    </div>
+</div>
+
+<style>
+    .invoices-list-container {
+        padding: 0;
+        min-height: 100%;
+    }
+
+    .list-card {
+        width: 100%;
+        margin: 0;
+    }
+
+    h2 {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 20px;
+        margin: 0 0 16px 0;
+        padding: 0;
+    }
+
+    .action-button {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 6px 12px;
+        border-radius: 6px;
+        background-color: #3b82f6;
+        border: none;
+        transition: background-color 0.2s, box-shadow 0.2s;
+    }
+
+        .action-button:hover:not(:disabled) {
+            background-color: #2563eb;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .action-button:disabled {
+            background-color: #d1d5db;
+            cursor: not-allowed;
+        }
+
+    .search-header {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+        margin: 0 0 16px 0;
+        align-items: end;
+        padding: 0;
+    }
+
+    .search-field {
+        display: flex;
+        flex-direction: column;
+    }
+
+        .search-field label {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+
+    .search-input {
+        width: 100% !important;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        padding: 8px;
+        font-size: 14px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+        .search-input:hover {
+            border-color: #9ca3af;
+        }
+
+        .search-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            outline: none;
+        }
+
+    .search-button {
+        display: flex;
+        align-items: flex-end;
+    }
+
+    @@media (max-width: 768px) {
+        .invoices-list-container {
+            padding: 0;
+        }
+
+        h2 {
+            font-size: 18px;
+        }
+
+        .action-button {
+            font-size: 12px;
+            padding: 6px 10px;
+        }
+
+        .search-header {
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .search-field {
+            min-width: 100%;
+        }
+
+            .search-field label {
+                font-size: 12px;
+            }
+
+        .search-input {
+            font-size: 13px;
+            padding: 6px;
+        }
+
+        .search-button {
+            margin-bottom: 0;
+        }
+    }
+
+    .summary-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 8px 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        flex: 0 0 auto;
+    }
+
+    .summary-stack {
+        gap: 1.5rem;
+    }
+
+    .summary-text {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+        .summary-text strong {
+            font-weight: 600;
+        }
+
+    @@media (min-width: 769px) and (max-width: 1024px) {
+        .search-header {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .summary-card {
+            width: 100%;
+            padding: 8px 12px;
+        }
+
+        .summary-stack {
+            flex-direction: column;
+            gap: 0.75rem;
+            align-items: flex-start;
+        }
+
+        .summary-text {
+            font-size: 12px;
+        }
+    }
+</style>
+
+@code {
+    private List<FactureAvoirFournisseurBaseInfo> facturesAvoirFournisseurList = new();
+    private int totalCount = 0;
+    private decimal totalNetAmount = 0;
+    private decimal totalVatAmount = 0;
+    private decimal totalIncludingTaxAmount = 0;
+    private int pageSize = GridPageSizeConstants.PageSize10;
+    private SearchCriteria searchCriteria = new SearchCriteria();
+    private List<ProviderResponse> _filteredProviders = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _logger.LogInformation("FactureAvoirFournisseurList.OnInitializedAsync called");
+        
+        await LoadProviders(new LoadDataArgs { Filter = string.Empty });
+
+        // Set default period to CurrentMonth and calculate dates
+        searchCriteria.PeriodFilter = "CurrentMonth";
+        var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
+            searchCriteria.PeriodFilter,
+            searchCriteria.StartDate,
+            searchCriteria.EndDate);
+        searchCriteria.StartDate = startDate;
+        searchCriteria.EndDate = endDate;
+
+        // Load initial data
+        _logger.LogInformation("Calling Callback to load initial data");
+        await Callback(new LoadDataArgs { Skip = 0, Top = pageSize });
+    }
+
+    async Task LoadProviders(LoadDataArgs args)
+    {
+        var parameters = new QueryStringParameters
+        {
+            PageNumber = 1,
+            PageSize = 7,
+            SearchKeyword = args?.Filter ?? string.Empty
+        };
+
+        try
+        {
+            var pagedProviders = await ProvidersService.GetPagedAsync(parameters, default);
+            _filteredProviders = pagedProviders.Items.ToList();
+        }
+        catch (Exception ex)
+        {
+            _filteredProviders = new List<ProviderResponse>();
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void OnPeriodFilterChanged()
+    {
+        StateHasChanged();
+    }
+
+    private async Task SearchFacturesAvoirFournisseur()
+    {
+        // Trigger a refresh by calling Callback with current args
+        await Callback(new LoadDataArgs { Skip = 0, Top = pageSize });
+    }
+
+    private async Task Callback(LoadDataArgs args)
+    {
+        _logger.LogInformation("FactureAvoirFournisseurList.Callback called with Skip: {Skip}, Top: {Top}", args.Skip, args.Top);
+        
+        // Update pageSize if Top is provided
+        if (args.Top.HasValue)
+        {
+            pageSize = args.Top.Value;
+        }
+        
+        var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
+            searchCriteria.PeriodFilter,
+            searchCriteria.StartDate,
+            searchCriteria.EndDate);
+
+        _logger.LogInformation("Date range: StartDate: {StartDate}, EndDate: {EndDate}", startDate, endDate);
+
+        try
+        {
+            var pageNumber = (args.Skip ?? 0) / pageSize + 1;
+            var queryParams = new GetFactureAvoirFournisseurQueryParams
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                IdFournisseur = searchCriteria.SelectedFournisseurId,
+                StartDate = startDate,
+                EndDate = endDate,
+                SearchKeyword = args.Filter,
+                SortOrder = args.Sorts?.FirstOrDefault()?.SortOrder == SortOrder.Ascending ? "asc" : "desc",
+                SortProperty = args.Sorts?.FirstOrDefault()?.Property
+            };
+
+            var response = await FactureAvoirFournisseurService.GetFactureAvoirFournisseurWithSummariesAsync(
+                queryParams.IdFournisseur,
+                queryParams.NumFactureFournisseur,
+                queryParams.SortOrder,
+                queryParams.SortProperty,
+                queryParams.PageNumber ?? 1,
+                queryParams.PageSize ?? 10,
+                queryParams.SearchKeyword,
+                queryParams.StartDate,
+                queryParams.EndDate,
+                default);
+
+            facturesAvoirFournisseurList = response.FactureAvoirFournisseurs.Items.ToList();
+            totalCount = response.FactureAvoirFournisseurs.TotalCount;
+            totalNetAmount = response.TotalNetAmount;
+            totalVatAmount = response.TotalVatAmount;
+            totalIncludingTaxAmount = response.TotalIncludingTaxAmount;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading factures avoir fournisseur: {Message}", ex.Message);
+            facturesAvoirFournisseurList = new List<FactureAvoirFournisseurBaseInfo>();
+            totalCount = 0;
+            totalNetAmount = 0;
+            totalVatAmount = 0;
+            totalIncludingTaxAmount = 0;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public class SearchCriteria
+    {
+        public string PeriodFilter { get; set; } = "CurrentMonth";
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public int? SelectedFournisseurId { get; set; }
+    }
+
+    private void EditFactureAvoirFournisseur(int num)
+    {
+        NavigationManager.NavigateTo($"/AddOrUpdateFactureAvoirFournisseur/{num}");
+    }
+}
+

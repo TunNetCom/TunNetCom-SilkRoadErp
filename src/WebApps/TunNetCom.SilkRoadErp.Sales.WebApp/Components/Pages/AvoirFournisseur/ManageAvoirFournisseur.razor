@@ -1,0 +1,21 @@
+@page "/manage-avoir-fournisseur"
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using Radzen.Blazor
+@inject IStringLocalizer<SharedResource> Localizer
+@inject NavigationManager NavigationManager
+
+<RadzenCard>
+    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
+        <RadzenText TextStyle="TextStyle.H3">Gérer les avoirs fournisseur</RadzenText>
+        <RadzenText TextStyle="TextStyle.Body1">
+            Créer et modifier les avoirs fournisseur.
+        </RadzenText>
+        <RadzenButton Text="Ajouter avoir fournisseur" 
+                      Icon="add" 
+                      ButtonStyle="ButtonStyle.Primary" 
+                      Click="@(() => NavigationManager.NavigateTo("/AddOrUpdateAvoirFournisseur"))"
+                      Size="ButtonSize.Large" />
+    </RadzenStack>
+</RadzenCard>
+

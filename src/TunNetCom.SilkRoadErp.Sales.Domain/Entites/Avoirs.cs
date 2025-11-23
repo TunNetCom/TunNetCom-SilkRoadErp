@@ -7,13 +7,42 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 public partial class Avoirs
 {
+    public static Avoirs CreateAvoir(
+        DateTime date,
+        int? clientId,
+        int accountingYearId)
+    {
+        return new Avoirs
+        {
+            Date = date,
+            ClientId = clientId,
+            AccountingYearId = accountingYearId
+        };
+    }
+
+    public void UpdateAvoir(
+        DateTime date,
+        int? clientId,
+        int accountingYearId)
+    {
+        this.Date = date;
+        this.ClientId = clientId;
+        this.AccountingYearId = accountingYearId;
+    }
+
+    public int Id { get; set; }
+
     public int Num { get; set; }
 
     public DateTime Date { get; set; }
 
     public int? ClientId { get; set; }
 
+    public int AccountingYearId { get; set; }
+
     public virtual Client? Client { get; set; }
+
+    public virtual AccountingYear AccountingYear { get; set; } = null!;
 
     public virtual ICollection<LigneAvoirs> LigneAvoirs { get; set; } = new List<LigneAvoirs>();
 }

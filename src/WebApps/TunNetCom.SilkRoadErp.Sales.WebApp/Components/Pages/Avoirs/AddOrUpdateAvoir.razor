@@ -1,0 +1,539 @@
+@page "/AddOrUpdateAvoir"
+@page "/AddOrUpdateAvoir/{num?}"
+
+@using Radzen.Blazor
+@using Microsoft.Extensions.Localization
+@using Microsoft.JSInterop
+@using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Avoirs
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Sorting
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Avoirs
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.Avoirs
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Customers
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Common
+
+@inject IStringLocalizer<SharedResource> Localizer
+@inject NotificationService NotificationService
+@inject IJSRuntime JSRuntime
+@inject IAvoirsApiClient avoirsApiClient
+@inject IProductsApiClient productsApiClient
+@inject ICustomersApiClient customersApiClient
+@inject IAppParametersClient appParametersClient
+@inject ILogger<AddOrUpdateAvoir> logger
+@inject DialogService DialogService
+
+<style>
+    .header-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 24px;
+        border-bottom: 1px solid #e5e7eb;
+        width: 100%;
+    }
+
+    .action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .action-button {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 8px 12px;
+        border-radius: 6px;
+        transition: background-color 0.2s, box-shadow 0.2s;
+        background-color: #3b82f6;
+        border: none;
+    }
+
+        .action-button:hover:not(:disabled) {
+            background-color: #2563eb;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .action-button:disabled {
+            background-color: #d1d5db;
+            cursor: not-allowed;
+        }
+
+    .summary-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 8px 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        flex: 0 0 auto;
+    }
+
+    .summary-stack {
+        gap: 1.5rem;
+    }
+
+    .summary-text {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+        .summary-text strong {
+            font-weight: 600;
+        }
+
+    .avoir-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .avoir-form {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        flex-wrap: wrap;
+        flex-grow: 1;
+    }
+</style>
+
+<!-- Loading Indicator -->
+@if (isLoading)
+{
+    <RadzenProgressBarCircular ProgressBarStyle="ProgressBarStyle.Primary" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+}
+else
+{
+    <!-- Avoir Container with Form and Summary -->
+    <div class="avoir-container">
+        <div class="avoir-form">
+            <RadzenLabel Text="Numéro avoir" Component="AvoirNumber" AriaLabel="Numéro avoir" />
+            <RadzenTextBox @bind-Value="avoirNumber" Name="AvoirNumber" Style="width: 120px;" ReadOnly="true" AriaReadOnly="true" />
+
+            <RadzenLabel Text="@Localizer["date"]" />
+            <RadzenDatePicker @bind-Value="avoirDate" Name="AvoirDate" Style="width: 200px;" DateFormat="d MMMM yyyy" ShowTime="false" />
+
+            <RadzenLabel Text="@Localizer["customer"]" />
+            <RadzenDropDownDataGrid AllowClear="true"
+                                    IsLoading="@isLoadingCustomers"
+                                    @bind-Value="@selectedCustomerId"
+                                    LoadData="@LoadCustomers"
+                                    AllowFiltering="true"
+                                    Style="width: 350px;"
+                                    Data="@_filteredCustomers"
+                                    TextProperty="@nameof(CustomerResponse.Name)"
+                                    ValueProperty="@nameof(CustomerResponse.Id)"
+                                    Placeholder="@Localizer["select_customer"]">
+                <Columns>
+                    <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Id)" Title="ID" Width="80px" />
+                    <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Name)" Title="@Localizer["name"]" Width="220px" />
+                </Columns>
+            </RadzenDropDownDataGrid>
+        </div>
+    </div>
+
+    <!-- Order Lines Grid -->
+    <LineItemsGrid TItem="AvoirLineWrapper"
+                   Items="@orders"
+                   ItemsChanged="@OnItemsChanged"
+                   OnDeleteItem="@DeleteRow"
+                   OnProductSelectedCallback="@OnProductSelectedHandler"
+                   LoadProducts="@LoadData"
+                   GetProductList="@GetCurrentProductList"
+                   ProductCount="@count"
+                   AppParameters="@getAppParametersResponse"
+                   OnShowPriceHistory="@ShowDialog"
+                   ShowPriceHistoryDialog="true"
+                   ShowPrintButton="false"
+                   ShowSaveButton="true"
+                   ShowSummary="true"
+                   OnSave="@SaveAvoir"
+                   TotalHt="@totalHt"
+                   TotalVat="@totalVat"
+                   TotalTtc="@totalTtc"
+                   Localizer="@Localizer"
+                   GetProductReference="@(item => item.ProductReference)"
+                   SetProductReference="@((item, value) => item.ProductReference = value)"
+                   GetProductDescription="@(item => item.Description)"
+                   SetProductDescription="@((item, value) => item.Description = value)"
+                   ProductTextProperty="ProductReferenceAndDescription"
+                   ProductValueProperty="ProductReference"
+                   CreateNewItem="@(() => new AvoirLineWrapper { Quantity = 1 })" />
+}
+
+@code {
+    [Parameter] public string? num { get; set; }
+    List<AvoirLineWrapper> orders;
+    List<AvoirLineWrapper> searchList;
+    int count;
+    private const int DefaultPageSize = 7;
+    private CancellationTokenSource _cancellationTokenSource = new();
+    private List<CustomerResponse> _filteredCustomers { get; set; } = new();
+    private bool isLoading = true;
+    bool isLoadingCustomers = false;
+    decimal totalHt;
+    decimal totalVat;
+    decimal totalTtc;
+    string avoirNumber;
+    DateTime avoirDate = DateTime.Now;
+    private GetAppParametersResponse getAppParametersResponse;
+    private int? selectedCustomerId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        searchList = new List<AvoirLineWrapper>();
+        orders = new List<AvoirLineWrapper>();
+        var param = await appParametersClient.GetAppParametersAsync(_cancellationTokenSource.Token);
+        getAppParametersResponse = param.AsT0;
+        await LoadCustomers(null);
+        await FetchAvoir();
+        isLoading = false;
+    }
+
+    private async Task SaveAvoir()
+    {
+        try
+        {
+            if (!selectedCustomerId.HasValue)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = $"{Localizer["select_customer"]}"
+                });
+                return;
+            }
+            isLoading = true;
+            StateHasChanged();
+
+            var request = new CreateAvoirRequest
+            {
+                Date = avoirDate,
+                ClientId = selectedCustomerId,
+                Lines = orders.Select(o => o.ToRequest()).ToList()
+            };
+
+            // Check if we're in edit mode (avoir number exists)
+            int avoirNum = 0;
+            bool isEditMode = !string.IsNullOrEmpty(avoirNumber) && int.TryParse(avoirNumber, out avoirNum);
+            
+            if (isEditMode)
+            {
+                var updateRequest = new UpdateAvoirRequest
+                {
+                    Date = avoirDate,
+                    ClientId = selectedCustomerId,
+                    Lines = orders.Select(o => o.ToRequest()).ToList()
+                };
+
+                var updateResponse = await avoirsApiClient.UpdateAvoirAsync(avoirNum, updateRequest, _cancellationTokenSource.Token);
+                
+                if (updateResponse.IsSuccess)
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = Localizer["success"],
+                        Detail = "Avoir mis à jour avec succès"
+                    });
+                }
+                else
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = Localizer["error"],
+                        Detail = $"Échec de la mise à jour: {updateResponse.Errors.First().Message}"
+                    });
+                }
+            }
+            else
+            {
+                var createResponse = await avoirsApiClient.CreateAvoir(request, _cancellationTokenSource.Token);
+                
+                if (createResponse.IsT0)
+                {
+                    var newAvoirNum = createResponse.AsT0;
+                    avoirNumber = newAvoirNum.ToString();
+                    
+                    await FetchAvoir();
+                    
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = Localizer["success"],
+                        Detail = "Avoir créé avec succès"
+                    });
+                }
+                else
+                {
+                    var badRequest = createResponse.AsT1;
+                    var errorMessage = badRequest.errors?.Any() == true
+                        ? string.Join(", ", badRequest.errors.SelectMany(e => e.Value))
+                        : (badRequest.Detail ?? "Échec de la création");
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = Localizer["error"],
+                        Detail = errorMessage
+                    });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Échec de la sauvegarde: {ex.Message}"
+            });
+            logger.LogError(ex, "Failed to save avoir");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task FetchAvoir()
+    {
+        var avoirNumToLoad = num;
+        if (string.IsNullOrEmpty(avoirNumToLoad) && !string.IsNullOrEmpty(avoirNumber))
+        {
+            avoirNumToLoad = avoirNumber;
+        }
+        
+        if (string.IsNullOrEmpty(avoirNumToLoad))
+        {
+            orders = new List<AvoirLineWrapper>();
+            totalHt = 0;
+            totalVat = 0;
+            totalTtc = 0;
+            return;
+        }
+
+        try
+        {
+            if (int.TryParse(avoirNumToLoad, out var numAsInt))
+            {
+                var avoir = await avoirsApiClient.GetFullAvoirAsync(numAsInt, _cancellationTokenSource.Token);
+
+                if (avoir.IsSuccess && avoir.Value != null)
+                {
+                    var avoirData = avoir.Value;
+                    avoirNumber = avoirData.Num.ToString();
+                    avoirDate = avoirData.Date;
+                    selectedCustomerId = avoirData.ClientId;
+
+                    if (avoirData.Lines != null && avoirData.Lines.Any())
+                    {
+                        orders = avoirData.Lines.Select(l => AvoirLineWrapper.FromResponse(l)).ToList();
+                    }
+                    else
+                    {
+                        orders = new List<AvoirLineWrapper>();
+                    }
+
+                    totalHt = avoirData.TotalExcludingTaxAmount;
+                    totalVat = avoirData.TotalVATAmount;
+                    totalTtc = avoirData.TotalIncludingTaxAmount;
+                }
+            }
+
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception e)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Échec du chargement: {e.Message}"
+            });
+
+            logger.LogError(e, "Failed to fetch avoir");
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    async Task DeleteRow(AvoirLineWrapper order)
+    {
+        if (orders.Contains(order))
+        {
+            orders.Remove(order);
+        }
+        else if (order.Id > 0)
+        {
+            var itemToRemove = orders.FirstOrDefault(t => t.Id == order.Id && t.Id > 0);
+            if (itemToRemove != null)
+            {
+                orders.Remove(itemToRemove);
+            }
+        }
+
+        UpdateTotals();
+        await OnItemsChanged(orders);
+        StateHasChanged();
+    }
+
+    private List<AvoirLineWrapper> GetCurrentProductList(AvoirLineWrapper currentOrder)
+    {
+        var resultList = new List<AvoirLineWrapper>();
+        
+        if (!string.IsNullOrEmpty(currentOrder.ProductReference))
+        {
+            var currentProduct = searchList.FirstOrDefault(p => p.ProductReference == currentOrder.ProductReference);
+            
+            if (currentProduct != null)
+            {
+                resultList.Add(currentProduct);
+            }
+            else
+            {
+                resultList.Add(new AvoirLineWrapper
+                {
+                    ProductReference = currentOrder.ProductReference,
+                    Description = currentOrder.Description,
+                    UnitPriceExcludingTax = currentOrder.UnitPriceExcludingTax,
+                    Quantity = 1
+                });
+            }
+            
+            resultList.AddRange(searchList.Where(p => p.ProductReference != currentOrder.ProductReference));
+        }
+        else
+        {
+            resultList.AddRange(searchList);
+        }
+        
+        return resultList;
+    }
+
+    async Task LoadData(LoadDataArgs args)
+    {
+        string _sortProperty = null;
+        string _sortOrder = null;
+        if (args.Sorts != null && args.Sorts.Any())
+        {
+            var sort = args.Sorts.First();
+            _sortProperty = sort.Property;
+            _sortOrder = sort.SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending;
+        }
+        var parameters = new QueryStringParameters
+        {
+            PageNumber = (args.Skip.Value / DefaultPageSize) + 1,
+            PageSize = DefaultPageSize,
+            SearchKeyword = args.Filter,
+            SortOrder = _sortOrder,
+            SortProprety = _sortProperty
+        };
+
+        try
+        {
+            var pagedProducts = await productsApiClient.GetPagedAsync(parameters, _cancellationTokenSource.Token);
+            searchList = pagedProducts.Items.Select(
+                p => new AvoirLineWrapper
+                {
+                    ProductReference = p.Reference,
+                    Description = p.Name,
+                    UnitPriceExcludingTax = p.Price,
+                    Quantity = 1,
+                    DiscountPercentage = p.DiscountPourcentage,
+                    VatPercentage = p.VatRate,
+                }).ToList();
+
+            count = pagedProducts.TotalCount;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Échec du chargement des produits: {ex.Message}"
+            });
+            searchList = new List<AvoirLineWrapper>();
+            count = 0;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task LoadCustomers(LoadDataArgs args)
+    {
+        isLoadingCustomers = true;
+        var parameters = new QueryStringParameters
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            SearchKeyword = args?.Filter ?? string.Empty
+        };
+
+        try
+        {
+            var pagedCustomers = await customersApiClient.GetAsync(parameters, _cancellationTokenSource.Token);
+            _filteredCustomers = pagedCustomers.Items;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Échec du chargement des clients: {ex.Message}"
+            });
+            _filteredCustomers = new List<CustomerResponse>();
+        }
+
+        isLoadingCustomers = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task OnProductSelectedHandler(AvoirLineWrapper order)
+    {
+        UpdateTotals();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task OnItemsChanged(List<AvoirLineWrapper> items)
+    {
+        orders = items;
+        UpdateTotals();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void UpdateTotals()
+    {
+        LineItemCalculator.UpdateTotals(orders, out totalHt, out totalVat, out totalTtc);
+    }
+
+    public async Task ShowDialog(string ProductReference)
+    {
+        await DialogService.OpenAsync<ProductHistoryDialog>($"{Localizer["history"]} {Localizer["article"]} {ProductReference}",
+            new Dictionary<string, object>() { { "ProductReference", ProductReference } },
+            new DialogOptions()
+            {
+                Resizable = true,
+                Draggable = true,
+                Width = "700px",
+                Height = "512px"
+            });
+    }
+}
+

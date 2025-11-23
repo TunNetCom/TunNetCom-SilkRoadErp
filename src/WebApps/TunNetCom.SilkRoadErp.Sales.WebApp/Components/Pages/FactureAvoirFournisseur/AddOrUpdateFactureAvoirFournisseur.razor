@@ -1,0 +1,489 @@
+@page "/AddOrUpdateFactureAvoirFournisseur"
+@page "/AddOrUpdateFactureAvoirFournisseur/{num?}"
+
+@using Radzen.Blazor
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.FactureAvoirFournisseur
+@using TunNetCom.SilkRoadErp.Sales.Contracts.AvoirFournisseur
+@using TunNetCom.SilkRoadErp.Sales.Contracts.AvoirFournisseur
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Providers
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Common
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.FactureAvoirFournisseur
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AvoirFournisseur
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+
+@inject IStringLocalizer<SharedResource> Localizer
+@inject NotificationService NotificationService
+@inject IFactureAvoirFournisseurApiClient factureAvoirFournisseurApiClient
+@inject IAvoirFournisseurApiClient avoirFournisseurApiClient
+@inject IProvidersApiClient providersApiClient
+@inject ILogger<AddOrUpdateFactureAvoirFournisseur> logger
+@inject NavigationManager NavigationManager
+
+<style>
+    .facture-avoir-container {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .facture-avoir-form {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .avoirs-section {
+        margin-top: 20px;
+    }
+
+    .avoirs-grid {
+        margin-top: 10px;
+    }
+
+    .summary-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 16px;
+        margin-top: 20px;
+    }
+
+    .summary-stack {
+        gap: 1.5rem;
+    }
+
+    .summary-text {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+        .summary-text strong {
+            font-weight: 600;
+        }
+</style>
+
+@if (isLoading)
+{
+    <RadzenProgressBarCircular ProgressBarStyle="ProgressBarStyle.Primary" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+}
+else
+{
+    <div class="facture-avoir-container">
+        <div class="facture-avoir-form">
+            <RadzenLabel Text="Numéro facture avoir fournisseur" />
+            <RadzenTextBox @bind-Value="factureAvoirNumber" Style="width: 150px;" ReadOnly="true" />
+
+            <RadzenLabel Text="@Localizer["date"]" />
+            <RadzenDatePicker @bind-Value="factureAvoirDate" Style="width: 200px;" DateFormat="d MMMM yyyy" ShowTime="false" />
+
+            <RadzenLabel Text="Fournisseur" />
+            <RadzenDropDownDataGrid AllowClear="true"
+                                    IsLoading="@isLoadingProviders"
+                                    @bind-Value="@selectedFournisseurId"
+                                    LoadData="@LoadProviders"
+                                    AllowFiltering="true"
+                                    Style="width: 350px;"
+                                    Data="@_filteredProviders"
+                                    TextProperty="@nameof(ProviderResponse.Nom)"
+                                    ValueProperty="@nameof(ProviderResponse.Id)"
+                                    Placeholder="Sélectionner un fournisseur">
+                <Columns>
+                    <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Id)" Title="ID" Width="80px" />
+                    <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Nom)" Title="@Localizer["name"]" Width="220px" />
+                </Columns>
+            </RadzenDropDownDataGrid>
+        </div>
+
+        <div class="avoirs-section">
+            <RadzenText TextStyle="TextStyle.H5">Avoirs fournisseur associés</RadzenText>
+            <RadzenText TextStyle="TextStyle.Body2" Style="margin-bottom: 10px;">
+                Sélectionnez les avoirs fournisseur à associer à cette facture avoir
+            </RadzenText>
+
+            <RadzenDataGrid Data="@availableAvoirs"
+                            TItem="AvoirFournisseurBaseInfo"
+                            AllowPaging="true"
+                            PageSize="10"
+                            AllowSorting="true"
+                            AllowFiltering="true"
+                            SelectionMode="DataGridSelectionMode.Multiple"
+                            SelectedItems="@selectedAvoirs"
+                            SelectedItemsChanged="@OnSelectedAvoirsChanged"
+                            class="avoirs-grid">
+                <Columns>
+                    <RadzenDataGridColumn TItem="AvoirFournisseurBaseInfo" Property="@nameof(AvoirFournisseurBaseInfo.Num)" Title="Numéro" Width="120px" />
+                    <RadzenDataGridColumn TItem="AvoirFournisseurBaseInfo" Property="@nameof(AvoirFournisseurBaseInfo.Date)" Title="@Localizer["date"]" Width="150px" FormatString="{0:d MMMM yyyy}" />
+                    <RadzenDataGridColumn TItem="AvoirFournisseurBaseInfo" Property="@nameof(AvoirFournisseurBaseInfo.TotalExcludingTaxAmount)" Title="@Localizer["total_net"]" Width="150px">
+                        <Template Context="item">
+                            @item.TotalExcludingTaxAmount.FormatAmount()
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="AvoirFournisseurBaseInfo" Property="@nameof(AvoirFournisseurBaseInfo.TotalVATAmount)" Title="@Localizer["total_vat"]" Width="150px">
+                        <Template Context="item">
+                            @item.TotalVATAmount.FormatAmount()
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="AvoirFournisseurBaseInfo" Property="@nameof(AvoirFournisseurBaseInfo.TotalIncludingTaxAmount)" Title="Total TTC" Width="150px">
+                        <Template Context="item">
+                            @item.TotalIncludingTaxAmount.FormatAmount()
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </div>
+
+        <RadzenCard class="summary-card" Variant="Variant.Outlined">
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal"
+                         Gap="1.5rem"
+                         JustifyContent="JustifyContent.End"
+                         class="summary-stack">
+                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                    @Localizer["total_net"]: <strong>@totalHt.FormatAmount()</strong>
+                </RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                    @Localizer["total_vat"]: <strong>@totalVat.FormatAmount()</strong>
+                </RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                    Total TTC: <strong>@totalTtc.FormatAmount()</strong>
+                </RadzenText>
+            </RadzenStack>
+        </RadzenCard>
+
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <RadzenButton Text="Enregistrer" 
+                          Icon="save" 
+                          ButtonStyle="ButtonStyle.Primary" 
+                          Click="@SaveFactureAvoirFournisseur"
+                          IsBusy="@isSaving" />
+            <RadzenButton Text="Annuler" 
+                          Icon="cancel" 
+                          ButtonStyle="ButtonStyle.Light" 
+                          Click="@(() => NavigationManager.NavigateTo("/facture-avoir-fournisseur"))" />
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string? num { get; set; }
+    
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private bool isLoadingProviders = false;
+    
+    private string factureAvoirNumber = string.Empty;
+    private DateTime factureAvoirDate = DateTime.Now;
+    private int? _selectedFournisseurId;
+    private int? selectedFournisseurId
+    {
+        get => _selectedFournisseurId;
+        set
+        {
+            if (_selectedFournisseurId != value)
+            {
+                _selectedFournisseurId = value;
+                selectedAvoirs = new List<AvoirFournisseurBaseInfo>();
+                _ = LoadAvailableAvoirs();
+            }
+        }
+    }
+    
+    private List<ProviderResponse> _filteredProviders = new();
+    private List<AvoirFournisseurBaseInfo> availableAvoirs = new();
+    private IList<AvoirFournisseurBaseInfo> selectedAvoirs = new List<AvoirFournisseurBaseInfo>();
+    
+    private decimal totalHt = 0;
+    private decimal totalVat = 0;
+    private decimal totalTtc = 0;
+    
+    private CancellationTokenSource _cancellationTokenSource = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await LoadProviders(null);
+        await FetchFactureAvoirFournisseur();
+        isLoading = false;
+    }
+
+    private async Task LoadProviders(LoadDataArgs args)
+    {
+        isLoadingProviders = true;
+        var parameters = new QueryStringParameters
+        {
+            PageNumber = 1,
+            PageSize = 100,
+            SearchKeyword = args?.Filter ?? string.Empty
+        };
+
+        try
+        {
+            var pagedProviders = await providersApiClient.GetPagedAsync(parameters, _cancellationTokenSource.Token);
+            _filteredProviders = pagedProviders.Items;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Échec du chargement des fournisseurs: {ex.Message}"
+            });
+            _filteredProviders = new List<ProviderResponse>();
+        }
+
+        isLoadingProviders = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadAvailableAvoirs()
+    {
+        if (!selectedFournisseurId.HasValue)
+        {
+            availableAvoirs = new List<AvoirFournisseurBaseInfo>();
+            UpdateTotals();
+            return;
+        }
+
+        try
+        {
+            // Load avoirs fournisseur that are not linked to a facture avoir (NumFactureAvoirFournisseur is null)
+            var response = await avoirFournisseurApiClient.GetAvoirFournisseurWithSummariesAsync(
+                selectedFournisseurId,
+                null, // NumFactureAvoirFournisseur = null means not linked
+                null,
+                null,
+                1,
+                1000,
+                null,
+                null,
+                null,
+                _cancellationTokenSource.Token);
+
+            availableAvoirs = response.AvoirFournisseurs.Items
+                .Where(a => a.NumFactureAvoirFournisseur == null)
+                .ToList();
+
+            // If in edit mode, also include already linked avoirs
+            if (!string.IsNullOrEmpty(num) && int.TryParse(num, out var numAsInt))
+            {
+                var factureAvoir = await factureAvoirFournisseurApiClient.GetFullFactureAvoirFournisseurAsync(numAsInt, _cancellationTokenSource.Token);
+                if (factureAvoir.IsSuccess && factureAvoir.Value != null)
+                {
+                    var linkedAvoirNums = factureAvoir.Value.AvoirFournisseurs.Select(a => a.Num).ToList();
+                    var linkedAvoirs = response.AvoirFournisseurs.Items
+                        .Where(a => linkedAvoirNums.Contains(a.Num))
+                        .ToList();
+                    
+                    // Add linked avoirs that are not already in availableAvoirs
+                    foreach (var linkedAvoir in linkedAvoirs)
+                    {
+                        if (!availableAvoirs.Any(a => a.Num == linkedAvoir.Num))
+                        {
+                            availableAvoirs.Add(linkedAvoir);
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Échec du chargement des avoirs: {ex.Message}"
+            });
+            availableAvoirs = new List<AvoirFournisseurBaseInfo>();
+        }
+
+        UpdateTotals();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void UpdateTotals()
+    {
+        totalHt = selectedAvoirs.Sum(a => a.TotalExcludingTaxAmount);
+        totalVat = selectedAvoirs.Sum(a => a.TotalVATAmount);
+        totalTtc = selectedAvoirs.Sum(a => a.TotalIncludingTaxAmount);
+    }
+
+    private void OnSelectedAvoirsChanged(IEnumerable<AvoirFournisseurBaseInfo> items)
+    {
+        selectedAvoirs = items.ToList();
+        UpdateTotals();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task FetchFactureAvoirFournisseur()
+    {
+        var factureAvoirNumToLoad = num;
+        if (string.IsNullOrEmpty(factureAvoirNumToLoad))
+        {
+            return;
+        }
+
+        try
+        {
+            if (int.TryParse(factureAvoirNumToLoad, out var numAsInt))
+            {
+                var factureAvoir = await factureAvoirFournisseurApiClient.GetFullFactureAvoirFournisseurAsync(numAsInt, _cancellationTokenSource.Token);
+
+                if (factureAvoir.IsSuccess && factureAvoir.Value != null)
+                {
+                    var factureAvoirData = factureAvoir.Value;
+                    factureAvoirNumber = factureAvoirData.Num.ToString();
+                    factureAvoirDate = factureAvoirData.Date;
+                    selectedFournisseurId = factureAvoirData.IdFournisseur;
+
+                    // Load available avoirs and select the linked ones
+                    await LoadAvailableAvoirs();
+                    
+                    var linkedAvoirNums = factureAvoirData.AvoirFournisseurs.Select(a => a.Num).ToList();
+                    selectedAvoirs = availableAvoirs.Where(a => linkedAvoirNums.Contains(a.Num)).ToList();
+                    
+                    UpdateTotals();
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Échec du chargement: {e.Message}"
+            });
+
+            logger.LogError(e, "Failed to fetch facture avoir fournisseur");
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SaveFactureAvoirFournisseur()
+    {
+        if (!selectedFournisseurId.HasValue)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["warning"],
+                Detail = "Veuillez sélectionner un fournisseur"
+            });
+            return;
+        }
+
+        if (selectedAvoirs == null || !selectedAvoirs.Any())
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["warning"],
+                Detail = "Veuillez sélectionner au moins un avoir fournisseur"
+            });
+            return;
+        }
+
+        try
+        {
+            isSaving = true;
+            StateHasChanged();
+
+            var avoirFournisseurIds = selectedAvoirs.Select(a => a.Num).ToList();
+
+            // Check if we're in edit mode
+            int factureAvoirNum = 0;
+            bool isEditMode = !string.IsNullOrEmpty(factureAvoirNumber) && int.TryParse(factureAvoirNumber, out factureAvoirNum);
+
+            if (isEditMode)
+            {
+                var updateRequest = new UpdateFactureAvoirFournisseurRequest
+                {
+                    Date = factureAvoirDate,
+                    IdFournisseur = selectedFournisseurId.Value,
+                    NumFactureFournisseur = null, // Can be added later if needed
+                    AvoirFournisseurIds = avoirFournisseurIds
+                };
+
+                var updateResponse = await factureAvoirFournisseurApiClient.UpdateFactureAvoirFournisseurAsync(factureAvoirNum, updateRequest, _cancellationTokenSource.Token);
+
+                if (updateResponse.IsSuccess)
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = Localizer["success"],
+                        Detail = "Facture avoir fournisseur mise à jour avec succès"
+                    });
+                    NavigationManager.NavigateTo("/facture-avoir-fournisseur");
+                }
+                else
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = Localizer["error"],
+                        Detail = $"Échec de la mise à jour: {updateResponse.Errors.First().Message}"
+                    });
+                }
+            }
+            else
+            {
+                var createRequest = new CreateFactureAvoirFournisseurRequest
+                {
+                    Date = factureAvoirDate,
+                    IdFournisseur = selectedFournisseurId.Value,
+                    NumFactureFournisseur = null, // Can be added later if needed
+                    AvoirFournisseurIds = avoirFournisseurIds
+                };
+
+                var createResponse = await factureAvoirFournisseurApiClient.CreateFactureAvoirFournisseur(createRequest, _cancellationTokenSource.Token);
+
+                if (createResponse.IsT0)
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = Localizer["success"],
+                        Detail = "Facture avoir fournisseur créée avec succès"
+                    });
+                    NavigationManager.NavigateTo("/facture-avoir-fournisseur");
+                }
+                else
+                {
+                    var badRequest = createResponse.AsT1;
+                    var errorMessage = badRequest.errors?.Any() == true
+                        ? string.Join(", ", badRequest.errors.SelectMany(e => e.Value))
+                        : (badRequest.Detail ?? "Échec de la création");
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = Localizer["error"],
+                        Detail = errorMessage
+                    });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Échec de la sauvegarde: {ex.Message}"
+            });
+            logger.LogError(ex, "Failed to save facture avoir fournisseur");
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+}
+

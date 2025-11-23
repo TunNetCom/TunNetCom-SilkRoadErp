@@ -7,6 +7,39 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 public partial class FactureAvoirFournisseur
 {
+    public static FactureAvoirFournisseur CreateFactureAvoirFournisseur(
+        int numFactureAvoirFourSurPage,
+        int idFournisseur,
+        DateTime date,
+        int? numFactureFournisseur,
+        int accountingYearId)
+    {
+        return new FactureAvoirFournisseur
+        {
+            NumFactureAvoirFourSurPage = numFactureAvoirFourSurPage,
+            IdFournisseur = idFournisseur,
+            Date = date,
+            NumFactureFournisseur = numFactureFournisseur,
+            AccountingYearId = accountingYearId
+        };
+    }
+
+    public void UpdateFactureAvoirFournisseur(
+        int numFactureAvoirFourSurPage,
+        int idFournisseur,
+        DateTime date,
+        int? numFactureFournisseur,
+        int accountingYearId)
+    {
+        this.NumFactureAvoirFourSurPage = numFactureAvoirFourSurPage;
+        this.IdFournisseur = idFournisseur;
+        this.Date = date;
+        this.NumFactureFournisseur = numFactureFournisseur;
+        this.AccountingYearId = accountingYearId;
+    }
+
+    public int Id { get; set; }
+
     public int Num { get; set; }
 
     public int NumFactureAvoirFourSurPage { get; set; }
@@ -17,9 +50,13 @@ public partial class FactureAvoirFournisseur
 
     public int? NumFactureFournisseur { get; set; }
 
-    public virtual ICollection<AvoirFournisseur> AvoirFournisseur { get; set; } = new List<AvoirFournisseur>();
+    public int AccountingYearId { get; set; }
 
     public virtual Fournisseur IdFournisseurNavigation { get; set; } = null!;
+
+    public virtual AccountingYear AccountingYear { get; set; } = null!;
+
+    public virtual ICollection<AvoirFournisseur> AvoirFournisseur { get; set; } = new List<AvoirFournisseur>();
 
     public virtual FactureFournisseur? NumFactureFournisseurNavigation { get; set; }
 }

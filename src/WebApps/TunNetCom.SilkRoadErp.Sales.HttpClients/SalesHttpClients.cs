@@ -1,8 +1,11 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AccountingYear;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Avoirs;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AvoirFournisseur;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.FactureAvoirFournisseur;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Orders;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products;
@@ -71,6 +74,18 @@ public static class SalesHttpClients
         _ = services.AddHttpClient<IQuotationApiClient, QuotationApiClient>(quotation =>
         {
             quotation.BaseAddress = new Uri(baseUrl);
+        });
+        _ = services.AddHttpClient<IAvoirsApiClient, AvoirsApiClient>(avoir =>
+        {
+            avoir.BaseAddress = new Uri(baseUrl);
+        });
+        _ = services.AddHttpClient<IAvoirFournisseurApiClient, AvoirFournisseurApiClient>(avoirFournisseur =>
+        {
+            avoirFournisseur.BaseAddress = new Uri(baseUrl);
+        });
+        _ = services.AddHttpClient<IFactureAvoirFournisseurApiClient, FactureAvoirFournisseurApiClient>(factureAvoirFournisseur =>
+        {
+            factureAvoirFournisseur.BaseAddress = new Uri(baseUrl);
         });
     }
 }

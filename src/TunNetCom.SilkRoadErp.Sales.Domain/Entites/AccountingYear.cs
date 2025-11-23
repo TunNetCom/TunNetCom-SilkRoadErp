@@ -49,5 +49,11 @@ public partial class AccountingYear
     public virtual ICollection<BonDeLivraison> BonDeLivraison { get; set; } = new List<BonDeLivraison>();
 
     public virtual ICollection<BonDeReception> BonDeReception { get; set; } = new List<BonDeReception>();
+
+    public virtual ICollection<Avoirs> Avoirs { get; set; } = new List<Avoirs>();
+
+    public virtual ICollection<AvoirFournisseur> AvoirFournisseur { get; set; } = new List<AvoirFournisseur>();
+
+    public virtual ICollection<FactureAvoirFournisseur> FactureAvoirFournisseur { get; set; } = new List<FactureAvoirFournisseur>();
 }
 
