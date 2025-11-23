@@ -54,7 +54,8 @@ public class PrintDeliveryNoteService(
             return Result.Fail("Failed to retrieve app parameters");
         }
 
-        printModel.Timbre = getAppParametersResponse.Value.Timbre;
+        // Le timbre n'est PAS utilisé dans les BL, seulement dans les factures
+        printModel.Timbre = 0;
         printModel.VatRate0 = getAppParametersResponse.Value.VatRate0;
         printModel.VatRate7 = getAppParametersResponse.Value.VatRate7;
         printModel.VatRate13 = getAppParametersResponse.Value.VatRate13;
@@ -98,7 +99,8 @@ public class PrintDeliveryNoteService(
             return Result.Fail("Failed to retrieve app parameters");
         }
 
-        printModel.Timbre = getAppParametersResponse.Value.Timbre;
+        // Le timbre n'est PAS utilisé dans les BL, seulement dans les factures
+        printModel.Timbre = 0;
         printModel.VatRate0 = getAppParametersResponse.Value.VatRate0;
         printModel.VatRate7 = getAppParametersResponse.Value.VatRate7;
         printModel.VatRate13 = getAppParametersResponse.Value.VatRate13;
@@ -120,7 +122,8 @@ public class PrintDeliveryNoteService(
         printModel.Tva19 = printModel.Lines.Where(l => l.Tva == (int)appParameters.VatRate19).Sum(l => l.TotTtc - l.TotHt);
         printModel.Tva13 = printModel.Lines.Where(l => l.Tva == (int)appParameters.VatRate13).Sum(l => l.TotTtc - l.TotHt);
         printModel.Tva7 = printModel.Lines.Where(l => l.Tva == (int)appParameters.VatRate7).Sum(l => l.TotTtc - l.TotHt);
-        printModel.TotalTTC = printModel.TotalAmount + printModel.Timbre;
+        // Le timbre n'est PAS ajouté dans les BL, seulement dans les factures
+        printModel.TotalTTC = printModel.TotalAmount;
     }
 
     private static PrintDeliveryNoteModel MapToPrintModel(DeliveryNoteResponse deliveryNote)
