@@ -14,6 +14,8 @@ public class CreateDeliveryNoteEndpoint : ICarterModule
         CreateDeliveryNoteRequest createDeliveryNoteRequest,
         CancellationToken cancellationToken)
     {
+        var items = createDeliveryNoteRequest.Items ?? new List<DeliveryNoteItemRequest>();
+        
         var createDeliveryNoteCommand = new CreateDeliveryNoteCommand
         (
             Date: createDeliveryNoteRequest.Date,
@@ -23,10 +25,10 @@ public class CreateDeliveryNoteEndpoint : ICarterModule
             TempBl: createDeliveryNoteRequest.DeliveryTime,
             NumFacture: createDeliveryNoteRequest.InvoiceNumber,
             ClientId: createDeliveryNoteRequest.CustomerId,
-            DeliveryNoteDetails: createDeliveryNoteRequest.Items.Select(selector => new LigneBlSubCommand
+            DeliveryNoteDetails: items.Select(selector => new LigneBlSubCommand
             {
-                RefProduit = selector.ProductReference,
-                DesignationLi = selector.Description,
+                RefProduit = selector.ProductReference ?? string.Empty,
+                DesignationLi = selector.Description ?? string.Empty,
                 QteLi = selector.Quantity,
                 PrixHt = selector.UnitPriceExcludingTax,
                 Remise = selector.DiscountPercentage,

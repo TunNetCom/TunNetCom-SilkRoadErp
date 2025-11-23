@@ -319,11 +319,12 @@ else
         await base.OnInitializedAsync();
 
         searchList = new List<DeliveryNoteDetailResponse>();
+        orders = new List<DeliveryNoteDetailResponse>();
         var param = await appParametersClient.GetAppParametersAsync(_cancellationTokenSource.Token);
         getAppParametersResponse = param.AsT0;
         await LoadCustomers(null);
         await FetchDeliveryNote();
-        // Only load invoices if customer is already selected (edit mode)
+        // Only load invoices if customer is already selected (edit mode or from quotation)
         if (selectedCustomerId.HasValue)
         {
             await LoadCustomerInvoices(null);
@@ -444,6 +445,57 @@ else
 
     private async Task FetchDeliveryNote()
     {
+        // Vérifier d'abord si on a des données depuis un devis dans sessionStorage
+        try
+        {
+            var deliveryNoteDataJson = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "deliveryNoteFromQuotation");
+            if (!string.IsNullOrEmpty(deliveryNoteDataJson))
+            {
+                var deliveryNoteRequest = JsonSerializer.Deserialize<CreateDeliveryNoteRequest>(deliveryNoteDataJson);
+                if (deliveryNoteRequest != null)
+                {
+                    // Pré-remplir l'interface avec les données du devis
+                    deliveryNoteDate = deliveryNoteRequest.Date;
+                    selectedCustomerId = deliveryNoteRequest.CustomerId;
+                    selectedInvoiceId = deliveryNoteRequest.InvoiceNumber;
+                    totalHt = deliveryNoteRequest.TotalExcludingTax;
+                    totalVat = deliveryNoteRequest.TotalVat;
+                    totalTtc = deliveryNoteRequest.TotalAmount;
+
+                    // Convertir les DeliveryNoteItemRequest en DeliveryNoteDetailResponse
+                    orders = deliveryNoteRequest.Items?.Select(item => new DeliveryNoteDetailResponse
+                    {
+                        Id = item.Id,
+                        ProductReference = item.ProductReference,
+                        Description = item.Description,
+                        Quantity = item.Quantity,
+                        UnitPriceExcludingTax = item.UnitPriceExcludingTax,
+                        DiscountPercentage = item.DiscountPercentage,
+                        TotalExcludingTax = item.TotalExcludingTax,
+                        VatPercentage = item.VatPercentage,
+                        TotalIncludingTax = item.TotalIncludingTax
+                    }).ToList() ?? new List<DeliveryNoteDetailResponse>();
+
+                    // Supprimer les données de sessionStorage après utilisation
+                    await JSRuntime.InvokeVoidAsync("sessionStorage.removeItem", "deliveryNoteFromQuotation");
+
+                    // Charger les factures du client si un client est sélectionné
+                    if (selectedCustomerId.HasValue)
+                    {
+                        await LoadCustomerInvoices(null);
+                    }
+
+                    await InvokeAsync(StateHasChanged);
+                    return;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to load delivery note data from sessionStorage");
+        }
+
+        // Si pas de données dans sessionStorage, vérifier si on est en mode édition
         if (string.IsNullOrEmpty(num))
         {
             orders = new List<DeliveryNoteDetailResponse>();

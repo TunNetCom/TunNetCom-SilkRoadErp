@@ -3,6 +3,7 @@
 
 @using Radzen.Blazor
 @using Microsoft.Extensions.Localization
+@using System.Text.Json
 @using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Quotations
 @using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests
@@ -26,6 +27,7 @@
 @inject ILogger<AddOrUpdateQuotation> logger
 @inject DialogService DialogService
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
 
 <style>
     .quotation-container {
@@ -87,7 +89,7 @@ else
                               Variant="Variant.Flat"
                               Size="ButtonSize.Medium"
                               Click="@ConvertToDeliveryNote"
-                              Disabled="@(isLoading || !selectedCustomerId.HasValue || !orders.Any())"
+                              Disabled="@(isLoading || !selectedCustomerId.HasValue || orders == null || !orders.Any())"
                               Title="Transformer ce devis en bon de livraison"
                               AriaLabel="Transformer en bon de livraison" />
             }
@@ -146,6 +148,7 @@ else
         await base.OnInitializedAsync();
 
         searchList = new List<QuotationDetailResponse>();
+        orders = new List<QuotationDetailResponse>();
         var param = await appParametersClient.GetAppParametersAsync(_cancellationTokenSource.Token);
         getAppParametersResponse = param.AsT0;
         await LoadCustomers(null);
@@ -177,7 +180,7 @@ else
                 TotHTva = totalHt,
                 TotTva = totalVat,
                 TotTtc = totalTtc,
-                Items = orders.Select(o => new QuotationItemRequest
+                Items = (orders ?? new List<QuotationDetailResponse>()).Select(o => new QuotationItemRequest
                 {
                     Id = o.Id,
                     ProductReference = o.ProductReference,
@@ -301,7 +304,7 @@ else
 
                     if (quotation.Items != null && quotation.Items.Any())
                     {
-                        orders = quotation.Items;
+                        orders = quotation.Items.ToList();
                     }
                     else
                     {
@@ -311,6 +314,11 @@ else
                     totalHt = quotation.TotalExcludingTax;
                     totalVat = quotation.TotalVat;
                     totalTtc = quotation.TotalAmount;
+                }
+                else
+                {
+                    // S'assurer que orders n'est jamais null
+                    orders = new List<QuotationDetailResponse>();
                 }
             }
 
@@ -332,6 +340,11 @@ else
 
     async Task DeleteRow(QuotationDetailResponse order)
     {
+        if (orders == null)
+        {
+            orders = new List<QuotationDetailResponse>();
+        }
+
         if (orders.Contains(order))
         {
             orders.Remove(order);
@@ -471,13 +484,17 @@ else
 
     async Task OnItemsChanged(List<QuotationDetailResponse> items)
     {
-        orders = items;
+        orders = items ?? new List<QuotationDetailResponse>();
         UpdateTotals();
         await InvokeAsync(StateHasChanged);
     }
 
     private void UpdateTotals()
     {
+        if (orders == null)
+        {
+            orders = new List<QuotationDetailResponse>();
+        }
         LineItemCalculator.UpdateTotals(orders, out totalHt, out totalVat, out totalTtc);
     }
 
@@ -523,7 +540,7 @@ else
             }
 
             // Vérifier qu'il y a des lignes de produits
-            if (!orders.Any())
+            if (orders == null || !orders.Any())
             {
                 NotificationService.Notify(new NotificationMessage
                 {
@@ -537,6 +554,22 @@ else
             isLoading = true;
             StateHasChanged();
 
+            // S'assurer que orders n'est pas null et contient des éléments
+            var itemsToConvert = orders?.Where(o => !string.IsNullOrWhiteSpace(o.ProductReference)).ToList() ?? new List<QuotationDetailResponse>();
+            
+            if (!itemsToConvert.Any())
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = "Aucune ligne de produit valide à convertir"
+                });
+                isLoading = false;
+                StateHasChanged();
+                return;
+            }
+
             // Créer la requête pour le bon de livraison à partir des données du devis
             var deliveryNoteRequest = new CreateDeliveryNoteRequest
             {
@@ -547,11 +580,11 @@ else
                 DeliveryTime = TimeOnly.FromDateTime(DateTime.Now),
                 InvoiceNumber = null, // Pas de facture associée lors de la création depuis un devis
                 CustomerId = selectedCustomerId.Value,
-                Items = orders.Select(o => new DeliveryNoteItemRequest
+                Items = itemsToConvert.Select(o => new DeliveryNoteItemRequest
                 {
                     Id = 0, // Nouveau item, pas d'ID
-                    ProductReference = o.ProductReference,
-                    Description = o.Description,
+                    ProductReference = o.ProductReference ?? string.Empty,
+                    Description = o.Description ?? string.Empty,
                     Quantity = o.Quantity,
                     UnitPriceExcludingTax = o.UnitPriceExcludingTax,
                     DiscountPercentage = o.DiscountPercentage,
@@ -561,32 +594,12 @@ else
                 }).ToList()
             };
 
-            // Créer le bon de livraison
-            var createResponse = await deliveryNoteApiClient.CreateDeliveryNoteAsync(deliveryNoteRequest, _cancellationTokenSource.Token);
+            // Stocker les données dans sessionStorage pour pré-remplir l'interface de création de BL
+            var deliveryNoteData = JsonSerializer.Serialize(deliveryNoteRequest);
+            await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "deliveryNoteFromQuotation", deliveryNoteData);
 
-            if (createResponse.IsSuccess)
-            {
-                var deliveryNoteNum = createResponse.ValueOrDefault;
-                
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Success,
-                    Summary = Localizer["success"],
-                    Detail = $"Bon de livraison créé avec succès (n° {deliveryNoteNum})"
-                });
-
-                // Rediriger vers la page de création/édition du bon de livraison
-                NavigationManager.NavigateTo($"/AddOrUpdateDeliveryNote/{deliveryNoteNum}");
-            }
-            else
-            {
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Error,
-                    Summary = Localizer["error"],
-                    Detail = $"Échec de la création du bon de livraison: {createResponse.Errors.First().Message}"
-                });
-            }
+            // Rediriger vers la page de création du bon de livraison (sans numéro, donc mode création)
+            NavigationManager.NavigateTo("/AddOrUpdateDeliveryNote");
         }
         catch (Exception ex)
         {

@@ -14,7 +14,7 @@
 <RadzenDataGrid @ref="ordersGrid" 
                 AllowAlternatingRows="false"
                 AllowPaging="true"
-                Data="@Items" 
+                Data="@(Items ?? new List<TItem>())" 
                 TItem="TItem"
                 ColumnWidth="200px">
     <HeaderTemplate>
@@ -32,7 +32,7 @@
                               Text="@Localizer["apply_discount"]"
                               Variant="Variant.Flat"
                               Size="ButtonSize.Small"
-                              Disabled="@(!Items.Any())"
+                              Disabled="@(Items == null || !Items.Any())"
                               Click="@OpenDiscountDialog"
                               class="action-button"
                               AriaLabel="@Localizer["apply_discount_to_all"]" />
@@ -42,7 +42,7 @@
                               Text="@Localizer["apply_vat"]"
                               Variant="Variant.Flat"
                               Size="ButtonSize.Small"
-                              Disabled="@(!Items.Any())"
+                              Disabled="@(Items == null || !Items.Any())"
                               Click="@OpenVatDialog"
                               class="action-button"
                               AriaLabel="@Localizer["apply_vat_to_all"]" />
@@ -53,7 +53,7 @@
                                   Icon="print"
                                   Text="@Localizer["print"]"
                                   Variant="Variant.Flat"
-                                  Disabled="@(!Items.Any())"
+                                  Disabled="@(Items == null || !Items.Any())"
                                   Click="@OnPrint"
                                   class="action-button"
                                   AriaLabel="@Localizer["print"]" />
@@ -66,7 +66,7 @@
                                   Text="@Localizer["save"]"
                                   Variant="Variant.Flat"
                                   Click="@OnSave" 
-                                  Disabled="@(!Items.Any())"
+                                  Disabled="@(Items == null || !Items.Any())"
                                   class="action-button"
                                   AriaLabel="@Localizer["save"]" />
                 }
@@ -100,7 +100,7 @@
                               Frozen="true"
                               FrozenPosition="FrozenColumnPosition.Left">
             <Template Context="order">
-                @(Items.IndexOf(order) + 1)
+                @((Items?.IndexOf(order) ?? -1) + 1)
             </Template>
         </RadzenDataGridColumn>
 
@@ -109,7 +109,7 @@
                               Title="@Localizer["product"]">
             <Template Context="order">
                 @{
-                    var rowIndex = Items.IndexOf(order);
+                    var rowIndex = Items?.IndexOf(order) ?? -1;
                     var dropdownId = $"product-dropdown-{rowIndex}";
                 }
                 <RadzenDropDownDataGrid Style="width: 100%; max-width: 600px;"
@@ -507,7 +507,7 @@
 
     private async Task OpenDiscountDialog()
     {
-        if (!Items.Any())
+        if (Items == null || !Items.Any())
         {
             return;
         }
@@ -530,7 +530,7 @@
 
     private async Task OpenVatDialog()
     {
-        if (!Items.Any())
+        if (Items == null || !Items.Any())
         {
             return;
         }
@@ -624,6 +624,11 @@
                 // Fallback to 0 if AppParameters is not loaded yet
                 order.DiscountPercentage = 0;
                 order.VatPercentage = 0;
+            }
+            
+            if (Items == null)
+            {
+                Items = new List<TItem>();
             }
             
             Items.Add(order);
@@ -731,6 +736,11 @@
 
     private async Task HandleDeleteItem(TItem order)
     {
+        if (Items == null)
+        {
+            return;
+        }
+        
         // Try to remove by reference first (most reliable for exact match)
         if (Items.Contains(order))
         {

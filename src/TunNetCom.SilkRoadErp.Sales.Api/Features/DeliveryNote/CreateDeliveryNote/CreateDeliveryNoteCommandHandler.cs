@@ -40,7 +40,10 @@ public class CreateDeliveryNoteCommandHandler(
             );
         deliveryNote.Num = num;
 
-        foreach(var deliveryNoteDetail in createDeliveryNoteCommand.DeliveryNoteDetails) 
+        var deliveryNoteDetailsList = createDeliveryNoteCommand.DeliveryNoteDetails?.ToList() ?? new List<LigneBlSubCommand>();
+        _logger.LogInformation($"Creating delivery note with {deliveryNoteDetailsList.Count} items");
+
+        foreach(var deliveryNoteDetail in deliveryNoteDetailsList) 
         {
             var lignesBl = new LigneBl
             {
@@ -58,6 +61,8 @@ public class CreateDeliveryNoteCommandHandler(
             // TODO make method to add lignesBl
             deliveryNote.LigneBl.Add( lignesBl );
         }
+
+        _logger.LogInformation($"Added {deliveryNote.LigneBl.Count} lines to delivery note before saving");
 
         _ = _context.BonDeLivraison.Add(deliveryNote);
         _ = await _context.SaveChangesAsync(cancellationToken);
