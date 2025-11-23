@@ -47,6 +47,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Update="Locales\SharedResource.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
     <EmbeddedResource Update="Locales\SharedResource.en.resx">
       <LastGenOutput>SharedResource.en.Designer.cs</LastGenOutput>
       <Generator>PublicResXFileCodeGenerator</Generator>
