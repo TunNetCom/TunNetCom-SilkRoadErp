@@ -1,10 +1,3 @@
-using Carter;
-using MediatR;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;
-using TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetInvoicesWithSummaries;
-using TunNetCom.SilkRoadErp.Sales.Contracts.Invoice;
-
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetInvoicesWithSummaries;
 
 public class GetInvoicesWithSummariesEndpoint : ICarterModule

@@ -1,6 +1,3 @@
-using System.Text.Json.Serialization;
-using TunNetCom.SilkRoadErp.Sales.Contracts.Common;
-
 namespace TunNetCom.SilkRoadErp.Sales.Contracts.Invoice;
 
 public class GetInvoicesWithSummariesResponse

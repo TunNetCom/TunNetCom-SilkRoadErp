@@ -1,6 +1,3 @@
-using MediatR;
-using TunNetCom.SilkRoadErp.Sales.Contracts.Invoice;
-
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetInvoicesWithSummaries;
 
 public record GetInvoicesWithSummariesQuery(

@@ -1,5 +1,4 @@
 ﻿using TunNetCom.SilkRoadErp.Sales.UnitTests.Tests;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Features.ReceiptNote.UpdateReceiptNote;
 

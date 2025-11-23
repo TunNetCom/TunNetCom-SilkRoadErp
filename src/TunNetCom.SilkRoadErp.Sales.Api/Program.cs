@@ -1,8 +1,6 @@
 using System.Threading.RateLimiting;
 using System.Reflection;
 using Microsoft.AspNetCore.OData;
-using Microsoft.OData.Edm;
-using Microsoft.OData.ModelBuilder;
 using Scalar.AspNetCore;
 using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.DataSeeder;
 using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.OData;

@@ -1,10 +1,6 @@
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.AspNetCore.OData.Routing.Controllers;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
-using TunNetCom.SilkRoadErp.Sales.Domain;
-using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Controllers;
 

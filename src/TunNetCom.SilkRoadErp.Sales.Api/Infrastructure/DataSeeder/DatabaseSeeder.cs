@@ -1,7 +1,4 @@
 using System.Text.Json;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 using JsonException = System.Text.Json.JsonException;
 

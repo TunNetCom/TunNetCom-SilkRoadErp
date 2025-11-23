@@ -1,7 +1,6 @@
 using Microsoft.OData.Edm;
 using Microsoft.OData.ModelBuilder;
 using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
-using TunNetCom.SilkRoadErp.Sales.Contracts.Invoice;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.OData;
 
