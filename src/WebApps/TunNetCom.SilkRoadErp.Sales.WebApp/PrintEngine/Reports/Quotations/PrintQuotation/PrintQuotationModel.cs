@@ -18,6 +18,10 @@ public class PrintQuotationModel
     public decimal Tva19 { get; set; }
     public decimal Tva13 { get; set; }
     public decimal Tva7 { get; set; }
+    public decimal VatRate0 { get; set; }
+    public decimal VatRate7 { get; set; }
+    public decimal VatRate13 { get; set; }
+    public decimal VatRate19 { get; set; }
 
     public QuotationCustomerModel? Customer { get; set; }
     public List<QuotationLineModel> Lines { get; set; } = new();

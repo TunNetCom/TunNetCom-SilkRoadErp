@@ -14,4 +14,8 @@ public record UpdateAppParametersCommand(
     string? AdresseRetenu,
     double? PourcentageRetenu,
     decimal? VatAmount,
-    decimal? DiscountPercentage) : IRequest<Result>;
+    decimal? DiscountPercentage,
+    decimal? VatRate0,
+    decimal? VatRate7,
+    decimal? VatRate13,
+    decimal? VatRate19) : IRequest<Result>;

@@ -37,6 +37,18 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             entity.Property(e => e.DiscountPercentage)
             .HasColumnType("decimal(18, 2)")
             .HasColumnName("DiscountPercentage");
+            entity.Property(e => e.VatRate0)
+            .HasColumnType("decimal(18, 2)")
+            .HasColumnName("VatRate0");
+            entity.Property(e => e.VatRate7)
+            .HasColumnType("decimal(18, 2)")
+            .HasColumnName("VatRate7");
+            entity.Property(e => e.VatRate13)
+            .HasColumnType("decimal(18, 2)")
+            .HasColumnName("VatRate13");
+            entity.Property(e => e.VatRate19)
+            .HasColumnType("decimal(18, 2)")
+            .HasColumnName("VatRate19");
 
             OnConfigurePartial(entity);
         }

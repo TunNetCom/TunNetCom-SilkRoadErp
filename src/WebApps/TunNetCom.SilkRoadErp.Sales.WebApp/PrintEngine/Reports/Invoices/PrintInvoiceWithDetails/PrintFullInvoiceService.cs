@@ -30,7 +30,11 @@ public class PrintFullInvoiceService(
             return Result.Fail("failed_to_retrieve_app_parameters");
         }
         printInvoiceWithDetailsModel.Timbre = getAppParametersResponse.Value.Timbre;
-        CalculateTotalAmounts(printInvoiceWithDetailsModel, getAppParametersResponse.Value.Timbre);
+        printInvoiceWithDetailsModel.VatRate0 = getAppParametersResponse.Value.VatRate0;
+        printInvoiceWithDetailsModel.VatRate7 = getAppParametersResponse.Value.VatRate7;
+        printInvoiceWithDetailsModel.VatRate13 = getAppParametersResponse.Value.VatRate13;
+        printInvoiceWithDetailsModel.VatRate19 = getAppParametersResponse.Value.VatRate19;
+        CalculateTotalAmounts(printInvoiceWithDetailsModel, getAppParametersResponse.Value.Timbre, getAppParametersResponse.Value);
 
         SilkPdfOptions printOptions = PreparePrintOptions(printInvoiceWithDetailsModel, getAppParametersResponse.Value);
 
@@ -83,17 +87,17 @@ public class PrintFullInvoiceService(
         return printOptions;
     }
 
-    private static void CalculateTotalAmounts(PrintFullInvoiceModel printInvoiceWithDetailsModel, decimal timbre)
+    private static void CalculateTotalAmounts(PrintFullInvoiceModel printInvoiceWithDetailsModel, decimal timbre, GetAppParametersResponse appParameters)
     {
         printInvoiceWithDetailsModel.TotalHT = printInvoiceWithDetailsModel.DeliveryNotes.Sum(dn => dn.Lines.Sum(l => l.TotHt));
         printInvoiceWithDetailsModel.TotalTVA = printInvoiceWithDetailsModel.DeliveryNotes.Sum(dn => dn.Lines.Sum(l => l.TotTtc - l.TotHt));
         printInvoiceWithDetailsModel.TotalTTC = printInvoiceWithDetailsModel.DeliveryNotes.Sum(dn => dn.Lines.Sum(l => l.TotTtc)) + timbre;
-        printInvoiceWithDetailsModel.Base19 = printInvoiceWithDetailsModel.DeliveryNotes.Sum(dn => dn.Lines.Where(l => l.Tva == 19).Sum(l => l.TotHt));
-        printInvoiceWithDetailsModel.Base13 = printInvoiceWithDetailsModel.DeliveryNotes.Sum(dn => dn.Lines.Where(l => l.Tva == 13).Sum(l => l.TotHt));
-        printInvoiceWithDetailsModel.Base7 = printInvoiceWithDetailsModel.DeliveryNotes.Sum(dn => dn.Lines.Where(l => l.Tva == 7).Sum(l => l.TotHt));
-        printInvoiceWithDetailsModel.Tva19 = printInvoiceWithDetailsModel.DeliveryNotes.Sum(dn => dn.Lines.Where(l => l.Tva == 19).Sum(l => l.TotTtc - l.TotHt));
-        printInvoiceWithDetailsModel.Tva13 = printInvoiceWithDetailsModel.DeliveryNotes.Sum(dn => dn.Lines.Where(l => l.Tva == 13).Sum(l => l.TotTtc - l.TotHt));
-        printInvoiceWithDetailsModel.Tva7 = printInvoiceWithDetailsModel.DeliveryNotes.Sum(dn => dn.Lines.Where(l => l.Tva == 7).Sum(l => l.TotTtc - l.TotHt));
+        printInvoiceWithDetailsModel.Base19 = printInvoiceWithDetailsModel.DeliveryNotes.Sum(dn => dn.Lines.Where(l => l.Tva == (int)appParameters.VatRate19).Sum(l => l.TotHt));
+        printInvoiceWithDetailsModel.Base13 = printInvoiceWithDetailsModel.DeliveryNotes.Sum(dn => dn.Lines.Where(l => l.Tva == (int)appParameters.VatRate13).Sum(l => l.TotHt));
+        printInvoiceWithDetailsModel.Base7 = printInvoiceWithDetailsModel.DeliveryNotes.Sum(dn => dn.Lines.Where(l => l.Tva == (int)appParameters.VatRate7).Sum(l => l.TotHt));
+        printInvoiceWithDetailsModel.Tva19 = printInvoiceWithDetailsModel.DeliveryNotes.Sum(dn => dn.Lines.Where(l => l.Tva == (int)appParameters.VatRate19).Sum(l => l.TotTtc - l.TotHt));
+        printInvoiceWithDetailsModel.Tva13 = printInvoiceWithDetailsModel.DeliveryNotes.Sum(dn => dn.Lines.Where(l => l.Tva == (int)appParameters.VatRate13).Sum(l => l.TotTtc - l.TotHt));
+        printInvoiceWithDetailsModel.Tva7 = printInvoiceWithDetailsModel.DeliveryNotes.Sum(dn => dn.Lines.Where(l => l.Tva == (int)appParameters.VatRate7).Sum(l => l.TotTtc - l.TotHt));
     }
 
     private async Task<Result<GetAppParametersResponse>> FetchAppParametersAsync(CancellationToken cancellationToken)

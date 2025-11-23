@@ -38,7 +38,11 @@ public class UpdateAppParametersCommandHandler(
             adresseRetenu: updateAppParametersCommand.AdresseRetenu,
             pourcentageRetenu: updateAppParametersCommand.PourcentageRetenu ?? appParametersToUpdate.PourcentageRetenu,
             vatAmount: updateAppParametersCommand.VatAmount ?? appParametersToUpdate.VatAmount,
-            discountPercentage: updateAppParametersCommand.DiscountPercentage ?? appParametersToUpdate.DiscountPercentage);
+            discountPercentage: updateAppParametersCommand.DiscountPercentage ?? appParametersToUpdate.DiscountPercentage,
+            vatRate0: updateAppParametersCommand.VatRate0 ?? appParametersToUpdate.VatRate0,
+            vatRate7: updateAppParametersCommand.VatRate7 ?? appParametersToUpdate.VatRate7,
+            vatRate13: updateAppParametersCommand.VatRate13 ?? appParametersToUpdate.VatRate13,
+            vatRate19: updateAppParametersCommand.VatRate19 ?? appParametersToUpdate.VatRate19);
 
         _ = await _context.SaveChangesAsync(cancellationToken);
 

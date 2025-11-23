@@ -397,7 +397,11 @@ public class DatabaseSeeder
             AdresseRetenu = systemeData.AdresseRetenu,
             PourcentageRetenu = systemeData.PourcentageRetenu,
             VatAmount = systemeData.VatAmount,
-            DiscountPercentage = systemeData.DiscountPercentage
+            DiscountPercentage = systemeData.DiscountPercentage,
+            VatRate0 = systemeData.VatRate0,
+            VatRate7 = systemeData.VatRate7,
+            VatRate13 = systemeData.VatRate13,
+            VatRate19 = systemeData.VatRate19
         };
 
         _logger.LogInformation("Ajout des données système à la base de données...");

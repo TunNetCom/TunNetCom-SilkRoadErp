@@ -57,7 +57,11 @@ public class PrintQuotationService(
         }
 
         printModel.Timbre = getAppParametersResponse.Value.Timbre;
-        CalculateTotalAmounts(printModel);
+        printModel.VatRate0 = getAppParametersResponse.Value.VatRate0;
+        printModel.VatRate7 = getAppParametersResponse.Value.VatRate7;
+        printModel.VatRate13 = getAppParametersResponse.Value.VatRate13;
+        printModel.VatRate19 = getAppParametersResponse.Value.VatRate19;
+        CalculateTotalAmounts(printModel, getAppParametersResponse.Value);
 
         var printOptions = PreparePrintOptions(printModel, getAppParametersResponse.Value);
 
@@ -97,7 +101,11 @@ public class PrintQuotationService(
         }
 
         printModel.Timbre = getAppParametersResponse.Value.Timbre;
-        CalculateTotalAmounts(printModel);
+        printModel.VatRate0 = getAppParametersResponse.Value.VatRate0;
+        printModel.VatRate7 = getAppParametersResponse.Value.VatRate7;
+        printModel.VatRate13 = getAppParametersResponse.Value.VatRate13;
+        printModel.VatRate19 = getAppParametersResponse.Value.VatRate19;
+        CalculateTotalAmounts(printModel, getAppParametersResponse.Value);
 
         var printOptions = PreparePrintOptions(printModel, getAppParametersResponse.Value);
 
@@ -106,14 +114,14 @@ public class PrintQuotationService(
         return Result.Ok(pdfBytes);
     }
 
-    private static void CalculateTotalAmounts(PrintQuotationModel printModel)
+    private static void CalculateTotalAmounts(PrintQuotationModel printModel, GetAppParametersResponse appParameters)
     {
-        printModel.Base19 = printModel.Lines.Where(l => l.Tva == 19).Sum(l => l.TotHt);
-        printModel.Base13 = printModel.Lines.Where(l => l.Tva == 13).Sum(l => l.TotHt);
-        printModel.Base7 = printModel.Lines.Where(l => l.Tva == 7).Sum(l => l.TotHt);
-        printModel.Tva19 = printModel.Lines.Where(l => l.Tva == 19).Sum(l => l.TotTtc - l.TotHt);
-        printModel.Tva13 = printModel.Lines.Where(l => l.Tva == 13).Sum(l => l.TotTtc - l.TotHt);
-        printModel.Tva7 = printModel.Lines.Where(l => l.Tva == 7).Sum(l => l.TotTtc - l.TotHt);
+        printModel.Base19 = printModel.Lines.Where(l => l.Tva == (int)appParameters.VatRate19).Sum(l => l.TotHt);
+        printModel.Base13 = printModel.Lines.Where(l => l.Tva == (int)appParameters.VatRate13).Sum(l => l.TotHt);
+        printModel.Base7 = printModel.Lines.Where(l => l.Tva == (int)appParameters.VatRate7).Sum(l => l.TotHt);
+        printModel.Tva19 = printModel.Lines.Where(l => l.Tva == (int)appParameters.VatRate19).Sum(l => l.TotTtc - l.TotHt);
+        printModel.Tva13 = printModel.Lines.Where(l => l.Tva == (int)appParameters.VatRate13).Sum(l => l.TotTtc - l.TotHt);
+        printModel.Tva7 = printModel.Lines.Where(l => l.Tva == (int)appParameters.VatRate7).Sum(l => l.TotTtc - l.TotHt);
         printModel.TotalTTC = printModel.TotalAmount + printModel.Timbre;
     }
 

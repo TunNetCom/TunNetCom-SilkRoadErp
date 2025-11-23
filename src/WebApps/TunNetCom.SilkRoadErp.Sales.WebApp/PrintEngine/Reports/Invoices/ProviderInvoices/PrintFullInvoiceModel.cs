@@ -18,6 +18,10 @@ public class ProviderInvoiceModel
     public decimal Base13 { get; internal set; }
     public decimal Tva13 { get; internal set; }
     public decimal Timbre { get; set; }
+    public decimal VatRate0 { get; set; }
+    public decimal VatRate7 { get; set; }
+    public decimal VatRate13 { get; set; }
+    public decimal VatRate19 { get; set; }
 
 }
 

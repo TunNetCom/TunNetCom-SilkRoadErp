@@ -129,6 +129,50 @@
             </RadzenColumn>
         </RadzenRow>
 
+        <RadzenRow Class="g-2 mb-4">
+            <RadzenColumn Size="12">
+                <h4 style="margin-bottom: 15px;">Taux de TVA</h4>
+            </RadzenColumn>
+        </RadzenRow>
+
+        <RadzenRow Class="g-2 mb-4">
+            <RadzenColumn Size="12" SizeSM="6" SizeMD="3" Class="d-flex flex-column gap-3">
+                <RadzenFormField Text="Taux TVA 0%">
+                    <Start><RadzenIcon Icon="percent" /></Start>
+                    <ChildContent>
+                        <RadzenNumeric @bind-Value="system.VatRate0" Name="VatRate0" Style="width: 100%;" Format="N2" Step="0.01" />
+                    </ChildContent>
+                </RadzenFormField>
+            </RadzenColumn>
+
+            <RadzenColumn Size="12" SizeSM="6" SizeMD="3" Class="d-flex flex-column gap-3">
+                <RadzenFormField Text="Taux TVA 7%">
+                    <Start><RadzenIcon Icon="percent" /></Start>
+                    <ChildContent>
+                        <RadzenNumeric @bind-Value="system.VatRate7" Name="VatRate7" Style="width: 100%;" Format="N2" Step="0.01" />
+                    </ChildContent>
+                </RadzenFormField>
+            </RadzenColumn>
+
+            <RadzenColumn Size="12" SizeSM="6" SizeMD="3" Class="d-flex flex-column gap-3">
+                <RadzenFormField Text="Taux TVA 13%">
+                    <Start><RadzenIcon Icon="percent" /></Start>
+                    <ChildContent>
+                        <RadzenNumeric @bind-Value="system.VatRate13" Name="VatRate13" Style="width: 100%;" Format="N2" Step="0.01" />
+                    </ChildContent>
+                </RadzenFormField>
+            </RadzenColumn>
+
+            <RadzenColumn Size="12" SizeSM="6" SizeMD="3" Class="d-flex flex-column gap-3">
+                <RadzenFormField Text="Taux TVA 19%">
+                    <Start><RadzenIcon Icon="percent" /></Start>
+                    <ChildContent>
+                        <RadzenNumeric @bind-Value="system.VatRate19" Name="VatRate19" Style="width: 100%;" Format="N2" Step="0.01" />
+                    </ChildContent>
+                </RadzenFormField>
+            </RadzenColumn>
+        </RadzenRow>
+
         <RadzenRow Style="margin-top: 15px;">
             <RadzenColumn Size="12" Style="text-align: center;">
                 <RadzenButton ButtonType="Radzen.ButtonType.Submit"
@@ -178,7 +222,11 @@
 					PourcentageRetenu = system.PourcentageRetenu,
 					EtbSecondaire = system.EtbSecondaire,
 					VatAmount = system.VatAmount,
-					DiscountPercentage = system.DiscountPercentage
+					DiscountPercentage = system.DiscountPercentage,
+					VatRate0 = system.VatRate0,
+					VatRate7 = system.VatRate7,
+					VatRate13 = system.VatRate13,
+					VatRate19 = system.VatRate19
 				}, cancellationToken);
 
         if (updateAppParametersResult.IsT0)

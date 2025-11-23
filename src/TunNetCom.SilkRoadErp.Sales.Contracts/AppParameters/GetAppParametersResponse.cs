@@ -46,4 +46,16 @@ public class GetAppParametersResponse
 
     [JsonPropertyName("vatAmount")]
     public decimal VatAmount { get; set; }
+
+    [JsonPropertyName("vatRate0")]
+    public decimal VatRate0 { get; set; }
+
+    [JsonPropertyName("vatRate7")]
+    public decimal VatRate7 { get; set; }
+
+    [JsonPropertyName("vatRate13")]
+    public decimal VatRate13 { get; set; }
+
+    [JsonPropertyName("vatRate19")]
+    public decimal VatRate19 { get; set; }
 }

@@ -23,7 +23,11 @@ public partial class Systeme
         string? adresseRetenu,
         double pourcentageRetenu,
         decimal vatAmount,
-        decimal discountPercentage)
+        decimal discountPercentage,
+        decimal vatRate0,
+        decimal vatRate7,
+        decimal vatRate13,
+        decimal vatRate19)
     {
         this.NomSociete = nomSociete;
         this.Timbre = timbre;
@@ -40,6 +44,10 @@ public partial class Systeme
         this.PourcentageRetenu = pourcentageRetenu;
         this.VatAmount = vatAmount;
         this.DiscountPercentage = discountPercentage;
+        this.VatRate0 = vatRate0;
+        this.VatRate7 = vatRate7;
+        this.VatRate13 = vatRate13;
+        this.VatRate19 = vatRate19;
     }
     public int Id { get; set; }
 
@@ -72,5 +80,13 @@ public partial class Systeme
     public decimal DiscountPercentage { get; set; }
 
     public decimal VatAmount { get; set; }
+
+    public decimal VatRate0 { get; set; }
+
+    public decimal VatRate7 { get; set; }
+
+    public decimal VatRate13 { get; set; }
+
+    public decimal VatRate19 { get; set; }
 
 }

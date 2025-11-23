@@ -30,7 +30,11 @@ public class PrintProviderFullInvoiceService(
             return Result.Fail("failed_to_retrieve_app_parameters");
         }
         printInvoiceWithDetailsModel.Timbre = getAppParametersResponse.Value.Timbre;
-        CalculateTotalAmounts(printInvoiceWithDetailsModel, getAppParametersResponse.Value.Timbre);
+        printInvoiceWithDetailsModel.VatRate0 = getAppParametersResponse.Value.VatRate0;
+        printInvoiceWithDetailsModel.VatRate7 = getAppParametersResponse.Value.VatRate7;
+        printInvoiceWithDetailsModel.VatRate13 = getAppParametersResponse.Value.VatRate13;
+        printInvoiceWithDetailsModel.VatRate19 = getAppParametersResponse.Value.VatRate19;
+        CalculateTotalAmounts(printInvoiceWithDetailsModel, getAppParametersResponse.Value.Timbre, getAppParametersResponse.Value);
 
         SilkPdfOptions printOptions = PreparePrintOptions(printInvoiceWithDetailsModel, getAppParametersResponse.Value);
 
@@ -124,17 +128,17 @@ public class PrintProviderFullInvoiceService(
         return printOptions;
     }
 
-    private static void CalculateTotalAmounts(ProviderInvoiceModel printInvoiceWithDetailsModel, decimal timbre)
+    private static void CalculateTotalAmounts(ProviderInvoiceModel printInvoiceWithDetailsModel, decimal timbre, GetAppParametersResponse appParameters)
     {
         printInvoiceWithDetailsModel.TotalHT = printInvoiceWithDetailsModel.ReceiptNotes.Sum(dn => dn.Lines.Sum(l => l.LineTotalExclTax));
         printInvoiceWithDetailsModel.TotalTVA = printInvoiceWithDetailsModel.ReceiptNotes.Sum(dn => dn.Lines.Sum(l => l.LineTotalInclTax - l.LineTotalExclTax));
         printInvoiceWithDetailsModel.TotalTTC = printInvoiceWithDetailsModel.ReceiptNotes.Sum(dn => dn.Lines.Sum(l => l.LineTotalInclTax)) + timbre;
-        printInvoiceWithDetailsModel.Base19 = printInvoiceWithDetailsModel.ReceiptNotes.Sum(dn => dn.Lines.Where(l => l.TaxRate == 19).Sum(l => l.LineTotalExclTax));
-        printInvoiceWithDetailsModel.Base13 = printInvoiceWithDetailsModel.ReceiptNotes.Sum(dn => dn.Lines.Where(l => l.TaxRate == 13).Sum(l => l.LineTotalExclTax));
-        printInvoiceWithDetailsModel.Base7 = printInvoiceWithDetailsModel.ReceiptNotes.Sum(dn => dn.Lines.Where(l => l.TaxRate == 7).Sum(l => l.LineTotalExclTax));
-        printInvoiceWithDetailsModel.Tva19 = printInvoiceWithDetailsModel.ReceiptNotes.Sum(dn => dn.Lines.Where(l => l.TaxRate == 19).Sum(l => l.LineTotalInclTax - l.LineTotalExclTax));
-        printInvoiceWithDetailsModel.Tva13 = printInvoiceWithDetailsModel.ReceiptNotes.Sum(dn => dn.Lines.Where(l => l.TaxRate == 13).Sum(l => l.LineTotalInclTax - l.LineTotalExclTax));
-        printInvoiceWithDetailsModel.Tva7 = printInvoiceWithDetailsModel.ReceiptNotes.Sum(dn => dn.Lines.Where(l => l.TaxRate == 7).Sum(l => l.LineTotalInclTax - l.LineTotalExclTax));
+        printInvoiceWithDetailsModel.Base19 = printInvoiceWithDetailsModel.ReceiptNotes.Sum(dn => dn.Lines.Where(l => l.TaxRate == (int)appParameters.VatRate19).Sum(l => l.LineTotalExclTax));
+        printInvoiceWithDetailsModel.Base13 = printInvoiceWithDetailsModel.ReceiptNotes.Sum(dn => dn.Lines.Where(l => l.TaxRate == (int)appParameters.VatRate13).Sum(l => l.LineTotalExclTax));
+        printInvoiceWithDetailsModel.Base7 = printInvoiceWithDetailsModel.ReceiptNotes.Sum(dn => dn.Lines.Where(l => l.TaxRate == (int)appParameters.VatRate7).Sum(l => l.LineTotalExclTax));
+        printInvoiceWithDetailsModel.Tva19 = printInvoiceWithDetailsModel.ReceiptNotes.Sum(dn => dn.Lines.Where(l => l.TaxRate == (int)appParameters.VatRate19).Sum(l => l.LineTotalInclTax - l.LineTotalExclTax));
+        printInvoiceWithDetailsModel.Tva13 = printInvoiceWithDetailsModel.ReceiptNotes.Sum(dn => dn.Lines.Where(l => l.TaxRate == (int)appParameters.VatRate13).Sum(l => l.LineTotalInclTax - l.LineTotalExclTax));
+        printInvoiceWithDetailsModel.Tva7 = printInvoiceWithDetailsModel.ReceiptNotes.Sum(dn => dn.Lines.Where(l => l.TaxRate == (int)appParameters.VatRate7).Sum(l => l.LineTotalInclTax - l.LineTotalExclTax));
     }
 
     private async Task<Result<GetAppParametersResponse>> FetchAppParametersAsync(CancellationToken cancellationToken)

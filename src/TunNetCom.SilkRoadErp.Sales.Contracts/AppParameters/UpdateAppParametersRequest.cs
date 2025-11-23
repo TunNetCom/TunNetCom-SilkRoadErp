@@ -22,7 +22,11 @@ public class UpdateAppParametersRequest
         string? adresseRetenu,
         double? pourcentageRetenu,
         decimal? vatAmount,
-        decimal? discountPercentage)
+        decimal? discountPercentage,
+        decimal? vatRate0,
+        decimal? vatRate7,
+        decimal? vatRate13,
+        decimal? vatRate19)
     {
         NomSociete = nomSociete;
         Timbre = (decimal)timbre;
@@ -39,6 +43,10 @@ public class UpdateAppParametersRequest
         PourcentageRetenu = (double)pourcentageRetenu;
         VatAmount = vatAmount ?? 0;
         DiscountPercentage = discountPercentage ?? 0;
+        VatRate0 = vatRate0 ?? 0;
+        VatRate7 = vatRate7 ?? 7;
+        VatRate13 = vatRate13 ?? 13;
+        VatRate19 = vatRate19 ?? 19;
     }
 
     public string NomSociete { get; set; } = null!;
@@ -70,4 +78,12 @@ public class UpdateAppParametersRequest
     public decimal DiscountPercentage { get; set; }
 
     public decimal VatAmount { get; set; }
+
+    public decimal VatRate0 { get; set; }
+
+    public decimal VatRate7 { get; set; }
+
+    public decimal VatRate13 { get; set; }
+
+    public decimal VatRate19 { get; set; }
 }

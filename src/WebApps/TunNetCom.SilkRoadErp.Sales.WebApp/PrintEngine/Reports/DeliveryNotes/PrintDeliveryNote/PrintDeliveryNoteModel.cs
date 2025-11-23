@@ -20,6 +20,10 @@ public class PrintDeliveryNoteModel
     public decimal Tva19 { get; set; }
     public decimal Tva13 { get; set; }
     public decimal Tva7 { get; set; }
+    public decimal VatRate0 { get; set; }
+    public decimal VatRate7 { get; set; }
+    public decimal VatRate13 { get; set; }
+    public decimal VatRate19 { get; set; }
 
     public DeliveryNoteCustomerModel? Customer { get; set; }
     public List<DeliveryNoteLineModel> Lines { get; set; } = new();

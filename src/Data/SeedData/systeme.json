@@ -14,5 +14,9 @@
   "etbSecondaire": "000",
   "codeTva": "A",
   "fax": "71369601",
-  "timbre": 1.00
+  "timbre": 1.00,
+  "vatRate0": 0.00,
+  "vatRate7": 7.00,
+  "vatRate13": 13.00,
+  "vatRate19": 19.00
 }

@@ -30,7 +30,11 @@ public class UpdateAppParametersEndpoint : ICarterModule
                         AdresseRetenu: request.AdresseRetenu,
                         PourcentageRetenu: request.PourcentageRetenu,
                         VatAmount: request.VatAmount,
-                        DiscountPercentage: request.DiscountPercentage);
+                        DiscountPercentage: request.DiscountPercentage,
+                        VatRate0: request.VatRate0,
+                        VatRate7: request.VatRate7,
+                        VatRate13: request.VatRate13,
+                        VatRate19: request.VatRate19);
 
                     var updateAppParametersResult = await mediator.Send(updateAppParametersCommand, cancellationToken);
 

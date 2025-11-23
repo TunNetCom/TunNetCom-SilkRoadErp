@@ -18,6 +18,10 @@ public class SystemeSeedData
     public double PourcentageRetenu { get; set; }
     public decimal VatAmount { get; set; }
     public decimal DiscountPercentage { get; set; }
+    public decimal VatRate0 { get; set; }
+    public decimal VatRate7 { get; set; }
+    public decimal VatRate13 { get; set; }
+    public decimal VatRate19 { get; set; }
 }
 
 
