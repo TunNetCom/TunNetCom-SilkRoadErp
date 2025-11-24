@@ -1,0 +1,163 @@
+@page "/banques"
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Banque
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Banque
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using Radzen.Blazor
+@using Radzen
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<SharedResource> Localizer
+@inject IBanqueApiClient BanqueService
+@inject ToastService ToastService
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+
+<div class="banques-container">
+    <div class="banques-card">
+        <div class="banques-header">
+            <h3 class="banques-title">@Localizer["Banques"]</h3>
+            <RadzenButton Icon="add" Text="@Localizer["Ajouter_Banque"]"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Click="CreateBanque"
+                          Class="btn-primary" />
+        </div>
+
+        <RadzenDataGrid @ref="banqueGrid"
+                        TItem="BanqueResponse"
+                        Data="@banques"
+                        LoadData="@LoadBanques"
+                        AllowFiltering="true"
+                        AllowPaging="true"
+                        AllowSorting="true"
+                        FilterPopupRenderMode="PopupRenderMode.OnDemand"
+                        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                        PageSize="10"
+                        Density="Density.Compact"
+                        Class="banques-grid"
+                        IsLoading="@isLoadingBanques"
+                        ShowPagingSummary="true"
+                        Responsive="true">
+            <EmptyTemplate>
+                <p style="font-size: 24px; text-align: center; margin: 2rem;">@Localizer["Aucune_Banque"]</p>
+            </EmptyTemplate>
+            <Columns>
+                <RadzenDataGridColumn TItem="BanqueResponse" Property="Id" Title="ID" Width="80px" />
+                <RadzenDataGridColumn TItem="BanqueResponse" Property="Nom" Title="@Localizer["Nom"]" Width="300px" />
+                <RadzenDataGridColumn TItem="BanqueResponse" Filterable="false" Sortable="false" Width="150px" TextAlign="TextAlign.Center">
+                    <Template Context="banque">
+                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Success" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter"
+                                      Click="@(() => EditBanque(banque.Id))"
+                                      Title="@Localizer["Modifier"]" />
+                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter" Class="rz-my-1 rz-ms-1"
+                                      Click="@(() => ConfirmDeleteBanque(banque.Id))"
+                                      Title="@Localizer["Supprimer"]" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    </div>
+</div>
+
+<style>
+    .banques-container {
+        padding: 0.25rem 1.25rem 1.25rem 1.25rem;
+        max-width: 1400px;
+        margin: 0.25rem auto 1rem auto;
+    }
+
+    .banques-card {
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        padding: 0.75rem 1.5rem 1.5rem 1.5rem;
+        border: none;
+    }
+
+    .banques-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.25rem;
+    }
+
+    .banques-title {
+        font-weight: 600;
+        margin: 0;
+        font-size: 2rem;
+        line-height: 1.2;
+    }
+
+    .banques-grid {
+        border-radius: 8px;
+        overflow: hidden;
+        border: none;
+    }
+</style>
+
+@code {
+    private RadzenDataGrid<BanqueResponse> banqueGrid = default!;
+    private List<BanqueResponse> banques = new();
+    private bool isLoadingBanques = false;
+    private CancellationTokenSource cancellationTokenSource = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await banqueGrid.Reload();
+        }
+    }
+
+    async Task LoadBanques(LoadDataArgs args)
+    {
+        isLoadingBanques = true;
+        await Task.Yield();
+
+        try
+        {
+            banques = await BanqueService.GetBanquesAsync(cancellationTokenSource.Token);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = $"{Localizer["Erreur_Chargement_Banques"]}: {ex.Message}"
+            });
+            banques = new List<BanqueResponse>();
+        }
+
+        isLoadingBanques = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void CreateBanque()
+    {
+        NavigationManager.NavigateTo("/banque/add");
+    }
+
+    private void EditBanque(int id)
+    {
+        NavigationManager.NavigateTo($"/banque/edit/{id}");
+    }
+
+    async Task ConfirmDeleteBanque(int banqueId)
+    {
+        bool? confirmed = await DialogService.Confirm(Localizer["Confirmation_Suppression_Banque"],
+                                                      Localizer["Confirmation_Suppression_Titre"],
+                                                      new ConfirmOptions() { OkButtonText = Localizer["Oui"], CancelButtonText = Localizer["Non"] });
+
+        if (confirmed == true)
+        {
+            // TODO: Implement delete when API is available
+            ToastService.Notify(new(ToastType.Info, Localizer["Fonctionnalite_Non_Disponible"]));
+        }
+    }
+
+    public void Dispose()
+    {
+        cancellationTokenSource.Cancel();
+        cancellationTokenSource.Dispose();
+    }
+}
+

@@ -13,6 +13,10 @@ using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProviderInvoice;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Quotations;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PaiementClient;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PaiementFournisseur;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Banque;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Soldes;
 
 
 public static class SalesHttpClients
@@ -86,6 +90,22 @@ public static class SalesHttpClients
         _ = services.AddHttpClient<IFactureAvoirFournisseurApiClient, FactureAvoirFournisseurApiClient>(factureAvoirFournisseur =>
         {
             factureAvoirFournisseur.BaseAddress = new Uri(baseUrl);
+        });
+        _ = services.AddHttpClient<IPaiementClientApiClient, PaiementClientApiClient>(paiementClient =>
+        {
+            paiementClient.BaseAddress = new Uri(baseUrl);
+        });
+        _ = services.AddHttpClient<IPaiementFournisseurApiClient, PaiementFournisseurApiClient>(paiementFournisseur =>
+        {
+            paiementFournisseur.BaseAddress = new Uri(baseUrl);
+        });
+        _ = services.AddHttpClient<IBanqueApiClient, BanqueApiClient>(banque =>
+        {
+            banque.BaseAddress = new Uri(baseUrl);
+        });
+        _ = services.AddHttpClient<ISoldesApiClient, SoldesApiClient>(soldes =>
+        {
+            soldes.BaseAddress = new Uri(baseUrl);
         });
     }
 }

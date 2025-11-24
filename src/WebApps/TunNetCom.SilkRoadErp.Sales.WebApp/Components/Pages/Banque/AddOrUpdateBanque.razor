@@ -1,0 +1,154 @@
+@page "/banque/add"
+@page "/banque/edit/{Id:int}"
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Banque
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Banque
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using Radzen.Blazor
+@using Radzen
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<SharedResource> Localizer
+@inject IBanqueApiClient BanqueService
+@inject ToastService ToastService
+@inject NotificationService NotificationService
+
+<div class="banque-form-container">
+    <div class="banque-form-card">
+        <div class="banque-form-header">
+            <h3>@(IsEditMode ? Localizer["Modifier_Banque"] : Localizer["Nouvelle_Banque"])</h3>
+            <RadzenButton Icon="arrow_back" Text="@Localizer["Retour"]"
+                          ButtonStyle="ButtonStyle.Secondary"
+                          Click="GoBack"
+                          Variant="Variant.Outlined" />
+        </div>
+
+        <RadzenStack Gap="1.5rem">
+            <RadzenFormField Text="@($"{Localizer["Nom"]} *")" class="rz-col-12">
+                <RadzenTextBox @bind-Value="banque.Nom" Placeholder="@Localizer["Nom_Banque"]" />
+            </RadzenFormField>
+
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" JustifyContent="Radzen.JustifyContent.End" class="rz-col-12">
+                <RadzenButton Text="@Localizer["Annuler"]" ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Outlined" Click="GoBack" />
+                <RadzenButton Text="@(IsEditMode ? Localizer["Modifier"] : Localizer["Creer"])" 
+                              ButtonStyle="ButtonStyle.Primary" 
+                              Click="@SaveBanque"
+                              IsBusy="@isSaving" />
+            </RadzenStack>
+        </RadzenStack>
+    </div>
+</div>
+
+<style>
+    .banque-form-container {
+        padding: 0;
+        margin: 0;
+    }
+
+    .banque-form-card {
+        background: transparent;
+        border-radius: 0;
+        box-shadow: none;
+        padding: 1rem;
+    }
+
+    .banque-form-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .banque-form-header h3 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+</style>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+    
+    private bool IsEditMode => Id.HasValue;
+    private bool isSaving = false;
+    private CreateBanqueRequest banque = new();
+    private CancellationTokenSource cancellationTokenSource = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (IsEditMode && Id.HasValue)
+        {
+            // TODO: Load banque when GetBanque API is available
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Info,
+                Summary = Localizer["Information"],
+                Detail = Localizer["Fonctionnalite_Non_Disponible"]
+            });
+        }
+    }
+
+    async Task SaveBanque()
+    {
+        if (string.IsNullOrWhiteSpace(banque.Nom))
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["Validation"],
+                Detail = Localizer["Nom_Requis"]
+            });
+            return;
+        }
+
+        isSaving = true;
+        try
+        {
+            if (IsEditMode)
+            {
+                // TODO: Implement update when API is available
+                ToastService.Notify(new(ToastType.Info, Localizer["Fonctionnalite_Non_Disponible"]));
+            }
+            else
+            {
+                var result = await BanqueService.CreateBanqueAsync(banque, cancellationTokenSource.Token);
+                if (result.IsT0)
+                {
+                    ToastService.Notify(new(ToastType.Success, Localizer["Banque_Creee"]));
+                    NavigationManager.NavigateTo("/banques");
+                }
+                else
+                {
+                    var badRequest = result.AsT1;
+                    ToastService.Notify(new(ToastType.Danger, $"{Localizer["Erreur"]}: {badRequest.Detail}"));
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = $"{Localizer["Erreur_Sauvegarde"]}: {ex.Message}"
+            });
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    void GoBack()
+    {
+        NavigationManager.NavigateTo("/banques");
+    }
+
+    public void Dispose()
+    {
+        cancellationTokenSource.Cancel();
+        cancellationTokenSource.Dispose();
+    }
+}
+

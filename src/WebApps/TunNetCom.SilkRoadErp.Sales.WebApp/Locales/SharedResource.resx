@@ -610,4 +610,277 @@
   <data name="enable_partial_delivery" xml:space="preserve">
     <value />
   </data>
+  <data name="Paiements_Clients" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Paiements_Fournisseurs" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Soldes_Clients" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Soldes_Fournisseurs" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Banques" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Ajouter_Paiement" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Nouveau_Paiement_Client" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Modifier_Paiement" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Retour" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Numero_Paiement" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Exercice_Comptable" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Exercice_Comptable_Filter" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Date_Paiement" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Methode_Paiement" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Select_Methode" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Numero_Cheque_Traite" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Select_Banque" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Nouvelle_Banque" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Date_Echeance" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Facture_Optionnel" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Select_Facture" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Bon_Livraison_Optionnel" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Select_Bon_Livraison" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Commentaire_Optionnel" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Creer" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Aucun_Paiement" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Chargement" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Attention" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Validation" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Select_Client" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Select_Client_Validation" xml:space="preserve">
+    <value />
+  </data>
+  <data name="No_Accounting_Year" xml:space="preserve">
+    <value />
+  </data>
+  <data name="No_Accounting_Year_Validation" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Select_Methode_Validation" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Paiement_Cree" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Paiement_Modifie" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Paiement_Supprime" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Erreur_Chargement_Accounting_Year" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Erreur_Chargement_Banques" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Erreur_Chargement_Paiement" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Erreur_Chargement" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Erreur_Chargement_Clients" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Erreur_Chargement_Factures" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Erreur_Chargement_BL" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Erreur_Chargement_Paiements" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Erreur_Suppression" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Erreur_Sauvegarde" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Confirmation_Suppression" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Confirmation_Suppression_Titre" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Oui" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Non" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Espece" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Cheque" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Traite" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Rechercher" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Tous_Exercices" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Numero_Col" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Client_Col" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Montant_Col" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Date_Paiement_Col" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Methode_Col" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Banque_Col" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Select_Provider" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Erreur_Chargement_Providers" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Nouveau_Paiement_Fournisseur" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Select_Provider_Validation" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Facture_Fournisseur_Optionnel" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Select_Facture_Fournisseur" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Bon_Reception_Optionnel" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Select_Bon_Reception" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Erreur_Chargement_Factures_Fournisseur" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Erreur_Chargement_BR" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Solde_Summary" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Total_Factures" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Total_BL_Non_Factures" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Total_BR_Non_Factures" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Total_Paiements" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Solde" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Documents" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Type" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Erreur_Chargement_Solde" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Ajouter_Banque" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Aucune_Banque" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Modifier_Banque" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Nouvelle_Banque" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Nom_Banque" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Confirmation_Suppression_Banque" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Fonctionnalite_Non_Disponible" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Information" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Nom_Requis" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Banque_Creee" xml:space="preserve">
+    <value />
+  </data>
 </root>

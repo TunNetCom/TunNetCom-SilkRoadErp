@@ -609,4 +609,277 @@
   <data name="enable_partial_delivery" xml:space="preserve">
     <value>تفعيل التسليم الجزئي</value>
   </data>
+  <data name="Paiements_Clients" xml:space="preserve">
+    <value>مدفوعات العملاء</value>
+  </data>
+  <data name="Paiements_Fournisseurs" xml:space="preserve">
+    <value>مدفوعات الموردين</value>
+  </data>
+  <data name="Soldes_Clients" xml:space="preserve">
+    <value>أرصدة العملاء</value>
+  </data>
+  <data name="Soldes_Fournisseurs" xml:space="preserve">
+    <value>أرصدة الموردين</value>
+  </data>
+  <data name="Banques" xml:space="preserve">
+    <value>البنوك</value>
+  </data>
+  <data name="Ajouter_Paiement" xml:space="preserve">
+    <value>إضافة دفعة</value>
+  </data>
+  <data name="Nouveau_Paiement_Client" xml:space="preserve">
+    <value>دفعة عميل جديدة</value>
+  </data>
+  <data name="Modifier_Paiement" xml:space="preserve">
+    <value>تعديل الدفعة</value>
+  </data>
+  <data name="Retour" xml:space="preserve">
+    <value>رجوع</value>
+  </data>
+  <data name="Numero_Paiement" xml:space="preserve">
+    <value>رقم الدفعة</value>
+  </data>
+  <data name="Exercice_Comptable" xml:space="preserve">
+    <value>التمرين المحاسبي</value>
+  </data>
+  <data name="Exercice_Comptable_Filter" xml:space="preserve">
+    <value>التمرين المحاسبي</value>
+  </data>
+  <data name="Date_Paiement" xml:space="preserve">
+    <value>تاريخ الدفعة</value>
+  </data>
+  <data name="Methode_Paiement" xml:space="preserve">
+    <value>طريقة الدفع</value>
+  </data>
+  <data name="Select_Methode" xml:space="preserve">
+    <value>اختر طريقة</value>
+  </data>
+  <data name="Numero_Cheque_Traite" xml:space="preserve">
+    <value>رقم الشيك/السند</value>
+  </data>
+  <data name="Select_Banque" xml:space="preserve">
+    <value>اختر بنك</value>
+  </data>
+  <data name="Nouvelle_Banque" xml:space="preserve">
+    <value>بنك جديد</value>
+  </data>
+  <data name="Date_Echeance" xml:space="preserve">
+    <value>تاريخ الاستحقاق</value>
+  </data>
+  <data name="Facture_Optionnel" xml:space="preserve">
+    <value>الفاتورة (اختياري)</value>
+  </data>
+  <data name="Select_Facture" xml:space="preserve">
+    <value>اختر فاتورة</value>
+  </data>
+  <data name="Bon_Livraison_Optionnel" xml:space="preserve">
+    <value>إيصال التسليم (اختياري)</value>
+  </data>
+  <data name="Select_Bon_Livraison" xml:space="preserve">
+    <value>اختر إيصال تسليم</value>
+  </data>
+  <data name="Commentaire_Optionnel" xml:space="preserve">
+    <value>تعليق (اختياري)</value>
+  </data>
+  <data name="Creer" xml:space="preserve">
+    <value>إنشاء</value>
+  </data>
+  <data name="Aucun_Paiement" xml:space="preserve">
+    <value>لم يتم العثور على دفعة.</value>
+  </data>
+  <data name="Chargement" xml:space="preserve">
+    <value>جاري التحميل...</value>
+  </data>
+  <data name="Attention" xml:space="preserve">
+    <value>تحذير</value>
+  </data>
+  <data name="Validation" xml:space="preserve">
+    <value>التحقق</value>
+  </data>
+  <data name="Select_Client" xml:space="preserve">
+    <value>اختر عميل</value>
+  </data>
+  <data name="Select_Client_Validation" xml:space="preserve">
+    <value>يرجى اختيار عميل</value>
+  </data>
+  <data name="No_Accounting_Year" xml:space="preserve">
+    <value>لم يتم العثور على تمرين محاسبي نشط</value>
+  </data>
+  <data name="No_Accounting_Year_Validation" xml:space="preserve">
+    <value>لم يتم العثور على تمرين محاسبي نشط. يرجى تفعيل تمرين محاسبي.</value>
+  </data>
+  <data name="Select_Methode_Validation" xml:space="preserve">
+    <value>يرجى اختيار طريقة دفع</value>
+  </data>
+  <data name="Paiement_Cree" xml:space="preserve">
+    <value>تم إنشاء الدفعة بنجاح</value>
+  </data>
+  <data name="Paiement_Modifie" xml:space="preserve">
+    <value>تم تحديث الدفعة بنجاح</value>
+  </data>
+  <data name="Paiement_Supprime" xml:space="preserve">
+    <value>تم حذف الدفعة بنجاح</value>
+  </data>
+  <data name="Erreur_Chargement_Accounting_Year" xml:space="preserve">
+    <value>خطأ في تحميل التمرين المحاسبي</value>
+  </data>
+  <data name="Erreur_Chargement_Banques" xml:space="preserve">
+    <value>خطأ في تحميل البنوك</value>
+  </data>
+  <data name="Erreur_Chargement_Paiement" xml:space="preserve">
+    <value>تعذر تحميل الدفعة</value>
+  </data>
+  <data name="Erreur_Chargement" xml:space="preserve">
+    <value>خطأ في التحميل</value>
+  </data>
+  <data name="Erreur_Chargement_Clients" xml:space="preserve">
+    <value>خطأ في تحميل العملاء</value>
+  </data>
+  <data name="Erreur_Chargement_Factures" xml:space="preserve">
+    <value>خطأ في تحميل الفواتير</value>
+  </data>
+  <data name="Erreur_Chargement_BL" xml:space="preserve">
+    <value>خطأ في تحميل إيصالات التسليم</value>
+  </data>
+  <data name="Erreur_Chargement_Paiements" xml:space="preserve">
+    <value>خطأ في تحميل المدفوعات</value>
+  </data>
+  <data name="Erreur_Suppression" xml:space="preserve">
+    <value>خطأ في الحذف</value>
+  </data>
+  <data name="Erreur_Sauvegarde" xml:space="preserve">
+    <value>خطأ في الحفظ</value>
+  </data>
+  <data name="Confirmation_Suppression" xml:space="preserve">
+    <value>هل أنت متأكد من حذف هذه الدفعة؟</value>
+  </data>
+  <data name="Confirmation_Suppression_Titre" xml:space="preserve">
+    <value>تأكيد الحذف</value>
+  </data>
+  <data name="Oui" xml:space="preserve">
+    <value>نعم</value>
+  </data>
+  <data name="Non" xml:space="preserve">
+    <value>لا</value>
+  </data>
+  <data name="Espece" xml:space="preserve">
+    <value>نقد</value>
+  </data>
+  <data name="Cheque" xml:space="preserve">
+    <value>شيك</value>
+  </data>
+  <data name="Traite" xml:space="preserve">
+    <value>سند</value>
+  </data>
+  <data name="Rechercher" xml:space="preserve">
+    <value>بحث</value>
+  </data>
+  <data name="Tous_Exercices" xml:space="preserve">
+    <value>جميع التمارين</value>
+  </data>
+  <data name="Numero_Col" xml:space="preserve">
+    <value>الرقم</value>
+  </data>
+  <data name="Client_Col" xml:space="preserve">
+    <value>العميل</value>
+  </data>
+  <data name="Montant_Col" xml:space="preserve">
+    <value>المبلغ</value>
+  </data>
+  <data name="Date_Paiement_Col" xml:space="preserve">
+    <value>تاريخ الدفعة</value>
+  </data>
+  <data name="Methode_Col" xml:space="preserve">
+    <value>الطريقة</value>
+  </data>
+  <data name="Banque_Col" xml:space="preserve">
+    <value>البنك</value>
+  </data>
+  <data name="Select_Provider" xml:space="preserve">
+    <value>اختر مورد</value>
+  </data>
+  <data name="Erreur_Chargement_Providers" xml:space="preserve">
+    <value>خطأ في تحميل الموردين</value>
+  </data>
+  <data name="Nouveau_Paiement_Fournisseur" xml:space="preserve">
+    <value>دفعة مورد جديدة</value>
+  </data>
+  <data name="Select_Provider_Validation" xml:space="preserve">
+    <value>يرجى اختيار مورد</value>
+  </data>
+  <data name="Facture_Fournisseur_Optionnel" xml:space="preserve">
+    <value>فاتورة المورد (اختياري)</value>
+  </data>
+  <data name="Select_Facture_Fournisseur" xml:space="preserve">
+    <value>اختر فاتورة مورد</value>
+  </data>
+  <data name="Bon_Reception_Optionnel" xml:space="preserve">
+    <value>إيصال الاستلام (اختياري)</value>
+  </data>
+  <data name="Select_Bon_Reception" xml:space="preserve">
+    <value>اختر إيصال استلام</value>
+  </data>
+  <data name="Erreur_Chargement_Factures_Fournisseur" xml:space="preserve">
+    <value>خطأ في تحميل فواتير الموردين</value>
+  </data>
+  <data name="Erreur_Chargement_BR" xml:space="preserve">
+    <value>خطأ في تحميل إيصالات الاستلام</value>
+  </data>
+  <data name="Solde_Summary" xml:space="preserve">
+    <value>ملخص الرصيد</value>
+  </data>
+  <data name="Total_Factures" xml:space="preserve">
+    <value>إجمالي الفواتير</value>
+  </data>
+  <data name="Total_BL_Non_Factures" xml:space="preserve">
+    <value>إجمالي إيصالات التسليم غير المفوترة</value>
+  </data>
+  <data name="Total_BR_Non_Factures" xml:space="preserve">
+    <value>إجمالي إيصالات الاستلام غير المفوترة</value>
+  </data>
+  <data name="Total_Paiements" xml:space="preserve">
+    <value>إجمالي المدفوعات</value>
+  </data>
+  <data name="Solde" xml:space="preserve">
+    <value>الرصيد</value>
+  </data>
+  <data name="Documents" xml:space="preserve">
+    <value>المستندات</value>
+  </data>
+  <data name="Type" xml:space="preserve">
+    <value>النوع</value>
+  </data>
+  <data name="Erreur_Chargement_Solde" xml:space="preserve">
+    <value>خطأ في تحميل الرصيد</value>
+  </data>
+  <data name="Ajouter_Banque" xml:space="preserve">
+    <value>إضافة بنك</value>
+  </data>
+  <data name="Aucune_Banque" xml:space="preserve">
+    <value>لم يتم العثور على بنك.</value>
+  </data>
+  <data name="Modifier_Banque" xml:space="preserve">
+    <value>تعديل البنك</value>
+  </data>
+  <data name="Nouvelle_Banque" xml:space="preserve">
+    <value>بنك جديد</value>
+  </data>
+  <data name="Nom_Banque" xml:space="preserve">
+    <value>اسم البنك</value>
+  </data>
+  <data name="Confirmation_Suppression_Banque" xml:space="preserve">
+    <value>هل أنت متأكد من حذف هذا البنك؟</value>
+  </data>
+  <data name="Fonctionnalite_Non_Disponible" xml:space="preserve">
+    <value>هذه الميزة غير متاحة بعد</value>
+  </data>
+  <data name="Information" xml:space="preserve">
+    <value>معلومات</value>
+  </data>
+  <data name="Nom_Requis" xml:space="preserve">
+    <value>الاسم مطلوب</value>
+  </data>
+  <data name="Banque_Creee" xml:space="preserve">
+    <value>تم إنشاء البنك بنجاح</value>
+  </data>
 </root>

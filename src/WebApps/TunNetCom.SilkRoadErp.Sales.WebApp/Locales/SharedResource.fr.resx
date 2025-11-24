@@ -609,4 +609,277 @@
   <data name="enable_partial_delivery" xml:space="preserve">
     <value>Activer la livraison partielle</value>
   </data>
+  <data name="Paiements_Clients" xml:space="preserve">
+    <value>Paiements Clients</value>
+  </data>
+  <data name="Paiements_Fournisseurs" xml:space="preserve">
+    <value>Paiements Fournisseurs</value>
+  </data>
+  <data name="Soldes_Clients" xml:space="preserve">
+    <value>Soldes Clients</value>
+  </data>
+  <data name="Soldes_Fournisseurs" xml:space="preserve">
+    <value>Soldes Fournisseurs</value>
+  </data>
+  <data name="Banques" xml:space="preserve">
+    <value>Banques</value>
+  </data>
+  <data name="Ajouter_Paiement" xml:space="preserve">
+    <value>Ajouter un paiement</value>
+  </data>
+  <data name="Nouveau_Paiement_Client" xml:space="preserve">
+    <value>Nouveau paiement client</value>
+  </data>
+  <data name="Modifier_Paiement" xml:space="preserve">
+    <value>Modifier le paiement</value>
+  </data>
+  <data name="Retour" xml:space="preserve">
+    <value>Retour</value>
+  </data>
+  <data name="Numero_Paiement" xml:space="preserve">
+    <value>Numéro du paiement</value>
+  </data>
+  <data name="Exercice_Comptable" xml:space="preserve">
+    <value>Exercice comptable</value>
+  </data>
+  <data name="Exercice_Comptable_Filter" xml:space="preserve">
+    <value>Exercice comptable</value>
+  </data>
+  <data name="Date_Paiement" xml:space="preserve">
+    <value>Date de paiement</value>
+  </data>
+  <data name="Methode_Paiement" xml:space="preserve">
+    <value>Méthode de paiement</value>
+  </data>
+  <data name="Select_Methode" xml:space="preserve">
+    <value>Sélectionner une méthode</value>
+  </data>
+  <data name="Numero_Cheque_Traite" xml:space="preserve">
+    <value>Numéro chèque/traite</value>
+  </data>
+  <data name="Select_Banque" xml:space="preserve">
+    <value>Sélectionner une banque</value>
+  </data>
+  <data name="Nouvelle_Banque" xml:space="preserve">
+    <value>Nouvelle banque</value>
+  </data>
+  <data name="Date_Echeance" xml:space="preserve">
+    <value>Date d'échéance</value>
+  </data>
+  <data name="Facture_Optionnel" xml:space="preserve">
+    <value>Facture (optionnel)</value>
+  </data>
+  <data name="Select_Facture" xml:space="preserve">
+    <value>Sélectionner une facture</value>
+  </data>
+  <data name="Bon_Livraison_Optionnel" xml:space="preserve">
+    <value>Bon de livraison (optionnel)</value>
+  </data>
+  <data name="Select_Bon_Livraison" xml:space="preserve">
+    <value>Sélectionner un bon de livraison</value>
+  </data>
+  <data name="Commentaire_Optionnel" xml:space="preserve">
+    <value>Commentaire (optionnel)</value>
+  </data>
+  <data name="Creer" xml:space="preserve">
+    <value>Créer</value>
+  </data>
+  <data name="Aucun_Paiement" xml:space="preserve">
+    <value>Aucun paiement trouvé.</value>
+  </data>
+  <data name="Chargement" xml:space="preserve">
+    <value>Chargement...</value>
+  </data>
+  <data name="Attention" xml:space="preserve">
+    <value>Attention</value>
+  </data>
+  <data name="Validation" xml:space="preserve">
+    <value>Validation</value>
+  </data>
+  <data name="Select_Client" xml:space="preserve">
+    <value>Sélectionner un client</value>
+  </data>
+  <data name="Select_Client_Validation" xml:space="preserve">
+    <value>Veuillez sélectionner un client</value>
+  </data>
+  <data name="No_Accounting_Year" xml:space="preserve">
+    <value>Aucun exercice comptable actif trouvé</value>
+  </data>
+  <data name="No_Accounting_Year_Validation" xml:space="preserve">
+    <value>Aucun exercice comptable actif trouvé. Veuillez activer un exercice comptable.</value>
+  </data>
+  <data name="Select_Methode_Validation" xml:space="preserve">
+    <value>Veuillez sélectionner une méthode de paiement</value>
+  </data>
+  <data name="Paiement_Cree" xml:space="preserve">
+    <value>Paiement créé avec succès</value>
+  </data>
+  <data name="Paiement_Modifie" xml:space="preserve">
+    <value>Paiement modifié avec succès</value>
+  </data>
+  <data name="Paiement_Supprime" xml:space="preserve">
+    <value>Paiement supprimé avec succès</value>
+  </data>
+  <data name="Erreur_Chargement_Accounting_Year" xml:space="preserve">
+    <value>Erreur lors du chargement de l'exercice comptable</value>
+  </data>
+  <data name="Erreur_Chargement_Banques" xml:space="preserve">
+    <value>Erreur lors du chargement des banques</value>
+  </data>
+  <data name="Erreur_Chargement_Paiement" xml:space="preserve">
+    <value>Impossible de charger le paiement</value>
+  </data>
+  <data name="Erreur_Chargement" xml:space="preserve">
+    <value>Erreur lors du chargement</value>
+  </data>
+  <data name="Erreur_Chargement_Clients" xml:space="preserve">
+    <value>Erreur lors du chargement des clients</value>
+  </data>
+  <data name="Erreur_Chargement_Factures" xml:space="preserve">
+    <value>Erreur lors du chargement des factures</value>
+  </data>
+  <data name="Erreur_Chargement_BL" xml:space="preserve">
+    <value>Erreur lors du chargement des bons de livraison</value>
+  </data>
+  <data name="Erreur_Chargement_Paiements" xml:space="preserve">
+    <value>Erreur lors du chargement des paiements</value>
+  </data>
+  <data name="Erreur_Suppression" xml:space="preserve">
+    <value>Erreur lors de la suppression</value>
+  </data>
+  <data name="Erreur_Sauvegarde" xml:space="preserve">
+    <value>Erreur lors de la sauvegarde</value>
+  </data>
+  <data name="Confirmation_Suppression" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir supprimer ce paiement ?</value>
+  </data>
+  <data name="Confirmation_Suppression_Titre" xml:space="preserve">
+    <value>Confirmation de suppression</value>
+  </data>
+  <data name="Oui" xml:space="preserve">
+    <value>Oui</value>
+  </data>
+  <data name="Non" xml:space="preserve">
+    <value>Non</value>
+  </data>
+  <data name="Espece" xml:space="preserve">
+    <value>Espèce</value>
+  </data>
+  <data name="Cheque" xml:space="preserve">
+    <value>Chèque</value>
+  </data>
+  <data name="Traite" xml:space="preserve">
+    <value>Traite</value>
+  </data>
+  <data name="Rechercher" xml:space="preserve">
+    <value>Rechercher</value>
+  </data>
+  <data name="Tous_Exercices" xml:space="preserve">
+    <value>Tous les exercices</value>
+  </data>
+  <data name="Numero_Col" xml:space="preserve">
+    <value>Numéro</value>
+  </data>
+  <data name="Client_Col" xml:space="preserve">
+    <value>Client</value>
+  </data>
+  <data name="Montant_Col" xml:space="preserve">
+    <value>Montant</value>
+  </data>
+  <data name="Date_Paiement_Col" xml:space="preserve">
+    <value>Date de paiement</value>
+  </data>
+  <data name="Methode_Col" xml:space="preserve">
+    <value>Méthode</value>
+  </data>
+  <data name="Banque_Col" xml:space="preserve">
+    <value>Banque</value>
+  </data>
+  <data name="Select_Provider" xml:space="preserve">
+    <value>Sélectionner un fournisseur</value>
+  </data>
+  <data name="Erreur_Chargement_Providers" xml:space="preserve">
+    <value>Erreur lors du chargement des fournisseurs</value>
+  </data>
+  <data name="Nouveau_Paiement_Fournisseur" xml:space="preserve">
+    <value>Nouveau paiement fournisseur</value>
+  </data>
+  <data name="Select_Provider_Validation" xml:space="preserve">
+    <value>Veuillez sélectionner un fournisseur</value>
+  </data>
+  <data name="Facture_Fournisseur_Optionnel" xml:space="preserve">
+    <value>Facture fournisseur (optionnel)</value>
+  </data>
+  <data name="Select_Facture_Fournisseur" xml:space="preserve">
+    <value>Sélectionner une facture fournisseur</value>
+  </data>
+  <data name="Bon_Reception_Optionnel" xml:space="preserve">
+    <value>Bon de réception (optionnel)</value>
+  </data>
+  <data name="Select_Bon_Reception" xml:space="preserve">
+    <value>Sélectionner un bon de réception</value>
+  </data>
+  <data name="Erreur_Chargement_Factures_Fournisseur" xml:space="preserve">
+    <value>Erreur lors du chargement des factures fournisseur</value>
+  </data>
+  <data name="Erreur_Chargement_BR" xml:space="preserve">
+    <value>Erreur lors du chargement des bons de réception</value>
+  </data>
+  <data name="Solde_Summary" xml:space="preserve">
+    <value>Résumé du solde</value>
+  </data>
+  <data name="Total_Factures" xml:space="preserve">
+    <value>Total factures</value>
+  </data>
+  <data name="Total_BL_Non_Factures" xml:space="preserve">
+    <value>Total BL non facturés</value>
+  </data>
+  <data name="Total_BR_Non_Factures" xml:space="preserve">
+    <value>Total BR non facturés</value>
+  </data>
+  <data name="Total_Paiements" xml:space="preserve">
+    <value>Total paiements</value>
+  </data>
+  <data name="Solde" xml:space="preserve">
+    <value>Solde</value>
+  </data>
+  <data name="Documents" xml:space="preserve">
+    <value>Documents</value>
+  </data>
+  <data name="Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Erreur_Chargement_Solde" xml:space="preserve">
+    <value>Erreur lors du chargement du solde</value>
+  </data>
+  <data name="Ajouter_Banque" xml:space="preserve">
+    <value>Ajouter une banque</value>
+  </data>
+  <data name="Aucune_Banque" xml:space="preserve">
+    <value>Aucune banque trouvée.</value>
+  </data>
+  <data name="Modifier_Banque" xml:space="preserve">
+    <value>Modifier la banque</value>
+  </data>
+  <data name="Nouvelle_Banque" xml:space="preserve">
+    <value>Nouvelle banque</value>
+  </data>
+  <data name="Nom_Banque" xml:space="preserve">
+    <value>Nom de la banque</value>
+  </data>
+  <data name="Confirmation_Suppression_Banque" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir supprimer cette banque ?</value>
+  </data>
+  <data name="Fonctionnalite_Non_Disponible" xml:space="preserve">
+    <value>Cette fonctionnalité n'est pas encore disponible</value>
+  </data>
+  <data name="Information" xml:space="preserve">
+    <value>Information</value>
+  </data>
+  <data name="Nom_Requis" xml:space="preserve">
+    <value>Le nom est requis</value>
+  </data>
+  <data name="Banque_Creee" xml:space="preserve">
+    <value>Banque créée avec succès</value>
+  </data>
 </root>

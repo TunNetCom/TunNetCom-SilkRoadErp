@@ -1,0 +1,328 @@
+@page "/paiements-client"
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.PaiementClient
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PaiementClient
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AccountingYear
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using Radzen.Blazor
+@using Radzen
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Customers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<SharedResource> Localizer
+@inject IPaiementClientApiClient PaiementClientService
+@inject ICustomersApiClient CustomersService
+@inject IAccountingYearApiClient AccountingYearService
+@inject ToastService ToastService
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+
+<div class="paiements-container">
+    <div class="paiements-card">
+        <div class="paiements-header">
+            <h3 class="paiements-title">@Localizer["Paiements_Clients"]</h3>
+            <RadzenButton Icon="add" Text="@Localizer["Ajouter_Paiement"]"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Click="CreatePaiement"
+                          Class="btn-primary" />
+        </div>
+
+        <div class="search-filters">
+            <div class="search-field">
+                <label>@Localizer["Client"]</label>
+                <RadzenDropDownDataGrid AllowClear="true"
+                                        @bind-Value="@selectedClientId"
+                                        LoadData="@LoadCustomers"
+                                        AllowFiltering="true"
+                                        Style="width: 300px;"
+                                        Data="@_filteredCustomers"
+                                        TextProperty="@nameof(CustomerResponse.Name)"
+                                        ValueProperty="@nameof(CustomerResponse.Id)"
+                                        Placeholder="@Localizer["Select_Client"]">
+                    <Columns>
+                        <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Id)" Title="ID" Width="80px" />
+                        <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Name)" Title="@Localizer["Nom"]" Width="220px" />
+                    </Columns>
+                </RadzenDropDownDataGrid>
+            </div>
+            <div class="search-field">
+                <label>@Localizer["Exercice_Comptable_Filter"]</label>
+                <RadzenDropDown @bind-Value="@selectedAccountingYearId"
+                                Data="@accountingYears"
+                                TextProperty="Year"
+                                ValueProperty="Id"
+                                Placeholder="@Localizer["Tous_Exercices"]"
+                                AllowClear="true"
+                                Style="width: 200px;" />
+            </div>
+            <div class="search-button">
+                <RadzenButton Text="@Localizer["Rechercher"]"
+                              Icon="search"
+                              ButtonStyle="ButtonStyle.Primary"
+                              Click="@SearchPaiements"
+                              Class="action-button" />
+            </div>
+        </div>
+
+        <RadzenDataGrid @ref="paiementGrid"
+                        TItem="PaiementClientResponse"
+                        Data="@paiements"
+                        Count="@totalPaiements"
+                        LoadData="@LoadPaiementData"
+                        AllowFiltering="true"
+                        AllowPaging="true"
+                        AllowSorting="true"
+                        FilterPopupRenderMode="PopupRenderMode.OnDemand"
+                        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                        PageSize="@_defaultPageSize"
+                        Density="Density.Compact"
+                        Class="paiements-grid"
+                        IsLoading="@isLoadingPaiements"
+                        ShowPagingSummary="true"
+                        Responsive="true">
+            <EmptyTemplate>
+                <p style="font-size: 24px; text-align: center; margin: 2rem;">@Localizer["Aucun_Paiement"]</p>
+            </EmptyTemplate>
+            <Columns>
+                <RadzenDataGridColumn TItem="PaiementClientResponse" Property="Numero" Title="@Localizer["Numero_Col"]" Width="150px" />
+                <RadzenDataGridColumn TItem="PaiementClientResponse" Property="ClientNom" Title="@Localizer["Client_Col"]" Width="200px" />
+                <RadzenDataGridColumn TItem="PaiementClientResponse" Property="Montant" Title="@Localizer["Montant_Col"]" Width="150px">
+                    <Template Context="paiement">
+                        @paiement.Montant.ToString("N2") TND
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="PaiementClientResponse" Property="DatePaiement" Title="@Localizer["Date_Paiement_Col"]" Width="150px">
+                    <Template Context="paiement">
+                        @paiement.DatePaiement.ToString("dd/MM/yyyy")
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="PaiementClientResponse" Property="MethodePaiement" Title="@Localizer["Methode_Col"]" Width="120px" />
+                <RadzenDataGridColumn TItem="PaiementClientResponse" Property="BanqueNom" Title="@Localizer["Banque_Col"]" Width="150px" />
+                <RadzenDataGridColumn TItem="PaiementClientResponse" Filterable="false" Sortable="false" Width="200px" TextAlign="TextAlign.Center">
+                    <Template Context="paiement">
+                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Success" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter"
+                                      Click="@(() => EditPaiement(paiement.Id))"
+                                      Title="@Localizer["Modifier"]" />
+                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter" Class="rz-my-1 rz-ms-1"
+                                      Click="@(() => ConfirmDeletePaiement(paiement.Id))"
+                                      Title="@Localizer["Supprimer"]" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    </div>
+</div>
+
+<style>
+    .paiements-container {
+        padding: 0.25rem 1.25rem 1.25rem 1.25rem;
+        max-width: 1400px;
+        margin: 0.25rem auto 1rem auto;
+    }
+
+    .paiements-card {
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        padding: 0.75rem 1.5rem 1.5rem 1.5rem;
+        border: none;
+    }
+
+    .paiements-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.25rem;
+    }
+
+    .paiements-title {
+        font-weight: 600;
+        margin: 0;
+        font-size: 2rem;
+        line-height: 1.2;
+    }
+
+    .search-filters {
+        display: flex;
+        gap: 1rem;
+        align-items: flex-end;
+        margin-bottom: 1.25rem;
+        flex-wrap: wrap;
+    }
+
+    .search-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .search-field label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #5f6368;
+    }
+
+    .search-button {
+        display: flex;
+        align-items: flex-end;
+    }
+
+    .action-button {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 8px 12px;
+        border-radius: 6px;
+    }
+
+    .paiements-grid {
+        border-radius: 8px;
+        overflow: hidden;
+        border: none;
+    }
+</style>
+
+@code {
+    private RadzenDataGrid<PaiementClientResponse> paiementGrid = default!;
+    private List<PaiementClientResponse> paiements = new();
+    private int totalPaiements;
+    private bool isLoadingPaiements = false;
+    private int? selectedClientId;
+    private int? selectedAccountingYearId;
+    private List<CustomerResponse> _filteredCustomers = new();
+    private List<GetAllAccountingYearsResponse> accountingYears = new();
+    private CancellationTokenSource cancellationTokenSource = new();
+    private const int _defaultPageSize = 10;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAccountingYearsAsync();
+    }
+
+    async Task LoadAccountingYearsAsync()
+    {
+        try
+        {
+            accountingYears = await AccountingYearService.GetAllAccountingYearsAsync();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = $"{Localizer["Erreur_Chargement_Accounting_Year"]}: {ex.Message}"
+            });
+        }
+    }
+
+    async Task LoadCustomers(LoadDataArgs args)
+    {
+        var parameters = new QueryStringParameters
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            SearchKeyword = args?.Filter ?? string.Empty
+        };
+
+        try
+        {
+            var pagedCustomers = await CustomersService.GetAsync(parameters, cancellationTokenSource.Token);
+            _filteredCustomers = pagedCustomers.Items;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = $"{Localizer["Erreur_Chargement_Clients"]}: {ex.Message}"
+            });
+            _filteredCustomers = new List<CustomerResponse>();
+        }
+    }
+
+    async Task LoadPaiementData(LoadDataArgs args)
+    {
+        isLoadingPaiements = true;
+        await Task.Yield();
+
+        try
+        {
+            var result = await PaiementClientService.GetPaiementsClientAsync(
+                selectedClientId,
+                selectedAccountingYearId,
+                (args.Skip.Value / _defaultPageSize) + 1,
+                args.Top ?? _defaultPageSize,
+                cancellationTokenSource.Token);
+
+            paiements = result.Items;
+            totalPaiements = result.TotalCount;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = $"{Localizer["Erreur_Chargement_Paiements"]}: {ex.Message}"
+            });
+            paiements = new List<PaiementClientResponse>();
+            totalPaiements = 0;
+        }
+
+        isLoadingPaiements = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task SearchPaiements()
+    {
+        await paiementGrid.Reload();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await paiementGrid.Reload();
+        }
+    }
+
+    private void CreatePaiement()
+    {
+        NavigationManager.NavigateTo("/paiement-client/add");
+    }
+
+    private void EditPaiement(int id)
+    {
+        NavigationManager.NavigateTo($"/paiement-client/edit/{id}");
+    }
+
+    async Task ConfirmDeletePaiement(int paiementId)
+    {
+        bool? confirmed = await DialogService.Confirm(Localizer["Confirmation_Suppression"],
+                                                      Localizer["Confirmation_Suppression_Titre"],
+                                                      new ConfirmOptions() { OkButtonText = Localizer["Oui"], CancelButtonText = Localizer["Non"] });
+
+        if (confirmed == true)
+        {
+            var result = await PaiementClientService.DeletePaiementClientAsync(paiementId, cancellationTokenSource.Token);
+            if (result.IsSuccess)
+            {
+                ToastService.Notify(new(ToastType.Success, Localizer["Paiement_Supprime"]));
+                await paiementGrid.Reload();
+            }
+            else
+            {
+                ToastService.Notify(new(ToastType.Danger, $"{Localizer["Erreur_Suppression"]}: {result.Errors.FirstOrDefault()?.Message}"));
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        cancellationTokenSource.Cancel();
+        cancellationTokenSource.Dispose();
+    }
+}
+

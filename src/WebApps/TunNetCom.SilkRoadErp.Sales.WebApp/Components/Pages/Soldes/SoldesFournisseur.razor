@@ -1,0 +1,363 @@
+@page "/soldes-fournisseur"
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Soldes
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Soldes
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AccountingYear
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using Radzen.Blazor
+@using Radzen
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Providers
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<SharedResource> Localizer
+@inject ISoldesApiClient SoldesService
+@inject IProvidersApiClient ProvidersService
+@inject IAccountingYearApiClient AccountingYearService
+@inject NotificationService NotificationService
+
+<div class="soldes-container">
+    <div class="soldes-card">
+        <div class="soldes-header">
+            <h3 class="soldes-title">@Localizer["Soldes_Fournisseurs"]</h3>
+        </div>
+
+        <div class="search-filters">
+            <div class="search-field">
+                <label>@Localizer["providers"]</label>
+                <RadzenDropDownDataGrid AllowClear="false"
+                                        @bind-Value="@selectedFournisseurId"
+                                        LoadData="@LoadProviders"
+                                        AllowFiltering="true"
+                                        Style="width: 300px;"
+                                        Data="@_filteredProviders"
+                                        TextProperty="@nameof(ProviderResponse.Nom)"
+                                        ValueProperty="@nameof(ProviderResponse.Id)"
+                                        Placeholder="@Localizer["Select_Provider"]"
+                                        Change="@OnProviderChanged">
+                    <Columns>
+                        <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Id)" Title="ID" Width="80px" />
+                        <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Nom)" Title="@Localizer["Nom"]" Width="220px" />
+                    </Columns>
+                </RadzenDropDownDataGrid>
+            </div>
+            <div class="search-field">
+                <label>@Localizer["Exercice_Comptable_Filter"]</label>
+                <RadzenDropDown @bind-Value="@selectedAccountingYearId"
+                                Data="@accountingYears"
+                                TextProperty="Year"
+                                ValueProperty="Id"
+                                Placeholder="@Localizer["Tous_Exercices"]"
+                                AllowClear="true"
+                                Style="width: 200px;" />
+            </div>
+            <div class="search-button">
+                <RadzenButton Text="@Localizer["Rechercher"]"
+                              Icon="search"
+                              ButtonStyle="ButtonStyle.Primary"
+                              Click="@LoadSolde"
+                              Class="action-button" />
+            </div>
+        </div>
+
+        @if (solde != null)
+        {
+            <div class="solde-summary">
+                <RadzenCard>
+                    <h4>@Localizer["Solde_Summary"]</h4>
+                    <RadzenStack Gap="1rem">
+                        <div class="solde-item">
+                            <span class="solde-label">@Localizer["providers"]:</span>
+                            <span class="solde-value">@solde.FournisseurNom</span>
+                        </div>
+                        <div class="solde-item">
+                            <span class="solde-label">@Localizer["Total_Factures"]:</span>
+                            <span class="solde-value">@solde.TotalFactures.ToString("N2") TND</span>
+                        </div>
+                        <div class="solde-item">
+                            <span class="solde-label">@Localizer["Total_BR_Non_Factures"]:</span>
+                            <span class="solde-value">@solde.TotalBonsReceptionNonFactures.ToString("N2") TND</span>
+                        </div>
+                        <div class="solde-item">
+                            <span class="solde-label">@Localizer["Total_Paiements"]:</span>
+                            <span class="solde-value">@solde.TotalPaiements.ToString("N2") TND</span>
+                        </div>
+                        <div class="solde-item solde-total">
+                            <span class="solde-label">@Localizer["Solde"]:</span>
+                            <span class="solde-value @(solde.Solde >= 0 ? "solde-positif" : "solde-negatif")">
+                                @solde.Solde.ToString("N2") TND
+                            </span>
+                        </div>
+                    </RadzenStack>
+                </RadzenCard>
+            </div>
+
+            <div class="documents-section">
+                <h4>@Localizer["Documents"]</h4>
+                <RadzenDataGrid TItem="DocumentSoldeFournisseur"
+                                Data="@solde.Documents"
+                                AllowPaging="true"
+                                PageSize="10"
+                                Density="Density.Compact">
+                    <Columns>
+                        <RadzenDataGridColumn TItem="DocumentSoldeFournisseur" Property="Type" Title="@Localizer["Type"]" Width="150px" />
+                        <RadzenDataGridColumn TItem="DocumentSoldeFournisseur" Property="Numero" Title="@Localizer["Numero_Col"]" Width="100px" />
+                        <RadzenDataGridColumn TItem="DocumentSoldeFournisseur" Property="Date" Title="@Localizer["date"]" Width="120px">
+                            <Template Context="doc">
+                                @doc.Date.ToString("dd/MM/yyyy")
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="DocumentSoldeFournisseur" Property="Montant" Title="@Localizer["Montant_Col"]" Width="150px">
+                            <Template Context="doc">
+                                @doc.Montant.ToString("N2") TND
+                            </Template>
+                        </RadzenDataGridColumn>
+                    </Columns>
+                </RadzenDataGrid>
+            </div>
+
+            <div class="paiements-section">
+                <h4>@Localizer["Paiements"]</h4>
+                <RadzenDataGrid TItem="PaiementSoldeFournisseur"
+                                Data="@solde.Paiements"
+                                AllowPaging="true"
+                                PageSize="10"
+                                Density="Density.Compact">
+                    <Columns>
+                        <RadzenDataGridColumn TItem="PaiementSoldeFournisseur" Property="Numero" Title="@Localizer["Numero_Col"]" Width="150px" />
+                        <RadzenDataGridColumn TItem="PaiementSoldeFournisseur" Property="DatePaiement" Title="@Localizer["Date_Paiement_Col"]" Width="150px">
+                            <Template Context="paiement">
+                                @paiement.DatePaiement.ToString("dd/MM/yyyy")
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="PaiementSoldeFournisseur" Property="Montant" Title="@Localizer["Montant_Col"]" Width="150px">
+                            <Template Context="paiement">
+                                @paiement.Montant.ToString("N2") TND
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="PaiementSoldeFournisseur" Property="MethodePaiement" Title="@Localizer["Methode_Col"]" Width="120px" />
+                    </Columns>
+                </RadzenDataGrid>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .soldes-container {
+        padding: 0.25rem 1.25rem 1.25rem 1.25rem;
+        max-width: 1400px;
+        margin: 0.25rem auto 1rem auto;
+    }
+
+    .soldes-card {
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        padding: 0.75rem 1.5rem 1.5rem 1.5rem;
+        border: none;
+    }
+
+    .soldes-header {
+        margin-bottom: 1.25rem;
+    }
+
+    .soldes-title {
+        font-weight: 600;
+        margin: 0;
+        font-size: 2rem;
+        line-height: 1.2;
+    }
+
+    .search-filters {
+        display: flex;
+        gap: 1rem;
+        align-items: flex-end;
+        margin-bottom: 1.25rem;
+        flex-wrap: wrap;
+    }
+
+    .search-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .search-field label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #5f6368;
+    }
+
+    .search-button {
+        display: flex;
+        align-items: flex-end;
+    }
+
+    .action-button {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 8px 12px;
+        border-radius: 6px;
+    }
+
+    .solde-summary {
+        margin-bottom: 2rem;
+    }
+
+    .solde-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+    }
+
+    .solde-total {
+        font-weight: 600;
+        font-size: 1.1rem;
+        border-top: 2px solid #e0e0e0;
+        padding-top: 1rem;
+        margin-top: 0.5rem;
+    }
+
+    .solde-label {
+        font-weight: 500;
+    }
+
+    .solde-value {
+        font-weight: 600;
+    }
+
+    .solde-positif {
+        color: #4caf50;
+    }
+
+    .solde-negatif {
+        color: #f44336;
+    }
+
+    .documents-section, .paiements-section {
+        margin-bottom: 2rem;
+    }
+
+    .documents-section h4, .paiements-section h4 {
+        margin-bottom: 1rem;
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+</style>
+
+@code {
+    private SoldeFournisseurResponse? solde;
+    private int? selectedFournisseurId;
+    private int? selectedAccountingYearId;
+    private List<ProviderResponse> _filteredProviders = new();
+    private List<GetAllAccountingYearsResponse> accountingYears = new();
+    private CancellationTokenSource cancellationTokenSource = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAccountingYearsAsync();
+    }
+
+    async Task LoadAccountingYearsAsync()
+    {
+        try
+        {
+            accountingYears = await AccountingYearService.GetAllAccountingYearsAsync();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = $"{Localizer["Erreur_Chargement_Accounting_Year"]}: {ex.Message}"
+            });
+        }
+    }
+
+    async Task LoadProviders(LoadDataArgs args)
+    {
+        var parameters = new QueryStringParameters
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            SearchKeyword = args?.Filter ?? string.Empty
+        };
+
+        try
+        {
+            var pagedProviders = await ProvidersService.GetPagedAsync(parameters, cancellationTokenSource.Token);
+            _filteredProviders = pagedProviders.Items;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = $"{Localizer["Erreur_Chargement_Providers"]}: {ex.Message}"
+            });
+            _filteredProviders = new List<ProviderResponse>();
+        }
+    }
+
+    async Task OnProviderChanged(object? value)
+    {
+        if (value is int providerId && providerId > 0)
+        {
+            await LoadSolde();
+        }
+    }
+
+    async Task LoadSolde()
+    {
+        if (!selectedFournisseurId.HasValue)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["Attention"],
+                Detail = Localizer["Select_Provider_Validation"]
+            });
+            return;
+        }
+
+        try
+        {
+            var result = await SoldesService.GetSoldeFournisseurAsync(
+                selectedFournisseurId.Value,
+                selectedAccountingYearId,
+                cancellationTokenSource.Token);
+
+            if (result.IsSuccess)
+            {
+                solde = result.Value;
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["Erreur"],
+                    Detail = Localizer["Erreur_Chargement_Solde"]
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = $"{Localizer["Erreur_Chargement_Solde"]}: {ex.Message}"
+            });
+        }
+    }
+
+    public void Dispose()
+    {
+        cancellationTokenSource.Cancel();
+        cancellationTokenSource.Dispose();
+    }
+}
+

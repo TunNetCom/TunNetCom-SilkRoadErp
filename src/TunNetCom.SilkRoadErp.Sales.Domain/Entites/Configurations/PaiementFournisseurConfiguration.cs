@@ -10,7 +10,14 @@ public partial class PaiementFournisseurConfiguration : IEntityTypeConfiguration
 {
     public void Configure(EntityTypeBuilder<PaiementFournisseur> entity)
     {
-        entity.ToTable("PaiementFournisseur");
+        entity.ToTable("PaiementFournisseur", t =>
+        {
+            t.HasCheckConstraint("CHK_PaiementFournisseur_Montant", "Montant > 0");
+            t.HasCheckConstraint("CHK_PaiementFournisseur_Document", 
+                "(FactureFournisseurId IS NULL AND BonDeReceptionId IS NULL) OR " +
+                "(FactureFournisseurId IS NOT NULL AND BonDeReceptionId IS NULL) OR " +
+                "(FactureFournisseurId IS NULL AND BonDeReceptionId IS NOT NULL)");
+        });
 
         entity.HasKey(e => e.Id);
 
@@ -114,13 +121,6 @@ public partial class PaiementFournisseurConfiguration : IEntityTypeConfiguration
             .HasForeignKey(d => d.BonDeReceptionId)
             .OnDelete(DeleteBehavior.NoAction)
             .HasConstraintName("FK_PaiementFournisseur_BonDeReception");
-
-        entity.HasCheckConstraint("CHK_PaiementFournisseur_Montant", "Montant > 0");
-
-        entity.HasCheckConstraint("CHK_PaiementFournisseur_Document", 
-            "(FactureFournisseurId IS NULL AND BonDeReceptionId IS NULL) OR " +
-            "(FactureFournisseurId IS NOT NULL AND BonDeReceptionId IS NULL) OR " +
-            "(FactureFournisseurId IS NULL AND BonDeReceptionId IS NOT NULL)");
 
         OnConfigurePartial(entity);
     }

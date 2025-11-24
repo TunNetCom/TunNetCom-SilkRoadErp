@@ -10,7 +10,14 @@ public partial class PaiementClientConfiguration : IEntityTypeConfiguration<Paie
 {
     public void Configure(EntityTypeBuilder<PaiementClient> entity)
     {
-        entity.ToTable("PaiementClient");
+        entity.ToTable("PaiementClient", t =>
+        {
+            t.HasCheckConstraint("CHK_PaiementClient_Montant", "Montant > 0");
+            t.HasCheckConstraint("CHK_PaiementClient_Document", 
+                "(FactureId IS NULL AND BonDeLivraisonId IS NULL) OR " +
+                "(FactureId IS NOT NULL AND BonDeLivraisonId IS NULL) OR " +
+                "(FactureId IS NULL AND BonDeLivraisonId IS NOT NULL)");
+        });
 
         entity.HasKey(e => e.Id);
 
@@ -114,13 +121,6 @@ public partial class PaiementClientConfiguration : IEntityTypeConfiguration<Paie
             .HasForeignKey(d => d.BonDeLivraisonId)
             .OnDelete(DeleteBehavior.NoAction)
             .HasConstraintName("FK_PaiementClient_BonDeLivraison");
-
-        entity.HasCheckConstraint("CHK_PaiementClient_Montant", "Montant > 0");
-
-        entity.HasCheckConstraint("CHK_PaiementClient_Document", 
-            "(FactureId IS NULL AND BonDeLivraisonId IS NULL) OR " +
-            "(FactureId IS NOT NULL AND BonDeLivraisonId IS NULL) OR " +
-            "(FactureId IS NULL AND BonDeLivraisonId IS NOT NULL)");
 
         OnConfigurePartial(entity);
     }

@@ -1,0 +1,601 @@
+@page "/paiement-client/add"
+@page "/paiement-client/edit/{Id:int}"
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.PaiementClient
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PaiementClient
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Banque
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AccountingYear
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Customers
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Invoice
+@using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Banque
+@using TunNetCom.SilkRoadErp.Sales.Domain.Entites
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using Radzen.Blazor
+@using Radzen
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<SharedResource> Localizer
+@inject IPaiementClientApiClient PaiementClientService
+@inject ICustomersApiClient CustomersService
+@inject IInvoicesApiClient InvoicesService
+@inject IDeliveryNoteApiClient DeliveryNoteService
+@inject IBanqueApiClient BanqueService
+@inject IAccountingYearApiClient AccountingYearService
+@inject ToastService ToastService
+@inject NotificationService NotificationService
+
+<div class="paiement-form-container">
+    <div class="paiement-form-card">
+        <div class="paiement-form-header">
+            <h3>@(IsEditMode ? Localizer["Modifier_Paiement"] : Localizer["Nouveau_Paiement_Client"])</h3>
+            <RadzenButton Icon="arrow_back" Text="@Localizer["Retour"]"
+                          ButtonStyle="ButtonStyle.Secondary"
+                          Click="GoBack"
+                          Variant="Variant.Outlined" />
+        </div>
+
+        <RadzenStack Gap="1.5rem">
+            <RadzenFormField Text="@Localizer["Numero"]" class="rz-col-12 rz-md-6">
+                <RadzenTextBox @bind-Value="paiement.Numero" Placeholder="@Localizer["Numero_Paiement"]" />
+            </RadzenFormField>
+
+            <RadzenFormField Text="@($"{Localizer["Client"]} *")" class="rz-col-12 rz-md-6">
+                <RadzenDropDownDataGrid AllowClear="false"
+                                        IsLoading="@isLoadingCustomers"
+                                        @bind-Value="@paiement.ClientId"
+                                        LoadData="@LoadCustomers"
+                                        AllowFiltering="true"
+                                        Style="width: 100%;"
+                                        Data="@_filteredCustomers"
+                                        TextProperty="@nameof(CustomerResponse.Name)"
+                                        ValueProperty="@nameof(CustomerResponse.Id)"
+                                        Placeholder="@Localizer["Select_Client"]"
+                                        Change="@OnClientChanged">
+                    <Columns>
+                        <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Id)" Title="ID" Width="80px" />
+                        <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Name)" Title="@Localizer["Nom"]" Width="220px" />
+                    </Columns>
+                </RadzenDropDownDataGrid>
+            </RadzenFormField>
+
+            <RadzenFormField Text="@($"{Localizer["Exercice_Comptable"]} *")" class="rz-col-12 rz-md-6">
+                <RadzenTextBox Value="@(activeAccountingYear?.Year.ToString() ?? Localizer["Chargement"])" 
+                               ReadOnly="true" 
+                               Style="width: 100%;" />
+            </RadzenFormField>
+
+            <RadzenFormField Text="@($"{Localizer["Montant"]} *")" class="rz-col-12 rz-md-6">
+                <RadzenNumeric @bind-Value="paiement.Montant" Min="0" Format="N2" Style="width: 100%;" />
+            </RadzenFormField>
+
+            <RadzenFormField Text="@($"{Localizer["Date_Paiement"]} *")" class="rz-col-12 rz-md-6">
+                <RadzenDatePicker @bind-Value="paiement.DatePaiement" DateFormat="dd/MM/yyyy" ShowTime="false" Style="width: 100%;" />
+            </RadzenFormField>
+
+            <RadzenFormField Text="@($"{Localizer["Methode_Paiement"]} *")" class="rz-col-12 rz-md-6">
+                <RadzenDropDown @bind-Value="selectedMethodePaiement"
+                                Data="@methodePaiementOptions"
+                                TextProperty="Text"
+                                ValueProperty="Value"
+                                Placeholder="@Localizer["Select_Methode"]"
+                                AllowClear="false"
+                                Style="width: 100%;"
+                                Change="@OnMethodePaiementChanged" />
+            </RadzenFormField>
+
+            @if (selectedMethodePaiement == "Cheque" || selectedMethodePaiement == "Traite")
+            {
+                <RadzenFormField Text="@Localizer["Numero_Cheque_Traite"]" class="rz-col-12 rz-md-6">
+                    <RadzenTextBox @bind-Value="paiement.NumeroChequeTraite" Placeholder="@Localizer["Numero"]" />
+                </RadzenFormField>
+
+                <RadzenFormField Text="@Localizer["Banque"]" class="rz-col-12 rz-md-6">
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" Style="width: 100%;">
+                        <RadzenDropDown @bind-Value="paiement.BanqueId"
+                                        Data="@banques"
+                                        TextProperty="Nom"
+                                        ValueProperty="Id"
+                                        Placeholder="@Localizer["Select_Banque"]"
+                                        AllowClear="true"
+                                        Style="flex: 1;" />
+                        <RadzenButton Icon="add" Text="@Localizer["Nouvelle_Banque"]"
+                                      ButtonStyle="ButtonStyle.Success"
+                                      Variant="Variant.Outlined"
+                                      Size="ButtonSize.Small"
+                                      Click="@OpenAddBanqueDialog" />
+                    </RadzenStack>
+                </RadzenFormField>
+
+                @if (selectedMethodePaiement == "Traite")
+                {
+                    <RadzenFormField Text="@Localizer["Date_Echeance"]" class="rz-col-12 rz-md-6">
+                        <RadzenDatePicker @bind-Value="paiement.DateEcheance" DateFormat="dd/MM/yyyy" ShowTime="false" Style="width: 100%;" />
+                    </RadzenFormField>
+                }
+            }
+
+            <RadzenFormField Text="@Localizer["Facture_Optionnel"]" class="rz-col-12 rz-md-6">
+                <RadzenDropDownDataGrid AllowClear="true"
+                                        IsLoading="@isLoadingInvoices"
+                                        @bind-Value="@paiement.FactureId"
+                                        LoadData="@LoadInvoices"
+                                        AllowFiltering="true"
+                                        Style="width: 100%;"
+                                        Data="@_filteredInvoices"
+                                        TextProperty="@nameof(InvoiceResponse.Number)"
+                                        ValueProperty="@nameof(InvoiceResponse.Number)"
+                                        Placeholder="@Localizer["Select_Facture"]"
+                                        Disabled="@(paiement.ClientId <= 0)">
+                    <Columns>
+                        <RadzenDropDownDataGridColumn Property="@nameof(InvoiceResponse.Number)" Title="Num" Width="100px" />
+                        <RadzenDropDownDataGridColumn Property="@nameof(InvoiceResponse.Date)" Title="Date" Width="100px" />
+                        <RadzenDropDownDataGridColumn Property="@nameof(InvoiceResponse.TotalIncludingTaxAmount)" Title="Total TTC" Width="150px" />
+                    </Columns>
+                </RadzenDropDownDataGrid>
+            </RadzenFormField>
+
+            <RadzenFormField Text="@Localizer["Bon_Livraison_Optionnel"]" class="rz-col-12 rz-md-6">
+                <RadzenDropDownDataGrid AllowClear="true"
+                                        IsLoading="@isLoadingDeliveryNotes"
+                                        @bind-Value="@paiement.BonDeLivraisonId"
+                                        LoadData="@LoadDeliveryNotes"
+                                        AllowFiltering="true"
+                                        Style="width: 100%;"
+                                        Data="@_filteredDeliveryNotes"
+                                        TextProperty="@nameof(GetDeliveryNoteBaseInfos.Number)"
+                                        ValueProperty="@nameof(GetDeliveryNoteBaseInfos.Number)"
+                                        Placeholder="@Localizer["Select_Bon_Livraison"]"
+                                        Disabled="@(paiement.ClientId <= 0)">
+                    <Columns>
+                        <RadzenDropDownDataGridColumn Property="@nameof(GetDeliveryNoteBaseInfos.Number)" Title="@Localizer["Numero"]" Width="100px" />
+                        <RadzenDropDownDataGridColumn Property="@nameof(GetDeliveryNoteBaseInfos.Date)" Title="@Localizer["date"]" Width="100px" />
+                        <RadzenDropDownDataGridColumn Property="@nameof(GetDeliveryNoteBaseInfos.NetAmount)" Title="@Localizer["net_payer"]" Width="150px" />
+                    </Columns>
+                </RadzenDropDownDataGrid>
+            </RadzenFormField>
+
+            <RadzenFormField Text="@Localizer["Commentaire"]" class="rz-col-12">
+                <RadzenTextArea @bind-Value="paiement.Commentaire" Placeholder="@Localizer["Commentaire_Optionnel"]" Rows="3" Style="width: 100%;" />
+            </RadzenFormField>
+
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" JustifyContent="Radzen.JustifyContent.End" class="rz-col-12">
+                <RadzenButton Text="@Localizer["Annuler"]" ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Outlined" Click="GoBack" />
+                <RadzenButton Text="@(IsEditMode ? Localizer["Modifier"] : Localizer["Creer"])" 
+                              ButtonStyle="ButtonStyle.Primary" 
+                              Click="@SavePaiement"
+                              IsBusy="@isSaving" />
+            </RadzenStack>
+        </RadzenStack>
+    </div>
+</div>
+
+<style>
+    .paiement-form-container {
+        padding: 0;
+        margin: 0;
+    }
+
+    .paiement-form-card {
+        background: transparent;
+        border-radius: 0;
+        box-shadow: none;
+        padding: 1rem;
+    }
+
+    .paiement-form-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .paiement-form-header h3 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+</style>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+    
+    private bool IsEditMode => Id.HasValue;
+    private bool isLoadingCustomers = false;
+    private bool isLoadingInvoices = false;
+    private bool isLoadingDeliveryNotes = false;
+    private bool isSaving = false;
+    private CreatePaiementClientRequest paiement = new();
+    private GetActiveAccountingYearResponse? activeAccountingYear;
+    private string? selectedMethodePaiement;
+    private List<CustomerResponse> _filteredCustomers = new();
+    private List<InvoiceResponse> _filteredInvoices = new();
+    private List<GetDeliveryNoteBaseInfos> _filteredDeliveryNotes = new();
+    private List<BanqueResponse> banques = new();
+    private CancellationTokenSource cancellationTokenSource = new();
+
+    private List<MethodePaiementOption> methodePaiementOptions = new();
+
+    private class MethodePaiementOption
+    {
+        public string Text { get; set; } = string.Empty;
+        public string Value { get; set; } = string.Empty;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        methodePaiementOptions = new()
+        {
+            new MethodePaiementOption { Text = Localizer["Espece"], Value = "Espece" },
+            new MethodePaiementOption { Text = Localizer["Cheque"], Value = "Cheque" },
+            new MethodePaiementOption { Text = Localizer["Traite"], Value = "Traite" }
+        };
+        
+        await LoadActiveAccountingYearAsync();
+        await LoadBanquesAsync();
+        
+        if (IsEditMode && Id.HasValue)
+        {
+            await LoadPaiementAsync(Id.Value);
+        }
+        else
+        {
+            // Set default values
+            paiement.DatePaiement = DateTime.Now;
+        }
+    }
+
+    async Task LoadActiveAccountingYearAsync()
+    {
+        try
+        {
+            activeAccountingYear = await AccountingYearService.GetActiveAccountingYearAsync();
+            if (activeAccountingYear == null)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = Localizer["Attention"],
+                    Detail = Localizer["No_Accounting_Year"]
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = $"{Localizer["Erreur_Chargement_Accounting_Year"]}: {ex.Message}"
+            });
+        }
+    }
+
+    async Task LoadBanquesAsync()
+    {
+        try
+        {
+            banques = await BanqueService.GetBanquesAsync(cancellationTokenSource.Token);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = $"{Localizer["Erreur_Chargement_Banques"]}: {ex.Message}"
+            });
+        }
+    }
+
+    async Task LoadPaiementAsync(int id)
+    {
+        try
+        {
+            var result = await PaiementClientService.GetPaiementClientAsync(id, cancellationTokenSource.Token);
+            if (result.IsSuccess)
+            {
+                var paiementResponse = result.Value;
+                paiement = new CreatePaiementClientRequest
+                {
+                    Numero = paiementResponse.Numero,
+                    ClientId = paiementResponse.ClientId,
+                    Montant = paiementResponse.Montant,
+                    DatePaiement = paiementResponse.DatePaiement,
+                    MethodePaiement = paiementResponse.MethodePaiement,
+                    FactureId = paiementResponse.FactureId,
+                    BonDeLivraisonId = paiementResponse.BonDeLivraisonId,
+                    NumeroChequeTraite = paiementResponse.NumeroChequeTraite,
+                    BanqueId = paiementResponse.BanqueId,
+                    DateEcheance = paiementResponse.DateEcheance,
+                    Commentaire = paiementResponse.Commentaire
+                };
+                selectedMethodePaiement = paiementResponse.MethodePaiement;
+                
+                if (paiement.ClientId > 0)
+                {
+                    await LoadInvoicesForClient(paiement.ClientId);
+                    await LoadDeliveryNotesForClient(paiement.ClientId);
+                }
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["Erreur"],
+                    Detail = Localizer["Erreur_Chargement_Paiement"]
+                });
+                NavigationManager.NavigateTo("/paiements-client");
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = $"{Localizer["Erreur_Chargement"]}: {ex.Message}"
+            });
+        }
+    }
+
+    async Task LoadCustomers(LoadDataArgs args)
+    {
+        isLoadingCustomers = true;
+        var parameters = new QueryStringParameters
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            SearchKeyword = args?.Filter ?? string.Empty
+        };
+
+        try
+        {
+            var pagedCustomers = await CustomersService.GetAsync(parameters, cancellationTokenSource.Token);
+            _filteredCustomers = pagedCustomers.Items;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = $"{Localizer["Erreur_Chargement_Clients"]}: {ex.Message}"
+            });
+            _filteredCustomers = new List<CustomerResponse>();
+        }
+
+        isLoadingCustomers = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task OnClientChanged(object? value)
+    {
+        if (value is int clientId && clientId > 0)
+        {
+            await LoadInvoicesForClient(clientId);
+            await LoadDeliveryNotesForClient(clientId);
+        }
+        else
+        {
+            _filteredInvoices = new List<InvoiceResponse>();
+            _filteredDeliveryNotes = new List<GetDeliveryNoteBaseInfos>();
+        }
+    }
+
+    async Task LoadInvoicesForClient(int clientId)
+    {
+        isLoadingInvoices = true;
+        var parameters = new QueryStringParameters
+        {
+            PageNumber = 1,
+            PageSize = 50,
+            SearchKeyword = null
+        };
+
+        try
+        {
+            var result = await InvoicesService.GetInvoicesByCustomerIdWithSummary(clientId, parameters, cancellationTokenSource.Token);
+            if (result.IsT0)
+            {
+                _filteredInvoices = result.AsT0.Invoices.Items;
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = $"{Localizer["Erreur_Chargement_Factures"]}: {ex.Message}"
+            });
+        }
+
+        isLoadingInvoices = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task LoadInvoices(LoadDataArgs args)
+    {
+        if (paiement.ClientId > 0)
+        {
+            await LoadInvoicesForClient(paiement.ClientId);
+        }
+    }
+
+    async Task LoadDeliveryNotesForClient(int clientId)
+    {
+        isLoadingDeliveryNotes = true;
+        try
+        {
+            var result = await DeliveryNoteService.GetDeliveryNotesWithSummariesAsync(
+                customerId: clientId,
+                invoiceId: null,
+                isInvoiced: null,
+                sortOrder: null,
+                sortProperty: null,
+                pageNumber: 1,
+                pageSize: 50,
+                searchKeyword: null,
+                startDate: null,
+                EndDate: null,
+                cancellationToken: cancellationTokenSource.Token);
+            
+            _filteredDeliveryNotes = result.GetDeliveryNoteBaseInfos.Items;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = $"{Localizer["Erreur_Chargement_BL"]}: {ex.Message}"
+            });
+        }
+
+        isLoadingDeliveryNotes = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task LoadDeliveryNotes(LoadDataArgs args)
+    {
+        if (paiement.ClientId > 0)
+        {
+            await LoadDeliveryNotesForClient(paiement.ClientId);
+        }
+    }
+
+    void OnMethodePaiementChanged(object? value)
+    {
+        if (value is string methode)
+        {
+            paiement.MethodePaiement = methode;
+            if (methode != "Cheque" && methode != "Traite")
+            {
+                paiement.NumeroChequeTraite = null;
+                paiement.BanqueId = null;
+                paiement.DateEcheance = null;
+            }
+        }
+    }
+
+    async Task OpenAddBanqueDialog()
+    {
+        // TODO: Implement dialog to add new banque
+        // For now, reload banques
+        await LoadBanquesAsync();
+    }
+
+    async Task SavePaiement()
+    {
+        if (paiement.ClientId <= 0)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["Validation"],
+                Detail = Localizer["Select_Client_Validation"]
+            });
+            return;
+        }
+
+        if (activeAccountingYear == null)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["Validation"],
+                Detail = Localizer["No_Accounting_Year_Validation"]
+            });
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(paiement.MethodePaiement))
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["Validation"],
+                Detail = Localizer["Select_Methode_Validation"]
+            });
+            return;
+        }
+
+        isSaving = true;
+        try
+        {
+            if (IsEditMode && Id.HasValue)
+            {
+                var updateRequest = new UpdatePaiementClientRequest
+                {
+                    Numero = paiement.Numero,
+                    ClientId = paiement.ClientId,
+                    Montant = paiement.Montant,
+                    DatePaiement = paiement.DatePaiement,
+                    MethodePaiement = paiement.MethodePaiement,
+                    FactureId = paiement.FactureId,
+                    BonDeLivraisonId = paiement.BonDeLivraisonId,
+                    NumeroChequeTraite = paiement.NumeroChequeTraite,
+                    BanqueId = paiement.BanqueId,
+                    DateEcheance = paiement.DateEcheance,
+                    Commentaire = paiement.Commentaire
+                };
+
+                var result = await PaiementClientService.UpdatePaiementClientAsync(Id.Value, updateRequest, cancellationTokenSource.Token);
+                if (result.IsSuccess)
+                {
+                    ToastService.Notify(new(ToastType.Success, Localizer["Paiement_Modifie"]));
+                    NavigationManager.NavigateTo("/paiements-client");
+                }
+                else
+                {
+                    ToastService.Notify(new(ToastType.Danger, $"{Localizer["Erreur"]}: {result.Errors.FirstOrDefault()?.Message}"));
+                }
+            }
+            else
+            {
+                var result = await PaiementClientService.CreatePaiementClientAsync(paiement, cancellationTokenSource.Token);
+                if (result.IsT0)
+                {
+                    ToastService.Notify(new(ToastType.Success, Localizer["Paiement_Cree"]));
+                    NavigationManager.NavigateTo("/paiements-client");
+                }
+                else
+                {
+                    var badRequest = result.AsT1;
+                    ToastService.Notify(new(ToastType.Danger, $"Erreur: {badRequest.Detail}"));
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = $"{Localizer["Erreur_Sauvegarde"]}: {ex.Message}"
+            });
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    void GoBack()
+    {
+        NavigationManager.NavigateTo("/paiements-client");
+    }
+
+    public void Dispose()
+    {
+        cancellationTokenSource.Cancel();
+        cancellationTokenSource.Dispose();
+    }
+}
+
