@@ -26,6 +26,19 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Banque",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Nom = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Banque", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Client",
                 columns: table => new
                 {
@@ -501,6 +514,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     Ref_Produit = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     designation_li = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     qte_li = table.Column<int>(type: "int", nullable: false),
+                    qte_livree = table.Column<int>(type: "int", nullable: true),
                     prix_HT = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
                     remise = table.Column<double>(type: "float", nullable: false),
                     tot_HT = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
@@ -521,6 +535,63 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         column: x => x.Ref_Produit,
                         principalTable: "Produit",
                         principalColumn: "refe");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PaiementClient",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Numero = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    ClientId = table.Column<int>(type: "int", nullable: false),
+                    AccountingYearId = table.Column<int>(type: "int", nullable: false),
+                    Montant = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    DatePaiement = table.Column<DateTime>(type: "datetime", nullable: false),
+                    MethodePaiement = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    FactureId = table.Column<int>(type: "int", nullable: true),
+                    BonDeLivraisonId = table.Column<int>(type: "int", nullable: true),
+                    NumeroChequeTraite = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    BanqueId = table.Column<int>(type: "int", nullable: true),
+                    DateEcheance = table.Column<DateTime>(type: "datetime", nullable: true),
+                    Commentaire = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    DateModification = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PaiementClient", x => x.Id);
+                    table.CheckConstraint("CHK_PaiementClient_Document", "(FactureId IS NULL AND BonDeLivraisonId IS NULL) OR (FactureId IS NOT NULL AND BonDeLivraisonId IS NULL) OR (FactureId IS NULL AND BonDeLivraisonId IS NOT NULL)");
+                    table.CheckConstraint("CHK_PaiementClient_Montant", "Montant > 0");
+                    table.ForeignKey(
+                        name: "FK_PaiementClient_AccountingYear",
+                        column: x => x.AccountingYearId,
+                        principalTable: "AccountingYear",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_PaiementClient_Banque",
+                        column: x => x.BanqueId,
+                        principalTable: "Banque",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_PaiementClient_BonDeLivraison",
+                        column: x => x.BonDeLivraisonId,
+                        principalTable: "BonDeLivraison",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.NoAction);
+                    table.ForeignKey(
+                        name: "FK_PaiementClient_Client",
+                        column: x => x.ClientId,
+                        principalTable: "Client",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_PaiementClient_Facture",
+                        column: x => x.FactureId,
+                        principalTable: "Facture",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.NoAction);
                 });
 
             migrationBuilder.CreateTable(
@@ -572,6 +643,63 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         column: x => x.Ref_Produit,
                         principalTable: "Produit",
                         principalColumn: "refe");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PaiementFournisseur",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Numero = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    FournisseurId = table.Column<int>(type: "int", nullable: false),
+                    AccountingYearId = table.Column<int>(type: "int", nullable: false),
+                    Montant = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    DatePaiement = table.Column<DateTime>(type: "datetime", nullable: false),
+                    MethodePaiement = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    FactureFournisseurId = table.Column<int>(type: "int", nullable: true),
+                    BonDeReceptionId = table.Column<int>(type: "int", nullable: true),
+                    NumeroChequeTraite = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    BanqueId = table.Column<int>(type: "int", nullable: true),
+                    DateEcheance = table.Column<DateTime>(type: "datetime", nullable: true),
+                    Commentaire = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    DateModification = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PaiementFournisseur", x => x.Id);
+                    table.CheckConstraint("CHK_PaiementFournisseur_Document", "(FactureFournisseurId IS NULL AND BonDeReceptionId IS NULL) OR (FactureFournisseurId IS NOT NULL AND BonDeReceptionId IS NULL) OR (FactureFournisseurId IS NULL AND BonDeReceptionId IS NOT NULL)");
+                    table.CheckConstraint("CHK_PaiementFournisseur_Montant", "Montant > 0");
+                    table.ForeignKey(
+                        name: "FK_PaiementFournisseur_AccountingYear",
+                        column: x => x.AccountingYearId,
+                        principalTable: "AccountingYear",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_PaiementFournisseur_Banque",
+                        column: x => x.BanqueId,
+                        principalTable: "Banque",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_PaiementFournisseur_BonDeReception",
+                        column: x => x.BonDeReceptionId,
+                        principalTable: "BonDeReception",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.NoAction);
+                    table.ForeignKey(
+                        name: "FK_PaiementFournisseur_FactureFournisseur",
+                        column: x => x.FactureFournisseurId,
+                        principalTable: "FactureFournisseur",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.NoAction);
+                    table.ForeignKey(
+                        name: "FK_PaiementFournisseur_Fournisseur",
+                        column: x => x.FournisseurId,
+                        principalTable: "Fournisseur",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -682,6 +810,12 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 name: "IX_Avoirs_Num",
                 table: "Avoirs",
                 column: "Num",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Banque_Nom",
+                table: "Banque",
+                column: "Nom",
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -853,6 +987,78 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 name: "IX_LigneDevis_Ref_produit",
                 table: "LigneDevis",
                 column: "Ref_produit");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PaiementClient_AccountingYearId",
+                table: "PaiementClient",
+                column: "AccountingYearId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PaiementClient_BanqueId",
+                table: "PaiementClient",
+                column: "BanqueId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PaiementClient_BonDeLivraisonId",
+                table: "PaiementClient",
+                column: "BonDeLivraisonId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PaiementClient_ClientId",
+                table: "PaiementClient",
+                column: "ClientId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PaiementClient_DatePaiement",
+                table: "PaiementClient",
+                column: "DatePaiement");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PaiementClient_FactureId",
+                table: "PaiementClient",
+                column: "FactureId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PaiementClient_Numero",
+                table: "PaiementClient",
+                column: "Numero",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PaiementFournisseur_AccountingYearId",
+                table: "PaiementFournisseur",
+                column: "AccountingYearId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PaiementFournisseur_BanqueId",
+                table: "PaiementFournisseur",
+                column: "BanqueId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PaiementFournisseur_BonDeReceptionId",
+                table: "PaiementFournisseur",
+                column: "BonDeReceptionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PaiementFournisseur_DatePaiement",
+                table: "PaiementFournisseur",
+                column: "DatePaiement");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PaiementFournisseur_FactureFournisseurId",
+                table: "PaiementFournisseur",
+                column: "FactureFournisseurId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PaiementFournisseur_FournisseurId",
+                table: "PaiementFournisseur",
+                column: "FournisseurId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PaiementFournisseur_Numero",
+                table: "PaiementFournisseur",
+                column: "Numero",
+                unique: true);
         }
 
         /// <inheritdoc />
@@ -883,6 +1089,12 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 name: "LigneDevis");
 
             migrationBuilder.DropTable(
+                name: "PaiementClient");
+
+            migrationBuilder.DropTable(
+                name: "PaiementFournisseur");
+
+            migrationBuilder.DropTable(
                 name: "Systeme");
 
             migrationBuilder.DropTable(
@@ -895,9 +1107,6 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 name: "Avoirs");
 
             migrationBuilder.DropTable(
-                name: "BonDeReception");
-
-            migrationBuilder.DropTable(
                 name: "Commandes");
 
             migrationBuilder.DropTable(
@@ -905,6 +1114,12 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 
             migrationBuilder.DropTable(
                 name: "Produit");
+
+            migrationBuilder.DropTable(
+                name: "Banque");
+
+            migrationBuilder.DropTable(
+                name: "BonDeReception");
 
             migrationBuilder.DropTable(
                 name: "BonDeLivraison");

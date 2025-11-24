@@ -85,4 +85,6 @@ public partial class Client
     public virtual ICollection<Devis> Devis { get; set; } = new List<Devis>();
 
     public virtual ICollection<Facture> Facture { get; set; } = new List<Facture>();
+
+    public virtual ICollection<PaiementClient> PaiementClient { get; set; } = new List<PaiementClient>();
 }

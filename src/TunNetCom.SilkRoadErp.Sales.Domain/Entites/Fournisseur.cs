@@ -97,4 +97,6 @@ public partial class Fournisseur
     public virtual ICollection<FactureAvoirFournisseur> FactureAvoirFournisseur { get; set; } = new List<FactureAvoirFournisseur>();
 
     public virtual ICollection<FactureFournisseur> FactureFournisseur { get; set; } = new List<FactureFournisseur>();
+
+    public virtual ICollection<PaiementFournisseur> PaiementFournisseur { get; set; } = new List<PaiementFournisseur>();
 }

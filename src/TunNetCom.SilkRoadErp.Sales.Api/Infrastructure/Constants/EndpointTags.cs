@@ -16,6 +16,10 @@ public static class EndpointTags
     public const string Avoirs = "Avoirs";
     public const string AvoirFournisseur = "AvoirFournisseur";
     public const string FactureAvoirFournisseur = "FactureAvoirFournisseur";
+    public const string PaiementClient = "PaiementClient";
+    public const string PaiementFournisseur = "PaiementFournisseur";
+    public const string Soldes = "Soldes";
+    public const string Banque = "Banque";
 }
 
 

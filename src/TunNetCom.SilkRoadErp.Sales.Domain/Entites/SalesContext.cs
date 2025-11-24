@@ -65,6 +65,12 @@ public partial class SalesContext : DbContext
 
     public virtual DbSet<ProviderInvoiceView> ProviderInvoiceView { get; set; }
 
+    public virtual DbSet<Banque> Banque { get; set; }
+
+    public virtual DbSet<PaiementClient> PaiementClient { get; set; }
+
+    public virtual DbSet<PaiementFournisseur> PaiementFournisseur { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(FactureConfiguration).Assembly);
