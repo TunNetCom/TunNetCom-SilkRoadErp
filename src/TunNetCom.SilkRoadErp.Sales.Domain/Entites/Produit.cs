@@ -105,4 +105,6 @@ public partial class Produit
     public virtual ICollection<LigneCommandes> LigneCommandes { get; set; } = new List<LigneCommandes>();
 
     public virtual ICollection<LigneDevis> LigneDevis { get; set; } = new List<LigneDevis>();
+
+    public virtual ICollection<LigneInventaire> LigneInventaire { get; set; } = new List<LigneInventaire>();
 }

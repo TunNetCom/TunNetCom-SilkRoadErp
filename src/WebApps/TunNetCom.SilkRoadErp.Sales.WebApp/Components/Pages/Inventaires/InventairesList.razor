@@ -1,0 +1,275 @@
+@page "/inventaires"
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Inventaire
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Inventaire
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AccountingYear
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using Radzen
+@using Radzen.Blazor
+@inject IInventaireApiClient inventaireService
+@inject IAccountingYearApiClient accountingYearService
+@inject IStringLocalizer<SharedResource> Localizer
+@inject NavigationManager NavigationManager
+@inject DialogService DialogService
+@inject ToastService ToastService
+
+<div class="inventaires-container">
+    <div class="inventaires-card">
+        <div class="inventaires-header">
+            <h3 class="inventaires-title">@Localizer["inventaires"]</h3>
+            <RadzenButton Icon="add" Text="@Localizer["add_inventaire"]"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Click="@CreateInventaire"
+                          Class="btn-primary" />
+        </div>
+
+        <RadzenTextBox Placeholder="@Localizer["Search"]"
+                       @bind-Value="searchKeyword"
+                       Change="@(async (string value) => await inventaireGrid.Reload())"
+                       Class="inventaires-search" />
+
+        <RadzenDataGrid @ref="inventaireGrid"
+                        TItem="InventaireResponse"
+                        Data="@inventaires"
+                        Count="@totalInventaires"
+                        LoadData="@LoadInventaireData"
+                        AllowFiltering="true"
+                        AllowPaging="true"
+                        AllowSorting="true"
+                        FilterPopupRenderMode="PopupRenderMode.OnDemand"
+                        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                        PageSize="@defaultPageSize"
+                        Density="Density.Compact"
+                        Class="inventaires-grid"
+                        IsLoading="@isLoadingInventaires"
+                        ShowPagingSummary="true"
+                        Responsive="true">
+            <EmptyTemplate>
+                <p style="font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
+            </EmptyTemplate>
+            <Columns>
+                <RadzenDataGridColumn TItem="InventaireResponse" Property="@nameof(InventaireResponse.Num)" Title="@Localizer["num"]" Width="100px" />
+                <RadzenDataGridColumn TItem="InventaireResponse" Property="@nameof(InventaireResponse.DateInventaire)" Title="@Localizer["date_inventaire"]" Width="150px">
+                    <Template Context="inventaire">
+                        <span>@inventaire.DateInventaire.ToString("dd/MM/yyyy")</span>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="InventaireResponse" Property="@nameof(InventaireResponse.Description)" Title="@Localizer["description"]" Width="200px" />
+                <RadzenDataGridColumn TItem="InventaireResponse" Property="@nameof(InventaireResponse.StatutLibelle)" Title="@Localizer["statut"]" Width="120px" />
+                <RadzenDataGridColumn TItem="InventaireResponse" Property="@nameof(InventaireResponse.AccountingYear)" Title="@Localizer["accounting_year"]" Width="120px" />
+                <RadzenDataGridColumn TItem="InventaireResponse" Filterable="false" Sortable="false" Width="250px" TextAlign="TextAlign.Center">
+                    <Template Context="inventaire">
+                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Success" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter" Class="rz-my-1 rz-ms-1"
+                                      Click="@(() => EditInventaire(inventaire.Id))"
+                                      Title="@Localizer["edit_button_label"]" />
+                        @if (inventaire.Statut == 0)
+                        {
+                            <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter"
+                                          Click="@(() => ConfirmDeleteInventaire(inventaire.Id))"
+                                          Title="@Localizer["delete_button_label"]" />
+                        }
+                        @if (inventaire.Statut == 0)
+                        {
+                            <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Info" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter"
+                                          Click="@(() => ValiderInventaire(inventaire.Id))"
+                                          Title="@Localizer["valider"]" />
+                        }
+                        @if (inventaire.Statut == 1)
+                        {
+                            <RadzenButton Icon="lock" ButtonStyle="ButtonStyle.Warning" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter"
+                                          Click="@(() => CloturerInventaire(inventaire.Id))"
+                                          Title="@Localizer["cloturer"]" />
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    </div>
+</div>
+
+<style>
+    .inventaires-container {
+        padding: 1.25rem;
+        max-width: 1280px;
+        margin: 1rem auto;
+    }
+
+    .inventaires-card {
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        padding: 1.5rem;
+        border: none;
+    }
+
+    .inventaires-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.25rem;
+    }
+
+    .inventaires-title {
+        font-weight: 600;
+        margin: 0;
+        font-size: 2rem;
+        line-height: 1.2;
+    }
+
+    .inventaires-search {
+        width: 100%;
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+        padding: 0.75rem 1rem;
+        margin-bottom: 1.25rem;
+        font-size: 0.95rem;
+    }
+</style>
+
+@code {
+    private RadzenDataGrid<InventaireResponse> inventaireGrid;
+    private IEnumerable<InventaireResponse> inventaires = new List<InventaireResponse>();
+    private int totalInventaires;
+    private bool isLoadingInventaires;
+    private string searchKeyword = string.Empty;
+    private int defaultPageSize = 10;
+    private int? activeAccountingYearId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadActiveAccountingYear();
+        await LoadInventaireData(new LoadDataArgs());
+    }
+
+    private async Task LoadActiveAccountingYear()
+    {
+        try
+        {
+            var activeYear = await accountingYearService.GetActiveAccountingYearAsync(CancellationToken.None);
+            if (activeYear.IsT0)
+            {
+                activeAccountingYearId = activeYear.AsT0.Id;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Error loading active accounting year");
+        }
+    }
+
+    private async Task LoadInventaireData(LoadDataArgs args)
+    {
+        isLoadingInventaires = true;
+        try
+        {
+            var queryParams = new GetInventairesQueryParams
+            {
+                PageNumber = args.Skip.HasValue ? (args.Skip.Value / args.Top.Value) + 1 : 1,
+                PageSize = args.Top ?? defaultPageSize,
+                SearchKeyword = searchKeyword,
+                AccountingYearId = activeAccountingYearId
+            };
+
+            var result = await inventaireService.GetPagedAsync(queryParams, CancellationToken.None);
+            inventaires = result.Items;
+            totalInventaires = result.TotalCount;
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Error loading inventaires");
+            inventaires = new List<InventaireResponse>();
+            totalInventaires = 0;
+        }
+        finally
+        {
+            isLoadingInventaires = false;
+        }
+    }
+
+    private void CreateInventaire()
+    {
+        NavigationManager.NavigateTo("/inventaires/add");
+    }
+
+    private void EditInventaire(int id)
+    {
+        NavigationManager.NavigateTo($"/inventaires/edit/{id}");
+    }
+
+    private async Task ConfirmDeleteInventaire(int id)
+    {
+        var result = await DialogService.Confirm("Êtes-vous sûr de vouloir supprimer cet inventaire ?", "Supprimer", new ConfirmOptions { OkButtonText = "Oui", CancelButtonText = "Non" });
+        if (result == true)
+        {
+            await DeleteInventaire(id);
+        }
+    }
+
+    private async Task DeleteInventaire(int id)
+    {
+        try
+        {
+            var result = await inventaireService.DeleteAsync(id, CancellationToken.None);
+            if (result.IsT0)
+            {
+                ToastService.Notify(NotificationSeverity.Success, "Inventaire supprimé avec succès");
+                await inventaireGrid.Reload();
+            }
+            else
+            {
+                ToastService.Notify(NotificationSeverity.Error, "Erreur lors de la suppression");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Error deleting inventaire");
+            ToastService.Notify(NotificationSeverity.Error, "Erreur lors de la suppression");
+        }
+    }
+
+    private async Task ValiderInventaire(int id)
+    {
+        try
+        {
+            var result = await inventaireService.ValiderAsync(id, CancellationToken.None);
+            if (result.IsT0)
+            {
+                ToastService.Notify(NotificationSeverity.Success, "Inventaire validé avec succès");
+                await inventaireGrid.Reload();
+            }
+            else
+            {
+                ToastService.Notify(NotificationSeverity.Error, "Erreur lors de la validation");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Error validating inventaire");
+            ToastService.Notify(NotificationSeverity.Error, "Erreur lors de la validation");
+        }
+    }
+
+    private async Task CloturerInventaire(int id)
+    {
+        try
+        {
+            var result = await inventaireService.CloturerAsync(id, CancellationToken.None);
+            if (result.IsT0)
+            {
+                ToastService.Notify(NotificationSeverity.Success, "Inventaire clôturé avec succès");
+                await inventaireGrid.Reload();
+            }
+            else
+            {
+                ToastService.Notify(NotificationSeverity.Error, "Erreur lors de la clôture");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Error closing inventaire");
+            ToastService.Notify(NotificationSeverity.Error, "Erreur lors de la clôture");
+        }
+    }
+
+    [Inject] private ILogger<InventairesList>? _logger { get; set; }
+}
+

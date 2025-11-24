@@ -69,6 +69,10 @@ public partial class SalesContext : DbContext
 
     public virtual DbSet<LigneDevis> LigneDevis { get; set; }
 
+    public virtual DbSet<Inventaire> Inventaire { get; set; }
+
+    public virtual DbSet<LigneInventaire> LigneInventaire { get; set; }
+
     public virtual DbSet<Produit> Produit { get; set; }
 
     public virtual DbSet<Systeme> Systeme { get; set; }

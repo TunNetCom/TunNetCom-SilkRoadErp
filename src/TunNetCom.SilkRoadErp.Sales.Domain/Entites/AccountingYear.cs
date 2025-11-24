@@ -57,5 +57,7 @@ public partial class AccountingYear
     public virtual ICollection<FactureAvoirFournisseur> FactureAvoirFournisseur { get; set; } = new List<FactureAvoirFournisseur>();
 
     public virtual ICollection<FactureAvoirClient> FactureAvoirClient { get; set; } = new List<FactureAvoirClient>();
+
+    public virtual ICollection<Inventaire> Inventaires { get; set; } = new List<Inventaire>();
 }
 

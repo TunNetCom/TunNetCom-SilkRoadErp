@@ -894,4 +894,61 @@
   <data name="Banque_Creee" xml:space="preserve">
     <value>تم إنشاء البنك بنجاح</value>
   </data>
+  <data name="inventaires" xml:space="preserve">
+    <value>الجرد</value>
+  </data>
+  <data name="inventaire" xml:space="preserve">
+    <value>جرد</value>
+  </data>
+  <data name="add_inventaire" xml:space="preserve">
+    <value>إنشاء جرد</value>
+  </data>
+  <data name="date_inventaire" xml:space="preserve">
+    <value>تاريخ الجرد</value>
+  </data>
+  <data name="quantite_theorique" xml:space="preserve">
+    <value>الكمية النظرية</value>
+  </data>
+  <data name="quantite_reelle" xml:space="preserve">
+    <value>الكمية الفعلية</value>
+  </data>
+  <data name="dernier_prix_achat" xml:space="preserve">
+    <value>آخر سعر شراء</value>
+  </data>
+  <data name="historique_achat_vente" xml:space="preserve">
+    <value>تاريخ الشراء/البيع</value>
+  </data>
+  <data name="lignes_inventaire" xml:space="preserve">
+    <value>بنود الجرد</value>
+  </data>
+  <data name="valider" xml:space="preserve">
+    <value>التحقق</value>
+  </data>
+  <data name="cloturer" xml:space="preserve">
+    <value>إغلاق</value>
+  </data>
+  <data name="statut" xml:space="preserve">
+    <value>الحالة</value>
+  </data>
+  <data name="num" xml:space="preserve">
+    <value>الرقم</value>
+  </data>
+  <data name="document_num" xml:space="preserve">
+    <value>رقم المستند</value>
+  </data>
+  <data name="fournisseur_client" xml:space="preserve">
+    <value>المورد/العميل</value>
+  </data>
+  <data name="type" xml:space="preserve">
+    <value>النوع</value>
+  </data>
+  <data name="back" xml:space="preserve">
+    <value>رجوع</value>
+  </data>
+  <data name="save" xml:space="preserve">
+    <value>حفظ</value>
+  </data>
+  <data name="cancel" xml:space="preserve">
+    <value>إلغاء</value>
+  </data>
 </root>

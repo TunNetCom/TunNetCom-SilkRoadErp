@@ -1,0 +1,283 @@
+@page "/inventaires/add"
+@page "/inventaires/edit/{Id:int}"
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Inventaire
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Products
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Inventaire
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AccountingYear
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using Radzen
+@using Radzen.Blazor
+@inject IInventaireApiClient inventaireService
+@inject IProductsApiClient productService
+@inject IAccountingYearApiClient accountingYearService
+@inject IStringLocalizer<SharedResource> Localizer
+@inject NavigationManager NavigationManager
+@inject ToastService ToastService
+@inject DialogService DialogService
+
+<RadzenStack Gap="1.5rem">
+    <div>
+        <RadzenButton Icon="arrow_back" Text="@Localizer["back"]" Click="@(() => NavigationManager.NavigateTo("/inventaires"))" 
+                      ButtonStyle="ButtonStyle.Light" Variant="Variant.Outlined" />
+    </div>
+
+    <RadzenCard>
+        <RadzenStack Gap="1.5rem">
+            <RadzenFormField Text="@($"{Localizer["date_inventaire"]} *")" class="rz-col-12 rz-md-6">
+                <RadzenDatePicker @bind-Value="inventaire.DateInventaire" DateFormat="dd/MM/yyyy" ShowTime="false" Style="width: 100%;" />
+            </RadzenFormField>
+
+            <RadzenFormField Text="@Localizer["description"]" class="rz-col-12">
+                <RadzenTextArea @bind-Value="inventaire.Description" Placeholder="@Localizer["description"]" Rows="3" Style="width: 100%;" />
+            </RadzenFormField>
+
+            <div class="rz-col-12">
+                <h4>@Localizer["lignes_inventaire"]</h4>
+                <RadzenButton Icon="add" Text="@Localizer["add_product"]" Click="@AddProduct" ButtonStyle="ButtonStyle.Primary" Class="rz-mb-2" />
+                
+                <RadzenDataGrid TItem="LigneInventaireResponse" Data="@lignes" AllowPaging="false" AllowSorting="false" AllowFiltering="false">
+                    <Columns>
+                        <RadzenDataGridColumn TItem="LigneInventaireResponse" Property="@nameof(LigneInventaireResponse.RefProduit)" Title="@Localizer["product_refe"]" Width="150px" />
+                        <RadzenDataGridColumn TItem="LigneInventaireResponse" Property="@nameof(LigneInventaireResponse.NomProduit)" Title="@Localizer["product_name"]" Width="200px" />
+                        <RadzenDataGridColumn TItem="LigneInventaireResponse" Property="@nameof(LigneInventaireResponse.QuantiteTheorique)" Title="@Localizer["quantite_theorique"]" Width="120px" />
+                        <RadzenDataGridColumn TItem="LigneInventaireResponse" Property="@nameof(LigneInventaireResponse.QuantiteReelle)" Title="@Localizer["quantite_reelle"]" Width="120px">
+                            <Template Context="ligne">
+                                <RadzenNumeric @bind-Value="@ligne.QuantiteReelle" Min="0" Format="N0" Style="width: 100px;" />
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="LigneInventaireResponse" Property="@nameof(LigneInventaireResponse.PrixHt)" Title="@Localizer["prix_ht"]" Width="120px">
+                            <Template Context="ligne">
+                                <RadzenNumeric @bind-Value="@ligne.PrixHt" Min="0" Format="N2" Style="width: 100px;" />
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="LigneInventaireResponse" Property="@nameof(LigneInventaireResponse.DernierPrixAchat)" Title="@Localizer["dernier_prix_achat"]" Width="150px" />
+                        <RadzenDataGridColumn TItem="LigneInventaireResponse" Filterable="false" Sortable="false" Width="150px">
+                            <Template Context="ligne">
+                                <RadzenButton Icon="history" ButtonStyle="ButtonStyle.Info" Variant="Variant.Outlined" Size="ButtonSize.Small"
+                                              Click="@(() => ShowHistorique(ligne.RefProduit))" Title="@Localizer["historique_achat_vente"]" />
+                                <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Outlined" Size="ButtonSize.Small"
+                                              Click="@(() => RemoveLigne(ligne))" Title="@Localizer["delete"]" />
+                            </Template>
+                        </RadzenDataGridColumn>
+                    </Columns>
+                </RadzenDataGrid>
+            </div>
+
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" JustifyContent="Radzen.JustifyContent.End" class="rz-col-12">
+                <RadzenButton Text="@Localizer["cancel"]" Click="@(() => NavigationManager.NavigateTo("/inventaires"))" 
+                              ButtonStyle="ButtonStyle.Light" Variant="Variant.Outlined" />
+                <RadzenButton Text="@Localizer["save"]" Click="@SaveInventaire" ButtonStyle="ButtonStyle.Primary" IsBusy="@isSaving" />
+            </RadzenStack>
+        </RadzenStack>
+    </RadzenCard>
+</RadzenStack>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    
+    private CreateInventaireRequest inventaire = new();
+    private List<LigneInventaireResponse> lignes = new();
+    private bool isSaving;
+    private int? activeAccountingYearId;
+    private List<ProductResponse> availableProducts = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadActiveAccountingYear();
+        if (Id > 0)
+        {
+            await LoadInventaire();
+        }
+        else
+        {
+            inventaire.DateInventaire = DateTime.Now;
+            inventaire.AccountingYearId = activeAccountingYearId ?? 0;
+        }
+        await LoadProducts();
+    }
+
+    private async Task LoadActiveAccountingYear()
+    {
+        try
+        {
+            var activeYear = await accountingYearService.GetActiveAccountingYearAsync(CancellationToken.None);
+            if (activeYear.IsT0)
+            {
+                activeAccountingYearId = activeYear.AsT0.Id;
+                inventaire.AccountingYearId = activeYear.AsT0.Id;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Error loading active accounting year");
+        }
+    }
+
+    private async Task LoadInventaire()
+    {
+        try
+        {
+            var result = await inventaireService.GetByIdAsync(Id, CancellationToken.None);
+            if (result.IsT0)
+            {
+                var fullInventaire = result.AsT0;
+                inventaire.DateInventaire = fullInventaire.DateInventaire;
+                inventaire.Description = fullInventaire.Description;
+                inventaire.AccountingYearId = fullInventaire.AccountingYearId;
+                lignes = fullInventaire.Lignes.ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Error loading inventaire");
+            ToastService.Notify(NotificationSeverity.Error, "Erreur lors du chargement de l'inventaire");
+        }
+    }
+
+    private async Task LoadProducts()
+    {
+        try
+        {
+            var queryParams = new QueryStringParameters { PageNumber = 1, PageSize = 1000 };
+            var result = await productService.GetPagedAsync(queryParams, CancellationToken.None);
+            availableProducts = result.Items.ToList();
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Error loading products");
+        }
+    }
+
+    private async Task AddProduct()
+    {
+        string? selectedProductValue = null;
+        var productOptions = availableProducts.Select(p => $"{p.Reference} - {p.Name}").ToList();
+        var selectedProduct = await DialogService.OpenAsync<string>("Sélectionner un produit", ds =>
+            @<RadzenStack>
+                <RadzenDropDown @bind-Value="selectedProductValue" Data="@productOptions" Placeholder="Sélectionner un produit" Style="width: 100%;" />
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" JustifyContent="Radzen.JustifyContent.End" class="rz-mt-2">
+                    <RadzenButton Text="Annuler" Click="@(() => ds.Close())" ButtonStyle="ButtonStyle.Light" />
+                    <RadzenButton Text="Ajouter" Click="@(() => ds.Close(selectedProductValue))" ButtonStyle="ButtonStyle.Primary" />
+                </RadzenStack>
+            </RadzenStack>,
+            new DialogOptions { Width = "500px" });
+
+        if (!string.IsNullOrEmpty(selectedProduct))
+        {
+            var productRef = selectedProduct.Split(" - ")[0];
+            var product = availableProducts.FirstOrDefault(p => p.Reference == productRef);
+            if (product != null)
+            {
+                var dernierPrixAchat = await GetDernierPrixAchat(productRef);
+                var ligne = new LigneInventaireResponse
+                {
+                    RefProduit = product.Reference,
+                    NomProduit = product.Name,
+                    QuantiteTheorique = product.Qte,
+                    QuantiteReelle = product.Qte,
+                    PrixHt = product.Price,
+                    DernierPrixAchat = dernierPrixAchat
+                };
+                lignes.Add(ligne);
+            }
+        }
+    }
+
+    private async Task<decimal> GetDernierPrixAchat(string refProduit)
+    {
+        try
+        {
+            var result = await inventaireService.GetDernierPrixAchatAsync(refProduit, CancellationToken.None);
+            if (result.IsT0)
+            {
+                return result.AsT0;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Error getting dernier prix achat");
+        }
+        return 0;
+    }
+
+    private void RemoveLigne(LigneInventaireResponse ligne)
+    {
+        lignes.Remove(ligne);
+    }
+
+    private async Task ShowHistorique(string refProduit)
+    {
+        await DialogService.OpenAsync<HistoriqueAchatVenteModal>("Historique Achat/Vente", 
+            new Dictionary<string, object> { { "RefProduit", refProduit } },
+            new DialogOptions { Width = "900px", Height = "600px" });
+    }
+
+    private async Task SaveInventaire()
+    {
+        isSaving = true;
+        try
+        {
+            inventaire.Lignes = lignes.Select(l => new CreateLigneInventaireRequest
+            {
+                RefProduit = l.RefProduit,
+                QuantiteReelle = l.QuantiteReelle,
+                PrixHt = l.PrixHt,
+                DernierPrixAchat = l.DernierPrixAchat
+            }).ToList();
+
+            if (Id > 0)
+            {
+                var updateRequest = new UpdateInventaireRequest
+                {
+                    DateInventaire = inventaire.DateInventaire,
+                    Description = inventaire.Description,
+                    Lignes = lignes.Select(l => new UpdateLigneInventaireRequest
+                    {
+                        Id = l.Id,
+                        RefProduit = l.RefProduit,
+                        QuantiteReelle = l.QuantiteReelle,
+                        PrixHt = l.PrixHt,
+                        DernierPrixAchat = l.DernierPrixAchat
+                    }).ToList()
+                };
+                var result = await inventaireService.UpdateAsync(updateRequest, Id, CancellationToken.None);
+                if (result.IsT0)
+                {
+                    ToastService.Notify(NotificationSeverity.Success, "Inventaire mis à jour avec succès");
+                    NavigationManager.NavigateTo("/inventaires");
+                }
+                else
+                {
+                    ToastService.Notify(NotificationSeverity.Error, "Erreur lors de la mise à jour");
+                }
+            }
+            else
+            {
+                var result = await inventaireService.CreateAsync(inventaire, CancellationToken.None);
+                if (result.IsT0)
+                {
+                    ToastService.Notify(NotificationSeverity.Success, "Inventaire créé avec succès");
+                    NavigationManager.NavigateTo("/inventaires");
+                }
+                else
+                {
+                    ToastService.Notify(NotificationSeverity.Error, "Erreur lors de la création");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Error saving inventaire");
+            ToastService.Notify(NotificationSeverity.Error, "Erreur lors de la sauvegarde");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    [Inject] private ILogger<AddOrUpdateInventaire>? _logger { get; set; }
+}
+

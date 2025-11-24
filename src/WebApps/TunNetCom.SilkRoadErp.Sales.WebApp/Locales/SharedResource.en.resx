@@ -894,4 +894,61 @@
   <data name="Banque_Creee" xml:space="preserve">
     <value>Bank created successfully</value>
   </data>
+  <data name="inventaires" xml:space="preserve">
+    <value>Inventories</value>
+  </data>
+  <data name="inventaire" xml:space="preserve">
+    <value>Inventory</value>
+  </data>
+  <data name="add_inventaire" xml:space="preserve">
+    <value>Create inventory</value>
+  </data>
+  <data name="date_inventaire" xml:space="preserve">
+    <value>Inventory date</value>
+  </data>
+  <data name="quantite_theorique" xml:space="preserve">
+    <value>Theoretical quantity</value>
+  </data>
+  <data name="quantite_reelle" xml:space="preserve">
+    <value>Actual quantity</value>
+  </data>
+  <data name="dernier_prix_achat" xml:space="preserve">
+    <value>Last purchase price</value>
+  </data>
+  <data name="historique_achat_vente" xml:space="preserve">
+    <value>Purchase/Sale History</value>
+  </data>
+  <data name="lignes_inventaire" xml:space="preserve">
+    <value>Inventory lines</value>
+  </data>
+  <data name="valider" xml:space="preserve">
+    <value>Validate</value>
+  </data>
+  <data name="cloturer" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="statut" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="num" xml:space="preserve">
+    <value>Number</value>
+  </data>
+  <data name="document_num" xml:space="preserve">
+    <value>Document number</value>
+  </data>
+  <data name="fournisseur_client" xml:space="preserve">
+    <value>Supplier/Customer</value>
+  </data>
+  <data name="type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="back" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
 </root>

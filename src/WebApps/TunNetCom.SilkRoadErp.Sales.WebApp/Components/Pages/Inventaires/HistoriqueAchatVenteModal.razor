@@ -1,0 +1,79 @@
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Inventaire
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Inventaire
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using Radzen
+@using Radzen.Blazor
+@inject IInventaireApiClient inventaireService
+@inject IStringLocalizer<SharedResource> Localizer
+
+<RadzenStack Gap="1.5rem">
+    <h3>@Localizer["historique_achat_vente"] - @RefProduit</h3>
+    
+    @if (isLoading)
+    {
+        <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+    }
+    else
+    {
+        <RadzenDataGrid TItem="HistoriqueAchatVenteResponse" Data="@historique" AllowPaging="true" PageSize="10" AllowSorting="true" AllowFiltering="false">
+            <Columns>
+                <RadzenDataGridColumn TItem="HistoriqueAchatVenteResponse" Property="@nameof(HistoriqueAchatVenteResponse.Date)" Title="@Localizer["date"]" Width="150px">
+                    <Template Context="item">
+                        @item.Date.ToString("dd/MM/yyyy")
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="HistoriqueAchatVenteResponse" Property="@nameof(HistoriqueAchatVenteResponse.Type)" Title="@Localizer["type"]" Width="100px" />
+                <RadzenDataGridColumn TItem="HistoriqueAchatVenteResponse" Property="@nameof(HistoriqueAchatVenteResponse.DocumentNum)" Title="@Localizer["document_num"]" Width="120px" />
+                <RadzenDataGridColumn TItem="HistoriqueAchatVenteResponse" Property="@nameof(HistoriqueAchatVenteResponse.FournisseurClient)" Title="@Localizer["fournisseur_client"]" Width="200px" />
+                <RadzenDataGridColumn TItem="HistoriqueAchatVenteResponse" Property="@nameof(HistoriqueAchatVenteResponse.Quantite)" Title="@Localizer["quantite"]" Width="100px" />
+                <RadzenDataGridColumn TItem="HistoriqueAchatVenteResponse" Property="@nameof(HistoriqueAchatVenteResponse.PrixHt)" Title="@Localizer["prix_ht"]" Width="120px">
+                    <Template Context="item">
+                        @item.PrixHt.ToString("N2")
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="HistoriqueAchatVenteResponse" Property="@nameof(HistoriqueAchatVenteResponse.TotalHt)" Title="@Localizer["total_ht"]" Width="120px">
+                    <Template Context="item">
+                        @item.TotalHt.ToString("N2")
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    }
+</RadzenStack>
+
+@code {
+    [Parameter] public string RefProduit { get; set; } = string.Empty;
+    
+    private List<HistoriqueAchatVenteResponse> historique = new();
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadHistorique();
+    }
+
+    private async Task LoadHistorique()
+    {
+        isLoading = true;
+        try
+        {
+            var result = await inventaireService.GetHistoriqueAchatVenteAsync(RefProduit, CancellationToken.None);
+            if (result.IsT0)
+            {
+                historique = result.AsT0;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Error loading historique");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    [Inject] private ILogger<HistoriqueAchatVenteModal>? _logger { get; set; }
+}
+
