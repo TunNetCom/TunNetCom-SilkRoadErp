@@ -54,6 +54,7 @@ public class DatabaseSeeder
             await SeedFournisseursAsync(context);
             await SeedSystemeAsync(context);
             await SeedProduitsAsync(context);
+            await SeedBanquesAsync(context);
 
             _logger.LogInformation("=== SEEDING DE LA BASE DE DONNÉES TERMINÉ AVEC SUCCÈS ===");
         }
@@ -512,6 +513,93 @@ public class DatabaseSeeder
         catch (Exception ex)
         {
             _logger.LogError(ex, "✗ ERREUR lors de l'insertion des produits: {Message}", ex.Message);
+            throw;
+        }
+    }
+
+    private async Task SeedBanquesAsync(SalesContext context)
+    {
+        var count = await context.Banque.CountAsync();
+        _logger.LogInformation("Table Banque - Nombre d'enregistrements actuels: {Count}", count);
+        
+        // On insère seulement si la table est vide
+        if (count > 0)
+        {
+            _logger.LogInformation("La table Banque contient déjà {Count} enregistrement(s). Seeding ignoré.", count);
+            return;
+        }
+
+        var jsonPath = Path.Combine(_seedDataPath, "banques.json");
+        _logger.LogInformation("Recherche du fichier banques.json à: {JsonPath}", jsonPath);
+        if (!File.Exists(jsonPath))
+        {
+            _logger.LogWarning("Fichier banques.json introuvable à {JsonPath}. Seeding ignoré.", jsonPath);
+            return;
+        }
+        _logger.LogInformation("Fichier banques.json trouvé. Taille: {Size} bytes", new FileInfo(jsonPath).Length);
+
+        var jsonContent = await File.ReadAllTextAsync(jsonPath);
+        _logger.LogInformation("Fichier banques.json lu. Contenu: {Length} caractères", jsonContent.Length);
+        
+        var options = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            AllowTrailingCommas = true,
+            ReadCommentHandling = JsonCommentHandling.Skip
+        };
+        
+        List<BanqueSeedData>? banquesData;
+        try
+        {
+            banquesData = JsonSerializer.Deserialize<List<BanqueSeedData>>(jsonContent, options);
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Erreur de désérialisation JSON: {Message}", ex.Message);
+            return;
+        }
+
+        if (banquesData == null)
+        {
+            _logger.LogWarning("Échec de la désérialisation du fichier banques.json - résultat null.");
+            return;
+        }
+        
+        _logger.LogInformation("Désérialisation réussie. Nombre d'éléments: {Count}", banquesData.Count);
+        
+        if (banquesData.Count == 0)
+        {
+            _logger.LogInformation("Aucune donnée banque à insérer (fichier vide).");
+            return;
+        }
+        
+        _logger.LogInformation("Nombre de banques à insérer: {Count}", banquesData.Count);
+
+        // Filtrer les banques avec nom null ou vide
+        var validBanques = banquesData
+            .Where(b => !string.IsNullOrWhiteSpace(b.Nom))
+            .ToList();
+        
+        var skippedCount = banquesData.Count - validBanques.Count;
+        if (skippedCount > 0)
+        {
+            _logger.LogWarning("{SkippedCount} banques ignorées car le nom est null ou vide.", skippedCount);
+        }
+        
+        _logger.LogInformation("Nombre de banques valides à insérer: {Count}", validBanques.Count);
+
+        var banques = validBanques.Select(b => Domain.Entites.Banque.CreateBanque(b.Nom!)).ToList();
+
+        _logger.LogInformation("Ajout de {Count} banques à la base de données...", banques.Count);
+        try
+        {
+            await context.Banque.AddRangeAsync(banques);
+            var saved = await context.SaveChangesAsync();
+            _logger.LogInformation("✓ {Count} banques insérées avec succès. {Saved} changements sauvegardés.", banques.Count, saved);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "✗ ERREUR lors de l'insertion des banques: {Message}", ex.Message);
             throw;
         }
     }
