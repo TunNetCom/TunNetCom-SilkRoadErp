@@ -600,4 +600,13 @@
   <data name="article" xml:space="preserve">
     <value>article</value>
   </data>
+  <data name="partial_delivery" xml:space="preserve">
+    <value>Livraison partielle</value>
+  </data>
+  <data name="delivered_quantity" xml:space="preserve">
+    <value>Quantité livrée</value>
+  </data>
+  <data name="enable_partial_delivery" xml:space="preserve">
+    <value>Activer la livraison partielle</value>
+  </data>
 </root>

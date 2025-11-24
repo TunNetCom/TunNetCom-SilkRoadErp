@@ -26,9 +26,12 @@ public class GetDeliveryNoteByNumQueryHandler(
                 TotalExcludingTax = LigneBl.TotHTva,
                 Items = LigneBl.LigneBl.Select(l => new DeliveryNoteDetailResponse
                 {
+                    Id = l.IdLi,
                     ProductReference = l.RefProduit,
                     Description = l.DesignationLi,
                     Quantity = l.QteLi,
+                    DeliveredQuantity = l.QteLivree ?? l.QteLi,
+                    HasPartialDelivery = l.QteLivree.HasValue && l.QteLivree.Value < l.QteLi,
                     UnitPriceExcludingTax = l.PrixHt,
                     DiscountPercentage = l.Remise,
                     VatPercentage = l.Tva,

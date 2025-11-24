@@ -5,6 +5,7 @@
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Common
 @using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters
 @using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNote.Responses
+@using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @typeparam TItem where TItem : class, ILineItem
@@ -138,6 +139,58 @@
                 <RadzenRequiredValidator Text="@Localizer["quantity_required"]" Component="Quantity" Popup="true" />
             </Template>
         </RadzenDataGridColumn>
+
+        @* Partial delivery columns - only shown for DeliveryNoteDetailResponse *@
+        @if (typeof(TItem) == typeof(DeliveryNoteDetailResponse))
+        {
+            var partialDeliveryTitle = Localizer["partial_delivery"];
+            var deliveredQuantityTitle = Localizer["delivered_quantity"];
+            var enablePartialDeliveryTitle = Localizer["enable_partial_delivery"];
+            
+            <RadzenDataGridColumn Width="80px" 
+                                  Title="@partialDeliveryTitle">
+                <Template Context="order">
+                    @{
+                        var deliveryNoteItem = order as DeliveryNoteDetailResponse;
+                        if (deliveryNoteItem != null)
+                        {
+                            <RadzenCheckBox Value="@deliveryNoteItem.HasPartialDelivery"
+                                            ValueChanged="@((bool value) => OnPartialDeliveryCheckboxChanged(deliveryNoteItem, value))"
+                                            Disabled="@(string.IsNullOrEmpty(deliveryNoteItem.ProductReference))"
+                                            Title="@enablePartialDeliveryTitle" />
+                        }
+                    }
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn Width="120px" 
+                                  Title="@deliveredQuantityTitle"
+                                  Visible="@showDeliveredQuantityColumn">
+                <Template Context="order">
+                    @{
+                        var deliveryNoteItem = order as DeliveryNoteDetailResponse;
+                        if (deliveryNoteItem != null)
+                        {
+                            var hasPartialDelivery = deliveryNoteItem.HasPartialDelivery;
+                            if (hasPartialDelivery)
+                            {
+                                <RadzenNumeric TValue="int"
+                                               Value="@(deliveryNoteItem.DeliveredQuantity ?? deliveryNoteItem.Quantity)"
+                                               Change="@(args => OnDeliveredQuantityChanged(deliveryNoteItem, args))"
+                                               Style="width:100%;"
+                                               Min="0"
+                                               Max="@deliveryNoteItem.Quantity"
+                                               Name="DeliveredQuantity"/>
+                            }
+                            else
+                            {
+                                <span style="color: #6b7280; visibility: hidden;">-</span>
+                            }
+                        }
+                    }
+                </Template>
+            </RadzenDataGridColumn>
+        }
 
         <RadzenDataGridColumn Width="200px" 
                               Title="@Localizer["unit_price_ht"]">
@@ -386,6 +439,7 @@
     RadzenDataGrid<TItem> ordersGrid;
     private DotNetObjectReference<LineItemsGrid<TItem>>? objRef;
     private string componentId = Guid.NewGuid().ToString();
+    private bool showDeliveredQuantityColumn = false;
 
     private string GetPriceFormat()
     {
@@ -403,6 +457,12 @@
             
             // Use the helper function from site.js
             await JSRuntime.InvokeVoidAsync("setupOrderLinesGridKeyboard", dotNetRefId, objRef);
+            
+            // Initialize column visibility
+            if (typeof(TItem) == typeof(DeliveryNoteDetailResponse))
+            {
+                showDeliveredQuantityColumn = Items?.Any(item => item is DeliveryNoteDetailResponse dn && dn.HasPartialDelivery) ?? false;
+            }
         }
     }
 
@@ -417,6 +477,26 @@
         if (value != null && int.TryParse(value.ToString(), out int quantity))
         {
             order.Quantity = quantity;
+            
+            // For DeliveryNoteDetailResponse, synchronize DeliveredQuantity ONLY if checkbox is NOT checked
+            // DO NOT change HasPartialDelivery automatically - it must be set manually by user
+            if (order is DeliveryNoteDetailResponse deliveryNoteItem)
+            {
+                if (!deliveryNoteItem.HasPartialDelivery)
+                {
+                    // If checkbox is not checked, set DeliveredQuantity = Quantity (synchronize)
+                    deliveryNoteItem.DeliveredQuantity = quantity;
+                }
+                else
+                {
+                    // If checkbox is checked, ensure DeliveredQuantity doesn't exceed Quantity
+                    if (deliveryNoteItem.DeliveredQuantity.HasValue && deliveryNoteItem.DeliveredQuantity.Value > quantity)
+                    {
+                        deliveryNoteItem.DeliveredQuantity = quantity;
+                    }
+                }
+            }
+            
             LineItemCalculator.CalculateTotals(order);
             await NotifyItemsChanged();
         }
@@ -470,6 +550,53 @@
         }
     }
 
+    private async Task OnPartialDeliveryCheckboxChanged(DeliveryNoteDetailResponse order, bool isChecked)
+    {
+        if (order == null) return;
+        
+        // Set HasPartialDelivery explicitly - this is the ONLY way it should change
+        order.HasPartialDelivery = isChecked;
+        
+        if (isChecked)
+        {
+            // When checkbox is checked, initialize DeliveredQuantity to Quantity if not set
+            if (!order.DeliveredQuantity.HasValue)
+            {
+                order.DeliveredQuantity = order.Quantity;
+            }
+            // Show the delivered quantity column
+            showDeliveredQuantityColumn = true;
+        }
+        else
+        {
+            // When checkbox is unchecked, reset DeliveredQuantity to Quantity
+            order.DeliveredQuantity = order.Quantity;
+            // Hide the column if no checkboxes are checked
+            showDeliveredQuantityColumn = Items?.Any(item => item is DeliveryNoteDetailResponse dn && dn.HasPartialDelivery) ?? false;
+        }
+        await NotifyItemsChanged();
+    }
+
+    private async Task OnDeliveredQuantityChanged(DeliveryNoteDetailResponse order, object value)
+    {
+        if (order == null) return;
+        
+        if (value != null && int.TryParse(value.ToString(), out int deliveredQuantity))
+        {
+            // Ensure DeliveredQuantity doesn't exceed Quantity
+            if (deliveredQuantity > order.Quantity)
+            {
+                deliveredQuantity = order.Quantity;
+            }
+            if (deliveredQuantity < 0)
+            {
+                deliveredQuantity = 0;
+            }
+            order.DeliveredQuantity = deliveredQuantity;
+            await NotifyItemsChanged();
+        }
+    }
+
     private async Task OnProductSelected(TItem order, object value)
     {
         if (value != null && value is string productReference)
@@ -512,6 +639,12 @@
 
     private async Task NotifyItemsChanged()
     {
+        // Update column visibility based on checkbox states
+        if (typeof(TItem) == typeof(DeliveryNoteDetailResponse))
+        {
+            showDeliveredQuantityColumn = Items?.Any(item => item is DeliveryNoteDetailResponse dn && dn.HasPartialDelivery) ?? false;
+        }
+        
         if (ItemsChanged.HasDelegate)
         {
             await ItemsChanged.InvokeAsync(Items);
@@ -626,6 +759,13 @@
             }
 
             var order = CreateNewItem();
+            
+            // For DeliveryNoteDetailResponse, initialize DeliveredQuantity to Quantity and HasPartialDelivery to false
+            if (order is DeliveryNoteDetailResponse deliveryNoteItem)
+            {
+                deliveryNoteItem.DeliveredQuantity = deliveryNoteItem.Quantity;
+                deliveryNoteItem.HasPartialDelivery = false; // Always start with checkbox unchecked
+            }
             
             // Always use AppParameters values as defaults from Systeme entity
             if (AppParameters != null)

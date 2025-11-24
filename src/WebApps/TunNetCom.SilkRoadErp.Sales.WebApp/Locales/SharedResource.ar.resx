@@ -600,4 +600,13 @@
   <data name="article" xml:space="preserve">
     <value>مقال</value>
   </data>
+  <data name="partial_delivery" xml:space="preserve">
+    <value>تسليم جزئي</value>
+  </data>
+  <data name="delivered_quantity" xml:space="preserve">
+    <value>الكمية المسلمة</value>
+  </data>
+  <data name="enable_partial_delivery" xml:space="preserve">
+    <value>تفعيل التسليم الجزئي</value>
+  </data>
 </root>

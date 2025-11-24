@@ -54,6 +54,7 @@ public class UpdateDeliveryNoteCommandHandler(
                 RefProduit = deliveryNoteDetail.RefProduit,
                 DesignationLi = deliveryNoteDetail.DesignationLi,
                 QteLi = deliveryNoteDetail.QteLi,
+                QteLivree = deliveryNoteDetail.QteLivree,
                 PrixHt = deliveryNoteDetail.PrixHt,
                 Remise = deliveryNoteDetail.Remise,
                 TotHt = deliveryNoteDetail.TotHt,

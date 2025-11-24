@@ -261,7 +261,7 @@ else
                    SetProductDescription="@((item, value) => item.Description = value)"
                    ProductTextProperty="ProductReferenceAndDescription"
                    ProductValueProperty="ProductReference"
-                   CreateNewItem="@(() => new DeliveryNoteDetailResponse { Quantity = 1 })" />
+                   CreateNewItem="@(() => new DeliveryNoteDetailResponse { Quantity = 1, DeliveredQuantity = 1, HasPartialDelivery = false })" />
 }
 
 @code {
@@ -364,6 +364,7 @@ else
                     ProductReference = o.ProductReference,
                     Description = o.Description,
                     Quantity = o.Quantity,
+                    DeliveredQuantity = o.DeliveredQuantity ?? o.Quantity,
                     UnitPriceExcludingTax = o.UnitPriceExcludingTax,
                     DiscountPercentage = o.DiscountPercentage,
                     TotalExcludingTax = o.TotalExcludingTax,
@@ -474,6 +475,8 @@ else
                         ProductReference = item.ProductReference,
                         Description = item.Description,
                         Quantity = item.Quantity,
+                        DeliveredQuantity = item.DeliveredQuantity ?? item.Quantity,
+                        HasPartialDelivery = item.DeliveredQuantity.HasValue && item.DeliveredQuantity.Value < item.Quantity,
                         UnitPriceExcludingTax = item.UnitPriceExcludingTax,
                         DiscountPercentage = item.DiscountPercentage,
                         TotalExcludingTax = item.TotalExcludingTax,

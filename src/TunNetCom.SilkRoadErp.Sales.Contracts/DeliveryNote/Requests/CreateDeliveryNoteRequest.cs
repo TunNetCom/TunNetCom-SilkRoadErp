@@ -41,6 +41,9 @@ public class DeliveryNoteItemRequest
     [JsonPropertyName("quantity")]
     public int Quantity { get; set; }
 
+    [JsonPropertyName("deliveredQuantity")]
+    public int? DeliveredQuantity { get; set; }
+
     [JsonPropertyName("unitPriceExcludingTax")]
     public decimal UnitPriceExcludingTax { get; set; }
 

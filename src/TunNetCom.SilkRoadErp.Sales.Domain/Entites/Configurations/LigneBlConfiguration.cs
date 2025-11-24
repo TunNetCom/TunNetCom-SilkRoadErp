@@ -24,6 +24,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             .HasColumnType("decimal(18, 3)")
             .HasColumnName("prix_HT");
             entity.Property(e => e.QteLi).HasColumnName("qte_li");
+            entity.Property(e => e.QteLivree).HasColumnName("qte_livree");
             entity.Property(e => e.RefProduit)
             .HasMaxLength(50)
             .HasColumnName("Ref_Produit");

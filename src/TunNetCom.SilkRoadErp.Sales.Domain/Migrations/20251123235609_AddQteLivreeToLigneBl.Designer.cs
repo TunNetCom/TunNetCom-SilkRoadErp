@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
@@ -11,9 +12,11 @@ using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 {
     [DbContext(typeof(SalesContext))]
-    partial class SalesContextModelSnapshot : ModelSnapshot
+    [Migration("20251123235609_AddQteLivreeToLigneBl")]
+    partial class AddQteLivreeToLigneBl
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

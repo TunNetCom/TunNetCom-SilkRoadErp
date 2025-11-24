@@ -30,6 +30,7 @@ public class CreateDeliveryNoteEndpoint : ICarterModule
                 RefProduit = selector.ProductReference ?? string.Empty,
                 DesignationLi = selector.Description ?? string.Empty,
                 QteLi = selector.Quantity,
+                QteLivree = selector.DeliveredQuantity,
                 PrixHt = selector.UnitPriceExcludingTax,
                 Remise = selector.DiscountPercentage,
                 TotHt = selector.TotalExcludingTax,

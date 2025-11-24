@@ -31,6 +31,7 @@ public class UpdateDeliveryNoteEndpoint : ICarterModule
                 RefProduit = selector.ProductReference,
                 DesignationLi = selector.Description,
                 QteLi = selector.Quantity,
+                QteLivree = selector.DeliveredQuantity,
                 PrixHt = selector.UnitPriceExcludingTax,
                 Remise = selector.DiscountPercentage,
                 TotHt = selector.TotalExcludingTax,

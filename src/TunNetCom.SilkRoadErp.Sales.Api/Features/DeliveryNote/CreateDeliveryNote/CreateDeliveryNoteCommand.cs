@@ -19,6 +19,8 @@ public record LigneBlSubCommand
 
     public int QteLi { get; set; }
 
+    public int? QteLivree { get; set; }
+
     public decimal PrixHt { get; set; }
 
     public double Remise { get; set; }

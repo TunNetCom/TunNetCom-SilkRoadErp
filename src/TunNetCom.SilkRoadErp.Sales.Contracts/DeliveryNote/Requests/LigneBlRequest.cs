@@ -14,6 +14,9 @@ public class LigneBlRequest
     [JsonPropertyName("qteLi")]
     public int QteLi { get; set; }
 
+    [JsonPropertyName("qteLivree")]
+    public int? QteLivree { get; set; }
+
     [JsonPropertyName("prixHt")]
     public decimal PrixHt { get; set; }
 

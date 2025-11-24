@@ -55,6 +55,12 @@ public class DeliveryNoteDetailResponse : ILineItem
     [JsonPropertyName("quantity")]
     public int Quantity { get; set; }
 
+    [JsonPropertyName("deliveredQuantity")]
+    public int? DeliveredQuantity { get; set; }
+
+    [JsonPropertyName("hasPartialDelivery")]
+    public bool HasPartialDelivery { get; set; }
+
     [JsonPropertyName("unitPriceExcludingTax")]
     public decimal UnitPriceExcludingTax { get; set; }
 
