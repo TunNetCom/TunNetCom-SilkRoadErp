@@ -17,6 +17,12 @@ public class SoldeClientResponse
     [JsonPropertyName("totalBonsLivraisonNonFactures")]
     public decimal TotalBonsLivraisonNonFactures { get; set; }
 
+    [JsonPropertyName("totalAvoirs")]
+    public decimal TotalAvoirs { get; set; }
+
+    [JsonPropertyName("totalFacturesAvoir")]
+    public decimal TotalFacturesAvoir { get; set; }
+
     [JsonPropertyName("totalPaiements")]
     public decimal TotalPaiements { get; set; }
 
@@ -33,7 +39,7 @@ public class SoldeClientResponse
 public class DocumentSoldeClient
 {
     [JsonPropertyName("type")]
-    public string Type { get; set; } = string.Empty; // "Facture" ou "BonDeLivraison"
+    public string Type { get; set; } = string.Empty; // "Facture", "BonDeLivraison", "Avoir", ou "FactureAvoir"
 
     [JsonPropertyName("id")]
     public int Id { get; set; }

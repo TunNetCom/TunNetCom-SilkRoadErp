@@ -840,6 +840,12 @@
   <data name="Total_BL_Non_Factures" xml:space="preserve">
     <value>Total BL non facturés</value>
   </data>
+  <data name="Total_Avoirs" xml:space="preserve">
+    <value>Total avoirs</value>
+  </data>
+  <data name="Total_Factures_Avoir" xml:space="preserve">
+    <value>Total factures avoir</value>
+  </data>
   <data name="Total_BR_Non_Factures" xml:space="preserve">
     <value>Total BR non facturés</value>
   </data>

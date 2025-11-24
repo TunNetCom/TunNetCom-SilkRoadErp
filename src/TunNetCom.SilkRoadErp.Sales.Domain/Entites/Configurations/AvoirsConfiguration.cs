@@ -25,6 +25,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             entity.Property(e => e.Date)
             .HasColumnType("datetime")
             .HasColumnName("date");
+            entity.Property(e => e.NumFactureAvoirClient).HasColumnName("Num_FactureAvoirClient");
 
             entity.HasOne(d => d.Client).WithMany(p => p.Avoirs)
             .HasForeignKey(d => d.ClientId)
@@ -34,6 +35,11 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             .HasForeignKey(d => d.AccountingYearId)
             .OnDelete(DeleteBehavior.Restrict)
             .HasConstraintName("FK_dbo.Avoirs_dbo.AccountingYear_AccountingYearId");
+
+            entity.HasOne(d => d.NumFactureAvoirClientNavigation).WithMany(p => p.Avoirs)
+            .HasForeignKey(d => d.NumFactureAvoirClient)
+            .OnDelete(DeleteBehavior.NoAction)
+            .HasConstraintName("FK_dbo.Avoirs_dbo.FactureAvoirClient_Num_FactureAvoirClient");
 
             OnConfigurePartial(entity);
         }

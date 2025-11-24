@@ -841,6 +841,12 @@
   <data name="Total_BL_Non_Factures" xml:space="preserve">
     <value />
   </data>
+  <data name="Total_Avoirs" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Total_Factures_Avoir" xml:space="preserve">
+    <value />
+  </data>
   <data name="Total_BR_Non_Factures" xml:space="preserve">
     <value />
   </data>

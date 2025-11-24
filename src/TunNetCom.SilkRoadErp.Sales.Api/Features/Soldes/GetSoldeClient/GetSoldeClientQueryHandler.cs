@@ -53,12 +53,27 @@ public class GetSoldeClientQueryHandler(
                 && b.NumFacture == null)
             .SumAsync(b => b.NetPayer, cancellationToken);
 
+        // Calculate total from avoirs (direct avoirs not linked to FactureAvoirClient)
+        var totalAvoirs = await _context.Avoirs
+            .Where(a => a.ClientId == query.ClientId 
+                && a.AccountingYearId == accountingYearId.Value 
+                && a.NumFactureAvoirClient == null)
+            .SelectMany(a => a.LigneAvoirs)
+            .SumAsync(l => l.TotTtc, cancellationToken);
+
+        // Calculate total from factures avoir (via Avoirs linked to FactureAvoirClient)
+        var totalFacturesAvoir = await _context.FactureAvoirClient
+            .Where(fa => fa.IdClient == query.ClientId && fa.AccountingYearId == accountingYearId.Value)
+            .SelectMany(fa => fa.Avoirs)
+            .SelectMany(a => a.LigneAvoirs)
+            .SumAsync(l => l.TotTtc, cancellationToken);
+
         // Calculate total payments
         var totalPaiements = await _context.PaiementClient
             .Where(p => p.ClientId == query.ClientId && p.AccountingYearId == accountingYearId.Value)
             .SumAsync(p => p.Montant, cancellationToken);
 
-        var solde = totalFactures + totalBonsLivraisonNonFactures - totalPaiements;
+        var solde = totalFactures + totalBonsLivraisonNonFactures - totalAvoirs - totalFacturesAvoir - totalPaiements;
 
         // Get documents
         var documents = new List<DocumentSoldeClient>();
@@ -93,6 +108,36 @@ public class GetSoldeClientQueryHandler(
             .ToListAsync(cancellationToken);
         documents.AddRange(bonsLivraison);
 
+        // Add avoirs (direct avoirs not linked to FactureAvoirClient)
+        var avoirs = await _context.Avoirs
+            .Where(a => a.ClientId == query.ClientId 
+                && a.AccountingYearId == accountingYearId.Value 
+                && a.NumFactureAvoirClient == null)
+            .Select(a => new DocumentSoldeClient
+            {
+                Type = "Avoir",
+                Id = a.Id,
+                Numero = a.Num,
+                Date = a.Date,
+                Montant = a.LigneAvoirs.Sum(l => l.TotTtc)
+            })
+            .ToListAsync(cancellationToken);
+        documents.AddRange(avoirs);
+
+        // Add factures avoir
+        var facturesAvoir = await _context.FactureAvoirClient
+            .Where(fa => fa.IdClient == query.ClientId && fa.AccountingYearId == accountingYearId.Value)
+            .Select(fa => new DocumentSoldeClient
+            {
+                Type = "FactureAvoir",
+                Id = fa.Id,
+                Numero = fa.Num,
+                Date = fa.Date,
+                Montant = fa.Avoirs.SelectMany(a => a.LigneAvoirs).Sum(l => l.TotTtc)
+            })
+            .ToListAsync(cancellationToken);
+        documents.AddRange(facturesAvoir);
+
         // Get payments
         var paiements = await _context.PaiementClient
             .Where(p => p.ClientId == query.ClientId && p.AccountingYearId == accountingYearId.Value)
@@ -114,6 +159,8 @@ public class GetSoldeClientQueryHandler(
             AccountingYearId = accountingYearId.Value,
             TotalFactures = totalFactures,
             TotalBonsLivraisonNonFactures = totalBonsLivraisonNonFactures,
+            TotalAvoirs = totalAvoirs,
+            TotalFacturesAvoir = totalFacturesAvoir,
             TotalPaiements = totalPaiements,
             Solde = solde,
             Documents = documents.OrderByDescending(d => d.Date).ToList(),

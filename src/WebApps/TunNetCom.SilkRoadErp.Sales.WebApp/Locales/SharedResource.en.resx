@@ -840,6 +840,12 @@
   <data name="Total_BL_Non_Factures" xml:space="preserve">
     <value>Total Uninvoiced Delivery Notes</value>
   </data>
+  <data name="Total_Avoirs" xml:space="preserve">
+    <value>Total Credit Notes</value>
+  </data>
+  <data name="Total_Factures_Avoir" xml:space="preserve">
+    <value>Total Credit Invoices</value>
+  </data>
   <data name="Total_BR_Non_Factures" xml:space="preserve">
     <value>Total Uninvoiced Receipt Notes</value>
   </data>

@@ -17,6 +17,9 @@ public class SoldeFournisseurResponse
     [JsonPropertyName("totalBonsReceptionNonFactures")]
     public decimal TotalBonsReceptionNonFactures { get; set; }
 
+    [JsonPropertyName("totalFacturesAvoir")]
+    public decimal TotalFacturesAvoir { get; set; }
+
     [JsonPropertyName("totalPaiements")]
     public decimal TotalPaiements { get; set; }
 
@@ -33,7 +36,7 @@ public class SoldeFournisseurResponse
 public class DocumentSoldeFournisseur
 {
     [JsonPropertyName("type")]
-    public string Type { get; set; } = string.Empty; // "FactureFournisseur" ou "BonDeReception"
+    public string Type { get; set; } = string.Empty; // "FactureFournisseur", "BonDeReception", ou "FactureAvoir"
 
     [JsonPropertyName("id")]
     public int Id { get; set; }

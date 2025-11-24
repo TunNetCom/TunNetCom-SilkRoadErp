@@ -840,6 +840,12 @@
   <data name="Total_BL_Non_Factures" xml:space="preserve">
     <value>إجمالي إيصالات التسليم غير المفوترة</value>
   </data>
+  <data name="Total_Avoirs" xml:space="preserve">
+    <value>إجمالي الإشعارات الدائنة</value>
+  </data>
+  <data name="Total_Factures_Avoir" xml:space="preserve">
+    <value>إجمالي فواتير الإشعارات الدائنة</value>
+  </data>
   <data name="Total_BR_Non_Factures" xml:space="preserve">
     <value>إجمالي إيصالات الاستلام غير المفوترة</value>
   </data>

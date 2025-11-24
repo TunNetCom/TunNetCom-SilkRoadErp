@@ -49,6 +49,8 @@ public partial class SalesContext : DbContext
 
     public virtual DbSet<Facture> Facture { get; set; }
 
+    public virtual DbSet<FactureAvoirClient> FactureAvoirClient { get; set; }
+
     public virtual DbSet<FactureAvoirFournisseur> FactureAvoirFournisseur { get; set; }
 
     public virtual DbSet<FactureFournisseur> FactureFournisseur { get; set; }

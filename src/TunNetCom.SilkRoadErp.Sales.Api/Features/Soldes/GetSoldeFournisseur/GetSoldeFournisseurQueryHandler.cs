@@ -47,12 +47,19 @@ public class GetSoldeFournisseurQueryHandler(
             .SelectMany(br => br.LigneBonReception)
             .SumAsync(l => l.TotTtc, cancellationToken);
 
+        // Calculate total from factures avoir (via AvoirFournisseur linked to FactureAvoirFournisseur)
+        var totalFacturesAvoir = await _context.FactureAvoirFournisseur
+            .Where(fa => fa.IdFournisseur == query.FournisseurId && fa.AccountingYearId == accountingYearId.Value)
+            .SelectMany(fa => fa.AvoirFournisseur)
+            .SelectMany(a => a.LigneAvoirFournisseur)
+            .SumAsync(l => l.TotTtc, cancellationToken);
+
         // Calculate total payments
         var totalPaiements = await _context.PaiementFournisseur
             .Where(p => p.FournisseurId == query.FournisseurId && p.AccountingYearId == accountingYearId.Value)
             .SumAsync(p => p.Montant, cancellationToken);
 
-        var solde = totalFactures + totalBonsReceptionNonFactures - totalPaiements;
+        var solde = totalFactures + totalBonsReceptionNonFactures - totalFacturesAvoir - totalPaiements;
 
         // Get documents
         var documents = new List<DocumentSoldeFournisseur>();
@@ -87,6 +94,20 @@ public class GetSoldeFournisseurQueryHandler(
             .ToListAsync(cancellationToken);
         documents.AddRange(bonsReception);
 
+        // Add factures avoir
+        var facturesAvoir = await _context.FactureAvoirFournisseur
+            .Where(fa => fa.IdFournisseur == query.FournisseurId && fa.AccountingYearId == accountingYearId.Value)
+            .Select(fa => new DocumentSoldeFournisseur
+            {
+                Type = "FactureAvoir",
+                Id = fa.Id,
+                Numero = fa.Num,
+                Date = fa.Date,
+                Montant = fa.AvoirFournisseur.SelectMany(a => a.LigneAvoirFournisseur).Sum(l => l.TotTtc)
+            })
+            .ToListAsync(cancellationToken);
+        documents.AddRange(facturesAvoir);
+
         // Get payments
         var paiements = await _context.PaiementFournisseur
             .Where(p => p.FournisseurId == query.FournisseurId && p.AccountingYearId == accountingYearId.Value)
@@ -108,6 +129,7 @@ public class GetSoldeFournisseurQueryHandler(
             AccountingYearId = accountingYearId.Value,
             TotalFactures = totalFactures,
             TotalBonsReceptionNonFactures = totalBonsReceptionNonFactures,
+            TotalFacturesAvoir = totalFacturesAvoir,
             TotalPaiements = totalPaiements,
             Solde = solde,
             Documents = documents.OrderByDescending(d => d.Date).ToList(),

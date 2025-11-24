@@ -22,4 +22,6 @@ public partial class Facture : IAccountingYearEntity
     public virtual Client IdClientNavigation { get; set; } = null!;
 
     public virtual AccountingYear AccountingYear { get; set; } = null!;
+
+    public virtual ICollection<FactureAvoirClient> FactureAvoirClient { get; set; } = new List<FactureAvoirClient>();
 }

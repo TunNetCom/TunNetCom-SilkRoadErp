@@ -10,24 +10,28 @@ public partial class Avoirs : IAccountingYearEntity
     public static Avoirs CreateAvoir(
         DateTime date,
         int? clientId,
-        int accountingYearId)
+        int accountingYearId,
+        int? numFactureAvoirClient = null)
     {
         return new Avoirs
         {
             Date = date,
             ClientId = clientId,
-            AccountingYearId = accountingYearId
+            AccountingYearId = accountingYearId,
+            NumFactureAvoirClient = numFactureAvoirClient
         };
     }
 
     public void UpdateAvoir(
         DateTime date,
         int? clientId,
-        int accountingYearId)
+        int accountingYearId,
+        int? numFactureAvoirClient = null)
     {
         this.Date = date;
         this.ClientId = clientId;
         this.AccountingYearId = accountingYearId;
+        this.NumFactureAvoirClient = numFactureAvoirClient;
     }
 
     public int Id { get; set; }
@@ -40,9 +44,13 @@ public partial class Avoirs : IAccountingYearEntity
 
     public int AccountingYearId { get; set; }
 
+    public int? NumFactureAvoirClient { get; set; }
+
     public virtual Client? Client { get; set; }
 
     public virtual AccountingYear AccountingYear { get; set; } = null!;
 
     public virtual ICollection<LigneAvoirs> LigneAvoirs { get; set; } = new List<LigneAvoirs>();
+
+    public virtual FactureAvoirClient? NumFactureAvoirClientNavigation { get; set; }
 }
