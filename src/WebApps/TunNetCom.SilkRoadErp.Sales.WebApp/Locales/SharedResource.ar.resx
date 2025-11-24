@@ -639,6 +639,12 @@
   <data name="Numero_Paiement" xml:space="preserve">
     <value>رقم الدفعة</value>
   </data>
+  <data name="Numero_Transaction_Bancaire" xml:space="preserve">
+    <value>رقم المعاملة البنكية (اختياري)</value>
+  </data>
+  <data name="Numero_Transaction_Bancaire_Description" xml:space="preserve">
+    <value>رقم المعاملة البنكية المرتبط بهذه الدفعة</value>
+  </data>
   <data name="Exercice_Comptable" xml:space="preserve">
     <value>التمرين المحاسبي</value>
   </data>

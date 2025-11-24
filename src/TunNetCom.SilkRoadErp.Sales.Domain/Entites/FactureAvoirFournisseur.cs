@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
-public partial class FactureAvoirFournisseur
+public partial class FactureAvoirFournisseur : IAccountingYearEntity
 {
     public static FactureAvoirFournisseur CreateFactureAvoirFournisseur(
         int numFactureAvoirFourSurPage,

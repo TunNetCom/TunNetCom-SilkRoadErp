@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
-public partial class AvoirFournisseur
+public partial class AvoirFournisseur : IAccountingYearEntity
 {
     public static AvoirFournisseur CreateAvoirFournisseur(
         DateTime date,

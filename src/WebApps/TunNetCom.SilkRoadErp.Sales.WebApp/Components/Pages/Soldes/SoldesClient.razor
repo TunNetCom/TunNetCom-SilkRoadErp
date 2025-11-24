@@ -40,16 +40,6 @@
                     </Columns>
                 </RadzenDropDownDataGrid>
             </div>
-            <div class="search-field">
-                <label>@Localizer["Exercice_Comptable_Filter"]</label>
-                <RadzenDropDown @bind-Value="@selectedAccountingYearId"
-                                Data="@accountingYears"
-                                TextProperty="Year"
-                                ValueProperty="Id"
-                                Placeholder="@Localizer["Tous_Exercices"]"
-                                AllowClear="true"
-                                Style="width: 200px;" />
-            </div>
             <div class="search-button">
                 <RadzenButton Text="@Localizer["Rechercher"]"
                               Icon="search"
@@ -248,32 +238,8 @@
 @code {
     private SoldeClientResponse? solde;
     private int? selectedClientId;
-    private int? selectedAccountingYearId;
     private List<CustomerResponse> _filteredCustomers = new();
-    private List<GetAllAccountingYearsResponse> accountingYears = new();
     private CancellationTokenSource cancellationTokenSource = new();
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadAccountingYearsAsync();
-    }
-
-    async Task LoadAccountingYearsAsync()
-    {
-        try
-        {
-            accountingYears = await AccountingYearService.GetAllAccountingYearsAsync();
-        }
-        catch (Exception ex)
-        {
-            NotificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Error,
-                Summary = Localizer["Erreur"],
-                Detail = $"{Localizer["Erreur_Chargement_Accounting_Year"]}: {ex.Message}"
-            });
-        }
-    }
 
     async Task LoadCustomers(LoadDataArgs args)
     {
@@ -324,9 +290,10 @@
 
         try
         {
+            // Toujours passer null pour utiliser l'exercice actif automatiquement
             var result = await SoldesService.GetSoldeClientAsync(
                 selectedClientId.Value,
-                selectedAccountingYearId,
+                null,
                 cancellationTokenSource.Token);
 
             if (result.IsSuccess)

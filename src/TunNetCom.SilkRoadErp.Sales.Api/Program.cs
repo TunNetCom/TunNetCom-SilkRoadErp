@@ -3,6 +3,7 @@ using System.Reflection;
 using Microsoft.AspNetCore.OData;
 using Scalar.AspNetCore;
 using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.DataSeeder;
+using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Middleware;
 using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.OData;
 using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
 
@@ -130,6 +131,9 @@ builder.Services.AddScoped<DatabaseSeeder>();
 // Register NumberGeneratorService
 builder.Services.AddScoped<INumberGeneratorService, NumberGeneratorService>();
 
+// Register ActiveAccountingYearService
+builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Domain.Entites.IActiveAccountingYearService, ActiveAccountingYearService>();
+
 var app = builder.Build();
 
 using (IServiceScope scope = app.Services.CreateScope())
@@ -239,6 +243,9 @@ app.UseSerilogRequestLogging();
 
 // Use the exception handler
 app.ConfigureExceptionHandler();
+
+// Use ActiveAccountingYearMiddleware to cache the active accounting year at the start of each request
+app.UseMiddleware<ActiveAccountingYearMiddleware>();
 
 app.UseStaticFiles();
 app.UseHttpsRedirection();

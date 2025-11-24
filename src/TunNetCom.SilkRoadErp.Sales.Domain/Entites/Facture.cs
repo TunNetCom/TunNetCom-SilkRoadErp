@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
-public partial class Facture
+public partial class Facture : IAccountingYearEntity
 {
     public int Id { get; set; }
 

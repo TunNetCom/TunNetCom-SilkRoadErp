@@ -639,6 +639,12 @@
   <data name="Numero_Paiement" xml:space="preserve">
     <value>Payment Number</value>
   </data>
+  <data name="Numero_Transaction_Bancaire" xml:space="preserve">
+    <value>Bank Transaction Number (optional)</value>
+  </data>
+  <data name="Numero_Transaction_Bancaire_Description" xml:space="preserve">
+    <value>Bank transaction number associated with this payment</value>
+  </data>
   <data name="Exercice_Comptable" xml:space="preserve">
     <value>Accounting Year</value>
   </data>

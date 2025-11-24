@@ -7,7 +7,9 @@ public class SetActiveAccountingYearHandler(
 {
     public async Task<Result> Handle(SetActiveAccountingYearCommand command, CancellationToken cancellationToken)
     {
-        var accountingYear = await _context.AccountingYear.FindAsync(new object[] { command.AccountingYearId }, cancellationToken);
+        var accountingYear = await _context.AccountingYear
+            .IgnoreQueryFilters() // Ignorer les filtres globaux pour accéder à tous les exercices
+            .FirstOrDefaultAsync(ay => ay.Id == command.AccountingYearId, cancellationToken);
 
         if (accountingYear == null)
         {
@@ -16,7 +18,9 @@ public class SetActiveAccountingYearHandler(
         }
 
         // Deactivate all accounting years
-        var allYears = await _context.AccountingYear.ToListAsync(cancellationToken);
+        var allYears = await _context.AccountingYear
+            .IgnoreQueryFilters() // Ignorer les filtres globaux pour accéder à tous les exercices
+            .ToListAsync(cancellationToken);
         foreach (var year in allYears)
         {
             if (year.IsActive)

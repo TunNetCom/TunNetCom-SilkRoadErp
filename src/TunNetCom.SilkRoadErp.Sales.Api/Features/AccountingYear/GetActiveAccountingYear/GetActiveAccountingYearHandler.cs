@@ -8,6 +8,7 @@ public class GetActiveAccountingYearHandler(
     public async Task<Result<GetActiveAccountingYearResponse>> Handle(GetActiveAccountingYearQuery request, CancellationToken cancellationToken)
     {
         var activeYear = await _context.AccountingYear
+            .IgnoreQueryFilters() // Ignorer les filtres globaux pour accéder à tous les exercices
             .Where(ay => ay.IsActive)
             .Select(ay => new GetActiveAccountingYearResponse(ay.Id, ay.Year, ay.IsActive))
             .FirstOrDefaultAsync(cancellationToken);

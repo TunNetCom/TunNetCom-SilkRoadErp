@@ -639,6 +639,12 @@
   <data name="Numero_Paiement" xml:space="preserve">
     <value>Numéro du paiement</value>
   </data>
+  <data name="Numero_Transaction_Bancaire" xml:space="preserve">
+    <value>Numéro de transaction bancaire (optionnel)</value>
+  </data>
+  <data name="Numero_Transaction_Bancaire_Description" xml:space="preserve">
+    <value>Numéro de transaction bancaire associé à ce paiement</value>
+  </data>
   <data name="Exercice_Comptable" xml:space="preserve">
     <value>Exercice comptable</value>
   </data>

@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
-public partial class BonDeReception
+public partial class BonDeReception : IAccountingYearEntity
 {
         public void UpdateReceiptNote(
             int num,

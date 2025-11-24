@@ -2,6 +2,9 @@
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations;
 using TunNetCom.SilkRoadErp.Sales.Domain.Views;
 #nullable enable
@@ -10,6 +13,15 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 public partial class SalesContext : DbContext
 {
+    // Variable AsyncLocal pour stocker l'ID de l'exercice actif de manière thread-safe avec async/await
+    // Cette valeur sera mise à jour par le middleware au début de chaque requête HTTP
+    private static readonly AsyncLocal<int?> _activeAccountingYearId = new();
+
+    public static void SetActiveAccountingYearId(int? yearId)
+    {
+        _activeAccountingYearId.Value = yearId;
+    }
+
     public SalesContext(DbContextOptions<SalesContext> options)
         : base(options)
     {
@@ -75,7 +87,65 @@ public partial class SalesContext : DbContext
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(FactureConfiguration).Assembly);
 
+        // Configurer les Global Query Filters pour toutes les entités qui implémentent IAccountingYearEntity
+        ConfigureAccountingYearFilters(modelBuilder);
+
         OnModelCreatingPartial(modelBuilder);
+    }
+
+    private void ConfigureAccountingYearFilters(ModelBuilder modelBuilder)
+    {
+        // Trouver toutes les entités qui implémentent IAccountingYearEntity
+        var entityTypes = modelBuilder.Model.GetEntityTypes()
+            .Where(et => typeof(IAccountingYearEntity).IsAssignableFrom(et.ClrType))
+            .ToList();
+
+        foreach (var entityType in entityTypes)
+        {
+            var clrType = entityType.ClrType;
+            var parameter = Expression.Parameter(clrType, "e");
+            var property = Expression.Property(parameter, nameof(IAccountingYearEntity.AccountingYearId));
+
+            // Utiliser une variable capturée qui sera résolue au moment de l'exécution
+            // On crée une expression qui compare AccountingYearId avec une valeur qui sera résolue dynamiquement
+            // Pour cela, on utilise une méthode qui sera appelée via un interceptor ou un middleware
+            // Pour l'instant, on crée un filtre qui sera évalué à chaque requête via le service
+            
+            // Créer une expression qui utilise le service pour obtenir l'exercice actif
+            // On utilise une closure pour capturer le contexte
+            var filterExpression = CreateAccountingYearFilterExpression(clrType);
+            
+            // Appliquer le filtre
+            modelBuilder.Entity(clrType).HasQueryFilter(filterExpression);
+        }
+    }
+
+    private LambdaExpression CreateAccountingYearFilterExpression(Type entityType)
+    {
+        var parameter = Expression.Parameter(entityType, "e");
+        var property = Expression.Property(parameter, nameof(IAccountingYearEntity.AccountingYearId));
+        
+        // Utiliser la variable statique thread-safe pour obtenir l'ID de l'exercice actif
+        // Cette valeur sera mise à jour par le middleware au début de chaque requête HTTP
+        var getActiveYearIdMethod = typeof(SalesContext).GetMethod(
+            nameof(GetActiveAccountingYearId),
+            BindingFlags.NonPublic | BindingFlags.Static)!;
+        
+        var methodCall = Expression.Call(getActiveYearIdMethod);
+        
+        // Si la valeur est null, on retourne -1 pour que la comparaison échoue
+        var nullCheck = Expression.Condition(
+            Expression.Equal(methodCall, Expression.Constant(null, typeof(int?))),
+            Expression.Constant(-1),
+            Expression.Property(methodCall, "Value"));
+        
+        var equals = Expression.Equal(property, nullCheck);
+        return Expression.Lambda(equals, parameter);
+    }
+
+    private static int? GetActiveAccountingYearId()
+    {
+        return _activeAccountingYearId.Value;
     }
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);

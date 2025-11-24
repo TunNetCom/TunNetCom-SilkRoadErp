@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
-public partial class BonDeLivraison
+public partial class BonDeLivraison : IAccountingYearEntity
 {
     public static BonDeLivraison CreateBonDeLivraison(
         DateTime date,

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
-public partial class PaiementClient
+public partial class PaiementClient : IAccountingYearEntity
 {
     private PaiementClient()
     {
