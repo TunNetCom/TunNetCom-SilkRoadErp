@@ -99,13 +99,16 @@
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="QuotationBaseInfo"
                                       Title="Tags"
-                                      Width="250px"
+                                      Width="300px"
                                       Sortable="false"
-                                      Filterable="false">
+                                      Filterable="false"
+                                      Resizable="true">
                     <Template Context="item">
-                        <TagSelector DocumentType="Devis" 
-                                    DocumentId="@item.Number"
-                                    SaveOnChange="true" />
+                        <div style="width: 100%; padding: 4px;">
+                            <TagSelector DocumentType="Devis" 
+                                        DocumentId="@item.Number"
+                                        SaveOnChange="true" />
+                        </div>
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="QuotationBaseInfo"

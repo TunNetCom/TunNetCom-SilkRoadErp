@@ -18,6 +18,9 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Quotations.PrintQuotation
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Tags
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
+@inject ITagsApiClient TagsService
 
 @inject IStringLocalizer<SharedResource> Localizer
 @inject NotificationService NotificationService
@@ -128,6 +131,15 @@ else
                    ProductTextProperty="ProductReferenceAndDescription"
                    ProductValueProperty="ProductReference"
                    CreateNewItem="@(() => new QuotationDetailResponse { Quantity = 1 })" />
+
+    <!-- Tags Section -->
+    @if (!string.IsNullOrEmpty(quotationNumber) && int.TryParse(quotationNumber, out var quotationNum))
+    {
+        <TagSelector @ref="tagSelectorRef"
+                    DocumentType="Devis" 
+                    DocumentId="@quotationNum"
+                    SaveOnChange="false" />
+    }
 }
 
 @code {
@@ -147,6 +159,7 @@ else
     DateTime quotationDate = DateTime.Now;
     private GetAppParametersResponse getAppParametersResponse;
     private int? selectedCustomerId;
+    private TagSelector? tagSelectorRef;
 
     protected override async Task OnInitializedAsync()
     {
@@ -221,6 +234,9 @@ else
                 
                 if (updateResponse.IsSuccess)
                 {
+                    // Sauvegarder les tags après la mise à jour du document
+                    await SaveTags();
+                    
                     NotificationService.Notify(new NotificationMessage
                     {
                         Severity = NotificationSeverity.Success,
@@ -247,6 +263,14 @@ else
                 if (createResponse.IsSuccess)
                 {
                     quotationNumber = createResponse.ValueOrDefault.ToString();
+                    await InvokeAsync(StateHasChanged);
+                    
+                    // Attendre un peu pour que le TagSelector soit mis à jour avec le nouveau DocumentId
+                    await Task.Delay(100);
+                    
+                    // Sauvegarder les tags après la création du document
+                    await SaveTags();
+                    
                     NotificationService.Notify(new NotificationMessage
                     {
                         Severity = NotificationSeverity.Success,
@@ -503,6 +527,68 @@ else
             orders = new List<QuotationDetailResponse>();
         }
         LineItemCalculator.UpdateTotals(orders, out totalHt, out totalVat, out totalTtc);
+    }
+
+    private async Task SaveTags()
+    {
+        if (tagSelectorRef == null || string.IsNullOrEmpty(quotationNumber) || !int.TryParse(quotationNumber, out var quotationNum))
+        {
+            logger.LogWarning("Cannot save tags: tagSelectorRef={TagSelectorRef}, quotationNumber={QuotationNumber}", 
+                tagSelectorRef == null ? "null" : "not null", quotationNumber);
+            return;
+        }
+
+        try
+        {
+            // Récupérer les tags à ajouter et à supprimer
+            var tagsToAdd = tagSelectorRef.GetTagsToAdd();
+            var tagIdsToRemove = tagSelectorRef.GetTagIdsToRemove();
+
+            logger.LogInformation("Saving tags for quotation {Number}: {AddCount} to add, {RemoveCount} to remove", 
+                quotationNum, tagsToAdd.Count, tagIdsToRemove.Count);
+
+            // Supprimer les tags (seulement ceux qui ont un Id > 0, car les tags avec Id = 0 ne sont pas encore en base)
+            var validTagIdsToRemove = tagIdsToRemove.Where(id => id > 0).ToList();
+            if (validTagIdsToRemove.Any())
+            {
+                var removeRequest = new RemoveTagsFromDocumentRequest { TagIds = validTagIdsToRemove };
+                var removeSuccess = await TagsService.RemoveTagsFromDocumentAsync("Devis", quotationNum, removeRequest);
+                if (!removeSuccess)
+                {
+                    logger.LogWarning("Failed to remove tags from quotation {Number}", quotationNum);
+                }
+            }
+
+            // Ajouter les nouveaux tags
+            if (tagsToAdd.Any())
+            {
+                var addRequest = new AddTagsToDocumentByNameRequest { TagNames = tagsToAdd };
+                var addSuccess = await TagsService.AddTagsToDocumentByNameAsync("Devis", quotationNum, addRequest);
+                if (!addSuccess)
+                {
+                    logger.LogWarning("Failed to add tags to quotation {Number}", quotationNum);
+                }
+            }
+
+            // Recharger les tags dans le TagSelector pour mettre à jour InitialTags
+            if (tagSelectorRef != null)
+            {
+                await tagSelectorRef.LoadDocumentTags();
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to save tags for quotation {Number}", quotationNumber);
+            // Ne pas bloquer la sauvegarde du document si les tags échouent
+            // Afficher une notification pour informer l'utilisateur
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["warning"] ?? "Warning",
+                Detail = "Les tags n'ont pas pu être sauvegardés, mais le document a été enregistré."
+            });
+        }
     }
 
     public async Task ShowDialog(string ProductReference)
