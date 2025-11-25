@@ -26,4 +26,12 @@ public interface IProductsApiClient
     Task<PagedList<ProductResponse>> SearchProducts(
         QueryStringParameters queryParameters,
         CancellationToken cancellationToken);
+
+    Task<OneOf<ProductStockResponse, BadRequestResponse>> GetProductStockAsync(
+        string refProduit,
+        CancellationToken cancellationToken = default);
+
+    Task<OneOf<List<ProductStockResponse>, BadRequestResponse>> GetProductsStockAsync(
+        List<string> refProduits,
+        CancellationToken cancellationToken = default);
 }

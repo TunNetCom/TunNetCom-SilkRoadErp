@@ -31,4 +31,13 @@ public class ProductResponse
 
     [JsonPropertyName("visibility")]
     public bool Visibility { get; set; }
+
+    [JsonPropertyName("stockCalcule")]
+    public int? StockCalcule { get; set; }
+
+    [JsonPropertyName("stockDisponible")]
+    public int? StockDisponible { get; set; }
+
+    [JsonPropertyName("isStockLow")]
+    public bool IsStockLow { get; set; }
 }

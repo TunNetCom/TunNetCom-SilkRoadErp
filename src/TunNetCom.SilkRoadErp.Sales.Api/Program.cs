@@ -134,6 +134,9 @@ builder.Services.AddScoped<INumberGeneratorService, NumberGeneratorService>();
 // Register ActiveAccountingYearService
 builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Domain.Entites.IActiveAccountingYearService, ActiveAccountingYearService>();
 
+// Register StockCalculationService
+builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Domain.Services.IStockCalculationService, TunNetCom.SilkRoadErp.Sales.Domain.Services.StockCalculationService>();
+
 var app = builder.Build();
 
 using (IServiceScope scope = app.Services.CreateScope())

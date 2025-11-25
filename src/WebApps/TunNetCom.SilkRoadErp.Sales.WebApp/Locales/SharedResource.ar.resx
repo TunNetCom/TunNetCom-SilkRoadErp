@@ -942,4 +942,46 @@
   <data name="back" xml:space="preserve">
     <value>رجوع</value>
   </data>
+  <data name="stock_calcule" xml:space="preserve">
+    <value>المخزون المحسوب</value>
+  </data>
+  <data name="stock_disponible" xml:space="preserve">
+    <value>المخزون المتاح</value>
+  </data>
+  <data name="stock_initial" xml:space="preserve">
+    <value>المخزون الأولي</value>
+  </data>
+  <data name="total_achats" xml:space="preserve">
+    <value>إجمالي المشتريات</value>
+  </data>
+  <data name="total_ventes" xml:space="preserve">
+    <value>إجمالي المبيعات</value>
+  </data>
+  <data name="stock_insuffisant" xml:space="preserve">
+    <value>مخزون غير كاف</value>
+  </data>
+  <data name="alerte_stock" xml:space="preserve">
+    <value>تنبيه المخزون</value>
+  </data>
+  <data name="forcer_vente" xml:space="preserve">
+    <value>إجبار البيع</value>
+  </data>
+  <data name="ajuster_quantite" xml:space="preserve">
+    <value>تعديل الكمية</value>
+  </data>
+  <data name="stock_manquant" xml:space="preserve">
+    <value>المخزون المفقود</value>
+  </data>
+  <data name="quantite_demandee" xml:space="preserve">
+    <value>الكمية المطلوبة</value>
+  </data>
+  <data name="quantite_disponible" xml:space="preserve">
+    <value>الكمية المتاحة</value>
+  </data>
+  <data name="difference_stock" xml:space="preserve">
+    <value>الفرق مع المخزون النظري</value>
+  </data>
+  <data name="stock_insuffisant_message" xml:space="preserve">
+    <value>المخزون المتاح غير كاف للكمية المطلوبة.</value>
+  </data>
 </root>

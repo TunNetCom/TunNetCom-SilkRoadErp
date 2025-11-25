@@ -942,4 +942,46 @@
   <data name="back" xml:space="preserve">
     <value>Back</value>
   </data>
+  <data name="stock_calcule" xml:space="preserve">
+    <value>Calculated stock</value>
+  </data>
+  <data name="stock_disponible" xml:space="preserve">
+    <value>Available stock</value>
+  </data>
+  <data name="stock_initial" xml:space="preserve">
+    <value>Initial stock</value>
+  </data>
+  <data name="total_achats" xml:space="preserve">
+    <value>Total purchases</value>
+  </data>
+  <data name="total_ventes" xml:space="preserve">
+    <value>Total sales</value>
+  </data>
+  <data name="stock_insuffisant" xml:space="preserve">
+    <value>Insufficient stock</value>
+  </data>
+  <data name="alerte_stock" xml:space="preserve">
+    <value>Stock alert</value>
+  </data>
+  <data name="forcer_vente" xml:space="preserve">
+    <value>Force sale</value>
+  </data>
+  <data name="ajuster_quantite" xml:space="preserve">
+    <value>Adjust quantity</value>
+  </data>
+  <data name="stock_manquant" xml:space="preserve">
+    <value>Missing stock</value>
+  </data>
+  <data name="quantite_demandee" xml:space="preserve">
+    <value>Requested quantity</value>
+  </data>
+  <data name="quantite_disponible" xml:space="preserve">
+    <value>Available quantity</value>
+  </data>
+  <data name="difference_stock" xml:space="preserve">
+    <value>Difference with theoretical stock</value>
+  </data>
+  <data name="stock_insuffisant_message" xml:space="preserve">
+    <value>Available stock is insufficient for the requested quantity.</value>
+  </data>
 </root>

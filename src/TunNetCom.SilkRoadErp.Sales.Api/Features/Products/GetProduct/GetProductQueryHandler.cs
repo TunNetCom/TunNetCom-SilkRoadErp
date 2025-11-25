@@ -1,6 +1,11 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Products.GetProduct;
+﻿using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
+using TunNetCom.SilkRoadErp.Sales.Domain.Services;
+
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Products.GetProduct;
 public class GetProductQueryHandler(
     SalesContext _context,
+    IStockCalculationService _stockCalculationService,
+    IActiveAccountingYearService _activeAccountingYearService,
     ILogger<GetProductQueryHandler> _logger)
     : IRequestHandler<GetProductQuery, PagedList<ProductResponse>>
 {
@@ -44,6 +49,24 @@ public class GetProductQueryHandler(
             getProductQuery.PageNumber,
             getProductQuery.PageSize,
             cancellationToken);
+
+        // Enrichir avec le stock calculé
+        var activeYearId = await _activeAccountingYearService.GetActiveAccountingYearIdAsync(cancellationToken);
+        if (activeYearId.HasValue)
+        {
+            var refProduits = pagedProducts.Items.Select(p => p.Reference).ToList();
+            var stocks = await _stockCalculationService.CalculateStocksAsync(refProduits, activeYearId.Value, cancellationToken);
+
+            foreach (var product in pagedProducts.Items)
+            {
+                if (stocks.TryGetValue(product.Reference, out var stock))
+                {
+                    product.StockCalcule = stock.StockCalcule;
+                    product.StockDisponible = stock.StockDisponible;
+                    product.IsStockLow = stock.StockDisponible <= product.QteLimit;
+                }
+            }
+        }
 
         _logger.LogEntitiesFetched(nameof(Produit), pagedProducts.Items.Count);
 

@@ -141,4 +141,48 @@ public class ProductsApiClient : IProductsApiClient
         return pagedProducts;
     }
 
+    public async Task<OneOf<ProductStockResponse, BadRequestResponse>> GetProductStockAsync(string refProduit, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync($"/products/{refProduit}/stock", cancellationToken: cancellationToken);
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                return await response.ReadJsonAsync<ProductStockResponse>();
+            }
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return new BadRequestResponse { Status = (int)HttpStatusCode.NotFound, Title = "Not Found", Detail = $"Product stock for {refProduit} not found." };
+            }
+            return await response.ReadJsonAsync<BadRequestResponse>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting product stock for {RefProduit}", refProduit);
+            return new BadRequestResponse { Status = (int)HttpStatusCode.InternalServerError, Title = "Error", Detail = ex.Message };
+        }
+    }
+
+    public async Task<OneOf<List<ProductStockResponse>, BadRequestResponse>> GetProductsStockAsync(List<string> refProduits, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync("/products/stock", refProduits, cancellationToken: cancellationToken);
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                return await response.ReadJsonAsync<List<ProductStockResponse>>();
+            }
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return new BadRequestResponse { Status = (int)HttpStatusCode.NotFound, Title = "Not Found", Detail = "Products stock not found." };
+            }
+            return await response.ReadJsonAsync<BadRequestResponse>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting products stock");
+            return new BadRequestResponse { Status = (int)HttpStatusCode.InternalServerError, Title = "Error", Detail = ex.Message };
+        }
+    }
+
 }

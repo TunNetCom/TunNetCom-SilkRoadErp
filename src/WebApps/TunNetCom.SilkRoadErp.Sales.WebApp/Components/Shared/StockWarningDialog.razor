@@ -1,0 +1,58 @@
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using Radzen
+@using Radzen.Blazor
+@inject IStringLocalizer<SharedResource> Localizer
+@inject DialogService DialogService
+
+<RadzenStack Gap="1rem" Class="rz-p-4">
+    <RadzenText TextStyle="TextStyle.H6" Text="@Localizer["alerte_stock"]" />
+    
+    <RadzenAlert AlertStyle="AlertStyle.Warning" Title="@Localizer["stock_insuffisant"]">
+        @Localizer["stock_insuffisant_message"]
+    </RadzenAlert>
+
+    <RadzenCard>
+        <RadzenStack Gap="0.5rem">
+            <RadzenRow>
+                <RadzenColumn Size="6">
+                    <RadzenText Text="@Localizer["quantite_disponible"]" TextStyle="TextStyle.Body2" />
+                </RadzenColumn>
+                <RadzenColumn Size="6">
+                    <RadzenText Text="@StockDisponible.ToString()" TextStyle="TextStyle.Body1" Style="font-weight: bold;" />
+                </RadzenColumn>
+            </RadzenRow>
+            <RadzenRow>
+                <RadzenColumn Size="6">
+                    <RadzenText Text="@Localizer["quantite_demandee"]" TextStyle="TextStyle.Body2" />
+                </RadzenColumn>
+                <RadzenColumn Size="6">
+                    <RadzenText Text="@QuantiteDemandee.ToString()" TextStyle="TextStyle.Body1" Style="font-weight: bold;" />
+                </RadzenColumn>
+            </RadzenRow>
+            <RadzenRow>
+                <RadzenColumn Size="6">
+                    <RadzenText Text="@Localizer["stock_manquant"]" TextStyle="TextStyle.Body2" />
+                </RadzenColumn>
+                <RadzenColumn Size="6">
+                    <RadzenText Text="@((QuantiteDemandee - StockDisponible).ToString())" TextStyle="TextStyle.Body1" Style="font-weight: bold; color: #d32f2f;" />
+                </RadzenColumn>
+            </RadzenRow>
+        </RadzenStack>
+    </RadzenCard>
+
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem" Class="rz-mt-4">
+        <RadzenButton Text="@Localizer["cancel"]" Click="@(() => DialogService.Close(false))" ButtonStyle="ButtonStyle.Light" />
+        <RadzenButton Text="@Localizer["forcer_vente"]" Click="@(() => DialogService.Close("force"))" ButtonStyle="ButtonStyle.Warning" />
+        <RadzenButton Text="@Localizer["ajuster_quantite"]" Click="@(() => DialogService.Close("adjust"))" ButtonStyle="ButtonStyle.Primary" />
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    [Parameter]
+    public int StockDisponible { get; set; }
+
+    [Parameter]
+    public int QuantiteDemandee { get; set; }
+}
+

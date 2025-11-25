@@ -872,6 +872,44 @@ else
 
     async Task OnProductSelectedHandler(DeliveryNoteDetailResponse order)
     {
+        // Vérifier le stock disponible avant d'ajouter le produit
+        if (!string.IsNullOrEmpty(order.ProductReference) && order.Quantity > 0)
+        {
+            var stockResult = await productsApiClient.GetProductStockAsync(order.ProductReference, _cancellationTokenSource.Token);
+            if (stockResult.IsT0)
+            {
+                var stock = stockResult.AsT0;
+                if (stock.StockDisponible < order.Quantity)
+                {
+                    // Afficher l'alerte de stock
+                    var dialogResult = await DialogService.OpenAsync<StockWarningDialog>(
+                        Localizer["alerte_stock"],
+                        new Dictionary<string, object>
+                        {
+                            { "StockDisponible", stock.StockDisponible },
+                            { "QuantiteDemandee", order.Quantity }
+                        },
+                        new DialogOptions { Width = "500px", Resizable = false });
+
+                    if (dialogResult == null || dialogResult == false)
+                    {
+                        // Annuler - retirer le produit de la liste
+                        orders.Remove(order);
+                        UpdateTotals();
+                        await InvokeAsync(StateHasChanged);
+                        return;
+                    }
+                    else if (dialogResult.ToString() == "adjust")
+                    {
+                        // Ajuster la quantité au stock disponible
+                        order.Quantity = stock.StockDisponible;
+                        order.DeliveredQuantity = stock.StockDisponible;
+                    }
+                    // Si "force", on continue avec la quantité demandée
+                }
+            }
+        }
+
         // Product selection is handled in the component, this is just for any additional logic
         UpdateTotals();
         await InvokeAsync(StateHasChanged);

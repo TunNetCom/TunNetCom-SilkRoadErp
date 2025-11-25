@@ -58,10 +58,33 @@
                         <span class="grid-cell">@product.Name</span>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="ProductResponse" Property="@nameof(ProductResponse.Qte)" Title="@Localizer["product_qte"]" Width="200px">
+                <RadzenDataGridColumn TItem="ProductResponse" Property="@nameof(ProductResponse.Qte)" Title="@Localizer["product_qte"]" Width="120px">
 	                <Template Context="product">
                         <span class="grid-cell @(product.Qte < product.QteLimit ? "low-quantity" : "")">@product.Qte</span>
 	                </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ProductResponse" Property="@nameof(ProductResponse.StockCalcule)" Title="@Localizer["stock_calcule"]" Width="150px">
+                    <Template Context="product">
+                        @if (product.StockCalcule.HasValue)
+                        {
+                            var stockValue = product.StockCalcule.Value;
+                            var badgeClass = stockValue > product.QteLimit ? "stock-badge-green" : 
+                                           stockValue > 0 ? "stock-badge-orange" : "stock-badge-red";
+                            <RadzenBadge BadgeStyle="BadgeStyle.Info" Variant="Variant.Flat" Size="BadgeSize.Medium" Class="@badgeClass">
+                                @stockValue
+                            </RadzenBadge>
+                            @if (product.Qte != stockValue)
+                            {
+                                <span class="stock-difference" title="@Localizer["difference_stock"]">
+                                    (@(stockValue - product.Qte > 0 ? "+" : "")@(stockValue - product.Qte))
+                                </span>
+                            }
+                        }
+                        else
+                        {
+                            <span class="grid-cell">-</span>
+                        }
+                    </Template>
                 </RadzenDataGridColumn>
 
                 <RadzenDataGridColumn TItem="ProductResponse" Filterable="false" Sortable="false" Width="200px" TextAlign="TextAlign.Center">
@@ -199,7 +222,26 @@
         line-height: 1.5;
     }
 
+    .stock-badge-green {
+        background-color: #4CAF50 !important;
+        color: white !important;
+    }
 
+    .stock-badge-orange {
+        background-color: #ff9800 !important;
+        color: white !important;
+    }
+
+    .stock-badge-red {
+        background-color: #d32f2f !important;
+        color: white !important;
+    }
+
+    .stock-difference {
+        margin-left: 0.5rem;
+        font-size: 0.85rem;
+        color: var(--muted-text);
+    }
 
     .products-grid .rz-grid-table {
         border-collapse: collapse;
