@@ -27,7 +27,8 @@ public partial class Systeme
         decimal vatRate0,
         decimal vatRate7,
         decimal vatRate13,
-        decimal vatRate19)
+        decimal vatRate19,
+        bool bloquerVenteStockInsuffisant)
     {
         this.NomSociete = nomSociete;
         this.Timbre = timbre;
@@ -48,6 +49,7 @@ public partial class Systeme
         this.VatRate7 = vatRate7;
         this.VatRate13 = vatRate13;
         this.VatRate19 = vatRate19;
+        this.BloquerVenteStockInsuffisant = bloquerVenteStockInsuffisant;
     }
     public int Id { get; set; }
 
@@ -88,5 +90,7 @@ public partial class Systeme
     public decimal VatRate13 { get; set; }
 
     public decimal VatRate19 { get; set; }
+
+    public bool BloquerVenteStockInsuffisant { get; set; }
 
 }

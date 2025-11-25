@@ -58,4 +58,7 @@ public class GetAppParametersResponse
 
     [JsonPropertyName("vatRate19")]
     public decimal VatRate19 { get; set; }
+
+    [JsonPropertyName("bloquerVenteStockInsuffisant")]
+    public bool BloquerVenteStockInsuffisant { get; set; }
 }

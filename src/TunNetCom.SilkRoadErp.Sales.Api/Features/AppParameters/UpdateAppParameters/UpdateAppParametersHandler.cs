@@ -42,7 +42,8 @@ public class UpdateAppParametersCommandHandler(
             vatRate0: updateAppParametersCommand.VatRate0 ?? appParametersToUpdate.VatRate0,
             vatRate7: updateAppParametersCommand.VatRate7 ?? appParametersToUpdate.VatRate7,
             vatRate13: updateAppParametersCommand.VatRate13 ?? appParametersToUpdate.VatRate13,
-            vatRate19: updateAppParametersCommand.VatRate19 ?? appParametersToUpdate.VatRate19);
+            vatRate19: updateAppParametersCommand.VatRate19 ?? appParametersToUpdate.VatRate19,
+            bloquerVenteStockInsuffisant: updateAppParametersCommand.BloquerVenteStockInsuffisant ?? appParametersToUpdate.BloquerVenteStockInsuffisant);
 
         _ = await _context.SaveChangesAsync(cancellationToken);
 

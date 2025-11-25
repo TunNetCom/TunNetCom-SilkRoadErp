@@ -12,166 +12,180 @@
 @inject NavigationManager navigationManager
 @inject IStringLocalizer<SharedResource> localizer
 
-<RadzenCard Style="padding: 20px; max-width: 700px; margin: auto;">
+<RadzenCard Style="padding: 20px; max-width: 900px; margin: auto;">
     <RadzenTemplateForm Data="@system" Submit="@OnSubmit">
         <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.Center" Style="margin-bottom: 0.5rem;">
             <h3>App Parameters</h3>
         </RadzenStack>
 
-        <RadzenRow Class="g-2 mb-4">
-            <RadzenColumn Size="12" SizeSM="6" Class="d-flex flex-column gap-3">
-                <RadzenFormField Text="@localizer["Nom"]">
-                    <Start><RadzenIcon Icon="person" /></Start>
-                    <ChildContent>
-                        <RadzenTextBox @bind-Value="system.NomSociete" Name="Nom" Style="width: 100%;" />
-                    </ChildContent>
-                </RadzenFormField>
+        <RadzenTabs RenderMode="TabRenderMode.Client">
+            <Tabs>
+                <RadzenTabsItem Text="Informations générales" Icon="info">
+                    <RadzenRow Class="g-2 mb-4">
+                        <RadzenColumn Size="12" SizeSM="6" Class="d-flex flex-column gap-3">
+                            <RadzenFormField Text="@localizer["Nom"]">
+                                <Start><RadzenIcon Icon="person" /></Start>
+                                <ChildContent>
+                                    <RadzenTextBox @bind-Value="system.NomSociete" Name="Nom" Style="width: 100%;" />
+                                </ChildContent>
+                            </RadzenFormField>
 
-                <RadzenFormField Text="@localizer["Mail"]">
-                    <Start><RadzenIcon Icon="email" /></Start>
-                    <ChildContent>
-                        <RadzenTextBox @bind-Value="system.Email" Name="Mail" Style="width: 100%;" />
-                    </ChildContent>
-                </RadzenFormField>
+                            <RadzenFormField Text="@localizer["Mail"]">
+                                <Start><RadzenIcon Icon="email" /></Start>
+                                <ChildContent>
+                                    <RadzenTextBox @bind-Value="system.Email" Name="Mail" Style="width: 100%;" />
+                                </ChildContent>
+                            </RadzenFormField>
 
-                <RadzenFormField Text="@localizer["Timbre"]">
-                    <Start><RadzenIcon Icon="loyalty" /></Start>
-                    <ChildContent>
-                        <RadzenNumeric @bind-Value="system.Timbre" Name="Timbre" Style="width: 100%;" />
-                    </ChildContent>
-                </RadzenFormField>
+                            <RadzenFormField Text="@localizer["Tel"]">
+                                <Start><RadzenIcon Icon="call" /></Start>
+                                <ChildContent>
+                                    <RadzenTextBox @bind-Value="system.Tel" Name="Tel" Style="width: 100%;" />
+                                </ChildContent>
+                            </RadzenFormField>
 
-                <RadzenFormField Text="@localizer["Adresse_retenu"]">
-                    <Start><RadzenIcon Icon="home" /></Start>
-                    <ChildContent>
-                        <RadzenTextBox @bind-Value="system.AdresseRetenu" Name="AdresseRetenu" Style="width: 100%;" />
-                    </ChildContent>
-                </RadzenFormField>
+                            <RadzenFormField Text="@localizer["Fax"]">
+                                <Start><RadzenIcon Icon="call" /></Start>
+                                <ChildContent>
+                                    <RadzenTextBox @bind-Value="system.Fax" Name="Fax" Style="width: 100%;" />
+                                </ChildContent>
+                            </RadzenFormField>
 
-                <RadzenFormField Text="@localizer["matricule_fiscale"]">
-                    <Start><RadzenIcon Icon="badge" /></Start>
-                    <ChildContent>
-                        <RadzenTextBox @bind-Value="system.MatriculeFiscale" Name="Matricule" Style="width: 100%;" />
-                    </ChildContent>
-                </RadzenFormField>
+                            <RadzenFormField Text="@localizer["Adresse"]">
+                                <Start><RadzenIcon Icon="home" /></Start>
+                                <ChildContent>
+                                    <RadzenTextBox @bind-Value="system.Adresse" Name="Adresse" Style="width: 100%;" />
+                                </ChildContent>
+                            </RadzenFormField>
 
-                <RadzenFormField Text="@localizer["CodeCat"]">
-                    <Start><RadzenIcon Icon="category" /></Start>
-                    <ChildContent>
-                        <RadzenTextBox @bind-Value="system.CodeCategorie" Name="CodeCat" Style="width: 100%;" />
-                    </ChildContent>
-                </RadzenFormField>
+                            <RadzenFormField Text="@localizer["Adresse_retenu"]">
+                                <Start><RadzenIcon Icon="home" /></Start>
+                                <ChildContent>
+                                    <RadzenTextBox @bind-Value="system.AdresseRetenu" Name="AdresseRetenu" Style="width: 100%;" />
+                                </ChildContent>
+                            </RadzenFormField>
+                        </RadzenColumn>
 
-                <RadzenFormField Text="@localizer["pourcentage_fodec"]">
-                    <Start><RadzenIcon Icon="email" /></Start>
-                    <ChildContent>
-                        <RadzenNumeric @bind-Value="system.PourcentageFodec" Name="PourcentageFodec" Style="width: 100%;" />
-                    </ChildContent>
-                </RadzenFormField>
-            </RadzenColumn>
+                        <RadzenColumn Size="12" SizeSM="6" Class="d-flex flex-column gap-3">
+                            <RadzenFormField Text="@localizer["matricule_fiscale"]">
+                                <Start><RadzenIcon Icon="badge" /></Start>
+                                <ChildContent>
+                                    <RadzenTextBox @bind-Value="system.MatriculeFiscale" Name="Matricule" Style="width: 100%;" />
+                                </ChildContent>
+                            </RadzenFormField>
 
-            <RadzenColumn Size="12" SizeSM="6" Class="d-flex flex-column gap-3">
-                <RadzenFormField Text="@localizer["Tel"]">
-                    <Start><RadzenIcon Icon="call" /></Start>
-                    <ChildContent>
-                        <RadzenTextBox @bind-Value="system.Tel" Name="Tel" Style="width: 100%;" />
-                    </ChildContent>
-                </RadzenFormField>
+                            <RadzenFormField Text="@localizer["CodeTva"]">
+                                <Start><RadzenIcon Icon="code" /></Start>
+                                <ChildContent>
+                                    <RadzenTextBox @bind-Value="system.CodeTva" Name="CodeTva" Style="width: 100%;" />
+                                </ChildContent>
+                            </RadzenFormField>
 
-                <RadzenFormField Text="@localizer["Fax"]">
-                    <Start><RadzenIcon Icon="call" /></Start>
-                    <ChildContent>
-                        <RadzenTextBox @bind-Value="system.Fax" Name="Tel" Style="width: 100%;" />
-                    </ChildContent>
-                </RadzenFormField>
+                            <RadzenFormField Text="@localizer["CodeCat"]">
+                                <Start><RadzenIcon Icon="category" /></Start>
+                                <ChildContent>
+                                    <RadzenTextBox @bind-Value="system.CodeCategorie" Name="CodeCat" Style="width: 100%;" />
+                                </ChildContent>
+                            </RadzenFormField>
 
-                <RadzenFormField Text="@localizer["Adresse"]">
-                    <Start><RadzenIcon Icon="home" /></Start>
-                    <ChildContent>
-                        <RadzenTextBox @bind-Value="system.Adresse" Name="Adresse" Style="width: 100%;" />
-                    </ChildContent>
-                </RadzenFormField>
+                            <RadzenFormField Text="@localizer["EtbSec"]">
+                                <Start><RadzenIcon Icon="business" /></Start>
+                                <ChildContent>
+                                    <RadzenTextBox @bind-Value="system.EtbSecondaire" Name="EtbSec" Style="width: 100%;" />
+                                </ChildContent>
+                            </RadzenFormField>
 
-                <RadzenFormField Text="@localizer["CodeTva"]">
-                    <Start><RadzenIcon Icon="code" /></Start>
-                    <ChildContent>
-                        <RadzenTextBox @bind-Value="system.CodeTva" Name="CodeTva" Style="width: 100%;" />
-                    </ChildContent>
-                </RadzenFormField>
+                            <RadzenFormField Text="@localizer["Timbre"]">
+                                <Start><RadzenIcon Icon="loyalty" /></Start>
+                                <ChildContent>
+                                    <RadzenNumeric @bind-Value="system.Timbre" Name="Timbre" Style="width: 100%;" />
+                                </ChildContent>
+                            </RadzenFormField>
+                        </RadzenColumn>
+                    </RadzenRow>
+                </RadzenTabsItem>
 
-                <RadzenFormField Text="@localizer["EtbSec"]">
-                    <Start><RadzenIcon Icon="business" /></Start>
-                    <ChildContent>
-                        <RadzenTextBox @bind-Value="system.EtbSecondaire" Name="EtbSec" Style="width: 100%;" />
-                    </ChildContent>
-                </RadzenFormField>
+                <RadzenTabsItem Text="Fiscal & Taxes" Icon="account_balance">
+                    <RadzenRow Class="g-2 mb-4">
+                        <RadzenColumn Size="12" SizeSM="6" Class="d-flex flex-column gap-3">
+                            <RadzenFormField Text="@localizer["pourcentage_fodec"]">
+                                <Start><RadzenIcon Icon="percent" /></Start>
+                                <ChildContent>
+                                    <RadzenNumeric @bind-Value="system.PourcentageFodec" Name="PourcentageFodec" Style="width: 100%;" />
+                                </ChildContent>
+                            </RadzenFormField>
 
-                <RadzenFormField Text="@localizer["pourcentage_retenu"]">
-                    <Start><RadzenIcon Icon="assessment" /></Start>
-                    <ChildContent>
-                        <RadzenNumeric @bind-Value="system.PourcentageRetenu" Name="PourcentageRetenu" Style="width: 100%;" />
-                    </ChildContent>
-                </RadzenFormField>
+                            <RadzenFormField Text="@localizer["pourcentage_retenu"]">
+                                <Start><RadzenIcon Icon="assessment" /></Start>
+                                <ChildContent>
+                                    <RadzenNumeric @bind-Value="system.PourcentageRetenu" Name="PourcentageRetenu" Style="width: 100%;" />
+                                </ChildContent>
+                            </RadzenFormField>
 
-                <RadzenFormField Text="@localizer["vat_percentage"]">
-                    <Start><RadzenIcon Icon="percent" /></Start>
-                    <ChildContent>
-                        <RadzenNumeric @bind-Value="system.VatAmount" Name="VatAmount" Style="width: 100%;" Format="N2" Step="0.01" />
-                    </ChildContent>
-                </RadzenFormField>
+                            <RadzenFormField Text="@localizer["vat_percentage"]">
+                                <Start><RadzenIcon Icon="percent" /></Start>
+                                <ChildContent>
+                                    <RadzenNumeric @bind-Value="system.VatAmount" Name="VatAmount" Style="width: 100%;" Format="N2" Step="0.01" />
+                                </ChildContent>
+                            </RadzenFormField>
 
-                <RadzenFormField Text="@localizer["discount_percentage"]">
-                    <Start><RadzenIcon Icon="percent" /></Start>
-                    <ChildContent>
-                        <RadzenNumeric @bind-Value="system.DiscountPercentage" Name="DiscountPercentage" Style="width: 100%;" Format="N2" Step="0.01" />
-                    </ChildContent>
-                </RadzenFormField>
-            </RadzenColumn>
-        </RadzenRow>
+                            <RadzenFormField Text="@localizer["discount_percentage"]">
+                                <Start><RadzenIcon Icon="percent" /></Start>
+                                <ChildContent>
+                                    <RadzenNumeric @bind-Value="system.DiscountPercentage" Name="DiscountPercentage" Style="width: 100%;" Format="N2" Step="0.01" />
+                                </ChildContent>
+                            </RadzenFormField>
+                        </RadzenColumn>
 
-        <RadzenRow Class="g-2 mb-4">
-            <RadzenColumn Size="12">
-                <h4 style="margin-bottom: 15px;">Taux de TVA</h4>
-            </RadzenColumn>
-        </RadzenRow>
+                        <RadzenColumn Size="12" SizeSM="6" Class="d-flex flex-column gap-3">
+                            <h4 style="margin-bottom: 15px;">Taux de TVA</h4>
+                            
+                            <RadzenFormField Text="Taux TVA 0%">
+                                <Start><RadzenIcon Icon="percent" /></Start>
+                                <ChildContent>
+                                    <RadzenNumeric @bind-Value="system.VatRate0" Name="VatRate0" Style="width: 100%;" Format="N2" Step="0.01" />
+                                </ChildContent>
+                            </RadzenFormField>
 
-        <RadzenRow Class="g-2 mb-4">
-            <RadzenColumn Size="12" SizeSM="6" SizeMD="3" Class="d-flex flex-column gap-3">
-                <RadzenFormField Text="Taux TVA 0%">
-                    <Start><RadzenIcon Icon="percent" /></Start>
-                    <ChildContent>
-                        <RadzenNumeric @bind-Value="system.VatRate0" Name="VatRate0" Style="width: 100%;" Format="N2" Step="0.01" />
-                    </ChildContent>
-                </RadzenFormField>
-            </RadzenColumn>
+                            <RadzenFormField Text="Taux TVA 7%">
+                                <Start><RadzenIcon Icon="percent" /></Start>
+                                <ChildContent>
+                                    <RadzenNumeric @bind-Value="system.VatRate7" Name="VatRate7" Style="width: 100%;" Format="N2" Step="0.01" />
+                                </ChildContent>
+                            </RadzenFormField>
 
-            <RadzenColumn Size="12" SizeSM="6" SizeMD="3" Class="d-flex flex-column gap-3">
-                <RadzenFormField Text="Taux TVA 7%">
-                    <Start><RadzenIcon Icon="percent" /></Start>
-                    <ChildContent>
-                        <RadzenNumeric @bind-Value="system.VatRate7" Name="VatRate7" Style="width: 100%;" Format="N2" Step="0.01" />
-                    </ChildContent>
-                </RadzenFormField>
-            </RadzenColumn>
+                            <RadzenFormField Text="Taux TVA 13%">
+                                <Start><RadzenIcon Icon="percent" /></Start>
+                                <ChildContent>
+                                    <RadzenNumeric @bind-Value="system.VatRate13" Name="VatRate13" Style="width: 100%;" Format="N2" Step="0.01" />
+                                </ChildContent>
+                            </RadzenFormField>
 
-            <RadzenColumn Size="12" SizeSM="6" SizeMD="3" Class="d-flex flex-column gap-3">
-                <RadzenFormField Text="Taux TVA 13%">
-                    <Start><RadzenIcon Icon="percent" /></Start>
-                    <ChildContent>
-                        <RadzenNumeric @bind-Value="system.VatRate13" Name="VatRate13" Style="width: 100%;" Format="N2" Step="0.01" />
-                    </ChildContent>
-                </RadzenFormField>
-            </RadzenColumn>
+                            <RadzenFormField Text="Taux TVA 19%">
+                                <Start><RadzenIcon Icon="percent" /></Start>
+                                <ChildContent>
+                                    <RadzenNumeric @bind-Value="system.VatRate19" Name="VatRate19" Style="width: 100%;" Format="N2" Step="0.01" />
+                                </ChildContent>
+                            </RadzenFormField>
+                        </RadzenColumn>
+                    </RadzenRow>
+                </RadzenTabsItem>
 
-            <RadzenColumn Size="12" SizeSM="6" SizeMD="3" Class="d-flex flex-column gap-3">
-                <RadzenFormField Text="Taux TVA 19%">
-                    <Start><RadzenIcon Icon="percent" /></Start>
-                    <ChildContent>
-                        <RadzenNumeric @bind-Value="system.VatRate19" Name="VatRate19" Style="width: 100%;" Format="N2" Step="0.01" />
-                    </ChildContent>
-                </RadzenFormField>
-            </RadzenColumn>
-        </RadzenRow>
+                <RadzenTabsItem Text="Paramètres de stock" Icon="inventory">
+                    <RadzenRow Class="g-2 mb-4">
+                        <RadzenColumn Size="12" Class="d-flex flex-column gap-3">
+                            <RadzenFormField Text="Bloquer la vente en cas de stock insuffisant">
+                                <Start><RadzenIcon Icon="block" /></Start>
+                                <ChildContent>
+                                    <RadzenCheckBox @bind-Value="system.BloquerVenteStockInsuffisant" Name="BloquerVenteStockInsuffisant" />
+                                </ChildContent>
+                            </RadzenFormField>
+                            <RadzenLabel Text="Si activé, les ventes seront bloquées lorsque le stock disponible est insuffisant. Si désactivé, un avertissement sera affiché mais la vente sera autorisée." Style="color: #666; font-size: 0.9em; margin-top: -10px;" />
+                        </RadzenColumn>
+                    </RadzenRow>
+                </RadzenTabsItem>
+            </Tabs>
+        </RadzenTabs>
 
         <RadzenRow Style="margin-top: 15px;">
             <RadzenColumn Size="12" Style="text-align: center;">
@@ -226,7 +240,8 @@
 					VatRate0 = system.VatRate0,
 					VatRate7 = system.VatRate7,
 					VatRate13 = system.VatRate13,
-					VatRate19 = system.VatRate19
+					VatRate19 = system.VatRate19,
+					BloquerVenteStockInsuffisant = system.BloquerVenteStockInsuffisant
 				}, cancellationToken);
 
         if (updateAppParametersResult.IsT0)

@@ -49,6 +49,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             entity.Property(e => e.VatRate19)
             .HasColumnType("decimal(18, 2)")
             .HasColumnName("VatRate19");
+            entity.Property(e => e.BloquerVenteStockInsuffisant)
+            .HasColumnName("BloquerVenteStockInsuffisant")
+            .HasDefaultValue(true);
 
             OnConfigurePartial(entity);
         }

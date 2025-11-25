@@ -362,6 +362,8 @@ else
             }
             // Valider le stock pour toutes les lignes avant la soumission
             var stockErrors = new List<string>();
+            var bloquerVenteStockInsuffisant = getAppParametersResponse?.BloquerVenteStockInsuffisant ?? true;
+            
             foreach (var order in orders)
             {
                 if (!string.IsNullOrEmpty(order.ProductReference) && order.Quantity > 0)
@@ -378,6 +380,7 @@ else
                 }
             }
 
+            // Afficher une alerte dans tous les cas
             if (stockErrors.Any())
             {
                 var errorMessage = $"{Localizer["alerte_stock"]}: {string.Join("; ", stockErrors)}";
@@ -387,9 +390,15 @@ else
                     Summary = Localizer["alerte_stock"],
                     Detail = errorMessage
                 });
-                isLoading = false;
-                StateHasChanged();
-                return;
+                
+                // Bloquer uniquement si le paramètre est activé
+                if (bloquerVenteStockInsuffisant)
+                {
+                    isLoading = false;
+                    StateHasChanged();
+                    return;
+                }
+                // Si le paramètre est désactivé, on continue malgré l'alerte
             }
 
             isLoading = true;
@@ -934,31 +943,47 @@ else
                 var stock = stockResult.AsT0;
                 if (stock.StockDisponible < order.Quantity)
                 {
-                    // Afficher l'alerte de stock
-                    var dialogResult = await DialogService.OpenAsync<StockWarningDialog>(
-                        Localizer["alerte_stock"],
-                        new Dictionary<string, object>
-                        {
-                            { "StockDisponible", stock.StockDisponible },
-                            { "QuantiteDemandee", order.Quantity }
-                        },
-                        new DialogOptions { Width = "500px", Resizable = false });
+                    var bloquerVenteStockInsuffisant = getAppParametersResponse?.BloquerVenteStockInsuffisant ?? true;
+                    
+                    // Si le blocage est activé, afficher le dialog
+                    if (bloquerVenteStockInsuffisant)
+                    {
+                        // Afficher l'alerte de stock
+                        var dialogResult = await DialogService.OpenAsync<StockWarningDialog>(
+                            Localizer["alerte_stock"],
+                            new Dictionary<string, object>
+                            {
+                                { "StockDisponible", stock.StockDisponible },
+                                { "QuantiteDemandee", order.Quantity }
+                            },
+                            new DialogOptions { Width = "500px", Resizable = false });
 
-                    if (dialogResult == null || dialogResult == false)
-                    {
-                        // Annuler - retirer le produit de la liste
-                        orders.Remove(order);
-                        UpdateTotals();
-                        await InvokeAsync(StateHasChanged);
-                        return;
+                        if (dialogResult == null || (dialogResult is bool boolResult && !boolResult) || (dialogResult is string strResult && (strResult == "false" || strResult == "cancel")))
+                        {
+                            // Annuler - retirer le produit de la liste
+                            orders.Remove(order);
+                            UpdateTotals();
+                            await InvokeAsync(StateHasChanged);
+                            return;
+                        }
+                        else if (dialogResult is string strDialogResult && strDialogResult == "adjust")
+                        {
+                            // Ajuster la quantité au stock disponible
+                            order.Quantity = stock.StockDisponible;
+                            order.DeliveredQuantity = stock.StockDisponible;
+                        }
+                        // Si "force", on continue avec la quantité demandée
                     }
-                    else if (dialogResult.ToString() == "adjust")
+                    else
                     {
-                        // Ajuster la quantité au stock disponible
-                        order.Quantity = stock.StockDisponible;
-                        order.DeliveredQuantity = stock.StockDisponible;
+                        // Si le blocage est désactivé, afficher juste une notification d'avertissement
+                        NotificationService.Notify(new NotificationMessage
+                        {
+                            Severity = NotificationSeverity.Warning,
+                            Summary = Localizer["alerte_stock"],
+                            Detail = $"{order.ProductReference}: {Localizer["stock_insuffisant"]} ({stock.StockDisponible} {Localizer["quantite_disponible"]}, {order.Quantity} {Localizer["quantite_demandee"]})"
+                        });
                     }
-                    // Si "force", on continue avec la quantité demandée
                 }
             }
         }

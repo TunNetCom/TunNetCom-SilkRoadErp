@@ -34,7 +34,8 @@ public class UpdateAppParametersEndpoint : ICarterModule
                         VatRate0: request.VatRate0,
                         VatRate7: request.VatRate7,
                         VatRate13: request.VatRate13,
-                        VatRate19: request.VatRate19);
+                        VatRate19: request.VatRate19,
+                        BloquerVenteStockInsuffisant: request.BloquerVenteStockInsuffisant);
 
                     var updateAppParametersResult = await mediator.Send(updateAppParametersCommand, cancellationToken);
 

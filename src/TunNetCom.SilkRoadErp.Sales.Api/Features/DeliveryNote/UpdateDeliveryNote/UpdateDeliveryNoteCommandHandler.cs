@@ -48,6 +48,10 @@ public class UpdateDeliveryNoteCommandHandler(
             activeAccountingYear.Id
         );
 
+        // Récupérer les paramètres d'application pour vérifier si on doit bloquer la vente
+        var systeme = await _context.Systeme.FirstOrDefaultAsync(cancellationToken);
+        var bloquerVenteStockInsuffisant = systeme?.BloquerVenteStockInsuffisant ?? true;
+
         // Valider le stock pour chaque ligne
         var activeYearId = await _activeAccountingYearService.GetActiveAccountingYearIdAsync(cancellationToken);
         if (activeYearId.HasValue)
@@ -72,15 +76,25 @@ public class UpdateDeliveryNoteCommandHandler(
                 
                 if (stockDisponibleReel < deliveryNoteDetail.QteLi)
                 {
-                    stockErrors.Add(
-                        $"Produit {deliveryNoteDetail.RefProduit}: Stock disponible ({stockDisponibleReel}) insuffisant pour la quantité demandée ({deliveryNoteDetail.QteLi})");
+                    var errorMessage = $"Produit {deliveryNoteDetail.RefProduit}: Stock disponible ({stockDisponibleReel}) insuffisant pour la quantité demandée ({deliveryNoteDetail.QteLi})";
+                    stockErrors.Add(errorMessage);
+                    
+                    // Logger un avertissement dans tous les cas
+                    _logger.LogWarning("Stock insuffisant détecté: {ErrorMessage}", errorMessage);
                 }
             }
 
-            if (stockErrors.Any())
+            // Bloquer uniquement si le paramètre est activé
+            if (stockErrors.Any() && bloquerVenteStockInsuffisant)
             {
-                _logger.LogWarning("Stock validation failed for delivery note update: {Errors}", string.Join("; ", stockErrors));
+                _logger.LogWarning("Stock validation failed for delivery note update (blocage activé): {Errors}", string.Join("; ", stockErrors));
                 return Result.Fail($"stock_insuffisant: {string.Join("; ", stockErrors)}");
+            }
+            
+            // Si le paramètre est désactivé, on log un avertissement mais on continue
+            if (stockErrors.Any() && !bloquerVenteStockInsuffisant)
+            {
+                _logger.LogWarning("Stock insuffisant détecté mais vente autorisée (blocage désactivé): {Errors}", string.Join("; ", stockErrors));
             }
         }
 

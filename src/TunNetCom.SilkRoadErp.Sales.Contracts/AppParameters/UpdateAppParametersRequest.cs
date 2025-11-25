@@ -26,7 +26,8 @@ public class UpdateAppParametersRequest
         decimal? vatRate0,
         decimal? vatRate7,
         decimal? vatRate13,
-        decimal? vatRate19)
+        decimal? vatRate19,
+        bool? bloquerVenteStockInsuffisant)
     {
         NomSociete = nomSociete;
         Timbre = (decimal)timbre;
@@ -47,6 +48,7 @@ public class UpdateAppParametersRequest
         VatRate7 = vatRate7 ?? 7;
         VatRate13 = vatRate13 ?? 13;
         VatRate19 = vatRate19 ?? 19;
+        BloquerVenteStockInsuffisant = bloquerVenteStockInsuffisant ?? true;
     }
 
     public string NomSociete { get; set; } = null!;
@@ -86,4 +88,6 @@ public class UpdateAppParametersRequest
     public decimal VatRate13 { get; set; }
 
     public decimal VatRate19 { get; set; }
+
+    public bool BloquerVenteStockInsuffisant { get; set; }
 }
