@@ -12,7 +12,7 @@ using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 {
     [DbContext(typeof(SalesContext))]
-    [Migration("20251125011124_InitMigration")]
+    [Migration("20251125130634_InitMigration")]
     partial class InitMigration
     {
         /// <inheritdoc />
@@ -271,6 +271,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("int")
                         .HasColumnName("id_fournisseur");
 
+                    b.Property<decimal>("NetPayer")
+                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnName("net_payer");
+
                     b.Property<int>("Num")
                         .HasColumnType("int");
 
@@ -281,6 +285,14 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Property<int?>("NumFactureFournisseur")
                         .HasColumnType("int")
                         .HasColumnName("Num_Facture_fournisseur");
+
+                    b.Property<decimal>("TotHTva")
+                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnName("tot_H_tva");
+
+                    b.Property<decimal>("TotTva")
+                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnName("tot_tva");
 
                     b.HasKey("Id")
                         .HasName("PK_dbo.BonDeReception");
@@ -1479,65 +1491,6 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasName("PK_dbo.Transaction");
 
                     b.ToTable("Transaction");
-                });
-
-            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Views.ProviderInvoiceView", b =>
-                {
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("InvoicingDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("Num")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ProviderId")
-                        .HasColumnType("int");
-
-                    b.Property<long>("ProviderInvoiceNumber")
-                        .HasColumnType("bigint");
-
-                    b.Property<decimal>("TotalHT")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("TotalTTC")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.ToTable((string)null);
-
-                    b.ToView("ProviderInvoiceView", "dbo");
-                });
-
-            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Views.ReceiptNoteView", b =>
-                {
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("DateLivraison")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("IdFournisseur")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Num")
-                        .HasColumnType("int");
-
-                    b.Property<long>("NumBonFournisseur")
-                        .HasColumnType("bigint");
-
-                    b.Property<int?>("NumFactureFournisseur")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("TotHt")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("TotalTTC")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.ToTable((string)null);
-
-                    b.ToView("ReceiptNoteView", "dbo");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.AvoirFinancierFournisseurs", b =>

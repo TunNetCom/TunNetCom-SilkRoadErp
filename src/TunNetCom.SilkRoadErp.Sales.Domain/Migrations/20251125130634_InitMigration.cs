@@ -480,6 +480,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     id_fournisseur = table.Column<int>(type: "int", nullable: false),
                     date = table.Column<DateTime>(type: "datetime", nullable: false),
                     Num_Facture_fournisseur = table.Column<int>(type: "int", nullable: true),
+                    tot_H_tva = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    tot_tva = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    net_payer = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     AccountingYearId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
