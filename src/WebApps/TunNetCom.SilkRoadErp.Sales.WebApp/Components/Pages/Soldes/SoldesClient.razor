@@ -458,22 +458,12 @@
 
     void OnFacturesDataGridRender(DataGridRenderEventArgs<DocumentSoldeClient> args)
     {
-        if (args.FirstRender && factures.Any())
-        {
-            InvokeAsync(() => args.Grid.ExpandRow(args.Grid.View.Where(f => f.BonsLivraison != null && f.BonsLivraison.Any()).FirstOrDefault()));
-        }
+        // Pas d'expansion automatique - toutes les lignes sont repliées par défaut
     }
 
     void OnBlsDataGridRender(DataGridRenderEventArgs<DocumentSoldeClient> args)
     {
-        if (args.FirstRender)
-        {
-            var blWithLines = args.Grid.View.Where(bl => bl.LignesBl != null && bl.LignesBl.Any()).FirstOrDefault();
-            if (blWithLines != null)
-            {
-                InvokeAsync(() => args.Grid.ExpandRow(blWithLines));
-            }
-        }
+        // Pas d'expansion automatique - toutes les lignes sont repliées par défaut
     }
 
     public void Dispose()
