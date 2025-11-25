@@ -18,19 +18,28 @@
             GetProviderInvoicesWithIdsListQuery request,
             CancellationToken cancellationToken)
         {
-            var invoices = await _context.ProviderInvoiceView
-                .AsNoTracking()
-                .Where(f => request.InvoicesIds.Contains(f.Num))
-                .Select(f => new ProviderInvoiceResponse
-                {
-                    Num = f.Num,
-                    ProviderId = f.ProviderId,
-                    Date = f.Date,
-                    TotTTC = f.TotalTTC,
-                    TotHTva = f.TotalHT,
-                    TotTva = f.TotalTTC - f.TotalHT
-                })
-                .ToListAsync(cancellationToken);
+            // Calculate totals from receipt notes instead of using ProviderInvoiceView
+            var invoices = await (from ff in _context.FactureFournisseur
+                                  join br in _context.BonDeReception on ff.Num equals br.NumFactureFournisseur into receiptNotesGroup
+                                  from br in receiptNotesGroup.DefaultIfEmpty()
+                                  where request.InvoicesIds.Contains(ff.Num)
+                                  group new { ff, br } by new
+                                  {
+                                      ff.Num,
+                                      ff.IdFournisseur,
+                                      ff.Date
+                                  } into g
+                                  select new ProviderInvoiceResponse
+                                  {
+                                      Num = g.Key.Num,
+                                      ProviderId = g.Key.IdFournisseur,
+                                      Date = g.Key.Date,
+                                      TotHTva = g.Where(x => x.br != null).Sum(x => x.br!.TotHTva),
+                                      TotTva = g.Where(x => x.br != null).Sum(x => x.br!.TotTva),
+                                      TotTTC = g.Where(x => x.br != null).Sum(x => x.br!.NetPayer)
+                                  })
+                                  .AsNoTracking()
+                                  .ToListAsync(cancellationToken);
 
             if (!invoices.Any())
             {

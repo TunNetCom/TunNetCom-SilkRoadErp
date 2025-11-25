@@ -30,6 +30,15 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             entity.Property(e => e.IdFournisseur).HasColumnName("id_fournisseur");
             entity.Property(e => e.NumBonFournisseur).HasColumnName("Num_Bon_fournisseur");
             entity.Property(e => e.NumFactureFournisseur).HasColumnName("Num_Facture_fournisseur");
+            entity.Property(e => e.TotHTva)
+                .HasColumnType("decimal(18, 2)")
+                .HasColumnName("tot_H_tva");
+            entity.Property(e => e.TotTva)
+                .HasColumnType("decimal(18, 2)")
+                .HasColumnName("tot_tva");
+            entity.Property(e => e.NetPayer)
+                .HasColumnType("decimal(18, 2)")
+                .HasColumnName("net_payer");
 
             entity.HasOne(d => d.IdFournisseurNavigation).WithMany(p => p.BonDeReception)
             .HasForeignKey(d => d.IdFournisseur)

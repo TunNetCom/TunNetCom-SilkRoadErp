@@ -37,7 +37,10 @@ public class CreateReceiptNoteCommandHandler(
             createReceiptNoteCommand.IdFournisseur,
             createReceiptNoteCommand.Date,
             createReceiptNoteCommand.NumFactureFournisseur,
-            activeAccountingYear.Id
+            activeAccountingYear.Id,
+            totHTva: 0m,
+            totTva: 0m,
+            netPayer: 0m
 );
 
         _ = _context.BonDeReception.Add(ReceiptNote);

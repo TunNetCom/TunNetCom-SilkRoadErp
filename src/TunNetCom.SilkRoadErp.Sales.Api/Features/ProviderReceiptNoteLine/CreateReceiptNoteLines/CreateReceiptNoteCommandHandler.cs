@@ -54,6 +54,22 @@ internal class CreateReceiptNoteCommandHandler(
             }
 
             await salesContext.LigneBonReception.AddRangeAsync(receiptNoteLines, cancellationToken);
+            
+            // Update totals for all affected receipt notes
+            var receiptNoteIds = receiptNoteLines.Select(x => x.BonDeReceptionId).Distinct().ToList();
+            var receiptNotesToUpdate = await salesContext.BonDeReception
+                .Where(br => receiptNoteIds.Contains(br.Id))
+                .Include(br => br.LigneBonReception)
+                .ToListAsync(cancellationToken);
+
+            foreach (var receiptNote in receiptNotesToUpdate)
+            {
+                var allLines = receiptNote.LigneBonReception.ToList();
+                receiptNote.TotHTva = allLines.Sum(l => l.TotHt);
+                receiptNote.TotTva = allLines.Sum(l => l.TotTtc - l.TotHt);
+                receiptNote.NetPayer = allLines.Sum(l => l.TotTtc);
+            }
+
             _ = await salesContext.SaveChangesAsync(cancellationToken);
 
             return Result.Ok(receiptNoteLines.Select(x => x.IdLigne).ToList());

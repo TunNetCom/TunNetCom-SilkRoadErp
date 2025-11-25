@@ -49,27 +49,19 @@ public class ReceiptNoteBaseInfosController : ODataController
                 baseQuery = baseQuery.Where(br => br.IdFournisseur == providerId.Value);
             }
 
-            // Now project to DTO with join and group by to calculate totals
+            // Now project to DTO using stored totals from BonDeReception
             var receiptNoteQuery = (from br in baseQuery
                                     join f in _context.Fournisseur on br.IdFournisseur equals f.Id into providerGroup
                                     from f in providerGroup.DefaultIfEmpty()
-                                    join lbr in _context.LigneBonReception on br.Id equals lbr.BonDeReceptionId into linesGroup
-                                    from lbr in linesGroup.DefaultIfEmpty()
-                                    group new { br, f, lbr } by new
-                                    {
-                                        br.Num,
-                                        br.Date,
-                                        br.IdFournisseur,
-                                        f.Nom
-                                    } into g
                                     select new ReceiptNoteBaseInfo
                                     {
-                                        Number = g.Key.Num,
-                                        Date = new DateTimeOffset(g.Key.Date, TimeSpan.Zero),
-                                        ProviderId = g.Key.IdFournisseur,
-                                        ProviderName = g.Key.Nom,
-                                        NetAmount = g.Where(x => x.lbr != null).Sum(x => x.lbr!.TotHt),
-                                        VatAmount = g.Where(x => x.lbr != null).Sum(x => x.lbr!.TotTtc) - g.Where(x => x.lbr != null).Sum(x => x.lbr!.TotHt)
+                                        Number = br.Num,
+                                        Date = new DateTimeOffset(br.Date, TimeSpan.Zero),
+                                        ProviderId = br.IdFournisseur,
+                                        ProviderName = f.Nom,
+                                        NetAmount = br.NetPayer,
+                                        GrossAmount = br.TotHTva,
+                                        VatAmount = br.TotTva
                                     })
                                     .AsQueryable();
 

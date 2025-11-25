@@ -31,16 +31,10 @@ public class UpdateReceiptNoteWithLinesCommandHandler(
             return Result.Fail("no_active_accounting_year");
         }
 
-        // Update the receipt note properties
-        receiptNote.UpdateReceiptNote(
-            num: command.Num,
-            numBonFournisseur: command.NumBonFournisseur,
-            dateLivraison: command.DateLivraison,
-            idFournisseur: command.IdFournisseur,
-            date: command.Date,
-            numFactureFournisseur: command.NumFactureFournisseur,
-            accountingYearId: activeAccountingYear.Id
-        );
+        // Calculate totals from new lines (before adding them)
+        var totHTva = 0m;
+        var totTva = 0m;
+        var netPayer = 0m;
 
         // Get system parameters for FODEC rate
         var systeme = await _context.Systeme.FirstOrDefaultAsync(cancellationToken);
@@ -76,6 +70,25 @@ public class UpdateReceiptNoteWithLinesCommandHandler(
 
             return line;
         }).ToList();
+
+        // Calculate totals from new lines
+        totHTva = newLines.Sum(l => l.TotHt);
+        totTva = newLines.Sum(l => l.TotTtc - l.TotHt);
+        netPayer = newLines.Sum(l => l.TotTtc);
+
+        // Update the receipt note properties with calculated totals
+        receiptNote.UpdateReceiptNote(
+            num: command.Num,
+            numBonFournisseur: command.NumBonFournisseur,
+            dateLivraison: command.DateLivraison,
+            idFournisseur: command.IdFournisseur,
+            date: command.Date,
+            numFactureFournisseur: command.NumFactureFournisseur,
+            accountingYearId: activeAccountingYear.Id,
+            totHTva: totHTva,
+            totTva: totTva,
+            netPayer: netPayer
+        );
 
         // Add new lines to the context explicitly
         await _context.LigneBonReception.AddRangeAsync(newLines, cancellationToken);

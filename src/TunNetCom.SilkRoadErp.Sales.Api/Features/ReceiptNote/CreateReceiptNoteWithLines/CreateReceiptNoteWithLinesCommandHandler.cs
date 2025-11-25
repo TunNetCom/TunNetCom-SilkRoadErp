@@ -77,7 +77,17 @@ internal class CreateReceiptNoteWithLinesCommandHandler(
 
             await salesContext.LigneBonReception.AddRangeAsync(receiptNoteLines, cancellationToken);
 
-            // Save the lines
+            // Calculate totals from lines
+            var totHTva = receiptNoteLines.Sum(l => l.TotHt);
+            var totTva = receiptNoteLines.Sum(l => l.TotTtc - l.TotHt);
+            var netPayer = receiptNoteLines.Sum(l => l.TotTtc);
+
+            // Update receipt note with calculated totals
+            recipetNote.TotHTva = totHTva;
+            recipetNote.TotTva = totTva;
+            recipetNote.NetPayer = netPayer;
+
+            // Save the lines and updated totals
             _ = await salesContext.SaveChangesAsync(cancellationToken);
 
             await transaction.CommitAsync(cancellationToken);

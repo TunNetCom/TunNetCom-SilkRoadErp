@@ -79,6 +79,22 @@
                                       Title="Fournisseur"
                                       Width="200px" />
                 <RadzenDataGridColumn TItem="ReceiptNoteBaseInfo"
+                                      Property="@nameof(ReceiptNoteBaseInfo.GrossAmount)"
+                                      Title="@Localizer["total_ht"]"
+                                      Width="150px">
+                    <Template Context="item">
+                        @item.GrossAmount.FormatAmount()
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ReceiptNoteBaseInfo"
+                                      Property="@nameof(ReceiptNoteBaseInfo.VatAmount)"
+                                      Title="@Localizer["total_vat"]"
+                                      Width="150px">
+                    <Template Context="item">
+                        @item.VatAmount.FormatAmount()
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ReceiptNoteBaseInfo"
                                       Property="@nameof(ReceiptNoteBaseInfo.NetAmount)"
                                       Title="@Localizer["total_net"]"
                                       Width="150px">
@@ -109,10 +125,13 @@
                          JustifyContent="JustifyContent.End"
                          class="summary-stack">
                 <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                    @Localizer["total_net"]: <strong>@totalNetAmount.FormatAmount()</strong>
+                    @Localizer["total_ht"]: <strong>@totalGrossAmount.FormatAmount()</strong>
                 </RadzenText>
                 <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
                     @Localizer["total_vat"]: <strong>@totalVatAmount.FormatAmount()</strong>
+                </RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                    @Localizer["total_net"]: <strong>@totalNetAmount.FormatAmount()</strong>
                 </RadzenText>
             </RadzenStack>
         </RadzenCard>
@@ -291,8 +310,9 @@
 @code {
     private List<ReceiptNoteBaseInfo> receiptNotesList = new();
     private int totalCount = 0;
-    private decimal totalNetAmount = 0;
+    private decimal totalGrossAmount = 0;
     private decimal totalVatAmount = 0;
+    private decimal totalNetAmount = 0;
     private int pageSize = GridPageSizeConstants.PageSize10;
     private SearchCriteria searchCriteria = new SearchCriteria();
     private List<ProviderResponse> _filteredProviders = new();
@@ -383,16 +403,18 @@
 
             // Calculate totals from current page (for display)
             // Note: For accurate totals across all pages, we'd need a separate aggregation endpoint
-            totalNetAmount = receiptNotesList.Sum(r => r.NetAmount);
+            totalGrossAmount = receiptNotesList.Sum(r => r.GrossAmount);
             totalVatAmount = receiptNotesList.Sum(r => r.VatAmount);
+            totalNetAmount = receiptNotesList.Sum(r => r.NetAmount);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error loading receipt notes: {Message}", ex.Message);
             receiptNotesList = new List<ReceiptNoteBaseInfo>();
             totalCount = 0;
-            totalNetAmount = 0;
+            totalGrossAmount = 0;
             totalVatAmount = 0;
+            totalNetAmount = 0;
         }
 
         await InvokeAsync(StateHasChanged);

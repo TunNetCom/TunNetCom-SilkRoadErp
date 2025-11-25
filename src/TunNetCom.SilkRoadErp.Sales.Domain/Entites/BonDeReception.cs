@@ -15,7 +15,10 @@ public partial class BonDeReception : IAccountingYearEntity
             int idFournisseur,
             DateTime date,
             int? numFactureFournisseur,
-            int accountingYearId
+            int accountingYearId,
+            decimal totHTva,
+            decimal totTva,
+            decimal netPayer
         )
         {
             this.Num = num;
@@ -25,6 +28,9 @@ public partial class BonDeReception : IAccountingYearEntity
             this.Date = date;
             this.NumFactureFournisseur = numFactureFournisseur;
             this.AccountingYearId = accountingYearId;
+            this.TotHTva = totHTva;
+            this.TotTva = totTva;
+            this.NetPayer = netPayer;
         }
 
         public static BonDeReception CreateReceiptNote(
@@ -34,7 +40,10 @@ public partial class BonDeReception : IAccountingYearEntity
         int idFournisseur,
         DateTime date,
         int? numFactureFournisseur,
-        int accountingYearId
+        int accountingYearId,
+        decimal totHTva,
+        decimal totTva,
+        decimal netPayer
         )
     {
         return new BonDeReception
@@ -45,7 +54,10 @@ public partial class BonDeReception : IAccountingYearEntity
             IdFournisseur= idFournisseur,
             Date = date,
             NumFactureFournisseur= numFactureFournisseur,
-            AccountingYearId = accountingYearId
+            AccountingYearId = accountingYearId,
+            TotHTva = totHTva,
+            TotTva = totTva,
+            NetPayer = netPayer
         };
     }
     public int Id { get; set; }
@@ -61,6 +73,12 @@ public partial class BonDeReception : IAccountingYearEntity
     public DateTime Date { get; set; }
 
     public int? NumFactureFournisseur { get; set; }
+
+    public decimal TotHTva { get; set; }
+
+    public decimal TotTva { get; set; }
+
+    public decimal NetPayer { get; set; }
 
     public int AccountingYearId { get; set; }
 

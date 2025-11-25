@@ -21,5 +21,8 @@ public class ReceiptNoteBaseInfo
 
     [JsonPropertyName("vatAmount")]
     public decimal VatAmount { get; set; }
+
+    [JsonPropertyName("grossAmount")]
+    public decimal GrossAmount { get; set; }
 }
 

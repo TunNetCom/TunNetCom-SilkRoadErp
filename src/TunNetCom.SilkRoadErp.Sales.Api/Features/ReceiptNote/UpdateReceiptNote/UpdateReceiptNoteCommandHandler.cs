@@ -32,7 +32,10 @@ public class UpdateReceiptNoteCommandHandler(
             idFournisseur: updateReceiptNoteCommand.IdFournisseur,
             date: updateReceiptNoteCommand.Date,
             numFactureFournisseur: updateReceiptNoteCommand.NumFactureFournisseur,
-            accountingYearId: activeAccountingYear.Id
+            accountingYearId: activeAccountingYear.Id,
+            totHTva: receiptnote.TotHTva,
+            totTva: receiptnote.TotTva,
+            netPayer: receiptnote.NetPayer
             );
         _ = await _context.SaveChangesAsync(cancellationToken);
 

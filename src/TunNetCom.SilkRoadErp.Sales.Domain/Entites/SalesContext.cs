@@ -6,7 +6,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations;
-using TunNetCom.SilkRoadErp.Sales.Domain.Views;
 #nullable enable
 
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
@@ -79,9 +78,6 @@ public partial class SalesContext : DbContext
 
     public virtual DbSet<Transaction> Transaction { get; set; }
 
-    public virtual DbSet<ReceiptNoteView> ReceiptNoteView { get; set; }
-
-    public virtual DbSet<ProviderInvoiceView> ProviderInvoiceView { get; set; }
 
     public virtual DbSet<Banque> Banque { get; set; }
 
