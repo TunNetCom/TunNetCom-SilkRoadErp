@@ -6,6 +6,7 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using Radzen
 @using Radzen.Blazor
+@using BlazorBootstrap
 @inject IInventaireApiClient inventaireService
 @inject IAccountingYearApiClient accountingYearService
 @inject IStringLocalizer<SharedResource> Localizer
@@ -145,9 +146,9 @@
         try
         {
             var activeYear = await accountingYearService.GetActiveAccountingYearAsync(CancellationToken.None);
-            if (activeYear.IsT0)
+            if (activeYear != null)
             {
-                activeAccountingYearId = activeYear.AsT0.Id;
+                activeAccountingYearId = activeYear.Id;
             }
         }
         catch (Exception ex)
@@ -211,18 +212,18 @@
             var result = await inventaireService.DeleteAsync(id, CancellationToken.None);
             if (result.IsT0)
             {
-                ToastService.Notify(NotificationSeverity.Success, "Inventaire supprimé avec succès");
+                ToastService.Notify(new(ToastType.Success, "Inventaire supprimé avec succès"));
                 await inventaireGrid.Reload();
             }
             else
             {
-                ToastService.Notify(NotificationSeverity.Error, "Erreur lors de la suppression");
+                ToastService.Notify(new(ToastType.Danger, "Erreur lors de la suppression"));
             }
         }
         catch (Exception ex)
         {
             _logger?.LogError(ex, "Error deleting inventaire");
-            ToastService.Notify(NotificationSeverity.Error, "Erreur lors de la suppression");
+            ToastService.Notify(new(ToastType.Danger, "Erreur lors de la suppression"));
         }
     }
 
@@ -233,18 +234,18 @@
             var result = await inventaireService.ValiderAsync(id, CancellationToken.None);
             if (result.IsT0)
             {
-                ToastService.Notify(NotificationSeverity.Success, "Inventaire validé avec succès");
+                ToastService.Notify(new(ToastType.Success, "Inventaire validé avec succès"));
                 await inventaireGrid.Reload();
             }
             else
             {
-                ToastService.Notify(NotificationSeverity.Error, "Erreur lors de la validation");
+                ToastService.Notify(new(ToastType.Danger, "Erreur lors de la validation"));
             }
         }
         catch (Exception ex)
         {
             _logger?.LogError(ex, "Error validating inventaire");
-            ToastService.Notify(NotificationSeverity.Error, "Erreur lors de la validation");
+            ToastService.Notify(new(ToastType.Danger, "Erreur lors de la validation"));
         }
     }
 
@@ -255,18 +256,18 @@
             var result = await inventaireService.CloturerAsync(id, CancellationToken.None);
             if (result.IsT0)
             {
-                ToastService.Notify(NotificationSeverity.Success, "Inventaire clôturé avec succès");
+                ToastService.Notify(new(ToastType.Success, "Inventaire clôturé avec succès"));
                 await inventaireGrid.Reload();
             }
             else
             {
-                ToastService.Notify(NotificationSeverity.Error, "Erreur lors de la clôture");
+                ToastService.Notify(new(ToastType.Danger, "Erreur lors de la clôture"));
             }
         }
         catch (Exception ex)
         {
             _logger?.LogError(ex, "Error closing inventaire");
-            ToastService.Notify(NotificationSeverity.Error, "Erreur lors de la clôture");
+            ToastService.Notify(new(ToastType.Danger, "Erreur lors de la clôture"));
         }
     }
 

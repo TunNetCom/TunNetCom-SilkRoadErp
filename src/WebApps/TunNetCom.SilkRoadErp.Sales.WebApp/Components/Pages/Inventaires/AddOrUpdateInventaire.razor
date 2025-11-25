@@ -9,6 +9,7 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using Radzen
 @using Radzen.Blazor
+@using BlazorBootstrap
 @inject IInventaireApiClient inventaireService
 @inject IProductsApiClient productService
 @inject IAccountingYearApiClient accountingYearService
@@ -103,10 +104,10 @@
         try
         {
             var activeYear = await accountingYearService.GetActiveAccountingYearAsync(CancellationToken.None);
-            if (activeYear.IsT0)
+            if (activeYear != null)
             {
-                activeAccountingYearId = activeYear.AsT0.Id;
-                inventaire.AccountingYearId = activeYear.AsT0.Id;
+                activeAccountingYearId = activeYear.Id;
+                inventaire.AccountingYearId = activeYear.Id;
             }
         }
         catch (Exception ex)
@@ -132,7 +133,7 @@
         catch (Exception ex)
         {
             _logger?.LogError(ex, "Error loading inventaire");
-            ToastService.Notify(NotificationSeverity.Error, "Erreur lors du chargement de l'inventaire");
+            ToastService.Notify(new(ToastType.Danger, "Erreur lors du chargement de l'inventaire"));
         }
     }
 
@@ -154,17 +155,15 @@
     {
         string? selectedProductValue = null;
         var productOptions = availableProducts.Select(p => $"{p.Reference} - {p.Name}").ToList();
-        var selectedProduct = await DialogService.OpenAsync<string>("Sélectionner un produit", ds =>
-            @<RadzenStack>
-                <RadzenDropDown @bind-Value="selectedProductValue" Data="@productOptions" Placeholder="Sélectionner un produit" Style="width: 100%;" />
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" JustifyContent="Radzen.JustifyContent.End" class="rz-mt-2">
-                    <RadzenButton Text="Annuler" Click="@(() => ds.Close())" ButtonStyle="ButtonStyle.Light" />
-                    <RadzenButton Text="Ajouter" Click="@(() => ds.Close(selectedProductValue))" ButtonStyle="ButtonStyle.Primary" />
-                </RadzenStack>
-            </RadzenStack>,
-            new DialogOptions { Width = "500px" });
+        var selectedProduct = await DialogService.OpenAsync("Sélectionner un produit", ds => @<RadzenStack>
+            <RadzenDropDown @bind-Value="selectedProductValue" Data="@productOptions" Placeholder="Sélectionner un produit" Style="width: 100%;" />
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" JustifyContent="Radzen.JustifyContent.End" class="rz-mt-2">
+                <RadzenButton Text="Annuler" Click="@(() => ds.Close())" ButtonStyle="ButtonStyle.Light" />
+                <RadzenButton Text="Ajouter" Click="@(() => ds.Close(selectedProductValue))" ButtonStyle="ButtonStyle.Primary" />
+            </RadzenStack>
+        </RadzenStack>, new DialogOptions { Width = "500px" });
 
-        if (!string.IsNullOrEmpty(selectedProduct))
+        if (selectedProduct != null && !string.IsNullOrEmpty(selectedProduct))
         {
             var productRef = selectedProduct.Split(" - ")[0];
             var product = availableProducts.FirstOrDefault(p => p.Reference == productRef);
@@ -209,7 +208,7 @@
 
     private async Task ShowHistorique(string refProduit)
     {
-        await DialogService.OpenAsync<HistoriqueAchatVenteModal>("Historique Achat/Vente", 
+        await DialogService.OpenAsync("Historique Achat/Vente", typeof(HistoriqueAchatVenteModal),
             new Dictionary<string, object> { { "RefProduit", refProduit } },
             new DialogOptions { Width = "900px", Height = "600px" });
     }
@@ -245,12 +244,12 @@
                 var result = await inventaireService.UpdateAsync(updateRequest, Id, CancellationToken.None);
                 if (result.IsT0)
                 {
-                    ToastService.Notify(NotificationSeverity.Success, "Inventaire mis à jour avec succès");
+                    ToastService.Notify(new(ToastType.Success, "Inventaire mis à jour avec succès"));
                     NavigationManager.NavigateTo("/inventaires");
                 }
                 else
                 {
-                    ToastService.Notify(NotificationSeverity.Error, "Erreur lors de la mise à jour");
+                    ToastService.Notify(new(ToastType.Danger, "Erreur lors de la mise à jour"));
                 }
             }
             else
@@ -258,19 +257,19 @@
                 var result = await inventaireService.CreateAsync(inventaire, CancellationToken.None);
                 if (result.IsT0)
                 {
-                    ToastService.Notify(NotificationSeverity.Success, "Inventaire créé avec succès");
+                    ToastService.Notify(new(ToastType.Success, "Inventaire créé avec succès"));
                     NavigationManager.NavigateTo("/inventaires");
                 }
                 else
                 {
-                    ToastService.Notify(NotificationSeverity.Error, "Erreur lors de la création");
+                    ToastService.Notify(new(ToastType.Danger, "Erreur lors de la création"));
                 }
             }
         }
         catch (Exception ex)
         {
             _logger?.LogError(ex, "Error saving inventaire");
-            ToastService.Notify(NotificationSeverity.Error, "Erreur lors de la sauvegarde");
+            ToastService.Notify(new(ToastType.Danger, "Erreur lors de la sauvegarde"));
         }
         finally
         {

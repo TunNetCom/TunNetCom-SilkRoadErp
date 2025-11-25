@@ -940,16 +940,7 @@
   <data name="fournisseur_client" xml:space="preserve">
     <value />
   </data>
-  <data name="type" xml:space="preserve">
-    <value />
-  </data>
   <data name="back" xml:space="preserve">
-    <value />
-  </data>
-  <data name="save" xml:space="preserve">
-    <value />
-  </data>
-  <data name="cancel" xml:space="preserve">
     <value />
   </data>
 </root>

@@ -183,7 +183,11 @@ public class InventaireApiClient : IInventaireApiClient
                 var result = JsonConvert.DeserializeObject<dynamic>(content);
                 if (result != null && result.dernierPrixAchat != null)
                 {
-                    return (decimal)result.dernierPrixAchat;
+                    var prixAchat = result.dernierPrixAchat;
+                    if (prixAchat != null)
+                    {
+                        return (decimal)prixAchat;
+                    }
                 }
             }
             if (response.StatusCode == HttpStatusCode.NotFound)

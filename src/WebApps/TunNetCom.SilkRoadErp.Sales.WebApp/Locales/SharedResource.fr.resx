@@ -939,16 +939,7 @@
   <data name="fournisseur_client" xml:space="preserve">
     <value>Fournisseur/Client</value>
   </data>
-  <data name="type" xml:space="preserve">
-    <value>Type</value>
-  </data>
   <data name="back" xml:space="preserve">
     <value>Retour</value>
-  </data>
-  <data name="save" xml:space="preserve">
-    <value>Enregistrer</value>
-  </data>
-  <data name="cancel" xml:space="preserve">
-    <value>Annuler</value>
   </data>
 </root>
