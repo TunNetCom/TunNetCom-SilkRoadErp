@@ -174,13 +174,11 @@
                 <RadzenTabsItem Text="Paramètres de stock" Icon="inventory">
                     <RadzenRow Class="g-2 mb-4">
                         <RadzenColumn Size="12" Class="d-flex flex-column gap-3">
-                            <RadzenFormField Text="Bloquer la vente en cas de stock insuffisant">
-                                <Start><RadzenIcon Icon="block" /></Start>
-                                <ChildContent>
-                                    <RadzenCheckBox @bind-Value="system.BloquerVenteStockInsuffisant" Name="BloquerVenteStockInsuffisant" />
-                                </ChildContent>
-                            </RadzenFormField>
-                            <RadzenLabel Text="Si activé, les ventes seront bloquées lorsque le stock disponible est insuffisant. Si désactivé, un avertissement sera affiché mais la vente sera autorisée." Style="color: #666; font-size: 0.9em; margin-top: -10px;" />
+                            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" AlignItems="Radzen.AlignItems.Center" Style="width: fit-content;">
+                                <RadzenCheckBox @bind-Value="system.BloquerVenteStockInsuffisant" Name="BloquerVenteStockInsuffisant" />
+                                <RadzenLabel Text="Bloquer la vente en cas de stock insuffisant" Style="margin: 0;" />
+                            </RadzenStack>
+                            <RadzenLabel Text="Si activé, les ventes seront bloquées lorsque le stock disponible est insuffisant. Si désactivé, un avertissement sera affiché mais la vente sera autorisée." Style="color: #666; font-size: 0.9em; margin-top: 5px;" />
                         </RadzenColumn>
                     </RadzenRow>
                 </RadzenTabsItem>
