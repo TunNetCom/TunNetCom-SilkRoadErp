@@ -73,7 +73,7 @@ public class GetSoldeClientQueryHandler(
             .Where(p => p.ClientId == query.ClientId && p.AccountingYearId == accountingYearId.Value)
             .SumAsync(p => p.Montant, cancellationToken);
 
-        var solde = totalFactures + totalBonsLivraisonNonFactures - totalAvoirs - totalFacturesAvoir - totalPaiements;
+        var solde = totalAvoirs + totalFacturesAvoir + totalPaiements - totalFactures - totalBonsLivraisonNonFactures;
 
         // Get documents
         var documents = new List<DocumentSoldeClient>();
