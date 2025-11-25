@@ -93,20 +93,6 @@
             <div class="documents-section">
                 <h4>@Localizer["Documents"]</h4>
                 <RadzenStack Gap="1rem">
-                    <RadzenCard Variant="Variant.Outlined">
-                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1.5rem;" Wrap="FlexWrap.Wrap">
-                            <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem;">
-                                <div>ExpandMode:</div>
-                                <RadzenSelectBar @bind-Value="@expandMode" TextProperty="Text" ValueProperty="Value"
-                                        Data="@(Enum.GetValues(typeof(DataGridExpandMode)).Cast<DataGridExpandMode>().Select(t => new { Text = $"{t}", Value = t }))" Size="ButtonSize.Small" />
-                            </RadzenStack>
-                            <RadzenButton Text="Expand all rows" Click="@(args => ToggleRowsExpand(true))" 
-                                          Disabled=@(allRowsExpanded == true || expandMode == DataGridExpandMode.Single) />
-                            <RadzenButton Text="Collapse all rows" Click="@(args => ToggleRowsExpand(false))" 
-                                          Disabled=@(allRowsExpanded == false || expandMode == DataGridExpandMode.Single) />
-                        </RadzenStack>
-                    </RadzenCard>
-
                     <RadzenDataGrid @ref="facturesGrid" 
                                     AllowFiltering="true" 
                                     AllowPaging="true" 
@@ -152,6 +138,7 @@
                                 </Template>
                                 <Columns>
                                     <RadzenDataGridColumn Property="@nameof(DocumentSoldeClient.Numero)" Title="@Localizer["Numero_Col"]" Width="120px" />
+                                    <RadzenDataGridColumn Property="@nameof(DocumentSoldeClient.Type)" Title="@Localizer["Type"]" Width="150px" />
                                     <RadzenDataGridColumn Property="@nameof(DocumentSoldeClient.Date)" Title="@Localizer["date"]" FormatString="{0:dd/MM/yyyy}" Width="140px" />
                                     <RadzenDataGridColumn Property="@nameof(DocumentSoldeClient.Montant)" Title="@Localizer["Montant_Col"]" Width="150px">
                                         <Template Context="bl">
@@ -171,6 +158,7 @@
                         </Template>
                         <Columns>
                             <RadzenDataGridColumn Property="@nameof(DocumentSoldeClient.Numero)" Title="@Localizer["Numero_Col"]" Width="120px" />
+                            <RadzenDataGridColumn Property="@nameof(DocumentSoldeClient.Type)" Title="@Localizer["Type"]" Width="150px" />
                             <RadzenDataGridColumn Property="@nameof(DocumentSoldeClient.Date)" Title="@Localizer["date"]" FormatString="{0:dd/MM/yyyy}" Width="140px" />
                             <RadzenDataGridColumn Property="@nameof(DocumentSoldeClient.Montant)" Title="@Localizer["Montant_Col"]" Width="150px">
                                 <Template Context="facture">
@@ -347,8 +335,7 @@
     private List<CustomerResponse> _filteredCustomers = new();
     private CancellationTokenSource cancellationTokenSource = new();
     
-    DataGridExpandMode expandMode = DataGridExpandMode.Single;
-    bool? allRowsExpanded;
+    DataGridExpandMode expandMode = DataGridExpandMode.Multiple;
     RadzenDataGrid<DocumentSoldeClient>? facturesGrid;
     
     private IEnumerable<DocumentSoldeClient> factures => solde?.Documents.Where(d => d.Type == "Facture" && d.BonsLivraison != null && d.BonsLivraison.Any()) ?? Enumerable.Empty<DocumentSoldeClient>();
@@ -411,7 +398,6 @@
             if (result.IsSuccess)
             {
                 solde = result.Value;
-                allRowsExpanded = null;
             }
             else
             {
@@ -431,23 +417,6 @@
                 Summary = Localizer["Erreur"],
                 Detail = $"{Localizer["Erreur_Chargement_Solde"]}: {ex.Message}"
             });
-        }
-    }
-
-    async Task ToggleRowsExpand(bool? value)
-    {
-        allRowsExpanded = value;
-
-        if (facturesGrid != null)
-        {
-            if (value == true)
-            {
-                await facturesGrid.ExpandRows(facturesGrid.PagedView);
-            }
-            else if (value == false)
-            { 
-                await facturesGrid.CollapseRows(facturesGrid.PagedView);
-            }
         }
     }
 
