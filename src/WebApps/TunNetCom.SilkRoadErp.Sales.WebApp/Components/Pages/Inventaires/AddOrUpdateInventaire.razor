@@ -2,11 +2,15 @@
 @page "/inventaires/edit/{Id:int}"
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Inventaire
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Products
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Sorting
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Inventaire
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AccountingYear
 @using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.Inventaires
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using Radzen
 @using Radzen.Blazor
 @using BlazorBootstrap
@@ -36,34 +40,30 @@
 
             <div class="rz-col-12">
                 <h4>@Localizer["lignes_inventaire"]</h4>
-                <RadzenButton Icon="add" Text="@Localizer["add_product"]" Click="@AddProduct" ButtonStyle="ButtonStyle.Primary" Class="rz-mb-2" />
                 
-                <RadzenDataGrid TItem="LigneInventaireResponse" Data="@lignes" AllowPaging="false" AllowSorting="false" AllowFiltering="false">
-                    <Columns>
-                        <RadzenDataGridColumn TItem="LigneInventaireResponse" Property="@nameof(LigneInventaireResponse.RefProduit)" Title="@Localizer["product_refe"]" Width="150px" />
-                        <RadzenDataGridColumn TItem="LigneInventaireResponse" Property="@nameof(LigneInventaireResponse.NomProduit)" Title="@Localizer["product_name"]" Width="200px" />
-                        <RadzenDataGridColumn TItem="LigneInventaireResponse" Property="@nameof(LigneInventaireResponse.QuantiteTheorique)" Title="@Localizer["quantite_theorique"]" Width="120px" />
-                        <RadzenDataGridColumn TItem="LigneInventaireResponse" Property="@nameof(LigneInventaireResponse.QuantiteReelle)" Title="@Localizer["quantite_reelle"]" Width="120px">
-                            <Template Context="ligne">
-                                <RadzenNumeric @bind-Value="@ligne.QuantiteReelle" Min="0" Format="N0" Style="width: 100px;" />
-                            </Template>
-                        </RadzenDataGridColumn>
-                        <RadzenDataGridColumn TItem="LigneInventaireResponse" Property="@nameof(LigneInventaireResponse.PrixHt)" Title="@Localizer["prix_ht"]" Width="120px">
-                            <Template Context="ligne">
-                                <RadzenNumeric @bind-Value="@ligne.PrixHt" Min="0" Format="N2" Style="width: 100px;" />
-                            </Template>
-                        </RadzenDataGridColumn>
-                        <RadzenDataGridColumn TItem="LigneInventaireResponse" Property="@nameof(LigneInventaireResponse.DernierPrixAchat)" Title="@Localizer["dernier_prix_achat"]" Width="150px" />
-                        <RadzenDataGridColumn TItem="LigneInventaireResponse" Filterable="false" Sortable="false" Width="150px">
-                            <Template Context="ligne">
-                                <RadzenButton Icon="history" ButtonStyle="ButtonStyle.Info" Variant="Variant.Outlined" Size="ButtonSize.Small"
-                                              Click="@(() => ShowHistorique(ligne.RefProduit))" Title="@Localizer["historique_achat_vente"]" />
-                                <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Outlined" Size="ButtonSize.Small"
-                                              Click="@(() => RemoveLigne(ligne))" Title="@Localizer["delete"]" />
-                            </Template>
-                        </RadzenDataGridColumn>
-                    </Columns>
-                </RadzenDataGrid>
+                <LineItemsGrid TItem="InventaireLineWrapper"
+                               Items="@orders"
+                               ItemsChanged="@OnItemsChanged"
+                               OnDeleteItem="@DeleteRow"
+                               OnProductSelectedCallback="@OnProductSelectedHandler"
+                               LoadProducts="@LoadData"
+                               GetProductList="@GetCurrentProductList"
+                               ProductCount="@count"
+                               OnShowPriceHistory="@ShowHistorique"
+                               ShowPriceHistoryDialog="true"
+                               ShowPrintButton="false"
+                               ShowSaveButton="false"
+                               ShowSummary="false"
+                               ShowVatColumn="false"
+                               ShowTtcColumn="false"
+                               Localizer="@Localizer"
+                               GetProductReference="@(item => item.ProductReference)"
+                               SetProductReference="@((item, value) => item.ProductReference = value)"
+                               GetProductDescription="@(item => item.Description)"
+                               SetProductDescription="@((item, value) => item.Description = value)"
+                               ProductTextProperty="ProductReferenceAndDescription"
+                               ProductValueProperty="ProductReference"
+                               CreateNewItem="@(() => new InventaireLineWrapper { Quantity = 1 })" />
             </div>
 
             <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" JustifyContent="Radzen.JustifyContent.End" class="rz-col-12">
@@ -79,13 +79,19 @@
     [Parameter] public int Id { get; set; }
     
     private CreateInventaireRequest inventaire = new();
-    private List<LigneInventaireResponse> lignes = new();
+    private List<InventaireLineWrapper> orders = new();
+    private List<InventaireLineWrapper> searchList = new();
+    private int count;
+    private const int DefaultPageSize = 7;
+    private CancellationTokenSource _cancellationTokenSource = new();
     private bool isSaving;
     private int? activeAccountingYearId;
-    private List<ProductResponse> availableProducts = new();
 
     protected override async Task OnInitializedAsync()
     {
+        searchList = new List<InventaireLineWrapper>();
+        orders = new List<InventaireLineWrapper>();
+        
         await LoadActiveAccountingYear();
         if (Id > 0)
         {
@@ -96,7 +102,6 @@
             inventaire.DateInventaire = DateTime.Now;
             inventaire.AccountingYearId = activeAccountingYearId ?? 0;
         }
-        await LoadProducts();
     }
 
     private async Task LoadActiveAccountingYear()
@@ -127,7 +132,8 @@
                 inventaire.DateInventaire = fullInventaire.DateInventaire;
                 inventaire.Description = fullInventaire.Description;
                 inventaire.AccountingYearId = fullInventaire.AccountingYearId;
-                lignes = fullInventaire.Lignes.ToList();
+                orders = fullInventaire.Lignes.Select(InventaireLineWrapper.FromResponse).ToList();
+                UpdateTotals();
             }
         }
         catch (Exception ex)
@@ -137,56 +143,87 @@
         }
     }
 
-    private async Task LoadProducts()
+    async Task LoadData(LoadDataArgs args)
     {
+        string _sortProperty = null;
+        string _sortOrder = null;
+        if (args.Sorts != null && args.Sorts.Any())
+        {
+            var sort = args.Sorts.First();
+            _sortProperty = sort.Property;
+            _sortOrder = sort.SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending;
+        }
+        var parameters = new QueryStringParameters
+        {
+            PageNumber = (args.Skip.Value / DefaultPageSize) + 1,
+            PageSize = DefaultPageSize,
+            SearchKeyword = args.Filter,
+            SortOrder = _sortOrder,
+            SortProprety = _sortProperty
+        };
+
         try
         {
-            var queryParams = new QueryStringParameters { PageNumber = 1, PageSize = 1000 };
-            var result = await productService.GetPagedAsync(queryParams, CancellationToken.None);
-            availableProducts = result.Items.ToList();
+            var pagedProducts = await productService.GetPagedAsync(parameters, _cancellationTokenSource.Token);
+            searchList = pagedProducts.Items.Select(
+                p => new InventaireLineWrapper
+                {
+                    ProductReference = p.Reference,
+                    Description = p.Name,
+                    UnitPriceExcludingTax = p.Price,
+                    Quantity = 1
+                }).ToList();
+
+            count = pagedProducts.TotalCount;
         }
         catch (Exception ex)
         {
             _logger?.LogError(ex, "Error loading products");
+            ToastService.Notify(new(ToastType.Danger, "Erreur lors du chargement des produits"));
+            searchList = new List<InventaireLineWrapper>();
+            count = 0;
         }
+
+        await InvokeAsync(StateHasChanged);
     }
 
-    private async Task AddProduct()
+    private List<InventaireLineWrapper> GetCurrentProductList(InventaireLineWrapper currentOrder)
     {
-        string? selectedProductValue = null;
-        var productOptions = availableProducts.Select(p => $"{p.Reference} - {p.Name}").ToList();
-        var selectedProduct = await DialogService.OpenAsync("Sélectionner un produit", ds => @<RadzenStack>
-            <RadzenDropDown @bind-Value="selectedProductValue" Data="@productOptions" Placeholder="Sélectionner un produit" Style="width: 100%;" />
-            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" JustifyContent="Radzen.JustifyContent.End" class="rz-mt-2">
-                <RadzenButton Text="Annuler" Click="@(() => ds.Close())" ButtonStyle="ButtonStyle.Light" />
-                <RadzenButton Text="Ajouter" Click="@(() => ds.Close(selectedProductValue))" ButtonStyle="ButtonStyle.Primary" />
-            </RadzenStack>
-        </RadzenStack>, new DialogOptions { Width = "500px" });
-
-        if (selectedProduct != null && !string.IsNullOrEmpty(selectedProduct))
+        var resultList = new List<InventaireLineWrapper>();
+        
+        // If current order has a product reference, ensure it's in the list
+        if (!string.IsNullOrEmpty(currentOrder.ProductReference))
         {
-            var productRef = selectedProduct.Split(" - ")[0];
-            var product = availableProducts.FirstOrDefault(p => p.Reference == productRef);
-            if (product != null)
+            var currentProduct = searchList.FirstOrDefault(p => p.ProductReference == currentOrder.ProductReference);
+            
+            if (currentProduct != null)
             {
-                var dernierPrixAchat = await GetDernierPrixAchat(productRef);
-                // Récupérer le stock calculé pour la quantité théorique
-                var stockResult = await productService.GetProductStockAsync(productRef, CancellationToken.None);
-                var quantiteTheorique = stockResult.IsT0 ? stockResult.AsT0.StockCalcule : 0;
-                var quantiteReelle = quantiteTheorique; // Par défaut, utiliser le stock calculé
-                
-                var ligne = new LigneInventaireResponse
-                {
-                    RefProduit = product.Reference,
-                    NomProduit = product.Name,
-                    QuantiteTheorique = quantiteTheorique,
-                    QuantiteReelle = quantiteReelle,
-                    PrixHt = product.Price,
-                    DernierPrixAchat = dernierPrixAchat
-                };
-                lignes.Add(ligne);
+                // Product is already in searchList, add it first
+                resultList.Add(currentProduct);
             }
+            else
+            {
+                // Product is not in searchList yet (e.g., when editing existing inventaire)
+                // Create a product entry from the current order so it appears in the dropdown
+                resultList.Add(new InventaireLineWrapper
+                {
+                    ProductReference = currentOrder.ProductReference,
+                    Description = currentOrder.Description,
+                    UnitPriceExcludingTax = currentOrder.UnitPriceExcludingTax,
+                    Quantity = 1
+                });
+            }
+            
+            // Add all other products from searchList
+            resultList.AddRange(searchList.Where(p => p.ProductReference != currentOrder.ProductReference));
         }
+        else
+        {
+            // No current product, return all products from searchList
+            resultList.AddRange(searchList);
+        }
+        
+        return resultList;
     }
 
     private async Task<decimal> GetDernierPrixAchat(string refProduit)
@@ -206,9 +243,63 @@
         return 0;
     }
 
-    private void RemoveLigne(LigneInventaireResponse ligne)
+    async Task OnItemsChanged(List<InventaireLineWrapper> items)
     {
-        lignes.Remove(ligne);
+        orders = items;
+        UpdateTotals();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task DeleteRow(InventaireLineWrapper order)
+    {
+        if (orders.Contains(order))
+        {
+            orders.Remove(order);
+        }
+        else if (order.Id > 0)
+        {
+            var itemToRemove = orders.FirstOrDefault(t => t.Id == order.Id && t.Id > 0);
+            if (itemToRemove != null)
+            {
+                orders.Remove(itemToRemove);
+            }
+        }
+
+        UpdateTotals();
+        await OnItemsChanged(orders);
+        StateHasChanged();
+    }
+
+    private async Task OnProductSelectedHandler(InventaireLineWrapper order)
+    {
+        if (!string.IsNullOrEmpty(order.ProductReference))
+        {
+            // Récupérer le dernier prix d'achat
+            var dernierPrixAchat = await GetDernierPrixAchat(order.ProductReference);
+            order.DernierPrixAchat = dernierPrixAchat;
+            
+            // Récupérer le stock calculé pour la quantité théorique
+            var stockResult = await productService.GetProductStockAsync(order.ProductReference, CancellationToken.None);
+            var quantiteTheorique = stockResult.IsT0 ? stockResult.AsT0.StockCalcule : 0;
+            order.QuantiteTheorique = quantiteTheorique;
+            
+            // Par défaut, utiliser le stock calculé pour la quantité réelle
+            if (order.Quantity == 1) // Si c'est la valeur par défaut
+            {
+                order.Quantity = quantiteTheorique;
+            }
+            
+            // Calculer les totaux
+            LineItemCalculator.CalculateTotals(order);
+            UpdateTotals();
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void UpdateTotals()
+    {
+        LineItemCalculator.UpdateTotals(orders, out decimal totalHt, out decimal totalVat, out decimal totalTtc);
+        // Pour l'inventaire, on n'affiche pas les totaux mais on les calcule quand même pour la cohérence
     }
 
     private async Task ShowHistorique(string refProduit)
@@ -223,13 +314,7 @@
         isSaving = true;
         try
         {
-            inventaire.Lignes = lignes.Select(l => new CreateLigneInventaireRequest
-            {
-                RefProduit = l.RefProduit,
-                QuantiteReelle = l.QuantiteReelle,
-                PrixHt = l.PrixHt,
-                DernierPrixAchat = l.DernierPrixAchat
-            }).ToList();
+            inventaire.Lignes = orders.Select(l => l.ToCreateRequest()).ToList();
 
             if (Id > 0)
             {
@@ -237,14 +322,7 @@
                 {
                     DateInventaire = inventaire.DateInventaire,
                     Description = inventaire.Description,
-                    Lignes = lignes.Select(l => new UpdateLigneInventaireRequest
-                    {
-                        Id = l.Id,
-                        RefProduit = l.RefProduit,
-                        QuantiteReelle = l.QuantiteReelle,
-                        PrixHt = l.PrixHt,
-                        DernierPrixAchat = l.DernierPrixAchat
-                    }).ToList()
+                    Lignes = orders.Select(l => l.ToUpdateRequest()).ToList()
                 };
                 var result = await inventaireService.UpdateAsync(updateRequest, Id, CancellationToken.None);
                 if (result.IsT0)

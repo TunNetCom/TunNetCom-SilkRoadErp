@@ -8,6 +8,7 @@
 @using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.Inventaires
 @typeparam TItem where TItem : class, ILineItem
 @inject IJSRuntime JSRuntime
 @inject DialogService DialogService
@@ -81,15 +82,21 @@
                                  Gap="1.5rem" 
                                  JustifyContent="JustifyContent.End"
                                  class="summary-stack">
-                        <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                            @Localizer["total_net"]: <strong>@TotalTtc.FormatAmount()</strong>
-                        </RadzenText>
+                        @if (ShowTtcColumn)
+                        {
+                            <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                                @Localizer["total_net"]: <strong>@TotalTtc.FormatAmount()</strong>
+                            </RadzenText>
+                        }
                         <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
                             @Localizer["total_gross"]: <strong>@TotalHt.FormatAmount()</strong>
                         </RadzenText>
-                        <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                            @Localizer["total_vat"]: <strong>@TotalVat.FormatAmount()</strong>
-                        </RadzenText>
+                        @if (ShowVatColumn)
+                        {
+                            <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                                @Localizer["total_vat"]: <strong>@TotalVat.FormatAmount()</strong>
+                            </RadzenText>
+                        }
                     </RadzenStack>
                 </RadzenCard>
             }
@@ -236,26 +243,65 @@
             </Template>
         </RadzenDataGridColumn>
 
-        <RadzenDataGridColumn Width="120px" 
-                              Title="@Localizer["vat_percentage"]">
-            <Template Context="order">
-                <RadzenNumeric TValue="double"
-                               Value="order.VatPercentage"
-                               Change="@(args => OnVatChanged(order, args))"
-                               Style="width:100%;"
-                               Min="0"
-                               Max="@((decimal)MaxVatPercentage)"
-                               Step="0.01"
-                               Format="N2"
-                               Name="Vat"/>
-            </Template>
-        </RadzenDataGridColumn>
+        @if (ShowVatColumn)
+        {
+            <RadzenDataGridColumn Width="120px" 
+                                  Title="@Localizer["vat_percentage"]">
+                <Template Context="order">
+                    <RadzenNumeric TValue="double"
+                                   Value="order.VatPercentage"
+                                   Change="@(args => OnVatChanged(order, args))"
+                                   Style="width:100%;"
+                                   Min="0"
+                                   Max="@((decimal)MaxVatPercentage)"
+                                   Step="0.01"
+                                   Format="N2"
+                                   Name="Vat"/>
+                </Template>
+            </RadzenDataGridColumn>
+        }
 
-        <RadzenDataGridColumn Title="@Localizer["total_including_tax"]">
-            <Template Context="order">
-                @order.TotalIncludingTax.FormatAmount()
-            </Template>
-        </RadzenDataGridColumn>
+        @if (ShowTtcColumn)
+        {
+            <RadzenDataGridColumn Title="@Localizer["total_including_tax"]">
+                <Template Context="order">
+                    @order.TotalIncludingTax.FormatAmount()
+                </Template>
+            </RadzenDataGridColumn>
+        }
+
+        @* Inventaire specific columns - only shown for InventaireLineWrapper *@
+        @if (typeof(TItem) == typeof(InventaireLineWrapper))
+        {
+            var quantiteTheoriqueTitle = Localizer["quantite_theorique"];
+            var dernierPrixAchatTitle = Localizer["dernier_prix_achat"];
+            
+            <RadzenDataGridColumn Width="120px" 
+                                  Title="@quantiteTheoriqueTitle">
+                <Template Context="order">
+                    @{
+                        var inventaireItem = order as InventaireLineWrapper;
+                        if (inventaireItem != null)
+                        {
+                            @inventaireItem.QuantiteTheorique
+                        }
+                    }
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn Width="150px" 
+                                  Title="@dernierPrixAchatTitle">
+                <Template Context="order">
+                    @{
+                        var inventaireItem = order as InventaireLineWrapper;
+                        if (inventaireItem != null)
+                        {
+                            @inventaireItem.DernierPrixAchat.FormatAmount()
+                        }
+                    }
+                </Template>
+            </RadzenDataGridColumn>
+        }
 
         @* FODEC column - only shown for ReceiptNoteDetailResponse when provider is constructor *@
         @if (typeof(TItem) == typeof(ReceiptNoteDetailResponse))
@@ -418,6 +464,8 @@
     [Parameter] public bool ShowPrintButton { get; set; } = true;
     [Parameter] public bool ShowSaveButton { get; set; } = true;
     [Parameter] public bool ShowSummary { get; set; } = true;
+    [Parameter] public bool ShowVatColumn { get; set; } = true;
+    [Parameter] public bool ShowTtcColumn { get; set; } = true;
     [Parameter] public EventCallback OnSave { get; set; }
     [Parameter] public EventCallback OnPrint { get; set; }
     [Parameter] public decimal TotalHt { get; set; }
