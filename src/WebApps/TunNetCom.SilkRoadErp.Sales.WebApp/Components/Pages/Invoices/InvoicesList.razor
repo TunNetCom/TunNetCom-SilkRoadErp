@@ -17,7 +17,14 @@
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Common
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Tags
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
+@using Microsoft.JSInterop
+@using Microsoft.AspNetCore.Components
+@using Microsoft.Extensions.Configuration
 @inject ITagsApiClient TagsService
+@inject IJSRuntime JS
+@inject HttpClient HttpClient
+@inject IConfiguration Configuration
+@inject NotificationService NotificationService
 
 <div class="invoices-list-container">
     <div class="search-header">
@@ -51,6 +58,12 @@
                           ButtonStyle="ButtonStyle.Primary"
                           Click="@SearchInvoices"
                           class="action-button" />
+            <RadzenButton Text="Exporter vers Sage ERP"
+                          Icon="file_download"
+                          ButtonStyle="ButtonStyle.Secondary"
+                          Click="@ExportToSageErpAsync"
+                          class="action-button"
+                          Style="margin-left: 8px;" />
         </div>
     </div>
     <div class="list-card">
@@ -209,6 +222,7 @@
     .search-button {
         display: flex;
         align-items: flex-end;
+        gap: 8px;
     }
 
     @@media (max-width: 768px) {
@@ -416,6 +430,109 @@
     {
         searchCriteria.SelectedTagIds = tagIds;
         await SearchInvoices();
+    }
+
+    private async Task ExportToSageErpAsync()
+    {
+        try
+        {
+            _logger.LogInformation("ExportToSageErpAsync called");
+
+            // Build query parameters based on current search criteria
+            var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
+                searchCriteria.PeriodFilter,
+                searchCriteria.StartDate,
+                searchCriteria.EndDate);
+
+            var queryParams = new List<string>();
+
+            if (startDate.HasValue)
+            {
+                queryParams.Add($"startDate={Uri.EscapeDataString(startDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+            }
+
+            if (endDate.HasValue)
+            {
+                queryParams.Add($"endDate={Uri.EscapeDataString(endDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+            }
+
+            if (searchCriteria.SelectedCustomerId.HasValue)
+            {
+                queryParams.Add($"customerId={searchCriteria.SelectedCustomerId.Value}");
+            }
+
+            if (searchCriteria.SelectedTagIds != null && searchCriteria.SelectedTagIds.Any())
+            {
+                foreach (var tagId in searchCriteria.SelectedTagIds)
+                {
+                    queryParams.Add($"tagIds={tagId}");
+                }
+            }
+
+            // Get the API base URL from configuration
+            var baseUrl = Configuration.GetValue<string>("BaseUrl")
+                ?? throw new InvalidOperationException("BaseUrl configuration is missing");
+            
+            var url = $"{baseUrl.TrimEnd('/')}/api/invoices/export/sage";
+            if (queryParams.Any())
+            {
+                url += "?" + string.Join("&", queryParams);
+            }
+
+            _logger.LogInformation("Calling export endpoint: {Url}", url);
+
+            // Call the export endpoint
+            var response = await HttpClient.GetAsync(url);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                _logger.LogError("Export failed with status {StatusCode}. Response: {ErrorContent}", 
+                    response.StatusCode, errorContent);
+                
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Erreur",
+                    Detail = "Erreur lors de l'export vers Sage ERP. Veuillez réessayer.",
+                    Duration = 4000
+                });
+                return;
+            }
+
+            // Get the file content
+            var fileBytes = await response.Content.ReadAsByteArrayAsync();
+            var fileName = response.Content.Headers.ContentDisposition?.FileName 
+                ?? $"Factures_Sage_{DateTime.Now:yyyyMMdd_HHmmss}.txt";
+
+            // Remove quotes from filename if present
+            fileName = fileName.Trim('"');
+
+            // Download the file using JavaScript
+            var base64String = Convert.ToBase64String(fileBytes);
+            await JS.InvokeVoidAsync("downloadFile", fileName, base64String, "text/plain; charset=windows-1252");
+
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Succès",
+                Detail = "Export vers Sage ERP réussi.",
+                Duration = 3000
+            });
+
+            _logger.LogInformation("Export completed successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error exporting to Sage ERP");
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Erreur",
+                Detail = $"Erreur lors de l'export: {ex.Message}",
+                Duration = 4000
+            });
+        }
     }
 }
 

@@ -137,6 +137,9 @@ builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Domain.Entites.IActiveAcc
 // Register StockCalculationService
 builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Domain.Services.IStockCalculationService, TunNetCom.SilkRoadErp.Sales.Domain.Services.StockCalculationService>();
 
+// Register SageErpExportService
+builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.SageErpExportService>();
+
 var app = builder.Build();
 
 using (IServiceScope scope = app.Services.CreateScope())

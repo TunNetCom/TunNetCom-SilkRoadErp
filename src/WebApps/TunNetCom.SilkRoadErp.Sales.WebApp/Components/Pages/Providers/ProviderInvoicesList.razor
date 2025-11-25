@@ -19,6 +19,9 @@
 @inject NavigationManager NavigationManager
 @inject ODataService ODataService
 @inject ITagsApiClient TagsService
+@inject IJSRuntime JS
+@inject HttpClient HttpClient
+@inject IConfiguration Configuration
 
 <div class="invoices-list-container">
     <div class="search-header">
@@ -52,6 +55,12 @@
                           ButtonStyle="ButtonStyle.Primary"
                           Click="@SearchProviderInvoices"
                           class="action-button" />
+            <RadzenButton Text="Exporter vers Sage ERP"
+                          Icon="file_download"
+                          ButtonStyle="ButtonStyle.Secondary"
+                          Click="@ExportToSageErpAsync"
+                          class="action-button"
+                          Style="margin-left: 8px;" />
         </div>
     </div>
     <div class="list-card">
@@ -435,6 +444,76 @@
     {
         searchCriteria.SelectedTagIds = tagIds;
         await SearchProviderInvoices();
+    }
+
+    private async Task ExportToSageErpAsync()
+    {
+        try
+        {
+            _logger.LogInformation("ExportToSageErpAsync called for provider invoices");
+
+            // Build query parameters based on current search criteria
+            var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
+                searchCriteria.PeriodFilter,
+                searchCriteria.StartDate,
+                searchCriteria.EndDate);
+
+            var queryParams = new List<string>();
+
+            if (startDate.HasValue)
+            {
+                queryParams.Add($"startDate={Uri.EscapeDataString(startDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+            }
+
+            if (endDate.HasValue)
+            {
+                queryParams.Add($"endDate={Uri.EscapeDataString(endDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+            }
+
+            if (searchCriteria.SelectedProviderId.HasValue)
+            {
+                queryParams.Add($"providerId={searchCriteria.SelectedProviderId.Value}");
+            }
+
+            if (searchCriteria.SelectedTagIds != null && searchCriteria.SelectedTagIds.Any())
+            {
+                foreach (var tagId in searchCriteria.SelectedTagIds)
+                {
+                    queryParams.Add($"tagIds={tagId}");
+                }
+            }
+
+            var baseUrl = Configuration.GetValue<string>("BaseUrl") ?? throw new ArgumentNullException("BaseUrl is not configured.");
+            var url = $"{baseUrl}/api/provider-invoices/export/sage";
+            if (queryParams.Any())
+            {
+                url += "?" + string.Join("&", queryParams);
+            }
+
+            try
+            {
+                _logger.LogInformation("Calling Sage ERP export API: {Url}", url);
+                var httpClient = new HttpClient();
+                var response = await httpClient.GetAsync(url);
+                response.EnsureSuccessStatusCode();
+
+                var fileBytes = await response.Content.ReadAsByteArrayAsync();
+                var fileName = response.Content.Headers.ContentDisposition?.FileNameStar ?? $"Factures_Fournisseurs_Sage_{DateTime.Now:yyyyMMdd_HHmmss}.txt";
+                var contentType = response.Content.Headers.ContentType?.ToString() ?? "text/plain; charset=windows-1252";
+
+                await JS.InvokeVoidAsync("downloadFile", fileName, Convert.ToBase64String(fileBytes), contentType);
+
+                _logger.LogInformation("Sage ERP export file downloaded successfully.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during Sage ERP export: {Message}", ex.Message);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in ExportToSageErpAsync: {Message}", ex.Message);
+        }
     }
 }
 
