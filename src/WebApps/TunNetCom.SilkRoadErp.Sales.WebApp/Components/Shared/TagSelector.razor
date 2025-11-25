@@ -1,0 +1,527 @@
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Tags
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
+@using Radzen.Blazor
+@using Radzen
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using Microsoft.AspNetCore.Components.Web
+@inject ITagsApiClient TagsService
+@inject ToastService ToastService
+@inject NotificationService NotificationService
+@inject IStringLocalizer<SharedResource> Localizer
+
+<div class="tag-selector">
+    <div class="selected-tags">
+        @if (_localSelectedTags != null && _localSelectedTags.Any())
+        {
+            @foreach (var tag in _localSelectedTags)
+            {
+                <span class="tag-badge-selector" style="@GetTagStyle(tag.Color)">
+                    @tag.Name
+                    <span class="tag-remove-icon" @onclick="@(() => RemoveTag(tag))" @onclick:stopPropagation="true">
+                        <RadzenIcon Icon="close" />
+                    </span>
+                </span>
+            }
+        }
+        <div class="tag-input-container">
+            <RadzenTextBox @bind-Value="@newTagName"
+                          Change="@OnTagInputChanged"
+                          @onkeypress="@OnTagInputKeyPress"
+                          @onblur="@OnTagInputBlur"
+                          Placeholder="+ Ajouter un tag..."
+                          class="tag-input"
+                          Variant="Variant.Flat" />
+        </div>
+    </div>
+    
+    @if (AvailableTags.Any() && showSuggestions)
+    {
+        <div class="tag-suggestions">
+            @foreach (var suggestion in filteredSuggestions)
+            {
+                <div class="tag-suggestion-item" @onclick="@(() => SelectSuggestion(suggestion))">
+                    @suggestion.Name
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .tag-selector {
+        display: flex !important;
+        flex-direction: column;
+        gap: 0.25rem;
+        position: relative;
+        width: 100%;
+        padding: 0.5rem 0;
+        min-height: 40px;
+    }
+
+    .selected-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+        min-height: 2rem;
+        width: 100%;
+    }
+
+    .tag-badge-selector {
+        font-size: 0.75rem;
+        padding: 0.125rem 0.5rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        border-radius: 3px;
+        background-color: #e1e1e1;
+        color: #333;
+        line-height: 1.5;
+    }
+
+    .tag-remove-icon {
+        cursor: pointer;
+        font-size: 0.875rem;
+        margin-left: 0.25rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2px;
+        pointer-events: auto;
+        z-index: 10;
+        position: relative;
+    }
+
+    .tag-remove-icon:hover {
+        opacity: 0.7;
+        background-color: rgba(0, 0, 0, 0.1);
+        border-radius: 50%;
+    }
+
+    .tag-badge-selector {
+        position: relative;
+        pointer-events: auto;
+    }
+
+    .tag-input-container {
+        display: inline-block;
+        min-width: 150px;
+    }
+
+    .tag-input {
+        border: none !important;
+        border-radius: 4px !important;
+        background: transparent !important;
+        font-size: 0.875rem !important;
+        padding: 0.375rem 0.5rem !important;
+        min-width: 150px !important;
+        width: 100% !important;
+        outline: none !important;
+        box-sizing: border-box !important;
+    }
+
+    .tag-input:focus {
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+    }
+
+    .tag-input:hover {
+        border: none !important;
+    }
+
+    .tag-suggestions {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        background: var(--rz-base-background-color);
+        border: 1px solid var(--rz-border-color);
+        border-radius: 4px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        z-index: 1000;
+        max-height: 200px;
+        overflow-y: auto;
+        min-width: 200px;
+        margin-top: 0.25rem;
+    }
+
+    .tag-suggestion-item {
+        padding: 0.5rem;
+        cursor: pointer;
+        font-size: 0.875rem;
+    }
+
+    .tag-suggestion-item:hover {
+        background: var(--rz-base-hover-background-color);
+    }
+</style>
+
+@code {
+    [Parameter] public string DocumentType { get; set; } = string.Empty;
+    [Parameter] public int DocumentId { get; set; }
+    [Parameter] public List<TagResponse> SelectedTags { get; set; } = new();
+    [Parameter] public EventCallback<List<TagResponse>> SelectedTagsChanged { get; set; }
+    [Parameter] public bool SaveOnChange { get; set; } = false; // Si false, les tags sont gérés localement
+
+    private List<TagResponse> AvailableTags { get; set; } = new();
+    private List<TagResponse> InitialTags { get; set; } = new(); // Tags initiaux chargés
+    private List<TagResponse> _localSelectedTags { get; set; } = new(); // Liste locale pour la gestion interne
+    private string newTagName = string.Empty;
+    private bool showSuggestions = false;
+    private List<TagResponse> filteredSuggestions = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAvailableTags();
+        _localSelectedTags = SelectedTags?.ToList() ?? new List<TagResponse>();
+        if (DocumentId > 0)
+        {
+            await LoadDocumentTags();
+        }
+        StateHasChanged();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Synchroniser la liste locale avec les paramètres
+        if (SelectedTags != null)
+        {
+            _localSelectedTags = SelectedTags.ToList();
+        }
+        
+        if (DocumentId > 0) // Only reload if DocumentId is valid
+        {
+            await LoadDocumentTags();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && DocumentId > 0)
+        {
+            await LoadDocumentTags();
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadAvailableTags()
+    {
+        try
+        {
+            AvailableTags = await TagsService.GetAllTagsAsync();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Error",
+                Detail = "Failed to load tags"
+            });
+        }
+    }
+
+    public async Task LoadDocumentTags()
+    {
+        if (DocumentId <= 0)
+        {
+            _localSelectedTags = new List<TagResponse>();
+            InitialTags = new List<TagResponse>();
+            SelectedTags = _localSelectedTags;
+            await SelectedTagsChanged.InvokeAsync(SelectedTags);
+            StateHasChanged();
+            return;
+        }
+
+        try
+        {
+            var documentTags = await TagsService.GetDocumentTagsAsync(DocumentType, DocumentId);
+            if (documentTags != null && documentTags.Tags != null)
+            {
+                _localSelectedTags = documentTags.Tags.ToList();
+                InitialTags = documentTags.Tags.ToList(); // Copie pour comparaison
+            }
+            else
+            {
+                _localSelectedTags = new List<TagResponse>();
+                InitialTags = new List<TagResponse>();
+            }
+            SelectedTags = _localSelectedTags;
+            await SelectedTagsChanged.InvokeAsync(SelectedTags);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            // Document might not have tags yet, which is fine
+            _localSelectedTags = new List<TagResponse>();
+            InitialTags = new List<TagResponse>();
+            SelectedTags = _localSelectedTags;
+            await SelectedTagsChanged.InvokeAsync(SelectedTags);
+            StateHasChanged();
+        }
+    }
+
+    // Méthodes publiques pour obtenir les tags à ajouter/supprimer
+    public List<string> GetTagsToAdd()
+    {
+        var initialTagNames = InitialTags.Select(t => t.Name.ToLowerInvariant()).ToHashSet();
+        return _localSelectedTags
+            .Where(t => !initialTagNames.Contains(t.Name.ToLowerInvariant()))
+            .Select(t => t.Name)
+            .ToList();
+    }
+
+    public List<int> GetTagIdsToRemove()
+    {
+        var currentTagIds = _localSelectedTags.Select(t => t.Id).ToHashSet();
+        return InitialTags
+            .Where(t => !currentTagIds.Contains(t.Id))
+            .Select(t => t.Id)
+            .ToList();
+    }
+
+    private void OnTagInputChanged(object? value)
+    {
+        if (value is string tagName && !string.IsNullOrWhiteSpace(tagName))
+        {
+            FilterSuggestions();
+        }
+        else
+        {
+            showSuggestions = false;
+        }
+    }
+
+    private async Task OnTagInputKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(newTagName))
+        {
+            await AddTagByName(newTagName.Trim());
+            newTagName = string.Empty;
+            showSuggestions = false;
+        }
+    }
+
+    private void OnTagInputBlur()
+    {
+        // Delay to allow click on suggestion
+        Task.Delay(200).ContinueWith(_ => InvokeAsync(() => { showSuggestions = false; StateHasChanged(); }));
+    }
+
+    private void FilterSuggestions()
+    {
+        if (string.IsNullOrWhiteSpace(newTagName))
+        {
+            showSuggestions = false;
+            return;
+        }
+
+        var searchTerm = newTagName.ToLower();
+        filteredSuggestions = AvailableTags
+            .Where(t => t.Name.ToLower().Contains(searchTerm) 
+                && !_localSelectedTags.Any(st => st.Id == t.Id))
+            .Take(10)
+            .ToList();
+        
+        showSuggestions = filteredSuggestions.Any();
+        StateHasChanged();
+    }
+
+    private async Task SelectSuggestion(TagResponse tag)
+    {
+        if (SaveOnChange)
+        {
+            await AddTagByName(tag.Name);
+        }
+        else
+        {
+            // Mode local : ajouter directement le tag existant
+            if (!_localSelectedTags.Any(t => t.Id == tag.Id))
+            {
+                _localSelectedTags.Add(tag);
+                SelectedTags = _localSelectedTags.ToList();
+                await SelectedTagsChanged.InvokeAsync(SelectedTags);
+            }
+        }
+        newTagName = string.Empty;
+        showSuggestions = false;
+        StateHasChanged();
+    }
+
+    private async Task AddTagByName(string tagName)
+    {
+        if (string.IsNullOrWhiteSpace(tagName))
+            return;
+
+        // Vérifier si le tag n'est pas déjà sélectionné
+        if (_localSelectedTags.Any(t => t.Name.Equals(tagName, StringComparison.OrdinalIgnoreCase)))
+        {
+            newTagName = string.Empty;
+            return;
+        }
+
+        if (SaveOnChange)
+        {
+            // Mode immédiat : sauvegarder directement
+            try
+            {
+                var request = new AddTagsToDocumentByNameRequest { TagNames = new List<string> { tagName } };
+                var success = await TagsService.AddTagsToDocumentByNameAsync(DocumentType, DocumentId, request);
+                
+                if (success)
+                {
+                    await LoadDocumentTags();
+                    newTagName = string.Empty;
+                    StateHasChanged();
+                }
+                else
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Warning,
+                        Summary = "Warning",
+                        Detail = "Failed to add tag"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Error",
+                    Detail = "Failed to add tag"
+                });
+            }
+        }
+        else
+        {
+            // Mode local : ajouter localement sans sauvegarder
+            // Chercher le tag dans les tags disponibles ou créer un tag temporaire
+            var existingTag = AvailableTags.FirstOrDefault(t => t.Name.Equals(tagName, StringComparison.OrdinalIgnoreCase));
+            
+            if (existingTag != null)
+            {
+                _localSelectedTags.Add(existingTag);
+            }
+            else
+            {
+                // Créer un tag temporaire (sera créé lors de la sauvegarde)
+                _localSelectedTags.Add(new TagResponse
+                {
+                    Id = 0, // 0 indique que c'est un nouveau tag
+                    Name = tagName,
+                    Color = null,
+                    Description = null
+                });
+            }
+            
+            SelectedTags = _localSelectedTags.ToList();
+            await SelectedTagsChanged.InvokeAsync(SelectedTags);
+            newTagName = string.Empty;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RemoveTag(TagResponse tag)
+    {
+        if (SaveOnChange)
+        {
+            // Mode immédiat : supprimer directement
+            if (tag.Id == 0)
+            {
+                // Tag non sauvegardé, supprimer localement
+                _localSelectedTags = _localSelectedTags.Where(t => !(t.Id == 0 && t.Name == tag.Name)).ToList();
+                SelectedTags = _localSelectedTags.ToList();
+                await SelectedTagsChanged.InvokeAsync(SelectedTags);
+                StateHasChanged();
+                return;
+            }
+
+            try
+            {
+                var request = new RemoveTagsFromDocumentRequest { TagIds = new List<int> { tag.Id } };
+                var success = await TagsService.RemoveTagsFromDocumentAsync(DocumentType, DocumentId, request);
+                
+                if (success)
+                {
+                    await LoadDocumentTags();
+                    StateHasChanged();
+                }
+                else
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Warning,
+                        Summary = "Warning",
+                        Detail = "Failed to remove tag"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Error",
+                    Detail = "Failed to remove tag"
+                });
+            }
+        }
+        else
+        {
+            // Mode local : supprimer localement sans sauvegarder
+            // Créer une nouvelle liste pour forcer la mise à jour de l'UI
+            if (tag.Id == 0)
+            {
+                // Utiliser le nom pour les tags avec Id = 0
+                _localSelectedTags = _localSelectedTags.Where(t => !(t.Id == 0 && t.Name == tag.Name)).ToList();
+            }
+            else
+            {
+                // Utiliser l'Id pour les tags existants
+                _localSelectedTags = _localSelectedTags.Where(t => t.Id != tag.Id).ToList();
+            }
+            
+            // Mettre à jour SelectedTags et notifier le changement
+            SelectedTags = _localSelectedTags.ToList();
+            await SelectedTagsChanged.InvokeAsync(SelectedTags);
+            StateHasChanged();
+        }
+    }
+
+    private string GetTagStyle(string? color)
+    {
+        if (string.IsNullOrEmpty(color))
+        {
+            return "background-color: #e1e1e1; color: #333;";
+        }
+
+        // Convertir les couleurs en styles inline
+        var bgColor = color.ToLower() switch
+        {
+            "red" or "#ff0000" => "#d32f2f",
+            "green" or "#00ff00" => "#388e3c",
+            "blue" or "#0000ff" => "#1976d2",
+            "yellow" or "#ffff00" => "#f57c00",
+            "orange" or "#ffa500" => "#f57c00",
+            "purple" or "#800080" => "#7b1fa2",
+            _ => "#e1e1e1"
+        };
+
+        var textColor = color.ToLower() switch
+        {
+            "red" or "#ff0000" => "#fff",
+            "green" or "#00ff00" => "#fff",
+            "blue" or "#0000ff" => "#fff",
+            "yellow" or "#ffff00" => "#fff",
+            "orange" or "#ffa500" => "#fff",
+            "purple" or "#800080" => "#fff",
+            _ => "#333"
+        };
+
+        return $"background-color: {bgColor}; color: {textColor};";
+    }
+}
+

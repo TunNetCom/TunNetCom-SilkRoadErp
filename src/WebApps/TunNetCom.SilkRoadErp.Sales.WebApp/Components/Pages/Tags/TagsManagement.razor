@@ -1,0 +1,224 @@
+@page "/tags"
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Tags
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using Radzen.Blazor
+@using Radzen
+@inject IStringLocalizer<SharedResource> Localizer
+@inject ITagsApiClient TagsService
+@inject ToastService ToastService
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+
+<div class="tags-container">
+    <div class="tags-card">
+        <div class="tags-header">
+            <h3 class="tags-title">@Localizer["Tags"]</h3>
+            <RadzenButton Icon="add" Text="@Localizer["Add_Tag"]"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Click="CreateTag"
+                          Class="btn-primary" />
+        </div>
+
+        <RadzenDataGrid @ref="tagsGrid"
+                        TItem="TagResponse"
+                        Data="@tags"
+                        LoadData="@LoadTags"
+                        AllowFiltering="true"
+                        AllowPaging="true"
+                        AllowSorting="true"
+                        FilterPopupRenderMode="PopupRenderMode.OnDemand"
+                        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                        PageSize="10"
+                        Density="Density.Compact"
+                        Class="tags-grid"
+                        IsLoading="@isLoadingTags"
+                        ShowPagingSummary="true"
+                        Responsive="true">
+            <EmptyTemplate>
+                <p style="font-size: 24px; text-align: center; margin: 2rem;">@Localizer["No_Tags"]</p>
+            </EmptyTemplate>
+            <Columns>
+                <RadzenDataGridColumn TItem="TagResponse" Property="Id" Title="ID" Width="80px" />
+                <RadzenDataGridColumn TItem="TagResponse" Property="Name" Title="@Localizer["Name"]" Width="200px" />
+                <RadzenDataGridColumn TItem="TagResponse" Property="Description" Title="@Localizer["Description"]" Width="300px" />
+                <RadzenDataGridColumn TItem="TagResponse" Filterable="false" Sortable="false" Width="100px" TextAlign="TextAlign.Center">
+                    <Template Context="tag">
+                        <RadzenBadge Text="@tag.Name" 
+                                    Variant="Variant.Flat" 
+                                    BadgeStyle="@GetTagStyle(tag.Color)"
+                                    class="tag-badge-preview" />
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="TagResponse" Filterable="false" Sortable="false" Width="150px" TextAlign="TextAlign.Center">
+                    <Template Context="tag">
+                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Success" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter"
+                                      Click="@(() => EditTag(tag))"
+                                      Title="@Localizer["Edit"]" />
+                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter" Class="rz-my-1 rz-ms-1"
+                                      Click="@(() => ConfirmDeleteTag(tag.Id))"
+                                      Title="@Localizer["Delete"]" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    </div>
+</div>
+
+<style>
+    .tags-container {
+        padding: 0.25rem 1.25rem 1.25rem 1.25rem;
+        max-width: 1400px;
+        margin: 0.25rem auto 1rem auto;
+    }
+
+    .tags-card {
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        padding: 0.75rem 1.5rem 1.5rem 1.5rem;
+        border: none;
+    }
+
+    .tags-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.25rem;
+    }
+
+    .tags-title {
+        font-weight: 600;
+        margin: 0;
+        font-size: 2rem;
+        line-height: 1.2;
+    }
+
+    .tags-grid {
+        border-radius: 8px;
+        overflow: hidden;
+        border: none;
+    }
+
+    .tag-badge-preview {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+</style>
+
+@code {
+    private RadzenDataGrid<TagResponse> tagsGrid = default!;
+    private List<TagResponse> tags = new();
+    private bool isLoadingTags = false;
+    private CancellationTokenSource cancellationTokenSource = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await tagsGrid.Reload();
+        }
+    }
+
+    async Task LoadTags(LoadDataArgs args)
+    {
+        isLoadingTags = true;
+        await Task.Yield();
+
+        try
+        {
+            tags = await TagsService.GetAllTagsAsync(cancellationTokenSource.Token);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Error"],
+                Detail = $"Failed to load tags: {ex.Message}"
+            });
+            tags = new List<TagResponse>();
+        }
+
+        isLoadingTags = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task CreateTag()
+    {
+        var result = await DialogService.OpenAsync<TagEditDialog>("Create Tag",
+            new Dictionary<string, object>(),
+            new DialogOptions() { Width = "500px", Resizable = true, Draggable = true });
+
+        if (result == true)
+        {
+            await tagsGrid.Reload();
+        }
+    }
+
+    private async Task EditTag(TagResponse tag)
+    {
+        var result = await DialogService.OpenAsync<TagEditDialog>("Edit Tag",
+            new Dictionary<string, object> { { "Tag", tag } },
+            new DialogOptions() { Width = "500px", Resizable = true, Draggable = true });
+
+        if (result == true)
+        {
+            await tagsGrid.Reload();
+        }
+    }
+
+    async Task ConfirmDeleteTag(int tagId)
+    {
+        bool? confirmed = await DialogService.Confirm("Are you sure you want to delete this tag?",
+                                                      "Confirm Deletion",
+                                                      new ConfirmOptions() { OkButtonText = "Yes", CancelButtonText = "No" });
+
+        if (confirmed == true)
+        {
+            try
+            {
+                var success = await TagsService.DeleteTagAsync(tagId, cancellationTokenSource.Token);
+                if (success)
+                {
+                    ToastService.Notify(new(ToastType.Success, "Tag deleted successfully"));
+                    await tagsGrid.Reload();
+                }
+                else
+                {
+                    ToastService.Notify(new(ToastType.Danger, "Failed to delete tag"));
+                }
+            }
+            catch (Exception ex)
+            {
+                ToastService.Notify(new(ToastType.Danger, $"Error deleting tag: {ex.Message}"));
+            }
+        }
+    }
+
+    private BadgeStyle GetTagStyle(string? color)
+    {
+        if (string.IsNullOrEmpty(color))
+        {
+            return BadgeStyle.Info;
+        }
+
+        return color.ToLower() switch
+        {
+            "red" or "#ff0000" => BadgeStyle.Danger,
+            "green" or "#00ff00" => BadgeStyle.Success,
+            "blue" or "#0000ff" => BadgeStyle.Info,
+            "yellow" or "#ffff00" => BadgeStyle.Warning,
+            "orange" or "#ffa500" => BadgeStyle.Warning,
+            "purple" or "#800080" => BadgeStyle.Secondary,
+            _ => BadgeStyle.Info
+        };
+    }
+
+    public void Dispose()
+    {
+        cancellationTokenSource.Cancel();
+        cancellationTokenSource.Dispose();
+    }
+}
+

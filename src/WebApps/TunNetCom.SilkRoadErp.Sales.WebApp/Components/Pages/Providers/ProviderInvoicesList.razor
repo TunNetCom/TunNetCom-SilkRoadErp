@@ -14,8 +14,11 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Providers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Services
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Tags
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
 @inject NavigationManager NavigationManager
 @inject ODataService ODataService
+@inject ITagsApiClient TagsService
 
 <div class="invoices-list-container">
     <div class="search-header">
@@ -88,6 +91,17 @@
                                       Width="150px">
                     <Template Context="item">
                         @item.VatAmount.FormatAmount()
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ProviderInvoiceBaseInfo"
+                                      Title="Tags"
+                                      Width="250px"
+                                      Sortable="false"
+                                      Filterable="false">
+                    <Template Context="item">
+                        <TagSelector DocumentType="FactureFournisseur" 
+                                    DocumentId="@item.Number"
+                                    SaveOnChange="true" />
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="ProviderInvoiceBaseInfo"

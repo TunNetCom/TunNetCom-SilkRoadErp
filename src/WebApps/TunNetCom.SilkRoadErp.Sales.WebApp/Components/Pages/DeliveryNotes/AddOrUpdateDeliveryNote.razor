@@ -21,6 +21,9 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.DeliveryNotes.PrintDeliveryNote
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Tags
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
+@inject ITagsApiClient TagsService
 
 @inject IStringLocalizer<SharedResource> Localizer
 @inject ToastService toastService
@@ -35,6 +38,7 @@
 @inject DialogService DialogService
 @inject PrintDeliveryNoteService PrintDeliveryNoteService
 @inject IPrintService PrintService
+@inject ITagsApiClient TagsService
 
 <style>
     /* Header actions container */
@@ -262,6 +266,15 @@ else
                    ProductTextProperty="ProductReferenceAndDescription"
                    ProductValueProperty="ProductReference"
                    CreateNewItem="@(() => new DeliveryNoteDetailResponse { Quantity = 1, DeliveredQuantity = 1, HasPartialDelivery = false })" />
+
+    <!-- Tags Section -->
+    @if (!string.IsNullOrEmpty(deliveryNoteNumber) && int.TryParse(deliveryNoteNumber, out var blNumber))
+    {
+        <TagSelector @ref="tagSelectorRef"
+                    DocumentType="BonDeLivraison" 
+                    DocumentId="@blNumber"
+                    SaveOnChange="false" />
+    }
 }
 
 @code {
@@ -282,6 +295,7 @@ else
     string deliveryNoteNumber;
     DateTime deliveryNoteDate = DateTime.Now;
     private GetAppParametersResponse getAppParametersResponse;
+    private TagSelector? tagSelectorRef;
     private int? _selectedCustomerId;
     int? selectedCustomerId
     {
@@ -416,6 +430,9 @@ else
                 
                 if (updateResponse.IsSuccess)
                 {
+                    // Sauvegarder les tags après la mise à jour du document
+                    await SaveTags();
+                    
                     NotificationService.Notify(new NotificationMessage
                     {
                         Severity = NotificationSeverity.Success,
@@ -442,9 +459,13 @@ else
                 {
                     var newDeliveryNoteNum = createResponse.ValueOrDefault;
                     deliveryNoteNumber = newDeliveryNoteNum.ToString();
+                    await InvokeAsync(StateHasChanged);
                     
-                    // Recharger les données du BL pour s'assurer que tout est à jour
+                            // Recharger les données du BL pour s'assurer que tout est à jour
                     await FetchDeliveryNote();
+                    
+                    // Sauvegarder les tags après la création du document
+                    await SaveTags();
                     
                     NotificationService.Notify(new NotificationMessage
                     {
@@ -1108,6 +1129,68 @@ else
     private void UpdateTotals()
     {
         LineItemCalculator.UpdateTotals(orders, out totalHt, out totalVat, out totalTtc);
+    }
+
+    private async Task SaveTags()
+    {
+        if (tagSelectorRef == null || string.IsNullOrEmpty(deliveryNoteNumber) || !int.TryParse(deliveryNoteNumber, out var blNumber))
+        {
+            logger.LogWarning("Cannot save tags: tagSelectorRef={TagSelectorRef}, deliveryNoteNumber={DeliveryNoteNumber}", 
+                tagSelectorRef == null ? "null" : "not null", deliveryNoteNumber);
+            return;
+        }
+
+        try
+        {
+            // Récupérer les tags à ajouter et à supprimer
+            var tagsToAdd = tagSelectorRef.GetTagsToAdd();
+            var tagIdsToRemove = tagSelectorRef.GetTagIdsToRemove();
+
+            logger.LogInformation("Saving tags for delivery note {Number}: {AddCount} to add, {RemoveCount} to remove", 
+                blNumber, tagsToAdd.Count, tagIdsToRemove.Count);
+
+            // Supprimer les tags (seulement ceux qui ont un Id > 0, car les tags avec Id = 0 ne sont pas encore en base)
+            var validTagIdsToRemove = tagIdsToRemove.Where(id => id > 0).ToList();
+            if (validTagIdsToRemove.Any())
+            {
+                var removeRequest = new RemoveTagsFromDocumentRequest { TagIds = validTagIdsToRemove };
+                var removeSuccess = await TagsService.RemoveTagsFromDocumentAsync("BonDeLivraison", blNumber, removeRequest);
+                if (!removeSuccess)
+                {
+                    logger.LogWarning("Failed to remove tags from delivery note {Number}", blNumber);
+                }
+            }
+
+            // Ajouter les nouveaux tags
+            if (tagsToAdd.Any())
+            {
+                var addRequest = new AddTagsToDocumentByNameRequest { TagNames = tagsToAdd };
+                var addSuccess = await TagsService.AddTagsToDocumentByNameAsync("BonDeLivraison", blNumber, addRequest);
+                if (!addSuccess)
+                {
+                    logger.LogWarning("Failed to add tags to delivery note {Number}", blNumber);
+                }
+            }
+
+            // Recharger les tags dans le TagSelector pour mettre à jour InitialTags
+            if (tagSelectorRef != null)
+            {
+                await tagSelectorRef.LoadDocumentTags();
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to save tags for delivery note {Number}", deliveryNoteNumber);
+            // Ne pas bloquer la sauvegarde du document si les tags échouent
+            // Afficher une notification pour informer l'utilisateur
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["warning"] ?? "Warning",
+                Detail = "Les tags n'ont pas pu être sauvegardés, mais le document a été enregistré."
+            });
+        }
     }
 
 

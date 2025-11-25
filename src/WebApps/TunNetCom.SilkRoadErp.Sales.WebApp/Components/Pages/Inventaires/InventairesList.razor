@@ -7,8 +7,11 @@
 @using Radzen
 @using Radzen.Blazor
 @using BlazorBootstrap
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Tags
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
 @inject IInventaireApiClient inventaireService
 @inject IAccountingYearApiClient accountingYearService
+@inject ITagsApiClient TagsService
 @inject IStringLocalizer<SharedResource> Localizer
 @inject NavigationManager NavigationManager
 @inject DialogService DialogService
@@ -58,6 +61,13 @@
                 <RadzenDataGridColumn TItem="InventaireResponse" Property="@nameof(InventaireResponse.Description)" Title="@Localizer["description"]" Width="200px" />
                 <RadzenDataGridColumn TItem="InventaireResponse" Property="@nameof(InventaireResponse.StatutLibelle)" Title="@Localizer["statut"]" Width="120px" />
                 <RadzenDataGridColumn TItem="InventaireResponse" Property="@nameof(InventaireResponse.AccountingYear)" Title="@Localizer["accounting_year"]" Width="120px" />
+                <RadzenDataGridColumn TItem="InventaireResponse" Title="Tags" Width="250px" Sortable="false" Filterable="false">
+                    <Template Context="inventaire">
+                        <TagSelector DocumentType="Inventaire" 
+                                    DocumentId="@inventaire.Id"
+                                    SaveOnChange="true" />
+                    </Template>
+                </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="InventaireResponse" Filterable="false" Sortable="false" Width="250px" TextAlign="TextAlign.Center">
                     <Template Context="inventaire">
                         <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Success" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter" Class="rz-my-1 rz-ms-1"

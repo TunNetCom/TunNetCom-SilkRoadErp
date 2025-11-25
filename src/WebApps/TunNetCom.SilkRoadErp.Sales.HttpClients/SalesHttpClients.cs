@@ -18,6 +18,7 @@ using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PaiementClient;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PaiementFournisseur;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Banque;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Soldes;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags;
 
 
 public static class SalesHttpClients
@@ -112,6 +113,10 @@ public static class SalesHttpClients
         _ = services.AddHttpClient<ISoldesApiClient, SoldesApiClient>(soldes =>
         {
             soldes.BaseAddress = new Uri(baseUrl);
+        });
+        _ = services.AddHttpClient<ITagsApiClient, TagsApiClient>(tags =>
+        {
+            tags.BaseAddress = new Uri(baseUrl);
         });
     }
 }

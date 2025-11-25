@@ -15,6 +15,8 @@ using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote;
+using TunNetCom.SilkRoadErp.Sales.Contracts.Tags;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags;
 using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared;
 using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers;
 using TunNetCom.SilkRoadErp.Sales.WebApp.Locales;
@@ -38,6 +40,7 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
     decimal totalTtc;
     decimal totalFodec;
     string receiptNoteNumber;
+    private TagSelector? tagSelectorRef;
     DateTime receiptNoteDate = DateTime.Now;
     long numBonFournisseur = 0;
     DateTime dateLivraison = DateTime.Now;
@@ -121,12 +124,16 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
                 {
                     // Ensure receiptNoteNumber is set before fetching
                     receiptNoteNumber = receiptNoteNum.ToString();
+                    await InvokeAsync(StateHasChanged);
                     
                     // Force reload by clearing orders first
                     orders = new List<ReceiptNoteDetailResponse>();
                     await InvokeAsync(StateHasChanged);
                     
                     await FetchReceiptNote();
+                    
+                    // Sauvegarder les tags après la mise à jour du document
+                    await SaveTags();
                     
                     NotificationService.Notify(new NotificationMessage
                     {
@@ -137,11 +144,16 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
                 }
                 else
                 {
+                    var errorMessage = updateResponse.Errors.First().Message;
+                    var localizedError = errorMessage == "not_found" 
+                        ? Localizer["receipt_note_not_found"] ?? "Bon de réception non trouvé"
+                        : errorMessage;
+                    
                     NotificationService.Notify(new NotificationMessage
                     {
                         Severity = NotificationSeverity.Error,
                         Summary = Localizer["error"],
-                        Detail = $"{Localizer["failed_to_save_delivery_note"]}: {updateResponse.Errors.First().Message}"
+                        Detail = $"{Localizer["failed_to_save_receipt_note"] ?? "Échec de l'enregistrement du bon de réception"}: {localizedError}"
                     });
                 }
             }
@@ -153,8 +165,15 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
                 {
                     var newReceiptNoteNum = createResponse.ValueOrDefault;
                     receiptNoteNumber = newReceiptNoteNum.ToString();
+                    await InvokeAsync(StateHasChanged);
                     
                     await FetchReceiptNote();
+                    
+                    // Attendre un peu pour que le TagSelector soit mis à jour avec le nouveau DocumentId
+                    await Task.Delay(100);
+                    
+                    // Sauvegarder les tags après la création du document
+                    await SaveTags();
                     
                     NotificationService.Notify(new NotificationMessage
                     {
@@ -165,11 +184,16 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
                 }
                 else
                 {
+                    var errorMessage = createResponse.Errors.First().Message;
+                    var localizedError = errorMessage == "not_found" 
+                        ? Localizer["receipt_note_not_found"] ?? "Bon de réception non trouvé"
+                        : errorMessage;
+                    
                     NotificationService.Notify(new NotificationMessage
                     {
                         Severity = NotificationSeverity.Error,
                         Summary = Localizer["error"],
-                        Detail = $"{Localizer["failed_to_save_delivery_note"]}: {createResponse.Errors.First().Message}"
+                        Detail = $"{Localizer["failed_to_save_receipt_note"] ?? "Échec de l'enregistrement du bon de réception"}: {localizedError}"
                     });
                 }
             }
@@ -605,5 +629,67 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
         public string Top { get; set; }
         public string Width { get; set; }
         public string Height { get; set; }
+    }
+
+    private async Task SaveTags()
+    {
+        if (tagSelectorRef == null || string.IsNullOrEmpty(receiptNoteNumber) || !int.TryParse(receiptNoteNumber, out var receiptNumber))
+        {
+            logger.LogWarning("Cannot save tags: tagSelectorRef={TagSelectorRef}, receiptNoteNumber={ReceiptNoteNumber}", 
+                tagSelectorRef == null ? "null" : "not null", receiptNoteNumber);
+            return;
+        }
+
+        try
+        {
+            // Récupérer les tags à ajouter et à supprimer
+            var tagsToAdd = tagSelectorRef.GetTagsToAdd();
+            var tagIdsToRemove = tagSelectorRef.GetTagIdsToRemove();
+
+            logger.LogInformation("Saving tags for receipt note {Number}: {AddCount} to add, {RemoveCount} to remove", 
+                receiptNumber, tagsToAdd.Count, tagIdsToRemove.Count);
+
+            // Supprimer les tags (seulement ceux qui ont un Id > 0, car les tags avec Id = 0 ne sont pas encore en base)
+            var validTagIdsToRemove = tagIdsToRemove.Where(id => id > 0).ToList();
+            if (validTagIdsToRemove.Any())
+            {
+                var removeRequest = new RemoveTagsFromDocumentRequest { TagIds = validTagIdsToRemove };
+                var removeSuccess = await TagsService.RemoveTagsFromDocumentAsync("BonDeReception", receiptNumber, removeRequest);
+                if (!removeSuccess)
+                {
+                    logger.LogWarning("Failed to remove tags from receipt note {Number}", receiptNumber);
+                }
+            }
+
+            // Ajouter les nouveaux tags
+            if (tagsToAdd.Any())
+            {
+                var addRequest = new AddTagsToDocumentByNameRequest { TagNames = tagsToAdd };
+                var addSuccess = await TagsService.AddTagsToDocumentByNameAsync("BonDeReception", receiptNumber, addRequest);
+                if (!addSuccess)
+                {
+                    logger.LogWarning("Failed to add tags to receipt note {Number}", receiptNumber);
+                }
+            }
+
+            // Recharger les tags dans le TagSelector pour mettre à jour InitialTags
+            if (tagSelectorRef != null)
+            {
+                await tagSelectorRef.LoadDocumentTags();
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to save tags for receipt note {Number}", receiptNoteNumber);
+            // Ne pas bloquer la sauvegarde du document si les tags échouent
+            // Afficher une notification pour informer l'utilisateur
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["warning"] ?? "Warning",
+                Detail = "Les tags n'ont pas pu être sauvegardés, mais le document a été enregistré."
+            });
+        }
     }
 }

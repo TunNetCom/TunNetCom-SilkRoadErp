@@ -15,7 +15,10 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Services
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Providers
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Common
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Tags
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
 @inject NavigationManager NavigationManager
+@inject ITagsApiClient TagsService
 
 <div class="invoices-list-container">
     <div class="search-header">
@@ -100,6 +103,17 @@
                                       Width="150px">
                     <Template Context="item">
                         @item.TotalIncludingTaxAmount.FormatAmount()
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="AvoirFournisseurBaseInfo"
+                                      Title="Tags"
+                                      Width="250px"
+                                      Sortable="false"
+                                      Filterable="false">
+                    <Template Context="item">
+                        <TagSelector DocumentType="AvoirFournisseur" 
+                                    DocumentId="@item.Num"
+                                    SaveOnChange="true" />
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="AvoirFournisseurBaseInfo"

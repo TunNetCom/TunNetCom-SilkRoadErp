@@ -14,6 +14,9 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Services
 @inject NavigationManager NavigationManager
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Tags
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
+@inject ITagsApiClient TagsService
 
 
 <div class="delivery-notes-list-container">
@@ -83,6 +86,20 @@
                                       Width="150px">
                     <Template Context="item">
                         @item.NetAmount.FormatAmount()
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos"
+                                      Title="Tags"
+                                      Width="300px"
+                                      Sortable="false"
+                                      Filterable="false"
+                                      Resizable="true">
+                    <Template Context="item">
+                        <div style="width: 100%; padding: 4px;">
+                            <TagSelector DocumentType="BonDeLivraison"
+                                         DocumentId="@item.Number"
+                                         SaveOnChange="true" />
+                        </div>
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos"

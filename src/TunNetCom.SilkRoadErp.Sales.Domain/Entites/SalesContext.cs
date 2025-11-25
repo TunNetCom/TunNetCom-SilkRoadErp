@@ -85,6 +85,10 @@ public partial class SalesContext : DbContext
 
     public virtual DbSet<PaiementFournisseur> PaiementFournisseur { get; set; }
 
+    public virtual DbSet<Tag> Tag { get; set; }
+
+    public virtual DbSet<DocumentTag> DocumentTag { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(FactureConfiguration).Assembly);

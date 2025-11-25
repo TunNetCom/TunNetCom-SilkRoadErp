@@ -14,8 +14,11 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Tags
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
 
 @inject IStringLocalizer<SharedResource> Localizer
+@inject ITagsApiClient TagsService
 @inject ToastService toastService
 @inject NotificationService NotificationService
 @inject IJSRuntime JSRuntime
@@ -171,7 +174,7 @@ else
     <!-- Receipt Note Container with Form and Summary -->
     <div class="receipt-note-container">
         <div class="receipt-note-form">
-            <RadzenLabel Text="@Localizer["delivery_note_number"]" Component="ReceiptNoteNumber" AriaLabel="@Localizer["delivery_note_number"]" />
+            <RadzenLabel Text="Numéro bon de réception" Component="ReceiptNoteNumber" AriaLabel="Numéro bon de réception" />
             <RadzenTextBox @bind-Value="receiptNoteNumber" Name="ReceiptNoteNumber" Style="width: 120px;" ReadOnly="true" AriaReadOnly="true" />
 
             <RadzenLabel Text="@Localizer["date"]" />
@@ -230,4 +233,13 @@ else
                    ProductTextProperty="ProductReferenceAndDescription"
                    ProductValueProperty="ProductReference"
                    CreateNewItem="@(() => new ReceiptNoteDetailResponse { Quantity = 1 })" />
+
+    <!-- Tags Section -->
+    @if (!string.IsNullOrEmpty(receiptNoteNumber) && int.TryParse(receiptNoteNumber, out var receiptNumber))
+    {
+        <TagSelector @ref="tagSelectorRef"
+                    DocumentType="BonDeReception" 
+                    DocumentId="@receiptNumber"
+                    SaveOnChange="false" />
+    }
 }

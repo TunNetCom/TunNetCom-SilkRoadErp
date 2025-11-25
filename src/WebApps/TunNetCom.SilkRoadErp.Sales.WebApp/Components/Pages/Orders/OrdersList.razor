@@ -2,7 +2,10 @@
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Commande
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Orders
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Tags
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
 @inject IOrderApiClient OrderApiClient
+@inject ITagsApiClient TagsService
 @inject NotificationService NotificationService
 @inject NavigationManager NavigationManager
 
@@ -58,6 +61,13 @@ else
             <RadzenDataGridColumn TItem="OrderSummaryResponse" Property="NetToPay" Title="Net à payer" Width="150px">
                 <Template Context="order">
                     @order.NetToPay.FormatAmount()
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="OrderSummaryResponse" Title="Tags" Width="250px" Sortable="false" Filterable="false">
+                <Template Context="order">
+                    <TagSelector DocumentType="Commande" 
+                                DocumentId="@order.OrderNumber"
+                                SaveOnChange="true" />
                 </Template>
             </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="OrderSummaryResponse" Width="100px" Sortable="false" Filterable="false">

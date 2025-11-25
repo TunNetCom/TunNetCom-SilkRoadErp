@@ -20,6 +20,7 @@ public static class EndpointTags
     public const string PaiementFournisseur = "PaiementFournisseur";
     public const string Soldes = "Soldes";
     public const string Banque = "Banque";
+    public const string Tags = "Tags";
 }
 
 

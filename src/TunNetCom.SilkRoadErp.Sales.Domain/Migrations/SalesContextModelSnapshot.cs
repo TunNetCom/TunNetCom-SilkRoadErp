@@ -417,6 +417,45 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.ToTable("Devis");
                 });
 
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.DocumentTag", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("Id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("DocumentId")
+                        .HasColumnType("int")
+                        .HasColumnName("DocumentId");
+
+                    b.Property<string>("DocumentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("DocumentType");
+
+                    b.Property<int>("TagId")
+                        .HasColumnType("int")
+                        .HasColumnName("TagId");
+
+                    b.HasKey("Id")
+                        .HasName("PK_dbo.DocumentTag");
+
+                    b.HasIndex("TagId")
+                        .HasDatabaseName("IX_DocumentTag_TagId");
+
+                    b.HasIndex("DocumentType", "DocumentId")
+                        .HasDatabaseName("IX_DocumentTag_DocumentType_DocumentId");
+
+                    b.HasIndex("DocumentType", "DocumentId", "TagId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_DocumentTag_DocumentType_DocumentId_TagId");
+
+                    b.ToTable("DocumentTag", (string)null);
+                });
+
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.EcheanceDesFournisseurs", b =>
                 {
                     b.Property<int>("Id")
@@ -1466,6 +1505,41 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.ToTable("Systeme");
                 });
 
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Tag", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("Id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Color")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("Color");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("Description");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("Name");
+
+                    b.HasKey("Id")
+                        .HasName("PK_dbo.Tag");
+
+                    b.HasIndex("Name")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Tag_Name");
+
+                    b.ToTable("Tag", (string)null);
+                });
+
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Transaction", b =>
                 {
                     b.Property<int>("BonDeLivraisonId")
@@ -1634,6 +1708,18 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasConstraintName("FK_dbo.Devis_dbo.Client_id_client");
 
                     b.Navigation("IdClientNavigation");
+                });
+
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.DocumentTag", b =>
+                {
+                    b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Tag", "Tag")
+                        .WithMany("DocumentTags")
+                        .HasForeignKey("TagId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo.DocumentTag_dbo.Tag_TagId");
+
+                    b.Navigation("Tag");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.EcheanceDesFournisseurs", b =>
@@ -2140,6 +2226,11 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Navigation("LigneDevis");
 
                     b.Navigation("LigneInventaire");
+                });
+
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Tag", b =>
+                {
+                    b.Navigation("DocumentTags");
                 });
 #pragma warning restore 612, 618
         }

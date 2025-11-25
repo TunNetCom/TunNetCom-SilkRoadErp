@@ -131,6 +131,21 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Tag",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Color = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_dbo.Tag", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Inventaire",
                 columns: table => new
                 {
@@ -273,6 +288,27 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         column: x => x.id_fournisseur,
                         principalTable: "Fournisseur",
                         principalColumn: "id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "DocumentTag",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    TagId = table.Column<int>(type: "int", nullable: false),
+                    DocumentType = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    DocumentId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_dbo.DocumentTag", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_dbo.DocumentTag_dbo.Tag_TagId",
+                        column: x => x.TagId,
+                        principalTable: "Tag",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -974,6 +1010,22 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 column: "id_client");
 
             migrationBuilder.CreateIndex(
+                name: "IX_DocumentTag_DocumentType_DocumentId",
+                table: "DocumentTag",
+                columns: new[] { "DocumentType", "DocumentId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DocumentTag_DocumentType_DocumentId_TagId",
+                table: "DocumentTag",
+                columns: new[] { "DocumentType", "DocumentId", "TagId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DocumentTag_TagId",
+                table: "DocumentTag",
+                column: "TagId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_EcheanceDesFournisseurs_fournisseur_id",
                 table: "EcheanceDesFournisseurs",
                 column: "fournisseur_id");
@@ -1209,6 +1261,12 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 table: "PaiementFournisseur",
                 column: "Numero",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Tag_Name",
+                table: "Tag",
+                column: "Name",
+                unique: true);
         }
 
         /// <inheritdoc />
@@ -1216,6 +1274,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
         {
             migrationBuilder.DropTable(
                 name: "AvoirFinancierFournisseurs");
+
+            migrationBuilder.DropTable(
+                name: "DocumentTag");
 
             migrationBuilder.DropTable(
                 name: "EcheanceDesFournisseurs");
@@ -1252,6 +1313,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 
             migrationBuilder.DropTable(
                 name: "Transaction");
+
+            migrationBuilder.DropTable(
+                name: "Tag");
 
             migrationBuilder.DropTable(
                 name: "AvoirFournisseur");

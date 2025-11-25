@@ -9,7 +9,10 @@
 @using Radzen
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Customers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Tags
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
 @inject NavigationManager NavigationManager
+@inject ITagsApiClient TagsService
 @inject IStringLocalizer<SharedResource> Localizer
 @inject IPaiementClientApiClient PaiementClientService
 @inject ICustomersApiClient CustomersService
@@ -99,6 +102,13 @@
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="PaiementClientResponse" Property="MethodePaiement" Title="@Localizer["Methode_Col"]" Width="120px" />
                 <RadzenDataGridColumn TItem="PaiementClientResponse" Property="BanqueNom" Title="@Localizer["Banque_Col"]" Width="150px" />
+                <RadzenDataGridColumn TItem="PaiementClientResponse" Title="Tags" Width="250px" Sortable="false" Filterable="false">
+                    <Template Context="paiement">
+                        <TagSelector DocumentType="PaiementClient" 
+                                    DocumentId="@paiement.Id"
+                                    SaveOnChange="true" />
+                    </Template>
+                </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="PaiementClientResponse" Filterable="false" Sortable="false" Width="200px" TextAlign="TextAlign.Center">
                     <Template Context="paiement">
                         <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Success" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter"

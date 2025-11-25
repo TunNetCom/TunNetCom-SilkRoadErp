@@ -1,0 +1,113 @@
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Tags
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
+@using Radzen.Blazor
+@using Radzen
+@inject ITagsApiClient TagsService
+@inject DialogService DialogService
+@inject ToastService ToastService
+
+<RadzenStack>
+    <RadzenFormField Text="Name" class="w-100">
+        <RadzenTextBox @bind-Value="@tagName" Placeholder="Enter tag name" class="w-100" />
+    </RadzenFormField>
+    
+    <RadzenFormField Text="Description" class="w-100">
+        <RadzenTextArea @bind-Value="@tagDescription" Placeholder="Enter tag description (optional)" Rows="3" class="w-100" />
+    </RadzenFormField>
+    
+    <RadzenFormField Text="Color" class="w-100">
+        <RadzenTextBox @bind-Value="@tagColor" Placeholder="Enter color (e.g., #ff0000 or red)" class="w-100" />
+    </RadzenFormField>
+
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="Radzen.JustifyContent.End" Gap="0.5rem" Style="margin-top: 1rem;">
+        <RadzenButton Text="Cancel" Click="Cancel" ButtonStyle="ButtonStyle.Light" />
+        <RadzenButton Text="Save" Click="Save" ButtonStyle="ButtonStyle.Primary" IsBusy="@isSaving" />
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    [Parameter] public TagResponse? Tag { get; set; }
+
+    private string tagName = string.Empty;
+    private string? tagDescription;
+    private string? tagColor;
+    private bool isSaving = false;
+
+    protected override void OnInitialized()
+    {
+        if (Tag != null)
+        {
+            tagName = Tag.Name;
+            tagDescription = Tag.Description;
+            tagColor = Tag.Color;
+        }
+    }
+
+    private async Task Save()
+    {
+        if (string.IsNullOrWhiteSpace(tagName))
+        {
+            ToastService.Notify(new(ToastType.Warning, "Tag name is required"));
+            return;
+        }
+
+        isSaving = true;
+        try
+        {
+            if (Tag == null)
+            {
+                // Create new tag
+                var request = new CreateTagRequest
+                {
+                    Name = tagName,
+                    Description = tagDescription,
+                    Color = tagColor
+                };
+                var result = await TagsService.CreateTagAsync(request);
+                if (result != null)
+                {
+                    ToastService.Notify(new(ToastType.Success, "Tag created successfully"));
+                    DialogService.Close(true);
+                }
+                else
+                {
+                    ToastService.Notify(new(ToastType.Danger, "Failed to create tag"));
+                }
+            }
+            else
+            {
+                // Update existing tag
+                var request = new UpdateTagRequest
+                {
+                    Name = tagName,
+                    Description = tagDescription,
+                    Color = tagColor
+                };
+                var result = await TagsService.UpdateTagAsync(Tag.Id, request);
+                if (result != null)
+                {
+                    ToastService.Notify(new(ToastType.Success, "Tag updated successfully"));
+                    DialogService.Close(true);
+                }
+                else
+                {
+                    ToastService.Notify(new(ToastType.Danger, "Failed to update tag"));
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.Notify(new(ToastType.Danger, $"Error: {ex.Message}"));
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        DialogService.Close(false);
+    }
+}
+

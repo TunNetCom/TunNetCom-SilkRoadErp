@@ -1,0 +1,71 @@
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Tags
+@using Radzen.Blazor
+
+<div class="tags-display">
+    @if (Tags != null && Tags.Any())
+    {
+        @foreach (var tag in Tags)
+        {
+            <span class="tag-badge-display" style="@GetTagStyle(tag.Color)">
+                @tag.Name
+            </span>
+        }
+    }
+</div>
+
+<style>
+    .tags-display {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+        align-items: center;
+    }
+
+    .tag-badge-display {
+        font-size: 0.75rem;
+        padding: 0.125rem 0.5rem;
+        border-radius: 3px;
+        background-color: #e1e1e1;
+        color: #333;
+        display: inline-block;
+        line-height: 1.5;
+    }
+</style>
+
+@code {
+    [Parameter] public List<TagResponse>? Tags { get; set; }
+
+    private string GetTagStyle(string? color)
+    {
+        if (string.IsNullOrEmpty(color))
+        {
+            return "background-color: #e1e1e1; color: #333;";
+        }
+
+        // Convertir les couleurs en styles inline
+        var bgColor = color.ToLower() switch
+        {
+            "red" or "#ff0000" => "#d32f2f",
+            "green" or "#00ff00" => "#388e3c",
+            "blue" or "#0000ff" => "#1976d2",
+            "yellow" or "#ffff00" => "#f57c00",
+            "orange" or "#ffa500" => "#f57c00",
+            "purple" or "#800080" => "#7b1fa2",
+            _ => "#e1e1e1"
+        };
+
+        var textColor = color.ToLower() switch
+        {
+            "red" or "#ff0000" => "#fff",
+            "green" or "#00ff00" => "#fff",
+            "blue" or "#0000ff" => "#fff",
+            "yellow" or "#ffff00" => "#fff",
+            "orange" or "#ffa500" => "#fff",
+            "purple" or "#800080" => "#fff",
+            _ => "#333"
+        };
+
+        return $"background-color: {bgColor}; color: {textColor};";
+    }
+}
+
