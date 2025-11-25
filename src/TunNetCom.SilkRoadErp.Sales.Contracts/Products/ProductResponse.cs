@@ -8,9 +8,6 @@ public class ProductResponse
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
 
-    [JsonPropertyName("qte")]
-    public int Qte { get; set; }
-
     [JsonPropertyName("qteLimit")]
     public int QteLimit { get; set; }
 

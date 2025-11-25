@@ -1,11 +1,15 @@
 ﻿using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
+using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
+using TunNetCom.SilkRoadErp.Sales.Domain.Services;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.CreateDeliveryNote;
 
 public class CreateDeliveryNoteCommandHandler(
     SalesContext _context,
     ILogger<CreateDeliveryNoteCommandHandler> _logger,
-    INumberGeneratorService _numberGeneratorService)
+    INumberGeneratorService _numberGeneratorService,
+    IStockCalculationService _stockCalculationService,
+    IActiveAccountingYearService _activeAccountingYearService)
     : IRequestHandler<CreateDeliveryNoteCommand, Result<int>>
 {
     public async Task<Result<int>> Handle(
@@ -42,6 +46,32 @@ public class CreateDeliveryNoteCommandHandler(
 
         var deliveryNoteDetailsList = createDeliveryNoteCommand.DeliveryNoteDetails?.ToList() ?? new List<LigneBlSubCommand>();
         _logger.LogInformation($"Creating delivery note with {deliveryNoteDetailsList.Count} items");
+
+        // Valider le stock pour chaque ligne
+        var activeYearId = await _activeAccountingYearService.GetActiveAccountingYearIdAsync(cancellationToken);
+        if (activeYearId.HasValue)
+        {
+            var stockErrors = new List<string>();
+            foreach (var deliveryNoteDetail in deliveryNoteDetailsList)
+            {
+                var stockResult = await _stockCalculationService.CalculateStockAsync(
+                    deliveryNoteDetail.RefProduit, 
+                    activeYearId.Value, 
+                    cancellationToken);
+                
+                if (stockResult.StockDisponible < deliveryNoteDetail.QteLi)
+                {
+                    stockErrors.Add(
+                        $"Produit {deliveryNoteDetail.RefProduit}: Stock disponible ({stockResult.StockDisponible}) insuffisant pour la quantité demandée ({deliveryNoteDetail.QteLi})");
+                }
+            }
+
+            if (stockErrors.Any())
+            {
+                _logger.LogWarning("Stock validation failed for delivery note: {Errors}", string.Join("; ", stockErrors));
+                return Result.Fail($"stock_insuffisant: {string.Join("; ", stockErrors)}");
+            }
+        }
 
         foreach(var deliveryNoteDetail in deliveryNoteDetailsList) 
         {

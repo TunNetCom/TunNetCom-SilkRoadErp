@@ -493,7 +493,6 @@ public class DatabaseSeeder
         var produits = validProduits.Select(p => Produit.CreateProduct(
             p.Refe!,
             p.Nom,
-            p.Qte,
             p.QteLimite,
             p.Remise,
             p.RemiseAchat,

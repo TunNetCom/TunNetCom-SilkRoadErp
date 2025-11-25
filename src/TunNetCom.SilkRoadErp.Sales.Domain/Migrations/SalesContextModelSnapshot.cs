@@ -1338,10 +1338,6 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("decimal(18, 3)")
                         .HasColumnName("prixAchat");
 
-                    b.Property<int>("Qte")
-                        .HasColumnType("int")
-                        .HasColumnName("qte");
-
                     b.Property<int>("QteLimite")
                         .HasColumnType("int")
                         .HasColumnName("qteLimite");

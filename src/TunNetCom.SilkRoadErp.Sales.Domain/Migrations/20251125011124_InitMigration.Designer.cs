@@ -12,8 +12,8 @@ using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 {
     [DbContext(typeof(SalesContext))]
-    [Migration("20251124220328_AddInventaireTables")]
-    partial class AddInventaireTables
+    [Migration("20251125011124_InitMigration")]
+    partial class InitMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -1340,10 +1340,6 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Property<decimal>("PrixAchat")
                         .HasColumnType("decimal(18, 3)")
                         .HasColumnName("prixAchat");
-
-                    b.Property<int>("Qte")
-                        .HasColumnType("int")
-                        .HasColumnName("qte");
 
                     b.Property<int>("QteLimite")
                         .HasColumnType("int")

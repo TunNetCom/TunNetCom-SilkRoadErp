@@ -31,7 +31,6 @@ public class UpdateProductCommandHandler(
         productToUpdate.UpdateProduct(
             refe: updateProductCommand.Refe,
             nom: updateProductCommand.Nom,
-            qte: updateProductCommand.Qte,
             qteLimite: updateProductCommand.QteLimite,
             remise: updateProductCommand.Remise,
             remiseAchat: updateProductCommand.RemiseAchat,

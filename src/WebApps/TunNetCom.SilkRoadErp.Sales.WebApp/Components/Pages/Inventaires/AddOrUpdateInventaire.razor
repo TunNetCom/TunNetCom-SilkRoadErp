@@ -170,12 +170,17 @@
             if (product != null)
             {
                 var dernierPrixAchat = await GetDernierPrixAchat(productRef);
+                // Récupérer le stock calculé pour la quantité théorique
+                var stockResult = await productService.GetProductStockAsync(productRef, CancellationToken.None);
+                var quantiteTheorique = stockResult.IsT0 ? stockResult.AsT0.StockCalcule : 0;
+                var quantiteReelle = quantiteTheorique; // Par défaut, utiliser le stock calculé
+                
                 var ligne = new LigneInventaireResponse
                 {
                     RefProduit = product.Reference,
                     NomProduit = product.Name,
-                    QuantiteTheorique = product.Qte,
-                    QuantiteReelle = product.Qte,
+                    QuantiteTheorique = quantiteTheorique,
+                    QuantiteReelle = quantiteReelle,
                     PrixHt = product.Price,
                     DernierPrixAchat = dernierPrixAchat
                 };

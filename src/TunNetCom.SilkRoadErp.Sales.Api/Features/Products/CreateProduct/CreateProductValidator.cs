@@ -12,9 +12,6 @@ public class CreateProductValidator : AbstractValidator<CreateProductCommand>
             .NotEmpty().WithMessage("nom_required")
             .MaximumLength(50).WithMessage("nom_must_be_less_than_50_characters");
 
-        _ = RuleFor(x => x.Qte)
-            .GreaterThanOrEqualTo(0).WithMessage("quantite_must_be_non_negative");
-
         _ = RuleFor(x => x.QteLimite)
             .GreaterThanOrEqualTo(0).WithMessage("quantite_limit_must_be_non_negative");
 

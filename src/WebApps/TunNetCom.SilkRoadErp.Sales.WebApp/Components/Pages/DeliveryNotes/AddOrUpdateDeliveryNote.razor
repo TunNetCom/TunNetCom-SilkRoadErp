@@ -346,6 +346,38 @@ else
                 });
                 return;
             }
+            // Valider le stock pour toutes les lignes avant la soumission
+            var stockErrors = new List<string>();
+            foreach (var order in orders)
+            {
+                if (!string.IsNullOrEmpty(order.ProductReference) && order.Quantity > 0)
+                {
+                    var stockResult = await productsApiClient.GetProductStockAsync(order.ProductReference, _cancellationTokenSource.Token);
+                    if (stockResult.IsT0)
+                    {
+                        var stock = stockResult.AsT0;
+                        if (stock.StockDisponible < order.Quantity)
+                        {
+                            stockErrors.Add($"{order.ProductReference}: {Localizer["stock_insuffisant"]} ({stock.StockDisponible} {Localizer["quantite_disponible"]}, {order.Quantity} {Localizer["quantite_demandee"]})");
+                        }
+                    }
+                }
+            }
+
+            if (stockErrors.Any())
+            {
+                var errorMessage = $"{Localizer["alerte_stock"]}: {string.Join("; ", stockErrors)}";
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = Localizer["alerte_stock"],
+                    Detail = errorMessage
+                });
+                isLoading = false;
+                StateHasChanged();
+                return;
+            }
+
             isLoading = true;
             StateHasChanged();
 

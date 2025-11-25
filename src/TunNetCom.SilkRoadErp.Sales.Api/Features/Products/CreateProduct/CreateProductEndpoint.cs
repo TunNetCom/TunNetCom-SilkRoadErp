@@ -13,7 +13,6 @@ public class CreateProductEndpoint : ICarterModule
             (
                 Refe: request.Refe,
                 Nom: request.Nom,
-                Qte: request.Qte,
                 QteLimite: request.QteLimite,
                 Remise: request.Remise,
                 RemiseAchat: request.RemiseAchat,

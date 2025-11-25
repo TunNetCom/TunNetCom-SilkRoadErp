@@ -58,11 +58,6 @@
                         <span class="grid-cell">@product.Name</span>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="ProductResponse" Property="@nameof(ProductResponse.Qte)" Title="@Localizer["product_qte"]" Width="120px">
-	                <Template Context="product">
-                        <span class="grid-cell @(product.Qte < product.QteLimit ? "low-quantity" : "")">@product.Qte</span>
-	                </Template>
-                </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="ProductResponse" Property="@nameof(ProductResponse.StockCalcule)" Title="@Localizer["stock_calcule"]" Width="150px">
                     <Template Context="product">
                         @if (product.StockCalcule.HasValue)
@@ -73,12 +68,6 @@
                             <RadzenBadge BadgeStyle="BadgeStyle.Info" Variant="Variant.Flat" Size="BadgeSize.Medium" Class="@badgeClass">
                                 @stockValue
                             </RadzenBadge>
-                            @if (product.Qte != stockValue)
-                            {
-                                <span class="stock-difference" title="@Localizer["difference_stock"]">
-                                    (@(stockValue - product.Qte > 0 ? "+" : "")@(stockValue - product.Qte))
-                                </span>
-                            }
                         }
                         else
                         {
@@ -319,7 +308,7 @@
 
     void OnRowRender(RowRenderEventArgs<ProductResponse> args)
     {
-	    if (args.Data.Qte < args.Data.QteLimit)
+	    if (args.Data.StockCalcule.HasValue && args.Data.StockCalcule.Value < args.Data.QteLimit)
 	    {
             args.Attributes.Add("style", "font-weight:bold; background-color:#28a745");
 

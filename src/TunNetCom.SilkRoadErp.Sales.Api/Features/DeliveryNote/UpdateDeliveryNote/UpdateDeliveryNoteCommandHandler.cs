@@ -1,8 +1,13 @@
+using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
+using TunNetCom.SilkRoadErp.Sales.Domain.Services;
+
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.UpdateDeliveryNote;
 
 public class UpdateDeliveryNoteCommandHandler(
     SalesContext _context,
-    ILogger<UpdateDeliveryNoteCommandHandler> _logger)
+    ILogger<UpdateDeliveryNoteCommandHandler> _logger,
+    IStockCalculationService _stockCalculationService,
+    IActiveAccountingYearService _activeAccountingYearService)
     : IRequestHandler<UpdateDeliveryNoteCommand, Result>
 {
     public async Task<Result> Handle(
@@ -42,6 +47,42 @@ public class UpdateDeliveryNoteCommandHandler(
             updateDeliveryNoteCommand.ClientId,
             activeAccountingYear.Id
         );
+
+        // Valider le stock pour chaque ligne
+        var activeYearId = await _activeAccountingYearService.GetActiveAccountingYearIdAsync(cancellationToken);
+        if (activeYearId.HasValue)
+        {
+            var stockErrors = new List<string>();
+            foreach (var deliveryNoteDetail in updateDeliveryNoteCommand.DeliveryNoteDetails)
+            {
+                var stockResult = await _stockCalculationService.CalculateStockAsync(
+                    deliveryNoteDetail.RefProduit, 
+                    activeYearId.Value, 
+                    cancellationToken);
+                
+                // Pour la mise à jour, on doit tenir compte des quantités déjà vendues dans ce BL
+                // On récupère la quantité actuelle du BL pour ce produit
+                var quantiteActuelleBl = deliveryNote.LigneBl
+                    .Where(l => l.RefProduit == deliveryNoteDetail.RefProduit)
+                    .Sum(l => l.QteLi);
+                
+                // Le stock disponible doit être suffisant pour la nouvelle quantité
+                // On ajoute la quantité actuelle du BL au stock disponible pour avoir le stock réellement disponible
+                var stockDisponibleReel = stockResult.StockDisponible + quantiteActuelleBl;
+                
+                if (stockDisponibleReel < deliveryNoteDetail.QteLi)
+                {
+                    stockErrors.Add(
+                        $"Produit {deliveryNoteDetail.RefProduit}: Stock disponible ({stockDisponibleReel}) insuffisant pour la quantité demandée ({deliveryNoteDetail.QteLi})");
+                }
+            }
+
+            if (stockErrors.Any())
+            {
+                _logger.LogWarning("Stock validation failed for delivery note update: {Errors}", string.Join("; ", stockErrors));
+                return Result.Fail($"stock_insuffisant: {string.Join("; ", stockErrors)}");
+            }
+        }
 
         // Remove all existing lines
         _context.LigneBl.RemoveRange(deliveryNote.LigneBl);

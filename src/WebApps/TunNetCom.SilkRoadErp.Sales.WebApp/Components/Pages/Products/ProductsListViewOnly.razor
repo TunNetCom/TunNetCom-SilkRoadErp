@@ -51,14 +51,26 @@
                         <span class="grid-cell">@product.Name</span>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="ProductResponse" Property="@nameof(ProductResponse.Qte)" Title="@Localizer["product_qte"]" Width="200px">
+                <RadzenDataGridColumn TItem="ProductResponse" Property="@nameof(ProductResponse.StockCalcule)" Title="@Localizer["stock_calcule"]" Width="200px">
                     <Template Context="product">
-                        <span class="grid-cell @(product.Qte < product.QteLimit ? "low-quantity" : "")">@product.Qte</span>
+                        @if (product.StockCalcule.HasValue)
+                        {
+                            var stockValue = product.StockCalcule.Value;
+                            var badgeClass = stockValue > product.QteLimit ? "stock-badge-green" : 
+                                           stockValue > 0 ? "stock-badge-orange" : "stock-badge-red";
+                            <RadzenBadge BadgeStyle="BadgeStyle.Info" Variant="Variant.Flat" Size="BadgeSize.Medium" Class="@badgeClass">
+                                @stockValue
+                            </RadzenBadge>
+                        }
+                        else
+                        {
+                            <span class="grid-cell">-</span>
+                        }
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="ProductResponse" Filterable="false" Sortable="false" Width="200px" TextAlign="TextAlign.Center">
                     <Template Context="product">
-                        @if (product.Qte < product.QteLimit)
+                        @if (product.StockCalcule.HasValue && product.StockCalcule.Value < product.QteLimit)
                         {
                             <RadzenButton Icon="highlight_off" IconColor="@Colors.Warning" ButtonStyle="ButtonStyle.Warning" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter" Class="rz-my-1 rz-ms-1"
                                           Title="@Localizer["manquant!"]" />
@@ -193,6 +205,21 @@
         line-height: 1.5;
     }
 
+    .stock-badge-green {
+        background-color: #4CAF50 !important;
+        color: white !important;
+    }
+
+    .stock-badge-orange {
+        background-color: #ff9800 !important;
+        color: white !important;
+    }
+
+    .stock-badge-red {
+        background-color: #d32f2f !important;
+        color: white !important;
+    }
+
     .rz-datatable-tbody > tr[style*="background-color: var(--rz-success)"] {
         background-color: var(--success-light) !important;
     }
@@ -261,7 +288,7 @@
 
     void OnRowRender(RowRenderEventArgs<ProductResponse> args)
     {
-        if (args.Data.Qte < args.Data.QteLimit)
+        if (args.Data.StockCalcule.HasValue && args.Data.StockCalcule.Value < args.Data.QteLimit)
         {
             args.Attributes.Add("style", "font-weight:bold; background-color:#28a745");
         }

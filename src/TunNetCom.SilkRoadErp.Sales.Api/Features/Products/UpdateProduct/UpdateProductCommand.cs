@@ -2,7 +2,6 @@
 
 public record UpdateProductCommand(string? Refe,
     string? Nom,
-    int Qte,
     int QteLimite,
     double Remise,
     double RemiseAchat,

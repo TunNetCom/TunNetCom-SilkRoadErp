@@ -14,7 +14,6 @@ public class UpdateProductEndpoint : ICarterModule
             var updateProductCommand = new UpdateProductCommand(
                 Refe: updateProductRequest.Refe,
                 Nom: updateProductRequest.Nom,
-                Qte: updateProductRequest.Qte,
                 QteLimite: updateProductRequest.QteLimite,
                 Remise: updateProductRequest.Remise,
                 RemiseAchat: updateProductRequest.RemiseAchat,

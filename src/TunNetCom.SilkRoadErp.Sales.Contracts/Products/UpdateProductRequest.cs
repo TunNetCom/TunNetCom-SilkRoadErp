@@ -8,9 +8,6 @@ public class UpdateProductRequest
     [JsonPropertyName("nom")]
     public string Nom { get; set; } = null!;
 
-    [JsonPropertyName("qte")]
-    public int Qte { get; set; }
-
     [JsonPropertyName("qteLimite")]
     public int QteLimite { get; set; }
 

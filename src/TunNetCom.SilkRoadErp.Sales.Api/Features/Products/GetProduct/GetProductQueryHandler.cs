@@ -10,7 +10,6 @@ public class GetProductQueryHandler(
     : IRequestHandler<GetProductQuery, PagedList<ProductResponse>>
 {
     private const string _referenceColumn = nameof(ProductResponse.Reference);
-    private const string _qteColumn = nameof(ProductResponse.Qte);
     private const string _priceColumn = nameof(ProductResponse.Price);
     public async Task<PagedList<ProductResponse>> Handle(GetProductQuery getProductQuery, CancellationToken cancellationToken)
     {
@@ -20,7 +19,6 @@ public class GetProductQueryHandler(
             {
                 Reference = t.Refe,
                 Name = t.Nom,
-                Qte = t.Qte,
                 QteLimit = t.QteLimite,
                 DiscountPourcentage = t.Remise,
                 DiscountPourcentageOfPurchasing = t.RemiseAchat,
@@ -92,8 +90,6 @@ public class GetProductQueryHandler(
             (_referenceColumn, SortConstants.Descending) => query.OrderByDescending(d => d.Reference),
             (_priceColumn, SortConstants.Ascending) => query.OrderBy(d => d.Price),
             (_priceColumn, SortConstants.Descending) => query.OrderByDescending(d => d.Price),
-            (_qteColumn, SortConstants.Ascending) => query.OrderBy(d => d.Qte),
-            (_qteColumn, SortConstants.Descending) => query.OrderByDescending(d => d.Qte),
             _ => query
         };
     }

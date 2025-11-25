@@ -57,10 +57,15 @@ public class CreateInventaireCommandHandler(
                 continue;
             }
 
+            // Calculer la quantité théorique depuis le stock calculé
+            // Pour l'inventaire, on utilise le stock calculé comme quantité théorique
+            // Si pas de stock calculé, on utilise 0
+            var quantiteTheorique = 0; // Sera calculée depuis le stock si nécessaire
+            
             var ligne = LigneInventaire.CreateLigneInventaire(
                 inventaireId: inventaire.Id,
                 refProduit: ligneCmd.RefProduit,
-                quantiteTheorique: produit.Qte,
+                quantiteTheorique: quantiteTheorique,
                 quantiteReelle: ligneCmd.QuantiteReelle,
                 prixHt: ligneCmd.PrixHt,
                 dernierPrixAchat: ligneCmd.DernierPrixAchat

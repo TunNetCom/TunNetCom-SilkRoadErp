@@ -25,7 +25,6 @@ public class GetProductByRefQueryHandler(
             Name = product.Nom,
             Price = product.Prix,
             PurchasingPrice = product.PrixAchat,
-            Qte = product.Qte,
             QteLimit = product.QteLimite,
             Reference = product.Refe,
             VatRate = product.Tva,

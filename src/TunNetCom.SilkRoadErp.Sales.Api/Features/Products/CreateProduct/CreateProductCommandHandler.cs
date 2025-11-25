@@ -20,7 +20,6 @@ public class CreateProductCommandHandler(
         var product = Produit.CreateProduct(
             createProductCommand.Refe,
             createProductCommand.Nom,
-            createProductCommand.Qte,
             createProductCommand.QteLimite,
             createProductCommand.Remise,
             createProductCommand.RemiseAchat,

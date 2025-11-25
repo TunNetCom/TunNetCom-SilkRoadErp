@@ -87,7 +87,6 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 {
                     refe = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     nom = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    qte = table.Column<int>(type: "int", nullable: false),
                     qteLimite = table.Column<int>(type: "int", nullable: false),
                     remise = table.Column<double>(type: "float", nullable: false),
                     remiseAchat = table.Column<double>(type: "float", nullable: false),
@@ -132,30 +131,26 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Avoirs",
+                name: "Inventaire",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Num = table.Column<int>(type: "int", nullable: false),
-                    date = table.Column<DateTime>(type: "datetime", nullable: false),
-                    clientId = table.Column<int>(type: "int", nullable: true),
-                    AccountingYearId = table.Column<int>(type: "int", nullable: false)
+                    AccountingYearId = table.Column<int>(type: "int", nullable: false),
+                    DateInventaire = table.Column<DateTime>(type: "datetime", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    Statut = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_dbo.Avoirs", x => x.Id);
+                    table.PrimaryKey("PK_dbo.Inventaire", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_dbo.Avoirs_dbo.AccountingYear_AccountingYearId",
+                        name: "FK_dbo.Inventaire_dbo.AccountingYear_AccountingYearId",
                         column: x => x.AccountingYearId,
                         principalTable: "AccountingYear",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_dbo.Avoirs_dbo.Client_clientId",
-                        column: x => x.clientId,
-                        principalTable: "Client",
-                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -281,34 +276,39 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "LigneAvoirs",
+                name: "LigneInventaire",
                 columns: table => new
                 {
-                    Id_li = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    AvoirsId = table.Column<int>(type: "int", nullable: false),
-                    Ref_Produit = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    designation_li = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    qte_li = table.Column<int>(type: "int", nullable: false),
-                    prix_HT = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
-                    remise = table.Column<double>(type: "float", nullable: false),
-                    tot_HT = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
-                    tva = table.Column<double>(type: "float", nullable: false),
-                    tot_TTC = table.Column<decimal>(type: "decimal(18,3)", nullable: false)
+                    InventaireId = table.Column<int>(type: "int", nullable: false),
+                    RefProduit = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    QuantiteTheorique = table.Column<int>(type: "int", nullable: false),
+                    QuantiteReelle = table.Column<int>(type: "int", nullable: false),
+                    PrixHt = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
+                    DernierPrixAchat = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
+                    ProduitRefe = table.Column<string>(type: "nvarchar(50)", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_dbo.LigneAvoirs", x => x.Id_li);
+                    table.PrimaryKey("PK_dbo.LigneInventaire", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_dbo.LigneAvoirs_dbo.Avoirs_AvoirsId",
-                        column: x => x.AvoirsId,
-                        principalTable: "Avoirs",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_dbo.LigneAvoirs_dbo.Produit_Ref_Produit",
-                        column: x => x.Ref_Produit,
+                        name: "FK_LigneInventaire_Produit_ProduitRefe",
+                        column: x => x.ProduitRefe,
                         principalTable: "Produit",
                         principalColumn: "refe");
+                    table.ForeignKey(
+                        name: "FK_dbo.LigneInventaire_dbo.Inventaire_InventaireId",
+                        column: x => x.InventaireId,
+                        principalTable: "Inventaire",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_dbo.LigneInventaire_dbo.Produit_RefProduit",
+                        column: x => x.RefProduit,
+                        principalTable: "Produit",
+                        principalColumn: "refe",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -379,6 +379,41 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         principalTable: "Facture",
                         principalColumn: "Num",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "FactureAvoirClient",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Num = table.Column<int>(type: "int", nullable: false),
+                    Num_FactureAvoirClientSurPage = table.Column<int>(type: "int", nullable: false),
+                    id_client = table.Column<int>(type: "int", nullable: false),
+                    date = table.Column<DateTime>(type: "datetime", nullable: false),
+                    Num_Facture = table.Column<int>(type: "int", nullable: true),
+                    AccountingYearId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_dbo.FactureAvoirClient", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_dbo.FactureAvoirClient_dbo.AccountingYear_AccountingYearId",
+                        column: x => x.AccountingYearId,
+                        principalTable: "AccountingYear",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_dbo.FactureAvoirClient_dbo.Client_id_client",
+                        column: x => x.id_client,
+                        principalTable: "Client",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_dbo.FactureAvoirClient_dbo.Facture_Num_Facture",
+                        column: x => x.Num_Facture,
+                        principalTable: "Facture",
+                        principalColumn: "Num");
                 });
 
             migrationBuilder.CreateTable(
@@ -578,8 +613,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         name: "FK_PaiementClient_BonDeLivraison",
                         column: x => x.BonDeLivraisonId,
                         principalTable: "BonDeLivraison",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_PaiementClient_Client",
                         column: x => x.ClientId,
@@ -590,8 +624,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         name: "FK_PaiementClient_Facture",
                         column: x => x.FactureId,
                         principalTable: "Facture",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -610,6 +643,39 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         name: "FK_dbo.Transaction_dbo.BonDeLivraison_BonDeLivraisonId",
                         column: x => x.BonDeLivraisonId,
                         principalTable: "BonDeLivraison",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Avoirs",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Num = table.Column<int>(type: "int", nullable: false),
+                    date = table.Column<DateTime>(type: "datetime", nullable: false),
+                    clientId = table.Column<int>(type: "int", nullable: true),
+                    AccountingYearId = table.Column<int>(type: "int", nullable: false),
+                    Num_FactureAvoirClient = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_dbo.Avoirs", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_dbo.Avoirs_dbo.AccountingYear_AccountingYearId",
+                        column: x => x.AccountingYearId,
+                        principalTable: "AccountingYear",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_dbo.Avoirs_dbo.Client_clientId",
+                        column: x => x.clientId,
+                        principalTable: "Client",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_dbo.Avoirs_dbo.FactureAvoirClient_Num_FactureAvoirClient",
+                        column: x => x.Num_FactureAvoirClient,
+                        principalTable: "FactureAvoirClient",
                         principalColumn: "Id");
                 });
 
@@ -686,14 +752,12 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         name: "FK_PaiementFournisseur_BonDeReception",
                         column: x => x.BonDeReceptionId,
                         principalTable: "BonDeReception",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_PaiementFournisseur_FactureFournisseur",
                         column: x => x.FactureFournisseurId,
                         principalTable: "FactureFournisseur",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_PaiementFournisseur_Fournisseur",
                         column: x => x.FournisseurId,
@@ -735,6 +799,37 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         column: x => x.fournisseurId,
                         principalTable: "Fournisseur",
                         principalColumn: "id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "LigneAvoirs",
+                columns: table => new
+                {
+                    Id_li = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    AvoirsId = table.Column<int>(type: "int", nullable: false),
+                    Ref_Produit = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    designation_li = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    qte_li = table.Column<int>(type: "int", nullable: false),
+                    prix_HT = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
+                    remise = table.Column<double>(type: "float", nullable: false),
+                    tot_HT = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
+                    tva = table.Column<double>(type: "float", nullable: false),
+                    tot_TTC = table.Column<decimal>(type: "decimal(18,3)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_dbo.LigneAvoirs", x => x.Id_li);
+                    table.ForeignKey(
+                        name: "FK_dbo.LigneAvoirs_dbo.Avoirs_AvoirsId",
+                        column: x => x.AvoirsId,
+                        principalTable: "Avoirs",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_dbo.LigneAvoirs_dbo.Produit_Ref_Produit",
+                        column: x => x.Ref_Produit,
+                        principalTable: "Produit",
+                        principalColumn: "refe");
                 });
 
             migrationBuilder.CreateTable(
@@ -811,6 +906,11 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 table: "Avoirs",
                 column: "Num",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Avoirs_Num_FactureAvoirClient",
+                table: "Avoirs",
+                column: "Num_FactureAvoirClient");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Banque_Nom",
@@ -892,6 +992,27 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_FactureAvoirClient_AccountingYearId",
+                table: "FactureAvoirClient",
+                column: "AccountingYearId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FactureAvoirClient_id_client",
+                table: "FactureAvoirClient",
+                column: "id_client");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FactureAvoirClient_Num",
+                table: "FactureAvoirClient",
+                column: "Num",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FactureAvoirClient_Num_Facture",
+                table: "FactureAvoirClient",
+                column: "Num_Facture");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_FactureAvoirFournisseur_AccountingYearId",
                 table: "FactureAvoirFournisseur",
                 column: "AccountingYearId");
@@ -926,6 +1047,17 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 name: "IX_FactureFournisseur_Num",
                 table: "FactureFournisseur",
                 column: "Num",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Inventaire_AccountingYearId",
+                table: "Inventaire",
+                column: "AccountingYearId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Inventaire_AccountingYearId_Num",
+                table: "Inventaire",
+                columns: new[] { "AccountingYearId", "Num" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -987,6 +1119,21 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 name: "IX_LigneDevis_Ref_produit",
                 table: "LigneDevis",
                 column: "Ref_produit");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LigneInventaire_InventaireId",
+                table: "LigneInventaire",
+                column: "InventaireId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LigneInventaire_ProduitRefe",
+                table: "LigneInventaire",
+                column: "ProduitRefe");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LigneInventaire_RefProduit",
+                table: "LigneInventaire",
+                column: "RefProduit");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PaiementClient_AccountingYearId",
@@ -1089,6 +1236,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 name: "LigneDevis");
 
             migrationBuilder.DropTable(
+                name: "LigneInventaire");
+
+            migrationBuilder.DropTable(
                 name: "PaiementClient");
 
             migrationBuilder.DropTable(
@@ -1116,6 +1266,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 name: "Produit");
 
             migrationBuilder.DropTable(
+                name: "Inventaire");
+
+            migrationBuilder.DropTable(
                 name: "Banque");
 
             migrationBuilder.DropTable(
@@ -1128,19 +1281,22 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 name: "FactureAvoirFournisseur");
 
             migrationBuilder.DropTable(
-                name: "Facture");
+                name: "FactureAvoirClient");
 
             migrationBuilder.DropTable(
                 name: "FactureFournisseur");
 
             migrationBuilder.DropTable(
-                name: "Client");
+                name: "Facture");
+
+            migrationBuilder.DropTable(
+                name: "Fournisseur");
 
             migrationBuilder.DropTable(
                 name: "AccountingYear");
 
             migrationBuilder.DropTable(
-                name: "Fournisseur");
+                name: "Client");
         }
     }
 }

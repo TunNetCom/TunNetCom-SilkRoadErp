@@ -43,11 +43,7 @@ public class StockCalculationService : IStockCalculationService
             .Where(l => l.RefProduit == refProduit && l.Inventaire.AccountingYearId == accountingYearId)
             .SumAsync(l => (int?)l.QuantiteReelle, cancellationToken) ?? 0;
 
-        // Si aucun inventaire, utiliser Produit.Qte comme stock initial
-        if (stockInitial == 0)
-        {
-            stockInitial = produit.Qte;
-        }
+        // Si aucun inventaire, stock initial = 0
 
         // Calculer les achats (BR) pour l'exercice en cours
         var totalAchats = await _context.LigneBonReception
@@ -123,14 +119,9 @@ public class StockCalculationService : IStockCalculationService
         // Construire les résultats
         foreach (var refProduit in refProduits)
         {
-            var produit = produitDict.GetValueOrDefault(refProduit);
             var stockInitial = stocksInitiaux.GetValueOrDefault(refProduit, 0);
             
-            // Si aucun inventaire, utiliser Produit.Qte
-            if (stockInitial == 0 && produit != null)
-            {
-                stockInitial = produit.Qte;
-            }
+            // Si aucun inventaire, stock initial = 0
 
             var totalAchats = achats.GetValueOrDefault(refProduit, 0);
             var totalVentes = ventes.GetValueOrDefault(refProduit, 0);

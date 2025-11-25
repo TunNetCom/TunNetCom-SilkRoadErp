@@ -40,16 +40,6 @@
                     </Helper>
                 </RadzenFormField>
 
-                <RadzenFormField Text="@Localizer["product_qte"]">
-                    <Start><RadzenIcon Icon="inventory" /></Start>
-                    <ChildContent>
-                        <RadzenNumeric @bind-Value="productModel.Qte" Name="@nameof(ProductModel.Qte)" Style="width: 100%;" Min="0" />
-                    </ChildContent>
-                    <Helper>
-                        <RadzenRangeValidator Component="Qte" Min="0" Text="@Localizer["positive_number"]" />
-                    </Helper>
-                </RadzenFormField>
-
                 <RadzenFormField Text="@Localizer["product_qteLimite"]">
                     <Start><RadzenIcon Icon="warning" /></Start>
                     <ChildContent>
@@ -156,9 +146,6 @@
         [StringLength(100, ErrorMessage = "Name cannot exceed 100 characters")]
         public string Name { get; set; } = string.Empty;
 
-        [Range(0, int.MaxValue, ErrorMessage = "Quantity must be positive")]
-        public int Qte { get; set; }
-
         [Range(0, int.MaxValue, ErrorMessage = "Limit quantity must be positive")]
         public int QteLimit { get; set; }
 
@@ -195,7 +182,6 @@
                 {
                     Reference = product.Reference,
                     Name = product.Name,
-                    Qte = product.Qte,
                     QteLimit = product.QteLimit,
                     DiscountPourcentage = product.DiscountPourcentage,
                     DiscountPourcentageOfPurchasing = product.DiscountPourcentageOfPurchasing,
@@ -231,7 +217,6 @@
                 {
                     Refe = model.Reference,
                     Nom = model.Name,
-                    Qte = model.Qte,
                     QteLimite = model.QteLimit,
                     Remise = model.DiscountPourcentage,
                     RemiseAchat = model.DiscountPourcentageOfPurchasing,
@@ -257,7 +242,6 @@
             {
                 Refe = model.Reference,
                 Nom = model.Name,
-                Qte = model.Qte,
                 QteLimite = model.QteLimit,
                 Remise = model.DiscountPourcentage,
                 RemiseAchat = model.DiscountPourcentageOfPurchasing,
