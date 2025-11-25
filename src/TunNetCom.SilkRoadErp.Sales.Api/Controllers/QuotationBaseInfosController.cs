@@ -22,12 +22,13 @@ public class QuotationBaseInfosController : ODataController
     public IActionResult Get(
         [FromQuery] DateTime? startDate = null,
         [FromQuery] DateTime? endDate = null,
-        [FromQuery] int? customerId = null)
+        [FromQuery] int? customerId = null,
+        [FromQuery] List<int>? tagIds = null)
     {
         try
         {
-            _logger.LogInformation("QuotationBaseInfosController.Get called with startDate: {StartDate}, endDate: {EndDate}, customerId: {CustomerId}", 
-                startDate, endDate, customerId);
+            _logger.LogInformation("QuotationBaseInfosController.Get called with startDate: {StartDate}, endDate: {EndDate}, customerId: {CustomerId}, tagIds: {TagIds}", 
+                startDate, endDate, customerId, tagIds != null ? string.Join(",", tagIds) : "null");
 
             // Build base query with filters before projection
             var baseQuery = _context.Devis.AsNoTracking();
@@ -47,6 +48,15 @@ public class QuotationBaseInfosController : ODataController
             if (customerId.HasValue)
             {
                 baseQuery = baseQuery.Where(d => d.IdClient == customerId.Value);
+            }
+
+            // Apply tag filter if provided (OR logic: document must have at least one of the selected tags)
+            if (tagIds != null && tagIds.Any())
+            {
+                baseQuery = baseQuery.Where(d => _context.DocumentTag
+                    .Any(dt => dt.DocumentType == "Devis" 
+                        && dt.DocumentId == d.Num 
+                        && tagIds.Contains(dt.TagId)));
             }
 
             // Now project to DTO with join

@@ -21,7 +21,7 @@ public class InvoiceBaseInfosController : ODataController
     }
 
     [EnableQuery(MaxExpansionDepth = 3, MaxAnyAllExpressionDepth = 3)]
-    public async Task<IActionResult> Get()
+    public async Task<IActionResult> Get([FromQuery] List<int>? tagIds = null)
     {
         try
         {
@@ -43,6 +43,15 @@ public class InvoiceBaseInfosController : ODataController
                                    NetAmount = g.Where(x => x.bdl != null).Sum(x => x.bdl!.NetPayer) + timbre,
                                    VatAmount = g.Where(x => x.bdl != null).Sum(x => x.bdl!.TotTva)
                                };
+
+            // Apply tag filter if provided (OR logic: document must have at least one of the selected tags)
+            if (tagIds != null && tagIds.Any())
+            {
+                invoicesQuery = invoicesQuery.Where(inv => _context.DocumentTag
+                    .Any(dt => dt.DocumentType == "Facture" 
+                        && dt.DocumentId == inv.Number 
+                        && tagIds.Contains(dt.TagId)));
+            }
 
             return Ok(invoicesQuery.AsNoTracking());
         }

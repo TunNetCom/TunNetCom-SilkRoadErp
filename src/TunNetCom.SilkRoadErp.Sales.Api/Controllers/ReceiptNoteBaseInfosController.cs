@@ -22,12 +22,13 @@ public class ReceiptNoteBaseInfosController : ODataController
     public IActionResult Get(
         [FromQuery] DateTime? startDate = null,
         [FromQuery] DateTime? endDate = null,
-        [FromQuery] int? providerId = null)
+        [FromQuery] int? providerId = null,
+        [FromQuery] List<int>? tagIds = null)
     {
         try
         {
-            _logger.LogInformation("ReceiptNoteBaseInfosController.Get called with startDate: {StartDate}, endDate: {EndDate}, providerId: {ProviderId}", 
-                startDate, endDate, providerId);
+            _logger.LogInformation("ReceiptNoteBaseInfosController.Get called with startDate: {StartDate}, endDate: {EndDate}, providerId: {ProviderId}, tagIds: {TagIds}", 
+                startDate, endDate, providerId, tagIds != null ? string.Join(",", tagIds) : "null");
 
             // Build base query with filters before projection
             var baseQuery = _context.BonDeReception.AsNoTracking();
@@ -47,6 +48,15 @@ public class ReceiptNoteBaseInfosController : ODataController
             if (providerId.HasValue)
             {
                 baseQuery = baseQuery.Where(br => br.IdFournisseur == providerId.Value);
+            }
+
+            // Apply tag filter if provided (OR logic: document must have at least one of the selected tags)
+            if (tagIds != null && tagIds.Any())
+            {
+                baseQuery = baseQuery.Where(br => _context.DocumentTag
+                    .Any(dt => dt.DocumentType == "BonDeReception" 
+                        && dt.DocumentId == br.Num 
+                        && tagIds.Contains(dt.TagId)));
             }
 
             // Now project to DTO using stored totals from BonDeReception

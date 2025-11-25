@@ -21,12 +21,13 @@ public class DeliveryNoteBaseInfosController : ODataController
     public IActionResult Get(
         [FromQuery] DateTime? startDate = null,
         [FromQuery] DateTime? endDate = null,
-        [FromQuery] int? customerId = null)
+        [FromQuery] int? customerId = null,
+        [FromQuery] List<int>? tagIds = null)
     {
         try
         {
-            _logger.LogInformation("DeliveryNoteBaseInfosController.Get called with startDate: {StartDate}, endDate: {EndDate}, customerId: {CustomerId}", 
-                startDate, endDate, customerId);
+            _logger.LogInformation("DeliveryNoteBaseInfosController.Get called with startDate: {StartDate}, endDate: {EndDate}, customerId: {CustomerId}, tagIds: {TagIds}", 
+                startDate, endDate, customerId, tagIds != null ? string.Join(",", tagIds) : "null");
 
             // Build base query with filters before projection
             var baseQuery = _context.BonDeLivraison.AsNoTracking();
@@ -46,6 +47,15 @@ public class DeliveryNoteBaseInfosController : ODataController
             if (customerId.HasValue)
             {
                 baseQuery = baseQuery.Where(bdl => bdl.ClientId == customerId.Value);
+            }
+
+            // Apply tag filter if provided (OR logic: document must have at least one of the selected tags)
+            if (tagIds != null && tagIds.Any())
+            {
+                baseQuery = baseQuery.Where(bdl => _context.DocumentTag
+                    .Any(dt => dt.DocumentType == "BonDeLivraison" 
+                        && dt.DocumentId == bdl.Num 
+                        && tagIds.Contains(dt.TagId)));
             }
 
             // Now project to DTO with join

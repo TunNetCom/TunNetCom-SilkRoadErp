@@ -43,6 +43,8 @@
                 </Columns>
             </RadzenDropDownDataGrid>
         </div>
+        <TagSearchFilter SelectedTagIds="@searchCriteria.SelectedTagIds"
+                       SelectedTagIdsChanged="@OnTagIdsChanged" />
         <div class="search-button">
             <RadzenButton Text="@Localizer["search"]"
                           Icon="search"
@@ -393,6 +395,7 @@
                 startDate: startDate,
                 endDate: endDate,
                 customerId: searchCriteria.SelectedCustomerId,
+                tagIds: searchCriteria.SelectedTagIds,
                 cancellationToken: default);
 
             deliveryNotesList = response.Value;
@@ -431,10 +434,17 @@
         public DateTime? EndDate { get; set; }
         public int? SelectedCustomerId { get; set; }
         public string InvoiceStatus { get; set; } = "Tous";
+        public List<int> SelectedTagIds { get; set; } = new();
     }
 
     private void OnPeriodFilterChanged()
     {
         StateHasChanged();
+    }
+
+    private async Task OnTagIdsChanged(List<int> tagIds)
+    {
+        searchCriteria.SelectedTagIds = tagIds;
+        await SearchDeliveryNotes();
     }
 }

@@ -22,6 +22,7 @@ public class ODataService
         DateTime? endDate = null,
         int? customerId = null,
         int? providerId = null,
+        List<int>? tagIds = null,
         CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("ODataService.QueryAsync called for entitySet: {EntitySet}", entitySet);
@@ -58,6 +59,14 @@ public class ODataService
             if (providerId.HasValue)
             {
                 queryParams.Add($"providerId={providerId.Value}");
+            }
+
+            if (tagIds != null && tagIds.Any())
+            {
+                foreach (var tagId in tagIds)
+                {
+                    queryParams.Add($"tagIds={tagId}");
+                }
             }
 
             // Add Radzen filter if provided
