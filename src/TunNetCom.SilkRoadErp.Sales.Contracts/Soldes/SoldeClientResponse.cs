@@ -52,6 +52,33 @@ public class DocumentSoldeClient
 
     [JsonPropertyName("montant")]
     public decimal Montant { get; set; }
+
+    [JsonPropertyName("lignesBl")]
+    public List<LigneBlSoldeClient>? LignesBl { get; set; }
+
+    [JsonPropertyName("hasQuantitesNonLivrees")]
+    public bool HasQuantitesNonLivrees { get; set; }
+
+    [JsonPropertyName("bonsLivraison")]
+    public List<DocumentSoldeClient>? BonsLivraison { get; set; }
+}
+
+public class LigneBlSoldeClient
+{
+    [JsonPropertyName("refProduit")]
+    public string RefProduit { get; set; } = string.Empty;
+
+    [JsonPropertyName("designationLi")]
+    public string DesignationLi { get; set; } = string.Empty;
+
+    [JsonPropertyName("qteLi")]
+    public int QteLi { get; set; }
+
+    [JsonPropertyName("qteLivree")]
+    public int? QteLivree { get; set; }
+
+    [JsonPropertyName("quantiteNonLivree")]
+    public int QuantiteNonLivree { get; set; }
 }
 
 public class PaiementSoldeClient

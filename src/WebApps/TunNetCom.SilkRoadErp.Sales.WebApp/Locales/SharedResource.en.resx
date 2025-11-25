@@ -984,4 +984,31 @@
   <data name="stock_insuffisant_message" xml:space="preserve">
     <value>Available stock is insufficient for the requested quantity.</value>
   </data>
+  <data name="Ref_Produit" xml:space="preserve">
+    <value>Product Reference</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Quantite" xml:space="preserve">
+    <value>Quantity</value>
+  </data>
+  <data name="Quantite_Livree" xml:space="preserve">
+    <value>Delivered Quantity</value>
+  </data>
+  <data name="Quantite_Non_Livree" xml:space="preserve">
+    <value>Undelivered Quantity</value>
+  </data>
+  <data name="Lignes_BL" xml:space="preserve">
+    <value>BL Lines</value>
+  </data>
+  <data name="Quantites_Non_Livrees_Indicator" xml:space="preserve">
+    <value>Undelivered Quantities</value>
+  </data>
+  <data name="Facture" xml:space="preserve">
+    <value>Invoice</value>
+  </data>
+  <data name="Bons_Livraison" xml:space="preserve">
+    <value>Delivery Notes</value>
+  </data>
 </root>

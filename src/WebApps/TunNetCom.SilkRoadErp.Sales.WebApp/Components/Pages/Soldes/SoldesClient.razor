@@ -8,6 +8,7 @@
 @using Radzen.Blazor
 @using Radzen
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Customers
+@using System.Linq
 @inject NavigationManager NavigationManager
 @inject IStringLocalizer<SharedResource> Localizer
 @inject ISoldesApiClient SoldesService
@@ -91,26 +92,102 @@
 
             <div class="documents-section">
                 <h4>@Localizer["Documents"]</h4>
-                <RadzenDataGrid TItem="DocumentSoldeClient"
-                                Data="@solde.Documents"
-                                AllowPaging="true"
-                                PageSize="10"
-                                Density="Density.Compact">
-                    <Columns>
-                        <RadzenDataGridColumn TItem="DocumentSoldeClient" Property="Type" Title="@Localizer["Type"]" Width="150px" />
-                        <RadzenDataGridColumn TItem="DocumentSoldeClient" Property="Numero" Title="@Localizer["Numero_Col"]" Width="100px" />
-                        <RadzenDataGridColumn TItem="DocumentSoldeClient" Property="Date" Title="@Localizer["date"]" Width="120px">
-                            <Template Context="doc">
-                                @doc.Date.ToString("dd/MM/yyyy")
-                            </Template>
-                        </RadzenDataGridColumn>
-                        <RadzenDataGridColumn TItem="DocumentSoldeClient" Property="Montant" Title="@Localizer["Montant_Col"]" Width="150px">
-                            <Template Context="doc">
-                                @doc.Montant.ToString("N2") TND
-                            </Template>
-                        </RadzenDataGridColumn>
-                    </Columns>
-                </RadzenDataGrid>
+                <RadzenStack Gap="1rem">
+                    <RadzenCard Variant="Variant.Outlined">
+                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1.5rem;" Wrap="FlexWrap.Wrap">
+                            <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem;">
+                                <div>ExpandMode:</div>
+                                <RadzenSelectBar @bind-Value="@expandMode" TextProperty="Text" ValueProperty="Value"
+                                        Data="@(Enum.GetValues(typeof(DataGridExpandMode)).Cast<DataGridExpandMode>().Select(t => new { Text = $"{t}", Value = t }))" Size="ButtonSize.Small" />
+                            </RadzenStack>
+                            <RadzenButton Text="Expand all rows" Click="@(args => ToggleRowsExpand(true))" 
+                                          Disabled=@(allRowsExpanded == true || expandMode == DataGridExpandMode.Single) />
+                            <RadzenButton Text="Collapse all rows" Click="@(args => ToggleRowsExpand(false))" 
+                                          Disabled=@(allRowsExpanded == false || expandMode == DataGridExpandMode.Single) />
+                        </RadzenStack>
+                    </RadzenCard>
+
+                    <RadzenDataGrid @ref="facturesGrid" 
+                                    AllowFiltering="true" 
+                                    AllowPaging="true" 
+                                    PageSize="10" 
+                                    AllowSorting="true" 
+                                    RowRender="@RowRender" 
+                                    ExpandMode="@expandMode"
+                                    Data="@factures" 
+                                    TItem="DocumentSoldeClient" 
+                                    Render="@OnFacturesDataGridRender">
+                        <Template Context="facture">
+                            <RadzenDataGrid AllowFiltering="true" 
+                                            AllowPaging="true" 
+                                            AllowSorting="true" 
+                                            Data="@(facture.BonsLivraison ?? new List<DocumentSoldeClient>())" 
+                                            Render="@OnBlsDataGridRender">
+                                <Template Context="bl">
+                                    <RadzenCard Variant="Variant.Text" class="rz-background-color-primary-lighter rz-color-on-primary-lighter rz-m-4">
+                                        @Localizer["Facture"]: <b>@facture.Numero</b> - @Localizer["Bons_Livraison"]: <b>@bl.Numero</b>
+                                    </RadzenCard>
+                                    <RadzenDataGrid AllowFiltering="true" 
+                                                    AllowPaging="true" 
+                                                    AllowSorting="true" 
+                                                    Data="@(bl.LignesBl ?? new List<LigneBlSoldeClient>())">
+                                        <Columns>
+                                            <RadzenDataGridColumn Property="@nameof(LigneBlSoldeClient.RefProduit)" Title="@Localizer["Ref_Produit"]" Width="150px" />
+                                            <RadzenDataGridColumn Property="@nameof(LigneBlSoldeClient.DesignationLi)" Title="@Localizer["Description"]" Width="250px" />
+                                            <RadzenDataGridColumn Property="@nameof(LigneBlSoldeClient.QteLi)" Title="@Localizer["Quantite"]" Width="100px" />
+                                            <RadzenDataGridColumn Property="@nameof(LigneBlSoldeClient.QteLivree)" Title="@Localizer["Quantite_Livree"]" Width="120px">
+                                                <Template Context="ligne">
+                                                    @(ligne.QteLivree?.ToString() ?? ligne.QteLi.ToString())
+                                                </Template>
+                                            </RadzenDataGridColumn>
+                                            <RadzenDataGridColumn Property="@nameof(LigneBlSoldeClient.QuantiteNonLivree)" Title="@Localizer["Quantite_Non_Livree"]" Width="150px">
+                                                <Template Context="ligne">
+                                                    <span class="@(ligne.QuantiteNonLivree > 0 ? "quantite-non-livree" : "")">
+                                                        @ligne.QuantiteNonLivree
+                                                    </span>
+                                                </Template>
+                                            </RadzenDataGridColumn>
+                                        </Columns>
+                                    </RadzenDataGrid>
+                                </Template>
+                                <Columns>
+                                    <RadzenDataGridColumn Property="@nameof(DocumentSoldeClient.Numero)" Title="@Localizer["Numero_Col"]" Width="120px" />
+                                    <RadzenDataGridColumn Property="@nameof(DocumentSoldeClient.Date)" Title="@Localizer["date"]" FormatString="{0:dd/MM/yyyy}" Width="140px" />
+                                    <RadzenDataGridColumn Property="@nameof(DocumentSoldeClient.Montant)" Title="@Localizer["Montant_Col"]" Width="150px">
+                                        <Template Context="bl">
+                                            @bl.Montant.ToString("N2") TND
+                                        </Template>
+                                    </RadzenDataGridColumn>
+                                    <RadzenDataGridColumn Title="" Width="50px">
+                                        <Template Context="bl">
+                                            @if (bl.HasQuantitesNonLivrees)
+                                            {
+                                                <RadzenIcon Icon="warning" Style="color: #f44336; font-size: 20px;" Title="@Localizer["Quantites_Non_Livrees_Indicator"]" />
+                                            }
+                                        </Template>
+                                    </RadzenDataGridColumn>
+                                </Columns>
+                            </RadzenDataGrid>
+                        </Template>
+                        <Columns>
+                            <RadzenDataGridColumn Property="@nameof(DocumentSoldeClient.Numero)" Title="@Localizer["Numero_Col"]" Width="120px" />
+                            <RadzenDataGridColumn Property="@nameof(DocumentSoldeClient.Date)" Title="@Localizer["date"]" FormatString="{0:dd/MM/yyyy}" Width="140px" />
+                            <RadzenDataGridColumn Property="@nameof(DocumentSoldeClient.Montant)" Title="@Localizer["Montant_Col"]" Width="150px">
+                                <Template Context="facture">
+                                    @facture.Montant.ToString("N2") TND
+                                </Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn Title="" Width="50px">
+                                <Template Context="facture">
+                                    @if (facture.HasQuantitesNonLivrees)
+                                    {
+                                        <RadzenIcon Icon="warning" Style="color: #f44336; font-size: 20px;" Title="@Localizer["Quantites_Non_Livrees_Indicator"]" />
+                                    }
+                                </Template>
+                            </RadzenDataGridColumn>
+                        </Columns>
+                    </RadzenDataGrid>
+                </RadzenStack>
             </div>
 
             <div class="paiements-section">
@@ -241,6 +318,27 @@
         font-size: 1.25rem;
         font-weight: 600;
     }
+
+    .facture-bls-detail {
+        padding: 1rem;
+        background-color: #e3f2fd;
+        margin: 0.5rem 0;
+        border-radius: 4px;
+        border-left: 4px solid #1976d2;
+    }
+
+    .bl-lines-detail {
+        padding: 1rem;
+        background-color: #f5f5f5;
+        margin: 0.5rem 0;
+        border-radius: 4px;
+        border-left: 4px solid #757575;
+    }
+
+    .quantite-non-livree {
+        color: #f44336;
+        font-weight: 600;
+    }
 </style>
 
 @code {
@@ -248,6 +346,12 @@
     private int? selectedClientId;
     private List<CustomerResponse> _filteredCustomers = new();
     private CancellationTokenSource cancellationTokenSource = new();
+    
+    DataGridExpandMode expandMode = DataGridExpandMode.Single;
+    bool? allRowsExpanded;
+    RadzenDataGrid<DocumentSoldeClient>? facturesGrid;
+    
+    private IEnumerable<DocumentSoldeClient> factures => solde?.Documents.Where(d => d.Type == "Facture" && d.BonsLivraison != null && d.BonsLivraison.Any()) ?? Enumerable.Empty<DocumentSoldeClient>();
 
     async Task LoadCustomers(LoadDataArgs args)
     {
@@ -307,6 +411,7 @@
             if (result.IsSuccess)
             {
                 solde = result.Value;
+                allRowsExpanded = null;
             }
             else
             {
@@ -326,6 +431,48 @@
                 Summary = Localizer["Erreur"],
                 Detail = $"{Localizer["Erreur_Chargement_Solde"]}: {ex.Message}"
             });
+        }
+    }
+
+    async Task ToggleRowsExpand(bool? value)
+    {
+        allRowsExpanded = value;
+
+        if (facturesGrid != null)
+        {
+            if (value == true)
+            {
+                await facturesGrid.ExpandRows(facturesGrid.PagedView);
+            }
+            else if (value == false)
+            { 
+                await facturesGrid.CollapseRows(facturesGrid.PagedView);
+            }
+        }
+    }
+
+    void RowRender(RowRenderEventArgs<DocumentSoldeClient> args)
+    {
+        args.Expandable = args.Data.BonsLivraison != null && args.Data.BonsLivraison.Any();
+    }
+
+    void OnFacturesDataGridRender(DataGridRenderEventArgs<DocumentSoldeClient> args)
+    {
+        if (args.FirstRender && factures.Any())
+        {
+            InvokeAsync(() => args.Grid.ExpandRow(args.Grid.View.Where(f => f.BonsLivraison != null && f.BonsLivraison.Any()).FirstOrDefault()));
+        }
+    }
+
+    void OnBlsDataGridRender(DataGridRenderEventArgs<DocumentSoldeClient> args)
+    {
+        if (args.FirstRender)
+        {
+            var blWithLines = args.Grid.View.Where(bl => bl.LignesBl != null && bl.LignesBl.Any()).FirstOrDefault();
+            if (blWithLines != null)
+            {
+                InvokeAsync(() => args.Grid.ExpandRow(blWithLines));
+            }
         }
     }
 

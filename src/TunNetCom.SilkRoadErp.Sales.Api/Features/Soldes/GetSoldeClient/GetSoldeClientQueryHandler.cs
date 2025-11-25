@@ -78,35 +78,73 @@ public class GetSoldeClientQueryHandler(
         // Get documents
         var documents = new List<DocumentSoldeClient>();
 
-        // Add factures
-        var factures = await _context.Facture
-            .Where(f => f.IdClient == query.ClientId && f.AccountingYearId == accountingYearId.Value)
-            .Select(f => new DocumentSoldeClient
+        // Helper method to create BL document with lines
+        DocumentSoldeClient CreateBlDocument(BonDeLivraison b)
+        {
+            var lignes = b.LigneBl.Select(l =>
             {
-                Type = "Facture",
-                Id = f.Id,
-                Numero = f.Num,
-                Date = f.Date,
-                Montant = f.BonDeLivraison.Sum(b => b.NetPayer) + appParams.Value.Timbre
-            })
-            .ToListAsync(cancellationToken);
-        documents.AddRange(factures);
+                var qteLivree = l.QteLivree ?? l.QteLi;
+                var quantiteNonLivree = l.QteLi - qteLivree;
+                return new LigneBlSoldeClient
+                {
+                    RefProduit = l.RefProduit,
+                    DesignationLi = l.DesignationLi,
+                    QteLi = l.QteLi,
+                    QteLivree = l.QteLivree,
+                    QuantiteNonLivree = quantiteNonLivree
+                };
+            }).ToList();
 
-        // Add non-factured BLs
-        var bonsLivraison = await _context.BonDeLivraison
-            .Where(b => b.ClientId == query.ClientId 
-                && b.AccountingYearId == accountingYearId.Value 
-                && b.NumFacture == null)
-            .Select(b => new DocumentSoldeClient
+            var hasQuantitesNonLivrees = lignes.Any(l => l.QuantiteNonLivree > 0);
+
+            return new DocumentSoldeClient
             {
                 Type = "BonDeLivraison",
                 Id = b.Id,
                 Numero = b.Num,
                 Date = b.Date,
-                Montant = b.NetPayer
-            })
+                Montant = b.NetPayer,
+                LignesBl = lignes,
+                HasQuantitesNonLivrees = hasQuantitesNonLivrees
+            };
+        }
+
+        // Add factures with their BLs
+        var factures = await _context.Facture
+            .Where(f => f.IdClient == query.ClientId && f.AccountingYearId == accountingYearId.Value)
+            .Include(f => f.BonDeLivraison)
+                .ThenInclude(b => b.LigneBl)
             .ToListAsync(cancellationToken);
-        documents.AddRange(bonsLivraison);
+
+        var documentsFactures = factures.Select(f =>
+        {
+            var bls = f.BonDeLivraison.Select(CreateBlDocument).ToList();
+            var hasQuantitesNonLivrees = bls.Any(bl => bl.HasQuantitesNonLivrees);
+
+            return new DocumentSoldeClient
+            {
+                Type = "Facture",
+                Id = f.Id,
+                Numero = f.Num,
+                Date = f.Date,
+                Montant = f.BonDeLivraison.Sum(b => b.NetPayer) + appParams.Value.Timbre,
+                BonsLivraison = bls,
+                HasQuantitesNonLivrees = hasQuantitesNonLivrees
+            };
+        }).ToList();
+
+        documents.AddRange(documentsFactures);
+
+        // Add non-factured BLs
+        var bonsLivraisonNonFactures = await _context.BonDeLivraison
+            .Where(b => b.ClientId == query.ClientId 
+                && b.AccountingYearId == accountingYearId.Value 
+                && b.NumFacture == null)
+            .Include(b => b.LigneBl)
+            .ToListAsync(cancellationToken);
+
+        var documentsBl = bonsLivraisonNonFactures.Select(CreateBlDocument).ToList();
+        documents.AddRange(documentsBl);
 
         // Add avoirs (direct avoirs not linked to FactureAvoirClient)
         var avoirs = await _context.Avoirs
