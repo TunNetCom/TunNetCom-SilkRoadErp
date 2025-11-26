@@ -1,0 +1,77 @@
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Orders.PrintOrder
+
+@code {
+    [Parameter] public PrintOrderModel Model { get; set; } = null!;
+}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            font-size: 12px;
+            margin: 0;
+            padding: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            border: 1px solid #000;
+            padding: 5px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+
+        .text-left {
+            text-align: left;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-bold {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <table>
+        <thead>
+            <tr>
+                <th>Code</th>
+                <th class="text-left">Désignation</th>
+                <th>Qte</th>
+                <th>Rem %</th>
+                <th>TVA</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var line in Model.Lines)
+            {
+                <tr>
+                    <td>@line.RefProduit</td>
+                    <td class="text-left">@line.DesignationLi</td>
+                    <td>@line.QteLi</td>
+                    <td class="text-right">@line.Remise.ToString("N2", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</td>
+                    <td class="text-right">@line.Tva.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))%</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</body>
+</html>
+

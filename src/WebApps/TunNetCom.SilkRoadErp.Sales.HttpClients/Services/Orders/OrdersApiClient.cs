@@ -1,4 +1,6 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.Commande;
+﻿using System.Net;
+using TunNetCom.SilkRoadErp.Sales.Contracts.Common;
+using TunNetCom.SilkRoadErp.Sales.Contracts.Commande;
 
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Orders
 {
@@ -55,6 +57,106 @@ namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Orders
 
             _logger.LogInformation("Successfully retrieved {Count} orders", orders.Count);
             return orders ?? new List<OrderSummaryResponse>();
+        }
+
+        public async Task<Result<int>> CreateOrderAsync(CreateOrderRequest request, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                _logger.LogInformation("Creating order via API /orders");
+
+                var response = await _httpClient.PostAsJsonAsync("/orders", request, cancellationToken);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var location = response.Headers.Location?.ToString();
+                    if (location != null && int.TryParse(location.Split('/').Last(), out var orderNum))
+                    {
+                        return Result.Ok(orderNum);
+                    }
+
+                    // Try to read the response body if location header is not available
+                    var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+                    if (int.TryParse(responseContent, out var numFromBody))
+                    {
+                        return Result.Ok(numFromBody);
+                    }
+
+                    return Result.Fail("Could not extract order number from response");
+                }
+
+                if (response.StatusCode == HttpStatusCode.BadRequest)
+                {
+                    var problemDetails = await response.Content.ReadFromJsonAsync<BadRequestResponse>(
+                        cancellationToken: cancellationToken);
+
+                    if (problemDetails?.errors != null)
+                    {
+                        var errors = problemDetails.errors
+                            .SelectMany(kvp => kvp.Value.Select(v => $"{kvp.Key}: {v}"));
+                        return Result.Fail(errors);
+                    }
+                    return Result.Fail("Validation failed but no error details provided");
+                }
+
+                return Result.Fail($"Failed to create order: {response.StatusCode}");
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "Network error creating order");
+                return Result.Fail($"Network error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error creating order");
+                return Result.Fail($"Unexpected error: {ex.Message}");
+            }
+        }
+
+        public async Task<Result> UpdateOrderAsync(int num, UpdateOrderRequest request, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                _logger.LogInformation("Updating order via API /orders/{Num}", num);
+
+                var response = await _httpClient.PutAsJsonAsync($"/orders/{num}", request, cancellationToken);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return Result.Ok();
+                }
+
+                if (response.StatusCode == HttpStatusCode.NotFound)
+                {
+                    return Result.Fail("Order not found");
+                }
+
+                if (response.StatusCode == HttpStatusCode.BadRequest)
+                {
+                    var problemDetails = await response.Content.ReadFromJsonAsync<BadRequestResponse>(
+                        cancellationToken: cancellationToken);
+
+                    if (problemDetails?.errors != null)
+                    {
+                        var errors = problemDetails.errors
+                            .SelectMany(kvp => kvp.Value.Select(v => $"{kvp.Key}: {v}"));
+                        return Result.Fail(errors);
+                    }
+                    return Result.Fail("Validation failed but no error details provided");
+                }
+
+                return Result.Fail($"Failed to update order: {response.StatusCode}");
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "Network error updating order {Num}", num);
+                return Result.Fail($"Network error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error updating order {Num}", num);
+                return Result.Fail($"Unexpected error: {ex.Message}");
+            }
         }
     }
 }

@@ -1,0 +1,652 @@
+@page "/AddOrUpdateOrder"
+@page "/AddOrUpdateOrder/{num?}"
+
+@using Radzen.Blazor
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Commande
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Sorting
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Providers
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Orders
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Orders.PrintOrder
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure
+
+@inject IStringLocalizer<SharedResource> Localizer
+@inject NotificationService NotificationService
+@inject IOrderApiClient orderApiClient
+@inject IProductsApiClient productsApiClient
+@inject IProvidersApiClient providersApiClient
+@inject IAppParametersClient appParametersClient
+@inject ILogger<AddOrUpdateOrder> logger
+@inject DialogService DialogService
+@inject NavigationManager NavigationManager
+@inject PrintOrderService PrintOrderService
+@inject IPrintService PrintService
+
+<style>
+    .order-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .order-form {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        flex-wrap: wrap;
+        flex-grow: 1;
+    }
+</style>
+
+<!-- Loading Indicator -->
+@if (isLoading)
+{
+    <RadzenProgressBarCircular ProgressBarStyle="ProgressBarStyle.Primary" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+}
+else
+{
+    <!-- Order Container with Form -->
+    <div class="order-container">
+        <div class="order-form">
+            <RadzenLabel Text="Numéro" Component="OrderNumber" AriaLabel="Numéro" />
+            <RadzenTextBox @bind-Value="orderNumber" Name="OrderNumber" Style="width: 120px;" ReadOnly="true" AriaReadOnly="true" />
+
+            <RadzenLabel Text="@Localizer["date"]" />
+            <RadzenDatePicker @bind-Value="orderDate" Name="OrderDate" Style="width: 200px;" DateFormat="d MMMM yyyy" ShowTime="false" />
+
+            <RadzenLabel Text="Fournisseur" />
+            <RadzenDropDownDataGrid AllowClear="true"
+                                    IsLoading="@isLoadingProviders"
+                                    @bind-Value="@selectedProviderId"
+                                    LoadData="@LoadProviders"
+                                    AllowFiltering="true"
+                                    Style="width: 350px;"
+                                    Data="@_filteredProviders"
+                                    TextProperty="@nameof(ProviderResponse.Nom)"
+                                    ValueProperty="@nameof(ProviderResponse.Id)"
+                                    Placeholder="Sélectionner un fournisseur">
+                <Columns>
+                    <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Id)" Title="ID" Width="80px" />
+                    <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Nom)" Title="@Localizer["name"]" Width="220px" />
+                </Columns>
+            </RadzenDropDownDataGrid>
+        </div>
+    </div>
+
+    <!-- Order Lines Grid -->
+    <LineItemsGrid TItem="OrderDetailResponse"
+                   Items="@orders"
+                   ItemsChanged="@OnItemsChanged"
+                   OnDeleteItem="@DeleteRow"
+                   OnProductSelectedCallback="@OnProductSelectedHandler"
+                   LoadProducts="@LoadData"
+                   GetProductList="@GetCurrentProductList"
+                   ProductCount="@count"
+                   AppParameters="@getAppParametersResponse"
+                   OnShowPriceHistory="@ShowDialog"
+                   ShowPriceHistoryDialog="true"
+                   ShowPrintButton="true"
+                   OnPrint="@PrintOrder"
+                   ShowSaveButton="true"
+                   ShowSummary="true"
+                   OnSave="@SaveOrder"
+                   TotalHt="@totalHt"
+                   TotalVat="@totalVat"
+                   TotalTtc="@totalTtc"
+                   Localizer="@Localizer"
+                   GetProductReference="@(item => item.ProductReference)"
+                   SetProductReference="@((item, value) => item.ProductReference = value)"
+                   GetProductDescription="@(item => item.Description)"
+                   SetProductDescription="@((item, value) => item.Description = value)"
+                   ProductTextProperty="ProductReferenceAndDescription"
+                   ProductValueProperty="ProductReference"
+                   CreateNewItem="@(() => new OrderDetailResponse { Quantity = 1 })" />
+}
+
+@code {
+    [Parameter] public string? num { get; set; }
+    List<OrderDetailResponse> orders = new();
+    List<OrderDetailResponse> searchList = new();
+    int count;
+    private const int DefaultPageSize = 7;
+    private CancellationTokenSource _cancellationTokenSource = new();
+    private List<ProviderResponse> _filteredProviders { get; set; } = new();
+    private bool isLoading = true;
+    bool isLoadingProviders = false;
+    decimal totalHt;
+    decimal totalVat;
+    decimal totalTtc;
+    string orderNumber = string.Empty;
+    DateTime orderDate = DateTime.Now;
+    private GetAppParametersResponse getAppParametersResponse;
+    private int? selectedProviderId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        searchList = new List<OrderDetailResponse>();
+        orders = new List<OrderDetailResponse>();
+        var param = await appParametersClient.GetAppParametersAsync(_cancellationTokenSource.Token);
+        getAppParametersResponse = param.AsT0;
+        await LoadProviders(null);
+        await FetchOrder();
+        isLoading = false;
+    }
+
+    private async Task SaveOrder()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            var request = new CreateOrderRequest
+            {
+                FournisseurId = selectedProviderId,
+                Date = orderDate,
+                TotHTva = totalHt,
+                TotTva = totalVat,
+                TotTtc = totalTtc,
+                Items = (orders ?? new List<OrderDetailResponse>()).Select(o => new OrderItemRequest
+                {
+                    Id = o.Id,
+                    ProductReference = o.ProductReference,
+                    Description = o.Description,
+                    Quantity = o.Quantity,
+                    UnitPriceExcludingTax = o.UnitPriceExcludingTax,
+                    DiscountPercentage = o.DiscountPercentage,
+                    TotalExcludingTax = o.TotalExcludingTax,
+                    VatPercentage = o.VatPercentage,
+                    TotalIncludingTax = o.TotalIncludingTax
+                }).ToList()
+            };
+
+            // Check if we're in edit mode (order number exists)
+            int orderNum = 0;
+            bool isEditMode = !string.IsNullOrEmpty(orderNumber) && int.TryParse(orderNumber, out orderNum);
+            
+            if (isEditMode)
+            {
+                // Update existing order
+                var updateRequest = new UpdateOrderRequest
+                {
+                    Num = orderNum,
+                    FournisseurId = selectedProviderId,
+                    Date = orderDate,
+                    TotHTva = totalHt,
+                    TotTva = totalVat,
+                    TotTtc = totalTtc,
+                    Items = request.Items
+                };
+
+                var updateResponse = await orderApiClient.UpdateOrderAsync(orderNum, updateRequest, _cancellationTokenSource.Token);
+                
+                if (updateResponse.IsSuccess)
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = Localizer["success"],
+                        Detail = "Commande mise à jour avec succès"
+                    });
+                }
+                else
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = Localizer["error"],
+                        Detail = $"Échec de la mise à jour de la commande: {updateResponse.Errors.First().Message}"
+                    });
+                }
+            }
+            else
+            {
+                // Create new order
+                var createResponse = await orderApiClient.CreateOrderAsync(request, _cancellationTokenSource.Token);
+                
+                if (createResponse.IsSuccess)
+                {
+                    orderNumber = createResponse.ValueOrDefault.ToString();
+                    await InvokeAsync(StateHasChanged);
+                    
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = Localizer["success"],
+                        Detail = "Commande créée avec succès"
+                    });
+                }
+                else
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = Localizer["error"],
+                        Detail = $"Échec de la création de la commande: {createResponse.Errors.First().Message}"
+                    });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Échec de l'enregistrement de la commande: {ex.Message}"
+            });
+            logger.LogError(ex, "Failed to save order");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task FetchOrder()
+    {
+        if (string.IsNullOrEmpty(num))
+        {
+            orders = new List<OrderDetailResponse>();
+            totalHt = 0;
+            totalVat = 0;
+            totalTtc = 0;
+            return;
+        }
+
+        try
+        {
+            if (int.TryParse(num, out var numAsInt))
+            {
+                var orderResult = await orderApiClient.GetFullOrderAsync(
+                    numAsInt,
+                    _cancellationTokenSource.Token);
+
+                if (orderResult != null)
+                {
+                    orderNumber = orderResult.OrderNumber.ToString();
+                    orderDate = orderResult.Date;
+                    selectedProviderId = orderResult.SupplierId;
+
+                    if (orderResult.OrderLines != null && orderResult.OrderLines.Any())
+                    {
+                        orders = orderResult.OrderLines.Select(ol => new OrderDetailResponse
+                        {
+                            Id = ol.LineId,
+                            ProductReference = ol.ProductReference ?? string.Empty,
+                            Description = ol.ItemDescription ?? string.Empty,
+                            Quantity = (int)ol.ItemQuantity,
+                            UnitPriceExcludingTax = ol.UnitPriceExcludingTax,
+                            DiscountPercentage = (double)ol.Discount,
+                            TotalExcludingTax = ol.TotalExcludingTax,
+                            VatPercentage = (double)ol.VatRate,
+                            TotalIncludingTax = ol.TotalIncludingTax
+                        }).ToList();
+                    }
+                    else
+                    {
+                        orders = new List<OrderDetailResponse>();
+                    }
+
+                    totalHt = orderResult.TotalExcludingVat;
+                    totalVat = orderResult.TotalVat;
+                    totalTtc = orderResult.NetToPay;
+                }
+                else
+                {
+                    orders = new List<OrderDetailResponse>();
+                }
+            }
+
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception e)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Échec du chargement de la commande: {e.Message}"
+            });
+
+            logger.LogError(e, "Failed to fetch order");
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    async Task DeleteRow(OrderDetailResponse order)
+    {
+        if (orders == null)
+        {
+            orders = new List<OrderDetailResponse>();
+        }
+
+        if (orders.Contains(order))
+        {
+            orders.Remove(order);
+        }
+        else if (order.Id > 0)
+        {
+            var itemToRemove = orders.FirstOrDefault(t => t.Id == order.Id && t.Id > 0);
+            if (itemToRemove != null)
+            {
+                orders.Remove(itemToRemove);
+            }
+        }
+
+        UpdateTotals();
+        await OnItemsChanged(orders);
+        StateHasChanged();
+    }
+
+    private List<OrderDetailResponse> GetCurrentProductList(OrderDetailResponse currentOrder)
+    {
+        var resultList = new List<OrderDetailResponse>();
+        
+        if (!string.IsNullOrEmpty(currentOrder.ProductReference))
+        {
+            var currentProduct = searchList.FirstOrDefault(p => p.ProductReference == currentOrder.ProductReference);
+            
+            if (currentProduct != null)
+            {
+                resultList.Add(currentProduct);
+            }
+            else
+            {
+                resultList.Add(new OrderDetailResponse
+                {
+                    ProductReference = currentOrder.ProductReference,
+                    Description = currentOrder.Description,
+                    UnitPriceExcludingTax = currentOrder.UnitPriceExcludingTax,
+                    Quantity = 1
+                });
+            }
+            
+            resultList.AddRange(searchList.Where(p => p.ProductReference != currentOrder.ProductReference));
+        }
+        else
+        {
+            resultList.AddRange(searchList);
+        }
+        
+        return resultList;
+    }
+
+    async Task LoadData(LoadDataArgs args)
+    {
+        string _sortProperty = null;
+        string _sortOrder = null;
+        if (args.Sorts != null && args.Sorts.Any())
+        {
+            var sort = args.Sorts.First();
+            _sortProperty = sort.Property;
+            _sortOrder = sort.SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending;
+        }
+        var parameters = new QueryStringParameters
+        {
+            PageNumber = (args.Skip.Value / DefaultPageSize) + 1,
+            PageSize = DefaultPageSize,
+            SearchKeyword = args.Filter,
+            SortOrder = _sortOrder,
+            SortProprety = _sortProperty
+        };
+
+        try
+        {
+            var pagedProducts = await productsApiClient.GetPagedAsync(parameters, _cancellationTokenSource.Token);
+            searchList = pagedProducts.Items.Select(
+                p => new OrderDetailResponse
+                {
+                    ProductReference = p.Reference,
+                    Description = p.Name,
+                    UnitPriceExcludingTax = p.Price,
+                    Quantity = 1,
+                    DiscountPercentage = p.DiscountPourcentage,
+                    VatPercentage = p.VatRate,
+                }).ToList();
+
+            count = pagedProducts.TotalCount;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"{Localizer["failed_to_load_products"]}: {ex.Message}"
+            });
+            searchList = new List<OrderDetailResponse>();
+            count = 0;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task LoadProviders(LoadDataArgs args)
+    {
+        isLoadingProviders = true;
+        var parameters = new QueryStringParameters
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            SearchKeyword = args?.Filter ?? string.Empty
+        };
+
+        try
+        {
+            var pagedProviders = await providersApiClient.GetPagedAsync(parameters, _cancellationTokenSource.Token);
+            _filteredProviders = pagedProviders.Items;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Échec du chargement des fournisseurs: {ex.Message}"
+            });
+            _filteredProviders = new List<ProviderResponse>();
+        }
+
+        isLoadingProviders = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task OnProductSelectedHandler(OrderDetailResponse order)
+    {
+        UpdateTotals();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task OnItemsChanged(List<OrderDetailResponse> items)
+    {
+        orders = items ?? new List<OrderDetailResponse>();
+        UpdateTotals();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void UpdateTotals()
+    {
+        if (orders == null)
+        {
+            orders = new List<OrderDetailResponse>();
+        }
+        LineItemCalculator.UpdateTotals(orders, out totalHt, out totalVat, out totalTtc);
+    }
+
+    public async Task ShowDialog(string ProductReference)
+    {
+        await DialogService.OpenAsync<ProductHistoryDialog>($"{Localizer["history"]} {Localizer["article"]} {ProductReference}",
+            new Dictionary<string, object>() { { "ProductReference", ProductReference } },
+            new DialogOptions()
+            {
+                Resizable = true,
+                Draggable = true,
+                Width = "700px",
+                Height = "512px"
+            });
+    }
+
+    private async Task PrintOrder()
+    {
+        try
+        {
+            if (orders == null || !orders.Any())
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = Localizer["warning"],
+                    Detail = Localizer["no_items_to_print"] ?? "No items to print"
+                });
+                return;
+            }
+
+            Result<byte[]> pdfResult;
+
+            // Check if order is saved (has a number)
+            if (!string.IsNullOrEmpty(orderNumber) && int.TryParse(orderNumber, out var orderNum))
+            {
+                // Print saved order
+                pdfResult = await PrintOrderService.GenerateOrderPdfAsync(
+                    orderNum,
+                    _cancellationTokenSource.Token);
+            }
+            else
+            {
+                // Print from current data (not saved yet)
+                var printModel = new PrintOrderModel
+                {
+                    Num = 0, // Not saved yet
+                    Date = orderDate,
+                    SupplierId = selectedProviderId,
+                    TotalExcludingTax = totalHt,
+                    TotalVat = totalVat,
+                    TotalAmount = totalTtc,
+                    Lines = orders.Select(o => new OrderLineModel
+                    {
+                        Id = o.Id,
+                        RefProduit = o.ProductReference,
+                        DesignationLi = o.Description,
+                        QteLi = o.Quantity,
+                        PrixHt = o.UnitPriceExcludingTax,
+                        Remise = o.DiscountPercentage,
+                        TotHt = o.TotalExcludingTax,
+                        Tva = o.VatPercentage,
+                        TotTtc = o.TotalIncludingTax
+                    }).ToList()
+                };
+
+                pdfResult = await PrintOrderService.GenerateOrderPdfFromDataAsync(
+                    printModel,
+                    _cancellationTokenSource.Token);
+            }
+
+            if (pdfResult.IsSuccess)
+            {
+                var fileName = string.IsNullOrEmpty(orderNumber)
+                    ? $"Commande - {orderDate:yyyy-MM-dd}.pdf"
+                    : $"Commande {orderNumber}.pdf";
+
+                // Show print mode selection dialog
+                var printModeResult = await DialogService.OpenAsync<PrintModeDialog>(
+                    Localizer["print_mode"],
+                    new Dictionary<string, object>(),
+                    new DialogOptions()
+                    {
+                        Width = "400px",
+                        Resizable = false,
+                        Draggable = true
+                    });
+
+                if (printModeResult is PrintMode selectedMode)
+                {
+                    var printOptions = new PrintOptions
+                    {
+                        Mode = selectedMode,
+                        FileName = fileName
+                    };
+
+                    if (selectedMode == PrintMode.DirectPrint)
+                    {
+                        // Show printer selection dialog
+                        var printerResult = await DialogService.OpenAsync<PrinterSelectionDialog>(
+                            Localizer["select_printer"],
+                            new Dictionary<string, object> { { "PdfBytes", pdfResult.Value } },
+                            new DialogOptions()
+                            {
+                                Width = "500px",
+                                Resizable = false,
+                                Draggable = true
+                            });
+
+                        if (printerResult is PrinterSelectionResult printerSelection)
+                        {
+                            printOptions.PrinterName = printerSelection.PrinterName;
+                            printOptions.Copies = printerSelection.Copies;
+                            printOptions.Duplex = printerSelection.Duplex;
+                        }
+                        else
+                        {
+                            return; // User cancelled
+                        }
+                    }
+
+                    var printResult = await PrintService.PrintAsync(pdfResult.Value, printOptions, _cancellationTokenSource.Token);
+
+                    if (!printResult.IsSuccess)
+                    {
+                        NotificationService.Notify(new NotificationMessage
+                        {
+                            Severity = NotificationSeverity.Error,
+                            Summary = Localizer["error"],
+                            Detail = $"Échec de l'impression de la commande: {printResult.ErrorMessage}"
+                        });
+                    }
+                    else if (selectedMode == PrintMode.DirectPrint)
+                    {
+                        NotificationService.Notify(new NotificationMessage
+                        {
+                            Severity = NotificationSeverity.Success,
+                            Summary = Localizer["success"],
+                            Detail = Localizer["print_job_submitted"] ?? "Print job submitted successfully"
+                        });
+                    }
+                }
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = $"Échec de l'impression de la commande: {pdfResult.Errors.First().Message}"
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Erreur lors de l'impression de la commande: {ex.Message}"
+            });
+            logger.LogError(ex, "Failed to print order");
+        }
+    }
+}
+

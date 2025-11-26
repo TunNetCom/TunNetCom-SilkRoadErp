@@ -7,6 +7,29 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 public partial class Commandes
 {
+    public void UpdateCommandes(
+        int num,
+        int? fournisseurId,
+        DateTime date)
+    {
+        this.Num = num;
+        this.FournisseurId = fournisseurId;
+        this.Date = date;
+    }
+
+    public static Commandes CreateCommandes(
+        int num,
+        int? fournisseurId,
+        DateTime date)
+    {
+        return new Commandes
+        {
+            Num = num,
+            FournisseurId = fournisseurId,
+            Date = date,
+        };
+    }
+
     public int Num { get; set; }
 
     public DateTime Date { get; set; }

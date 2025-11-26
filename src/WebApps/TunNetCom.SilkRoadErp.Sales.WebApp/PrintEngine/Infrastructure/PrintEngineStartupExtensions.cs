@@ -5,6 +5,7 @@ using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Invoices.RetenueSou
 using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Invoices.RetenueSourceFournisseur;
 using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.DeliveryNotes.PrintDeliveryNote;
 using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Quotations.PrintQuotation;
+using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Orders.PrintOrder;
 
 namespace TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure;
 
@@ -18,6 +19,7 @@ public static class PrintEngineStartupExtensions
         _ = services.AddScoped<PrintProviderFullInvoiceService>();
         _ = services.AddScoped<PrintDeliveryNoteService>();
         _ = services.AddScoped<PrintQuotationService>();
+        _ = services.AddScoped<PrintOrderService>();
         _ = services.AddScoped(typeof(IPrintPdfService<,>), typeof(PrintPdfPlayWrightService<,>));
 
         // Register printing services

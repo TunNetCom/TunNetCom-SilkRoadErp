@@ -1,110 +1,346 @@
 ﻿@page "/orders"
+@page "/commandes"
+
+@using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Commande
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Orders
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@inject IOrderApiClient OrderService
+@inject IProvidersApiClient ProvidersService
+@inject IStringLocalizer<SharedResource> Localizer
+@inject ILogger<OrdersList> _logger
+@using Radzen.Blazor
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
-@using TunNetCom.SilkRoadErp.Sales.Contracts.Tags
-@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
-@inject IOrderApiClient OrderApiClient
-@inject ITagsApiClient TagsService
-@inject NotificationService NotificationService
 @inject NavigationManager NavigationManager
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Common
 
-<PageTitle>Liste des commandes</PageTitle>
+<div class="orders-list-container">
+    <div class="search-header">
+        <div class="search-field">
+            <label for="provider">Fournisseur</label>
+            <RadzenDropDownDataGrid id="provider"
+                                    AllowClear="true"
+                                    @bind-Value="@selectedProviderId"
+                                    LoadData="@LoadProviders"
+                                    AllowFiltering="true"
+                                    class="w-100 search-input"
+                                    Data="@_filteredProviders"
+                                    TextProperty="@nameof(ProviderResponse.Nom)"
+                                    ValueProperty="@nameof(ProviderResponse.Id)"
+                                    Placeholder="Sélectionner un fournisseur">
+                <Columns>
+                    <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Id)" Title="ID" Width="80px" />
+                    <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Nom)" Title="@Localizer["name"]" Width="220px" />
+                </Columns>
+            </RadzenDropDownDataGrid>
+        </div>
+        <div class="search-button">
+            <RadzenButton Text="@Localizer["search"]"
+                          Icon="search"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Click="@SearchOrders"
+                          class="action-button" />
+        </div>
+        <div class="search-button">
+            <RadzenButton Text="Nouvelle commande"
+                          Icon="add"
+                          ButtonStyle="ButtonStyle.Success"
+                          Click="@CreateNewOrder"
+                          class="action-button" />
+        </div>
+    </div>
+    <div class="list-card">
+        <h2>Commandes fournisseur</h2>
+        <RadzenDataGrid Data="@ordersList"
+                        LoadData="@Callback"
+                        TItem="OrderSummaryResponse"
+                        AllowSorting="true"
+                        AllowFiltering="true"
+                        AllowPaging="true"
+                        PageSize="@pageSize"
+                        PageSizeOptions="@GridPageSizeConstants.PageSizeOptions"
+                        Count="@totalCount"
+                        AllowColumnResize="true">
+            <EmptyTemplate>
+                <p style="font-size: 24px; text-align: center; margin: 2rem;">Aucune commande à afficher.</p>
+            </EmptyTemplate>
+            <Columns>
+                <RadzenDataGridColumn TItem="OrderSummaryResponse"
+                                      Property="@nameof(OrderSummaryResponse.OrderNumber)"
+                                      Title="@Localizer["number"]"
+                                      Width="150px" />
+                <RadzenDataGridColumn TItem="OrderSummaryResponse"
+                                      Property="@nameof(OrderSummaryResponse.Date)"
+                                      Title="@Localizer["date"]"
+                                      Width="150px"
+                                      FormatString="{0:d MMMM yyyy}" />
+                <RadzenDataGridColumn TItem="OrderSummaryResponse"
+                                      Property="@nameof(OrderSummaryResponse.NetToPay)"
+                                      Title="@Localizer["tot_ttc"]"
+                                      Width="150px">
+                    <Template Context="item">
+                        @item.NetToPay.FormatAmount()
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="OrderSummaryResponse"
+                                      Title="@Localizer["actions_label"]"
+                                      Width="100px"
+                                      Sortable="false"
+                                      Filterable="false">
+                    <Template Context="item">
+                        <RadzenButton Icon="edit"
+                                      ButtonStyle="ButtonStyle.Primary"
+                                      Variant="Variant.Flat"
+                                      Size="ButtonSize.Small"
+                                      Click="@(() => ViewOrder(item.OrderNumber.ToString()))"
+                                      Title="@Localizer["edit"]"
+                                      AriaLabel="@Localizer["edit"]" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+        <RadzenCard class="summary-card" Variant="Variant.Outlined">
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal"
+                         Gap="1.5rem"
+                         JustifyContent="JustifyContent.End"
+                         class="summary-stack">
+                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                    @Localizer["tot_ttc"]: <strong>@ordersList.Sum(q => q.NetToPay).FormatAmount()</strong>
+                </RadzenText>
+            </RadzenStack>
+        </RadzenCard>
+    </div>
+</div>
 
-<h3>Liste des commandes</h3>
+<style>
+    .orders-list-container {
+        padding: 0;
+        min-height: 100%;
+    }
 
-<RadzenButton Text="Ajouter une commande"
-              Click="@(() => NavigationManager.NavigateTo("/AddOrUpdateDeliveryNote"))"
-              ButtonStyle="ButtonStyle.Primary"
-              Size="ButtonSize.Medium"
-              Style="margin-bottom: 20px;" />
+    .list-card {
+        width: 100%;
+        margin: 0;
+    }
 
-@if (_isLoading)
-{
-    <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
-}
-else if (_errorMessage != null)
-{
-    <RadzenAlert AlertStyle="AlertStyle.Danger" Shade="Shade.Darker">
-        Erreur : @_errorMessage
-    </RadzenAlert>
-}
-else
-{
-    <RadzenDataGrid Data="@_orders"
-                    TItem="OrderSummaryResponse"
-                    AllowSorting="true"
-                    AllowFiltering="true"
-                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
-                    AllowColumnResize="true"
-                    AllowPaging="true"
-                    PageSize="10"
-                    ShowPagingSummary="true">
-        <Columns>
-            <RadzenDataGridColumn TItem="OrderSummaryResponse" Property="OrderNumber" Title="N° de commande" Width="120px" />
-            <RadzenDataGridColumn TItem="OrderSummaryResponse" Property="SupplierId" Title="Fournisseur" Width="120px" />
-            <RadzenDataGridColumn TItem="OrderSummaryResponse" Property="Date" Title="Date" Width="150px">
-                <Template Context="order">
-                    @order.Date.ToString("dd/MM/yyyy")
-                </Template>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="OrderSummaryResponse" Property="TotalExcludingVat" Title="Total HT" Width="150px">
-                <Template Context="order">
-                    @order.TotalExcludingVat.FormatAmount()
-                </Template>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="OrderSummaryResponse" Property="TotalVat" Title="TVA" Width="120px">
-                <Template Context="order">
-                    @order.TotalVat.FormatAmount()
-                </Template>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="OrderSummaryResponse" Property="NetToPay" Title="Net à payer" Width="150px">
-                <Template Context="order">
-                    @order.NetToPay.FormatAmount()
-                </Template>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="OrderSummaryResponse" Title="Tags" Width="250px" Sortable="false" Filterable="false">
-                <Template Context="order">
-                    <TagSelector DocumentType="Commande" 
-                                DocumentId="@order.OrderNumber"
-                                SaveOnChange="true" />
-                </Template>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="OrderSummaryResponse" Width="100px" Sortable="false" Filterable="false">
-                <Template Context="order">
-                    <RadzenButton Text="Voir"
-                                  Click="@(() => NavigationManager.NavigateTo($"/order/{order.OrderNumber}"))"
-                                  ButtonStyle="ButtonStyle.Primary"
-                                  Size="ButtonSize.Small" />
-                </Template>
-            </RadzenDataGridColumn>
-        </Columns>
-    </RadzenDataGrid>
-}
+    h2 {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 20px;
+        margin: 0 0 16px 0;
+        padding: 0;
+    }
+
+    .action-button {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 6px 12px;
+        border-radius: 6px;
+        background-color: #3b82f6;
+        border: none;
+        transition: background-color 0.2s, box-shadow 0.2s;
+    }
+
+        .action-button:hover:not(:disabled) {
+            background-color: #2563eb;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .action-button:disabled {
+            background-color: #d1d5db;
+            cursor: not-allowed;
+        }
+
+    .search-header {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+        margin: 0 0 16px 0;
+        align-items: end;
+        padding: 0;
+    }
+
+    .search-field {
+        display: flex;
+        flex-direction: column;
+    }
+
+        .search-field label {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+
+    .search-input {
+        width: 100% !important;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        padding: 8px;
+        font-size: 14px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+        .search-input:hover {
+            border-color: #9ca3af;
+        }
+
+        .search-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            outline: none;
+        }
+
+    .search-button {
+        display: flex;
+        align-items: flex-end;
+    }
+
+    .summary-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 8px 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        flex: 0 0 auto;
+    }
+
+    .summary-stack {
+        gap: 1.5rem;
+    }
+
+    .summary-text {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+        .summary-text strong {
+            font-weight: 600;
+        }
+
+    @@media (max-width: 768px) {
+        .orders-list-container {
+            padding: 8px 12px;
+        }
+
+        h2 {
+            font-size: 18px;
+        }
+
+        .action-button {
+            font-size: 12px;
+            padding: 6px 10px;
+        }
+
+        .search-header {
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .search-field {
+            min-width: 100%;
+        }
+
+            .search-field label {
+                font-size: 12px;
+            }
+
+        .search-input {
+            font-size: 13px;
+            padding: 6px;
+        }
+    }
+</style>
 
 @code {
-    private List<OrderSummaryResponse> _orders = new();
-    private bool _isLoading = true;
-    private string? _errorMessage;
+    private List<OrderSummaryResponse> ordersList = new();
+    private int totalCount = 0;
+    private int pageSize = GridPageSizeConstants.PageSize10;
+    private int? selectedProviderId;
+    private List<ProviderResponse> _filteredProviders = new();
 
     protected override async Task OnInitializedAsync()
     {
+        _logger.LogInformation("OrdersList.OnInitializedAsync called");
+        
+        await LoadProviders(new LoadDataArgs { Filter = string.Empty });
+
+        // Load initial data
+        _logger.LogInformation("Calling Callback to load initial data");
+        await Callback(new LoadDataArgs { Skip = 0, Top = pageSize });
+    }
+
+    async Task LoadProviders(LoadDataArgs args)
+    {
+        var parameters = new QueryStringParameters
+        {
+            PageNumber = 1,
+            PageSize = 7,
+            SearchKeyword = args?.Filter ?? string.Empty
+        };
+
         try
         {
-            _orders = await OrderApiClient.GetOrdersListAsync();
-            _isLoading = false;
+            var pagedProviders = await ProvidersService.GetPagedAsync(parameters, default);
+            _filteredProviders = pagedProviders.Items.ToList();
         }
         catch (Exception ex)
         {
-            _isLoading = false;
-            _errorMessage = $"Échec du chargement des commandes : {ex.Message}";
-            NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Error,
-                    Summary = "Erreur",
-                    Detail = _errorMessage,
-                    Duration = 4000
-                });
+            _filteredProviders = new List<ProviderResponse>();
         }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void ViewOrder(string id)
+    {
+        NavigationManager.NavigateTo($"/AddOrUpdateOrder/{id}");
+    }
+
+    private void CreateNewOrder()
+    {
+        NavigationManager.NavigateTo("/AddOrUpdateOrder");
+    }
+
+    private async Task SearchOrders()
+    {
+        await Callback(new LoadDataArgs { Skip = 0, Top = pageSize });
+    }
+
+    private async Task Callback(LoadDataArgs args)
+    {
+        _logger.LogInformation("OrdersList.Callback called with Skip: {Skip}, Top: {Top}", args.Skip, args.Top);
+        
+        // Update pageSize if Top is provided
+        if (args.Top.HasValue)
+        {
+            pageSize = args.Top.Value;
+        }
+
+        try
+        {
+            var allOrders = await OrderService.GetOrdersListAsync(default);
+            
+            // Filter by provider if selected
+            if (selectedProviderId.HasValue)
+            {
+                allOrders = allOrders.Where(o => o.SupplierId == selectedProviderId.Value).ToList();
+            }
+
+            // Apply paging
+            ordersList = allOrders.Skip(args.Skip ?? 0).Take(args.Top ?? pageSize).ToList();
+            totalCount = allOrders.Count;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading orders");
+            ordersList = new List<OrderSummaryResponse>();
+            totalCount = 0;
+        }
+
+        await InvokeAsync(StateHasChanged);
     }
 }
