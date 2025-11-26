@@ -1,3 +1,5 @@
+using TunNetCom.SilkRoadErp.Sales.Contracts.Common;
+
 namespace TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Quotations.PrintQuotation;
 
 public class PrintQuotationModel
@@ -22,6 +24,7 @@ public class PrintQuotationModel
     public decimal VatRate7 { get; set; }
     public decimal VatRate13 { get; set; }
     public decimal VatRate19 { get; set; }
+    public int DecimalPlaces { get; set; } = DecimalFormatConstants.DEFAULT_DECIMAL_PLACES;
 
     public QuotationCustomerModel? Customer { get; set; }
     public List<QuotationLineModel> Lines { get; set; } = new();

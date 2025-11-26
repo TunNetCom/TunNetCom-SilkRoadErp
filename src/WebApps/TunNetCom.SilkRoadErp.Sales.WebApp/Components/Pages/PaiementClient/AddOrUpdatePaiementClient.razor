@@ -14,6 +14,7 @@
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Banque
 @using TunNetCom.SilkRoadErp.Sales.Domain.Entites
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using Radzen.Blazor
 @using Radzen
 @inject NavigationManager NavigationManager
@@ -69,7 +70,7 @@
             </RadzenFormField>
 
             <RadzenFormField Text="@($"{Localizer["Montant"]} *")" class="rz-col-12 rz-md-6">
-                <RadzenNumeric @bind-Value="paiement.Montant" Min="0" Format="N2" Style="width: 100%;" />
+                <RadzenNumeric @bind-Value="paiement.Montant" Min="0" Format="@AmountHelper.FORMAT_N2" Style="width: 100%;" />
             </RadzenFormField>
 
             <RadzenFormField Text="@($"{Localizer["Date_Paiement"]} *")" class="rz-col-12 rz-md-6">

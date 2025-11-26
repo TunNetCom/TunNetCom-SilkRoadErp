@@ -4,6 +4,8 @@
 @using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using System.ComponentModel.DataAnnotations
 @using System.Globalization
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services
@@ -11,6 +13,7 @@
 @inject NavigationManager NavigationManager
 @inject IStringLocalizer<SharedResource> Localizer
 @inject ToastService ToastService
+@inject IDecimalFormatService DecimalFormatService
 
 <RadzenCard Style="padding: 20px; max-width: 900px; margin: 2rem auto;">
     <RadzenTemplateForm Data="@productModel" Submit="@OnSubmit">
@@ -86,7 +89,7 @@
                 <RadzenFormField Text="@Localizer["product_prix"]">
                     <Start><RadzenIcon Icon="attach_money" /></Start>
                     <ChildContent>
-                        <RadzenNumeric @bind-Value="productModel.Price" Name="@nameof(ProductModel.Price)" Style="width: 100%;" Min="0" Step="0.001" Format="N3" />
+                        <RadzenNumeric @bind-Value="productModel.Price" Name="@nameof(ProductModel.Price)" Style="width: 100%;" Min="0" Step="0.001" Format="@priceFormat" />
                     </ChildContent>
                     <Helper>
                         <RadzenRangeValidator Component="Price" Min="0" Text="@Localizer["positive_number"]" />
@@ -96,7 +99,7 @@
                 <RadzenFormField Text="@Localizer["product_prixAchat"]">
                     <Start><RadzenIcon Icon="shopping_basket" /></Start>
                     <ChildContent>
-                        <RadzenNumeric @bind-Value="productModel.PurchasingPrice" Name="@nameof(ProductModel.PurchasingPrice)" Style="width: 100%;" Min="0" Step="0.001" Format="N3" />
+                        <RadzenNumeric @bind-Value="productModel.PurchasingPrice" Name="@nameof(ProductModel.PurchasingPrice)" Style="width: 100%;" Min="0" Step="0.001" Format="@priceFormat" />
                     </ChildContent>
                     <Helper>
                         <RadzenRangeValidator Component="PurchasingPrice" Min="0" Text="@Localizer["positive_number"]" />
@@ -133,6 +136,7 @@
     private ProductModel productModel = new();
     private bool isSubmitting = false;
     private CancellationTokenSource cancellationTokenSource = new();
+    private string priceFormat = AmountHelper.FORMAT_N3;
     private EventCallback<ProductModel> OnSubmit => EventCallback.Factory.Create<ProductModel>(this, HandleValidSubmit);
 
     // Product Model Definition
@@ -170,6 +174,9 @@
     // Lifecycle Methods
     protected override async Task OnInitializedAsync()
     {
+        await base.OnInitializedAsync();
+        priceFormat = await DecimalFormatService.GetDecimalFormatAsync();
+        
         if (string.IsNullOrEmpty(Refe)) return;
 
         try

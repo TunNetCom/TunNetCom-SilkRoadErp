@@ -1,9 +1,18 @@
 ﻿using System.Globalization;
+using TunNetCom.SilkRoadErp.Sales.Contracts.Common;
 
 namespace TunNetCom.SilkRoadErp.Sales.WebApp.Helpers;
 
 public static class AmountHelper
 {
+    // Constants for decimal places - use shared constants from Contracts
+    public const int DEFAULT_DECIMAL_PLACES = DecimalFormatConstants.DEFAULT_DECIMAL_PLACES;
+    public const int PERCENTAGE_DECIMAL_PLACES = DecimalFormatConstants.PERCENTAGE_DECIMAL_PLACES;
+    
+    // Constants for format strings
+    public const string FORMAT_N2 = "N2";
+    public const string FORMAT_N3 = "N3";
+
     public const string TYPE_BL = "BL";
     public const string TYPE_DEVIS = "Devis";
     public const string TYPE_FACTURE = "Facture";
@@ -13,7 +22,24 @@ public static class AmountHelper
 
     public static string FormatAmount(this decimal value)
     {
-        return string.Format(CultureInfo.GetCultureInfo("fr-FR"), "{0:N3}", value);
+        // Default to 3 decimal places for backward compatibility
+        return FormatAmount(value, DEFAULT_DECIMAL_PLACES);
+    }
+
+    public static string FormatAmount(this decimal value, int decimalPlaces)
+    {
+        var format = GetDecimalFormat(decimalPlaces);
+        return string.Format(CultureInfo.GetCultureInfo("fr-FR"), $"{{0:{format}}}", value);
+    }
+
+    public static string GetDecimalFormat(int decimalPlaces)
+    {
+        // Validate that decimalPlaces is 2 or 3
+        if (decimalPlaces != PERCENTAGE_DECIMAL_PLACES && decimalPlaces != DEFAULT_DECIMAL_PLACES)
+        {
+            decimalPlaces = DEFAULT_DECIMAL_PLACES; // Default to 3 if invalid
+        }
+        return $"N{decimalPlaces}";
     }
 
     public static string ConvertFloatToFrenchToWords(float chiffre, string type)

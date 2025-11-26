@@ -52,6 +52,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             entity.Property(e => e.BloquerVenteStockInsuffisant)
             .HasColumnName("BloquerVenteStockInsuffisant")
             .HasDefaultValue(true);
+            entity.Property(e => e.DecimalPlaces)
+            .HasColumnName("DecimalPlaces")
+            .HasDefaultValue(3);
 
             OnConfigurePartial(entity);
         }

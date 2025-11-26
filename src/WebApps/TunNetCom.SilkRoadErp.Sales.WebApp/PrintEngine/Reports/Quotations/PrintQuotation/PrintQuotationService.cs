@@ -62,6 +62,7 @@ public class PrintQuotationService(
         printModel.VatRate7 = getAppParametersResponse.Value.VatRate7;
         printModel.VatRate13 = getAppParametersResponse.Value.VatRate13;
         printModel.VatRate19 = getAppParametersResponse.Value.VatRate19;
+        printModel.DecimalPlaces = getAppParametersResponse.Value.DecimalPlaces;
         CalculateTotalAmounts(printModel, getAppParametersResponse.Value);
 
         var printOptions = PreparePrintOptions(printModel, getAppParametersResponse.Value);
@@ -107,6 +108,7 @@ public class PrintQuotationService(
         printModel.VatRate7 = getAppParametersResponse.Value.VatRate7;
         printModel.VatRate13 = getAppParametersResponse.Value.VatRate13;
         printModel.VatRate19 = getAppParametersResponse.Value.VatRate19;
+        printModel.DecimalPlaces = getAppParametersResponse.Value.DecimalPlaces;
         CalculateTotalAmounts(printModel, getAppParametersResponse.Value);
 
         var printOptions = PreparePrintOptions(printModel, getAppParametersResponse.Value);

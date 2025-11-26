@@ -1,4 +1,6 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.Common;
+
+namespace TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters;
 
 public class UpdateAppParametersRequest
 {
@@ -27,7 +29,8 @@ public class UpdateAppParametersRequest
         decimal? vatRate7,
         decimal? vatRate13,
         decimal? vatRate19,
-        bool? bloquerVenteStockInsuffisant)
+        bool? bloquerVenteStockInsuffisant,
+        int? decimalPlaces)
     {
         NomSociete = nomSociete;
         Timbre = (decimal)timbre;
@@ -49,6 +52,7 @@ public class UpdateAppParametersRequest
         VatRate13 = vatRate13 ?? 13;
         VatRate19 = vatRate19 ?? 19;
         BloquerVenteStockInsuffisant = bloquerVenteStockInsuffisant ?? true;
+        DecimalPlaces = decimalPlaces ?? DecimalFormatConstants.DEFAULT_DECIMAL_PLACES;
     }
 
     public string NomSociete { get; set; } = null!;
@@ -90,4 +94,6 @@ public class UpdateAppParametersRequest
     public decimal VatRate19 { get; set; }
 
     public bool BloquerVenteStockInsuffisant { get; set; }
+
+    public int DecimalPlaces { get; set; } = DecimalFormatConstants.DEFAULT_DECIMAL_PLACES;
 }

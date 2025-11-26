@@ -9,9 +9,11 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.Inventaires
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
 @typeparam TItem where TItem : class, ILineItem
 @inject IJSRuntime JSRuntime
 @inject DialogService DialogService
+@inject IDecimalFormatService DecimalFormatService
 
 <div id="@componentId">
 <RadzenDataGrid @ref="ordersGrid" 
@@ -207,7 +209,7 @@
                                    Value="order.UnitPriceExcludingTax"
                                    Change="@(args => OnUnitPriceChanged(order, args))"
                                    Style="width:100%;"
-                                   Format="@GetPriceFormat()"
+                                   Format="@priceFormat"
                                    Name="UnitPrice"/>
                     @if (ShowPriceHistoryDialog && !string.IsNullOrEmpty(GetProductReference?.Invoke(order)))
                     {
@@ -232,14 +234,14 @@
                                Min="0"
                                Max="@((decimal)MaxDiscountPercentage)"
                                Step="0.01"
-                               Format="N2"
+                               Format="@discountFormat"
                                Name="Discount"/>
             </Template>
         </RadzenDataGridColumn>
 
         <RadzenDataGridColumn Width="120px" Title="@Localizer["total_excluding_tax"]">
             <Template Context="order">
-                @order.TotalExcludingTax.FormatAmount()
+                @order.TotalExcludingTax.FormatAmount(decimalPlaces)
             </Template>
         </RadzenDataGridColumn>
 
@@ -255,7 +257,7 @@
                                    Min="0"
                                    Max="@((decimal)MaxVatPercentage)"
                                    Step="0.01"
-                                   Format="N2"
+                                   Format="@vatFormat"
                                    Name="Vat"/>
                 </Template>
             </RadzenDataGridColumn>
@@ -265,7 +267,7 @@
         {
             <RadzenDataGridColumn Title="@Localizer["total_including_tax"]">
                 <Template Context="order">
-                    @order.TotalIncludingTax.FormatAmount()
+                    @order.TotalIncludingTax.FormatAmount(decimalPlaces)
                 </Template>
             </RadzenDataGridColumn>
         }
@@ -488,12 +490,19 @@
     private DotNetObjectReference<LineItemsGrid<TItem>>? objRef;
     private string componentId = Guid.NewGuid().ToString();
     private bool showDeliveredQuantityColumn = false;
+    private string priceFormat = AmountHelper.FORMAT_N3;
+    private string discountFormat = AmountHelper.FORMAT_N2;
+    private string vatFormat = AmountHelper.FORMAT_N2;
+    private int decimalPlaces = AmountHelper.DEFAULT_DECIMAL_PLACES;
 
-    private string GetPriceFormat()
+    protected override async Task OnInitializedAsync()
     {
-        // Format with thousands separator and 3 decimal places (e.g., 1,234.567)
-        // Using "N3" format: Number with 3 decimal places and thousands separator
-        return "N3";
+        await base.OnInitializedAsync();
+        decimalPlaces = await DecimalFormatService.GetDecimalPlacesAsync();
+        priceFormat = await DecimalFormatService.GetDecimalFormatAsync();
+        // Discount and VAT percentages typically use 2 decimal places
+        discountFormat = AmountHelper.FORMAT_N2;
+        vatFormat = AmountHelper.FORMAT_N2;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

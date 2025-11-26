@@ -1,4 +1,6 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.Common;
+
+namespace TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters;
 
 public class GetAppParametersResponse
 {
@@ -61,4 +63,7 @@ public class GetAppParametersResponse
 
     [JsonPropertyName("bloquerVenteStockInsuffisant")]
     public bool BloquerVenteStockInsuffisant { get; set; }
+
+    [JsonPropertyName("decimalPlaces")]
+    public int DecimalPlaces { get; set; } = DecimalFormatConstants.DEFAULT_DECIMAL_PLACES;
 }

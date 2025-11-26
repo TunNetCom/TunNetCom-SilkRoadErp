@@ -43,7 +43,8 @@ public class UpdateAppParametersCommandHandler(
             vatRate7: updateAppParametersCommand.VatRate7 ?? appParametersToUpdate.VatRate7,
             vatRate13: updateAppParametersCommand.VatRate13 ?? appParametersToUpdate.VatRate13,
             vatRate19: updateAppParametersCommand.VatRate19 ?? appParametersToUpdate.VatRate19,
-            bloquerVenteStockInsuffisant: updateAppParametersCommand.BloquerVenteStockInsuffisant ?? appParametersToUpdate.BloquerVenteStockInsuffisant);
+            bloquerVenteStockInsuffisant: updateAppParametersCommand.BloquerVenteStockInsuffisant ?? appParametersToUpdate.BloquerVenteStockInsuffisant,
+            decimalPlaces: updateAppParametersCommand.DecimalPlaces ?? appParametersToUpdate.DecimalPlaces);
 
         _ = await _context.SaveChangesAsync(cancellationToken);
 

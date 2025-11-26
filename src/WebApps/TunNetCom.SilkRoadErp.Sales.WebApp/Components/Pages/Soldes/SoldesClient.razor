@@ -5,6 +5,8 @@
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AccountingYear
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using Radzen.Blazor
 @using Radzen
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Customers
@@ -15,6 +17,7 @@
 @inject ICustomersApiClient CustomersService
 @inject IAccountingYearApiClient AccountingYearService
 @inject NotificationService NotificationService
+@inject IDecimalFormatService DecimalFormatService
 
 <div class="soldes-container">
     <div class="soldes-card">
@@ -62,28 +65,28 @@
                         </div>
                         <div class="solde-item">
                             <span class="solde-label">@Localizer["Total_Factures"]:</span>
-                            <span class="solde-value">@solde.TotalFactures.ToString("N2") TND</span>
+                            <span class="solde-value">@solde.TotalFactures.FormatAmount(decimalPlaces) TND</span>
                         </div>
                         <div class="solde-item">
                             <span class="solde-label">@Localizer["Total_BL_Non_Factures"]:</span>
-                            <span class="solde-value">@solde.TotalBonsLivraisonNonFactures.ToString("N2") TND</span>
+                            <span class="solde-value">@solde.TotalBonsLivraisonNonFactures.FormatAmount(decimalPlaces) TND</span>
                         </div>
                         <div class="solde-item">
                             <span class="solde-label">@Localizer["Total_Avoirs"]:</span>
-                            <span class="solde-value">@solde.TotalAvoirs.ToString("N2") TND</span>
+                            <span class="solde-value">@solde.TotalAvoirs.FormatAmount(decimalPlaces) TND</span>
                         </div>
                         <div class="solde-item">
                             <span class="solde-label">@Localizer["Total_Factures_Avoir"]:</span>
-                            <span class="solde-value">@solde.TotalFacturesAvoir.ToString("N2") TND</span>
+                            <span class="solde-value">@solde.TotalFacturesAvoir.FormatAmount(decimalPlaces) TND</span>
                         </div>
                         <div class="solde-item">
                             <span class="solde-label">@Localizer["Total_Paiements"]:</span>
-                            <span class="solde-value">@solde.TotalPaiements.ToString("N2") TND</span>
+                            <span class="solde-value">@solde.TotalPaiements.FormatAmount(decimalPlaces) TND</span>
                         </div>
                         <div class="solde-item solde-total">
                             <span class="solde-label">@Localizer["Solde"]:</span>
                             <span class="solde-value @(solde.Solde >= 0 ? "solde-positif" : "solde-negatif")">
-                                @solde.Solde.ToString("N2") TND
+                                @solde.Solde.FormatAmount(decimalPlaces) TND
                             </span>
                         </div>
                     </RadzenStack>
@@ -142,7 +145,7 @@
                                     <RadzenDataGridColumn Property="@nameof(DocumentSoldeClient.Date)" Title="@Localizer["date"]" FormatString="{0:dd/MM/yyyy}" Width="140px" />
                                     <RadzenDataGridColumn Property="@nameof(DocumentSoldeClient.Montant)" Title="@Localizer["Montant_Col"]" Width="150px">
                                         <Template Context="bl">
-                                            @bl.Montant.ToString("N2") TND
+                                            @bl.Montant.FormatAmount(decimalPlaces) TND
                                         </Template>
                                     </RadzenDataGridColumn>
                                     <RadzenDataGridColumn Title="" Width="50px">
@@ -162,7 +165,7 @@
                             <RadzenDataGridColumn Property="@nameof(DocumentSoldeClient.Date)" Title="@Localizer["date"]" FormatString="{0:dd/MM/yyyy}" Width="140px" />
                             <RadzenDataGridColumn Property="@nameof(DocumentSoldeClient.Montant)" Title="@Localizer["Montant_Col"]" Width="150px">
                                 <Template Context="facture">
-                                    @facture.Montant.ToString("N2") TND
+                                    @facture.Montant.FormatAmount(decimalPlaces) TND
                                 </Template>
                             </RadzenDataGridColumn>
                             <RadzenDataGridColumn Title="" Width="50px">
@@ -194,7 +197,7 @@
                         </RadzenDataGridColumn>
                         <RadzenDataGridColumn TItem="PaiementSoldeClient" Property="Montant" Title="@Localizer["Montant_Col"]" Width="150px">
                             <Template Context="paiement">
-                                @paiement.Montant.ToString("N2") TND
+                                @paiement.Montant.FormatAmount(decimalPlaces) TND
                             </Template>
                         </RadzenDataGridColumn>
                         <RadzenDataGridColumn TItem="PaiementSoldeClient" Property="MethodePaiement" Title="@Localizer["Methode_Col"]" Width="120px" />
@@ -334,11 +337,18 @@
     private int? selectedClientId;
     private List<CustomerResponse> _filteredCustomers = new();
     private CancellationTokenSource cancellationTokenSource = new();
+    private int decimalPlaces = AmountHelper.DEFAULT_DECIMAL_PLACES;
     
     DataGridExpandMode expandMode = DataGridExpandMode.Multiple;
     RadzenDataGrid<DocumentSoldeClient>? facturesGrid;
     
     private IEnumerable<DocumentSoldeClient> factures => solde?.Documents.Where(d => d.Type == "Facture" && d.BonsLivraison != null && d.BonsLivraison.Any()) ?? Enumerable.Empty<DocumentSoldeClient>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        decimalPlaces = await DecimalFormatService.GetDecimalPlacesAsync();
+    }
 
     async Task LoadCustomers(LoadDataArgs args)
     {

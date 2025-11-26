@@ -5,6 +5,8 @@
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AccountingYear
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using Radzen.Blazor
 @using Radzen
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Customers
@@ -20,6 +22,7 @@
 @inject ToastService ToastService
 @inject DialogService DialogService
 @inject NotificationService NotificationService
+@inject IDecimalFormatService DecimalFormatService
 
 <div class="paiements-container">
     <div class="paiements-card">
@@ -92,7 +95,7 @@
                 <RadzenDataGridColumn TItem="PaiementClientResponse" Property="ClientNom" Title="@Localizer["Client_Col"]" Width="200px" />
                 <RadzenDataGridColumn TItem="PaiementClientResponse" Property="Montant" Title="@Localizer["Montant_Col"]" Width="150px">
                     <Template Context="paiement">
-                        @paiement.Montant.ToString("N2") TND
+                        @paiement.Montant.FormatAmount(decimalPlaces) TND
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="PaiementClientResponse" Property="DatePaiement" Title="@Localizer["Date_Paiement_Col"]" Width="150px">
@@ -197,6 +200,7 @@
     private List<PaiementClientResponse> paiements = new();
     private int totalPaiements;
     private bool isLoadingPaiements = false;
+    private int decimalPlaces = AmountHelper.DEFAULT_DECIMAL_PLACES;
     private int? selectedClientId;
     private int? selectedAccountingYearId;
     private List<CustomerResponse> _filteredCustomers = new();
@@ -206,6 +210,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await base.OnInitializedAsync();
+        decimalPlaces = await DecimalFormatService.GetDecimalPlacesAsync();
         await LoadAccountingYearsAsync();
     }
 

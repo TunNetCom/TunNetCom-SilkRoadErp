@@ -125,14 +125,14 @@
                             <RadzenFormField Text="@localizer["vat_percentage"]">
                                 <Start><RadzenIcon Icon="percent" /></Start>
                                 <ChildContent>
-                                    <RadzenNumeric @bind-Value="system.VatAmount" Name="VatAmount" Style="width: 100%;" Format="N2" Step="0.01" />
+                                    <RadzenNumeric @bind-Value="system.VatAmount" Name="VatAmount" Style="width: 100%;" Format="@AmountHelper.FORMAT_N2" Step="0.01" />
                                 </ChildContent>
                             </RadzenFormField>
 
                             <RadzenFormField Text="@localizer["discount_percentage"]">
                                 <Start><RadzenIcon Icon="percent" /></Start>
                                 <ChildContent>
-                                    <RadzenNumeric @bind-Value="system.DiscountPercentage" Name="DiscountPercentage" Style="width: 100%;" Format="N2" Step="0.01" />
+                                    <RadzenNumeric @bind-Value="system.DiscountPercentage" Name="DiscountPercentage" Style="width: 100%;" Format="@AmountHelper.FORMAT_N2" Step="0.01" />
                                 </ChildContent>
                             </RadzenFormField>
                         </RadzenColumn>
@@ -143,28 +143,35 @@
                             <RadzenFormField Text="Taux TVA 0%">
                                 <Start><RadzenIcon Icon="percent" /></Start>
                                 <ChildContent>
-                                    <RadzenNumeric @bind-Value="system.VatRate0" Name="VatRate0" Style="width: 100%;" Format="N2" Step="0.01" />
+                                    <RadzenNumeric @bind-Value="system.VatRate0" Name="VatRate0" Style="width: 100%;" Format="@AmountHelper.FORMAT_N2" Step="0.01" />
                                 </ChildContent>
                             </RadzenFormField>
 
                             <RadzenFormField Text="Taux TVA 7%">
                                 <Start><RadzenIcon Icon="percent" /></Start>
                                 <ChildContent>
-                                    <RadzenNumeric @bind-Value="system.VatRate7" Name="VatRate7" Style="width: 100%;" Format="N2" Step="0.01" />
+                                    <RadzenNumeric @bind-Value="system.VatRate7" Name="VatRate7" Style="width: 100%;" Format="@AmountHelper.FORMAT_N2" Step="0.01" />
                                 </ChildContent>
                             </RadzenFormField>
 
                             <RadzenFormField Text="Taux TVA 13%">
                                 <Start><RadzenIcon Icon="percent" /></Start>
                                 <ChildContent>
-                                    <RadzenNumeric @bind-Value="system.VatRate13" Name="VatRate13" Style="width: 100%;" Format="N2" Step="0.01" />
+                                    <RadzenNumeric @bind-Value="system.VatRate13" Name="VatRate13" Style="width: 100%;" Format="@AmountHelper.FORMAT_N2" Step="0.01" />
                                 </ChildContent>
                             </RadzenFormField>
 
                             <RadzenFormField Text="Taux TVA 19%">
                                 <Start><RadzenIcon Icon="percent" /></Start>
                                 <ChildContent>
-                                    <RadzenNumeric @bind-Value="system.VatRate19" Name="VatRate19" Style="width: 100%;" Format="N2" Step="0.01" />
+                                    <RadzenNumeric @bind-Value="system.VatRate19" Name="VatRate19" Style="width: 100%;" Format="@AmountHelper.FORMAT_N2" Step="0.01" />
+                                </ChildContent>
+                            </RadzenFormField>
+
+                            <RadzenFormField Text="Nombre de décimales">
+                                <Start><RadzenIcon Icon="format_numbered_list" /></Start>
+                                <ChildContent>
+                                    <RadzenNumeric @bind-Value="system.DecimalPlaces" Name="DecimalPlaces" Style="width: 100%;" Min="2" Max="3" Step="1" />
                                 </ChildContent>
                             </RadzenFormField>
                         </RadzenColumn>
@@ -239,7 +246,8 @@
 					VatRate7 = system.VatRate7,
 					VatRate13 = system.VatRate13,
 					VatRate19 = system.VatRate19,
-					BloquerVenteStockInsuffisant = system.BloquerVenteStockInsuffisant
+					BloquerVenteStockInsuffisant = system.BloquerVenteStockInsuffisant,
+					DecimalPlaces = system.DecimalPlaces
 				}, cancellationToken);
 
         if (updateAppParametersResult.IsT0)

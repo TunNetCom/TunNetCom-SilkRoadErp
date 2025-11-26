@@ -19,4 +19,5 @@ public record UpdateAppParametersCommand(
     decimal? VatRate7,
     decimal? VatRate13,
     decimal? VatRate19,
-    bool? BloquerVenteStockInsuffisant) : IRequest<Result>;
+    bool? BloquerVenteStockInsuffisant,
+    int? DecimalPlaces) : IRequest<Result>;

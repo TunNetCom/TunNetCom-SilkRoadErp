@@ -22,6 +22,7 @@ builder.Services.AddPrintEngine(builder.Configuration);
 builder.Services.AddLocalization();
 builder.Services.AddControllers();
 builder.Services.AddScoped<GitHubService>();
+builder.Services.AddScoped<IDecimalFormatService, DecimalFormatService>();
 string[] supportedCultures = ["en", "fr", "ar"];
 var localizationOptions = new RequestLocalizationOptions()
     .SetDefaultCulture("fr")
