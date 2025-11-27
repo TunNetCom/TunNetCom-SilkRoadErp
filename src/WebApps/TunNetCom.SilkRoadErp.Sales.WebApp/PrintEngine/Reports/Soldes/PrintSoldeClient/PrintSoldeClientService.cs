@@ -114,6 +114,7 @@ public class PrintSoldeClientService(
         return new PrintSoldeClientDeliveryNote
         {
             Numero = deliveryNote.Numero,
+            Date = deliveryNote.Date,
             Montant = deliveryNote.Montant,
             Lines = lines.Select(line => new PrintSoldeClientDeliveryLine
             {

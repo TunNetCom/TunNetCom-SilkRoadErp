@@ -46,6 +46,7 @@ public class PrintSoldeClientDocument
 public class PrintSoldeClientDeliveryNote
 {
     public int Numero { get; set; }
+    public DateTime Date { get; set; }
     public decimal Montant { get; set; }
     public List<PrintSoldeClientDeliveryLine> Lines { get; set; } = new();
 }

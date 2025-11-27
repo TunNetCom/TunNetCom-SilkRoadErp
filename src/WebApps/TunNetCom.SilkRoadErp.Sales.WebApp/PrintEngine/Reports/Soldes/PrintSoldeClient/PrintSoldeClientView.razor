@@ -158,7 +158,7 @@
                             <td colspan="5">
                                 @foreach (var bl in document.DeliveryNotes)
                                 {
-                                    <div style="font-weight:bold;margin-top:8px;">Bon de livraison @bl.Numero - Montant @bl.Montant.FormatAmount(Model.DecimalPlaces) TND</div>
+                                    <div style="font-weight:bold;margin-top:8px;">Bon de livraison @bl.Numero - Date: @bl.Date.ToString("dd/MM/yyyy") - Montant @bl.Montant.FormatAmount(Model.DecimalPlaces) TND</div>
                                     @if (bl.Lines.Any())
                                     {
                                         <table class="sub-table">
