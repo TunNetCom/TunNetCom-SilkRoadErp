@@ -1,4 +1,6 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Json;
+using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.JSInterop;
 using TunNetCom.SilkRoadErp.Sales.Contracts.Auth;
@@ -13,6 +15,14 @@ public interface IAuthService
     Task LoadTokenFromStorageAsync();
     bool IsAuthenticated { get; }
     string? AccessToken { get; }
+    UserInfo? GetUserInfo();
+}
+
+public class UserInfo
+{
+    public string Username { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string? DisplayName { get; set; }
 }
 
 public class AuthService : IAuthService
@@ -177,6 +187,37 @@ public class AuthService : IAuthService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error initializing auth service");
+        }
+    }
+
+    public UserInfo? GetUserInfo()
+    {
+        if (string.IsNullOrEmpty(AccessToken))
+            return null;
+
+        try
+        {
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadJwtToken(AccessToken);
+            
+            var username = jsonToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+            var email = jsonToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+            var displayName = jsonToken.Claims.FirstOrDefault(c => c.Type == "display_name")?.Value;
+
+            if (string.IsNullOrEmpty(username))
+                return null;
+
+            return new UserInfo
+            {
+                Username = username,
+                Email = email ?? string.Empty,
+                DisplayName = displayName ?? username
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error decoding JWT token");
+            return null;
         }
     }
 }

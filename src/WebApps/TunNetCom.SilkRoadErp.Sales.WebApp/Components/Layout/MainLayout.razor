@@ -1,8 +1,10 @@
 ﻿@using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
 @inherits LayoutComponentBase
 @inject IStringLocalizer<SharedResource> Localizer
 @inject NavigationManager NavigationManager
+@inject IAuthService AuthService
 
 <RadzenComponents @rendermode="InteractiveAuto" />
 
@@ -24,8 +26,8 @@
             </div>
         </div>
     </RadzenHeader>
-    <RadzenSidebar Responsive="false" Style="width: max-content">
-        <RadzenPanelMenu DisplayStyle="@(sidebarExpanded? MenuItemDisplayStyle.IconAndText: MenuItemDisplayStyle.Icon)" ShowArrow="false">
+    <RadzenSidebar Responsive="false" Style="width: max-content; display: flex; flex-direction: column;">
+        <RadzenPanelMenu DisplayStyle="@(sidebarExpanded? MenuItemDisplayStyle.IconAndText: MenuItemDisplayStyle.Icon)" ShowArrow="false" Style="flex: 1;">
             <RadzenPanelMenuItem Text="@Localizer["Overview"]" Icon="home" />
             <RadzenPanelMenuItem Text="@Localizer["Dashboard"]" Icon="dashboard" />
             <RadzenPanelMenuItem Text="@Localizer["Clients"]" Icon="account_circle">
@@ -62,6 +64,78 @@
             </RadzenPanelMenuItem>
             <RadzenPanelMenuItem Text="@Localizer["Banques"]" Icon="account_balance_wallet" Path="/banques" />
         </RadzenPanelMenu>
+        
+        <!-- User section at the bottom of sidebar -->
+        <div style="padding: 12px; border-top: 1px solid rgba(255, 255, 255, 0.1); display: flex; align-items: center; gap: 12px;" @onclick:stopPropagation="true">
+            @if (userInfo != null)
+            {
+                <!-- Avatar circulaire -->
+                <div style="width: 40px; height: 40px; border-radius: 50%; background: #8b5cf6; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <span style="color: white; font-weight: 600; font-size: 14px; text-transform: uppercase;">
+                        @GetInitials(userInfo.DisplayName ?? userInfo.Username)
+                    </span>
+                </div>
+                
+                @if (sidebarExpanded)
+                {
+                    <!-- Informations utilisateur -->
+                    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px;">
+                        <span style="color: white; font-weight: 400; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;">
+                            @userInfo.Username
+                        </span>
+                        <span style="color: rgba(255, 255, 255, 0.7); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;">
+                            @userInfo.Email
+                        </span>
+                    </div>
+                    
+                    <!-- Menu avec trois points -->
+                    <div style="position: relative;">
+                        <RadzenButton Icon="more_vert" 
+                                     ButtonStyle="ButtonStyle.Light" 
+                                     Variant="Variant.Flat"
+                                     Size="ButtonSize.Small"
+                                     Click="@(() => showMenu = !showMenu)"
+                                     Style="min-width: 32px; height: 32px; padding: 0; background: rgba(255, 255, 255, 0.1); border-radius: 6px;" />
+                        @if (showMenu)
+                        {
+                            <div style="position: absolute; bottom: 100%; right: 0; margin-bottom: 8px; background: var(--rz-base-background-color); border: 1px solid var(--rz-border-color); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; min-width: 160px; overflow: hidden;">
+                                <div style="padding: 8px 12px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: background-color 0.2s;" 
+                                     @onclick="@(async () => { showMenu = false; await HandleLogout(); })"
+                                     @onclick:stopPropagation="true"
+                                     class="menu-item">
+                                    <RadzenIcon Icon="logout" Style="font-size: 18px;" />
+                                    <span style="font-size: 14px;">Déconnexion</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <!-- Menu avec trois points quand sidebar réduite -->
+                    <div style="position: relative; margin-left: auto;">
+                        <RadzenButton Icon="more_vert" 
+                                     ButtonStyle="ButtonStyle.Light" 
+                                     Variant="Variant.Flat"
+                                     Size="ButtonSize.Small"
+                                     Click="@(() => showMenu = !showMenu)"
+                                     Style="min-width: 32px; height: 32px; padding: 0; background: rgba(255, 255, 255, 0.1); border-radius: 6px;" />
+                        @if (showMenu)
+                        {
+                            <div style="position: absolute; bottom: 100%; right: 0; margin-bottom: 8px; background: var(--rz-base-background-color); border: 1px solid var(--rz-border-color); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; min-width: 160px; overflow: hidden;">
+                                <div style="padding: 8px 12px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: background-color 0.2s;" 
+                                     @onclick="@(async () => { showMenu = false; await HandleLogout(); })"
+                                     @onclick:stopPropagation="true"
+                                     class="menu-item">
+                                    <RadzenIcon Icon="logout" Style="font-size: 18px;" />
+                                    <span style="font-size: 14px;">Déconnexion</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+        </div>
     </RadzenSidebar>
     <RadzenBody>
         <div class="rz-p-4">
@@ -74,9 +148,79 @@
 
 @code {
     bool sidebarExpanded = true;
+    bool isLoggingOut = false;
+    bool showMenu = false;
+    UserInfo? userInfo;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUserInfo();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadUserInfo();
+            StateHasChanged();
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        // Close menu when clicking outside
+        NavigationManager.LocationChanged += (sender, args) => 
+        {
+            showMenu = false;
+            StateHasChanged();
+        };
+    }
+
+    private async Task LoadUserInfo()
+    {
+        await AuthService.LoadTokenFromStorageAsync();
+        userInfo = AuthService.GetUserInfo();
+    }
+
+    private string GetInitials(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+            return "U";
+        
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length >= 2)
+        {
+            return (parts[0][0].ToString() + parts[1][0].ToString()).ToUpper();
+        }
+        return name.Length >= 2 ? name.Substring(0, 2).ToUpper() : name[0].ToString().ToUpper();
+    }
+
     void OpenAccountSettings()
     {
         NavigationManager.NavigateTo($"/app_parameters");
+    }
+
+
+    private async Task HandleLogout()
+    {
+        if (isLoggingOut)
+            return;
+
+        try
+        {
+            isLoggingOut = true;
+            await AuthService.LogoutAsync();
+            NavigationManager.NavigateTo("/login", forceLoad: true);
+        }
+        catch (Exception)
+        {
+            // Even if logout fails, redirect to login
+            NavigationManager.NavigateTo("/login", forceLoad: true);
+        }
+        finally
+        {
+            isLoggingOut = false;
+        }
     }
 }
 
@@ -89,4 +233,10 @@
 </div>
 
 <Toasts class="p-3" AutoHide="true" Delay="4000" Placement="ToastsPlacement.TopRight" />
+
+<style>
+    .menu-item:hover {
+        background-color: var(--rz-base-hover-background-color) !important;
+    }
+</style>
 

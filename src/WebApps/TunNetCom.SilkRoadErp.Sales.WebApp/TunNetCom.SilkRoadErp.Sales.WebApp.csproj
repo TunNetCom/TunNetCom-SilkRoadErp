@@ -12,6 +12,7 @@
     <PackageReference Include="Newtonsoft.Json" />
     <PackageReference Include="OneOf" />
     <PackageReference Include="Radzen.Blazor" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
     <PackageReference Include="System.Linq.Dynamic.Core" />
     <PackageReference Include="xunit.runner.console">
       <PrivateAssets>all</PrivateAssets>
