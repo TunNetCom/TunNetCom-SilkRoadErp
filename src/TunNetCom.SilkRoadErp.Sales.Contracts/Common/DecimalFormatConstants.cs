@@ -13,3 +13,4 @@ public static class DecimalFormatConstants
     public const int PERCENTAGE_DECIMAL_PLACES = 2;
 }
 
+

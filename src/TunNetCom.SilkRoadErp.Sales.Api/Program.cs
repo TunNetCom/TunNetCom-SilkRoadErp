@@ -37,10 +37,19 @@ builder.Services.AddControllers()
         .Count()
         .AddRouteComponents("odata", EdmModelBuilder.GetEdmModel()));
 
-builder.Services.AddDbContext<SalesContext>(options =>
+// Add HttpContextAccessor for accessing current user in services
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddDbContext<SalesContext>((serviceProvider, options) =>
+{
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection"),
-        sqlServerOptions => sqlServerOptions.MigrationsAssembly("TunNetCom.SilkRoadErp.Sales.Domain")));
+        sqlServerOptions => sqlServerOptions.MigrationsAssembly("TunNetCom.SilkRoadErp.Sales.Domain"));
+    
+    // Add audit interceptor
+    var auditInterceptor = serviceProvider.GetRequiredService<TunNetCom.SilkRoadErp.Sales.Domain.Entites.Interceptors.AuditSaveChangesInterceptor>();
+    options.AddInterceptors(auditInterceptor);
+});
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -156,6 +165,13 @@ builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Servic
 // Register JWT and Password services
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
+
+// Register CurrentUserService for audit logging (implements both ICurrentUserService and ICurrentUserProvider)
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Domain.Entites.ICurrentUserProvider, CurrentUserService>();
+
+// Register AuditSaveChangesInterceptor
+builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Domain.Entites.Interceptors.AuditSaveChangesInterceptor>();
 
 // Configure JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");

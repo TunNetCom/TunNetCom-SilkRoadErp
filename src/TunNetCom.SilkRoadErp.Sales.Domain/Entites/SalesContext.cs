@@ -101,6 +101,8 @@ public partial class SalesContext : DbContext
 
     public virtual DbSet<RefreshToken> RefreshToken { get; set; }
 
+    public virtual DbSet<AuditLog> AuditLog { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(FactureConfiguration).Assembly);
