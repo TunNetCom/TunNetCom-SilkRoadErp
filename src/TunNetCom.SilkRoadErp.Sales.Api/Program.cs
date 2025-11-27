@@ -1,6 +1,10 @@
 using System.Threading.RateLimiting;
 using System.Reflection;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.OData;
+using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.DataSeeder;
 using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Middleware;
@@ -75,6 +79,15 @@ builder.Services.AddSwaggerGen(options =>
         Description = "API for SilkRoad ERP Sales Management System"
     });
     
+    // Add JWT Bearer authentication to Swagger
+    options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token in the text input below.",
+        Name = "Authorization",
+        Scheme = "bearer",
+        BearerFormat = "JWT"
+    });
+    
     // Extract tags from endpoint metadata
     // WithTags() in minimal APIs stores tags in endpoint metadata
     options.TagActionsBy(api =>
@@ -139,6 +152,45 @@ builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Domain.Services.IStockCal
 
 // Register SageErpExportService
 builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.SageErpExportService>();
+
+// Register JWT and Password services
+builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
+
+// Configure JWT Authentication
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey is not configured");
+var key = Encoding.UTF8.GetBytes(secretKey);
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings["Issuer"] ?? "SilkRoadErp",
+        ValidAudience = jwtSettings["Audience"] ?? "SilkRoadErp",
+        IssuerSigningKey = new SymmetricSecurityKey(key),
+        ClockSkew = TimeSpan.Zero
+    };
+});
+
+// Configure Authorization
+builder.Services.AddAuthorization(options =>
+{
+    // No fallback policy - endpoints must explicitly require authorization
+});
+
+// Register Permission Authorization Handler and Policy Provider
+builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
 
 var app = builder.Build();
 
@@ -255,6 +307,10 @@ app.UseMiddleware<ActiveAccountingYearMiddleware>();
 
 app.UseStaticFiles();
 app.UseHttpsRedirection();
+
+// Authentication & Authorization must be before MapControllers and MapCarter
+app.UseAuthentication();
+app.UseAuthorization();
 
 // Map OData routes
 app.MapControllers();

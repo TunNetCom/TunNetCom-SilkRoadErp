@@ -4,16 +4,35 @@ using TunNetCom.SilkRoadErp.Sales.WebApp.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddRazorComponents()
+var razorBuilder = builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// Enable detailed errors in development
+if (builder.Environment.IsDevelopment())
+{
+    razorBuilder.AddCircuitOptions(options =>
+    {
+        options.DetailedErrors = true;
+    });
+}
 
 var baseUrl = builder.Configuration.GetValue<string>("BaseUrl")
     ?? throw new ArgumentNullException("Sales base url was null!");
 
 builder.Services.AddSalesHttpClients(baseUrl);
 
-// Add OData service
+// Add Auth Service
+builder.Services.AddScoped<IAuthService, AuthService>();
+
+// Add OData service with auth handler
 builder.Services.AddHttpClient<ODataService>(client =>
+{
+    client.BaseAddress = new Uri(baseUrl);
+})
+.AddHttpMessageHandler<AuthHttpClientHandler>();
+
+// Add HttpClient for auth endpoints
+builder.Services.AddHttpClient<IAuthService, AuthService>(client =>
 {
     client.BaseAddress = new Uri(baseUrl);
 });

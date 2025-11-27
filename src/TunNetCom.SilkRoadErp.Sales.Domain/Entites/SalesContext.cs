@@ -89,6 +89,18 @@ public partial class SalesContext : DbContext
 
     public virtual DbSet<DocumentTag> DocumentTag { get; set; }
 
+    public virtual DbSet<User> User { get; set; }
+
+    public virtual DbSet<Role> Role { get; set; }
+
+    public virtual DbSet<Permission> Permission { get; set; }
+
+    public virtual DbSet<UserRole> UserRole { get; set; }
+
+    public virtual DbSet<RolePermission> RolePermission { get; set; }
+
+    public virtual DbSet<RefreshToken> RefreshToken { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(FactureConfiguration).Assembly);

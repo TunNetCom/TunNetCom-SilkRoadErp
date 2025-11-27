@@ -1,0 +1,82 @@
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+
+@if (IsAuthorized || IsLoginPage)
+{
+    <RouteView RouteData="@RouteData" DefaultLayout="@DefaultLayout" />
+    <FocusOnNavigate RouteData="@RouteData" Selector="h1" />
+}
+else
+{
+    <div style="display: flex; justify-content: center; align-items: center; height: 100vh; color: #fff; background: #1a1a1a;">
+        <div>Vérification de l'authentification...</div>
+    </div>
+}
+
+@code {
+    [Parameter] public RouteData? RouteData { get; set; }
+    [Parameter] public Type? DefaultLayout { get; set; }
+
+    private bool IsAuthorized { get; set; }
+    private bool IsLoginPage { get; set; }
+    private bool _hasCheckedAuth = false;
+
+    protected override void OnInitialized()
+    {
+        // Check if this is the login page - allow access immediately
+        var currentUri = Navigation.Uri;
+        var pageType = RouteData?.PageType;
+        
+        IsLoginPage = currentUri.EndsWith("/login") || 
+                     currentUri.Contains("/login") ||
+                     pageType?.Name == "LoginPage" || 
+                     pageType?.FullName?.Contains("Login") == true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Always allow login page without any async checks
+        if (IsLoginPage)
+            return;
+
+        if (!firstRender || _hasCheckedAuth)
+            return;
+
+        _hasCheckedAuth = true;
+
+        try
+        {
+            // Load token from storage
+            await AuthService.LoadTokenFromStorageAsync();
+
+            // Check if user is authenticated
+            if (AuthService.IsAuthenticated)
+            {
+                IsAuthorized = true;
+                await InvokeAsync(StateHasChanged);
+            }
+            else
+            {
+                // Not authenticated, redirect to login
+                await Task.Delay(100);
+                var currentUri = Navigation.Uri;
+                if (!currentUri.EndsWith("/login") && !currentUri.Contains("/login"))
+                {
+                    Navigation.NavigateTo("/login", forceLoad: true);
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // If there's an error, redirect to login
+            await Task.Delay(100);
+            var currentUri = Navigation.Uri;
+            if (!currentUri.EndsWith("/login") && !currentUri.Contains("/login"))
+            {
+                Navigation.NavigateTo("/login", forceLoad: true);
+            }
+        }
+    }
+}
+

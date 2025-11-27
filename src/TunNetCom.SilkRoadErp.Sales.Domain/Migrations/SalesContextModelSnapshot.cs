@@ -1369,6 +1369,43 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         });
                 });
 
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Permission", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("Id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreatedAt");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("Description");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("Name");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("UpdatedAt");
+
+                    b.HasKey("Id")
+                        .HasName("PK_Permission");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Permissions", (string)null);
+                });
+
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Produit", b =>
                 {
                     b.Property<string>("Refe")
@@ -1413,6 +1450,113 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasName("PK_dbo.Produit");
 
                     b.ToTable("Produit");
+                });
+
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.RefreshToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("Id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreatedAt");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ExpiresAt");
+
+                    b.Property<bool>("IsRevoked")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsRevoked");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("RevokedAt");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("Token");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int")
+                        .HasColumnName("UserId");
+
+                    b.HasKey("Id")
+                        .HasName("PK_RefreshToken");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RefreshTokens", (string)null);
+                });
+
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Role", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("Id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreatedAt");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("Description");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("Name");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("UpdatedAt");
+
+                    b.HasKey("Id")
+                        .HasName("PK_Role");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Roles", (string)null);
+                });
+
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.RolePermission", b =>
+                {
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int")
+                        .HasColumnName("RoleId");
+
+                    b.Property<int>("PermissionId")
+                        .HasColumnType("int")
+                        .HasColumnName("PermissionId");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreatedAt");
+
+                    b.HasKey("RoleId", "PermissionId")
+                        .HasName("PK_RolePermission");
+
+                    b.HasIndex("PermissionId");
+
+                    b.ToTable("RolePermissions", (string)null);
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Systeme", b =>
@@ -1574,6 +1718,91 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasName("PK_dbo.Transaction");
 
                     b.ToTable("Transaction");
+                });
+
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.User", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("Id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreatedAt");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("Email");
+
+                    b.Property<string>("FirstName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("FirstName");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true)
+                        .HasColumnName("IsActive");
+
+                    b.Property<string>("LastName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("LastName");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("PasswordHash");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("UpdatedAt");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("Username");
+
+                    b.HasKey("Id")
+                        .HasName("PK_User");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("Username")
+                        .IsUnique();
+
+                    b.ToTable("Users", (string)null);
+                });
+
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.UserRole", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int")
+                        .HasColumnName("UserId");
+
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int")
+                        .HasColumnName("RoleId");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreatedAt");
+
+                    b.HasKey("UserId", "RoleId")
+                        .HasName("PK_UserRole");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("UserRoles", (string)null);
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.AvoirFinancierFournisseurs", b =>
@@ -2089,6 +2318,36 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Navigation("Fournisseur");
                 });
 
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.RefreshToken", b =>
+                {
+                    b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.User", "User")
+                        .WithMany("RefreshTokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.RolePermission", b =>
+                {
+                    b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Permission", "Permission")
+                        .WithMany("RolePermissions")
+                        .HasForeignKey("PermissionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Role", "Role")
+                        .WithMany("RolePermissions")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Permission");
+
+                    b.Navigation("Role");
+                });
+
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Transaction", b =>
                 {
                     b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.BonDeLivraison", "NumBlNavigation")
@@ -2098,6 +2357,25 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasConstraintName("FK_dbo.Transaction_dbo.BonDeLivraison_BonDeLivraisonId");
 
                     b.Navigation("NumBlNavigation");
+                });
+
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.UserRole", b =>
+                {
+                    b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Role", "Role")
+                        .WithMany("UserRoles")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.User", "User")
+                        .WithMany("UserRoles")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Role");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.AccountingYear", b =>
@@ -2223,6 +2501,11 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Navigation("LigneInventaire");
                 });
 
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Permission", b =>
+                {
+                    b.Navigation("RolePermissions");
+                });
+
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Produit", b =>
                 {
                     b.Navigation("LigneAvoirFournisseur");
@@ -2240,9 +2523,23 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Navigation("LigneInventaire");
                 });
 
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Role", b =>
+                {
+                    b.Navigation("RolePermissions");
+
+                    b.Navigation("UserRoles");
+                });
+
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Tag", b =>
                 {
                     b.Navigation("DocumentTags");
+                });
+
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.User", b =>
+                {
+                    b.Navigation("RefreshTokens");
+
+                    b.Navigation("UserRoles");
                 });
 #pragma warning restore 612, 618
         }

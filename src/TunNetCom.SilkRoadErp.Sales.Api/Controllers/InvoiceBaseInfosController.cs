@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.AspNetCore.OData.Routing.Controllers;
 using TunNetCom.SilkRoadErp.Sales.Api.Features.AppParameters.GetAppParameters;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Controllers;
 
+[Authorize]
 public class InvoiceBaseInfosController : ODataController
 {
     private readonly SalesContext _context;

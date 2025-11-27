@@ -28,3 +28,5 @@ global using TunNetCom.SilkRoadErp.Sales.Contracts.RecieptNotes;
 global using TunNetCom.SilkRoadErp.Sales.Contracts.Sorting;
 global using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;
 global using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Constants;
+global using TunNetCom.SilkRoadErp.Sales.Contracts.Auth;
+global using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Authorization;

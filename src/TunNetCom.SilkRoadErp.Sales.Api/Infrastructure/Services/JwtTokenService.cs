@@ -1,0 +1,118 @@
+using System;
+using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
+
+namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
+
+public class JwtTokenService : IJwtTokenService
+{
+    private readonly IConfiguration _configuration;
+    private readonly SymmetricSecurityKey _key;
+    private readonly string _issuer;
+    private readonly string _audience;
+    private readonly int _accessTokenExpirationMinutes;
+
+    public JwtTokenService(IConfiguration configuration)
+    {
+        _configuration = configuration;
+        var secretKey = _configuration["JwtSettings:SecretKey"] 
+            ?? throw new InvalidOperationException("JWT SecretKey is not configured");
+        _key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
+        _issuer = _configuration["JwtSettings:Issuer"] ?? "SilkRoadErp";
+        _audience = _configuration["JwtSettings:Audience"] ?? "SilkRoadErp";
+        _accessTokenExpirationMinutes = int.Parse(_configuration["JwtSettings:AccessTokenExpirationMinutes"] ?? "15");
+    }
+
+    public string GenerateAccessToken(User user, IList<string> roles, IList<string> permissions)
+    {
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Name, user.Username),
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+        };
+
+        // Add roles
+        foreach (var role in roles)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, role));
+        }
+
+        // Add permissions
+        foreach (var permission in permissions)
+        {
+            claims.Add(new Claim("permission", permission));
+        }
+
+        var credentials = new SigningCredentials(_key, SecurityAlgorithms.HmacSha256);
+        var expires = DateTime.UtcNow.AddMinutes(_accessTokenExpirationMinutes);
+
+        var token = new JwtSecurityToken(
+            issuer: _issuer,
+            audience: _audience,
+            claims: claims,
+            expires: expires,
+            signingCredentials: credentials
+        );
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    public string GenerateRefreshToken()
+    {
+        var randomNumber = new byte[64];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(randomNumber);
+        return Convert.ToBase64String(randomNumber);
+    }
+
+    public ClaimsPrincipal? GetPrincipalFromExpiredToken(string token)
+    {
+        var tokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateAudience = true,
+            ValidateIssuer = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = _key,
+            ValidateLifetime = false, // We want to validate expired tokens
+            ValidIssuer = _issuer,
+            ValidAudience = _audience
+        };
+
+        var tokenHandler = new JwtSecurityTokenHandler();
+        try
+        {
+            var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken securityToken);
+            
+            if (securityToken is not JwtSecurityToken jwtSecurityToken ||
+                !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+            {
+                return null;
+            }
+
+            return principal;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public async Task<bool> ValidateRefreshTokenAsync(string refreshToken, int userId)
+    {
+        // This will be implemented in the handler that has access to the database
+        // For now, we just return true - the actual validation will be done in the handler
+        await Task.CompletedTask;
+        return true;
+    }
+}
+

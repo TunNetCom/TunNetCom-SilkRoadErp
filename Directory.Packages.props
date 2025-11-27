@@ -44,6 +44,11 @@
     <PackageVersion Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Localization" Version="10.0.0" />
+    <!-- Authentication -->
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
+    <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerGen" Version="10.0.1" />
+    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.2.1" />
+    <PackageVersion Include="BCrypt.Net-Next" Version="4.0.3" />
     <!-- Blazor UI -->
     <PackageVersion Include="Blazor.Bootstrap" Version="2.2.0" />
     <PackageVersion Include="Radzen.Blazor" Version="8.3.2" />

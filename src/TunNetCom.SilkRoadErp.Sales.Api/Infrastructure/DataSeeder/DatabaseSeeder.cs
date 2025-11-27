@@ -1,4 +1,7 @@
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
+using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
+using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 using JsonException = System.Text.Json.JsonException;
 
@@ -55,6 +58,7 @@ public class DatabaseSeeder
             await SeedSystemeAsync(context);
             await SeedProduitsAsync(context);
             await SeedBanquesAsync(context);
+            await SeedAuthAsync(context);
 
             _logger.LogInformation("=== SEEDING DE LA BASE DE DONNÉES TERMINÉ AVEC SUCCÈS ===");
         }
@@ -601,6 +605,204 @@ public class DatabaseSeeder
             _logger.LogError(ex, "✗ ERREUR lors de l'insertion des banques: {Message}", ex.Message);
             throw;
         }
+    }
+
+    private async Task SeedAuthAsync(SalesContext context)
+    {
+        _logger.LogInformation("=== DÉBUT DU SEEDING AUTHENTIFICATION ===");
+
+        // Seed Roles
+        await SeedRolesAsync(context);
+
+        // Seed Permissions
+        await SeedPermissionsAsync(context);
+
+        // Assign Permissions to Roles
+        await SeedRolePermissionsAsync(context);
+
+        // Seed Admin User
+        await SeedAdminUserAsync(context);
+
+        _logger.LogInformation("=== SEEDING AUTHENTIFICATION TERMINÉ ===");
+    }
+
+    private async Task SeedRolesAsync(SalesContext context)
+    {
+        var count = await context.Role.CountAsync();
+        _logger.LogInformation("Table Role - Nombre d'enregistrements actuels: {Count}", count);
+
+        if (count > 0)
+        {
+            _logger.LogInformation("La table Role contient déjà {Count} enregistrement(s). Seeding ignoré.", count);
+            return;
+        }
+
+        var roles = new[]
+        {
+            Role.CreateRole("Admin", "Administrateur avec tous les droits"),
+            Role.CreateRole("Manager", "Manager avec droits de gestion"),
+            Role.CreateRole("User", "Utilisateur standard")
+        };
+
+        await context.Role.AddRangeAsync(roles);
+        await context.SaveChangesAsync();
+        _logger.LogInformation("✓ {Count} rôles insérés avec succès.", roles.Length);
+    }
+
+    private async Task SeedPermissionsAsync(SalesContext context)
+    {
+        var count = await context.Permission.CountAsync();
+        _logger.LogInformation("Table Permission - Nombre d'enregistrements actuels: {Count}", count);
+
+        if (count > 0)
+        {
+            _logger.LogInformation("La table Permission contient déjà {Count} enregistrement(s). Seeding ignoré.", count);
+            return;
+        }
+
+        var permissions = new[]
+        {
+            Permission.CreatePermission("CanViewInvoices", "Peut voir les factures"),
+            Permission.CreatePermission("CanCreateInvoice", "Peut créer des factures"),
+            Permission.CreatePermission("CanUpdateInvoice", "Peut modifier des factures"),
+            Permission.CreatePermission("CanDeleteInvoice", "Peut supprimer des factures"),
+            Permission.CreatePermission("CanViewProducts", "Peut voir les produits"),
+            Permission.CreatePermission("CanCreateProduct", "Peut créer des produits"),
+            Permission.CreatePermission("CanUpdateProduct", "Peut modifier des produits"),
+            Permission.CreatePermission("CanDeleteProduct", "Peut supprimer des produits"),
+            Permission.CreatePermission("CanViewCustomers", "Peut voir les clients"),
+            Permission.CreatePermission("CanCreateCustomer", "Peut créer des clients"),
+            Permission.CreatePermission("CanUpdateCustomer", "Peut modifier des clients"),
+            Permission.CreatePermission("CanDeleteCustomer", "Peut supprimer des clients"),
+            Permission.CreatePermission("CanViewProviders", "Peut voir les fournisseurs"),
+            Permission.CreatePermission("CanCreateProvider", "Peut créer des fournisseurs"),
+            Permission.CreatePermission("CanUpdateProvider", "Peut modifier des fournisseurs"),
+            Permission.CreatePermission("CanDeleteProvider", "Peut supprimer des fournisseurs"),
+            Permission.CreatePermission("CanManageUsers", "Peut gérer les utilisateurs"),
+            Permission.CreatePermission("CanManageRoles", "Peut gérer les rôles"),
+            Permission.CreatePermission("CanManagePermissions", "Peut gérer les permissions")
+        };
+
+        await context.Permission.AddRangeAsync(permissions);
+        await context.SaveChangesAsync();
+        _logger.LogInformation("✓ {Count} permissions insérées avec succès.", permissions.Length);
+    }
+
+    private async Task SeedRolePermissionsAsync(SalesContext context)
+    {
+        var adminRole = await context.Role.FirstOrDefaultAsync(r => r.Name == "Admin");
+        var managerRole = await context.Role.FirstOrDefaultAsync(r => r.Name == "Manager");
+        var userRole = await context.Role.FirstOrDefaultAsync(r => r.Name == "User");
+
+        if (adminRole == null || managerRole == null || userRole == null)
+        {
+            _logger.LogWarning("Les rôles n'existent pas encore. Impossible d'assigner les permissions.");
+            return;
+        }
+
+        // Check if role permissions already exist
+        var existingCount = await context.RolePermission.CountAsync();
+        if (existingCount > 0)
+        {
+            _logger.LogInformation("Les permissions de rôles existent déjà. Seeding ignoré.");
+            return;
+        }
+
+        var allPermissions = await context.Permission.ToListAsync();
+        var rolePermissions = new List<RolePermission>();
+
+        // Admin gets all permissions
+        foreach (var permission in allPermissions)
+        {
+            rolePermissions.Add(RolePermission.CreateRolePermission(adminRole.Id, permission.Id));
+        }
+
+        // Manager gets most permissions except user/role management
+        var managerPermissions = allPermissions.Where(p => 
+            !p.Name.Contains("ManageUsers") && 
+            !p.Name.Contains("ManageRoles") && 
+            !p.Name.Contains("ManagePermissions")).ToList();
+        foreach (var permission in managerPermissions)
+        {
+            rolePermissions.Add(RolePermission.CreateRolePermission(managerRole.Id, permission.Id));
+        }
+
+        // User gets view permissions only
+        var userPermissions = allPermissions.Where(p => p.Name.StartsWith("CanView")).ToList();
+        foreach (var permission in userPermissions)
+        {
+            rolePermissions.Add(RolePermission.CreateRolePermission(userRole.Id, permission.Id));
+        }
+
+        await context.RolePermission.AddRangeAsync(rolePermissions);
+        await context.SaveChangesAsync();
+        _logger.LogInformation("✓ Permissions assignées aux rôles avec succès.");
+    }
+
+    private async Task SeedAdminUserAsync(SalesContext context)
+    {
+        _logger.LogInformation("=== DÉBUT DU SEEDING UTILISATEUR ADMIN ===");
+
+        // Check if admin user already exists
+        var existingAdmin = await context.User
+            .FirstOrDefaultAsync(u => u.Username == "admin");
+
+        if (existingAdmin != null)
+        {
+            _logger.LogInformation("L'utilisateur admin existe déjà (ID: {UserId}).", existingAdmin.Id);
+            
+            // Ensure admin has Admin role
+            var adminRole = await context.Role.FirstOrDefaultAsync(r => r.Name == "Admin");
+            if (adminRole != null)
+            {
+                var existingUserRole = await context.UserRole
+                    .FirstOrDefaultAsync(ur => ur.UserId == existingAdmin.Id && ur.RoleId == adminRole.Id);
+                
+                if (existingUserRole == null)
+                {
+                    var userRole = UserRole.CreateUserRole(existingAdmin.Id, adminRole.Id);
+                    await context.UserRole.AddAsync(userRole);
+                    await context.SaveChangesAsync();
+                    _logger.LogInformation("✓ Rôle Admin assigné à l'utilisateur admin existant.");
+                }
+            }
+            return;
+        }
+
+        var passwordHasher = new PasswordHasher();
+        var adminPasswordHash = passwordHasher.HashPassword("Admin123!"); // Default password - should be changed in production
+
+        var adminUser = User.CreateUser(
+            username: "admin",
+            email: "admin@silkroaderp.com",
+            passwordHash: adminPasswordHash,
+            firstName: "Admin",
+            lastName: "User",
+            isActive: true
+        );
+
+        await context.User.AddAsync(adminUser);
+        await context.SaveChangesAsync();
+
+        // Assign Admin role to admin user
+        var adminRole2 = await context.Role.FirstOrDefaultAsync(r => r.Name == "Admin");
+        if (adminRole2 != null)
+        {
+            var userRole = UserRole.CreateUserRole(adminUser.Id, adminRole2.Id);
+            await context.UserRole.AddAsync(userRole);
+            await context.SaveChangesAsync();
+            _logger.LogInformation("✓ Rôle Admin assigné à l'utilisateur admin.");
+        }
+        else
+        {
+            _logger.LogWarning("⚠ Le rôle Admin n'existe pas. L'utilisateur admin a été créé sans rôle.");
+        }
+
+        _logger.LogInformation("✓ Utilisateur admin créé avec succès");
+        _logger.LogInformation("  - Username: admin");
+        _logger.LogInformation("  - Password: Admin123!");
+        _logger.LogInformation("  - Email: admin@silkroaderp.com");
+        _logger.LogInformation("=== FIN DU SEEDING UTILISATEUR ADMIN ===");
     }
 }
 

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.AspNetCore.OData.Routing.Controllers;
 using TunNetCom.SilkRoadErp.Sales.Contracts.Quotations;
@@ -5,6 +6,7 @@ using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Controllers;
 
+[Authorize]
 public class QuotationBaseInfosController : ODataController
 {
     private readonly SalesContext _context;
