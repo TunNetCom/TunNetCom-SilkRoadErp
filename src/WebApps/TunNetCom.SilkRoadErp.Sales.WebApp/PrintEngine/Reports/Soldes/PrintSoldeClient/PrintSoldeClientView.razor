@@ -1,0 +1,244 @@
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Soldes.PrintSoldeClient
+
+@code {
+    [Parameter] public PrintSoldeClientModel Model { get; set; } = null!;
+}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            margin: 20px;
+            color: #222;
+        }
+
+        h2 {
+            margin-bottom: 4px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 24px;
+            border-bottom: 2px solid #444;
+            padding-bottom: 4px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 6px 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f5f5f5;
+            font-size: 11px;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .badge-warning {
+            color: #b45309;
+            font-weight: bold;
+        }
+
+        .sub-table {
+            margin-top: 6px;
+            border: 1px solid #ddd;
+        }
+
+        .sub-table th, .sub-table td {
+            border: 1px solid #ddd;
+            font-size: 10px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .summary-card {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 8px;
+            background-color: #fafafa;
+        }
+
+        .summary-card .label {
+            font-size: 10px;
+            color: #555;
+        }
+
+        .summary-card .value {
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .footer {
+            margin-top: 32px;
+            font-size: 10px;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <h2>Rapport solde client</h2>
+    <div>Généré le @Model.GeneratedAt.ToString("dd/MM/yyyy HH:mm")</div>
+
+    <div class="summary-grid">
+        <div class="summary-card">
+            <div class="label">Client</div>
+            <div class="value">@Model.Client.Name</div>
+            <div class="label">Code: @Model.Client.Code</div>
+            <div class="label">Contact: @Model.Client.Contact</div>
+        </div>
+        <div class="summary-card">
+            <div class="label">Adresse</div>
+            <div>@Model.Client.Adresse</div>
+        </div>
+        <div class="summary-card">
+            <div class="label">Solde</div>
+            <div class="value">@Model.Summary.Solde.FormatAmount(Model.DecimalPlaces) TND</div>
+            <div class="label">Total factures: @Model.Summary.TotalFactures.FormatAmount(Model.DecimalPlaces)</div>
+            <div class="label">Total paiements: @Model.Summary.TotalPaiements.FormatAmount(Model.DecimalPlaces)</div>
+        </div>
+    </div>
+
+    <div class="section-title">Documents</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Type</th>
+                <th>Numéro</th>
+                <th>Date</th>
+                <th class="text-right">Montant</th>
+                <th>Quantités manquantes</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Documents.Any())
+            {
+                foreach (var document in Model.Documents)
+                {
+                    <tr>
+                        <td>@document.Type</td>
+                        <td>@document.Numero</td>
+                        <td>@document.Date.ToString("dd/MM/yyyy")</td>
+                        <td class="text-right">@document.Montant.FormatAmount(Model.DecimalPlaces) TND</td>
+                        <td>
+                            @if (document.HasMissingQuantities)
+                            {
+                                <span class="badge-warning">Oui</span>
+                            }
+                            else
+                            {
+                                <span>Non</span>
+                            }
+                        </td>
+                    </tr>
+
+                    @if (document.DeliveryNotes.Any())
+                    {
+                        <tr>
+                            <td colspan="5">
+                                @foreach (var bl in document.DeliveryNotes)
+                                {
+                                    <div style="font-weight:bold;margin-top:8px;">Bon de livraison @bl.Numero - Montant @bl.Montant.FormatAmount(Model.DecimalPlaces) TND</div>
+                                    @if (bl.Lines.Any())
+                                    {
+                                        <table class="sub-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Réf</th>
+                                                    <th>Désignation</th>
+                                                    <th class="text-right">Qté</th>
+                                                    <th class="text-right">Qté livrée</th>
+                                                    <th class="text-right">Qté manquante</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var line in bl.Lines)
+                                                {
+                                                    <tr>
+                                                        <td>@line.RefProduit</td>
+                                                        <td>@line.Designation</td>
+                                                        <td class="text-right">@line.Quantite</td>
+                                                        <td class="text-right">@((line.QuantiteLivree ?? line.Quantite).ToString())</td>
+                                                        <td class="text-right">@line.QuantiteNonLivree</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    }
+                                    else if (Model.ShowOnlyMissingProducts)
+                                    {
+                                        <div style="font-style: italic; color: #666; margin-top: 4px;">Aucun produit manquant</div>
+                                    }
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="5" style="text-align:center;">Aucun document</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="section-title">Paiements</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Numéro</th>
+                <th>Date</th>
+                <th>Méthode</th>
+                <th class="text-right">Montant</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Payments.Any())
+            {
+                foreach (var payment in Model.Payments)
+                {
+                    <tr>
+                        <td>@payment.Numero</td>
+                        <td>@payment.DatePaiement.ToString("dd/MM/yyyy")</td>
+                        <td>@payment.Methode</td>
+                        <td class="text-right">@payment.Montant.FormatAmount(Model.DecimalPlaces) TND</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="4" style="text-align:center;">Aucun paiement</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="footer">
+        Société @Model.Company.Name - @Model.Company.Adresse - Tel: @Model.Company.Tel - MF: @Model.Company.Matricule
+    </div>
+</body>
+</html>
+

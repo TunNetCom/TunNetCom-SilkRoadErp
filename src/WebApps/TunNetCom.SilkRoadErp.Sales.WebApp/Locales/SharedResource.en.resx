@@ -354,6 +354,15 @@
   <data name="print" xml:space="preserve">
     <value>Print</value>
   </data>
+  <data name="Print_Solde" xml:space="preserve">
+    <value>Print balance</value>
+  </data>
+  <data name="Erreur_Impression_Solde" xml:space="preserve">
+    <value>Unable to generate balance report.</value>
+  </data>
+  <data name="Show_Only_Missing_Products" xml:space="preserve">
+    <value>Show only missing products</value>
+  </data>
   <data name="apply_discount" xml:space="preserve">
     <value>Apply discount</value>
   </data>

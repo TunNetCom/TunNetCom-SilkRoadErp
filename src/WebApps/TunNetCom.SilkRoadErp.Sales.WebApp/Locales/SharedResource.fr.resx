@@ -354,6 +354,15 @@
   <data name="print" xml:space="preserve">
     <value>print</value>
   </data>
+  <data name="Print_Solde" xml:space="preserve">
+    <value>Imprimer le solde</value>
+  </data>
+  <data name="Erreur_Impression_Solde" xml:space="preserve">
+    <value>Impossible de générer le rapport de solde.</value>
+  </data>
+  <data name="Show_Only_Missing_Products" xml:space="preserve">
+    <value>Afficher uniquement les produits manquants</value>
+  </data>
   <data name="apply_discount" xml:space="preserve">
     <value>Appliquer remise</value>
   </data>

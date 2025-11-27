@@ -6,6 +6,7 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Services
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Soldes.PrintSoldeFournisseur
 @using Radzen.Blazor
 @using Radzen
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Providers
@@ -15,11 +16,19 @@
 @inject IProvidersApiClient ProvidersService
 @inject NotificationService NotificationService
 @inject IDecimalFormatService DecimalFormatService
+@inject PrintSoldeFournisseurService PrintSoldeFournisseurService
+@inject IJSRuntime JS
 
 <div class="soldes-container">
     <div class="soldes-card">
         <div class="soldes-header">
             <h3 class="soldes-title">@Localizer["Soldes_Fournisseurs"]</h3>
+            <RadzenButton Text="@Localizer["Print_Solde"]"
+                          Icon="print"
+                          Disabled="@(solde is null || isPrinting)"
+                          ButtonStyle="ButtonStyle.Light"
+                          Click="@PrintSoldeFournisseurAsync"
+                          Class="action-button" />
         </div>
 
         <div class="search-filters">
@@ -246,6 +255,7 @@
     private List<ProviderResponse> _filteredProviders = new();
     private CancellationTokenSource cancellationTokenSource = new();
     private int decimalPlaces = AmountHelper.DEFAULT_DECIMAL_PLACES;
+    private bool isPrinting;
 
     protected override async Task OnInitializedAsync()
     {
@@ -330,6 +340,59 @@
                 Summary = Localizer["Erreur"],
                 Detail = $"{Localizer["Erreur_Chargement_Solde"]}: {ex.Message}"
             });
+        }
+    }
+
+    private async Task PrintSoldeFournisseurAsync()
+    {
+        if (!selectedFournisseurId.HasValue)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["Attention"],
+                Detail = Localizer["Select_Provider_Validation"]
+            });
+            return;
+        }
+
+        try
+        {
+            isPrinting = true;
+            var pdfResult = await PrintSoldeFournisseurService.GenerateSoldeFournisseurPdfAsync(
+                selectedFournisseurId.Value,
+                cancellationTokenSource.Token);
+
+            if (pdfResult.IsFailed)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["Erreur"],
+                    Detail = Localizer["Erreur_Impression_Solde"]
+                });
+                return;
+            }
+
+            var fileName = $"SoldeFournisseur_{solde?.FournisseurNom ?? selectedFournisseurId.Value.ToString()}.pdf";
+            await JS.InvokeVoidAsync(
+                "downloadFile",
+                fileName,
+                Convert.ToBase64String(pdfResult.Value),
+                "application/pdf");
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = $"{Localizer["Erreur_Impression_Solde"]}: {ex.Message}"
+            });
+        }
+        finally
+        {
+            isPrinting = false;
         }
     }
 
