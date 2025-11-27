@@ -2,7 +2,12 @@
 @inject IAuthService AuthService
 @inject NavigationManager Navigation
 
-@if (IsAuthorized || IsLoginPage)
+@if (IsLoginPage)
+{
+    <RouteView RouteData="@RouteData" DefaultLayout="@DefaultLayout" />
+    <FocusOnNavigate RouteData="@RouteData" Selector="h1" />
+}
+else if (IsAuthorized)
 {
     <RouteView RouteData="@RouteData" DefaultLayout="@DefaultLayout" />
     <FocusOnNavigate RouteData="@RouteData" Selector="h1" />
@@ -25,13 +30,20 @@ else
     protected override void OnInitialized()
     {
         // Check if this is the login page - allow access immediately
-        var currentUri = Navigation.Uri;
+        var currentUri = Navigation.Uri.ToLowerInvariant();
         var pageType = RouteData?.PageType;
         
+        // Only allow login page, block everything else
         IsLoginPage = currentUri.EndsWith("/login") || 
-                     currentUri.Contains("/login") ||
+                     currentUri.EndsWith("/login/") ||
                      pageType?.Name == "LoginPage" || 
                      pageType?.FullName?.Contains("Login") == true;
+        
+        // If not login page, set IsAuthorized to false initially to block access
+        if (!IsLoginPage)
+        {
+            IsAuthorized = false;
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -58,24 +70,18 @@ else
             }
             else
             {
-                // Not authenticated, redirect to login
-                await Task.Delay(100);
-                var currentUri = Navigation.Uri;
-                if (!currentUri.EndsWith("/login") && !currentUri.Contains("/login"))
-                {
-                    Navigation.NavigateTo("/login", forceLoad: true);
-                }
+                // Not authenticated, redirect to login immediately
+                IsAuthorized = false;
+                await Task.Delay(50);
+                Navigation.NavigateTo("/login", forceLoad: true);
             }
         }
         catch (Exception)
         {
-            // If there's an error, redirect to login
-            await Task.Delay(100);
-            var currentUri = Navigation.Uri;
-            if (!currentUri.EndsWith("/login") && !currentUri.Contains("/login"))
-            {
-                Navigation.NavigateTo("/login", forceLoad: true);
-            }
+            // If there's an error, redirect to login immediately
+            IsAuthorized = false;
+            await Task.Delay(50);
+            Navigation.NavigateTo("/login", forceLoad: true);
         }
     }
 }

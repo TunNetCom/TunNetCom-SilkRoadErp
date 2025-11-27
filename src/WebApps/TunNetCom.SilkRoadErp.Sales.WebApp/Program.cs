@@ -24,6 +24,9 @@ builder.Services.AddSalesHttpClients(baseUrl);
 // Add Auth Service
 builder.Services.AddScoped<IAuthService, AuthService>();
 
+// Register AuthHttpClientHandler as scoped (required for IJSRuntime)
+builder.Services.AddScoped<AuthHttpClientHandler>();
+
 // Add OData service with auth handler
 builder.Services.AddHttpClient<ODataService>(client =>
 {
