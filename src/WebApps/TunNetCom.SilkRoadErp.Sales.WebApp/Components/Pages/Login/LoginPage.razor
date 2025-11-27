@@ -72,8 +72,11 @@
         </div>
     </div>
     
-    <div class="login-image-section">
-        <!-- Image section - can be hidden on mobile -->
+    <div class="login-image-section" id="login-image-section">
+        <img src="/logo.jpg" 
+             alt="NISSAF Logo" 
+             class="login-background-image"
+             onerror="this.style.display='none'; document.getElementById('login-image-section').classList.add('no-image');" />
     </div>
 </div>
 
@@ -98,6 +101,22 @@
         min-height: 100vh;
         grid-template-columns: 1fr;
         background: var(--background);
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+    }
+
+    .login-page-grid * {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .login-page-grid input,
+    .login-page-grid button {
+        user-select: auto;
+        -webkit-user-select: auto;
+        -moz-user-select: auto;
+        -ms-user-select: auto;
     }
 
     @@media (min-width: 1024px) {
@@ -211,6 +230,20 @@
         line-height: 2rem;
         color: var(--foreground);
         margin: 0;
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        outline: none !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .login-form-title:focus,
+    .login-form-title:active {
+        outline: none !important;
+        border: none !important;
+        box-shadow: none !important;
     }
 
     .login-form-subtitle {
@@ -218,6 +251,11 @@
         color: var(--muted-foreground);
         margin: 0;
         text-align: center;
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        outline: none !important;
     }
 
     .error-alert {
@@ -329,15 +367,58 @@
     }
 
     .login-image-section {
-        background: var(--muted);
+        background: #232A32 !important;
         position: relative;
         display: none;
+        overflow: hidden;
     }
 
     @@media (min-width: 1024px) {
         .login-image-section {
-            display: block;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #232A32 !important;
         }
+    }
+
+    .login-background-image {
+        position: relative;
+        height: 90%;
+        width: 90%;
+        max-width: 600px;
+        max-height: 600px;
+        object-fit: contain;
+        object-position: center;
+        z-index: 1;
+        pointer-events: none;
+        margin: auto;
+    }
+
+    .login-image-section::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: #232A32 !important;
+        z-index: 0;
+    }
+
+    /* Fallback si l'image n'existe pas */
+    .login-image-section.no-image {
+        background: linear-gradient(135deg, oklch(0.269 0 0) 0%, oklch(0.205 0 0) 100%);
+    }
+
+    .login-image-section.no-image::after {
+        content: 'NISSAF Logo';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: var(--muted-foreground);
+        font-size: 1.5rem;
+        font-weight: 600;
+        opacity: 0.3;
+        z-index: 2;
     }
 
     /* Force dark mode colors */
