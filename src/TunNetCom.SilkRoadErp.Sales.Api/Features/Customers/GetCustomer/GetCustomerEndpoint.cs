@@ -26,6 +26,7 @@ public class GetCustomersEndpoint : ICarterModule
             .Produces<PagedList<CustomerResponse>>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .WithDescription("Retrieves a paginated list of customers with optional search filtering.")
+            .RequireAuthorization($"Permission:{Permissions.ViewCustomers}")
             .WithTags(EndpointTags.Customers)
             .WithOpenApi();
     }

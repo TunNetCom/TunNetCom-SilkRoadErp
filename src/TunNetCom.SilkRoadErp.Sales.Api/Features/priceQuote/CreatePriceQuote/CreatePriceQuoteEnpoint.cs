@@ -42,7 +42,7 @@ public class CreatePriceQuoteEnpoint : ICarterModule
 
                return TypedResults.Created($"/quotations/{result.Value}", request);
            })
-           .RequireAuthorization("Permission:CanCreatePriceQuote")
+           .RequireAuthorization($"Permission:{Permissions.CreatePriceQuote}")
            .WithTags(EndpointTags.PriceQuotes);
     }
 }

@@ -5,6 +5,7 @@ public class UpdateCustomerEndpoint : ICarterModule
     public void AddRoutes(IEndpointRouteBuilder app)
     {
         _ = app.MapPut("/customers/{id:int}", HandleUpdateCustomerAsync)
+            .RequireAuthorization($"Permission:{Permissions.UpdateCustomer}")
             .WithTags(EndpointTags.Customers);
     }
 

@@ -5,6 +5,7 @@ public class GetCustomerByIdEndpoint : ICarterModule
     public void AddRoutes(IEndpointRouteBuilder app)
     {
         _ = app.MapGet("/customers/{id:int}", HandleGetCustomerByIdAsync)
+            .RequireAuthorization($"Permission:{Permissions.ViewCustomers}")
             .WithTags(EndpointTags.Customers);
     }
 

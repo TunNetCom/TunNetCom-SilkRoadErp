@@ -6,7 +6,7 @@ public class CreateDeliveryNoteEndpoint : ICarterModule
     public void AddRoutes(IEndpointRouteBuilder app)
     {
         _ = app.MapPost("/deliveryNote", HandleCreateDeliveryNoteAsync)
-            .RequireAuthorization("Permission:CanCreateDeliveryNote")
+            .RequireAuthorization($"Permission:{Permissions.CreateDeliveryNote}")
             .WithTags(EndpointTags.DeliveryNotes);
     }
 

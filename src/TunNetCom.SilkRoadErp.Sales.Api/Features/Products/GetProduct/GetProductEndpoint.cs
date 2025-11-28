@@ -4,6 +4,7 @@ public class GetProductEndpoint : ICarterModule
     public void AddRoutes(IEndpointRouteBuilder app)
     {
         _ = app.MapGet("/products", Handle)
+            .RequireAuthorization($"Permission:{Permissions.ViewProducts}")
             .WithTags(EndpointTags.Products);
     }
     public async Task<IResult> Handle(

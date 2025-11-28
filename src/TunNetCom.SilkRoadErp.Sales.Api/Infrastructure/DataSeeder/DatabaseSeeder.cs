@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Constants;
 using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
 using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 using JsonSerializer = System.Text.Json.JsonSerializer;
@@ -657,50 +658,34 @@ public class DatabaseSeeder
         var count = await context.Permission.CountAsync();
         _logger.LogInformation("Table Permission - Nombre d'enregistrements actuels: {Count}", count);
 
-        if (count > 0)
+        // Récupérer toutes les permissions depuis la classe Permissions
+        var allPermissionsFromClass = Permissions.GetAllPermissions();
+        _logger.LogInformation("Total permissions définies dans la classe Permissions: {Count}", allPermissionsFromClass.Count);
+
+        // Vérifier les permissions existantes
+        var existingPermissions = await context.Permission
+            .Select(p => p.Name)
+            .ToListAsync();
+
+        var permissionsToAdd = allPermissionsFromClass
+            .Where(p => !existingPermissions.Contains(p.Name))
+            .ToList();
+
+        if (permissionsToAdd.Count == 0)
         {
-            _logger.LogInformation("La table Permission contient déjà {Count} enregistrement(s). Seeding ignoré.", count);
+            _logger.LogInformation("Toutes les permissions sont déjà présentes dans la base de données.");
             return;
         }
 
-        var permissions = new[]
-        {
-            Permission.CreatePermission("CanViewInvoices", "Peut voir les factures"),
-            Permission.CreatePermission("CanCreateInvoice", "Peut créer des factures"),
-            Permission.CreatePermission("CanUpdateInvoice", "Peut modifier des factures"),
-            Permission.CreatePermission("CanDeleteInvoice", "Peut supprimer des factures"),
-            Permission.CreatePermission("CanViewDeliveryNotes", "Peut voir les bons de livraison"),
-            Permission.CreatePermission("CanCreateDeliveryNote", "Peut créer des bons de livraison"),
-            Permission.CreatePermission("CanUpdateDeliveryNote", "Peut modifier des bons de livraison"),
-            Permission.CreatePermission("CanDeleteDeliveryNote", "Peut supprimer des bons de livraison"),
-            Permission.CreatePermission("CanViewPriceQuotes", "Peut voir les devis"),
-            Permission.CreatePermission("CanCreatePriceQuote", "Peut créer des devis"),
-            Permission.CreatePermission("CanUpdatePriceQuote", "Peut modifier des devis"),
-            Permission.CreatePermission("CanDeletePriceQuote", "Peut supprimer des devis"),
-            Permission.CreatePermission("CanViewOrders", "Peut voir les commandes"),
-            Permission.CreatePermission("CanCreateOrder", "Peut créer des commandes"),
-            Permission.CreatePermission("CanUpdateOrder", "Peut modifier des commandes"),
-            Permission.CreatePermission("CanDeleteOrder", "Peut supprimer des commandes"),
-            Permission.CreatePermission("CanViewProducts", "Peut voir les produits"),
-            Permission.CreatePermission("CanCreateProduct", "Peut créer des produits"),
-            Permission.CreatePermission("CanUpdateProduct", "Peut modifier des produits"),
-            Permission.CreatePermission("CanDeleteProduct", "Peut supprimer des produits"),
-            Permission.CreatePermission("CanViewCustomers", "Peut voir les clients"),
-            Permission.CreatePermission("CanCreateCustomer", "Peut créer des clients"),
-            Permission.CreatePermission("CanUpdateCustomer", "Peut modifier des clients"),
-            Permission.CreatePermission("CanDeleteCustomer", "Peut supprimer des clients"),
-            Permission.CreatePermission("CanViewProviders", "Peut voir les fournisseurs"),
-            Permission.CreatePermission("CanCreateProvider", "Peut créer des fournisseurs"),
-            Permission.CreatePermission("CanUpdateProvider", "Peut modifier des fournisseurs"),
-            Permission.CreatePermission("CanDeleteProvider", "Peut supprimer des fournisseurs"),
-            Permission.CreatePermission("CanManageUsers", "Peut gérer les utilisateurs"),
-            Permission.CreatePermission("CanManageRoles", "Peut gérer les rôles"),
-            Permission.CreatePermission("CanManagePermissions", "Peut gérer les permissions")
-        };
+        _logger.LogInformation("Ajout de {Count} nouvelle(s) permission(s)...", permissionsToAdd.Count);
+
+        var permissions = permissionsToAdd
+            .Select(p => Permission.CreatePermission(p.Name, p.Description))
+            .ToList();
 
         await context.Permission.AddRangeAsync(permissions);
         await context.SaveChangesAsync();
-        _logger.LogInformation("✓ {Count} permissions insérées avec succès.", permissions.Length);
+        _logger.LogInformation("✓ {Count} permissions insérées avec succès.", permissions.Count);
     }
 
     private async Task SeedRolePermissionsAsync(SalesContext context)

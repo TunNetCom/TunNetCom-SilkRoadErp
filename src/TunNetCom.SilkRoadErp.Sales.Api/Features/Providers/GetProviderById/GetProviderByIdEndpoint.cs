@@ -21,6 +21,7 @@ public class GetProviderByIdEndpoint : ICarterModule
 
             return TypedResults.Ok(result.Value);
         })
+        .RequireAuthorization($"Permission:{Permissions.ViewProviders}")
         .WithTags(EndpointTags.Providers);
     }
 }

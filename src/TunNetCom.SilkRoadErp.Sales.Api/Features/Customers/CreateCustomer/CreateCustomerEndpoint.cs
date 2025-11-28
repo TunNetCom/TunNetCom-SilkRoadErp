@@ -7,8 +7,8 @@ public class CreateCustomerEndpoint : ICarterModule
         _ = app.MapPost(
             "/customers",
             HandleCreateCustomerAsync)
-            .WithTags(EndpointTags.Customers)
-            .RequireAuthorization();
+            .RequireAuthorization($"Permission:{Permissions.CreateCustomer}")
+            .WithTags(EndpointTags.Customers);
     }
 
     public async Task<Results<Created<CreateCustomerRequest>, ValidationProblem>> HandleCreateCustomerAsync(

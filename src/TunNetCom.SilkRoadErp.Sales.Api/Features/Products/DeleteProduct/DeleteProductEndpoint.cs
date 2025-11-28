@@ -21,6 +21,7 @@ public class DeleteProductEndpoint : ICarterModule
 
             return TypedResults.NoContent();
         })
+        .RequireAuthorization($"Permission:{Permissions.DeleteProduct}")
         .WithTags(EndpointTags.Products);
     }
 }

@@ -29,7 +29,7 @@ public class CreateProductEndpoint : ICarterModule
              }
              return TypedResults.Created($"/products/{result.Value}", request);
          })
-         .RequireAuthorization("Permission:CanCreateProduct")
+         .RequireAuthorization($"Permission:{Permissions.CreateProduct}")
          .WithTags(EndpointTags.Products);
     }
 }

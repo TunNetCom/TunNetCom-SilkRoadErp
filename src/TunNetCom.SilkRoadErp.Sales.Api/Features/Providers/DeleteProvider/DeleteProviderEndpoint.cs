@@ -16,6 +16,7 @@ public class DeleteProviderEndpoint : ICarterModule
 
             return TypedResults.NoContent();
         })
+        .RequireAuthorization($"Permission:{Permissions.DeleteProvider}")
         .WithTags(EndpointTags.Providers);
     }
 }

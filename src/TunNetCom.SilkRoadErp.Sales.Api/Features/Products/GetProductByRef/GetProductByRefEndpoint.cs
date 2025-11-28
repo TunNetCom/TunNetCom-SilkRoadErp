@@ -17,6 +17,7 @@ public class GetProductByRefEndpoint : ICarterModule
             }
             return TypedResults.Ok(result.Value);
         })
+        .RequireAuthorization($"Permission:{Permissions.ViewProducts}")
         .WithTags(EndpointTags.Products);
     }
 }

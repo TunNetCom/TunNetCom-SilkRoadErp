@@ -38,6 +38,7 @@ public class UpdateProviderEndpoint : ICarterModule
 
                 return TypedResults.NoContent();
             })
+            .RequireAuthorization($"Permission:{Permissions.UpdateProvider}")
             .WithTags(EndpointTags.Providers);
     }
 }

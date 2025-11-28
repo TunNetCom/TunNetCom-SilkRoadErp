@@ -37,6 +37,7 @@ public class UpdateProductEndpoint : ICarterModule
 
             return TypedResults.NoContent();
         })
+        .RequireAuthorization($"Permission:{Permissions.UpdateProduct}")
         .WithTags(EndpointTags.Products);
     }
 }

@@ -23,6 +23,7 @@ public class GetProductsStockEndpoint : ICarterModule
 
             return Results.Ok(result.Value);
         })
+        .RequireAuthorization($"Permission:{Permissions.ViewProductStock}")
         .WithTags(EndpointTags.Products)
         .Produces<List<ProductStockResponse>>(StatusCodes.Status200OK)
         .ProducesProblem(StatusCodes.Status404NotFound);

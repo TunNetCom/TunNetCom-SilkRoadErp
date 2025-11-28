@@ -30,6 +30,7 @@
 
             return Results.Ok(pagedProviders);
         })
+        .RequireAuthorization($"Permission:{Permissions.ViewProviders}")
         .WithTags(EndpointTags.Providers);
     }
 }

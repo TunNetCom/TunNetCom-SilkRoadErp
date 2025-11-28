@@ -5,6 +5,7 @@ public class DeleteCustomerEndpoint : ICarterModule
     public void AddRoutes(IEndpointRouteBuilder app)
     {
         _ = app.MapDelete("/customers/{id:int}", HandleDeleteCustomerAsync)
+            .RequireAuthorization($"Permission:{Permissions.DeleteCustomer}")
             .WithTags(EndpointTags.Customers);
     }
 
