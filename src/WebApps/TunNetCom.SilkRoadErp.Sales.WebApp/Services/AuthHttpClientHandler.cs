@@ -35,14 +35,10 @@ public class AuthHttpClientHandler : DelegatingHandler
             token = _authService?.AccessToken;
             if (!string.IsNullOrEmpty(token))
             {
-                _logger.LogInformation("AuthHttpClientHandler: ✓ Token found in AuthService memory for request {Method} {Uri}. Length: {Length}", 
-                    request.Method, request.RequestUri, token.Length);
+                _logger.LogDebug("Token found in AuthService memory for {Method} {Uri}", request.Method, request.RequestUri);
             }
             else
             {
-                _logger.LogWarning("AuthHttpClientHandler: AuthService has no token in memory for request {Method} {Uri}. Trying localStorage...", 
-                    request.Method, request.RequestUri);
-                
                 // 2. Try to get token from localStorage (fallback)
                 try
                 {
@@ -54,26 +50,16 @@ public class AuthHttpClientHandler : DelegatingHandler
                     
                     if (completedTask == timeoutTask)
                     {
-                        _logger.LogError("AuthHttpClientHandler: ⏱️ TIMEOUT (5s) loading token from localStorage for request {Method} {Uri}", 
-                            request.Method, request.RequestUri);
+                        _logger.LogWarning("Timeout loading token from localStorage for {Method} {Uri}", request.Method, request.RequestUri);
                     }
                     else
                     {
                         token = await loadTask;
-                        if (!string.IsNullOrEmpty(token))
+                        if (!string.IsNullOrEmpty(token) && _authService != null)
                         {
-                            _logger.LogInformation("AuthHttpClientHandler: ✓ Token loaded from localStorage for request {Method} {Uri}. Length: {Length}", 
-                                request.Method, request.RequestUri, token.Length);
-                            
                             // Update AuthService for future requests in this circuit
-                            if (_authService != null)
-                            {
-                                _authService.SetAccessToken(token);
-                            }
-                        }
-                        else
-                        {
-                            _logger.LogWarning("AuthHttpClientHandler: localStorage returned NULL or EMPTY token for key '{Key}'", AccessTokenKey);
+                            _authService.SetAccessToken(token);
+                            _logger.LogDebug("Token loaded from localStorage for {Method} {Uri}", request.Method, request.RequestUri);
                         }
                     }
                 }
@@ -82,23 +68,19 @@ public class AuthHttpClientHandler : DelegatingHandler
                     ex.Message.Contains("statically rendered") || 
                     ex.Message.Contains("JavaScript interop calls cannot be issued"))
                 {
-                    _logger.LogWarning("AuthHttpClientHandler: JS interop not available (prerendering) for request {Method} {Uri}. Token must be in AuthService memory or request will fail.", 
-                        request.Method, request.RequestUri);
+                    _logger.LogDebug("JS interop not available during prerendering for {Method} {Uri}", request.Method, request.RequestUri);
                 }
-                catch (JSDisconnectedException ex)
+                catch (JSDisconnectedException)
                 {
-                    _logger.LogWarning(ex, "AuthHttpClientHandler: JS circuit disconnected for request {Method} {Uri}", 
-                        request.Method, request.RequestUri);
+                    _logger.LogDebug("JS circuit disconnected for {Method} {Uri}", request.Method, request.RequestUri);
                 }
-                catch (TaskCanceledException ex)
+                catch (TaskCanceledException)
                 {
-                    _logger.LogWarning(ex, "AuthHttpClientHandler: Task cancelled while loading token for request {Method} {Uri}", 
-                        request.Method, request.RequestUri);
+                    _logger.LogDebug("Task cancelled while loading token for {Method} {Uri}", request.Method, request.RequestUri);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "AuthHttpClientHandler: Unexpected error loading token from localStorage for request {Method} {Uri}", 
-                        request.Method, request.RequestUri);
+                    _logger.LogError(ex, "Error loading token from localStorage for {Method} {Uri}", request.Method, request.RequestUri);
                 }
             }
 
@@ -106,13 +88,10 @@ public class AuthHttpClientHandler : DelegatingHandler
             if (!string.IsNullOrEmpty(token))
             {
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-                _logger.LogInformation("AuthHttpClientHandler: ✓ Bearer token ADDED to request {Method} {Uri}. Token length: {Length}", 
-                    request.Method, request.RequestUri, token.Length);
             }
             else
             {
-                _logger.LogError("AuthHttpClientHandler: ✗ NO TOKEN available for request {Method} {Uri}. Request will return 401 if endpoint requires auth.", 
-                    request.Method, request.RequestUri);
+                _logger.LogWarning("No token available for {Method} {Uri}", request.Method, request.RequestUri);
             }
         }
         catch (Exception ex)
@@ -125,8 +104,7 @@ public class AuthHttpClientHandler : DelegatingHandler
         
         if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
         {
-            _logger.LogError("AuthHttpClientHandler: ✗ Request {Method} {Uri} returned 401 Unauthorized", 
-                request.Method, request.RequestUri);
+            _logger.LogWarning("Unauthorized request: {Method} {Uri}", request.Method, request.RequestUri);
         }
         
         return response;
