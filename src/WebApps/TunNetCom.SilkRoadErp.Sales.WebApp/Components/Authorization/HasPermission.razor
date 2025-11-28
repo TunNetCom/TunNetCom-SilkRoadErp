@@ -1,0 +1,81 @@
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
+@inject IPermissionService PermissionService
+@inject ILogger<HasPermission> Logger
+
+@if (_hasPermission)
+{
+    @ChildContent
+}
+else if (FallbackContent != null)
+{
+    @FallbackContent
+}
+
+@code {
+    /// <summary>
+    /// Permission requise pour afficher le contenu
+    /// </summary>
+    [Parameter]
+    public string? Permission { get; set; }
+
+    /// <summary>
+    /// Liste de permissions (l'utilisateur doit en avoir au moins une)
+    /// </summary>
+    [Parameter]
+    public string[]? AnyPermissions { get; set; }
+
+    /// <summary>
+    /// Liste de permissions (l'utilisateur doit les avoir toutes)
+    /// </summary>
+    [Parameter]
+    public string[]? AllPermissions { get; set; }
+
+    /// <summary>
+    /// Contenu à afficher si l'utilisateur a la/les permission(s)
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    /// Contenu à afficher si l'utilisateur n'a PAS la/les permission(s)
+    /// </summary>
+    [Parameter]
+    public RenderFragment? FallbackContent { get; set; }
+
+    private bool _hasPermission = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(Permission))
+            {
+                _hasPermission = await PermissionService.HasPermissionAsync(Permission);
+                Logger.LogDebug("HasPermission check for '{Permission}': {Result}", Permission, _hasPermission);
+            }
+            else if (AnyPermissions != null && AnyPermissions.Length > 0)
+            {
+                _hasPermission = await PermissionService.HasAnyPermissionAsync(AnyPermissions);
+                Logger.LogDebug("HasAnyPermission check for '{Permissions}': {Result}", 
+                    string.Join(", ", AnyPermissions), _hasPermission);
+            }
+            else if (AllPermissions != null && AllPermissions.Length > 0)
+            {
+                _hasPermission = await PermissionService.HasAllPermissionsAsync(AllPermissions);
+                Logger.LogDebug("HasAllPermissions check for '{Permissions}': {Result}", 
+                    string.Join(", ", AllPermissions), _hasPermission);
+            }
+            else
+            {
+                Logger.LogWarning("HasPermission component used without Permission, AnyPermissions, or AllPermissions parameter");
+                _hasPermission = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error checking permissions in HasPermission component");
+            _hasPermission = false;
+        }
+    }
+}
+

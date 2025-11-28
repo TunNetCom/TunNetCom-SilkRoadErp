@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Interceptors;
 
@@ -49,7 +50,22 @@ public class AuditSaveChangesInterceptor : SaveChangesInterceptor
         var currentUserProvider = _serviceProvider.GetService<ICurrentUserProvider>();
         
         var userId = currentUserProvider?.GetUserId();
-        var username = currentUserProvider?.GetUsername() ?? "System";
+        var username = currentUserProvider?.GetUsername();
+        
+        // Log for debugging
+        var logger = _serviceProvider.GetService<Microsoft.Extensions.Logging.ILogger<AuditSaveChangesInterceptor>>();
+        if (currentUserProvider == null)
+        {
+            logger?.LogWarning("AuditLog: CurrentUserProvider is NULL");
+        }
+        else
+        {
+            logger?.LogDebug("AuditLog: UserId={UserId}, Username={Username}, IsAuthenticated={IsAuthenticated}", 
+                userId, username ?? "null", currentUserProvider.IsAuthenticated());
+        }
+        
+        // Use "System" as fallback if username is null
+        username = username ?? "System";
 
         var entries = context.ChangeTracker.Entries()
             .Where(e => e.State == EntityState.Added 

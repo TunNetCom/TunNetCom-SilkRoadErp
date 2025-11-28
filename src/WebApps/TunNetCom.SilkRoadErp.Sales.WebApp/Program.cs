@@ -57,6 +57,7 @@ builder.Services.AddScoped<ICircuitIdService, CircuitIdService>();
 
 // Add Auth Service FIRST (before HttpClients that depend on it)
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IPermissionService, PermissionService>();
 
 // Register AuthHttpClientHandler as scoped (required for IJSRuntime)
 builder.Services.AddScoped<AuthHttpClientHandler>();
