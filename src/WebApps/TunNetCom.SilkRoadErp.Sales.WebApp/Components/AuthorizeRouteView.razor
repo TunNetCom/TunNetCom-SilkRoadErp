@@ -1,6 +1,8 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Services
+@using Microsoft.Extensions.Logging
 @inject IAuthService AuthService
 @inject NavigationManager Navigation
+@inject ILogger<AuthorizeRouteView> Logger
 
 @if (IsLoginPage)
 {
@@ -15,9 +17,10 @@ else if (IsAuthorized)
 else
 {
     <div style="display: flex; justify-content: center; align-items: center; height: 100vh; color: #fff; background: #1a1a1a;">
-        <div>Vérification de l'authentification...</div>
+        <div>Vérification de l'authentification... (@_statusMessage)</div>
     </div>
 }
+
 
 @code {
     [Parameter] public RouteData? RouteData { get; set; }
@@ -26,21 +29,142 @@ else
     private bool IsAuthorized { get; set; }
     private bool IsLoginPage { get; set; }
     private bool _hasCheckedAuth = false;
+    private string _statusMessage = "Initialisation...";
+
+    private string? _lastUri;
 
     protected override void OnInitialized()
+    {
+        UpdateLoginPageStatus();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Reset auth check when route changes (e.g., after login)
+        var currentUri = Navigation.Uri.ToLowerInvariant();
+        var routeChanged = _lastUri != null && _lastUri != currentUri;
+        
+        // Update login page status first
+        var wasLoginPage = IsLoginPage;
+        UpdateLoginPageStatus();
+        
+        if (routeChanged)
+        {
+            Logger.LogInformation("AuthorizeRouteView: Route changed from {OldUri} to {NewUri}", _lastUri, currentUri);
+            _hasCheckedAuth = false;
+            // Only reset IsAuthorized if not login page and not already authorized
+            if (!IsLoginPage && !IsAuthorized)
+            {
+                IsAuthorized = false;
+            }
+        }
+        _lastUri = currentUri;
+        
+        // If route changed and not login page, check auth immediately
+        if (routeChanged && !IsLoginPage && !_hasCheckedAuth)
+        {
+            await CheckAuthenticationAsync();
+        }
+    }
+    
+    private async Task CheckAuthenticationAsync()
+    {
+        if (_hasCheckedAuth)
+            return;
+            
+        _hasCheckedAuth = true;
+        _statusMessage = "Chargement du token...";
+        StateHasChanged();
+
+        try
+        {
+            Logger.LogInformation("AuthorizeRouteView: Starting authentication check");
+            _statusMessage = "Vérification du token...";
+            StateHasChanged();
+            
+            // First check if token is already in memory
+            if (AuthService.IsAuthenticated)
+            {
+                Logger.LogInformation("AuthorizeRouteView: Token already in memory, user authenticated");
+                IsAuthorized = true;
+                _statusMessage = "Authentifié";
+                Logger.LogInformation("AuthorizeRouteView: IsAuthorized set to {IsAuthorized}, calling StateHasChanged", IsAuthorized);
+                StateHasChanged();
+                // Force a re-render by updating a dummy variable
+                await Task.Delay(100);
+                StateHasChanged();
+                Logger.LogInformation("AuthorizeRouteView: StateHasChanged called twice, IsAuthorized: {IsAuthorized}", IsAuthorized);
+                return;
+            }
+            
+            // Load token from storage with timeout
+            _statusMessage = "Chargement depuis localStorage...";
+            StateHasChanged();
+            
+            try
+            {
+                // LoadTokenFromStorageAsync has its own timeout, so we just await it
+                await AuthService.LoadTokenFromStorageAsync();
+                Logger.LogInformation("AuthorizeRouteView: Token loaded. IsAuthenticated: {IsAuthenticated}", AuthService.IsAuthenticated);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "AuthorizeRouteView: Error loading token from storage");
+                // Continue to check IsAuthenticated anyway
+            }
+            
+            if (AuthService.IsAuthenticated)
+            {
+                Logger.LogInformation("AuthorizeRouteView: User authenticated, setting IsAuthorized to true");
+                IsAuthorized = true;
+                _statusMessage = "Authentifié";
+                Logger.LogInformation("AuthorizeRouteView: IsAuthorized set to {IsAuthorized}, calling StateHasChanged", IsAuthorized);
+                StateHasChanged();
+                // Force a re-render by updating a dummy variable
+                await Task.Delay(100);
+                StateHasChanged();
+                Logger.LogInformation("AuthorizeRouteView: StateHasChanged called twice, IsAuthorized: {IsAuthorized}", IsAuthorized);
+            }
+            else
+            {
+                // Not authenticated, redirect to login immediately
+                Logger.LogWarning("AuthorizeRouteView: User not authenticated, redirecting to login");
+                _statusMessage = "Non authentifié - redirection...";
+                StateHasChanged();
+                IsAuthorized = false;
+                await Task.Delay(100);
+                Navigation.NavigateTo("/login");
+            }
+        }
+        catch (Exception ex)
+        {
+            // If there's an error, redirect to login immediately
+            Logger.LogError(ex, "AuthorizeRouteView: Error during authentication check");
+            _statusMessage = "Erreur - redirection...";
+            StateHasChanged();
+            IsAuthorized = false;
+            await Task.Delay(100);
+            Navigation.NavigateTo("/login", forceLoad: true);
+        }
+    }
+
+    private void UpdateLoginPageStatus()
     {
         // Check if this is the login page - allow access immediately
         var currentUri = Navigation.Uri.ToLowerInvariant();
         var pageType = RouteData?.PageType;
         
         // Only allow login page, block everything else
-        IsLoginPage = currentUri.EndsWith("/login") || 
+        var newIsLoginPage = currentUri.EndsWith("/login") || 
                      currentUri.EndsWith("/login/") ||
                      pageType?.Name == "LoginPage" || 
                      pageType?.FullName?.Contains("Login") == true;
         
-        // If not login page, set IsAuthorized to false initially to block access
-        if (!IsLoginPage)
+        IsLoginPage = newIsLoginPage;
+        
+        // NEVER reset IsAuthorized if it's already true - this causes the render issue
+        // Only set to false if we're not on login page AND not already authorized AND haven't checked yet
+        if (!IsLoginPage && !IsAuthorized && !_hasCheckedAuth)
         {
             IsAuthorized = false;
         }
@@ -50,38 +174,16 @@ else
     {
         // Always allow login page without any async checks
         if (IsLoginPage)
-            return;
-
-        if (!firstRender || _hasCheckedAuth)
-            return;
-
-        _hasCheckedAuth = true;
-
-        try
         {
-            // Load token from storage
-            await AuthService.LoadTokenFromStorageAsync();
-
-            // Check if user is authenticated
-            if (AuthService.IsAuthenticated)
-            {
-                IsAuthorized = true;
-                await InvokeAsync(StateHasChanged);
-            }
-            else
-            {
-                // Not authenticated, redirect to login immediately
-                IsAuthorized = false;
-                await Task.Delay(50);
-                Navigation.NavigateTo("/login", forceLoad: true);
-            }
+            _hasCheckedAuth = false; // Reset for next time
+            _statusMessage = "Page de login";
+            return;
         }
-        catch (Exception)
+
+        // Only check on first render if not already checked
+        if (firstRender && !_hasCheckedAuth)
         {
-            // If there's an error, redirect to login immediately
-            IsAuthorized = false;
-            await Task.Delay(50);
-            Navigation.NavigateTo("/login", forceLoad: true);
+            await CheckAuthenticationAsync();
         }
     }
 }

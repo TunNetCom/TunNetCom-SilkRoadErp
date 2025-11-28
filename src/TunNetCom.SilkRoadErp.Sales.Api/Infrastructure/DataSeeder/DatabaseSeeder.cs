@@ -623,6 +623,9 @@ public class DatabaseSeeder
         // Seed Admin User
         await SeedAdminUserAsync(context);
 
+        // Seed Manager User
+        await SeedManagerUserAsync(context);
+
         _logger.LogInformation("=== SEEDING AUTHENTIFICATION TERMINÉ ===");
     }
 
@@ -666,6 +669,18 @@ public class DatabaseSeeder
             Permission.CreatePermission("CanCreateInvoice", "Peut créer des factures"),
             Permission.CreatePermission("CanUpdateInvoice", "Peut modifier des factures"),
             Permission.CreatePermission("CanDeleteInvoice", "Peut supprimer des factures"),
+            Permission.CreatePermission("CanViewDeliveryNotes", "Peut voir les bons de livraison"),
+            Permission.CreatePermission("CanCreateDeliveryNote", "Peut créer des bons de livraison"),
+            Permission.CreatePermission("CanUpdateDeliveryNote", "Peut modifier des bons de livraison"),
+            Permission.CreatePermission("CanDeleteDeliveryNote", "Peut supprimer des bons de livraison"),
+            Permission.CreatePermission("CanViewPriceQuotes", "Peut voir les devis"),
+            Permission.CreatePermission("CanCreatePriceQuote", "Peut créer des devis"),
+            Permission.CreatePermission("CanUpdatePriceQuote", "Peut modifier des devis"),
+            Permission.CreatePermission("CanDeletePriceQuote", "Peut supprimer des devis"),
+            Permission.CreatePermission("CanViewOrders", "Peut voir les commandes"),
+            Permission.CreatePermission("CanCreateOrder", "Peut créer des commandes"),
+            Permission.CreatePermission("CanUpdateOrder", "Peut modifier des commandes"),
+            Permission.CreatePermission("CanDeleteOrder", "Peut supprimer des commandes"),
             Permission.CreatePermission("CanViewProducts", "Peut voir les produits"),
             Permission.CreatePermission("CanCreateProduct", "Peut créer des produits"),
             Permission.CreatePermission("CanUpdateProduct", "Peut modifier des produits"),
@@ -700,43 +715,76 @@ public class DatabaseSeeder
             return;
         }
 
-        // Check if role permissions already exist
-        var existingCount = await context.RolePermission.CountAsync();
-        if (existingCount > 0)
-        {
-            _logger.LogInformation("Les permissions de rôles existent déjà. Seeding ignoré.");
-            return;
-        }
-
         var allPermissions = await context.Permission.ToListAsync();
         var rolePermissions = new List<RolePermission>();
 
-        // Admin gets all permissions
+        // Get existing role permissions to avoid duplicates
+        var existingAdminPermissions = await context.RolePermission
+            .Where(rp => rp.RoleId == adminRole.Id)
+            .Select(rp => rp.PermissionId)
+            .ToListAsync();
+        var existingManagerPermissions = await context.RolePermission
+            .Where(rp => rp.RoleId == managerRole.Id)
+            .Select(rp => rp.PermissionId)
+            .ToListAsync();
+        var existingUserPermissions = await context.RolePermission
+            .Where(rp => rp.RoleId == userRole.Id)
+            .Select(rp => rp.PermissionId)
+            .ToListAsync();
+
+        // Admin gets all permissions (only add missing ones)
         foreach (var permission in allPermissions)
         {
-            rolePermissions.Add(RolePermission.CreateRolePermission(adminRole.Id, permission.Id));
+            if (!existingAdminPermissions.Contains(permission.Id))
+            {
+                rolePermissions.Add(RolePermission.CreateRolePermission(adminRole.Id, permission.Id));
+            }
         }
 
-        // Manager gets most permissions except user/role management
+        // Manager gets most permissions except user/role management (only add missing ones)
         var managerPermissions = allPermissions.Where(p => 
             !p.Name.Contains("ManageUsers") && 
             !p.Name.Contains("ManageRoles") && 
             !p.Name.Contains("ManagePermissions")).ToList();
+        
+        // Log Manager permissions for debugging
+        var createPermissions = managerPermissions.Where(p => p.Name.StartsWith("CanCreate")).Select(p => p.Name).ToList();
+        _logger.LogInformation("Manager permissions to assign: {Count} total, {CreateCount} create permissions: {CreatePermissions}", 
+            managerPermissions.Count, createPermissions.Count, string.Join(", ", createPermissions));
+        
         foreach (var permission in managerPermissions)
         {
-            rolePermissions.Add(RolePermission.CreateRolePermission(managerRole.Id, permission.Id));
+            if (!existingManagerPermissions.Contains(permission.Id))
+            {
+                rolePermissions.Add(RolePermission.CreateRolePermission(managerRole.Id, permission.Id));
+                _logger.LogDebug("Adding permission {PermissionName} to Manager role", permission.Name);
+            }
+            else
+            {
+                _logger.LogDebug("Permission {PermissionName} already assigned to Manager role", permission.Name);
+            }
         }
 
-        // User gets view permissions only
+        // User gets view permissions only (only add missing ones)
         var userPermissions = allPermissions.Where(p => p.Name.StartsWith("CanView")).ToList();
         foreach (var permission in userPermissions)
         {
-            rolePermissions.Add(RolePermission.CreateRolePermission(userRole.Id, permission.Id));
+            if (!existingUserPermissions.Contains(permission.Id))
+            {
+                rolePermissions.Add(RolePermission.CreateRolePermission(userRole.Id, permission.Id));
+            }
         }
 
-        await context.RolePermission.AddRangeAsync(rolePermissions);
-        await context.SaveChangesAsync();
-        _logger.LogInformation("✓ Permissions assignées aux rôles avec succès.");
+        if (rolePermissions.Count > 0)
+        {
+            await context.RolePermission.AddRangeAsync(rolePermissions);
+            await context.SaveChangesAsync();
+            _logger.LogInformation("✓ {Count} permission(s) ajoutée(s) aux rôles avec succès.", rolePermissions.Count);
+        }
+        else
+        {
+            _logger.LogInformation("✓ Toutes les permissions sont déjà assignées aux rôles.");
+        }
     }
 
     private async Task SeedAdminUserAsync(SalesContext context)
@@ -803,6 +851,72 @@ public class DatabaseSeeder
         _logger.LogInformation("  - Password: Admin123!");
         _logger.LogInformation("  - Email: admin@silkroaderp.com");
         _logger.LogInformation("=== FIN DU SEEDING UTILISATEUR ADMIN ===");
+    }
+
+    private async Task SeedManagerUserAsync(SalesContext context)
+    {
+        _logger.LogInformation("=== DÉBUT DU SEEDING UTILISATEUR MANAGER ===");
+
+        // Check if manager user already exists
+        var existingManager = await context.User
+            .FirstOrDefaultAsync(u => u.Username == "Nieze");
+
+        if (existingManager != null)
+        {
+            _logger.LogInformation("L'utilisateur Nieze existe déjà (ID: {UserId}).", existingManager.Id);
+            
+            // Ensure manager has Manager role
+            var managerRole = await context.Role.FirstOrDefaultAsync(r => r.Name == "Manager");
+            if (managerRole != null)
+            {
+                var existingUserRole = await context.UserRole
+                    .FirstOrDefaultAsync(ur => ur.UserId == existingManager.Id && ur.RoleId == managerRole.Id);
+                
+                if (existingUserRole == null)
+                {
+                    var userRole = UserRole.CreateUserRole(existingManager.Id, managerRole.Id);
+                    await context.UserRole.AddAsync(userRole);
+                    await context.SaveChangesAsync();
+                    _logger.LogInformation("✓ Rôle Manager assigné à l'utilisateur Nieze existant.");
+                }
+            }
+            return;
+        }
+
+        var passwordHasher = new PasswordHasher();
+        var managerPasswordHash = passwordHasher.HashPassword("Manager123!"); // Default password - should be changed in production
+
+        var managerUser = User.CreateUser(
+            username: "Nieze",
+            email: "nieze@silkroaderp.com",
+            passwordHash: managerPasswordHash,
+            firstName: "Nieze",
+            lastName: "Manager",
+            isActive: true
+        );
+
+        await context.User.AddAsync(managerUser);
+        await context.SaveChangesAsync();
+
+        // Assign Manager role to manager user
+        var managerRole2 = await context.Role.FirstOrDefaultAsync(r => r.Name == "Manager");
+        if (managerRole2 != null)
+        {
+            var userRole = UserRole.CreateUserRole(managerUser.Id, managerRole2.Id);
+            await context.UserRole.AddAsync(userRole);
+            await context.SaveChangesAsync();
+            _logger.LogInformation("✓ Rôle Manager assigné à l'utilisateur Nieze.");
+        }
+        else
+        {
+            _logger.LogWarning("⚠ Le rôle Manager n'existe pas. L'utilisateur Nieze a été créé sans rôle.");
+        }
+
+        _logger.LogInformation("✓ Utilisateur manager Nieze créé avec succès");
+        _logger.LogInformation("  - Username: Nieze");
+        _logger.LogInformation("  - Password: Manager123!");
+        _logger.LogInformation("  - Email: nieze@silkroaderp.com");
+        _logger.LogInformation("=== FIN DU SEEDING UTILISATEUR MANAGER ===");
     }
 }
 

@@ -5,6 +5,7 @@
 @inject IStringLocalizer<SharedResource> Localizer
 @inject NavigationManager NavigationManager
 @inject IAuthService AuthService
+@inject ILogger<MainLayout> Logger
 
 <RadzenComponents @rendermode="InteractiveAuto" />
 
@@ -178,8 +179,22 @@
 
     private async Task LoadUserInfo()
     {
-        await AuthService.LoadTokenFromStorageAsync();
-        userInfo = AuthService.GetUserInfo();
+        try
+        {
+            Logger.LogInformation("MainLayout: Loading token from storage");
+            await AuthService.LoadTokenFromStorageAsync();
+            Logger.LogInformation("MainLayout: Token loaded. IsAuthenticated: {IsAuthenticated}", AuthService.IsAuthenticated);
+            userInfo = AuthService.GetUserInfo();
+        }
+        catch (InvalidOperationException ioEx) when (ioEx.Message.Contains("prerendering") || ioEx.Message.Contains("statically rendered") || ioEx.Message.Contains("JavaScript interop calls cannot be issued"))
+        {
+            // JS interop not available during prerendering - this is expected
+            Logger.LogInformation("MainLayout: Cannot load token during prerendering. This is expected.");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "MainLayout: Error loading user info");
+        }
     }
 
     private string GetInitials(string name)

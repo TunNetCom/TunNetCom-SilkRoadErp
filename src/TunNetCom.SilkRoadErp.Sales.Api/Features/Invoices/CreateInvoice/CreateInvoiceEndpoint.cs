@@ -5,6 +5,7 @@ public class CreateInvoiceEndpoint : ICarterModule
     public void AddRoutes(IEndpointRouteBuilder app)
     {
         _ = app.MapPost("/invoices", HandleCreateInvoiceAsync)
+            .RequireAuthorization("Permission:CanCreateInvoice")
             .WithTags(EndpointTags.Invoices);
     }
     public async Task<Results<Created<CreateInvoiceRequest>, ValidationProblem>> HandleCreateInvoiceAsync(

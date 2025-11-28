@@ -196,6 +196,83 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(key),
         ClockSkew = TimeSpan.Zero
     };
+    
+    // Add event handlers for debugging
+    options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+    {
+        OnAuthenticationFailed = context =>
+        {
+            Log.Error("JWT Authentication failed: {Error}", context.Exception.Message);
+            Log.Error("JWT Authentication failed - Exception type: {ExceptionType}", 
+                context.Exception.GetType().Name);
+            if (context.Exception.InnerException != null)
+            {
+                Log.Error("JWT Authentication failed - Inner exception: {InnerException}", 
+                    context.Exception.InnerException.Message);
+            }
+            return Task.CompletedTask;
+        },
+        OnTokenValidated = context =>
+        {
+            var identity = context.Principal?.Identity;
+            var isAuthenticated = identity?.IsAuthenticated ?? false;
+            var claimsCount = context.Principal?.Claims.Count() ?? 0;
+            var userIdClaim = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+            
+            Log.Information("JWT Token validated successfully for user: {User}, IsAuthenticated: {IsAuthenticated}, Claims count: {ClaimsCount}, UserId: {UserId}", 
+                identity?.Name ?? "unknown", isAuthenticated, claimsCount, userIdClaim?.Value ?? "null");
+            
+            // Log all claims for debugging
+            if (context.Principal != null)
+            {
+                foreach (var claim in context.Principal.Claims)
+                {
+                    Log.Information("OnTokenValidated - Claim: {Type} = {Value}", claim.Type, claim.Value);
+                }
+            }
+            else
+            {
+                Log.Error("OnTokenValidated: context.Principal is NULL! Token validation succeeded but no principal was set.");
+            }
+            
+            // Ensure HttpContext.User is set (this should happen automatically, but let's be explicit)
+            if (context.HttpContext != null && context.Principal != null)
+            {
+                context.HttpContext.User = context.Principal;
+                Log.Information("OnTokenValidated: HttpContext.User set to validated principal.");
+            }
+            
+            return Task.CompletedTask;
+        },
+        OnChallenge = context =>
+        {
+            Log.Warning("JWT Challenge triggered. Error: {Error}, ErrorDescription: {ErrorDescription}", 
+                context.Error, context.ErrorDescription);
+            return Task.CompletedTask;
+        },
+        OnMessageReceived = context =>
+        {
+            var request = context.HttpContext.Request;
+            var authHeader = request.Headers["Authorization"].ToString();
+            
+            Log.Information("OnMessageReceived - Request path: {Path}, Method: {Method}", 
+                request.Path, request.Method);
+            Log.Information("OnMessageReceived - Authorization header: {Header}", 
+                string.IsNullOrEmpty(authHeader) ? "MISSING" : authHeader.Substring(0, Math.Min(50, authHeader.Length)) + "...");
+            
+            var token = context.Token;
+            if (!string.IsNullOrEmpty(token))
+            {
+                Log.Information("JWT Token extracted (length: {Length})", token.Length);
+            }
+            else
+            {
+                Log.Warning("No JWT Token extracted from request. Authorization header present: {HasHeader}", 
+                    !string.IsNullOrEmpty(authHeader));
+            }
+            return Task.CompletedTask;
+        }
+    };
 });
 
 // Configure Authorization
@@ -324,8 +401,15 @@ app.UseMiddleware<ActiveAccountingYearMiddleware>();
 app.UseStaticFiles();
 app.UseHttpsRedirection();
 
+// Routing must be before Authentication
+app.UseRouting();
+
 // Authentication & Authorization must be before MapControllers and MapCarter
 app.UseAuthentication();
+
+// Add debug middleware to log authentication state AFTER authentication middleware runs
+app.UseMiddleware<AuthenticationDebugMiddleware>();
+
 app.UseAuthorization();
 
 // Map OData routes

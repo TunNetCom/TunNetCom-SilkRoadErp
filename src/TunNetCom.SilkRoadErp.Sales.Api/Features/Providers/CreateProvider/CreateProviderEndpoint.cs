@@ -27,6 +27,7 @@ public class CreateProviderEndPoint : ICarterModule
             return TypedResults.Created($"/providers/{result.Value}", request);
 
         })
+        .RequireAuthorization("Permission:CanCreateProvider")
         .WithTags(EndpointTags.Providers);
     }
 

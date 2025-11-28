@@ -486,7 +486,9 @@
 
             if (success)
             {
-                Navigation.NavigateTo("/", forceLoad: true);
+                // Don't use forceLoad: true - it recreates the circuit and breaks JS interop
+                // Instead, navigate normally and let AuthorizeRouteView handle the auth check
+                Navigation.NavigateTo("/");
             }
             else
             {

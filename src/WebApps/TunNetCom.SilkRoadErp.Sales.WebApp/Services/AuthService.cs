@@ -15,6 +15,7 @@ public interface IAuthService
     Task LoadTokenFromStorageAsync();
     bool IsAuthenticated { get; }
     string? AccessToken { get; }
+    void SetAccessToken(string? token);
     UserInfo? GetUserInfo();
 }
 
@@ -30,19 +31,47 @@ public class AuthService : IAuthService
     private readonly HttpClient _httpClient;
     private readonly ILogger<AuthService> _logger;
     private readonly IJSRuntime _jsRuntime;
+    private readonly ITokenStore _tokenStore;
+    private readonly ICircuitIdService _circuitIdService;
     private const string AccessTokenKey = "auth_access_token";
     private const string RefreshTokenKey = "auth_refresh_token";
 
-    public AuthService(HttpClient httpClient, ILogger<AuthService> logger, IJSRuntime jsRuntime)
+    public AuthService(
+        HttpClient httpClient, 
+        ILogger<AuthService> logger, 
+        IJSRuntime jsRuntime,
+        ITokenStore tokenStore,
+        ICircuitIdService circuitIdService)
     {
         _httpClient = httpClient;
         _logger = logger;
         _jsRuntime = jsRuntime;
+        _tokenStore = tokenStore;
+        _circuitIdService = circuitIdService;
     }
 
     public bool IsAuthenticated => !string.IsNullOrEmpty(AccessToken);
 
-    public string? AccessToken { get; private set; }
+    public string? AccessToken
+    {
+        get => _tokenStore.GetToken(_circuitIdService.GetCircuitId());
+        private set
+        {
+            if (!string.IsNullOrEmpty(value))
+            {
+                _tokenStore.SetToken(_circuitIdService.GetCircuitId(), value);
+            }
+        }
+    }
+    
+    // Public setter for AuthHttpClientHandler to set token directly (avoids timeout issues)
+    public void SetAccessToken(string? token)
+    {
+        if (!string.IsNullOrEmpty(token))
+        {
+            _tokenStore.SetToken(_circuitIdService.GetCircuitId(), token);
+        }
+    }
 
     public async Task<bool> LoginAsync(string username, string password)
     {
@@ -69,13 +98,37 @@ public class AuthService : IAuthService
                 return false;
             }
 
-            // Store tokens in localStorage
-            await _jsRuntime.InvokeVoidAsync("localStorage.setItem", AccessTokenKey, loginResponse.AccessToken);
-            await _jsRuntime.InvokeVoidAsync("localStorage.setItem", RefreshTokenKey, loginResponse.RefreshToken);
-            
+            if (string.IsNullOrEmpty(loginResponse.AccessToken))
+            {
+                _logger.LogError("Login response AccessToken is null or empty");
+                return false;
+            }
+
+            // Set token in memory FIRST - this is critical for immediate use
             AccessToken = loginResponse.AccessToken;
+            _logger.LogInformation("Login: Token set in memory. Length: {Length}", loginResponse.AccessToken.Length);
             
-            _logger.LogInformation("Login successful for user {Username}", username);
+            // Then try to store in localStorage for persistence (may fail during prerendering, that's OK)
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync("localStorage.setItem", AccessTokenKey, loginResponse.AccessToken);
+                await _jsRuntime.InvokeVoidAsync("localStorage.setItem", RefreshTokenKey, loginResponse.RefreshToken);
+                _logger.LogInformation("Login: Tokens stored in localStorage successfully");
+            }
+            catch (InvalidOperationException ex) when (
+                ex.Message.Contains("prerendering") || 
+                ex.Message.Contains("statically rendered") || 
+                ex.Message.Contains("JavaScript interop calls cannot be issued"))
+            {
+                _logger.LogWarning("Login: Cannot store in localStorage during prerendering, but token is available in memory");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Login: Failed to store tokens in localStorage, but token is available in memory");
+            }
+            
+            _logger.LogInformation("Login successful for user {Username}. Token available in memory. Length: {Length}", 
+                username, loginResponse.AccessToken.Length);
             return true;
         }
         catch (Exception ex)
@@ -89,21 +142,44 @@ public class AuthService : IAuthService
     {
         try
         {
-            AccessToken = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", AccessTokenKey);
+            _logger.LogInformation("LoadTokenFromStorageAsync: Attempting to load token from localStorage");
+            
+            // Use a timeout to prevent indefinite blocking
+            var loadValueTask = _jsRuntime.InvokeAsync<string>("localStorage.getItem", AccessTokenKey);
+            var loadTask = loadValueTask.AsTask();
+            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(2));
+            var completedTask = await Task.WhenAny(loadTask, timeoutTask);
+            
+            if (completedTask == timeoutTask)
+            {
+                _logger.LogWarning("LoadTokenFromStorageAsync: Timeout loading token from localStorage");
+                AccessToken = null;
+                return;
+            }
+            
+            AccessToken = await loadTask;
+            _logger.LogInformation("LoadTokenFromStorageAsync: Token loaded. HasToken: {HasToken}", !string.IsNullOrEmpty(AccessToken));
         }
-        catch (JSDisconnectedException)
+        catch (JSDisconnectedException ex)
         {
             // Component was disposed or circuit disconnected, ignore
+            _logger.LogWarning(ex, "LoadTokenFromStorageAsync: JSDisconnectedException - circuit disconnected");
             AccessToken = null;
         }
-        catch (InvalidOperationException)
+        catch (InvalidOperationException ex)
         {
             // JS interop not available, ignore
+            _logger.LogWarning(ex, "LoadTokenFromStorageAsync: InvalidOperationException - JS interop not available");
+            AccessToken = null;
+        }
+        catch (TaskCanceledException)
+        {
+            _logger.LogWarning("LoadTokenFromStorageAsync: Task was cancelled");
             AccessToken = null;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error loading token from storage");
+            _logger.LogError(ex, "LoadTokenFromStorageAsync: Unexpected error loading token");
             AccessToken = null;
         }
     }
@@ -172,9 +248,18 @@ public class AuthService : IAuthService
         finally
         {
             // Clear tokens from localStorage
-            await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", AccessTokenKey);
-            await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", RefreshTokenKey);
-            AccessToken = null;
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", AccessTokenKey);
+                await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", RefreshTokenKey);
+            }
+            catch
+            {
+                // Ignore errors clearing localStorage
+            }
+            
+            // Clear token from circuit store
+            _tokenStore.ClearToken(_circuitIdService.GetCircuitId());
         }
     }
 

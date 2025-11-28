@@ -43,6 +43,7 @@ public class CreateOrderEndpoint : ICarterModule
 
                return TypedResults.Created($"/orders/{result.Value}", request);
            })
+           .RequireAuthorization("Permission:CanCreateOrder")
            .WithTags(EndpointTags.Orders);
     }
 }

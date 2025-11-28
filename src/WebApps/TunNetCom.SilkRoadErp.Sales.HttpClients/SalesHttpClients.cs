@@ -25,96 +25,106 @@ public static class SalesHttpClients
 {
     /// <summary>
     /// setting up communication with api backend
-    /// this is a method extension  that adds HTTP clients to your app’s dependency injection (DI) system
-    /// It’s called in Program.cs of your WebApp project to configure how your Blazor app talks to the API.
+    /// this is a method extension  that adds HTTP clients to your app's dependency injection (DI) system
+    /// It's called in Program.cs of your WebApp project to configure how your Blazor app talks to the API.
     /// </summary>
     /// <param name="services"></param>
     /// <param name="baseUrl"></param>
-    public static void AddSalesHttpClients(this IServiceCollection services, string baseUrl)
+    public static void AddSalesHttpClients(this IServiceCollection services, string baseUrl, Action<IHttpClientBuilder>? configureBuilder = null)
     {
-        _ = services.AddHttpClient<ICustomersApiClient, CustomersApiClient>(client =>
+        // Helper to configure client with optional builder configuration
+        IHttpClientBuilder AddClient<TInterface, TImplementation>(Action<HttpClient> configureClient) 
+            where TInterface : class 
+            where TImplementation : class, TInterface
+        {
+            var builder = services.AddHttpClient<TInterface, TImplementation>(configureClient);
+            configureBuilder?.Invoke(builder);
+            return builder;
+        }
+        
+        _ = AddClient<ICustomersApiClient, CustomersApiClient>(client =>
         {
             client.BaseAddress = new Uri(baseUrl);
         });
 
-        _ = services.AddHttpClient<IDeliveryNoteApiClient, DeliveryNoteApiClient>(deliverynote =>
+        _ = AddClient<IDeliveryNoteApiClient, DeliveryNoteApiClient>(deliverynote =>
         {
             deliverynote.BaseAddress = new Uri(baseUrl);
         });
 
-        _ = services.AddHttpClient<IInvoicesApiClient, InvoicesApiClient>(invoice =>
+        _ = AddClient<IInvoicesApiClient, InvoicesApiClient>(invoice =>
         {
             invoice.BaseAddress = new Uri(baseUrl);
         });
 
-        _ = services.AddHttpClient<IInventaireApiClient, InventaireApiClient>(inventaire =>
+        _ = AddClient<IInventaireApiClient, InventaireApiClient>(inventaire =>
         {
             inventaire.BaseAddress = new Uri(baseUrl);
         });
 
-        _ = services.AddHttpClient<IProductsApiClient, ProductsApiClient>(product =>
+        _ = AddClient<IProductsApiClient, ProductsApiClient>(product =>
         {
             product.BaseAddress = new Uri(baseUrl);
         });
 
-        _ = services.AddHttpClient<IProvidersApiClient, ProvidersApiClient>(provider =>
+        _ = AddClient<IProvidersApiClient, ProvidersApiClient>(provider =>
         {
             provider.BaseAddress = new Uri($"{baseUrl}/providers/");
         });
 
-        _ = services.AddHttpClient<IAppParametersClient, AppParametersClient>(provider =>
+        _ = AddClient<IAppParametersClient, AppParametersClient>(provider =>
         {
             provider.BaseAddress = new Uri($"{baseUrl}/");
         });
-        _ = services.AddHttpClient<IReceiptNoteApiClient, ReceiptNoteApiClient>(receipt =>
+        _ = AddClient<IReceiptNoteApiClient, ReceiptNoteApiClient>(receipt =>
         {
             receipt.BaseAddress = new Uri(baseUrl);
         });
-        _ = services.AddHttpClient<IProviderInvoiceApiClient, ProviderInvoiceApiClient>(invoice =>
+        _ = AddClient<IProviderInvoiceApiClient, ProviderInvoiceApiClient>(invoice =>
         {
             invoice.BaseAddress = new Uri(baseUrl);
         });
-        _ = services.AddHttpClient<IOrderApiClient, OrderApiClient>(order =>
+        _ = AddClient<IOrderApiClient, OrderApiClient>(order =>
         {
             order.BaseAddress = new Uri(baseUrl);
         });
-        _ = services.AddHttpClient<IAccountingYearApiClient, AccountingYearApiClient>(accountingYear =>
+        _ = AddClient<IAccountingYearApiClient, AccountingYearApiClient>(accountingYear =>
         {
             accountingYear.BaseAddress = new Uri(baseUrl);
         });
-        _ = services.AddHttpClient<IQuotationApiClient, QuotationApiClient>(quotation =>
+        _ = AddClient<IQuotationApiClient, QuotationApiClient>(quotation =>
         {
             quotation.BaseAddress = new Uri(baseUrl);
         });
-        _ = services.AddHttpClient<IAvoirsApiClient, AvoirsApiClient>(avoir =>
+        _ = AddClient<IAvoirsApiClient, AvoirsApiClient>(avoir =>
         {
             avoir.BaseAddress = new Uri(baseUrl);
         });
-        _ = services.AddHttpClient<IAvoirFournisseurApiClient, AvoirFournisseurApiClient>(avoirFournisseur =>
+        _ = AddClient<IAvoirFournisseurApiClient, AvoirFournisseurApiClient>(avoirFournisseur =>
         {
             avoirFournisseur.BaseAddress = new Uri(baseUrl);
         });
-        _ = services.AddHttpClient<IFactureAvoirFournisseurApiClient, FactureAvoirFournisseurApiClient>(factureAvoirFournisseur =>
+        _ = AddClient<IFactureAvoirFournisseurApiClient, FactureAvoirFournisseurApiClient>(factureAvoirFournisseur =>
         {
             factureAvoirFournisseur.BaseAddress = new Uri(baseUrl);
         });
-        _ = services.AddHttpClient<IPaiementClientApiClient, PaiementClientApiClient>(paiementClient =>
+        _ = AddClient<IPaiementClientApiClient, PaiementClientApiClient>(paiementClient =>
         {
             paiementClient.BaseAddress = new Uri(baseUrl);
         });
-        _ = services.AddHttpClient<IPaiementFournisseurApiClient, PaiementFournisseurApiClient>(paiementFournisseur =>
+        _ = AddClient<IPaiementFournisseurApiClient, PaiementFournisseurApiClient>(paiementFournisseur =>
         {
             paiementFournisseur.BaseAddress = new Uri(baseUrl);
         });
-        _ = services.AddHttpClient<IBanqueApiClient, BanqueApiClient>(banque =>
+        _ = AddClient<IBanqueApiClient, BanqueApiClient>(banque =>
         {
             banque.BaseAddress = new Uri(baseUrl);
         });
-        _ = services.AddHttpClient<ISoldesApiClient, SoldesApiClient>(soldes =>
+        _ = AddClient<ISoldesApiClient, SoldesApiClient>(soldes =>
         {
             soldes.BaseAddress = new Uri(baseUrl);
         });
-        _ = services.AddHttpClient<ITagsApiClient, TagsApiClient>(tags =>
+        _ = AddClient<ITagsApiClient, TagsApiClient>(tags =>
         {
             tags.BaseAddress = new Uri(baseUrl);
         });
