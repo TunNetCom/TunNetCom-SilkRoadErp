@@ -12,7 +12,14 @@
 
 <RadzenCard Style="padding: 20px; max-width: 900px; margin: auto;">
     <RadzenTemplateForm Data="@provider" Submit="@OnSubmit">
-        <h3 class="mb-4">@(provider.Id == 0 ? localizer["add_provider"] : localizer["edit_provider"])</h3>
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center" Style="margin-bottom: 1rem;">
+            <h3 style="margin: 0;">@(provider.Id == 0 ? localizer["add_provider"] : localizer["edit_provider"])</h3>
+            @if (provider.Id > 0)
+            {
+                <RadzenButton Icon="history" Text="Historique" Click="@ShowAuditLog" 
+                              ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" />
+            }
+        </RadzenStack>
 
         <RadzenRow Class="g-4 mb-4">
 
@@ -183,6 +190,23 @@
     private void Cancel()
     {
         navigationManager.NavigateTo("/providers_list");
+    }
+
+    private async Task ShowAuditLog()
+    {
+        await dialogService.OpenAsync<AuditLogModal>("Historique des modifications",
+            new Dictionary<string, object> 
+            { 
+                { "EntityName", "Provider" }, 
+                { "EntityId", provider.Id.ToString() } 
+            },
+            new DialogOptions() 
+            { 
+                Width = "900px", 
+                Height = "600px",
+                Resizable = true, 
+                Draggable = true 
+            });
     }
 
     private async Task ShowErrorsDialog(List<string> errorList)

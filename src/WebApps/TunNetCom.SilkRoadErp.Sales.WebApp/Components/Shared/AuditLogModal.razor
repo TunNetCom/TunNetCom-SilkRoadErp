@@ -1,0 +1,195 @@
+@using TunNetCom.SilkRoadErp.Sales.Contracts.AuditLogs
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AuditLogs
+@using System.Text.Json
+@inject IAuditLogsClient AuditLogsClient
+@inject ILogger<AuditLogModal> Logger
+
+<div style="padding: 20px;">
+    @if (isLoading)
+    {
+        <div style="text-align: center; padding: 40px;">
+            <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+            <p>Chargement de l'historique...</p>
+        </div>
+    }
+    else if (auditLogs == null || !auditLogs.Any())
+    {
+        <div style="text-align: center; padding: 40px; color: #666;">
+            <RadzenIcon Icon="history" Style="font-size: 48px; margin-bottom: 10px;" />
+            <p>Aucun historique de modifications trouvé pour cet élément.</p>
+        </div>
+    }
+    else
+    {
+        <RadzenStack Gap="1rem">
+            @foreach (var log in auditLogs)
+            {
+                <RadzenCard Style="@GetCardStyle(log.Action)">
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Start" Gap="1rem">
+                        <RadzenStack Gap="0.5rem" Style="flex: 1;">
+                            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" AlignItems="AlignItems.Center">
+                                <RadzenBadge BadgeStyle="@GetBadgeStyle(log.Action)" Text="@log.Action" />
+                                <RadzenText TextStyle="TextStyle.Body2" Style="color: #666;">
+                                    @log.Timestamp.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")
+                                </RadzenText>
+                            </RadzenStack>
+                            
+                            <RadzenText TextStyle="TextStyle.Body2">
+                                <strong>Utilisateur:</strong> @log.Username
+                            </RadzenText>
+
+                            @if (log.Action == "Updated" && log.ChangedProperties != null && log.ChangedProperties.Any())
+                            {
+                                <RadzenText TextStyle="TextStyle.Body2">
+                                    <strong>Propriétés modifiées:</strong> @string.Join(", ", log.ChangedProperties)
+                                </RadzenText>
+                                
+                                @if (log.OldValues != null || log.NewValues != null)
+                                {
+                                    <RadzenCard Style="margin-top: 10px; background-color: rgba(0,0,0,0.02);">
+                                        <RadzenStack Gap="0.5rem">
+                                            @foreach (var property in log.ChangedProperties)
+                                            {
+                                                <RadzenRow>
+                                                    <RadzenColumn Size="12" SizeMD="4">
+                                                        <RadzenText TextStyle="TextStyle.Body2" Style="font-weight: 500;">
+                                                            @property:
+                                                        </RadzenText>
+                                                    </RadzenColumn>
+                                                    <RadzenColumn Size="12" SizeMD="4">
+                                                        <RadzenText TextStyle="TextStyle.Body2" Style="color: #d32f2f;">
+                                                            <strong>Avant:</strong> @GetPropertyValue(log.OldValues, property)
+                                                        </RadzenText>
+                                                    </RadzenColumn>
+                                                    <RadzenColumn Size="12" SizeMD="4">
+                                                        <RadzenText TextStyle="TextStyle.Body2" Style="color: #388e3c;">
+                                                            <strong>Après:</strong> @GetPropertyValue(log.NewValues, property)
+                                                        </RadzenText>
+                                                    </RadzenColumn>
+                                                </RadzenRow>
+                                            }
+                                        </RadzenStack>
+                                    </RadzenCard>
+                                }
+                            }
+                            else if (log.Action == "Created" && log.NewValues != null)
+                            {
+                                <RadzenCard Style="margin-top: 10px; background-color: rgba(0,0,0,0.02);">
+                                    <RadzenText TextStyle="TextStyle.Subtitle2" Style="margin-bottom: 0.5rem;">Valeurs initiales:</RadzenText>
+                                    @foreach (var kvp in log.NewValues)
+                                    {
+                                        <RadzenText TextStyle="TextStyle.Body2">
+                                            <strong>@kvp.Key:</strong> @FormatValue(kvp.Value)
+                                        </RadzenText>
+                                    }
+                                </RadzenCard>
+                            }
+                            else if (log.Action == "Deleted" && log.OldValues != null)
+                            {
+                                <RadzenCard Style="margin-top: 10px; background-color: rgba(0,0,0,0.02);">
+                                    <RadzenText TextStyle="TextStyle.Subtitle2" Style="margin-bottom: 0.5rem;">Valeurs supprimées:</RadzenText>
+                                    @foreach (var kvp in log.OldValues)
+                                    {
+                                        <RadzenText TextStyle="TextStyle.Body2">
+                                            <strong>@kvp.Key:</strong> @FormatValue(kvp.Value)
+                                        </RadzenText>
+                                    }
+                                </RadzenCard>
+                            }
+                        </RadzenStack>
+                    </RadzenStack>
+                </RadzenCard>
+            }
+        </RadzenStack>
+    }
+</div>
+
+@code {
+    [Parameter] public string EntityName { get; set; } = string.Empty;
+    [Parameter] public string EntityId { get; set; } = string.Empty;
+
+    private List<AuditLogDetailResponse>? auditLogs;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAuditLogs();
+    }
+
+    private async Task LoadAuditLogs()
+    {
+        try
+        {
+            isLoading = true;
+            auditLogs = await AuditLogsClient.GetAuditLogsByEntityAsync(EntityName, EntityId, CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading audit logs for {EntityName}:{EntityId}", EntityName, EntityId);
+            auditLogs = new List<AuditLogDetailResponse>();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private string GetCardStyle(string action)
+    {
+        var borderColor = action switch
+        {
+            "Created" => "#4caf50",
+            "Updated" => "#2196f3",
+            "Deleted" => "#f44336",
+            _ => "#9e9e9e"
+        };
+        return $"border-left: 4px solid {borderColor}; margin-bottom: 0;";
+    }
+
+    private BadgeStyle GetBadgeStyle(string action)
+    {
+        return action switch
+        {
+            "Created" => BadgeStyle.Success,
+            "Updated" => BadgeStyle.Info,
+            "Deleted" => BadgeStyle.Danger,
+            _ => BadgeStyle.Secondary
+        };
+    }
+
+    private string GetPropertyValue(Dictionary<string, object?>? values, string property)
+    {
+        if (values == null || !values.ContainsKey(property))
+            return "N/A";
+
+        return FormatValue(values[property]);
+    }
+
+    private string FormatValue(object? value)
+    {
+        if (value == null)
+            return "null";
+
+        if (value is JsonElement jsonElement)
+        {
+            return jsonElement.ValueKind switch
+            {
+                JsonValueKind.String => jsonElement.GetString() ?? "null",
+                JsonValueKind.Number => jsonElement.GetDouble().ToString("N2"),
+                JsonValueKind.True => "true",
+                JsonValueKind.False => "false",
+                JsonValueKind.Null => "null",
+                _ => jsonElement.ToString()
+            };
+        }
+
+        if (value is DateTime dateTime)
+            return dateTime.ToString("dd/MM/yyyy HH:mm:ss");
+
+        if (value is decimal || value is double || value is float)
+            return Convert.ToDecimal(value).ToString("N2");
+
+        return value.ToString() ?? "N/A";
+    }
+}
+

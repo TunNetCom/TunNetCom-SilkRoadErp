@@ -1,6 +1,7 @@
 ﻿@using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Services
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Constants
 @inherits LayoutComponentBase
 @inject IStringLocalizer<SharedResource> Localizer
 @inject NavigationManager NavigationManager
@@ -65,6 +66,9 @@
             </RadzenPanelMenuItem>
             <RadzenPanelMenuItem Text="Installateurs" Icon="engineering" Path="/installation-technicians" />
             <RadzenPanelMenuItem Text="@Localizer["Banques"]" Icon="account_balance_wallet" Path="/banques" />
+            <HasPermission Permission="@Permissions.ViewAuditLogs">
+                <RadzenPanelMenuItem Text="Journal d'Audit" Icon="history" Path="/audit-logs" />
+            </HasPermission>
         </RadzenPanelMenu>
         
         <!-- User section at the bottom of sidebar -->

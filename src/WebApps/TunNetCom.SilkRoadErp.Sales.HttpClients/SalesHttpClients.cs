@@ -20,6 +20,7 @@ using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Banque;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Soldes;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.InstallationTechnician;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AuditLogs;
 
 
 public static class SalesHttpClients
@@ -132,6 +133,10 @@ public static class SalesHttpClients
         _ = AddClient<IInstallationTechnicianApiClient, InstallationTechnicianApiClient>(installationTechnician =>
         {
             installationTechnician.BaseAddress = new Uri(baseUrl);
+        });
+        _ = AddClient<IAuditLogsClient, AuditLogsClient>(auditLogs =>
+        {
+            auditLogs.BaseAddress = new Uri(baseUrl);
         });
     }
 }

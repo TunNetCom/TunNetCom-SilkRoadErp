@@ -1,0 +1,280 @@
+@page "/audit-logs"
+@using TunNetCom.SilkRoadErp.Sales.Contracts.AuditLogs
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AuditLogs
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Constants
+@inject IAuditLogsClient AuditLogsClient
+@inject ILogger<AuditLogsList> Logger
+
+<PageTitle>Journal d'Audit</PageTitle>
+
+<RadzenStack Gap="1rem">
+    <RadzenCard>
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+            <RadzenText TextStyle="TextStyle.H4">
+                <RadzenIcon Icon="history" /> Journal d'Audit
+            </RadzenText>
+        </RadzenStack>
+    </RadzenCard>
+
+    <RadzenCard>
+        <RadzenText TextStyle="TextStyle.Subtitle1" Style="margin-bottom: 1rem;">Filtres</RadzenText>
+        <RadzenRow Gap="1rem">
+            <RadzenColumn Size="12" SizeMD="3">
+                <RadzenFormField Text="Type d'entité" Style="width: 100%;">
+                    <RadzenDropDown 
+                        @bind-Value="@filterEntityName" 
+                        Data="@entityTypes" 
+                        Style="width: 100%;"
+                        AllowClear="true"
+                        Placeholder="Tous les types"
+                        Change="@OnFilterChanged" />
+                </RadzenFormField>
+            </RadzenColumn>
+            
+            <RadzenColumn Size="12" SizeMD="2">
+                <RadzenFormField Text="ID Entité" Style="width: 100%;">
+                    <RadzenTextBox 
+                        @bind-Value="@filterEntityId" 
+                        Style="width: 100%;"
+                        Placeholder="ID"
+                        Change="@OnFilterChanged" />
+                </RadzenFormField>
+            </RadzenColumn>
+
+            <RadzenColumn Size="12" SizeMD="2">
+                <RadzenFormField Text="Action" Style="width: 100%;">
+                    <RadzenDropDown 
+                        @bind-Value="@filterAction" 
+                        Data="@actions" 
+                        Style="width: 100%;"
+                        AllowClear="true"
+                        Placeholder="Toutes les actions"
+                        Change="@OnFilterChanged" />
+                </RadzenFormField>
+            </RadzenColumn>
+
+            <RadzenColumn Size="12" SizeMD="2">
+                <RadzenFormField Text="Date début" Style="width: 100%;">
+                    <RadzenDatePicker 
+                        @bind-Value="@filterDateFrom" 
+                        Style="width: 100%;"
+                        DateFormat="dd/MM/yyyy"
+                        Change="@OnFilterChanged"
+                        ShowTime="false" />
+                </RadzenFormField>
+            </RadzenColumn>
+
+            <RadzenColumn Size="12" SizeMD="2">
+                <RadzenFormField Text="Date fin" Style="width: 100%;">
+                    <RadzenDatePicker 
+                        @bind-Value="@filterDateTo" 
+                        Style="width: 100%;"
+                        DateFormat="dd/MM/yyyy"
+                        Change="@OnFilterChanged"
+                        ShowTime="false" />
+                </RadzenFormField>
+            </RadzenColumn>
+
+            <RadzenColumn Size="12" SizeMD="1" Style="display: flex; align-items: flex-end;">
+                <RadzenButton 
+                    Icon="refresh" 
+                    ButtonStyle="ButtonStyle.Secondary"
+                    Click="@ResetFilters"
+                    Style="width: 100%;"
+                    Text="Reset" />
+            </RadzenColumn>
+        </RadzenRow>
+    </RadzenCard>
+
+    <RadzenCard>
+        <RadzenDataGrid 
+            @ref="grid"
+            Data="@auditLogs" 
+            TItem="AuditLogResponse" 
+            AllowPaging="true"
+            AllowSorting="true"
+            PageSize="@pageSize"
+            Count="@totalCount"
+            LoadData="@LoadData"
+            IsLoading="@isLoading"
+            PagerHorizontalAlign="HorizontalAlign.Center"
+            ColumnWidth="150px">
+            
+            <Columns>
+                <RadzenDataGridColumn TItem="AuditLogResponse" Property="Timestamp" Title="Date & Heure" Width="180px" Sortable="true">
+                    <Template Context="log">
+                        @log.Timestamp.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="AuditLogResponse" Property="Action" Title="Action" Width="120px" Sortable="true">
+                    <Template Context="log">
+                        <RadzenBadge BadgeStyle="@GetBadgeStyle(log.Action)" Text="@log.Action" />
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="AuditLogResponse" Property="EntityName" Title="Type d'entité" Width="150px" Sortable="true">
+                    <Template Context="log">
+                        <RadzenText TextStyle="TextStyle.Body2">@log.EntityName</RadzenText>
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="AuditLogResponse" Property="EntityId" Title="ID" Width="100px" Sortable="true">
+                    <Template Context="log">
+                        <RadzenText TextStyle="TextStyle.Body2">@log.EntityId</RadzenText>
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="AuditLogResponse" Property="Username" Title="Utilisateur" Width="150px" Sortable="true">
+                    <Template Context="log">
+                        <RadzenText TextStyle="TextStyle.Body2">@log.Username</RadzenText>
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="AuditLogResponse" Property="ChangedProperties" Title="Propriétés modifiées" Sortable="false">
+                    <Template Context="log">
+                        @if (log.ChangedProperties != null && log.ChangedProperties.Any())
+                        {
+                            <RadzenText TextStyle="TextStyle.Body2">@string.Join(", ", log.ChangedProperties.Take(3))</RadzenText>
+                            @if (log.ChangedProperties.Count > 3)
+                            {
+                                <RadzenText TextStyle="TextStyle.Body2" Style="color: #666; font-style: italic;">
+                                    ... +@(log.ChangedProperties.Count - 3) autres
+                                </RadzenText>
+                            }
+                        }
+                        else
+                        {
+                            <RadzenText TextStyle="TextStyle.Body2" Style="color: #999;">-</RadzenText>
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="AuditLogResponse" Title="Actions" Width="100px" Sortable="false" Frozen="true" FrozenPosition="FrozenColumnPosition.Right">
+                    <Template Context="log">
+                        <RadzenButton 
+                            Icon="visibility" 
+                            ButtonStyle="ButtonStyle.Info" 
+                            Size="ButtonSize.Small"
+                            Click="@(() => ShowDetails(log))"
+                            Text="Détails" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    </RadzenCard>
+</RadzenStack>
+
+@code {
+    private RadzenDataGrid<AuditLogResponse>? grid;
+    private List<AuditLogResponse> auditLogs = new();
+    private int totalCount;
+    private int pageSize = 20;
+    private bool isLoading = false;
+
+    // Filters
+    private string? filterEntityName;
+    private string? filterEntityId;
+    private string? filterAction;
+    private DateTime? filterDateFrom;
+    private DateTime? filterDateTo;
+
+    private List<string> entityTypes = new()
+    {
+        "Customer", "Provider", "Product", 
+        "FactureClient", "BonLivraison", "Devis", 
+        "Commande", "BonReception", "FactureFournisseur",
+        "AvoirClient", "AvoirFournisseur", "FactureAvoirFournisseur",
+        "PaiementClient", "PaiementFournisseur",
+        "Inventaire", "Banque", "Tag"
+    };
+
+    private List<string> actions = new() { "Created", "Updated", "Deleted" };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData(new LoadDataArgs { Skip = 0, Top = pageSize });
+    }
+
+    private async Task LoadData(LoadDataArgs args)
+    {
+        isLoading = true;
+        try
+        {
+            var pageNumber = (args.Skip.GetValueOrDefault() / pageSize) + 1;
+
+            var request = new GetAuditLogsRequest
+            {
+                EntityName = filterEntityName,
+                EntityId = filterEntityId,
+                Action = filterAction,
+                DateFrom = filterDateFrom,
+                DateTo = filterDateTo,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+
+            var result = await AuditLogsClient.GetAuditLogsAsync(request, CancellationToken.None);
+            
+            auditLogs = result.Items.ToList();
+            totalCount = result.TotalCount;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading audit logs");
+            auditLogs = new List<AuditLogResponse>();
+            totalCount = 0;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task OnFilterChanged()
+    {
+        await grid!.Reload();
+    }
+
+    private async Task ResetFilters()
+    {
+        filterEntityName = null;
+        filterEntityId = null;
+        filterAction = null;
+        filterDateFrom = null;
+        filterDateTo = null;
+        await grid!.Reload();
+    }
+
+    private async Task ShowDetails(AuditLogResponse log)
+    {
+        await DialogService.OpenAsync<AuditLogModal>(
+            $"Historique - {log.EntityName} #{log.EntityId}",
+            new Dictionary<string, object> 
+            { 
+                { "EntityName", log.EntityName }, 
+                { "EntityId", log.EntityId } 
+            },
+            new DialogOptions() 
+            { 
+                Width = "900px", 
+                Height = "600px",
+                Resizable = true, 
+                Draggable = true 
+            });
+    }
+
+    private BadgeStyle GetBadgeStyle(string action)
+    {
+        return action switch
+        {
+            "Created" => BadgeStyle.Success,
+            "Updated" => BadgeStyle.Info,
+            "Deleted" => BadgeStyle.Danger,
+            _ => BadgeStyle.Secondary
+        };
+    }
+
+    [Inject] DialogService DialogService { get; set; } = default!;
+}
+

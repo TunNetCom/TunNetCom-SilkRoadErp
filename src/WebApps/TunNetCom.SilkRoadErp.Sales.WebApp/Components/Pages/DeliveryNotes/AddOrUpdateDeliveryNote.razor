@@ -190,6 +190,12 @@ else
         <div class="delivery-note-form">
             <RadzenLabel Text="@Localizer["delivery_note_number"]" Component="DeliveryNoteNumber" AriaLabel="@Localizer["delivery_note_number"]" />
             <RadzenTextBox @bind-Value="deliveryNoteNumber" Name="DeliveryNoteNumber" Style="width: 120px;" ReadOnly="true" AriaReadOnly="true" />
+            
+            @if (!string.IsNullOrEmpty(deliveryNoteNumber) && deliveryNoteNumber != "0")
+            {
+                <RadzenButton Icon="history" Text="Historique" Click="@ShowAuditLog" 
+                              ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" />
+            }
 
             <RadzenLabel Text="@Localizer["date"]" />
             <RadzenDatePicker @bind-Value="deliveryNoteDate" Name="DeliveryNoteDate" Style="width: 200px;" DateFormat="d MMMM yyyy" ShowTime="false" />
@@ -1310,6 +1316,23 @@ else
             });
 
         await SaveStateAsync();
+    }
+
+    private async Task ShowAuditLog()
+    {
+        await DialogService.OpenAsync<AuditLogModal>("Historique des modifications",
+            new Dictionary<string, object> 
+            { 
+                { "EntityName", "BonLivraison" }, 
+                { "EntityId", deliveryNoteNumber } 
+            },
+            new DialogOptions() 
+            { 
+                Width = "900px", 
+                Height = "600px",
+                Resizable = true, 
+                Draggable = true 
+            });
     }
 
     void OnDrag(System.Drawing.Point point)

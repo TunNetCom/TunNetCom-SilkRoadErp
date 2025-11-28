@@ -147,5 +147,9 @@ public static class Permissions
     // ==================== PERMISSION MANAGEMENT ====================
     public const string ViewPermissions = "CanViewPermissions";
     public const string ManagePermissions = "CanManagePermissions";
+
+    // ==================== AUDIT LOGS (JOURNAL D'AUDIT) ====================
+    public const string ViewAuditLogs = "CanViewAuditLogs";
+    public const string ExportAuditLogs = "CanExportAuditLogs";
 }
 

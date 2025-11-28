@@ -18,7 +18,14 @@
 <RadzenCard Style="padding: 20px; max-width: 900px; margin: auto;">
     <RadzenTemplateForm Data="@customer" Submit="@OnSubmit">
 
-        <h3>@(customer.Id == 0 ? localizer["AddClient"] : localizer["EditClient"])</h3>
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center" Style="margin-bottom: 1rem;">
+            <h3 style="margin: 0;">@(customer.Id == 0 ? localizer["AddClient"] : localizer["EditClient"])</h3>
+            @if (customer.Id > 0)
+            {
+                <RadzenButton Icon="history" Text="Historique" Click="@ShowAuditLog" 
+                              ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" />
+            }
+        </RadzenStack>
 
         <RadzenRow Class="g-2 mb-4">
             <RadzenColumn Size="12" SizeSM="6" Class="d-flex flex-column gap-3">
@@ -186,6 +193,23 @@
     private void Cancel()
     {
         navigationManager.NavigateTo("/customers_list");
+    }
+
+    private async Task ShowAuditLog()
+    {
+        await dialogService.OpenAsync<AuditLogModal>("Historique des modifications",
+            new Dictionary<string, object> 
+            { 
+                { "EntityName", "Customer" }, 
+                { "EntityId", customer.Id.ToString() } 
+            },
+            new DialogOptions() 
+            { 
+                Width = "900px", 
+                Height = "600px",
+                Resizable = true, 
+                Draggable = true 
+            });
     }
 
     private async Task ShowErrorsDialog(List<string> errorList)

@@ -147,6 +147,10 @@ public static class Permissions
     public const string ViewPermissions = "CanViewPermissions";
     public const string ManagePermissions = "CanManagePermissions";
 
+    // ==================== AUDIT LOGS (JOURNAL D'AUDIT) ====================
+    public const string ViewAuditLogs = "CanViewAuditLogs";
+    public const string ExportAuditLogs = "CanExportAuditLogs";
+
     /// <summary>
     /// Retourne toutes les permissions sous forme de liste
     /// </summary>
@@ -295,7 +299,11 @@ public static class Permissions
 
             // Permission Management
             (ViewPermissions, "Peut voir les permissions"),
-            (ManagePermissions, "Peut gérer les permissions")
+            (ManagePermissions, "Peut gérer les permissions"),
+
+            // Audit Logs
+            (ViewAuditLogs, "Peut voir les journaux d'audit"),
+            (ExportAuditLogs, "Peut exporter les journaux d'audit")
         };
     }
 }

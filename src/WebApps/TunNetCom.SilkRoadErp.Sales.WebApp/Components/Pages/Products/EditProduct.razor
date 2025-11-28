@@ -17,7 +17,14 @@
 
 <RadzenCard Style="padding: 20px; max-width: 900px; margin: 2rem auto;">
     <RadzenTemplateForm Data="@productModel" Submit="@OnSubmit">
-        <h3>@(string.IsNullOrEmpty(Refe) ? Localizer["add_product"] : Localizer["edit_product"])</h3>
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center" Style="margin-bottom: 1rem;">
+            <h3 style="margin: 0;">@(string.IsNullOrEmpty(Refe) ? Localizer["add_product"] : Localizer["edit_product"])</h3>
+            @if (!string.IsNullOrEmpty(Refe))
+            {
+                <RadzenButton Icon="history" Text="Historique" Click="@ShowAuditLog" 
+                              ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" />
+            }
+        </RadzenStack>
 
         <RadzenRow Class="g-2 mb-4">
             <!-- Left Column: Core Product Info -->
@@ -286,6 +293,25 @@
         {
             NavigationManager.NavigateTo("/products_list");
         }
+    }
+
+    [Inject] DialogService DialogService { get; set; } = default!;
+
+    private async Task ShowAuditLog()
+    {
+        await DialogService.OpenAsync<AuditLogModal>("Historique des modifications",
+            new Dictionary<string, object> 
+            { 
+                { "EntityName", "Product" }, 
+                { "EntityId", Refe ?? string.Empty } 
+            },
+            new DialogOptions() 
+            { 
+                Width = "900px", 
+                Height = "600px",
+                Resizable = true, 
+                Draggable = true 
+            });
     }
 
     // Error Handling with Toasts
