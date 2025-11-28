@@ -40,7 +40,8 @@ public class CreateDeliveryNoteCommandHandler(
                 createDeliveryNoteCommand.TempBl,
                 createDeliveryNoteCommand.NumFacture,
                 createDeliveryNoteCommand.ClientId,
-                activeAccountingYear.Id
+                activeAccountingYear.Id,
+                createDeliveryNoteCommand.InstallationTechnicianId
             );
         deliveryNote.Num = num;
 

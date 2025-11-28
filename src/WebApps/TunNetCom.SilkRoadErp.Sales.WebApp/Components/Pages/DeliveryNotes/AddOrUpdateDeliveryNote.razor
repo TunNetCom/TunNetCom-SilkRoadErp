@@ -23,7 +23,10 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Tags
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
+@using TunNetCom.SilkRoadErp.Sales.Contracts.InstallationTechnician.Responses
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.InstallationTechnician
 @inject ITagsApiClient TagsService
+@inject IInstallationTechnicianApiClient TechnicianService
 
 @inject IStringLocalizer<SharedResource> Localizer
 @inject ToastService toastService
@@ -208,6 +211,38 @@ else
                 </Columns>
             </RadzenDropDownDataGrid>
 
+            <RadzenLabel Text="Installateur" />
+            <RadzenDropDownDataGrid AllowClear="true"
+                                    IsLoading="@isLoadingTechnicians"
+                                    @bind-Value="@selectedTechnicianId"
+                                    LoadData="@LoadTechnicians"
+                                    AllowFiltering="true"
+                                    Style="width: 350px;"
+                                    Data="@_filteredTechnicians"
+                                    TextProperty="@nameof(InstallationTechnicianBaseInfo.Nom)"
+                                    ValueProperty="@nameof(InstallationTechnicianBaseInfo.Id)"
+                                    Placeholder="Sélectionner un installateur">
+                <Template Context="technician">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        @if (!string.IsNullOrEmpty(technician.Photo))
+                        {
+                            <img src="@technician.Photo" alt="@technician.Nom" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;" />
+                        }
+                        else
+                        {
+                            <div style="width: 30px; height: 30px; border-radius: 50%; background-color: #e0e0e0; display: flex; align-items: center; justify-content: center;">
+                                <RadzenIcon Icon="person" Style="font-size: 16px;" />
+                            </div>
+                        }
+                        <span>@technician.Nom</span>
+                    </div>
+                </Template>
+                <Columns>
+                    <RadzenDropDownDataGridColumn Property="@nameof(InstallationTechnicianBaseInfo.Id)" Title="ID" Width="80px" />
+                    <RadzenDropDownDataGridColumn Property="@nameof(InstallationTechnicianBaseInfo.Nom)" Title="Nom" Width="220px" />
+                </Columns>
+            </RadzenDropDownDataGrid>
+
             <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" AlignItems="Radzen.AlignItems.Center">
                 <RadzenLabel Text="@Localizer["invoice_number"]" />
                 <RadzenDropDownDataGrid AllowClear="true"
@@ -286,9 +321,12 @@ else
     private CancellationTokenSource _cancellationTokenSource = new();
     private List<CustomerResponse> _filteredCustomers { get; set; } = new();
     private List<InvoiceResponse> _filteredInvoices { get; set; } = new();
+    private List<InstallationTechnicianBaseInfo> _filteredTechnicians { get; set; } = new();
     private bool isLoading = true;
     bool isLoadingCustomers = false;
     bool isLoadingInvoices = false;
+    bool isLoadingTechnicians = false;
+    private int? selectedTechnicianId;
     decimal totalHt;
     decimal totalVat;
     decimal totalTtc;
@@ -337,6 +375,7 @@ else
         var param = await appParametersClient.GetAppParametersAsync(_cancellationTokenSource.Token);
         getAppParametersResponse = param.AsT0;
         await LoadCustomers(null);
+        await LoadTechnicians(null);
         await FetchDeliveryNote();
         // Only load invoices if customer is already selected (edit mode or from quotation)
         if (selectedCustomerId.HasValue)
@@ -413,6 +452,7 @@ else
                 DeliveryTime = TimeOnly.FromDateTime(DateTime.Now),
                 InvoiceNumber = _selectedInvoiceId,
                 CustomerId = _selectedCustomerId,
+                InstallationTechnicianId = selectedTechnicianId,
                 Items = orders.Select(o => new DeliveryNoteItemRequest
                 {
                     Id = o.Id,
@@ -595,6 +635,7 @@ else
                     deliveryNoteNumber = deliveryNote.DeliveryNoteNumber.ToString();
                     deliveryNoteDate = deliveryNote.Date;
                     selectedCustomerId = deliveryNote.CustomerId;
+                    selectedTechnicianId = deliveryNote.InstallationTechnicianId;
                     selectedInvoiceId = deliveryNote.InvoiceNumber;
 
                     if (deliveryNote.Items != null && deliveryNote.Items.Any())
@@ -767,6 +808,37 @@ else
         }
 
         isLoadingCustomers = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task LoadTechnicians(LoadDataArgs args)
+    {
+        isLoadingTechnicians = true;
+
+        try
+        {
+            _filteredTechnicians = await TechnicianService.GetInstallationTechniciansBaseInfosAsync(_cancellationTokenSource.Token);
+            
+            // Apply filter if provided
+            if (!string.IsNullOrEmpty(args?.Filter))
+            {
+                _filteredTechnicians = _filteredTechnicians
+                    .Where(t => t.Nom.Contains(args.Filter, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Erreur",
+                Detail = $"Erreur lors du chargement des installateurs: {ex.Message}"
+            });
+            _filteredTechnicians = new List<InstallationTechnicianBaseInfo>();
+        }
+
+        isLoadingTechnicians = false;
         await InvokeAsync(StateHasChanged);
     }
 

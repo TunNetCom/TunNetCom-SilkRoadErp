@@ -19,6 +19,8 @@ public class GetDeliveryNoteByNumQueryHandler(
                 DeliveryNoteNumber = LigneBl.Num,
                 Date = LigneBl.Date,
                 CustomerId = LigneBl.ClientId,
+                InstallationTechnicianId = LigneBl.InstallationTechnicianId,
+                InstallationTechnicianName = LigneBl.InstallationTechnician != null ? LigneBl.InstallationTechnician.Nom : null,
                 TotalVat = LigneBl.TotTva,
                 TotalAmount = LigneBl.NetPayer,
                 InvoiceNumber = LigneBl.NumFacture,

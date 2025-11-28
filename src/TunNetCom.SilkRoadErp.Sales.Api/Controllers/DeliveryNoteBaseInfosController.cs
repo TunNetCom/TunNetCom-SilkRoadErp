@@ -24,12 +24,13 @@ public class DeliveryNoteBaseInfosController : ODataController
         [FromQuery] DateTime? startDate = null,
         [FromQuery] DateTime? endDate = null,
         [FromQuery] int? customerId = null,
+        [FromQuery] int? technicianId = null,
         [FromQuery] List<int>? tagIds = null)
     {
         try
         {
-            _logger.LogInformation("DeliveryNoteBaseInfosController.Get called with startDate: {StartDate}, endDate: {EndDate}, customerId: {CustomerId}, tagIds: {TagIds}", 
-                startDate, endDate, customerId, tagIds != null ? string.Join(",", tagIds) : "null");
+            _logger.LogInformation("DeliveryNoteBaseInfosController.Get called with startDate: {StartDate}, endDate: {EndDate}, customerId: {CustomerId}, technicianId: {TechnicianId}, tagIds: {TagIds}", 
+                startDate, endDate, customerId, technicianId, tagIds != null ? string.Join(",", tagIds) : "null");
 
             // Build base query with filters before projection
             var baseQuery = _context.BonDeLivraison.AsNoTracking();
@@ -49,6 +50,11 @@ public class DeliveryNoteBaseInfosController : ODataController
             if (customerId.HasValue)
             {
                 baseQuery = baseQuery.Where(bdl => bdl.ClientId == customerId.Value);
+            }
+
+            if (technicianId.HasValue)
+            {
+                baseQuery = baseQuery.Where(bdl => bdl.InstallationTechnicianId == technicianId.Value);
             }
 
             // Apply tag filter if provided (OR logic: document must have at least one of the selected tags)

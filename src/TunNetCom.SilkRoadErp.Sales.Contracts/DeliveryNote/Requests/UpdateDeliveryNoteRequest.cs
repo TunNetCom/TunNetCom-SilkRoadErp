@@ -23,6 +23,9 @@ public class UpdateDeliveryNoteRequest
     [JsonPropertyName("clientId")]
     public int? ClientId { get; set; }
 
+    [JsonPropertyName("installationTechnicianId")]
+    public int? InstallationTechnicianId { get; set; }
+
     [JsonPropertyName("lignes")]
     public List<LigneBlRequest> Lignes { get; set; }
 }

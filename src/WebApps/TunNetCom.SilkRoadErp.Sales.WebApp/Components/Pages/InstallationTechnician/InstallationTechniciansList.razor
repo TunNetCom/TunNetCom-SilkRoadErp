@@ -1,0 +1,245 @@
+@page "/installation-technicians"
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.InstallationTechnician.Responses
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.InstallationTechnician
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using Radzen.Blazor
+@using Radzen
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<SharedResource> Localizer
+@inject IInstallationTechnicianApiClient TechnicianService
+@inject ToastService ToastService
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+
+<div class="technicians-container">
+    <div class="technicians-card">
+        <div class="technicians-header">
+            <h3 class="technicians-title">Installateurs</h3>
+            <RadzenButton Icon="add" Text="Ajouter Installateur"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Click="CreateTechnician"
+                          Class="btn-primary" />
+        </div>
+
+        <RadzenDataGrid @ref="technicianGrid"
+                        TItem="InstallationTechnicianResponse"
+                        AllowFiltering="true"
+                        FilterMode="FilterMode.Simple"
+                        AllowPaging="true"
+                        PageSize="10"
+                        AllowSorting="true"
+                        IsLoading="@isLoadingTechnicians"
+                        LoadData="@LoadTechnicians"
+                        Count="@count"
+                        Data="@technicians"
+                        Class="technicians-grid">
+            <Columns>
+                <RadzenDataGridColumn TItem="InstallationTechnicianResponse" Title="Photo" Width="100px" Sortable="false" Filterable="false">
+                    <Template Context="technician">
+                        @if (!string.IsNullOrEmpty(technician.Photo))
+                        {
+                            <img src="@technician.Photo" alt="@technician.Nom" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;" />
+                        }
+                        else
+                        {
+                            <div style="width: 50px; height: 50px; border-radius: 50%; background-color: #e0e0e0; display: flex; align-items: center; justify-content: center;">
+                                <RadzenIcon Icon="person" />
+                            </div>
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="InstallationTechnicianResponse" Property="Nom" Title="Nom" />
+                <RadzenDataGridColumn TItem="InstallationTechnicianResponse" Property="Tel" Title="Téléphone 1" />
+                <RadzenDataGridColumn TItem="InstallationTechnicianResponse" Property="Tel2" Title="Téléphone 2" />
+                <RadzenDataGridColumn TItem="InstallationTechnicianResponse" Property="Tel3" Title="Téléphone 3" />
+                <RadzenDataGridColumn TItem="InstallationTechnicianResponse" Property="Email" Title="Email" />
+                <RadzenDataGridColumn TItem="InstallationTechnicianResponse" Property="Description" Title="Description" />
+                <RadzenDataGridColumn TItem="InstallationTechnicianResponse" Title="Actions" Width="150px" Sortable="false" Filterable="false">
+                    <Template Context="technician">
+                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" Click="@(() => EditTechnician(technician.Id))" />
+                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click="@(() => ConfirmDeleteTechnician(technician.Id))" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    </div>
+</div>
+
+<style>
+    .technicians-container {
+        padding: 1.5rem;
+        min-height: 100vh;
+    }
+
+    .technicians-card {
+        background: var(--rz-panel-background-color, white);
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 1.5rem;
+    }
+
+    .technicians-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .technicians-title {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--rz-text-color, #333);
+        line-height: 1.2;
+    }
+
+    .technicians-grid {
+        border-radius: 8px;
+        overflow: hidden;
+        border: none;
+    }
+</style>
+
+@code {
+    private RadzenDataGrid<InstallationTechnicianResponse> technicianGrid = default!;
+    private List<InstallationTechnicianResponse> technicians = new();
+    private List<InstallationTechnicianResponse> allTechnicians = new();
+    private bool isLoadingTechnicians = false;
+    private int count;
+    private CancellationTokenSource cancellationTokenSource = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await technicianGrid.Reload();
+        }
+    }
+
+    async Task LoadTechnicians(LoadDataArgs args)
+    {
+        isLoadingTechnicians = true;
+        await Task.Yield();
+
+        try
+        {
+            // Load all technicians if not already loaded
+            if (!allTechnicians.Any())
+            {
+                allTechnicians = await TechnicianService.GetInstallationTechniciansAsync(cancellationTokenSource.Token);
+            }
+
+            // Apply filtering
+            var query = allTechnicians.AsQueryable();
+
+            if (!string.IsNullOrEmpty(args?.Filter))
+            {
+                query = query.Where(t => 
+                    (t.Nom != null && t.Nom.Contains(args.Filter, StringComparison.OrdinalIgnoreCase)) ||
+                    (t.Tel != null && t.Tel.Contains(args.Filter, StringComparison.OrdinalIgnoreCase)) ||
+                    (t.Tel2 != null && t.Tel2.Contains(args.Filter, StringComparison.OrdinalIgnoreCase)) ||
+                    (t.Tel3 != null && t.Tel3.Contains(args.Filter, StringComparison.OrdinalIgnoreCase)) ||
+                    (t.Email != null && t.Email.Contains(args.Filter, StringComparison.OrdinalIgnoreCase)) ||
+                    (t.Description != null && t.Description.Contains(args.Filter, StringComparison.OrdinalIgnoreCase))
+                );
+            }
+
+            count = query.Count();
+
+            // Apply sorting
+            if (!string.IsNullOrEmpty(args?.OrderBy))
+            {
+                query = query.OrderBy(args.OrderBy);
+            }
+            else
+            {
+                query = query.OrderBy(t => t.Nom);
+            }
+
+            // Apply paging
+            if (args?.Skip != null)
+            {
+                query = query.Skip(args.Skip.Value);
+            }
+
+            if (args?.Top != null)
+            {
+                query = query.Take(args.Top.Value);
+            }
+
+            technicians = query.ToList();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Erreur",
+                Detail = $"Erreur lors du chargement des installateurs: {ex.Message}"
+            });
+            technicians = new List<InstallationTechnicianResponse>();
+            count = 0;
+        }
+
+        isLoadingTechnicians = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void CreateTechnician()
+    {
+        NavigationManager.NavigateTo("/installation-technician/add");
+    }
+
+    private void EditTechnician(int id)
+    {
+        NavigationManager.NavigateTo($"/installation-technician/edit/{id}");
+    }
+
+    async Task ConfirmDeleteTechnician(int technicianId)
+    {
+        bool? confirmed = await DialogService.Confirm("Êtes-vous sûr de vouloir supprimer cet installateur?",
+                                                      "Confirmation de suppression",
+                                                      new ConfirmOptions() { OkButtonText = "Oui", CancelButtonText = "Non" });
+
+        if (confirmed == true)
+        {
+            await DeleteTechnician(technicianId);
+        }
+    }
+
+    async Task DeleteTechnician(int technicianId)
+    {
+        try
+        {
+            await TechnicianService.DeleteInstallationTechnicianAsync(technicianId, cancellationTokenSource.Token);
+            
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Succès",
+                Detail = "Installateur supprimé avec succès"
+            });
+
+            // Reload data from server
+            allTechnicians.Clear();
+            await technicianGrid.Reload();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Erreur",
+                Detail = $"Erreur lors de la suppression: {ex.Message}"
+            });
+        }
+    }
+
+    public void Dispose()
+    {
+        cancellationTokenSource?.Cancel();
+        cancellationTokenSource?.Dispose();
+    }
+}
+

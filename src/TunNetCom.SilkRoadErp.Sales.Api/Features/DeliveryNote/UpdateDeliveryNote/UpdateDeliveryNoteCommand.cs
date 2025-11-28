@@ -9,6 +9,7 @@ public record UpdateDeliveryNoteCommand(
     TimeOnly TempBl,
     int? NumFacture,
     int? ClientId,
+    int? InstallationTechnicianId,
     IEnumerable<LigneBlSubCommand> DeliveryNoteDetails)
     : IRequest<Result>;
 

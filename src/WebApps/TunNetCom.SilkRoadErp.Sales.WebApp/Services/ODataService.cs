@@ -22,6 +22,7 @@ public class ODataService
         DateTime? endDate = null,
         int? customerId = null,
         int? providerId = null,
+        int? technicianId = null,
         List<int>? tagIds = null,
         CancellationToken cancellationToken = default)
     {
@@ -59,6 +60,11 @@ public class ODataService
             if (providerId.HasValue)
             {
                 queryParams.Add($"providerId={providerId.Value}");
+            }
+
+            if (technicianId.HasValue)
+            {
+                queryParams.Add($"technicianId={technicianId.Value}");
             }
 
             if (tagIds != null && tagIds.Any())

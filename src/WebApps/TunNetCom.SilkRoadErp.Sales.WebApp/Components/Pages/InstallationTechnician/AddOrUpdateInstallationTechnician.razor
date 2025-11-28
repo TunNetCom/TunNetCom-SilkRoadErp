@@ -1,0 +1,278 @@
+@page "/installation-technician/add"
+@page "/installation-technician/edit/{Id:int}"
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.InstallationTechnician.Requests
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.InstallationTechnician
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using Radzen.Blazor
+@using Radzen
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<SharedResource> Localizer
+@inject IInstallationTechnicianApiClient TechnicianService
+@inject ToastService ToastService
+@inject NotificationService NotificationService
+
+<div class="technician-form-container">
+    <div class="technician-form-card">
+        <div class="technician-form-header">
+            <h3>@(IsEditMode ? "Modifier Installateur" : "Nouvel Installateur")</h3>
+            <RadzenButton Icon="arrow_back" Text="Retour"
+                          ButtonStyle="ButtonStyle.Secondary"
+                          Click="GoBack"
+                          Variant="Variant.Outlined" />
+        </div>
+
+        <RadzenStack Gap="1.5rem">
+            <RadzenFormField Text="Nom *" class="rz-col-12">
+                <RadzenTextBox @bind-Value="technician.Nom" Placeholder="Nom de l'installateur" />
+            </RadzenFormField>
+
+            <RadzenRow>
+                <RadzenColumn Size="12" SizeMD="4">
+                    <RadzenFormField Text="Téléphone 1">
+                        <RadzenTextBox @bind-Value="technician.Tel" Placeholder="Téléphone 1" />
+                    </RadzenFormField>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="4">
+                    <RadzenFormField Text="Téléphone 2">
+                        <RadzenTextBox @bind-Value="technician.Tel2" Placeholder="Téléphone 2" />
+                    </RadzenFormField>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="4">
+                    <RadzenFormField Text="Téléphone 3">
+                        <RadzenTextBox @bind-Value="technician.Tel3" Placeholder="Téléphone 3" />
+                    </RadzenFormField>
+                </RadzenColumn>
+            </RadzenRow>
+
+            <RadzenFormField Text="Email" class="rz-col-12">
+                <RadzenTextBox @bind-Value="technician.Email" Placeholder="Email" />
+            </RadzenFormField>
+
+            <RadzenFormField Text="Description" class="rz-col-12">
+                <RadzenTextArea @bind-Value="technician.Description" Placeholder="Description" Rows="3" />
+            </RadzenFormField>
+
+            <RadzenFormField Text="Photo" class="rz-col-12">
+                <RadzenStack Gap="1rem">
+                    <InputFile OnChange="@HandleFileSelected" accept="image/*" />
+                    @if (!string.IsNullOrEmpty(technician.Photo))
+                    {
+                        <div style="margin-top: 1rem;">
+                            <p><strong>Aperçu :</strong></p>
+                            <img src="@technician.Photo" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 2px solid #ddd;" />
+                        </div>
+                    }
+                </RadzenStack>
+            </RadzenFormField>
+
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" JustifyContent="Radzen.JustifyContent.End" class="rz-col-12">
+                <RadzenButton Text="Annuler" ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Outlined" Click="GoBack" />
+                <RadzenButton Text="@(IsEditMode ? "Modifier" : "Créer")" 
+                              ButtonStyle="ButtonStyle.Primary" 
+                              Click="@SaveTechnician"
+                              IsBusy="@isSaving" />
+            </RadzenStack>
+        </RadzenStack>
+    </div>
+</div>
+
+<style>
+    .technician-form-container {
+        padding: 1.5rem;
+        margin: 0;
+        min-height: 100vh;
+    }
+
+    .technician-form-card {
+        background: var(--rz-panel-background-color, white);
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 2rem;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .technician-form-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid var(--rz-border-color, #f0f0f0);
+    }
+
+    .technician-form-header h3 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--rz-text-color, #333);
+    }
+</style>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    private CreateInstallationTechnicianRequest technician = new();
+    private bool isSaving = false;
+    private bool IsEditMode => Id.HasValue;
+    private CancellationTokenSource cancellationTokenSource = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (IsEditMode && Id.HasValue)
+        {
+            await LoadTechnician(Id.Value);
+        }
+    }
+
+    private async Task LoadTechnician(int id)
+    {
+        try
+        {
+            var existingTechnician = await TechnicianService.GetInstallationTechnicianByIdAsync(id, cancellationTokenSource.Token);
+            if (existingTechnician != null)
+            {
+                technician = new CreateInstallationTechnicianRequest
+                {
+                    Nom = existingTechnician.Nom,
+                    Tel = existingTechnician.Tel,
+                    Tel2 = existingTechnician.Tel2,
+                    Tel3 = existingTechnician.Tel3,
+                    Email = existingTechnician.Email,
+                    Description = existingTechnician.Description,
+                    Photo = existingTechnician.Photo
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Erreur",
+                Detail = $"Erreur lors du chargement: {ex.Message}"
+            });
+        }
+    }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var file = e.File;
+            if (file != null)
+            {
+                // Limit file size to 5MB
+                const long maxFileSize = 5 * 1024 * 1024;
+                if (file.Size > maxFileSize)
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Warning,
+                        Summary = "Fichier trop volumineux",
+                        Detail = "La taille maximale est de 5 MB"
+                    });
+                    return;
+                }
+
+                using var stream = file.OpenReadStream(maxFileSize);
+                using var memoryStream = new MemoryStream();
+                await stream.CopyToAsync(memoryStream);
+                var bytes = memoryStream.ToArray();
+                var base64 = Convert.ToBase64String(bytes);
+                technician.Photo = $"data:{file.ContentType};base64,{base64}";
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Erreur",
+                Detail = $"Erreur lors du téléchargement de l'image: {ex.Message}"
+            });
+        }
+    }
+
+    private async Task SaveTechnician()
+    {
+        if (string.IsNullOrWhiteSpace(technician.Nom))
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = "Validation",
+                Detail = "Le nom est requis"
+            });
+            return;
+        }
+
+        isSaving = true;
+
+        try
+        {
+            if (IsEditMode && Id.HasValue)
+            {
+                var updateRequest = new UpdateInstallationTechnicianRequest
+                {
+                    Id = Id.Value,
+                    Nom = technician.Nom,
+                    Tel = technician.Tel,
+                    Tel2 = technician.Tel2,
+                    Tel3 = technician.Tel3,
+                    Email = technician.Email,
+                    Description = technician.Description,
+                    Photo = technician.Photo
+                };
+                await TechnicianService.UpdateInstallationTechnicianAsync(Id.Value, updateRequest, cancellationTokenSource.Token);
+                
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Succès",
+                    Detail = "Installateur modifié avec succès"
+                });
+            }
+            else
+            {
+                await TechnicianService.CreateInstallationTechnicianAsync(technician, cancellationTokenSource.Token);
+                
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Succès",
+                    Detail = "Installateur créé avec succès"
+                });
+            }
+
+            NavigationManager.NavigateTo("/installation-technicians");
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Erreur",
+                Detail = $"Erreur lors de l'enregistrement: {ex.Message}"
+            });
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo("/installation-technicians");
+    }
+
+    public void Dispose()
+    {
+        cancellationTokenSource?.Cancel();
+        cancellationTokenSource?.Dispose();
+    }
+}
+

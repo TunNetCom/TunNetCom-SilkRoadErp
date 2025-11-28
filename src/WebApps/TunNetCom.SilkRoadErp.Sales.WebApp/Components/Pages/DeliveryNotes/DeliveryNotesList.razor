@@ -16,7 +16,10 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Tags
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
+@using TunNetCom.SilkRoadErp.Sales.Contracts.InstallationTechnician.Responses
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.InstallationTechnician
 @inject ITagsApiClient TagsService
+@inject IInstallationTechnicianApiClient TechnicianService
 
 
 <div class="delivery-notes-list-container">
@@ -40,6 +43,39 @@
                 <Columns>
                     <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Id)" Title="ID" Width="80px" />
                     <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Name)" Title="@Localizer["name"]" Width="220px" />
+                </Columns>
+            </RadzenDropDownDataGrid>
+        </div>
+        <div class="search-field">
+            <label for="technician">Installateur</label>
+            <RadzenDropDownDataGrid id="technician"
+                                    AllowClear="true"
+                                    @bind-Value="@searchCriteria.SelectedTechnicianId"
+                                    LoadData="@LoadTechnicians"
+                                    AllowFiltering="true"
+                                    class="w-100 search-input"
+                                    Data="@_filteredTechnicians"
+                                    TextProperty="@nameof(InstallationTechnicianBaseInfo.Nom)"
+                                    ValueProperty="@nameof(InstallationTechnicianBaseInfo.Id)"
+                                    Placeholder="Sélectionner un installateur">
+                <Template Context="technician">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        @if (!string.IsNullOrEmpty(technician.Photo))
+                        {
+                            <img src="@technician.Photo" alt="@technician.Nom" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;" />
+                        }
+                        else
+                        {
+                            <div style="width: 24px; height: 24px; border-radius: 50%; background-color: #e0e0e0; display: flex; align-items: center; justify-content: center;">
+                                <RadzenIcon Icon="person" Style="font-size: 12px;" />
+                            </div>
+                        }
+                        <span>@technician.Nom</span>
+                    </div>
+                </Template>
+                <Columns>
+                    <RadzenDropDownDataGridColumn Property="@nameof(InstallationTechnicianBaseInfo.Id)" Title="ID" Width="80px" />
+                    <RadzenDropDownDataGridColumn Property="@nameof(InstallationTechnicianBaseInfo.Nom)" Title="Nom" Width="220px" />
                 </Columns>
             </RadzenDropDownDataGrid>
         </div>
@@ -315,6 +351,7 @@
     private int pageSize = GridPageSizeConstants.PageSize10;
     private SearchCriteria searchCriteria = new SearchCriteria();
     private List<CustomerResponse> _filteredCustomers = new();
+    private List<InstallationTechnicianBaseInfo> _filteredTechnicians = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -358,6 +395,28 @@
         await InvokeAsync(StateHasChanged);
     }
 
+    async Task LoadTechnicians(LoadDataArgs args)
+    {
+        try
+        {
+            _filteredTechnicians = await TechnicianService.GetInstallationTechniciansBaseInfosAsync(default);
+            
+            // Apply filter if provided
+            if (!string.IsNullOrEmpty(args?.Filter))
+            {
+                _filteredTechnicians = _filteredTechnicians
+                    .Where(t => t.Nom.Contains(args.Filter, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            _filteredTechnicians = new List<InstallationTechnicianBaseInfo>();
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
     private void ViewDeliveryNote(string id)
     {
         NavigationManager.NavigateTo($"/AddOrUpdateDeliveryNote/{id}");
@@ -395,6 +454,7 @@
                 startDate: startDate,
                 endDate: endDate,
                 customerId: searchCriteria.SelectedCustomerId,
+                technicianId: searchCriteria.SelectedTechnicianId,
                 tagIds: searchCriteria.SelectedTagIds,
                 cancellationToken: default);
 
@@ -433,6 +493,7 @@
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public int? SelectedCustomerId { get; set; }
+        public int? SelectedTechnicianId { get; set; }
         public string InvoiceStatus { get; set; } = "Tous";
         public List<int> SelectedTagIds { get; set; } = new();
     }

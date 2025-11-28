@@ -15,7 +15,8 @@ public partial class BonDeLivraison : IAccountingYearEntity
         TimeOnly tempBl,
         int? numFacture,
         int? clientId,
-        int accountingYearId)
+        int accountingYearId,
+        int? installationTechnicianId = null)
     {
         return new BonDeLivraison
         {
@@ -26,7 +27,8 @@ public partial class BonDeLivraison : IAccountingYearEntity
             TempBl = tempBl,
             NumFacture = numFacture,
             ClientId = clientId,
-            AccountingYearId = accountingYearId
+            AccountingYearId = accountingYearId,
+            InstallationTechnicianId = installationTechnicianId
         };
     }
 
@@ -38,7 +40,8 @@ public partial class BonDeLivraison : IAccountingYearEntity
         TimeOnly tempBl,
         int? numFacture,
         int? clientId,
-        int accountingYearId) 
+        int accountingYearId,
+        int? installationTechnicianId = null) 
     {
         this.Date = date;
         this.TotHTva = totHTva;
@@ -48,6 +51,7 @@ public partial class BonDeLivraison : IAccountingYearEntity
         this.NumFacture = numFacture;
         this.ClientId = clientId;
         this.AccountingYearId = accountingYearId;
+        this.InstallationTechnicianId = installationTechnicianId;
     }
 
     public int Id { get; set; }
@@ -70,7 +74,11 @@ public partial class BonDeLivraison : IAccountingYearEntity
 
     public int AccountingYearId { get; set; }
 
+    public int? InstallationTechnicianId { get; set; }
+
     public virtual Client? Client { get; set; }
+
+    public virtual InstallationTechnician? InstallationTechnician { get; set; }
 
     public virtual ICollection<LigneBl> LigneBl { get; set; } = new List<LigneBl>();
 
