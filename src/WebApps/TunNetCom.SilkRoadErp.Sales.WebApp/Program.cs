@@ -47,7 +47,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromHours(2);
+    options.IdleTimeout = TimeSpan.FromMinutes(1); // Set to 1 minute for testing
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
@@ -59,6 +59,8 @@ builder.Services.AddScoped<ICircuitIdService, CircuitIdService>();
 // Add Auth Service FIRST (before HttpClients that depend on it)
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
+builder.Services.AddSingleton<ITokenExpirationNotifier, TokenExpirationNotifier>();
+builder.Services.AddScoped<IAutoLogoutService, AutoLogoutService>();
 
 // Add AuthenticationStateProvider for Blazor authorization
 builder.Services.AddScoped<JwtAuthenticationStateProvider>();

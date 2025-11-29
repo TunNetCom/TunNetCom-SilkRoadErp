@@ -8,13 +8,16 @@ public class JwtAuthenticationStateProvider : AuthenticationStateProvider
 {
     private readonly IAuthService _authService;
     private readonly ILogger<JwtAuthenticationStateProvider> _logger;
+    private readonly IAutoLogoutService _autoLogoutService;
 
     public JwtAuthenticationStateProvider(
         IAuthService authService,
-        ILogger<JwtAuthenticationStateProvider> logger)
+        ILogger<JwtAuthenticationStateProvider> logger,
+        IAutoLogoutService autoLogoutService)
     {
         _authService = authService;
         _logger = logger;
+        _autoLogoutService = autoLogoutService;
     }
 
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
@@ -46,7 +49,23 @@ public class JwtAuthenticationStateProvider : AuthenticationStateProvider
             // Check if token is expired
             if (jwtToken.ValidTo < DateTime.UtcNow)
             {
-                _logger.LogWarning("Token has expired");
+                _logger.LogWarning("Token has expired. ValidTo: {ValidTo}, Current: {Current}", 
+                    jwtToken.ValidTo, DateTime.UtcNow);
+                
+                // Handle token expiration in background (fire-and-forget)
+                // This will try to refresh the token or logout the user
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await _autoLogoutService.HandleTokenExpirationAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error handling token expiration in JwtAuthenticationStateProvider");
+                    }
+                });
+                
                 return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
             }
 

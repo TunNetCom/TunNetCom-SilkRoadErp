@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using Microsoft.JSInterop;
 
@@ -8,16 +9,19 @@ public class AuthHttpClientHandler : DelegatingHandler
     private readonly IAuthService _authService;
     private readonly IJSRuntime _jsRuntime;
     private readonly ILogger<AuthHttpClientHandler> _logger;
+    private readonly IAutoLogoutService _autoLogoutService;
     private const string AccessTokenKey = "auth_access_token";
 
     public AuthHttpClientHandler(
         IAuthService authService,
         IJSRuntime jsRuntime,
-        ILogger<AuthHttpClientHandler> logger)
+        ILogger<AuthHttpClientHandler> logger,
+        IAutoLogoutService autoLogoutService)
     {
         _authService = authService;
         _jsRuntime = jsRuntime;
         _logger = logger;
+        _autoLogoutService = autoLogoutService;
     }
 
     protected override async Task<HttpResponseMessage> SendAsync(
@@ -87,7 +91,46 @@ public class AuthHttpClientHandler : DelegatingHandler
             // Add Bearer token to request if available
             if (!string.IsNullOrEmpty(token))
             {
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                // PROACTIVE CHECK: Verify token expiration before sending request
+                try
+                {
+                    var handler = new JwtSecurityTokenHandler();
+                    if (handler.CanReadToken(token))
+                    {
+                        var jwtToken = handler.ReadJwtToken(token);
+                        
+                        // Check if token is expired
+                        if (jwtToken.ValidTo < DateTime.UtcNow)
+                        {
+                            _logger.LogWarning("Token expired before request: {Method} {Uri}. ValidTo: {ValidTo}, Current: {Current}", 
+                                request.Method, request.RequestUri, jwtToken.ValidTo, DateTime.UtcNow);
+                            
+                            // Handle token expiration (will try to refresh or logout)
+                            await _autoLogoutService.HandleTokenExpirationAsync();
+                            
+                            // After handling, try to get the refreshed token
+                            token = _authService?.AccessToken;
+                            
+                            // If still no valid token, don't send the request with expired token
+                            if (string.IsNullOrEmpty(token))
+                            {
+                                _logger.LogWarning("No valid token available after expiration handling for {Method} {Uri}", 
+                                    request.Method, request.RequestUri);
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Error checking token expiration for {Method} {Uri}, proceeding with request", 
+                        request.Method, request.RequestUri);
+                }
+                
+                // Add token to request if we have one
+                if (!string.IsNullOrEmpty(token))
+                {
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                }
             }
             else
             {
@@ -102,12 +145,73 @@ public class AuthHttpClientHandler : DelegatingHandler
 
         var response = await base.SendAsync(request, cancellationToken);
         
+        // REACTIVE CHECK: Handle 401 Unauthorized responses
         if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
         {
-            _logger.LogWarning("Unauthorized request: {Method} {Uri}", request.Method, request.RequestUri);
+            _logger.LogError("AuthHttpClientHandler: ===== 401 UNAUTHORIZED DETECTED: {Method} {Uri} =====", request.Method, request.RequestUri);
+            
+            // Clear token immediately - this will cause Blazor components to detect unauthenticated state
+            try
+            {
+                _logger.LogWarning("AuthHttpClientHandler: Clearing access token");
+                _authService?.SetAccessToken(null);
+                
+                // Try to handle token expiration (refresh or logout) - fire and forget, don't block
+                // Use Task.Run to avoid blocking the HTTP response
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await HandleTokenExpirationSafelyAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "AuthHttpClientHandler: Error in background token expiration handler");
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                // Don't let exceptions crash the app - just log
+                _logger.LogError(ex, "AuthHttpClientHandler: Error handling 401 - non-critical, continuing");
+            }
         }
         
         return response;
+    }
+
+    private async Task HandleTokenExpirationSafelyAsync()
+    {
+        _logger.LogWarning("HandleTokenExpirationSafelyAsync: ===== STARTING =====");
+        try
+        {
+            // Wrap in try-catch to prevent any exceptions from bubbling up
+            _logger.LogInformation("HandleTokenExpirationSafelyAsync: Calling HandleTokenExpirationAsync");
+            await _autoLogoutService.HandleTokenExpirationAsync();
+            _logger.LogInformation("HandleTokenExpirationSafelyAsync: HandleTokenExpirationAsync completed");
+        }
+        catch (JSDisconnectedException)
+        {
+            // JS disconnected - this is OK, AuthorizeRouteView will handle redirect
+            _logger.LogWarning("HandleTokenExpirationSafelyAsync: JS disconnected - AuthorizeRouteView will redirect");
+        }
+        catch (InvalidOperationException ex) when (
+            ex.Message.Contains("prerendering") || 
+            ex.Message.Contains("statically rendered") ||
+            ex.Message.Contains("JavaScript interop calls cannot be issued"))
+        {
+            // Prerendering - this is OK
+            _logger.LogWarning("HandleTokenExpirationSafelyAsync: Prerendering - AuthorizeRouteView will redirect");
+        }
+        catch (Exception ex)
+        {
+            // Log but don't throw - we don't want to crash the app
+            _logger.LogError(ex, "HandleTokenExpirationSafelyAsync: ===== EXCEPTION =====");
+        }
+        finally
+        {
+            _logger.LogWarning("HandleTokenExpirationSafelyAsync: ===== COMPLETED =====");
+        }
     }
 }
 

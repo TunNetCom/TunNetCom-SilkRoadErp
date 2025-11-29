@@ -188,11 +188,16 @@ public class AuthService : IAuthService
     {
         try
         {
+            _logger.LogWarning("RefreshTokenAsync: Starting token refresh");
+            
             var refreshToken = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", RefreshTokenKey);
             if (string.IsNullOrEmpty(refreshToken))
             {
+                _logger.LogError("RefreshTokenAsync: No refresh token found in localStorage");
                 return false;
             }
+
+            _logger.LogInformation("RefreshTokenAsync: Refresh token found, calling API");
 
             var request = new RefreshTokenRequest
             {
@@ -201,18 +206,29 @@ public class AuthService : IAuthService
 
             var response = await _httpClient.PostAsJsonAsync("/api/auth/refresh", request);
             
+            _logger.LogInformation("RefreshTokenAsync: API response status: {StatusCode}", response.StatusCode);
+            
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogWarning("Token refresh failed with status {StatusCode}", response.StatusCode);
-                await LogoutAsync();
+                _logger.LogError("RefreshTokenAsync: Token refresh failed with status {StatusCode}", response.StatusCode);
+                // Don't call LogoutAsync here - let AutoLogoutService handle it
                 return false;
             }
 
             var loginResponse = await response.Content.ReadFromJsonAsync<LoginResponse>();
             if (loginResponse == null)
             {
+                _logger.LogError("RefreshTokenAsync: LoginResponse is null");
                 return false;
             }
+
+            if (string.IsNullOrEmpty(loginResponse.AccessToken))
+            {
+                _logger.LogError("RefreshTokenAsync: AccessToken in response is null or empty");
+                return false;
+            }
+
+            _logger.LogInformation("RefreshTokenAsync: Updating tokens in localStorage and memory");
 
             // Update tokens in localStorage
             await _jsRuntime.InvokeVoidAsync("localStorage.setItem", AccessTokenKey, loginResponse.AccessToken);
@@ -220,12 +236,13 @@ public class AuthService : IAuthService
             
             AccessToken = loginResponse.AccessToken;
             
+            _logger.LogWarning("RefreshTokenAsync: ===== TOKEN REFRESH SUCCESSFUL =====");
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during token refresh");
-            await LogoutAsync();
+            _logger.LogError(ex, "RefreshTokenAsync: ===== EXCEPTION during token refresh =====");
+            // Don't call LogoutAsync here - let AutoLogoutService handle it
             return false;
         }
     }

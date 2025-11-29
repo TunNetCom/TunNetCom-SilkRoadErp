@@ -3,6 +3,7 @@
 @inject IAuthService AuthService
 @inject NavigationManager Navigation
 @inject ILogger<AuthorizeRouteView> Logger
+@inject ITokenExpirationNotifier TokenExpirationNotifier
 
 @if (IsLoginPage)
 {
@@ -22,6 +23,8 @@ else
 }
 
 
+@implements IDisposable
+
 @code {
     [Parameter] public RouteData? RouteData { get; set; }
     [Parameter] public Type? DefaultLayout { get; set; }
@@ -36,6 +39,36 @@ else
     protected override void OnInitialized()
     {
         UpdateLoginPageStatus();
+        
+        // Subscribe to token expiration events
+        TokenExpirationNotifier.OnTokenExpired += HandleTokenExpiredAsync;
+    }
+
+    public void Dispose()
+    {
+        // Unsubscribe from token expiration events
+        TokenExpirationNotifier.OnTokenExpired -= HandleTokenExpiredAsync;
+    }
+
+    private async Task HandleTokenExpiredAsync()
+    {
+        try
+        {
+            Logger.LogWarning("AuthorizeRouteView: Token expiration event received, redirecting to login");
+            
+            // Clear authorization state
+            IsAuthorized = false;
+            _hasCheckedAuth = false;
+            StateHasChanged();
+            
+            // Redirect to login
+            await Task.Delay(100); // Small delay to ensure state is updated
+            Navigation.NavigateTo("/login", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "AuthorizeRouteView: Error handling token expiration event");
+        }
     }
 
     protected override async Task OnParametersSetAsync()
