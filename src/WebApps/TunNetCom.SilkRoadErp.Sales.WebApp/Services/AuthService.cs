@@ -232,6 +232,8 @@ public class AuthService : IAuthService
 
     public async Task LogoutAsync()
     {
+        _logger.LogInformation("Logout: Starting logout process");
+        
         try
         {
             var refreshToken = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", RefreshTokenKey);
@@ -239,27 +241,37 @@ public class AuthService : IAuthService
             {
                 var request = new { RefreshToken = refreshToken };
                 await _httpClient.PostAsJsonAsync("/api/auth/logout", request);
+                _logger.LogInformation("Logout: Logout request sent to API");
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during logout");
+            _logger.LogError(ex, "Error during logout API call");
         }
         finally
         {
+            // Clear token from memory FIRST
+            AccessToken = null;
+            _logger.LogInformation("Logout: Token cleared from memory");
+            
+            // Clear token from circuit store
+            var circuitId = _circuitIdService.GetCircuitId();
+            _tokenStore.ClearToken(circuitId);
+            _logger.LogInformation("Logout: Token cleared from TokenStore for circuit {CircuitId}", circuitId);
+            
             // Clear tokens from localStorage
             try
             {
                 await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", AccessTokenKey);
                 await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", RefreshTokenKey);
+                _logger.LogInformation("Logout: Tokens cleared from localStorage");
             }
-            catch
+            catch (Exception ex)
             {
-                // Ignore errors clearing localStorage
+                _logger.LogWarning(ex, "Error clearing localStorage during logout (may be prerendering)");
             }
             
-            // Clear token from circuit store
-            _tokenStore.ClearToken(_circuitIdService.GetCircuitId());
+            _logger.LogInformation("Logout: Logout process completed");
         }
     }
 

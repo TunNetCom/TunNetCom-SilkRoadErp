@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Components.Authorization;
 using RadzenBlazorDemos.Services;
 using TunNetCom.SilkRoadErp.Sales.WebApp.Services;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers;
@@ -58,6 +59,11 @@ builder.Services.AddScoped<ICircuitIdService, CircuitIdService>();
 // Add Auth Service FIRST (before HttpClients that depend on it)
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
+
+// Add AuthenticationStateProvider for Blazor authorization
+builder.Services.AddScoped<JwtAuthenticationStateProvider>();
+builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<JwtAuthenticationStateProvider>());
+builder.Services.AddCascadingAuthenticationState();
 
 // Register AuthHttpClientHandler as scoped (required for IJSRuntime)
 builder.Services.AddScoped<AuthHttpClientHandler>();

@@ -674,22 +674,27 @@ public class DatabaseSeeder
         if (permissionsToAdd.Count == 0)
         {
             _logger.LogInformation("Toutes les permissions sont déjà présentes dans la base de données.");
-            return;
         }
+        else
+        {
+            _logger.LogInformation("Ajout de {Count} nouvelle(s) permission(s): {Names}", 
+                permissionsToAdd.Count, 
+                string.Join(", ", permissionsToAdd.Select(p => p.Name)));
 
-        _logger.LogInformation("Ajout de {Count} nouvelle(s) permission(s)...", permissionsToAdd.Count);
+            var permissions = permissionsToAdd
+                .Select(p => Permission.CreatePermission(p.Name, p.Description))
+                .ToList();
 
-        var permissions = permissionsToAdd
-            .Select(p => Permission.CreatePermission(p.Name, p.Description))
-            .ToList();
-
-        await context.Permission.AddRangeAsync(permissions);
-        await context.SaveChangesAsync();
-        _logger.LogInformation("✓ {Count} permissions insérées avec succès.", permissions.Count);
+            await context.Permission.AddRangeAsync(permissions);
+            await context.SaveChangesAsync();
+            _logger.LogInformation("✓ {Count} permissions insérées avec succès.", permissions.Count);
+        }
     }
 
     private async Task SeedRolePermissionsAsync(SalesContext context)
     {
+        _logger.LogInformation("=== DÉBUT ASSIGNATION PERMISSIONS AUX RÔLES ===");
+        
         var adminRole = await context.Role.FirstOrDefaultAsync(r => r.Name == "Admin");
         var managerRole = await context.Role.FirstOrDefaultAsync(r => r.Name == "Manager");
         var userRole = await context.Role.FirstOrDefaultAsync(r => r.Name == "User");
@@ -700,7 +705,12 @@ public class DatabaseSeeder
             return;
         }
 
+        _logger.LogInformation("Rôles trouvés - Admin: {AdminId}, Manager: {ManagerId}, User: {UserId}", 
+            adminRole.Id, managerRole.Id, userRole.Id);
+
         var allPermissions = await context.Permission.ToListAsync();
+        _logger.LogInformation("Total permissions disponibles: {Count}", allPermissions.Count);
+        
         var rolePermissions = new List<RolePermission>();
 
         // Get existing role permissions to avoid duplicates
@@ -717,14 +727,21 @@ public class DatabaseSeeder
             .Select(rp => rp.PermissionId)
             .ToListAsync();
 
-        // Admin gets all permissions (only add missing ones)
+        _logger.LogInformation("Permissions existantes - Admin: {AdminCount}, Manager: {ManagerCount}, User: {UserCount}", 
+            existingAdminPermissions.Count, existingManagerPermissions.Count, existingUserPermissions.Count);
+
+        // Admin gets ALL permissions (only add missing ones)
+        int adminPermissionsAdded = 0;
         foreach (var permission in allPermissions)
         {
             if (!existingAdminPermissions.Contains(permission.Id))
             {
                 rolePermissions.Add(RolePermission.CreateRolePermission(adminRole.Id, permission.Id));
+                adminPermissionsAdded++;
+                _logger.LogDebug("Ajout permission {PermissionName} au rôle Admin", permission.Name);
             }
         }
+        _logger.LogInformation("Admin: {AddedCount} nouvelles permissions à ajouter", adminPermissionsAdded);
 
         // Manager gets most permissions except user/role management (only add missing ones)
         var managerPermissions = allPermissions.Where(p => 
@@ -732,44 +749,58 @@ public class DatabaseSeeder
             !p.Name.Contains("ManageRoles") && 
             !p.Name.Contains("ManagePermissions")).ToList();
         
-        // Log Manager permissions for debugging
-        var createPermissions = managerPermissions.Where(p => p.Name.StartsWith("CanCreate")).Select(p => p.Name).ToList();
-        _logger.LogInformation("Manager permissions to assign: {Count} total, {CreateCount} create permissions: {CreatePermissions}", 
-            managerPermissions.Count, createPermissions.Count, string.Join(", ", createPermissions));
-        
+        int managerPermissionsAdded = 0;
         foreach (var permission in managerPermissions)
         {
             if (!existingManagerPermissions.Contains(permission.Id))
             {
                 rolePermissions.Add(RolePermission.CreateRolePermission(managerRole.Id, permission.Id));
-                _logger.LogDebug("Adding permission {PermissionName} to Manager role", permission.Name);
-            }
-            else
-            {
-                _logger.LogDebug("Permission {PermissionName} already assigned to Manager role", permission.Name);
+                managerPermissionsAdded++;
+                _logger.LogDebug("Ajout permission {PermissionName} au rôle Manager", permission.Name);
             }
         }
+        _logger.LogInformation("Manager: {AddedCount} nouvelles permissions à ajouter", managerPermissionsAdded);
 
         // User gets view permissions only (only add missing ones)
         var userPermissions = allPermissions.Where(p => p.Name.StartsWith("CanView")).ToList();
+        int userPermissionsAdded = 0;
         foreach (var permission in userPermissions)
         {
             if (!existingUserPermissions.Contains(permission.Id))
             {
                 rolePermissions.Add(RolePermission.CreateRolePermission(userRole.Id, permission.Id));
+                userPermissionsAdded++;
+                _logger.LogDebug("Ajout permission {PermissionName} au rôle User", permission.Name);
             }
         }
+        _logger.LogInformation("User: {AddedCount} nouvelles permissions à ajouter", userPermissionsAdded);
 
         if (rolePermissions.Count > 0)
         {
             await context.RolePermission.AddRangeAsync(rolePermissions);
             await context.SaveChangesAsync();
-            _logger.LogInformation("✓ {Count} permission(s) ajoutée(s) aux rôles avec succès.", rolePermissions.Count);
+            _logger.LogInformation("✓✓✓ {Count} permission(s) ajoutée(s) aux rôles avec succès.", rolePermissions.Count);
+            _logger.LogInformation("    - Admin: {AdminCount} permissions", adminPermissionsAdded);
+            _logger.LogInformation("    - Manager: {ManagerCount} permissions", managerPermissionsAdded);
+            _logger.LogInformation("    - User: {UserCount} permissions", userPermissionsAdded);
         }
         else
         {
             _logger.LogInformation("✓ Toutes les permissions sont déjà assignées aux rôles.");
         }
+        
+        // Vérification finale
+        var finalAdminCount = await context.RolePermission.CountAsync(rp => rp.RoleId == adminRole.Id);
+        _logger.LogInformation("VÉRIFICATION FINALE: Admin a maintenant {Count} permissions sur {Total} disponibles", 
+            finalAdminCount, allPermissions.Count);
+        
+        if (finalAdminCount < allPermissions.Count)
+        {
+            _logger.LogWarning("⚠️ ATTENTION: Admin n'a pas toutes les permissions! ({Current}/{Total})", 
+                finalAdminCount, allPermissions.Count);
+        }
+        
+        _logger.LogInformation("=== FIN ASSIGNATION PERMISSIONS AUX RÔLES ===");
     }
 
     private async Task SeedAdminUserAsync(SalesContext context)

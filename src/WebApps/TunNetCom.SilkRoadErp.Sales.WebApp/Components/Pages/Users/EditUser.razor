@@ -1,0 +1,319 @@
+@page "/users/new"
+@page "/users/edit/{UserId:int}"
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Users
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Users
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Constants
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Authorization
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@inject IUsersClient UsersClient
+@inject NavigationManager NavigationManager
+@inject NotificationService NotificationService
+@inject IStringLocalizer<SharedResource> Localizer
+
+<PageTitle>@(IsNewUser ? "Nouvel Utilisateur" : "Modifier l'Utilisateur")</PageTitle>
+
+<HasPermission Permission="@(IsNewUser ? Permissions.CreateUser : Permissions.UpdateUser)">
+    <RadzenCard Class="rz-p-4" Style="max-width: 800px; margin: auto;">
+        <RadzenStack Gap="1.5rem">
+            <RadzenRow JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                <RadzenColumn>
+                    <RadzenText TextStyle="TextStyle.H5">
+                        <h2 style="margin: 0;">
+                            <RadzenIcon Icon="@(IsNewUser ? "person_add" : "edit")" />
+                            @(IsNewUser ? "Nouvel Utilisateur" : $"Modifier - {model.Username}")
+                        </h2>
+                    </RadzenText>
+                </RadzenColumn>
+            </RadzenRow>
+
+            @if (isLoading)
+            {
+                <RadzenProgressBarCircular ProgressBarStyle="ProgressBarStyle.Primary" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+            }
+            else
+            {
+                <EditForm Model="@model" OnValidSubmit="@HandleSubmit">
+                    <RadzenFieldset Text="Informations de base">
+                        <RadzenStack Gap="1rem">
+                            <RadzenRow Gap="1rem">
+                                <RadzenColumn Size="12" SizeMD="6">
+                                    <RadzenFormField Text="Nom d'utilisateur *" Variant="Variant.Outlined">
+                                        <RadzenTextBox @bind-Value="model.Username" Style="width: 100%;" Disabled="@(!IsNewUser)" />
+                                    </RadzenFormField>
+                                </RadzenColumn>
+                                <RadzenColumn Size="12" SizeMD="6">
+                                    <RadzenFormField Text="Email *" Variant="Variant.Outlined">
+                                        <RadzenTextBox @bind-Value="model.Email" Style="width: 100%;" />
+                                    </RadzenFormField>
+                                </RadzenColumn>
+                            </RadzenRow>
+
+                            <RadzenRow Gap="1rem">
+                                <RadzenColumn Size="12" SizeMD="6">
+                                    <RadzenFormField Text="Prénom" Variant="Variant.Outlined">
+                                        <RadzenTextBox @bind-Value="model.FirstName" Style="width: 100%;" />
+                                    </RadzenFormField>
+                                </RadzenColumn>
+                                <RadzenColumn Size="12" SizeMD="6">
+                                    <RadzenFormField Text="Nom" Variant="Variant.Outlined">
+                                        <RadzenTextBox @bind-Value="model.LastName" Style="width: 100%;" />
+                                    </RadzenFormField>
+                                </RadzenColumn>
+                            </RadzenRow>
+
+                            @if (IsNewUser)
+                            {
+                                <RadzenRow Gap="1rem">
+                                    <RadzenColumn Size="12" SizeMD="6">
+                                        <RadzenFormField Text="Mot de passe *" Variant="Variant.Outlined">
+                                            <RadzenPassword @bind-Value="model.Password" Style="width: 100%;" />
+                                        </RadzenFormField>
+                                    </RadzenColumn>
+                                    <RadzenColumn Size="12" SizeMD="6">
+                                        <RadzenFormField Text="Confirmer le mot de passe *" Variant="Variant.Outlined">
+                                            <RadzenPassword @bind-Value="confirmPassword" Style="width: 100%;" />
+                                        </RadzenFormField>
+                                    </RadzenColumn>
+                                </RadzenRow>
+                            }
+
+                            <RadzenFormField Text="Statut" Variant="Variant.Outlined">
+                                <RadzenCheckBox @bind-Value="model.IsActive" Name="IsActive" />
+                                <RadzenLabel Text="Utilisateur actif" Component="IsActive" Style="margin-left: 0.5rem;" />
+                            </RadzenFormField>
+                        </RadzenStack>
+                    </RadzenFieldset>
+
+                    <RadzenFieldset Text="Rôles">
+                        @if (availableRoles.Any())
+                        {
+                            <RadzenStack Gap="0.5rem">
+                                @foreach (var role in availableRoles)
+                                {
+                                    var roleId = role.Id;
+                                    var isSelected = model.RoleIds.Contains(roleId);
+                                    <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                                        <RadzenCheckBox Value="@isSelected" 
+                                                      Change="@((bool val) => OnRoleChanged(roleId, val))"
+                                                      Name="@($"role_{roleId}")" />
+                                        <RadzenLabel Text="@($"{role.Name} - {role.Description}")" 
+                                                   Component="@($"role_{roleId}")" 
+                                                   Style="margin-left: 0.5rem;" />
+                                    </div>
+                                }
+                            </RadzenStack>
+                        }
+                        else
+                        {
+                            <RadzenText TextStyle="TextStyle.Body2">Aucun rôle disponible</RadzenText>
+                        }
+                    </RadzenFieldset>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <RadzenAlert AlertStyle="AlertStyle.Danger" Variant="Variant.Flat">
+                            @errorMessage
+                        </RadzenAlert>
+                    }
+
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                        <RadzenButton Text="Annuler" Click="@Cancel" ButtonStyle="ButtonStyle.Light" Icon="cancel" />
+                        <RadzenButton ButtonType="Radzen.ButtonType.Submit" Text="Enregistrer" ButtonStyle="ButtonStyle.Success" Icon="save" />
+                    </RadzenStack>
+                </EditForm>
+            }
+        </RadzenStack>
+    </RadzenCard>
+</HasPermission>
+
+@code {
+    [Parameter] public int? UserId { get; set; }
+
+    private bool IsNewUser => !UserId.HasValue || UserId == 0;
+    private bool isLoading = true;
+    private string? errorMessage;
+    private string confirmPassword = string.Empty;
+    
+    private UserEditModel model = new();
+    private List<RoleResponse> availableRoles = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRoles();
+        
+        if (!IsNewUser)
+        {
+            await LoadUser();
+        }
+        else
+        {
+            model.IsActive = true;
+        }
+        
+        isLoading = false;
+    }
+
+    private async Task LoadRoles()
+    {
+        try
+        {
+            availableRoles = await UsersClient.GetAvailableRolesAsync();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Erreur",
+                Detail = $"Erreur lors du chargement des rôles: {ex.Message}"
+            });
+        }
+    }
+
+    private async Task LoadUser()
+    {
+        try
+        {
+            var user = await UsersClient.GetUserByIdAsync(UserId!.Value);
+            if (user != null)
+            {
+                model.Username = user.Username;
+                model.Email = user.Email;
+                model.FirstName = user.FirstName;
+                model.LastName = user.LastName;
+                model.IsActive = user.IsActive;
+                
+                // Map roles to role IDs
+                model.RoleIds = availableRoles
+                    .Where(r => user.Roles.Contains(r.Name))
+                    .Select(r => r.Id)
+                    .ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Erreur",
+                Detail = $"Erreur lors du chargement de l'utilisateur: {ex.Message}"
+            });
+            NavigationManager.NavigateTo("/users");
+        }
+    }
+
+    private void OnRoleChanged(int roleId, bool isChecked)
+    {
+        if (isChecked)
+        {
+            if (!model.RoleIds.Contains(roleId))
+            {
+                model.RoleIds.Add(roleId);
+            }
+        }
+        else
+        {
+            model.RoleIds.Remove(roleId);
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        errorMessage = null;
+
+        // Validation
+        if (string.IsNullOrWhiteSpace(model.Username))
+        {
+            errorMessage = "Le nom d'utilisateur est requis";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(model.Email))
+        {
+            errorMessage = "L'email est requis";
+            return;
+        }
+
+        if (IsNewUser)
+        {
+            if (string.IsNullOrWhiteSpace(model.Password))
+            {
+                errorMessage = "Le mot de passe est requis";
+                return;
+            }
+
+            if (model.Password.Length < 6)
+            {
+                errorMessage = "Le mot de passe doit contenir au moins 6 caractères";
+                return;
+            }
+
+            if (model.Password != confirmPassword)
+            {
+                errorMessage = "Les mots de passe ne correspondent pas";
+                return;
+            }
+        }
+
+        try
+        {
+            if (IsNewUser)
+            {
+                var createRequest = new CreateUserRequest
+                {
+                    Username = model.Username,
+                    Email = model.Email,
+                    Password = model.Password,
+                    FirstName = model.FirstName,
+                    LastName = model.LastName,
+                    IsActive = model.IsActive,
+                    RoleIds = model.RoleIds
+                };
+                await UsersClient.CreateUserAsync(createRequest);
+            }
+            else
+            {
+                var updateRequest = new UpdateUserRequest
+                {
+                    Email = model.Email,
+                    FirstName = model.FirstName,
+                    LastName = model.LastName,
+                    IsActive = model.IsActive,
+                    RoleIds = model.RoleIds
+                };
+                await UsersClient.UpdateUserAsync(UserId!.Value, updateRequest);
+            }
+
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Succès",
+                Detail = IsNewUser ? "Utilisateur créé avec succès" : "Utilisateur modifié avec succès"
+            });
+
+            NavigationManager.NavigateTo("/users");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erreur: {ex.Message}";
+        }
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/users");
+    }
+
+    private class UserEditModel
+    {
+        public string Username { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
+        public bool IsActive { get; set; }
+        public List<int> RoleIds { get; set; } = new();
+    }
+}
+

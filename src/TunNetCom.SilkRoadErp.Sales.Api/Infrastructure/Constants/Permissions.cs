@@ -129,6 +129,7 @@ public static class Permissions
     public const string ViewReports = "CanViewReports";
     public const string ExportData = "CanExportData";
 
+
     // ==================== USER MANAGEMENT ====================
     public const string ViewUsers = "CanViewUsers";
     public const string CreateUser = "CanCreateUser";

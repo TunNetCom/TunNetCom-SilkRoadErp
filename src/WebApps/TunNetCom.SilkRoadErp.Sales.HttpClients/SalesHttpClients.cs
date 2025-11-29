@@ -21,6 +21,7 @@ using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Soldes;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.InstallationTechnician;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AuditLogs;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Users;
 
 
 public static class SalesHttpClients
@@ -137,6 +138,10 @@ public static class SalesHttpClients
         _ = AddClient<IAuditLogsClient, AuditLogsClient>(auditLogs =>
         {
             auditLogs.BaseAddress = new Uri(baseUrl);
+        });
+        _ = AddClient<IUsersClient, UsersClient>(users =>
+        {
+            users.BaseAddress = new Uri(baseUrl);
         });
     }
 }

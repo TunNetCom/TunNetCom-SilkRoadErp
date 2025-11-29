@@ -17,3 +17,4 @@ public record AuditLogDetailResponse
     public List<string>? ChangedProperties { get; init; }
 }
 
+

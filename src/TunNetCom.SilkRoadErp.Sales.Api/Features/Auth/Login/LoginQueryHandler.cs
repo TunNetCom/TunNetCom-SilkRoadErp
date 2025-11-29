@@ -16,17 +16,20 @@ public class LoginQueryHandler : IRequestHandler<LoginQuery, Result<LoginRespons
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IConfiguration _configuration;
+    private readonly ILogger<LoginQueryHandler> _logger;
 
     public LoginQueryHandler(
         SalesContext context,
         IPasswordHasher passwordHasher,
         IJwtTokenService jwtTokenService,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        ILogger<LoginQueryHandler> logger)
     {
         _context = context;
         _passwordHasher = passwordHasher;
         _jwtTokenService = jwtTokenService;
         _configuration = configuration;
+        _logger = logger;
     }
 
     public async Task<Result<LoginResponse>> Handle(LoginQuery request, CancellationToken cancellationToken)
@@ -55,6 +58,26 @@ public class LoginQueryHandler : IRequestHandler<LoginQuery, Result<LoginRespons
             .Select(rp => rp.Permission.Name)
             .Distinct()
             .ToList();
+
+        // LOG: Debug permissions loading
+        _logger.LogInformation("=== LOGIN DEBUG ===");
+        _logger.LogInformation("User: {Username} (ID: {UserId})", user.Username, user.Id);
+        _logger.LogInformation("UserRoles count: {Count}", user.UserRoles.Count);
+        foreach (var userRole in user.UserRoles)
+        {
+            _logger.LogInformation("  - Role: {RoleName} (ID: {RoleId}), RolePermissions count: {Count}", 
+                userRole.Role.Name, userRole.Role.Id, userRole.Role.RolePermissions.Count);
+        }
+        _logger.LogInformation("Total Roles: {Count} - {Roles}", roles.Count, string.Join(", ", roles));
+        _logger.LogInformation("Total Permissions: {Count}", permissions.Count);
+        if (permissions.Count > 0)
+        {
+            _logger.LogInformation("First 10 permissions: {Permissions}", string.Join(", ", permissions.Take(10)));
+        }
+        else
+        {
+            _logger.LogWarning("⚠️⚠️⚠️ NO PERMISSIONS LOADED FOR USER {Username}! ⚠️⚠️⚠️", user.Username);
+        }
 
         // Generate tokens
         var accessToken = _jwtTokenService.GenerateAccessToken(user, roles, permissions);

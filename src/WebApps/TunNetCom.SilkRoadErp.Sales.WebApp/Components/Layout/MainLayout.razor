@@ -66,9 +66,23 @@
             </RadzenPanelMenuItem>
             <RadzenPanelMenuItem Text="Installateurs" Icon="engineering" Path="/installation-technicians" />
             <RadzenPanelMenuItem Text="@Localizer["Banques"]" Icon="account_balance_wallet" Path="/banques" />
-            <HasPermission Permission="@Permissions.ViewAuditLogs">
-                <RadzenPanelMenuItem Text="Journal d'Audit" Icon="history" Path="/audit-logs" />
-            </HasPermission>
+            
+            <!-- Menu Administration -->
+            <RadzenPanelMenuItem Text="Administration" Icon="admin_panel_settings">
+                <HasPermission Permission="@Permissions.ViewAuditLogs">
+                    <RadzenPanelMenuItem Text="Journal d'Audit" Icon="history" Path="/audit-logs" />
+                </HasPermission>
+                <HasPermission AnyPermissions="new[] { Permissions.ManageUsers, Permissions.ViewUsers }">
+                    <RadzenPanelMenuItem Text="Utilisateurs" Icon="people" Path="/users" />
+                </HasPermission>
+                <HasPermission AnyPermissions="new[] { Permissions.ManageRoles, Permissions.ViewRoles }">
+                    <RadzenPanelMenuItem Text="Rôles" Icon="security" Path="/admin/roles" />
+                </HasPermission>
+                <HasPermission Permission="@Permissions.ViewAppParameters">
+                    <RadzenPanelMenuItem Text="Paramètres" Icon="settings" Path="/app_parameters" />
+                </HasPermission>
+                <RadzenPanelMenuItem Text="Déconnexion" Icon="logout" Click="@HandleLogout" />
+            </RadzenPanelMenuItem>
         </RadzenPanelMenu>
         
         <!-- User section at the bottom of sidebar -->

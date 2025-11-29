@@ -1,0 +1,272 @@
+@page "/users"
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Users
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Users
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Constants
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Authorization
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@inject IUsersClient UsersClient
+@inject NavigationManager NavigationManager
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+@inject IStringLocalizer<SharedResource> Localizer
+
+<PageTitle>Gestion des Utilisateurs</PageTitle>
+
+<HasPermission Permission="@Permissions.ViewUsers">
+    <RadzenStack Gap="1rem" Class="rz-p-4">
+        <RadzenRow JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+            <RadzenColumn Size="6">
+                <RadzenText TextStyle="TextStyle.H4">
+                    <h1 style="margin: 0;"><RadzenIcon Icon="people" /> Gestion des Utilisateurs</h1>
+                </RadzenText>
+            </RadzenColumn>
+            <RadzenColumn Size="6" Style="text-align: right;">
+                <HasPermission Permission="@Permissions.CreateUser">
+                    <RadzenButton Icon="add" Text="Nouvel Utilisateur" Click="@CreateUser"
+                                ButtonStyle="ButtonStyle.Success" />
+                </HasPermission>
+            </RadzenColumn>
+        </RadzenRow>
+
+        <RadzenCard>
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Wrap="FlexWrap.Wrap" AlignItems="AlignItems.Center" Gap="1rem" Class="rz-mb-3">
+                <RadzenTextBox @bind-Value="searchKeyword" Placeholder="Rechercher..." Style="width: 300px;" 
+                             @oninput="@(async args => { searchKeyword = args.Value?.ToString(); await Search(); })" />
+                <RadzenButton Icon="search" Text="Rechercher" Click="@Search" ButtonStyle="ButtonStyle.Primary" />
+                <RadzenButton Icon="clear" Text="Réinitialiser" Click="@ClearSearch" ButtonStyle="ButtonStyle.Secondary" />
+            </RadzenStack>
+
+            <RadzenDataGrid @ref="userGrid"
+                          TItem="UserResponse"
+                          Data="@users"
+                          LoadData="@LoadUsers"
+                          AllowPaging="true"
+                          PageSize="10"
+                          AllowSorting="true"
+                          Count="@totalCount"
+                          IsLoading="@isLoading"
+                          ShowPagingSummary="true"
+                          Responsive="true"
+                          Density="Density.Compact">
+                <EmptyTemplate>
+                    <p style="font-size: 24px; text-align: center; margin: 2rem;">Aucun utilisateur trouvé.</p>
+                </EmptyTemplate>
+
+                <Columns>
+                    <RadzenDataGridColumn TItem="UserResponse" Property="Username" Title="Nom d'utilisateur" Width="150px" Sortable="true">
+                        <Template Context="user">
+                            <RadzenText TextStyle="TextStyle.Body2"><strong>@user.Username</strong></RadzenText>
+                        </Template>
+                    </RadzenDataGridColumn>
+
+                    <RadzenDataGridColumn TItem="UserResponse" Property="Email" Title="Email" Width="200px" Sortable="true" />
+
+                    <RadzenDataGridColumn TItem="UserResponse" Property="FirstName" Title="Prénom" Width="150px" Sortable="true" />
+
+                    <RadzenDataGridColumn TItem="UserResponse" Property="LastName" Title="Nom" Width="150px" Sortable="true" />
+
+                    <RadzenDataGridColumn TItem="UserResponse" Property="Roles" Title="Rôles" Width="200px">
+                        <Template Context="user">
+                            @if (user.Roles.Any())
+                            {
+                                foreach (var role in user.Roles)
+                                {
+                                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@role" Class="rz-mr-1" />
+                                }
+                            }
+                            else
+                            {
+                                <RadzenText TextStyle="TextStyle.Caption">Aucun rôle</RadzenText>
+                            }
+                        </Template>
+                    </RadzenDataGridColumn>
+
+                    <RadzenDataGridColumn TItem="UserResponse" Property="IsActive" Title="Statut" Width="100px" Sortable="true">
+                        <Template Context="user">
+                            @if (user.IsActive)
+                            {
+                                <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="Actif" />
+                            }
+                            else
+                            {
+                                <RadzenBadge BadgeStyle="BadgeStyle.Danger" Text="Inactif" />
+                            }
+                        </Template>
+                    </RadzenDataGridColumn>
+
+                    <RadzenDataGridColumn TItem="UserResponse" Property="CreatedAt" Title="Date de création" Width="150px" Sortable="true">
+                        <Template Context="user">
+                            @user.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")
+                        </Template>
+                    </RadzenDataGridColumn>
+
+                    <RadzenDataGridColumn TItem="UserResponse" Title="Actions" Width="150px" Sortable="false" Frozen="true" FrozenPosition="FrozenColumnPosition.Right">
+                        <Template Context="user">
+                            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem">
+                                <HasPermission Permission="@Permissions.UpdateUser">
+                                    <RadzenButton Icon="edit"
+                                                ButtonStyle="ButtonStyle.Primary"
+                                                Variant="Variant.Flat"
+                                                Size="ButtonSize.Small"
+                                                Click="@(() => EditUser(user.Id))"
+                                                Title="Modifier" />
+                                </HasPermission>
+                                <HasPermission Permission="@Permissions.UpdateUser">
+                                    <RadzenButton Icon="lock"
+                                                ButtonStyle="ButtonStyle.Warning"
+                                                Variant="Variant.Flat"
+                                                Size="ButtonSize.Small"
+                                                Click="@(() => ChangePassword(user.Id))"
+                                                Title="Changer le mot de passe" />
+                                </HasPermission>
+                                <HasPermission Permission="@Permissions.DeleteUser">
+                                    <RadzenButton Icon="delete"
+                                                ButtonStyle="ButtonStyle.Danger"
+                                                Variant="Variant.Flat"
+                                                Size="ButtonSize.Small"
+                                                Click="@(() => DeleteUser(user))"
+                                                Title="Désactiver l'utilisateur" />
+                                </HasPermission>
+                            </RadzenStack>
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </RadzenCard>
+    </RadzenStack>
+</HasPermission>
+
+@code {
+    private RadzenDataGrid<UserResponse>? userGrid;
+    private List<UserResponse> users = new();
+    private int totalCount;
+    private bool isLoading = false;
+    private string? searchKeyword;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Force initial load with default values
+        await LoadUsers(new LoadDataArgs { Skip = 0, Top = 10 });
+    }
+
+    private async Task LoadUsers(LoadDataArgs args)
+    {
+        isLoading = true;
+        try
+        {
+            var pageNumber = (args.Skip.GetValueOrDefault() / args.Top.GetValueOrDefault()) + 1;
+            var pageSize = args.Top.GetValueOrDefault(10);
+
+            Console.WriteLine($"[UsersList] LoadUsers called - PageNumber: {pageNumber}, PageSize: {pageSize}, Search: {searchKeyword ?? "null"}");
+
+            var pagedUsers = await UsersClient.GetUsersAsync(pageNumber, pageSize, searchKeyword);
+            
+            Console.WriteLine($"[UsersList] API returned - TotalCount: {pagedUsers.TotalCount}, Items: {pagedUsers.Items.Count()}");
+            
+            users = pagedUsers.Items.ToList();
+            totalCount = pagedUsers.TotalCount;
+            
+            Console.WriteLine($"[UsersList] Users list updated - Count: {users.Count}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[UsersList] ERROR: {ex.Message}");
+            Console.WriteLine($"[UsersList] StackTrace: {ex.StackTrace}");
+            
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Erreur",
+                Detail = $"Erreur lors du chargement des utilisateurs: {ex.Message}"
+            });
+            users = new List<UserResponse>();
+            totalCount = 0;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task Search()
+    {
+        if (userGrid != null)
+        {
+            await userGrid.FirstPage();
+        }
+    }
+
+    private async Task ClearSearch()
+    {
+        searchKeyword = null;
+        if (userGrid != null)
+        {
+            await userGrid.Reload();
+        }
+    }
+
+    private void CreateUser()
+    {
+        NavigationManager.NavigateTo("/users/new");
+    }
+
+    private void EditUser(int userId)
+    {
+        NavigationManager.NavigateTo($"/users/edit/{userId}");
+    }
+
+    private async Task ChangePassword(int userId)
+    {
+        var result = await DialogService.OpenAsync<ChangePasswordDialog>("Changer le mot de passe",
+            new Dictionary<string, object> { { "UserId", userId } },
+            new DialogOptions() { Width = "500px" });
+
+        if (result == true)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Succès",
+                Detail = "Mot de passe modifié avec succès"
+            });
+        }
+    }
+
+    private async Task DeleteUser(UserResponse user)
+    {
+        var confirmed = await DialogService.Confirm(
+            $"Êtes-vous sûr de vouloir désactiver l'utilisateur '{user.Username}' ?",
+            "Confirmer la suppression",
+            new ConfirmOptions() { OkButtonText = "Oui", CancelButtonText = "Non" });
+
+        if (confirmed == true)
+        {
+            try
+            {
+                await UsersClient.DeleteUserAsync(user.Id);
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Succès",
+                    Detail = "Utilisateur désactivé avec succès"
+                });
+                
+                if (userGrid != null)
+                {
+                    await userGrid.Reload();
+                }
+            }
+            catch (Exception ex)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Erreur",
+                    Detail = $"Erreur lors de la suppression: {ex.Message}"
+                });
+            }
+        }
+    }
+}
+
