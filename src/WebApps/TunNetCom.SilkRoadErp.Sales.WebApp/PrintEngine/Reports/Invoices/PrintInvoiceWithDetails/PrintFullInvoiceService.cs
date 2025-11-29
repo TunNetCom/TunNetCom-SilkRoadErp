@@ -12,7 +12,8 @@ public class PrintFullInvoiceService(
 {
     public async Task<Result<byte[]>> GenerateInvoicePdfAsync(
     int invoiceId,
-    CancellationToken cancellationToken)
+    CancellationToken cancellationToken,
+    bool isDuplicata = false)
     {
         var invoiceResponse = await _invoicesService.GetFullInvoiceByIdAsync(invoiceId, cancellationToken);
 
@@ -36,7 +37,7 @@ public class PrintFullInvoiceService(
         printInvoiceWithDetailsModel.VatRate19 = getAppParametersResponse.Value.VatRate19;
         CalculateTotalAmounts(printInvoiceWithDetailsModel, getAppParametersResponse.Value.Timbre, getAppParametersResponse.Value);
 
-        SilkPdfOptions printOptions = PreparePrintOptions(printInvoiceWithDetailsModel, getAppParametersResponse.Value);
+        SilkPdfOptions printOptions = PreparePrintOptions(printInvoiceWithDetailsModel, getAppParametersResponse.Value, isDuplicata);
 
         var pdfBytes = await _printService.GeneratePdfAsync(printInvoiceWithDetailsModel, printOptions, cancellationToken);
 
@@ -45,8 +46,11 @@ public class PrintFullInvoiceService(
 
     private static SilkPdfOptions PreparePrintOptions(
         PrintFullInvoiceModel printInvoiceWithDetailsModel,
-        GetAppParametersResponse getAppParametersResponse)
+        GetAppParametersResponse getAppParametersResponse,
+        bool isDuplicata = false)
     {
+        var duplicataText = isDuplicata ? "<div style='font-weight: bold; font-size: 16px; color: red; margin-top: 10px;'>DUPLICATA</div>" : "";
+        
         var headerContent = $@"
 <div style='font-family: Arial; font-size: 12px; width: 90%; margin: 0 auto;'>
     <table style='width: 100%; border-collapse: collapse;'>
@@ -63,6 +67,7 @@ public class PrintFullInvoiceService(
             <!-- Middle Column - Invoice Info -->
             <td style='width: 35%; text-align: center; vertical-align: top;'>
                 <div style='font-weight: bold; font-size: 14px;'>FACTURE</div>
+                {duplicataText}
                 <div style='font-weight: bold;'>N°: {printInvoiceWithDetailsModel.Num}</div>
                 <div>Date: {printInvoiceWithDetailsModel.Date.ToString("dd/MM/yyyy")}</div>
                 <div>Page: <span class='pageNumber'></span>/<span class='totalPages'></span></div>

@@ -8,6 +8,7 @@ using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Quotations.PrintQuo
 using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Orders.PrintOrder;
 using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Soldes.PrintSoldeClient;
 using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Soldes.PrintSoldeFournisseur;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PrintHistory;
 
 namespace TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure;
 
@@ -37,7 +38,7 @@ public static class PrintEngineStartupExtensions
             }
         });
 
-        // Register print service - use DirectPrintService if service URL is configured, otherwise use PrintToPdfService
+        // Register inner print service - use DirectPrintService if service URL is configured, otherwise use PrintToPdfService
         services.AddScoped<IPrintService>(serviceProvider =>
         {
             var config = serviceProvider.GetRequiredService<IConfiguration>();
@@ -45,10 +46,11 @@ public static class PrintEngineStartupExtensions
             var jsRuntime = serviceProvider.GetRequiredService<IJSRuntime>();
             var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
 
+            IPrintService innerService;
             if (!string.IsNullOrEmpty(serviceUrl))
             {
                 var printerService = serviceProvider.GetRequiredService<IPrinterService>();
-                return new DirectPrintService(
+                innerService = new DirectPrintService(
                     printerService,
                     jsRuntime,
                     loggerFactory.CreateLogger<DirectPrintService>(),
@@ -57,10 +59,17 @@ public static class PrintEngineStartupExtensions
             }
             else
             {
-                return new PrintToPdfService(
+                innerService = new PrintToPdfService(
                     jsRuntime,
                     loggerFactory.CreateLogger<PrintToPdfService>());
             }
+
+            // Wrap with CentralizedPrintService for logging
+            var printHistoryClient = serviceProvider.GetRequiredService<IPrintHistoryClient>();
+            return new CentralizedPrintService(
+                innerService,
+                printHistoryClient,
+                loggerFactory.CreateLogger<CentralizedPrintService>());
         });
     }
 }

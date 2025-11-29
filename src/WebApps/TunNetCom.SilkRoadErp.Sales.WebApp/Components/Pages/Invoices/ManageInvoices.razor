@@ -30,7 +30,13 @@
 @inject PrintFullInvoiceService PrintFullInvoiceService
 @inject DialogService DialogService
 @inject IJSRuntime JS
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure.IPrintService PrintService
+@inject TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PrintHistory.IPrintHistoryClient PrintHistoryClient
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.DeliveryNotes
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.PrintHistory
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
 
 <div style="padding: 0.5rem 1.5rem 1.5rem 1.5rem; min-height: 100vh;">
     <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
@@ -941,13 +947,42 @@
             return;
         }
 
-        var invoices = new List<int>() { SelectedInvoiceId };
+        // Get current user info
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userIdClaim = authState.User.FindFirst(ClaimTypes.NameIdentifier);
+        var usernameClaim = authState.User.FindFirst(ClaimTypes.Name);
+        int? userId = userIdClaim != null && int.TryParse(userIdClaim.Value, out var uid) ? uid : null;
+        string? username = usernameClaim?.Value;
+
+        // Check if invoice has been printed before (for duplicata)
+        bool isDuplicata = false;
+        try
+        {
+            var existingHistory = await PrintHistoryClient.GetPrintHistoryByDocumentAsync("Facture", SelectedInvoiceId, _cancellationTokenSource.Token);
+            isDuplicata = existingHistory.Any();
+        }
+        catch
+        {
+            // If we can't check, assume it's not a duplicata
+        }
 
         var pdfBytes = await PrintFullInvoiceService
-        .GenerateInvoicePdfAsync(SelectedInvoiceId, cancellationToken: _cancellationTokenSource.Token);
+            .GenerateInvoicePdfAsync(SelectedInvoiceId, cancellationToken: _cancellationTokenSource.Token, isDuplicata: isDuplicata);
 
         var fileName = $"Invoice {SelectedInvoiceId}.pdf";
-        await JS.InvokeVoidAsync("downloadFile", fileName, Convert.ToBase64String(pdfBytes.Value), "application/pdf");
+        
+        // Use centralized print service with document tracking
+        var printOptions = new TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure.PrintOptions
+        {
+            Mode = TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure.PrintMode.Download,
+            FileName = fileName,
+            DocumentType = "Facture",
+            DocumentId = SelectedInvoiceId,
+            UserId = userId,
+            Username = username
+        };
+
+        await PrintService.PrintAsync(pdfBytes.Value, printOptions, _cancellationTokenSource.Token);
     }
     #endregion
 }

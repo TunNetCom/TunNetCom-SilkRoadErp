@@ -1,0 +1,255 @@
+@page "/print-history"
+@using TunNetCom.SilkRoadErp.Sales.Contracts.PrintHistory
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PrintHistory
+@inject IPrintHistoryClient PrintHistoryClient
+@inject ILogger<PrintHistoryList> Logger
+
+<PageTitle>Historique d'Impression</PageTitle>
+
+<RadzenStack Gap="1rem">
+    <RadzenCard>
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+            <RadzenText TextStyle="TextStyle.H4">
+                <RadzenIcon Icon="print" /> Historique d'Impression
+            </RadzenText>
+        </RadzenStack>
+    </RadzenCard>
+
+    <RadzenCard>
+        <RadzenText TextStyle="TextStyle.Subtitle1" Style="margin-bottom: 1rem;">Filtres</RadzenText>
+        <RadzenRow Gap="1rem">
+            <RadzenColumn Size="12" SizeMD="3">
+                <RadzenFormField Text="Type de document" Style="width: 100%;">
+                    <RadzenDropDown 
+                        @bind-Value="@filterDocumentType" 
+                        Data="@documentTypes" 
+                        Style="width: 100%;"
+                        AllowClear="true"
+                        Placeholder="Tous les types"
+                        Change="@OnFilterChanged" />
+                </RadzenFormField>
+            </RadzenColumn>
+            
+            <RadzenColumn Size="12" SizeMD="2">
+                <RadzenFormField Text="ID Document" Style="width: 100%;">
+                    <RadzenTextBox 
+                        @bind-Value="@filterDocumentId" 
+                        Style="width: 100%;"
+                        Placeholder="ID"
+                        Change="@OnFilterChanged" />
+                </RadzenFormField>
+            </RadzenColumn>
+
+            <RadzenColumn Size="12" SizeMD="2">
+                <RadzenFormField Text="Mode d'impression" Style="width: 100%;">
+                    <RadzenDropDown 
+                        @bind-Value="@filterPrintMode" 
+                        Data="@printModes" 
+                        Style="width: 100%;"
+                        AllowClear="true"
+                        Placeholder="Tous les modes"
+                        Change="@OnFilterChanged" />
+                </RadzenFormField>
+            </RadzenColumn>
+
+            <RadzenColumn Size="12" SizeMD="2">
+                <RadzenFormField Text="Date début" Style="width: 100%;">
+                    <RadzenDatePicker 
+                        @bind-Value="@filterDateFrom" 
+                        Style="width: 100%;"
+                        DateFormat="dd/MM/yyyy"
+                        Change="@OnFilterChanged"
+                        ShowTime="false" />
+                </RadzenFormField>
+            </RadzenColumn>
+
+            <RadzenColumn Size="12" SizeMD="2">
+                <RadzenFormField Text="Date fin" Style="width: 100%;">
+                    <RadzenDatePicker 
+                        @bind-Value="@filterDateTo" 
+                        Style="width: 100%;"
+                        DateFormat="dd/MM/yyyy"
+                        Change="@OnFilterChanged"
+                        ShowTime="false" />
+                </RadzenFormField>
+            </RadzenColumn>
+
+            <RadzenColumn Size="12" SizeMD="1" Style="display: flex; align-items: flex-end;">
+                <RadzenButton 
+                    Icon="refresh" 
+                    ButtonStyle="ButtonStyle.Secondary"
+                    Click="@ResetFilters"
+                    Style="width: 100%;" />
+            </RadzenColumn>
+        </RadzenRow>
+    </RadzenCard>
+
+    <RadzenCard>
+        <RadzenDataGrid 
+            @ref="grid"
+            Data="@printHistory" 
+            TItem="PrintHistoryResponse" 
+            AllowPaging="true"
+            AllowSorting="true"
+            PageSize="@pageSize"
+            Count="@totalCount"
+            LoadData="@LoadData"
+            IsLoading="@isLoading"
+            PagerHorizontalAlign="HorizontalAlign.Center"
+            ColumnWidth="150px">
+            
+            <Columns>
+                <RadzenDataGridColumn TItem="PrintHistoryResponse" Property="PrintedAt" Title="Date & Heure" Width="180px" Sortable="true">
+                    <Template Context="history">
+                        @history.PrintedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="PrintHistoryResponse" Property="DocumentType" Title="Type de document" Width="150px" Sortable="true">
+                    <Template Context="history">
+                        <RadzenText TextStyle="TextStyle.Body2">@history.DocumentType</RadzenText>
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="PrintHistoryResponse" Property="DocumentId" Title="ID Document" Width="120px" Sortable="true">
+                    <Template Context="history">
+                        <RadzenText TextStyle="TextStyle.Body2">@history.DocumentId</RadzenText>
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="PrintHistoryResponse" Property="PrintMode" Title="Mode" Width="120px" Sortable="true">
+                    <Template Context="history">
+                        <RadzenBadge BadgeStyle="@GetBadgeStyle(history.PrintMode)" Text="@history.PrintMode" />
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="PrintHistoryResponse" Property="Username" Title="Utilisateur" Width="150px" Sortable="true">
+                    <Template Context="history">
+                        <RadzenText TextStyle="TextStyle.Body2">@history.Username</RadzenText>
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="PrintHistoryResponse" Property="PrinterName" Title="Imprimante" Width="150px" Sortable="true">
+                    <Template Context="history">
+                        <RadzenText TextStyle="TextStyle.Body2">@(history.PrinterName ?? "-")</RadzenText>
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="PrintHistoryResponse" Property="Copies" Title="Copies" Width="80px" Sortable="true">
+                    <Template Context="history">
+                        <RadzenText TextStyle="TextStyle.Body2">@history.Copies</RadzenText>
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="PrintHistoryResponse" Property="IsDuplicata" Title="Duplicata" Width="100px" Sortable="true">
+                    <Template Context="history">
+                        @if (history.IsDuplicata)
+                        {
+                            <RadzenBadge BadgeStyle="BadgeStyle.Warning" Text="Oui" />
+                        }
+                        else
+                        {
+                            <RadzenText TextStyle="TextStyle.Body2">Non</RadzenText>
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    </RadzenCard>
+</RadzenStack>
+
+@code {
+    private RadzenDataGrid<PrintHistoryResponse>? grid;
+    private List<PrintHistoryResponse> printHistory = new();
+    private int totalCount;
+    private int pageSize = 20;
+    private bool isLoading = false;
+
+    // Filters
+    private string? filterDocumentType;
+    private string? filterDocumentId;
+    private string? filterPrintMode;
+    private DateTime? filterDateFrom;
+    private DateTime? filterDateTo;
+
+    private List<string> documentTypes = new()
+    {
+        "Facture", "Devis", "Commande", "BonDeLivraison", 
+        "BonDeReception", "FactureFournisseur", "FactureAvoirClient",
+        "FactureAvoirFournisseur", "Avoirs", "AvoirFournisseur"
+    };
+
+    private List<string> printModes = new() { "Download", "DirectPrint" };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData(new LoadDataArgs { Skip = 0, Top = pageSize });
+    }
+
+    private async Task LoadData(LoadDataArgs args)
+    {
+        isLoading = true;
+        try
+        {
+            var pageNumber = (args.Skip.GetValueOrDefault() / pageSize) + 1;
+
+            int? documentId = null;
+            if (!string.IsNullOrEmpty(filterDocumentId) && int.TryParse(filterDocumentId, out var docId))
+            {
+                documentId = docId;
+            }
+
+            var request = new GetPrintHistoryRequest
+            {
+                DocumentType = filterDocumentType,
+                DocumentId = documentId,
+                DateFrom = filterDateFrom,
+                DateTo = filterDateTo,
+                PrintMode = filterPrintMode,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+
+            var result = await PrintHistoryClient.GetPrintHistoryAsync(request, CancellationToken.None);
+            
+            printHistory = result.Items.ToList();
+            totalCount = result.TotalCount;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading print history");
+            printHistory = new List<PrintHistoryResponse>();
+            totalCount = 0;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task OnFilterChanged()
+    {
+        await grid!.Reload();
+    }
+
+    private async Task ResetFilters()
+    {
+        filterDocumentType = null;
+        filterDocumentId = null;
+        filterPrintMode = null;
+        filterDateFrom = null;
+        filterDateTo = null;
+        await grid!.Reload();
+    }
+
+    private BadgeStyle GetBadgeStyle(string printMode)
+    {
+        return printMode switch
+        {
+            "Download" => BadgeStyle.Info,
+            "DirectPrint" => BadgeStyle.Success,
+            _ => BadgeStyle.Secondary
+        };
+    }
+}
+

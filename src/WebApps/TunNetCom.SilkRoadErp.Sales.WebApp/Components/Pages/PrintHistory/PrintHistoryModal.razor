@@ -1,0 +1,127 @@
+@using TunNetCom.SilkRoadErp.Sales.Contracts.PrintHistory
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PrintHistory
+@inject IPrintHistoryClient PrintHistoryClient
+@inject ILogger<PrintHistoryModal> Logger
+
+<RadzenStack Gap="1rem">
+    <RadzenText TextStyle="TextStyle.H5">
+        Historique d'impression - @DocumentType #@DocumentId
+    </RadzenText>
+
+    @if (isLoading)
+    {
+        <RadzenProgressBarCircular ProgressBarStyle="ProgressBarStyle.Primary" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+    }
+    else if (printHistory == null || !printHistory.Any())
+    {
+        <RadzenText TextStyle="TextStyle.Body1" Style="color: #666; text-align: center; padding: 2rem;">
+            Aucun historique d'impression pour ce document.
+        </RadzenText>
+    }
+    else
+    {
+        <RadzenDataGrid 
+            Data="@printHistory" 
+            TItem="PrintHistoryResponse" 
+            AllowPaging="false"
+            AllowSorting="true"
+            ColumnWidth="150px">
+            
+            <Columns>
+                <RadzenDataGridColumn TItem="PrintHistoryResponse" Property="PrintedAt" Title="Date & Heure" Width="180px" Sortable="true">
+                    <Template Context="history">
+                        @history.PrintedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="PrintHistoryResponse" Property="PrintMode" Title="Mode" Width="120px" Sortable="true">
+                    <Template Context="history">
+                        <RadzenBadge BadgeStyle="@GetBadgeStyle(history.PrintMode)" Text="@history.PrintMode" />
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="PrintHistoryResponse" Property="Username" Title="Utilisateur" Width="150px" Sortable="true">
+                    <Template Context="history">
+                        <RadzenText TextStyle="TextStyle.Body2">@history.Username</RadzenText>
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="PrintHistoryResponse" Property="PrinterName" Title="Imprimante" Width="150px" Sortable="true">
+                    <Template Context="history">
+                        <RadzenText TextStyle="TextStyle.Body2">@(history.PrinterName ?? "-")</RadzenText>
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="PrintHistoryResponse" Property="Copies" Title="Copies" Width="80px" Sortable="true">
+                    <Template Context="history">
+                        <RadzenText TextStyle="TextStyle.Body2">@history.Copies</RadzenText>
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="PrintHistoryResponse" Property="FileName" Title="Nom du fichier" Width="200px" Sortable="true">
+                    <Template Context="history">
+                        <RadzenText TextStyle="TextStyle.Body2">@(history.FileName ?? "-")</RadzenText>
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="PrintHistoryResponse" Property="IsDuplicata" Title="Duplicata" Width="100px" Sortable="true">
+                    <Template Context="history">
+                        @if (history.IsDuplicata)
+                        {
+                            <RadzenBadge BadgeStyle="BadgeStyle.Warning" Text="Oui" />
+                        }
+                        else
+                        {
+                            <RadzenText TextStyle="TextStyle.Body2">Non</RadzenText>
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    }
+</RadzenStack>
+
+@code {
+    [Parameter] public string DocumentType { get; set; } = string.Empty;
+    [Parameter] public int DocumentId { get; set; }
+
+    private List<PrintHistoryResponse>? printHistory;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPrintHistory();
+    }
+
+    private async Task LoadPrintHistory()
+    {
+        isLoading = true;
+        try
+        {
+            printHistory = await PrintHistoryClient.GetPrintHistoryByDocumentAsync(
+                DocumentType,
+                DocumentId,
+                CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading print history for {DocumentType}:{DocumentId}", DocumentType, DocumentId);
+            printHistory = new List<PrintHistoryResponse>();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private BadgeStyle GetBadgeStyle(string printMode)
+    {
+        return printMode switch
+        {
+            "Download" => BadgeStyle.Info,
+            "DirectPrint" => BadgeStyle.Success,
+            _ => BadgeStyle.Secondary
+        };
+    }
+}
+

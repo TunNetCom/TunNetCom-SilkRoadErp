@@ -25,6 +25,9 @@
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
 @using TunNetCom.SilkRoadErp.Sales.Contracts.InstallationTechnician.Responses
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.InstallationTechnician
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.PrintHistory
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
 @inject ITagsApiClient TagsService
 @inject IInstallationTechnicianApiClient TechnicianService
 
@@ -42,6 +45,7 @@
 @inject PrintDeliveryNoteService PrintDeliveryNoteService
 @inject IPrintService PrintService
 @inject ITagsApiClient TagsService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <style>
     /* Header actions container */
@@ -198,7 +202,7 @@ else
             }
 
             <RadzenLabel Text="@Localizer["date"]" />
-            <RadzenDatePicker @bind-Value="deliveryNoteDate" Name="DeliveryNoteDate" Style="width: 200px;" DateFormat="d MMMM yyyy" ShowTime="false" />
+            <RadzenDatePicker @bind-Value="deliveryNoteDate" Name="DeliveryNoteDate" Style="width: 200px;" DateFormat="d MMMM yyyy" ShowTime="false" Disabled="@isReadOnly" />
 
             <RadzenLabel Text="@Localizer["customer"]" />
             <RadzenDropDownDataGrid AllowClear="true"
@@ -210,7 +214,8 @@ else
                                     Data="@_filteredCustomers"
                                     TextProperty="@nameof(CustomerResponse.Name)"
                                     ValueProperty="@nameof(CustomerResponse.Id)"
-                                    Placeholder="@Localizer["select_customer"]">
+                                    Placeholder="@Localizer["select_customer"]"
+                                    Disabled="@isReadOnly">
                 <Columns>
                     <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Id)" Title="ID" Width="80px" />
                     <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Name)" Title="@Localizer["name"]" Width="220px" />
@@ -223,6 +228,7 @@ else
                                     @bind-Value="@selectedTechnicianId"
                                     LoadData="@LoadTechnicians"
                                     AllowFiltering="true"
+                                    Disabled="@isReadOnly"
                                     Style="width: 350px;"
                                     Data="@_filteredTechnicians"
                                     TextProperty="@nameof(InstallationTechnicianBaseInfo.Nom)"
@@ -260,7 +266,8 @@ else
                                         Data="@_filteredInvoices"
                                         TextProperty="@nameof(InvoiceResponse.Number)"
                                         ValueProperty="@nameof(InvoiceResponse.Number)"
-                                        Placeholder="@Localizer["select_invoice"]">
+                                        Placeholder="@Localizer["select_invoice"]"
+                                        Disabled="@isReadOnly">
                     <Columns>
                         <RadzenDropDownDataGridColumn Property="@nameof(InvoiceResponse.Number)" Title="Num" Width="100px" />
                         <RadzenDropDownDataGridColumn Property="@nameof(InvoiceResponse.Date)" Title="Date" Width="100px" />
@@ -271,7 +278,7 @@ else
                               ButtonStyle="ButtonStyle.Success" 
                               Variant="Variant.Flat"
                               Size="ButtonSize.Medium"
-                              Disabled="@(!selectedCustomerId.HasValue)"
+                              Disabled="@(isReadOnly || !selectedCustomerId.HasValue)"
                               Click="@CreateNewInvoice"
                               Title="@Localizer["create_new_invoice"]"
                               AriaLabel="@Localizer["create_new_invoice"]" />
@@ -292,10 +299,11 @@ else
                    OnShowPriceHistory="@ShowDialog"
                    ShowPriceHistoryDialog="true"
                    ShowPrintButton="true"
-                   ShowSaveButton="true"
+                   ShowSaveButton="@(!isReadOnly)"
                    ShowSummary="true"
                    OnSave="@SaveDeliveryNote"
                    OnPrint="@PrintDeliveryNote"
+                   IsReadOnly="@isReadOnly"
                    TotalHt="@totalHt"
                    TotalVat="@totalVat"
                    TotalTtc="@totalTtc"
@@ -315,6 +323,17 @@ else
                     DocumentType="BonDeLivraison" 
                     DocumentId="@blNumber"
                     SaveOnChange="false" />
+        
+        <!-- Print History Button -->
+        <RadzenCard Style="margin-top: 1rem;">
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem">
+                <RadzenButton 
+                    Icon="history" 
+                    Text="Historique d'impression" 
+                    ButtonStyle="ButtonStyle.Info"
+                    Click="@ShowPrintHistory" />
+            </RadzenStack>
+        </RadzenCard>
     }
 }
 
@@ -340,6 +359,8 @@ else
     DateTime deliveryNoteDate = DateTime.Now;
     private GetAppParametersResponse getAppParametersResponse;
     private TagSelector? tagSelectorRef;
+    private int documentStatut = 0; // 0 = Brouillon, 1 = Validé
+    private bool isReadOnly => documentStatut == 1; // Mode lecture seule si validé
     private int? _selectedCustomerId;
     int? selectedCustomerId
     {
@@ -643,6 +664,7 @@ else
                     selectedCustomerId = deliveryNote.CustomerId;
                     selectedTechnicianId = deliveryNote.InstallationTechnicianId;
                     selectedInvoiceId = deliveryNote.InvoiceNumber;
+                    documentStatut = deliveryNote.Statut; // Récupérer le statut
 
                     if (deliveryNote.Items != null && deliveryNote.Items.Any())
                     {
@@ -1075,6 +1097,18 @@ else
     {
         try
         {
+            // Check if document is saved before allowing print
+            if (string.IsNullOrEmpty(deliveryNoteNumber) || !int.TryParse(deliveryNoteNumber, out var deliveryNoteNum) || deliveryNoteNum <= 0)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = Localizer["warning"],
+                    Detail = "Le document doit être enregistré avant d'être imprimé."
+                });
+                return;
+            }
+
             if (!orders.Any())
             {
                 NotificationService.Notify(new NotificationMessage
@@ -1086,53 +1120,23 @@ else
                 return;
             }
 
+            // Get current user info
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var userIdClaim = authState.User.FindFirst(ClaimTypes.NameIdentifier);
+            var usernameClaim = authState.User.FindFirst(ClaimTypes.Name);
+            int? userId = userIdClaim != null && int.TryParse(userIdClaim.Value, out var uid) ? uid : null;
+            string? username = usernameClaim?.Value;
+
             Result<byte[]> pdfResult;
 
-            // Check if delivery note is saved (has a number)
-            if (!string.IsNullOrEmpty(deliveryNoteNumber) && int.TryParse(deliveryNoteNumber, out var deliveryNoteNum))
-            {
-                // Print saved delivery note
-                pdfResult = await PrintDeliveryNoteService.GenerateDeliveryNotePdfAsync(
-                    deliveryNoteNum,
-                    _cancellationTokenSource.Token);
-            }
-            else
-            {
-                // Print from current data (not saved yet)
-                var printModel = new PrintDeliveryNoteModel
-                {
-                    Num = 0, // Not saved yet
-                    Date = deliveryNoteDate,
-                    DeliveryTime = TimeOnly.FromDateTime(DateTime.Now),
-                    CustomerId = selectedCustomerId,
-                    InvoiceNumber = _selectedInvoiceId,
-                    TotalExcludingTax = totalHt,
-                    TotalVat = totalVat,
-                    TotalAmount = totalTtc,
-                    Lines = orders.Select(o => new DeliveryNoteLineModel
-                    {
-                        Id = o.Id,
-                        RefProduit = o.ProductReference,
-                        DesignationLi = o.Description,
-                        QteLi = o.Quantity,
-                        PrixHt = o.UnitPriceExcludingTax,
-                        Remise = o.DiscountPercentage,
-                        TotHt = o.TotalExcludingTax,
-                        Tva = o.VatPercentage,
-                        TotTtc = o.TotalIncludingTax
-                    }).ToList()
-                };
-
-                pdfResult = await PrintDeliveryNoteService.GenerateDeliveryNotePdfFromDataAsync(
-                    printModel,
-                    _cancellationTokenSource.Token);
-            }
+            // Print saved delivery note
+            pdfResult = await PrintDeliveryNoteService.GenerateDeliveryNotePdfAsync(
+                deliveryNoteNum,
+                _cancellationTokenSource.Token);
 
             if (pdfResult.IsSuccess)
             {
-                var fileName = string.IsNullOrEmpty(deliveryNoteNumber)
-                    ? $"Bon de Livraison - {deliveryNoteDate:yyyy-MM-dd}.pdf"
-                    : $"Bon de Livraison {deliveryNoteNumber}.pdf";
+                var fileName = $"Bon de Livraison {deliveryNoteNumber}.pdf";
 
                 // Show print mode selection dialog
                 var printModeResult = await DialogService.OpenAsync<PrintModeDialog>(
@@ -1150,7 +1154,11 @@ else
                     var printOptions = new PrintOptions
                     {
                         Mode = selectedMode,
-                        FileName = fileName
+                        FileName = fileName,
+                        DocumentType = "BonDeLivraison",
+                        DocumentId = deliveryNoteNum,
+                        UserId = userId,
+                        Username = username
                     };
 
                     if (selectedMode == PrintMode.DirectPrint)
@@ -1220,6 +1228,29 @@ else
             });
             logger.LogError(ex, "Failed to print delivery note");
         }
+    }
+
+    private async Task ShowPrintHistory()
+    {
+        if (string.IsNullOrEmpty(deliveryNoteNumber) || !int.TryParse(deliveryNoteNumber, out var deliveryNoteNum))
+        {
+            return;
+        }
+
+        await DialogService.OpenAsync<PrintHistoryModal>(
+            $"Historique d'impression - Bon de Livraison #{deliveryNoteNumber}",
+            new Dictionary<string, object>
+            {
+                { "DocumentType", "BonDeLivraison" },
+                { "DocumentId", deliveryNoteNum }
+            },
+            new DialogOptions()
+            {
+                Width = "900px",
+                Height = "600px",
+                Resizable = true,
+                Draggable = true
+            });
     }
 
     async Task OnItemsChanged(List<DeliveryNoteDetailResponse> items)

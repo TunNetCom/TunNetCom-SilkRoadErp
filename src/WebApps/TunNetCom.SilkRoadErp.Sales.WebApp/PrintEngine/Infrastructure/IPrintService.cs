@@ -12,6 +12,12 @@ public class PrintOptions
     public PrintMode Mode { get; set; } = PrintMode.Download;
     public bool Duplex { get; set; } = false;
     public string? FileName { get; set; }
+    
+    // Document tracking information for print history
+    public string? DocumentType { get; set; }
+    public int? DocumentId { get; set; }
+    public int? UserId { get; set; }
+    public string? Username { get; set; }
 }
 
 public enum PrintMode

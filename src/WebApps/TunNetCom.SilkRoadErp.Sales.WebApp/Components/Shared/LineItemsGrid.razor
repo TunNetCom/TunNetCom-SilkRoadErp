@@ -30,14 +30,15 @@
                               Text="@Localizer["add_new_order"]"
                               Click="@(async () => await InsertRow())" 
                               class="action-button success-button"
-                              AriaLabel="@Localizer["add_new_order"]" />
+                              AriaLabel="@Localizer["add_new_order"]"
+                              Disabled="@IsReadOnly" />
 
                 <RadzenButton ButtonStyle="ButtonStyle.Info"
                               Icon="percent"
                               Text="@Localizer["apply_discount"]"
                               Variant="Variant.Flat"
                               Size="ButtonSize.Small"
-                              Disabled="@(Items == null || !Items.Any())"
+                              Disabled="@(IsReadOnly || Items == null || !Items.Any())"
                               Click="@OpenDiscountDialog"
                               class="action-button"
                               AriaLabel="@Localizer["apply_discount_to_all"]" />
@@ -47,7 +48,7 @@
                               Text="@Localizer["apply_vat"]"
                               Variant="Variant.Flat"
                               Size="ButtonSize.Small"
-                              Disabled="@(Items == null || !Items.Any())"
+                              Disabled="@(IsReadOnly || Items == null || !Items.Any())"
                               Click="@OpenVatDialog"
                               class="action-button"
                               AriaLabel="@Localizer["apply_vat_to_all"]" />
@@ -133,7 +134,8 @@
                                         Change="@(args => OnProductSelected(order, args))"
                                         TextProperty="@ProductTextProperty"
                                         ValueProperty="@ProductValueProperty"
-                                        Name="@dropdownId" />
+                                        Name="@dropdownId"
+                                        Disabled="@IsReadOnly" />
             </Template>
         </RadzenDataGridColumn>
 
@@ -144,7 +146,8 @@
                                Value="order.Quantity"
                                Change="@(args => OnQuantityChanged(order, args))"
                                Style="width:100%;"
-                               Name="Quantity"/>
+                               Name="Quantity"
+                               Disabled="@IsReadOnly"/>
                 <RadzenRequiredValidator Text="@Localizer["quantity_required"]" Component="Quantity" Popup="true" />
             </Template>
         </RadzenDataGridColumn>
@@ -186,6 +189,7 @@
                                 <RadzenNumeric TValue="int"
                                                Value="@(deliveryNoteItem.DeliveredQuantity ?? deliveryNoteItem.Quantity)"
                                                Change="@(args => OnDeliveredQuantityChanged(deliveryNoteItem, args))"
+                                               Disabled="@IsReadOnly"
                                                Style="width:100%;"
                                                Min="0"
                                                Max="@deliveryNoteItem.Quantity"
@@ -210,7 +214,8 @@
                                    Change="@(args => OnUnitPriceChanged(order, args))"
                                    Style="width:100%;"
                                    Format="@priceFormat"
-                                   Name="UnitPrice"/>
+                                   Name="UnitPrice"
+                                   Disabled="@IsReadOnly"/>
                     @if (ShowPriceHistoryDialog && !string.IsNullOrEmpty(GetProductReference?.Invoke(order)))
                     {
                         <RadzenButton Icon="history" 
@@ -235,7 +240,8 @@
                                Max="@((decimal)MaxDiscountPercentage)"
                                Step="0.01"
                                Format="@discountFormat"
-                               Name="Discount"/>
+                               Name="Discount"
+                               Disabled="@IsReadOnly"/>
             </Template>
         </RadzenDataGridColumn>
 
@@ -258,7 +264,8 @@
                                    Max="@((decimal)MaxVatPercentage)"
                                    Step="0.01"
                                    Format="@vatFormat"
-                                   Name="Vat"/>
+                                   Name="Vat"
+                                   Disabled="@IsReadOnly"/>
                 </Template>
             </RadzenDataGridColumn>
         }
@@ -330,7 +337,8 @@
                               Icon="delete" 
                               Variant="Variant.Flat"
                               Shade="Shade.Lighter" 
-                              Size="ButtonSize.Medium" 
+                              Size="ButtonSize.Medium"
+                              Disabled="@IsReadOnly" 
                               class="rz-my-1 rz-ms-1"
                               Click="@(args => HandleDeleteItem(order))" 
                               @onclick:stopPropagation="true"
@@ -485,6 +493,7 @@
     [Parameter] public Func<TItem> CreateNewItem { get; set; }
     [Parameter] public double MaxDiscountPercentage { get; set; } = 50.0;
     [Parameter] public double MaxVatPercentage { get; set; } = 50.0;
+    [Parameter] public bool IsReadOnly { get; set; } = false;
 
     RadzenDataGrid<TItem> ordersGrid;
     private DotNetObjectReference<LineItemsGrid<TItem>>? objRef;

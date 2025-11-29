@@ -20,6 +20,9 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Tags
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.PrintHistory
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
 @inject ITagsApiClient TagsService
 
 @inject IStringLocalizer<SharedResource> Localizer
@@ -35,6 +38,7 @@
 @inject IJSRuntime JSRuntime
 @inject PrintQuotationService PrintQuotationService
 @inject IPrintService PrintService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <style>
     .quotation-container {
@@ -139,6 +143,17 @@ else
                     DocumentType="Devis" 
                     DocumentId="@quotationNum"
                     SaveOnChange="false" />
+        
+        <!-- Print History Button -->
+        <RadzenCard Style="margin-top: 1rem;">
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem">
+                <RadzenButton 
+                    Icon="history" 
+                    Text="Historique d'impression" 
+                    ButtonStyle="ButtonStyle.Info"
+                    Click="@ShowPrintHistory" />
+            </RadzenStack>
+        </RadzenCard>
     }
 }
 
@@ -715,6 +730,18 @@ else
     {
         try
         {
+            // Check if document is saved before allowing print
+            if (string.IsNullOrEmpty(quotationNumber) || !int.TryParse(quotationNumber, out var quotationNum) || quotationNum <= 0)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = Localizer["warning"],
+                    Detail = "Le document doit être enregistré avant d'être imprimé."
+                });
+                return;
+            }
+
             if (orders == null || !orders.Any())
             {
                 NotificationService.Notify(new NotificationMessage
@@ -726,51 +753,23 @@ else
                 return;
             }
 
+            // Get current user info
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var userIdClaim = authState.User.FindFirst(ClaimTypes.NameIdentifier);
+            var usernameClaim = authState.User.FindFirst(ClaimTypes.Name);
+            int? userId = userIdClaim != null && int.TryParse(userIdClaim.Value, out var uid) ? uid : null;
+            string? username = usernameClaim?.Value;
+
             Result<byte[]> pdfResult;
 
-            // Check if quotation is saved (has a number)
-            if (!string.IsNullOrEmpty(quotationNumber) && int.TryParse(quotationNumber, out var quotationNum))
-            {
-                // Print saved quotation
-                pdfResult = await PrintQuotationService.GenerateQuotationPdfAsync(
-                    quotationNum,
-                    _cancellationTokenSource.Token);
-            }
-            else
-            {
-                // Print from current data (not saved yet)
-                var printModel = new PrintQuotationModel
-                {
-                    Num = 0, // Not saved yet
-                    Date = quotationDate,
-                    CustomerId = selectedCustomerId,
-                    TotalExcludingTax = totalHt,
-                    TotalVat = totalVat,
-                    TotalAmount = totalTtc,
-                    Lines = orders.Select(o => new QuotationLineModel
-                    {
-                        Id = o.Id,
-                        RefProduit = o.ProductReference,
-                        DesignationLi = o.Description,
-                        QteLi = o.Quantity,
-                        PrixHt = o.UnitPriceExcludingTax,
-                        Remise = o.DiscountPercentage,
-                        TotHt = o.TotalExcludingTax,
-                        Tva = o.VatPercentage,
-                        TotTtc = o.TotalIncludingTax
-                    }).ToList()
-                };
-
-                pdfResult = await PrintQuotationService.GenerateQuotationPdfFromDataAsync(
-                    printModel,
-                    _cancellationTokenSource.Token);
-            }
+            // Print saved quotation
+            pdfResult = await PrintQuotationService.GenerateQuotationPdfAsync(
+                quotationNum,
+                _cancellationTokenSource.Token);
 
             if (pdfResult.IsSuccess)
             {
-                var fileName = string.IsNullOrEmpty(quotationNumber)
-                    ? $"Devis - {quotationDate:yyyy-MM-dd}.pdf"
-                    : $"Devis {quotationNumber}.pdf";
+                var fileName = $"Devis {quotationNumber}.pdf";
 
                 // Show print mode selection dialog
                 var printModeResult = await DialogService.OpenAsync<PrintModeDialog>(
@@ -788,7 +787,11 @@ else
                     var printOptions = new PrintOptions
                     {
                         Mode = selectedMode,
-                        FileName = fileName
+                        FileName = fileName,
+                        DocumentType = "Devis",
+                        DocumentId = quotationNum,
+                        UserId = userId,
+                        Username = username
                     };
 
                     if (selectedMode == PrintMode.DirectPrint)
@@ -858,6 +861,29 @@ else
             });
             logger.LogError(ex, "Failed to print quotation");
         }
+    }
+
+    private async Task ShowPrintHistory()
+    {
+        if (string.IsNullOrEmpty(quotationNumber) || !int.TryParse(quotationNumber, out var quotationNum))
+        {
+            return;
+        }
+
+        await DialogService.OpenAsync<PrintHistoryModal>(
+            $"Historique d'impression - Devis #{quotationNumber}",
+            new Dictionary<string, object>
+            {
+                { "DocumentType", "Devis" },
+                { "DocumentId", quotationNum }
+            },
+            new DialogOptions()
+            {
+                Width = "900px",
+                Height = "600px",
+                Resizable = true,
+                Draggable = true
+            });
     }
 }
 

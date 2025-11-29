@@ -105,6 +105,8 @@ public partial class SalesContext : DbContext
 
     public virtual DbSet<AuditLog> AuditLog { get; set; }
 
+    public virtual DbSet<PrintHistory> PrintHistory { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(FactureConfiguration).Assembly);
