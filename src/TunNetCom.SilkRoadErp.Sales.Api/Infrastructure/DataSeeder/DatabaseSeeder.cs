@@ -59,6 +59,7 @@ public class DatabaseSeeder
             await SeedSystemeAsync(context);
             await SeedProduitsAsync(context);
             await SeedBanquesAsync(context);
+            await SeedInstallationTechniciansAsync(context);
             await SeedAuthAsync(context);
 
             _logger.LogInformation("=== SEEDING DE LA BASE DE DONNÉES TERMINÉ AVEC SUCCÈS ===");
@@ -604,6 +605,56 @@ public class DatabaseSeeder
         catch (Exception ex)
         {
             _logger.LogError(ex, "✗ ERREUR lors de l'insertion des banques: {Message}", ex.Message);
+            throw;
+        }
+    }
+
+    private async Task SeedInstallationTechniciansAsync(SalesContext context)
+    {
+        var count = await context.InstallationTechnician.CountAsync();
+        _logger.LogInformation("Table InstallationTechnician - Nombre d'enregistrements actuels: {Count}", count);
+        
+        // On insère seulement si la table est vide
+        if (count > 0)
+        {
+            _logger.LogInformation("La table InstallationTechnician contient déjà {Count} enregistrement(s). Seeding ignoré.", count);
+            return;
+        }
+
+        _logger.LogInformation("Création des installateurs...");
+
+        var technicians = new[]
+        {
+            Domain.Entites.InstallationTechnician.CreateInstallationTechnician(
+                nom: "Makrem Bouraui",
+                tel: "56440436",
+                tel2: null,
+                tel3: null,
+                email: null,
+                description: null,
+                photo: null
+            ),
+            Domain.Entites.InstallationTechnician.CreateInstallationTechnician(
+                nom: "Monji Zakraoui",
+                tel: "97264230",
+                tel2: null,
+                tel3: null,
+                email: null,
+                description: null,
+                photo: null
+            )
+        };
+
+        _logger.LogInformation("Ajout de {Count} installateurs à la base de données...", technicians.Length);
+        try
+        {
+            await context.InstallationTechnician.AddRangeAsync(technicians);
+            var saved = await context.SaveChangesAsync();
+            _logger.LogInformation("✓ {Count} installateurs insérés avec succès. {Saved} changements sauvegardés.", technicians.Length, saved);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "✗ ERREUR lors de l'insertion des installateurs: {Message}", ex.Message);
             throw;
         }
     }
