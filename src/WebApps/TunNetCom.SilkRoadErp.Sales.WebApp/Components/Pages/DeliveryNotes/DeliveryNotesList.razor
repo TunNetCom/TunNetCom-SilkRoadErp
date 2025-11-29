@@ -184,23 +184,35 @@
                                       Sortable="false"
                                       Filterable="false">
                     <Template Context="item">
-                        <RadzenButton Icon="edit"
-                                      ButtonStyle="ButtonStyle.Primary"
-                                      Variant="Variant.Flat"
-                                      Size="ButtonSize.Small"
-                                      Click="@(() => ViewDeliveryNote(item.Number.ToString()))"
-                                      Disabled="@(item.Statut == 1)"
-                                      Title="@Localizer["Edit"]"
-                                      AriaLabel="@Localizer["Edit"]" 
-                                      Style="margin-right: 4px;" />
-                        <RadzenButton Icon="check_circle"
-                                      ButtonStyle="ButtonStyle.Success"
-                                      Variant="Variant.Flat"
-                                      Size="ButtonSize.Small"
-                                      Click="@(() => ValidateDeliveryNote(item))"
-                                      Disabled="@(item.Statut == 1)"
-                                      Title="Valider"
-                                      AriaLabel="Valider" />
+                        @if (item.Statut == 1)
+                        {
+                            <RadzenButton Icon="visibility"
+                                          ButtonStyle="ButtonStyle.Info"
+                                          Variant="Variant.Flat"
+                                          Size="ButtonSize.Small"
+                                          Click="@(() => ViewDeliveryNote(item.Number.ToString()))"
+                                          Title="@Localizer["View"]"
+                                          AriaLabel="@Localizer["View"]" 
+                                          Style="margin-right: 4px;" />
+                        }
+                        else
+                        {
+                            <RadzenButton Icon="edit"
+                                          ButtonStyle="ButtonStyle.Primary"
+                                          Variant="Variant.Flat"
+                                          Size="ButtonSize.Small"
+                                          Click="@(() => ViewDeliveryNote(item.Number.ToString()))"
+                                          Title="@Localizer["Edit"]"
+                                          AriaLabel="@Localizer["Edit"]" 
+                                          Style="margin-right: 4px;" />
+                            <RadzenButton Icon="check_circle"
+                                          ButtonStyle="ButtonStyle.Success"
+                                          Variant="Variant.Flat"
+                                          Size="ButtonSize.Small"
+                                          Click="@(() => ValidateDeliveryNote(item))"
+                                          Title="@Localizer["Validate"]"
+                                          AriaLabel="@Localizer["Validate"]" />
+                        }
                     </Template>
                 </RadzenDataGridColumn>
             </Columns>

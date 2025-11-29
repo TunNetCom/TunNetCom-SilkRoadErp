@@ -141,6 +141,9 @@
   <data name="Edit" xml:space="preserve">
     <value>Edit</value>
   </data>
+  <data name="View" xml:space="preserve">
+    <value>View</value>
+  </data>
   <data name="EditClient" xml:space="preserve">
     <value>Edit Client</value>
   </data>
@@ -1121,6 +1124,18 @@
   </data>
   <data name="Select_At_Least_One_DeliveryNote" xml:space="preserve">
     <value>Please select at least one delivery note.</value>
+  </data>
+  <data name="Cannot_Validate_New_Document" xml:space="preserve">
+    <value>Cannot validate a new unsaved document.</value>
+  </data>
+  <data name="Document_Already_Validated" xml:space="preserve">
+    <value>This document is already validated.</value>
+  </data>
+  <data name="Invalid_Document_Number" xml:space="preserve">
+    <value>Invalid document number.</value>
+  </data>
+  <data name="Validate" xml:space="preserve">
+    <value>Validate</value>
   </data>
   <data name="Select_At_Least_One_Order" xml:space="preserve">
     <value>Please select at least one order.</value>

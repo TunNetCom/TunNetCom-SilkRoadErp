@@ -168,7 +168,7 @@
                         {
                             <RadzenCheckBox Value="@deliveryNoteItem.HasPartialDelivery"
                                             ValueChanged="@((bool value) => OnPartialDeliveryCheckboxChanged(deliveryNoteItem, value))"
-                                            Disabled="@(string.IsNullOrEmpty(deliveryNoteItem.ProductReference))"
+                                            Disabled="@(IsReadOnly || string.IsNullOrEmpty(deliveryNoteItem.ProductReference))"
                                             Title="@enablePartialDeliveryTitle" />
                         }
                     }

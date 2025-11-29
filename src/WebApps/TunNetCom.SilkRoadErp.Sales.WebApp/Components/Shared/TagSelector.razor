@@ -18,21 +18,27 @@
             {
                 <span class="tag-badge-selector" style="@GetTagStyle(tag.Color)">
                     @tag.Name
-                    <span class="tag-remove-icon" @onclick="@(() => RemoveTag(tag))" @onclick:stopPropagation="true">
-                        <RadzenIcon Icon="close" />
-                    </span>
+                    @if (!IsReadOnly)
+                    {
+                        <span class="tag-remove-icon" @onclick="@(() => RemoveTag(tag))" @onclick:stopPropagation="true">
+                            <RadzenIcon Icon="close" />
+                        </span>
+                    }
                 </span>
             }
         }
-        <div class="tag-input-container">
-            <RadzenTextBox @bind-Value="@newTagName"
-                          Change="@OnTagInputChanged"
-                          @onkeypress="@OnTagInputKeyPress"
-                          @onblur="@OnTagInputBlur"
-                          Placeholder="+ Ajouter un tag..."
-                          class="tag-input"
-                          Variant="Variant.Flat" />
-        </div>
+        @if (!IsReadOnly)
+        {
+            <div class="tag-input-container">
+                <RadzenTextBox @bind-Value="@newTagName"
+                              Change="@OnTagInputChanged"
+                              @onkeypress="@OnTagInputKeyPress"
+                              @onblur="@OnTagInputBlur"
+                              Placeholder="+ Ajouter un tag..."
+                              class="tag-input"
+                              Variant="Variant.Flat" />
+            </div>
+        }
     </div>
     
     @if (AvailableTags.Any() && showSuggestions)
@@ -163,6 +169,7 @@
     [Parameter] public List<TagResponse> SelectedTags { get; set; } = new();
     [Parameter] public EventCallback<List<TagResponse>> SelectedTagsChanged { get; set; }
     [Parameter] public bool SaveOnChange { get; set; } = false; // Si false, les tags sont gérés localement
+    [Parameter] public bool IsReadOnly { get; set; } = false; // Mode lecture seule
 
     private List<TagResponse> AvailableTags { get; set; } = new();
     private List<TagResponse> InitialTags { get; set; } = new(); // Tags initiaux chargés

@@ -16,6 +16,7 @@ public class GetDeliveryNoteByNumQueryHandler(
         var deliveryNoteResponse = await _context.BonDeLivraison
             .Select(LigneBl => new DeliveryNoteResponse
             {
+                Id = LigneBl.Id,
                 DeliveryNoteNumber = LigneBl.Num,
                 Date = LigneBl.Date,
                 CustomerId = LigneBl.ClientId,
@@ -26,6 +27,8 @@ public class GetDeliveryNoteByNumQueryHandler(
                 InvoiceNumber = LigneBl.NumFacture,
                 CreationTime = LigneBl.TempBl,
                 TotalExcludingTax = LigneBl.TotHTva,
+                Statut = (int)LigneBl.Statut,
+                StatutLibelle = LigneBl.Statut == Domain.Entites.DocumentStatus.Brouillon ? "Brouillon" : "Validé",
                 Items = LigneBl.LigneBl.Select(l => new DeliveryNoteDetailResponse
                 {
                     Id = l.IdLi,

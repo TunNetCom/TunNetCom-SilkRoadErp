@@ -141,6 +141,9 @@
   <data name="Edit" xml:space="preserve">
     <value>تعديل</value>
   </data>
+  <data name="View" xml:space="preserve">
+    <value>عرض</value>
+  </data>
   <data name="EditClient" xml:space="preserve">
     <value>تعديل العميل</value>
   </data>
@@ -1085,6 +1088,18 @@
   </data>
   <data name="Select_At_Least_One_DeliveryNote" xml:space="preserve">
     <value>يرجى تحديد إيصال تسليم واحد على الأقل.</value>
+  </data>
+  <data name="Cannot_Validate_New_Document" xml:space="preserve">
+    <value>لا يمكن التحقق من صحة مستند جديد غير محفوظ.</value>
+  </data>
+  <data name="Document_Already_Validated" xml:space="preserve">
+    <value>تم التحقق من صحة هذا المستند بالفعل.</value>
+  </data>
+  <data name="Invalid_Document_Number" xml:space="preserve">
+    <value>رقم المستند غير صالح.</value>
+  </data>
+  <data name="Validate" xml:space="preserve">
+    <value>التحقق</value>
   </data>
   <data name="Select_At_Least_One_Order" xml:space="preserve">
     <value>يرجى تحديد طلب واحد على الأقل.</value>

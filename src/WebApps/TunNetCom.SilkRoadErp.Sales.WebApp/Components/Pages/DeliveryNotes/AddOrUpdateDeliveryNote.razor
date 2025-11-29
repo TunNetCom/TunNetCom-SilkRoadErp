@@ -195,10 +195,26 @@ else
             <RadzenLabel Text="@Localizer["delivery_note_number"]" Component="DeliveryNoteNumber" AriaLabel="@Localizer["delivery_note_number"]" />
             <RadzenTextBox @bind-Value="deliveryNoteNumber" Name="DeliveryNoteNumber" Style="width: 120px;" ReadOnly="true" AriaReadOnly="true" />
             
+            @if (isReadOnly && !string.IsNullOrEmpty(deliveryNoteNumber) && deliveryNoteNumber != "0")
+            {
+                <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="@Localizer["Validated"]" Style="margin-left: 8px;" />
+            }
+            
             @if (!string.IsNullOrEmpty(deliveryNoteNumber) && deliveryNoteNumber != "0")
             {
                 <RadzenButton Icon="history" Text="Historique" Click="@ShowAuditLog" 
                               ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" />
+                
+                @if (!isReadOnly)
+                {
+                    <RadzenButton Icon="check_circle" 
+                                  Text="@Localizer["Validate"]" 
+                                  Click="@ValidateCurrentDeliveryNote" 
+                                  ButtonStyle="ButtonStyle.Success" 
+                                  Size="ButtonSize.Small"
+                                  Title="@Localizer["Validate"]"
+                                  AriaLabel="@Localizer["Validate"]" />
+                }
             }
 
             <RadzenLabel Text="@Localizer["date"]" />
@@ -322,7 +338,8 @@ else
         <TagSelector @ref="tagSelectorRef"
                     DocumentType="BonDeLivraison" 
                     DocumentId="@blNumber"
-                    SaveOnChange="false" />
+                    SaveOnChange="false"
+                    IsReadOnly="@isReadOnly" />
         
         <!-- Print History Button -->
         <RadzenCard Style="margin-top: 1rem;">
@@ -360,7 +377,14 @@ else
     private GetAppParametersResponse getAppParametersResponse;
     private TagSelector? tagSelectorRef;
     private int documentStatut = 0; // 0 = Brouillon, 1 = Validé
-    private bool isReadOnly => documentStatut == 1; // Mode lecture seule si validé
+    private bool isReadOnly = false; // Mode lecture seule si validé
+    private int? deliveryNoteId; // Id du BL pour l'audit log
+    
+    private void UpdateReadOnlyState()
+    {
+        isReadOnly = documentStatut == 1;
+        StateHasChanged();
+    }
     private int? _selectedCustomerId;
     int? selectedCustomerId
     {
@@ -410,6 +434,9 @@ else
             await LoadCustomerInvoices(null);
         }
         isLoading = false;
+        
+        // Forcer la mise à jour après le chargement initial pour s'assurer que isReadOnly est correctement appliqué
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task SaveDeliveryNote()
@@ -659,12 +686,17 @@ else
 
                 if (deliveryNote != null)
                 {
+                    deliveryNoteId = deliveryNote.Id; // Récupérer l'Id pour l'audit log
                     deliveryNoteNumber = deliveryNote.DeliveryNoteNumber.ToString();
                     deliveryNoteDate = deliveryNote.Date;
                     selectedCustomerId = deliveryNote.CustomerId;
                     selectedTechnicianId = deliveryNote.InstallationTechnicianId;
                     selectedInvoiceId = deliveryNote.InvoiceNumber;
                     documentStatut = deliveryNote.Statut; // Récupérer le statut
+                    isReadOnly = documentStatut == 1; // Mettre à jour le mode lecture seule
+                    
+                    logger.LogInformation("Delivery note {Number} loaded with status: {Statut}, isReadOnly: {IsReadOnly}", 
+                        deliveryNoteNumber, documentStatut, isReadOnly);
 
                     if (deliveryNote.Items != null && deliveryNote.Items.Any())
                     {
@@ -679,6 +711,10 @@ else
                     totalVat = deliveryNote.TotalVat;
                     totalTtc = deliveryNote.TotalAmount;
                 }
+                
+                // Forcer la mise à jour de l'interface après avoir récupéré le statut
+                // Appelé après le bloc if pour s'assurer que isReadOnly est bien mis à jour
+                await InvokeAsync(StateHasChanged);
             }
 
             await InvokeAsync(StateHasChanged);
@@ -1351,11 +1387,22 @@ else
 
     private async Task ShowAuditLog()
     {
+        if (!deliveryNoteId.HasValue)
+        {
+            NotificationService.Notify(new NotificationMessage 
+            { 
+                Severity = NotificationSeverity.Warning, 
+                Summary = Localizer["Attention"], 
+                Detail = "Impossible de charger l'historique : ID du document non disponible." 
+            });
+            return;
+        }
+
         await DialogService.OpenAsync<AuditLogModal>("Historique des modifications",
             new Dictionary<string, object> 
             { 
-                { "EntityName", "BonLivraison" }, 
-                { "EntityId", deliveryNoteNumber } 
+                { "EntityName", "BonDeLivraison" }, 
+                { "EntityId", deliveryNoteId.Value.ToString() } 
             },
             new DialogOptions() 
             { 
@@ -1364,6 +1411,76 @@ else
                 Resizable = true, 
                 Draggable = true 
             });
+    }
+
+    private async Task ValidateCurrentDeliveryNote()
+    {
+        if (string.IsNullOrEmpty(deliveryNoteNumber) || deliveryNoteNumber == "0")
+        {
+            NotificationService.Notify(new NotificationMessage 
+            { 
+                Severity = NotificationSeverity.Warning, 
+                Summary = Localizer["Attention"], 
+                Detail = Localizer["Cannot_Validate_New_Document"] 
+            });
+            return;
+        }
+
+        if (isReadOnly)
+        {
+            NotificationService.Notify(new NotificationMessage 
+            { 
+                Severity = NotificationSeverity.Info, 
+                Summary = Localizer["Information"], 
+                Detail = Localizer["Document_Already_Validated"] 
+            });
+            return;
+        }
+
+        var confirmed = await DialogService.Confirm(
+            string.Format(Localizer["Confirmation_Validation_DeliveryNote"], deliveryNoteNumber),
+            Localizer["Confirmation_Validation_Titre"],
+            new ConfirmOptions() { OkButtonText = Localizer["Oui"], CancelButtonText = Localizer["Non"] });
+
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        if (!int.TryParse(deliveryNoteNumber, out var numAsInt))
+        {
+            NotificationService.Notify(new NotificationMessage 
+            { 
+                Severity = NotificationSeverity.Error, 
+                Summary = Localizer["Error"], 
+                Detail = Localizer["Invalid_Document_Number"] 
+            });
+            return;
+        }
+
+        var result = await deliveryNoteApiClient.ValidateDeliveryNotesAsync(new List<int> { numAsInt }, default);
+
+        if (result.IsSuccess)
+        {
+            NotificationService.Notify(new NotificationMessage 
+            { 
+                Severity = NotificationSeverity.Success, 
+                Summary = Localizer["Success"], 
+                Detail = Localizer["Validation_Success_DeliveryNote"] 
+            });
+            
+            // Recharger le document pour mettre à jour le statut
+            await FetchDeliveryNote();
+        }
+        else
+        {
+            NotificationService.Notify(new NotificationMessage 
+            { 
+                Severity = NotificationSeverity.Error, 
+                Summary = Localizer["Error"], 
+                Detail = result.Errors.FirstOrDefault()?.Message ?? Localizer["Unexpected_Error"] 
+            });
+        }
     }
 
     void OnDrag(System.Drawing.Point point)
