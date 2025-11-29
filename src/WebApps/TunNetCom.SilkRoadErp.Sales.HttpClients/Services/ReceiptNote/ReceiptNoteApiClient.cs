@@ -4,6 +4,7 @@ using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Request;
 using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Response;
 using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNote.Responses;
 using TunNetCom.SilkRoadErp.Sales.Contracts.RecieptNotes;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services;
 
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote;
 
@@ -312,5 +313,24 @@ class ReceiptNoteApiClient : IReceiptNoteApiClient
             _logger.LogError(ex, "Error updating receipt note with lines");
             return Result.Fail($"failed_to_update_receipt_note_with_lines: {ex.Message}");
         }
+    }
+
+    public async Task<Result> ValidateReceiptNotesAsync(List<int> ids, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Validating receipt notes via API /receipt-notes/validate");
+        var response = await _httpClient.PostAsJsonAsync("/receipt-notes/validate", ids, cancellationToken: cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.NoContent)
+        {
+            return Result.Ok();
+        }
+
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            var badRequest = await response.ReadJsonAsync<BadRequestResponse>();
+            return Result.Fail(badRequest.Detail ?? badRequest.Title ?? "Unknown error");
+        }
+
+        throw new Exception($"Receipt notes validation: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
     }
 }

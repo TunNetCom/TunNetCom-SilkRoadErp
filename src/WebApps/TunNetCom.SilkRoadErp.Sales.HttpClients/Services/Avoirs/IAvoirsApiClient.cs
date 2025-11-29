@@ -25,11 +25,14 @@ public interface IAvoirsApiClient
         string? searchKeyword,
         DateTime? startDate,
         DateTime? endDate,
-        CancellationToken cancellationToken);
+        CancellationToken cancellationToken,
+        int? status = null);
 
     Task<Result> UpdateAvoirAsync(
         int num,
         UpdateAvoirRequest request,
         CancellationToken cancellationToken);
+
+    Task<Result> ValidateAvoirsAsync(List<int> ids, CancellationToken cancellationToken);
 }
 

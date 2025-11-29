@@ -20,4 +20,6 @@ public interface IProviderInvoiceApiClient
     Task<OneOf<int, BadRequestResponse>> CreateProviderInvoice(
         CreateProviderInvoiceRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<Result> ValidateProviderInvoicesAsync(List<int> ids, CancellationToken cancellationToken);
 }

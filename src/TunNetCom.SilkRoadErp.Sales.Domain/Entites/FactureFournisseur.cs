@@ -23,6 +23,17 @@ public partial class FactureFournisseur : IAccountingYearEntity
 
     public int AccountingYearId { get; set; }
 
+    public DocumentStatus Statut { get; private set; }
+
+    public void Valider()
+    {
+        if (Statut != DocumentStatus.Brouillon)
+        {
+            throw new InvalidOperationException("Seul un document en brouillon peut être validé.");
+        }
+        Statut = DocumentStatus.Valide;
+    }
+
     public virtual AvoirFinancierFournisseurs? AvoirFinancierFournisseurs { get; set; }
 
     public virtual ICollection<BonDeReception> BonDeReception { get; set; } = new List<BonDeReception>();

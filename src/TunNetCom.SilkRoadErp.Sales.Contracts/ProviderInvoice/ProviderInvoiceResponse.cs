@@ -25,4 +25,10 @@ public class ProviderInvoiceResponse
 
     [JsonPropertyName("providerInvoiceNumber")]
     public long ProviderInvoiceNumber { get; set; }
+
+    [JsonPropertyName("statut")]
+    public int Statut { get; set; }
+
+    [JsonPropertyName("statutLibelle")]
+    public string StatutLibelle { get; set; } = string.Empty;
 }

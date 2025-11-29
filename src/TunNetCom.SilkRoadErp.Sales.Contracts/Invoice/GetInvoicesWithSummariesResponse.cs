@@ -31,5 +31,11 @@ public class InvoiceBaseInfo
 
     [JsonPropertyName("vatAmount")]
     public decimal VatAmount { get; set; }
+
+    [JsonPropertyName("statut")]
+    public int Statut { get; set; }
+
+    [JsonPropertyName("statutLibelle")]
+    public string StatutLibelle { get; set; } = string.Empty;
 }
 

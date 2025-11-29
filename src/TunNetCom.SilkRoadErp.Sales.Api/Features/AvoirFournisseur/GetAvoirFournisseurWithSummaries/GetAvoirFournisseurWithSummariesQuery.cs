@@ -11,6 +11,7 @@ public record GetAvoirFournisseurWithSummariesQuery(
     string? SortProperty,
     string? SearchKeyword,
     DateTime? StartDate,
-    DateTime? EndDate
+    DateTime? EndDate,
+    int? Status
 ) : IRequest<GetAvoirFournisseurWithSummariesResponse>;
 

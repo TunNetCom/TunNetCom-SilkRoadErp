@@ -28,8 +28,18 @@ public partial class BonDeLivraison : IAccountingYearEntity
             NumFacture = numFacture,
             ClientId = clientId,
             AccountingYearId = accountingYearId,
-            InstallationTechnicianId = installationTechnicianId
+            InstallationTechnicianId = installationTechnicianId,
+            Statut = DocumentStatus.Brouillon
         };
+    }
+
+    public void Valider()
+    {
+        if (Statut != DocumentStatus.Brouillon)
+        {
+            throw new InvalidOperationException("Seul un document en brouillon peut être validé.");
+        }
+        Statut = DocumentStatus.Valide;
     }
 
     public void UpdateBonDeLivraison(
@@ -75,6 +85,8 @@ public partial class BonDeLivraison : IAccountingYearEntity
     public int AccountingYearId { get; set; }
 
     public int? InstallationTechnicianId { get; set; }
+
+    public DocumentStatus Statut { get; private set; }
 
     public virtual Client? Client { get; set; }
 

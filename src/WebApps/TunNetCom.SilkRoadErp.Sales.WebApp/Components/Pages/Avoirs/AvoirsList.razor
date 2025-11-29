@@ -19,6 +19,9 @@
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
 @inject NavigationManager NavigationManager
 @inject ITagsApiClient TagsService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+@using TunNetCom.SilkRoadErp.Sales.Domain.Entites
 
 <div class="invoices-list-container">
     <div class="search-header">
@@ -51,12 +54,32 @@
                           Click="@SearchAvoirs"
                           class="action-button" />
         </div>
+        <div class="search-field">
+            <label>Statut</label>
+            <RadzenDropDown @bind-Value="@searchCriteria.Status"
+                            Data="@(Enum.GetValues(typeof(DocumentStatus)).Cast<DocumentStatus>().Select(e => new { Value = (int?)e, Text = e.ToString() }).Prepend(new { Value = (int?)null, Text = "Tous" }))"
+                            TextProperty="Text"
+                            ValueProperty="Value"
+                            class="w-100 search-input" />
+        </div>
+        <div class="search-button" style="display: flex; gap: 8px;">
+            <RadzenButton Icon="check_circle"
+                          ButtonStyle="ButtonStyle.Success"
+                          Click="@ValidateSelectedAvoirs"
+                          Disabled="@(selectedAvoirs == null || !selectedAvoirs.Any())"
+                          Title="Valider la sélection"
+                          AriaLabel="Valider la sélection"
+                          class="action-button" />
+        </div>
     </div>
     <div class="list-card">
         <h2>Avoirs</h2>
-        <RadzenDataGrid Data="@avoirsList"
+        <RadzenDataGrid @ref="avoirsGrid"
+                        Data="@avoirsList"
                         LoadData="@Callback"
                         TItem="AvoirBaseInfo"
+                        SelectionMode="DataGridSelectionMode.Multiple"
+                        @bind-Value="selectedAvoirs"
                         AllowSorting="true"
                         AllowFiltering="true"
                         AllowPaging="true"
@@ -68,6 +91,23 @@
                 <p style="font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
             </EmptyTemplate>
             <Columns>
+                <RadzenDataGridColumn TItem="AvoirBaseInfo" Width="40px" Sortable="false" Filterable="false">
+                    <HeaderTemplate>
+                        <RadzenCheckBox TriState="false" TValue="bool" Value="@(avoirsList != null && avoirsList.Any() && selectedAvoirs != null && avoirsList.All(i => selectedAvoirs.Contains(i)))"
+                                        Change="@(args => { if(args == true) { selectedAvoirs = avoirsList.ToList(); } else { selectedAvoirs = new List<AvoirBaseInfo>(); } })" />
+                    </HeaderTemplate>
+                    <Template Context="data">
+                        <RadzenCheckBox TriState="false" Value="@(selectedAvoirs != null && selectedAvoirs.Contains(data))" 
+                                        TValue="bool" Change="@(args => { if(selectedAvoirs == null) selectedAvoirs = new List<AvoirBaseInfo>(); if(args) { if(!selectedAvoirs.Contains(data)) selectedAvoirs.Add(data); } else { selectedAvoirs.Remove(data); } })" />
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="AvoirBaseInfo" Property="Statut" Title="Statut" Width="100px">
+                    <Template Context="item">
+                        <span class="status-tag" style="@GetStatusStyle(item.Statut)">
+                            @(item.Statut == 1 ? "Validé" : "Brouillon")
+                        </span>
+                    </Template>
+                </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="AvoirBaseInfo"
                                       Property="@nameof(AvoirBaseInfo.Num)"
                                       Title="Numéro"
@@ -127,8 +167,18 @@
                                       Variant="Variant.Flat"
                                       Size="ButtonSize.Small"
                                       Click="@(() => EditAvoir(item.Num))"
+                                      Disabled="@(item.Statut == 1)"
                                       Title="@Localizer["Edit"]"
-                                      AriaLabel="@Localizer["Edit"]" />
+                                      AriaLabel="@Localizer["Edit"]"
+                                      Style="margin-right: 4px;" />
+                        <RadzenButton Icon="check_circle"
+                                      ButtonStyle="ButtonStyle.Success"
+                                      Variant="Variant.Flat"
+                                      Size="ButtonSize.Small"
+                                      Click="@(() => ValidateAvoir(item))"
+                                      Disabled="@(item.Statut == 1)"
+                                      Title="Valider"
+                                      AriaLabel="Valider" />
                     </Template>
                 </RadzenDataGridColumn>
             </Columns>
@@ -153,6 +203,16 @@
 </div>
 
 <style>
+    .status-tag {
+        font-size: 0.75rem;
+        padding: 0.125rem 0.5rem;
+        display: inline-flex;
+        align-items: center;
+        border-radius: 3px;
+        line-height: 1.5;
+        font-weight: 500;
+    }
+
     .invoices-list-container {
         padding: 0;
         min-height: 100%;
@@ -316,10 +376,24 @@
             font-size: 12px;
         }
     }
+
+    /* Style pour le bouton "Oui" dans les modals de confirmation */
+    ::deep .rz-dialog-footer button:first-child {
+        background-color: #4CAF50 !important;
+        color: white !important;
+        border-color: #4CAF50 !important;
+    }
+
+    ::deep .rz-dialog-footer button:first-child:hover {
+        background-color: #45a049 !important;
+        border-color: #45a049 !important;
+    }
 </style>
 
 @code {
+    private RadzenDataGrid<AvoirBaseInfo> avoirsGrid = default!;
     private List<AvoirBaseInfo> avoirsList = new();
+    private IList<AvoirBaseInfo> selectedAvoirs = new List<AvoirBaseInfo>();
     private int totalCount = 0;
     private decimal totalNetAmount = 0;
     private decimal totalVatAmount = 0;
@@ -381,6 +455,79 @@
         await Callback(new LoadDataArgs { Skip = 0, Top = pageSize });
     }
 
+    private async Task ValidateSelectedAvoirs()
+    {
+        if (selectedAvoirs == null || !selectedAvoirs.Any())
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Warning, Summary = Localizer["Attention"], Detail = Localizer["Select_At_Least_One_Avoir"] });
+            return;
+        }
+
+        var count = selectedAvoirs.Count;
+        var confirmed = await DialogService.Confirm(
+            string.Format(Localizer["Confirmation_Validation_Avoirs"], count, count > 1 ? "s" : ""),
+            Localizer["Confirmation_Validation_Titre"],
+            new ConfirmOptions() { OkButtonText = Localizer["Oui"], CancelButtonText = Localizer["Non"] });
+
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        var ids = selectedAvoirs.Select(d => d.Num).ToList();
+        var result = await AvoirsService.ValidateAvoirsAsync(ids, default);
+        
+        if (result.IsSuccess)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = Localizer["Success"], Detail = Localizer["Validation_Success_Avoirs"] });
+            selectedAvoirs.Clear();
+            if (avoirsGrid != null)
+            {
+                await avoirsGrid.Reload();
+            }
+            else
+            {
+                await SearchAvoirs();
+            }
+        }
+        else
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = Localizer["Error"], Detail = result.Errors.FirstOrDefault()?.Message ?? Localizer["Unexpected_Error"] });
+        }
+    }
+
+    private async Task ValidateAvoir(AvoirBaseInfo item)
+    {
+        var confirmed = await DialogService.Confirm(
+            string.Format(Localizer["Confirmation_Validation_Avoir"], item.Num),
+            Localizer["Confirmation_Validation_Titre"],
+            new ConfirmOptions() { OkButtonText = Localizer["Oui"], CancelButtonText = Localizer["Non"] });
+
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        var result = await AvoirsService.ValidateAvoirsAsync(new List<int> { item.Num }, default);
+        
+        if (result.IsSuccess)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = Localizer["Success"], Detail = Localizer["Validation_Success_Avoir"] });
+            if (avoirsGrid != null)
+            {
+                await avoirsGrid.Reload();
+            }
+            else
+            {
+                await SearchAvoirs();
+            }
+        }
+        else
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = Localizer["Error"], Detail = result.Errors.FirstOrDefault()?.Message ?? Localizer["Unexpected_Error"] });
+        }
+    }
+
     private async Task Callback(LoadDataArgs args)
     {
         _logger.LogInformation("AvoirsList.Callback called with Skip: {Skip}, Top: {Top}", args.Skip, args.Top);
@@ -422,7 +569,8 @@
                 queryParams.SearchKeyword,
                 queryParams.StartDate,
                 queryParams.EndDate,
-                default);
+                default,
+                status: searchCriteria.Status);
 
             avoirsList = response.Avoirs.Items.ToList();
             totalCount = response.Avoirs.TotalCount;
@@ -449,11 +597,19 @@
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public int? SelectedClientId { get; set; }
+        public int? Status { get; set; }
     }
 
     private void EditAvoir(int num)
     {
         NavigationManager.NavigateTo($"/AddOrUpdateAvoir/{num}");
+    }
+
+    private string GetStatusStyle(int statut)
+    {
+        return statut == 1 
+            ? "background-color: #388e3c; color: #fff;" 
+            : "background-color: #e1e1e1; color: #333;";
     }
 }
 

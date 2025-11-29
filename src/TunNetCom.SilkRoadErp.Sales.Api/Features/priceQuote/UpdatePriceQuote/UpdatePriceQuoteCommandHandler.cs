@@ -28,6 +28,11 @@ public class UpdatePriceQuoteCommandHandler : IRequestHandler<UpdatePriceQuoteCo
             return Result.Fail(EntityNotFound.Error());
         }
 
+        if (quotationToUpdate.Statut == DocumentStatus.Valide)
+        {
+            return Result.Fail("Le document est validé et ne peut plus être modifié.");
+        }
+
         // Mettre à jour les propriétés
         quotationToUpdate.UpdateDevis(
             num: updatePriceQuoteCommand.Num,

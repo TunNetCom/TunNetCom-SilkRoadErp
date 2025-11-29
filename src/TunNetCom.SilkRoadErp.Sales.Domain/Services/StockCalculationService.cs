@@ -40,7 +40,7 @@ public class StockCalculationService : IStockCalculationService
         var stockInitial = await _context.LigneInventaire
             .IgnoreQueryFilters()
             .Include(l => l.Inventaire)
-            .Where(l => l.RefProduit == refProduit && l.Inventaire.AccountingYearId == accountingYearId)
+            .Where(l => l.RefProduit == refProduit && l.Inventaire.AccountingYearId == accountingYearId && l.Inventaire.Statut == InventaireStatut.Valide)
             .SumAsync(l => (int?)l.QuantiteReelle, cancellationToken) ?? 0;
 
         // Si aucun inventaire, stock initial = 0
@@ -93,7 +93,7 @@ public class StockCalculationService : IStockCalculationService
         var stocksInitiaux = await _context.LigneInventaire
             .IgnoreQueryFilters()
             .Include(l => l.Inventaire)
-            .Where(l => refProduits.Contains(l.RefProduit) && l.Inventaire.AccountingYearId == accountingYearId)
+            .Where(l => refProduits.Contains(l.RefProduit) && l.Inventaire.AccountingYearId == accountingYearId && l.Inventaire.Statut == InventaireStatut.Valide)
             .GroupBy(l => l.RefProduit)
             .Select(g => new { RefProduit = g.Key, StockInitial = g.Sum(l => l.QuantiteReelle) })
             .ToDictionaryAsync(x => x.RefProduit, x => x.StockInitial, cancellationToken);

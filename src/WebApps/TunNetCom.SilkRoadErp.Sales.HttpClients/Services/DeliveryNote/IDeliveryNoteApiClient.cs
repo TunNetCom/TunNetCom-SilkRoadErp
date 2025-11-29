@@ -61,4 +61,8 @@ public interface IDeliveryNoteApiClient
         int num,
         CreateDeliveryNoteRequest request,
         CancellationToken cancellationToken);
+
+    Task<Result> ValidateDeliveryNotesAsync(
+        List<int> ids,
+        CancellationToken cancellationToken);
 }

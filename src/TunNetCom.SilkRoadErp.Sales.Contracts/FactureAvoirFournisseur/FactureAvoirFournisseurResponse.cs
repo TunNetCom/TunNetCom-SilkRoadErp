@@ -16,5 +16,11 @@ public class FactureAvoirFournisseurResponse
 
     [JsonPropertyName("numFactureFournisseur")]
     public int? NumFactureFournisseur { get; set; }
+
+    [JsonPropertyName("statut")]
+    public int Statut { get; set; }
+
+    [JsonPropertyName("statutLibelle")]
+    public string StatutLibelle { get; set; } = string.Empty;
 }
 

@@ -17,6 +17,17 @@ public partial class Facture : IAccountingYearEntity
 
     public int AccountingYearId { get; set; }
 
+    public DocumentStatus Statut { get; private set; }
+
+    public void Valider()
+    {
+        if (Statut != DocumentStatus.Brouillon)
+        {
+            throw new InvalidOperationException("Seul un document en brouillon peut être validé.");
+        }
+        Statut = DocumentStatus.Valide;
+    }
+
     public virtual ICollection<BonDeLivraison> BonDeLivraison { get; set; } = new List<BonDeLivraison>();
 
     public virtual Client IdClientNavigation { get; set; } = null!;

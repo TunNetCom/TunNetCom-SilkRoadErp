@@ -28,7 +28,8 @@ public class GetAvoirsWithSummariesQueryHandler(
                               ClientName = c != null ? c.Nom : null,
                               TotalExcludingTaxAmount = a.LigneAvoirs.Sum(l => l.TotHt),
                               TotalVATAmount = a.LigneAvoirs.Sum(l => l.TotTtc - l.TotHt),
-                              TotalIncludingTaxAmount = a.LigneAvoirs.Sum(l => l.TotTtc)
+                              TotalIncludingTaxAmount = a.LigneAvoirs.Sum(l => l.TotTtc),
+                              Statut = (int)a.Statut
                           })
                           .AsNoTracking()
                           .AsQueryable();
@@ -36,6 +37,13 @@ public class GetAvoirsWithSummariesQueryHandler(
         if (request.ClientId.HasValue)
         {
             avoirsQuery = avoirsQuery.Where(a => a.ClientId == request.ClientId.Value);
+        }
+
+        // Apply Status filter
+        if (request.Status.HasValue)
+        {
+            _logger.LogInformation("Applying status filter: {status}", request.Status);
+            avoirsQuery = avoirsQuery.Where(a => a.Statut == request.Status.Value);
         }
 
         // Apply Date Range filters

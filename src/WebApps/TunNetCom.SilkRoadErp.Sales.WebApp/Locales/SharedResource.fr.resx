@@ -1020,4 +1020,136 @@
   <data name="Bons_Livraison" xml:space="preserve">
     <value>Bons de livraison</value>
   </data>
+  <data name="Confirmation_Validation_Titre" xml:space="preserve">
+    <value>Confirmer la validation</value>
+  </data>
+  <data name="Confirmation_Validation_DeliveryNote" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider le bon de livraison n°{0} ?</value>
+  </data>
+  <data name="Confirmation_Validation_DeliveryNotes" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider {0} bon{1} de livraison ?</value>
+  </data>
+  <data name="Confirmation_Validation_Order" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider la commande n°{0} ?</value>
+  </data>
+  <data name="Confirmation_Validation_Orders" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider {0} commande{1} ?</value>
+  </data>
+  <data name="Confirmation_Validation_Invoice" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider la facture n°{0} ?</value>
+  </data>
+  <data name="Confirmation_Validation_Invoices" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider {0} facture{1} ?</value>
+  </data>
+  <data name="Confirmation_Validation_Quotation" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider le devis n°{0} ?</value>
+  </data>
+  <data name="Confirmation_Validation_Quotations" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider {0} devis ?</value>
+  </data>
+  <data name="Confirmation_Validation_ReceiptNote" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider le bon de réception n°{0} ?</value>
+  </data>
+  <data name="Confirmation_Validation_ReceiptNotes" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider {0} bon{1} de réception ?</value>
+  </data>
+  <data name="Confirmation_Validation_ProviderInvoice" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider la facture fournisseur n°{0} ?</value>
+  </data>
+  <data name="Confirmation_Validation_ProviderInvoices" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider {0} facture{1} fournisseur ?</value>
+  </data>
+  <data name="Confirmation_Validation_Avoir" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider l'avoir n°{0} ?</value>
+  </data>
+  <data name="Confirmation_Validation_Avoirs" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider {0} avoir{1} ?</value>
+  </data>
+  <data name="Confirmation_Validation_AvoirFournisseur" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider l'avoir fournisseur n°{0} ?</value>
+  </data>
+  <data name="Confirmation_Validation_AvoirsFournisseur" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider {0} avoir{1} fournisseur ?</value>
+  </data>
+  <data name="Validation_Success_DeliveryNote" xml:space="preserve">
+    <value>Bon de livraison validé avec succès.</value>
+  </data>
+  <data name="Validation_Success_DeliveryNotes" xml:space="preserve">
+    <value>Bons de livraison validés avec succès.</value>
+  </data>
+  <data name="Validation_Success_Order" xml:space="preserve">
+    <value>Commande validée avec succès.</value>
+  </data>
+  <data name="Validation_Success_Orders" xml:space="preserve">
+    <value>Commandes validées avec succès.</value>
+  </data>
+  <data name="Validation_Success_Invoice" xml:space="preserve">
+    <value>Facture validée avec succès.</value>
+  </data>
+  <data name="Validation_Success_Invoices" xml:space="preserve">
+    <value>Factures validées avec succès.</value>
+  </data>
+  <data name="Validation_Success_Quotation" xml:space="preserve">
+    <value>Devis validé avec succès.</value>
+  </data>
+  <data name="Validation_Success_Quotations" xml:space="preserve">
+    <value>Devis validés avec succès.</value>
+  </data>
+  <data name="Validation_Success_ReceiptNote" xml:space="preserve">
+    <value>Bon de réception validé avec succès.</value>
+  </data>
+  <data name="Validation_Success_ReceiptNotes" xml:space="preserve">
+    <value>Bons de réception validés avec succès.</value>
+  </data>
+  <data name="Validation_Success_ProviderInvoice" xml:space="preserve">
+    <value>Facture fournisseur validée avec succès.</value>
+  </data>
+  <data name="Validation_Success_ProviderInvoices" xml:space="preserve">
+    <value>Factures fournisseur validées avec succès.</value>
+  </data>
+  <data name="Validation_Success_Avoir" xml:space="preserve">
+    <value>Avoir validé avec succès.</value>
+  </data>
+  <data name="Validation_Success_Avoirs" xml:space="preserve">
+    <value>Avoirs validés avec succès.</value>
+  </data>
+  <data name="Validation_Success_AvoirFournisseur" xml:space="preserve">
+    <value>Avoir fournisseur validé avec succès.</value>
+  </data>
+  <data name="Validation_Success_AvoirsFournisseur" xml:space="preserve">
+    <value>Avoirs fournisseur validés avec succès.</value>
+  </data>
+  <data name="Select_At_Least_One_DeliveryNote" xml:space="preserve">
+    <value>Veuillez sélectionner au moins un bon de livraison.</value>
+  </data>
+  <data name="Select_At_Least_One_Order" xml:space="preserve">
+    <value>Veuillez sélectionner au moins une commande.</value>
+  </data>
+  <data name="Select_At_Least_One_Invoice" xml:space="preserve">
+    <value>Veuillez sélectionner au moins une facture.</value>
+  </data>
+  <data name="Select_At_Least_One_Quotation" xml:space="preserve">
+    <value>Veuillez sélectionner au moins un devis.</value>
+  </data>
+  <data name="Select_At_Least_One_ReceiptNote" xml:space="preserve">
+    <value>Veuillez sélectionner au moins un bon de réception.</value>
+  </data>
+  <data name="Select_At_Least_One_ProviderInvoice" xml:space="preserve">
+    <value>Veuillez sélectionner au moins une facture fournisseur.</value>
+  </data>
+  <data name="Select_At_Least_One_Avoir" xml:space="preserve">
+    <value>Veuillez sélectionner au moins un avoir.</value>
+  </data>
+  <data name="Select_At_Least_One_AvoirFournisseur" xml:space="preserve">
+    <value>Veuillez sélectionner au moins un avoir fournisseur.</value>
+  </data>
+  <data name="Success" xml:space="preserve">
+    <value>Succès</value>
+  </data>
+  <data name="Error" xml:space="preserve">
+    <value>Erreur</value>
+  </data>
+  <data name="Unexpected_Error" xml:space="preserve">
+    <value>Une erreur est survenue.</value>
+  </data>
 </root>

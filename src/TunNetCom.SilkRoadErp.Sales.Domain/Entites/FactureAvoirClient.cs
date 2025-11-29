@@ -23,8 +23,18 @@ public partial class FactureAvoirClient : IAccountingYearEntity
             IdClient = idClient,
             Date = date,
             NumFacture = numFacture,
-            AccountingYearId = accountingYearId
+            AccountingYearId = accountingYearId,
+            Statut = DocumentStatus.Brouillon
         };
+    }
+
+    public void Valider()
+    {
+        if (Statut != DocumentStatus.Brouillon)
+        {
+            throw new InvalidOperationException("Seul un document en brouillon peut être validé.");
+        }
+        Statut = DocumentStatus.Valide;
     }
 
     public void UpdateFactureAvoirClient(
@@ -54,6 +64,8 @@ public partial class FactureAvoirClient : IAccountingYearEntity
     public int? NumFacture { get; private set; }
 
     public int AccountingYearId { get; private set; }
+
+    public DocumentStatus Statut { get; private set; }
 
     public virtual Client IdClientNavigation { get; private set; } = null!;
 

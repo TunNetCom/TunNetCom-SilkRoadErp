@@ -24,5 +24,11 @@ namespace TunNetCom.SilkRoadErp.Sales.Contracts.Quotations
 
         [JsonPropertyName("TotTtc")]
         public decimal TotTtc { get; set; }
+
+        [JsonPropertyName("statut")]
+        public int Statut { get; set; }
+
+        [JsonPropertyName("statutLibelle")]
+        public string StatutLibelle { get; set; } = string.Empty;
     }
 }

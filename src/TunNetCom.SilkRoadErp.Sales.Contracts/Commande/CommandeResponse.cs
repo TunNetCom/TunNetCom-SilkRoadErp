@@ -19,6 +19,9 @@ public class CommandeResponse
     [JsonPropertyName("totalVATAmount")]
     public decimal TotalVATAmount { get; set; }
 
-    [JsonPropertyName("Statut")]
-    public string Statut { get; set; }
+    [JsonPropertyName("statut")]
+    public int Statut { get; set; }
+
+    [JsonPropertyName("statutLibelle")]
+    public string StatutLibelle { get; set; } = string.Empty;
 }

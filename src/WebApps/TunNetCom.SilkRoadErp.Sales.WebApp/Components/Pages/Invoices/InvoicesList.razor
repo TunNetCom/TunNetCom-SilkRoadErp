@@ -20,11 +20,13 @@
 @using Microsoft.JSInterop
 @using Microsoft.AspNetCore.Components
 @using Microsoft.Extensions.Configuration
+@using TunNetCom.SilkRoadErp.Sales.Domain.Entites
 @inject ITagsApiClient TagsService
 @inject IJSRuntime JS
 @inject HttpClient HttpClient
 @inject IConfiguration Configuration
 @inject NotificationService NotificationService
+@inject DialogService DialogService
 
 <div class="invoices-list-container">
     <div class="search-header">
@@ -52,11 +54,26 @@
         </div>
         <TagSearchFilter SelectedTagIds="@searchCriteria.SelectedTagIds"
                        SelectedTagIdsChanged="@OnTagIdsChanged" />
+        <div class="search-field">
+            <label>Statut</label>
+            <RadzenDropDown @bind-Value="@searchCriteria.Status"
+                            Data="@(Enum.GetValues(typeof(DocumentStatus)).Cast<DocumentStatus>().Select(e => new { Value = (int?)e, Text = e.ToString() }).Prepend(new { Value = (int?)null, Text = "Tous" }))"
+                            TextProperty="Text"
+                            ValueProperty="Value"
+                            class="w-100 search-input" />
+        </div>
         <div class="search-button">
             <RadzenButton Text="@Localizer["search"]"
                           Icon="search"
                           ButtonStyle="ButtonStyle.Primary"
                           Click="@SearchInvoices"
+                          class="action-button" />
+            <RadzenButton Icon="check_circle"
+                          ButtonStyle="ButtonStyle.Success"
+                          Click="@ValidateSelectedInvoices"
+                          Disabled="@(selectedInvoices == null || !selectedInvoices.Any())"
+                          Title="Valider la sélection"
+                          AriaLabel="Valider la sélection"
                           class="action-button" />
             <RadzenButton Text="Exporter vers Sage ERP"
                           Icon="file_download"
@@ -68,9 +85,12 @@
     </div>
     <div class="list-card">
         <h2>Factures</h2>
-        <RadzenDataGrid Data="@invoicesList"
+        <RadzenDataGrid @ref="invoicesGrid"
+                        Data="@invoicesList"
                         LoadData="@Callback"
                         TItem="InvoiceBaseInfo"
+                        SelectionMode="DataGridSelectionMode.Multiple"
+                        @bind-Value="selectedInvoices"
                         AllowSorting="true"
                         AllowFiltering="true"
                         AllowPaging="true"
@@ -82,6 +102,23 @@
                 <p style="font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
             </EmptyTemplate>
             <Columns>
+                <RadzenDataGridColumn TItem="InvoiceBaseInfo" Width="40px" Sortable="false" Filterable="false">
+                    <HeaderTemplate>
+                        <RadzenCheckBox TriState="false" TValue="bool" Value="@(invoicesList != null && invoicesList.Any() && selectedInvoices != null && invoicesList.All(i => selectedInvoices.Contains(i)))"
+                                        Change="@(args => selectedInvoices = args ? invoicesList.ToList() : new List<InvoiceBaseInfo>())" />
+                    </HeaderTemplate>
+                    <Template Context="data">
+                        <RadzenCheckBox TriState="false" Value="@(selectedInvoices != null && selectedInvoices.Contains(data))" 
+                                        TValue="bool" Change="@(args => { if(selectedInvoices == null) selectedInvoices = new List<InvoiceBaseInfo>(); if(args) { if(!selectedInvoices.Contains(data)) selectedInvoices.Add(data); } else { selectedInvoices.Remove(data); } })" />
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="InvoiceBaseInfo" Property="Statut" Title="Statut" Width="100px">
+                    <Template Context="item">
+                        <span class="status-tag" style="@GetStatusStyle(item.Statut)">
+                            @(item.Statut == 1 ? "Validé" : "Brouillon")
+                        </span>
+                    </Template>
+                </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="InvoiceBaseInfo"
                                       Property="@nameof(InvoiceBaseInfo.Number)"
                                       Title="Numéro"
@@ -122,6 +159,18 @@
                                     SaveOnChange="true" />
                     </Template>
                 </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="InvoiceBaseInfo" Title="@Localizer["actions_label"]" Width="100px" Sortable="false" Filterable="false">
+                    <Template Context="item">
+                        <RadzenButton Icon="check_circle"
+                                      ButtonStyle="ButtonStyle.Success"
+                                      Variant="Variant.Flat"
+                                      Size="ButtonSize.Small"
+                                      Click="@(() => ValidateInvoice(item))"
+                                      Disabled="@(item.Statut == 1)"
+                                      Title="Valider"
+                                      AriaLabel="Valider" />
+                    </Template>
+                </RadzenDataGridColumn>
             </Columns>
         </RadzenDataGrid>
         <RadzenCard class="summary-card" Variant="Variant.Outlined">
@@ -141,6 +190,16 @@
 </div>
 
 <style>
+    .status-tag {
+        font-size: 0.75rem;
+        padding: 0.125rem 0.5rem;
+        display: inline-flex;
+        align-items: center;
+        border-radius: 3px;
+        line-height: 1.5;
+        font-weight: 500;
+    }
+
     .invoices-list-container {
         padding: 0;
         min-height: 100%;
@@ -305,10 +364,24 @@
             font-size: 12px;
         }
     }
+
+    /* Style pour le bouton "Oui" dans les modals de confirmation */
+    ::deep .rz-dialog-footer button:first-child {
+        background-color: #4CAF50 !important;
+        color: white !important;
+        border-color: #4CAF50 !important;
+    }
+
+    ::deep .rz-dialog-footer button:first-child:hover {
+        background-color: #45a049 !important;
+        border-color: #45a049 !important;
+    }
 </style>
 
 @code {
+    private RadzenDataGrid<InvoiceBaseInfo> invoicesGrid = default!;
     private List<InvoiceBaseInfo> invoicesList = new();
+    private IList<InvoiceBaseInfo> selectedInvoices = new List<InvoiceBaseInfo>();
     private int totalCount = 0;
     private decimal totalNetAmount = 0;
     private decimal totalVatAmount = 0;
@@ -325,8 +398,8 @@
         // Set default period to CurrentMonth and calculate dates
         searchCriteria.PeriodFilter = "CurrentMonth";
         var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
-            searchCriteria.PeriodFilter,
-            searchCriteria.StartDate,
+            searchCriteria.PeriodFilter, 
+            searchCriteria.StartDate, 
             searchCriteria.EndDate);
         searchCriteria.StartDate = startDate;
         searchCriteria.EndDate = endDate;
@@ -369,6 +442,79 @@
         await Callback(new LoadDataArgs { Skip = 0, Top = pageSize });
     }
 
+    private async Task ValidateSelectedInvoices()
+    {
+        if (selectedInvoices == null || !selectedInvoices.Any())
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Warning, Summary = Localizer["Attention"], Detail = Localizer["Select_At_Least_One_Invoice"] });
+            return;
+        }
+
+        var count = selectedInvoices.Count;
+        var confirmed = await DialogService.Confirm(
+            string.Format(Localizer["Confirmation_Validation_Invoices"], count, count > 1 ? "s" : ""),
+            Localizer["Confirmation_Validation_Titre"],
+            new ConfirmOptions() { OkButtonText = Localizer["Oui"], CancelButtonText = Localizer["Non"] });
+
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        var ids = selectedInvoices.Select(d => d.Number).ToList();
+        var result = await InvoicesService.ValidateInvoicesAsync(ids, default);
+        
+        if (result.IsSuccess)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = Localizer["Success"], Detail = Localizer["Validation_Success_Invoices"] });
+            selectedInvoices.Clear();
+            if (invoicesGrid != null)
+            {
+                await invoicesGrid.Reload();
+            }
+            else
+            {
+                await SearchInvoices();
+            }
+        }
+        else
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = Localizer["Error"], Detail = result.Errors.FirstOrDefault()?.Message ?? Localizer["Unexpected_Error"] });
+        }
+    }
+
+    private async Task ValidateInvoice(InvoiceBaseInfo item)
+    {
+        var confirmed = await DialogService.Confirm(
+            string.Format(Localizer["Confirmation_Validation_Invoice"], item.Number),
+            Localizer["Confirmation_Validation_Titre"],
+            new ConfirmOptions() { OkButtonText = Localizer["Oui"], CancelButtonText = Localizer["Non"] });
+
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        var result = await InvoicesService.ValidateInvoicesAsync(new List<int> { item.Number }, default);
+        
+        if (result.IsSuccess)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = Localizer["Success"], Detail = Localizer["Validation_Success_Invoice"] });
+            if (invoicesGrid != null)
+            {
+                await invoicesGrid.Reload();
+            }
+            else
+            {
+                await SearchInvoices();
+            }
+        }
+        else
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = Localizer["Error"], Detail = result.Errors.FirstOrDefault()?.Message ?? Localizer["Unexpected_Error"] });
+        }
+    }
+
     private async Task Callback(LoadDataArgs args)
     {
         _logger.LogInformation("InvoicesList.Callback called with Skip: {Skip}, Top: {Top}", args.Skip, args.Top);
@@ -389,6 +535,21 @@
         try
         {
             _logger.LogInformation("Calling ODataService.QueryAsync for InvoiceBaseInfos");
+            
+            // Add Status filter to args if selected
+            if (searchCriteria.Status.HasValue)
+            {
+                var statusFilter = $"Statut eq {searchCriteria.Status.Value}";
+                if (!string.IsNullOrEmpty(args.Filter))
+                {
+                    args.Filter = $"({args.Filter}) and ({statusFilter})";
+                }
+                else
+                {
+                    args.Filter = statusFilter;
+                }
+            }
+
             var response = await ODataService.QueryAsync<InvoiceBaseInfo>(
                 entitySet: "InvoiceBaseInfos",
                 args: args,
@@ -424,6 +585,7 @@
         public DateTime? EndDate { get; set; }
         public int? SelectedCustomerId { get; set; }
         public List<int> SelectedTagIds { get; set; } = new();
+        public int? Status { get; set; }
     }
 
     private async Task OnTagIdsChanged(List<int> tagIds)
@@ -533,6 +695,13 @@
                 Duration = 4000
             });
         }
+    }
+
+    private string GetStatusStyle(int statut)
+    {
+        return statut == 1 
+            ? "background-color: #388e3c; color: #fff;" 
+            : "background-color: #e1e1e1; color: #333;";
     }
 }
 

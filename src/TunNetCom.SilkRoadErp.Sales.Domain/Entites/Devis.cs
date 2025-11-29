@@ -39,7 +39,17 @@ public partial class Devis
             TotHTva = totHTva,
             TotTva = totTva,
             TotTtc = totTtc,
+            Statut = DocumentStatus.Brouillon
         };
+    }
+
+    public void Valider()
+    {
+        if (Statut != DocumentStatus.Brouillon)
+        {
+            throw new InvalidOperationException("Seul un document en brouillon peut être validé.");
+        }
+        Statut = DocumentStatus.Valide;
     }
 
     public void SetNum(int num)
@@ -58,6 +68,8 @@ public partial class Devis
     public decimal TotTva { get; set; }
 
     public decimal TotTtc { get; set; }
+
+    public DocumentStatus Statut { get; private set; }
 
     public virtual Client IdClientNavigation { get; set; } = null!;
 

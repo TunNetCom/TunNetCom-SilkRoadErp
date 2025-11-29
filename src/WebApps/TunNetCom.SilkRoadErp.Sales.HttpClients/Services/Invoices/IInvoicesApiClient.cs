@@ -31,4 +31,8 @@ public interface IInvoicesApiClient
         DateTime? startDate,
         DateTime? endDate,
         CancellationToken cancellationToken);
+
+    Task<Result> ValidateInvoicesAsync(
+        List<int> ids,
+        CancellationToken cancellationToken);
 }

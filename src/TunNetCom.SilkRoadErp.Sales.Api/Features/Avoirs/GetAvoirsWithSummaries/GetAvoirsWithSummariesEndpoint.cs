@@ -21,7 +21,8 @@ public class GetAvoirsWithSummariesEndpoint : ICarterModule
                     SortProperty: queryParams.SortProperty,
                     SearchKeyword: queryParams.SearchKeyword,
                     StartDate: queryParams.StartDate,
-                    EndDate: queryParams.EndDate
+                    EndDate: queryParams.EndDate,
+                    Status: queryParams.Status
                 );
 
                 var response = await mediator.Send(query, cancellationToken);

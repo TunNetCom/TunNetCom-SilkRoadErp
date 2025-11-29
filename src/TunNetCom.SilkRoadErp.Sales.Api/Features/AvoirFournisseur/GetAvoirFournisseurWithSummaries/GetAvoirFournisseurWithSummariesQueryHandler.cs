@@ -27,10 +27,11 @@ public class GetAvoirFournisseurWithSummariesQueryHandler(
                                          FournisseurId = a.FournisseurId,
                                          FournisseurName = f != null ? f.Nom : null,
                                          NumFactureAvoirFournisseur = a.NumFactureAvoirFournisseur,
-                                         TotalExcludingTaxAmount = a.LigneAvoirFournisseur.Sum(l => l.TotHt),
-                                         TotalVATAmount = a.LigneAvoirFournisseur.Sum(l => l.TotTtc - l.TotHt),
-                                         TotalIncludingTaxAmount = a.LigneAvoirFournisseur.Sum(l => l.TotTtc)
-                                     })
+                              TotalExcludingTaxAmount = a.LigneAvoirFournisseur.Sum(l => l.TotHt),
+                              TotalVATAmount = a.LigneAvoirFournisseur.Sum(l => l.TotTtc - l.TotHt),
+                              TotalIncludingTaxAmount = a.LigneAvoirFournisseur.Sum(l => l.TotTtc),
+                              Statut = (int)a.Statut
+                          })
                                      .AsNoTracking()
                                      .AsQueryable();
 
@@ -42,6 +43,13 @@ public class GetAvoirFournisseurWithSummariesQueryHandler(
         if (request.NumFactureAvoirFournisseur.HasValue)
         {
             avoirFournisseursQuery = avoirFournisseursQuery.Where(a => a.NumFactureAvoirFournisseur == request.NumFactureAvoirFournisseur.Value);
+        }
+
+        // Apply Status filter
+        if (request.Status.HasValue)
+        {
+            _logger.LogInformation("Applying status filter: {status}", request.Status);
+            avoirFournisseursQuery = avoirFournisseursQuery.Where(a => a.Statut == request.Status.Value);
         }
 
         // Apply Date Range filters

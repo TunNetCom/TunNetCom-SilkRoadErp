@@ -158,5 +158,42 @@ namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Orders
                 return Result.Fail($"Unexpected error: {ex.Message}");
             }
         }
+
+        public async Task<Result> ValidateOrdersAsync(List<int> ids, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                _logger.LogInformation("Validating orders via API /orders/validate");
+
+                var request = new ValidateOrdersRequest { Ids = ids };
+                var response = await _httpClient.PostAsJsonAsync("api/orders/validate", request, cancellationToken);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return Result.Ok();
+                }
+
+                if (response.StatusCode == HttpStatusCode.BadRequest)
+                {
+                    var problemDetails = await response.Content.ReadFromJsonAsync<BadRequestResponse>(
+                        cancellationToken);
+
+                    if (problemDetails?.errors != null)
+                    {
+                        var errors = problemDetails.errors
+                            .SelectMany(kvp => kvp.Value.Select(v => $"{kvp.Key}: {v}"));
+                        return Result.Fail(errors);
+                    }
+                    return Result.Fail("Validation failed but no error details provided");
+                }
+
+                return Result.Fail($"Failed to validate orders: {response.StatusCode}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error validating orders");
+                return Result.Fail($"Unexpected error: {ex.Message}");
+            }
+        }
     }
 }

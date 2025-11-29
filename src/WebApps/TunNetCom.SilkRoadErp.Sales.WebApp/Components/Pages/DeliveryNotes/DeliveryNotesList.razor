@@ -20,6 +20,9 @@
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.InstallationTechnician
 @inject ITagsApiClient TagsService
 @inject IInstallationTechnicianApiClient TechnicianService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+@using TunNetCom.SilkRoadErp.Sales.Domain.Entites
 
 
 <div class="delivery-notes-list-container">
@@ -39,7 +42,7 @@
                                     Data="@_filteredCustomers"
                                     TextProperty="@nameof(CustomerResponse.Name)"
                                     ValueProperty="@nameof(CustomerResponse.Id)"
-                                    Placeholder="Selectionner un fournisseur">
+                                    Placeholder="Selectionner un client">
                 <Columns>
                     <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Id)" Title="ID" Width="80px" />
                     <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Name)" Title="@Localizer["name"]" Width="220px" />
@@ -81,19 +84,37 @@
         </div>
         <TagSearchFilter SelectedTagIds="@searchCriteria.SelectedTagIds"
                        SelectedTagIdsChanged="@OnTagIdsChanged" />
-        <div class="search-button">
+        <div class="search-field">
+            <label>Statut</label>
+            <RadzenDropDown @bind-Value="@searchCriteria.Status"
+                            Data="@(Enum.GetValues(typeof(DocumentStatus)).Cast<DocumentStatus>().Select(e => new { Value = (int?)e, Text = e.ToString() }).Prepend(new { Value = (int?)null, Text = "Tous" }))"
+                            TextProperty="Text"
+                            ValueProperty="Value"
+                            class="w-100 search-input" />
+        </div>
+        <div class="search-button" style="display: flex; gap: 8px;">
             <RadzenButton Text="@Localizer["search"]"
                           Icon="search"
                           ButtonStyle="ButtonStyle.Primary"
                           Click="@SearchDeliveryNotes"
                           class="action-button" />
+            <RadzenButton Icon="check_circle"
+                          ButtonStyle="ButtonStyle.Success"
+                          Click="@ValidateSelectedDeliveryNotes"
+                          Disabled="@(selectedDeliveryNotes == null || !selectedDeliveryNotes.Any())"
+                          Title="Valider la sélection"
+                          AriaLabel="Valider la sélection"
+                          class="action-button" />
         </div>
     </div>
     <div class="list-card">
         <h2>Bons de livraison</h2>
-        <RadzenDataGrid Data="@deliveryNotesList"
+        <RadzenDataGrid @ref="deliveryNotesGrid"
+                        Data="@deliveryNotesList"
                         LoadData="@Callback"
                         TItem="GetDeliveryNoteBaseInfos"
+                        SelectionMode="DataGridSelectionMode.Multiple"
+                        @bind-Value="selectedDeliveryNotes"
                         AllowSorting="true"
                         AllowFiltering="true"
                         AllowPaging="true"
@@ -105,6 +126,23 @@
                 <p style="font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
             </EmptyTemplate>
             <Columns>
+                <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos" Width="40px" Sortable="false" Filterable="false">
+                    <HeaderTemplate>
+                        <RadzenCheckBox TriState="false" TValue="bool" Value="@(deliveryNotesList != null && deliveryNotesList.Any() && selectedDeliveryNotes != null && deliveryNotesList.All(i => selectedDeliveryNotes.Contains(i)))"
+                                        Change="@(args => { if(args == true) { selectedDeliveryNotes = deliveryNotesList.ToList(); } else { selectedDeliveryNotes = new List<GetDeliveryNoteBaseInfos>(); } })" />
+                    </HeaderTemplate>
+                    <Template Context="data">
+                        <RadzenCheckBox TriState="false" Value="@(selectedDeliveryNotes != null && selectedDeliveryNotes.Contains(data))" 
+                                        TValue="bool" Change="@(args => { if(selectedDeliveryNotes == null) selectedDeliveryNotes = new List<GetDeliveryNoteBaseInfos>(); if(args) { if(!selectedDeliveryNotes.Contains(data)) selectedDeliveryNotes.Add(data); } else { selectedDeliveryNotes.Remove(data); } })" />
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos" Property="Statut" Title="Statut" Width="100px">
+                    <Template Context="item">
+                        <span class="status-tag" style="@GetStatusStyle(item.Statut)">
+                            @(item.Statut == 1 ? "Validé" : "Brouillon")
+                        </span>
+                    </Template>
+                </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos"
                                       Property="@nameof(GetDeliveryNoteBaseInfos.Number)"
                                       Title="Numéro"
@@ -142,7 +180,7 @@
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos"
                                       Title="@Localizer["actions_label"]"
-                                      Width="100px"
+                                      Width="120px"
                                       Sortable="false"
                                       Filterable="false">
                     <Template Context="item">
@@ -151,8 +189,18 @@
                                       Variant="Variant.Flat"
                                       Size="ButtonSize.Small"
                                       Click="@(() => ViewDeliveryNote(item.Number.ToString()))"
+                                      Disabled="@(item.Statut == 1)"
                                       Title="@Localizer["Edit"]"
-                                      AriaLabel="@Localizer["Edit"]" />
+                                      AriaLabel="@Localizer["Edit"]" 
+                                      Style="margin-right: 4px;" />
+                        <RadzenButton Icon="check_circle"
+                                      ButtonStyle="ButtonStyle.Success"
+                                      Variant="Variant.Flat"
+                                      Size="ButtonSize.Small"
+                                      Click="@(() => ValidateDeliveryNote(item))"
+                                      Disabled="@(item.Statut == 1)"
+                                      Title="Valider"
+                                      AriaLabel="Valider" />
                     </Template>
                 </RadzenDataGridColumn>
             </Columns>
@@ -175,6 +223,16 @@
 
 @* CSS remains unchanged *@
 <style>
+    .status-tag {
+        font-size: 0.75rem;
+        padding: 0.125rem 0.5rem;
+        display: inline-flex;
+        align-items: center;
+        border-radius: 3px;
+        line-height: 1.5;
+        font-weight: 500;
+    }
+
     .delivery-notes-list-container {
         padding: 0;
         min-height: 100%;
@@ -341,10 +399,26 @@
             font-size: 12px;
         }
     }
+
+    /* Style pour le bouton "Oui" dans les modals de confirmation */
+    ::deep .rz-dialog-footer button:first-child {
+        background-color: #4CAF50 !important;
+        color: white !important;
+        border-color: #4CAF50 !important;
+    }
+
+    ::deep .rz-dialog-footer button:first-child:hover {
+        background-color: #45a049 !important;
+        border-color: #45a049 !important;
+    }
 </style>
 
 @code {
+    private const int CustomerDropdownPageSize = 10;
+    
+    private RadzenDataGrid<GetDeliveryNoteBaseInfos> deliveryNotesGrid = default!;
     private List<GetDeliveryNoteBaseInfos> deliveryNotesList = new();
+    private IList<GetDeliveryNoteBaseInfos> selectedDeliveryNotes = new List<GetDeliveryNoteBaseInfos>();
     private int totalCount = 0;
     private decimal totalNetAmount = 0;
     private decimal totalVatAmount = 0;
@@ -378,17 +452,20 @@
         var parameters = new QueryStringParameters
         {
             PageNumber = 1,
-            PageSize = 7,
+            PageSize = CustomerDropdownPageSize,
             SearchKeyword = args?.Filter ?? string.Empty
         };
 
         try
         {
             var pagedCustomers = await CustomersService.SearchCustomers(parameters, default);
-            _filteredCustomers = pagedCustomers.Items.ToList();
+            _filteredCustomers = pagedCustomers != null && pagedCustomers.Items != null 
+                ? pagedCustomers.Items.ToList() 
+                : new List<CustomerResponse>();
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error loading customers: {Message}", ex.Message);
             _filteredCustomers = new List<CustomerResponse>();
         }
 
@@ -428,6 +505,79 @@
         await Callback(new LoadDataArgs { Skip = 0, Top = pageSize });
     }
 
+    private async Task ValidateSelectedDeliveryNotes()
+    {
+        if (selectedDeliveryNotes == null || !selectedDeliveryNotes.Any())
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Warning, Summary = Localizer["Attention"], Detail = Localizer["Select_At_Least_One_DeliveryNote"] });
+            return;
+        }
+
+        var count = selectedDeliveryNotes.Count;
+        var confirmed = await DialogService.Confirm(
+            string.Format(Localizer["Confirmation_Validation_DeliveryNotes"], count, count > 1 ? "s" : ""),
+            Localizer["Confirmation_Validation_Titre"],
+            new ConfirmOptions() { OkButtonText = Localizer["Oui"], CancelButtonText = Localizer["Non"] });
+
+        if (confirmed != true)
+        {
+            return;
+        }
+        
+        var ids = selectedDeliveryNotes.Select(d => d.Number).ToList();
+        var result = await DeliveryNoteService.ValidateDeliveryNotesAsync(ids, default);
+        
+        if (result.IsSuccess)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = Localizer["Success"], Detail = Localizer["Validation_Success_DeliveryNotes"] });
+            selectedDeliveryNotes.Clear();
+            if (deliveryNotesGrid != null)
+            {
+                await deliveryNotesGrid.Reload();
+            }
+            else
+            {
+                await SearchDeliveryNotes();
+            }
+        }
+        else
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = Localizer["Error"], Detail = result.Errors.FirstOrDefault()?.Message ?? Localizer["Unexpected_Error"] });
+        }
+    }
+
+    private async Task ValidateDeliveryNote(GetDeliveryNoteBaseInfos item)
+    {
+        var confirmed = await DialogService.Confirm(
+            string.Format(Localizer["Confirmation_Validation_DeliveryNote"], item.Number),
+            Localizer["Confirmation_Validation_Titre"],
+            new ConfirmOptions() { OkButtonText = Localizer["Oui"], CancelButtonText = Localizer["Non"] });
+
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        var result = await DeliveryNoteService.ValidateDeliveryNotesAsync(new List<int> { item.Number }, default);
+        
+        if (result.IsSuccess)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = Localizer["Success"], Detail = Localizer["Validation_Success_DeliveryNote"] });
+            if (deliveryNotesGrid != null)
+            {
+                await deliveryNotesGrid.Reload();
+            }
+            else
+            {
+                await SearchDeliveryNotes();
+            }
+        }
+        else
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = Localizer["Error"], Detail = result.Errors.FirstOrDefault()?.Message ?? Localizer["Unexpected_Error"] });
+        }
+    }
+
     private async Task Callback(LoadDataArgs args)
     {
         _logger.LogInformation("DeliveryNotesList.Callback called with Skip: {Skip}, Top: {Top}", args.Skip, args.Top);
@@ -448,6 +598,21 @@
         try
         {
             _logger.LogInformation("Calling ODataService.QueryAsync for DeliveryNoteBaseInfos");
+            
+            // Add Status filter to args if selected
+            if (searchCriteria.Status.HasValue)
+            {
+                var statusFilter = $"Statut eq {searchCriteria.Status.Value}";
+                if (!string.IsNullOrEmpty(args.Filter))
+                {
+                    args.Filter = $"({args.Filter}) and ({statusFilter})";
+                }
+                else
+                {
+                    args.Filter = statusFilter;
+                }
+            }
+
             var response = await ODataService.QueryAsync<GetDeliveryNoteBaseInfos>(
                 entitySet: "DeliveryNoteBaseInfos",
                 args: args,
@@ -458,8 +623,8 @@
                 tagIds: searchCriteria.SelectedTagIds,
                 cancellationToken: default);
 
-            deliveryNotesList = response.Value;
-            totalCount = response.ODataCount ?? response.Value.Count;
+            deliveryNotesList = response.Value ?? new List<GetDeliveryNoteBaseInfos>();
+            totalCount = response.ODataCount ?? deliveryNotesList.Count;
 
             // Apply invoice status filter if needed (client-side for now)
             if (searchCriteria.InvoiceStatus != "Tous")
@@ -478,13 +643,27 @@
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error loading delivery notes: {Message}", ex.Message);
             deliveryNotesList = new List<GetDeliveryNoteBaseInfos>();
             totalCount = 0;
             totalNetAmount = 0;
             totalVatAmount = 0;
+            NotificationService.Notify(new NotificationMessage 
+            { 
+                Severity = NotificationSeverity.Error, 
+                Summary = Localizer["Error"], 
+                Detail = $"Erreur lors du chargement des données: {ex.Message}" 
+            });
         }
 
         await InvokeAsync(StateHasChanged);
+    }
+
+    private string GetStatusStyle(int statut)
+    {
+        return statut == 1 
+            ? "background-color: #388e3c; color: #fff;" 
+            : "background-color: #e1e1e1; color: #333;";
     }
 
     public class SearchCriteria
@@ -496,6 +675,7 @@
         public int? SelectedTechnicianId { get; set; }
         public string InvoiceStatus { get; set; } = "Tous";
         public List<int> SelectedTagIds { get; set; } = new();
+        public int? Status { get; set; }
     }
 
     private void OnPeriodFilterChanged()

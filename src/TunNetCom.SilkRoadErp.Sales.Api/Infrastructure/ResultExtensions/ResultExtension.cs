@@ -95,5 +95,15 @@ public static class ResultExtension
         return result.HasError<EntityNotFound>();
     }
 
+    public static IResult ToResponse(this Result result)
+    {
+        if (result.IsSuccess)
+        {
+            return Results.NoContent();
+        }
+
+        return result.ToValidationProblem();
+    }
+
 }
 

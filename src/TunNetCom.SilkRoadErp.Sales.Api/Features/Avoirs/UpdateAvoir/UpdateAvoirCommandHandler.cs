@@ -21,6 +21,11 @@ public class UpdateAvoirCommandHandler(
             return Result.Fail(EntityNotFound.Error());
         }
 
+        if (avoir.Statut == DocumentStatus.Valide)
+        {
+            return Result.Fail("Le document est validé et ne peut plus être modifié.");
+        }
+
         if (command.ClientId.HasValue)
         {
             var clientExists = await _context.Client.AnyAsync(c => c.Id == command.ClientId.Value, cancellationToken);

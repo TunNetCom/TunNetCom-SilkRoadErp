@@ -25,5 +25,7 @@ public interface IQuotationApiClient
     Task<Result> DeleteQuotationAsync(
         int num,
         CancellationToken cancellationToken);
+
+    Task<Result> ValidateQuotationsAsync(List<int> ids, CancellationToken cancellationToken);
 }
 

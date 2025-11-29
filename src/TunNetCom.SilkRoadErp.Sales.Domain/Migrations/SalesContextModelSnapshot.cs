@@ -180,6 +180,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("int")
                         .HasColumnName("Num_FactureAvoirFournisseur");
 
+                    b.Property<int>("Statut")
+                        .HasColumnType("int");
+
                     b.HasKey("Id")
                         .HasName("PK_dbo.AvoirFournisseur");
 
@@ -221,6 +224,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Property<int?>("NumFactureAvoirClient")
                         .HasColumnType("int")
                         .HasColumnName("Num_FactureAvoirClient");
+
+                    b.Property<int>("Statut")
+                        .HasColumnType("int");
 
                     b.HasKey("Id")
                         .HasName("PK_dbo.Avoirs");
@@ -295,6 +301,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("int")
                         .HasColumnName("Num_Facture");
 
+                    b.Property<int>("Statut")
+                        .HasColumnType("int");
+
                     b.Property<TimeOnly>("TempBl")
                         .HasColumnType("time")
                         .HasColumnName("temp_bl");
@@ -362,6 +371,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Property<int?>("NumFactureFournisseur")
                         .HasColumnType("int")
                         .HasColumnName("Num_Facture_fournisseur");
+
+                    b.Property<int>("Statut")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("TotHTva")
                         .HasColumnType("decimal(18, 2)")
@@ -453,6 +465,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("int")
                         .HasColumnName("fournisseurId");
 
+                    b.Property<int>("Statut")
+                        .HasColumnType("int");
+
                     b.HasKey("Num")
                         .HasName("PK_dbo.Commandes");
 
@@ -476,6 +491,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Property<int>("IdClient")
                         .HasColumnType("int")
                         .HasColumnName("id_client");
+
+                    b.Property<int>("Statut")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("TotHTva")
                         .HasColumnType("decimal(18, 2)")
@@ -591,6 +609,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Property<int>("Num")
                         .HasColumnType("int");
 
+                    b.Property<int>("Statut")
+                        .HasColumnType("int");
+
                     b.HasKey("Id")
                         .HasName("PK_dbo.Facture");
 
@@ -634,6 +655,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Property<int>("NumFactureAvoirClientSurPage")
                         .HasColumnType("int")
                         .HasColumnName("Num_FactureAvoirClientSurPage");
+
+                    b.Property<int>("Statut")
+                        .HasColumnType("int");
 
                     b.HasKey("Id")
                         .HasName("PK_dbo.FactureAvoirClient");
@@ -680,6 +704,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Property<int?>("NumFactureFournisseur")
                         .HasColumnType("int")
                         .HasColumnName("Num_FactureFournisseur");
+
+                    b.Property<int>("Statut")
+                        .HasColumnType("int");
 
                     b.HasKey("Id")
                         .HasName("PK_dbo.FactureAvoirFournisseur");
@@ -729,6 +756,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Property<bool>("Paye")
                         .HasColumnType("bit")
                         .HasColumnName("paye");
+
+                    b.Property<int>("Statut")
+                        .HasColumnType("int");
 
                     b.HasKey("Id")
                         .HasName("PK_dbo.FactureFournisseur");

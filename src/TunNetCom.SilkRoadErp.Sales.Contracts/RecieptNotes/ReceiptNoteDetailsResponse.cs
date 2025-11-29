@@ -31,4 +31,10 @@ public class ReceiptNoteDetailsResponse
 
     [JsonPropertyName("totTva")]
     public decimal TotTva { get; set; }
+
+    [JsonPropertyName("statut")]
+    public int Statut { get; set; }
+
+    [JsonPropertyName("statutLibelle")]
+    public string StatutLibelle { get; set; } = string.Empty;
 }

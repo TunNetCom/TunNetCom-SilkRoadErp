@@ -984,4 +984,136 @@
   <data name="stock_insuffisant_message" xml:space="preserve">
     <value>المخزون المتاح غير كاف للكمية المطلوبة.</value>
   </data>
+  <data name="Confirmation_Validation_Titre" xml:space="preserve">
+    <value>تأكيد التحقق</value>
+  </data>
+  <data name="Confirmation_Validation_DeliveryNote" xml:space="preserve">
+    <value>هل أنت متأكد من أنك تريد التحقق من إيصال التسليم رقم {0}؟</value>
+  </data>
+  <data name="Confirmation_Validation_DeliveryNotes" xml:space="preserve">
+    <value>هل أنت متأكد من أنك تريد التحقق من {0} إيصال{1} تسليم؟</value>
+  </data>
+  <data name="Confirmation_Validation_Order" xml:space="preserve">
+    <value>هل أنت متأكد من أنك تريد التحقق من الطلب رقم {0}؟</value>
+  </data>
+  <data name="Confirmation_Validation_Orders" xml:space="preserve">
+    <value>هل أنت متأكد من أنك تريد التحقق من {0} طلب{1}؟</value>
+  </data>
+  <data name="Confirmation_Validation_Invoice" xml:space="preserve">
+    <value>هل أنت متأكد من أنك تريد التحقق من الفاتورة رقم {0}؟</value>
+  </data>
+  <data name="Confirmation_Validation_Invoices" xml:space="preserve">
+    <value>هل أنت متأكد من أنك تريد التحقق من {0} فاتورة{1}؟</value>
+  </data>
+  <data name="Confirmation_Validation_Quotation" xml:space="preserve">
+    <value>هل أنت متأكد من أنك تريد التحقق من العرض رقم {0}؟</value>
+  </data>
+  <data name="Confirmation_Validation_Quotations" xml:space="preserve">
+    <value>هل أنت متأكد من أنك تريد التحقق من {0} عرض{1}؟</value>
+  </data>
+  <data name="Confirmation_Validation_ReceiptNote" xml:space="preserve">
+    <value>هل أنت متأكد من أنك تريد التحقق من إيصال الاستلام رقم {0}؟</value>
+  </data>
+  <data name="Confirmation_Validation_ReceiptNotes" xml:space="preserve">
+    <value>هل أنت متأكد من أنك تريد التحقق من {0} إيصال{1} استلام؟</value>
+  </data>
+  <data name="Confirmation_Validation_ProviderInvoice" xml:space="preserve">
+    <value>هل أنت متأكد من أنك تريد التحقق من فاتورة المورد رقم {0}؟</value>
+  </data>
+  <data name="Confirmation_Validation_ProviderInvoices" xml:space="preserve">
+    <value>هل أنت متأكد من أنك تريد التحقق من {0} فاتورة{1} مورد؟</value>
+  </data>
+  <data name="Confirmation_Validation_Avoir" xml:space="preserve">
+    <value>هل أنت متأكد من أنك تريد التحقق من إشعار الائتمان رقم {0}؟</value>
+  </data>
+  <data name="Confirmation_Validation_Avoirs" xml:space="preserve">
+    <value>هل أنت متأكد من أنك تريد التحقق من {0} إشعار{1} ائتمان؟</value>
+  </data>
+  <data name="Confirmation_Validation_AvoirFournisseur" xml:space="preserve">
+    <value>هل أنت متأكد من أنك تريد التحقق من إشعار ائتمان المورد رقم {0}؟</value>
+  </data>
+  <data name="Confirmation_Validation_AvoirsFournisseur" xml:space="preserve">
+    <value>هل أنت متأكد من أنك تريد التحقق من {0} إشعار{1} ائتمان مورد؟</value>
+  </data>
+  <data name="Validation_Success_DeliveryNote" xml:space="preserve">
+    <value>تم التحقق من إيصال التسليم بنجاح.</value>
+  </data>
+  <data name="Validation_Success_DeliveryNotes" xml:space="preserve">
+    <value>تم التحقق من إيصالات التسليم بنجاح.</value>
+  </data>
+  <data name="Validation_Success_Order" xml:space="preserve">
+    <value>تم التحقق من الطلب بنجاح.</value>
+  </data>
+  <data name="Validation_Success_Orders" xml:space="preserve">
+    <value>تم التحقق من الطلبات بنجاح.</value>
+  </data>
+  <data name="Validation_Success_Invoice" xml:space="preserve">
+    <value>تم التحقق من الفاتورة بنجاح.</value>
+  </data>
+  <data name="Validation_Success_Invoices" xml:space="preserve">
+    <value>تم التحقق من الفواتير بنجاح.</value>
+  </data>
+  <data name="Validation_Success_Quotation" xml:space="preserve">
+    <value>تم التحقق من العرض بنجاح.</value>
+  </data>
+  <data name="Validation_Success_Quotations" xml:space="preserve">
+    <value>تم التحقق من العروض بنجاح.</value>
+  </data>
+  <data name="Validation_Success_ReceiptNote" xml:space="preserve">
+    <value>تم التحقق من إيصال الاستلام بنجاح.</value>
+  </data>
+  <data name="Validation_Success_ReceiptNotes" xml:space="preserve">
+    <value>تم التحقق من إيصالات الاستلام بنجاح.</value>
+  </data>
+  <data name="Validation_Success_ProviderInvoice" xml:space="preserve">
+    <value>تم التحقق من فاتورة المورد بنجاح.</value>
+  </data>
+  <data name="Validation_Success_ProviderInvoices" xml:space="preserve">
+    <value>تم التحقق من فواتير المورد بنجاح.</value>
+  </data>
+  <data name="Validation_Success_Avoir" xml:space="preserve">
+    <value>تم التحقق من إشعار الائتمان بنجاح.</value>
+  </data>
+  <data name="Validation_Success_Avoirs" xml:space="preserve">
+    <value>تم التحقق من إشعارات الائتمان بنجاح.</value>
+  </data>
+  <data name="Validation_Success_AvoirFournisseur" xml:space="preserve">
+    <value>تم التحقق من إشعار ائتمان المورد بنجاح.</value>
+  </data>
+  <data name="Validation_Success_AvoirsFournisseur" xml:space="preserve">
+    <value>تم التحقق من إشعارات ائتمان المورد بنجاح.</value>
+  </data>
+  <data name="Select_At_Least_One_DeliveryNote" xml:space="preserve">
+    <value>يرجى تحديد إيصال تسليم واحد على الأقل.</value>
+  </data>
+  <data name="Select_At_Least_One_Order" xml:space="preserve">
+    <value>يرجى تحديد طلب واحد على الأقل.</value>
+  </data>
+  <data name="Select_At_Least_One_Invoice" xml:space="preserve">
+    <value>يرجى تحديد فاتورة واحدة على الأقل.</value>
+  </data>
+  <data name="Select_At_Least_One_Quotation" xml:space="preserve">
+    <value>يرجى تحديد عرض واحد على الأقل.</value>
+  </data>
+  <data name="Select_At_Least_One_ReceiptNote" xml:space="preserve">
+    <value>يرجى تحديد إيصال استلام واحد على الأقل.</value>
+  </data>
+  <data name="Select_At_Least_One_ProviderInvoice" xml:space="preserve">
+    <value>يرجى تحديد فاتورة مورد واحدة على الأقل.</value>
+  </data>
+  <data name="Select_At_Least_One_Avoir" xml:space="preserve">
+    <value>يرجى تحديد إشعار ائتمان واحد على الأقل.</value>
+  </data>
+  <data name="Select_At_Least_One_AvoirFournisseur" xml:space="preserve">
+    <value>يرجى تحديد إشعار ائتمان مورد واحد على الأقل.</value>
+  </data>
+  <data name="Success" xml:space="preserve">
+    <value>نجاح</value>
+  </data>
+  <data name="Error" xml:space="preserve">
+    <value>خطأ</value>
+  </data>
+  <data name="Unexpected_Error" xml:space="preserve">
+    <value>حدث خطأ.</value>
+  </data>
 </root>

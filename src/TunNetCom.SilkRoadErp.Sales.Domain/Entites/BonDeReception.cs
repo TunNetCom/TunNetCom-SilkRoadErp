@@ -57,8 +57,18 @@ public partial class BonDeReception : IAccountingYearEntity
             AccountingYearId = accountingYearId,
             TotHTva = totHTva,
             TotTva = totTva,
-            NetPayer = netPayer
+            NetPayer = netPayer,
+            Statut = DocumentStatus.Brouillon
         };
+    }
+
+    public void Valider()
+    {
+        if (Statut != DocumentStatus.Brouillon)
+        {
+            throw new InvalidOperationException("Seul un document en brouillon peut être validé.");
+        }
+        Statut = DocumentStatus.Valide;
     }
     public int Id { get; set; }
 
@@ -81,6 +91,8 @@ public partial class BonDeReception : IAccountingYearEntity
     public decimal NetPayer { get; set; }
 
     public int AccountingYearId { get; set; }
+
+    public DocumentStatus Statut { get; private set; }
 
     public virtual Fournisseur IdFournisseurNavigation { get; set; } = null!;
 

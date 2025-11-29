@@ -21,6 +21,11 @@ public class UpdateFactureAvoirFournisseurCommandHandler(
             return Result.Fail(EntityNotFound.Error());
         }
 
+        if (factureAvoirFournisseur.Statut == DocumentStatus.Valide)
+        {
+            return Result.Fail("Le document est validé et ne peut plus être modifié.");
+        }
+
         var fournisseurExists = await _context.Fournisseur.AnyAsync(f => f.Id == command.IdFournisseur, cancellationToken);
         if (!fournisseurExists)
         {

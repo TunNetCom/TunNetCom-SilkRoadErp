@@ -1,6 +1,7 @@
 using System.Net;
 using TunNetCom.SilkRoadErp.Sales.Contracts.Common;
 using TunNetCom.SilkRoadErp.Sales.Contracts.Quotations;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services;
 using JsonException = System.Text.Json.JsonException;
 
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Quotations;
@@ -226,6 +227,25 @@ public class QuotationApiClient(HttpClient httpClient, ILogger<QuotationApiClien
             logger.LogError(ex, "Unexpected error deleting quotation {Num}", num);
             return Result.Fail($"Unexpected error: {ex.Message}");
         }
+    }
+
+    public async Task<Result> ValidateQuotationsAsync(List<int> ids, CancellationToken cancellationToken)
+    {
+        logger.LogInformation("Validating quotations via API /quotations/validate");
+        var response = await httpClient.PostAsJsonAsync("/quotations/validate", ids, cancellationToken: cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.NoContent)
+        {
+            return Result.Ok();
+        }
+
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            var badRequest = await response.ReadJsonAsync<BadRequestResponse>();
+            return Result.Fail(badRequest.Detail ?? badRequest.Title ?? "Unknown error");
+        }
+
+        throw new Exception($"Quotations validation: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
     }
 }
 

@@ -26,6 +26,11 @@ public class UpdateDeliveryNoteCommandHandler(
             return Result.Fail(EntityNotFound.Error());
         }
 
+        if (deliveryNote.Statut == DocumentStatus.Valide)
+        {
+            return Result.Fail("Le document est validé et ne peut plus être modifié.");
+        }
+
         // Get the active accounting year
         var activeAccountingYear = await _context.AccountingYear
             .FirstOrDefaultAsync(ay => ay.IsActive, cancellationToken);

@@ -351,4 +351,43 @@ public class DeliveryNoteApiClient(HttpClient _httpClient) : IDeliveryNoteApiCli
             return Result.Fail($"Unexpected error: {ex.Message}");
         }
     }
+
+    public async Task<Result> ValidateDeliveryNotesAsync(
+        List<int> ids,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var request = new ValidateDeliveryNotesRequest { Ids = ids };
+            var response = await _httpClient.PostAsJsonAsync(
+                "api/delivery-notes/validate",
+                request,
+                cancellationToken);
+
+            if (response.IsSuccessStatusCode)
+            {
+                return Result.Ok();
+            }
+
+            if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+            {
+                var problemDetails = await response.Content.ReadFromJsonAsync<BadRequestResponse>(
+                    cancellationToken);
+
+                if (problemDetails?.errors != null)
+                {
+                    var errors = problemDetails.errors
+                        .SelectMany(kvp => kvp.Value.Select(v => $"{kvp.Key}: {v}"));
+                    return Result.Fail(errors);
+                }
+                return Result.Fail("Validation failed but no error details provided");
+            }
+
+            return Result.Fail($"Failed to validate delivery notes: {response.StatusCode}");
+        }
+        catch (Exception ex)
+        {
+            return Result.Fail($"Unexpected error: {ex.Message}");
+        }
+    }
 }

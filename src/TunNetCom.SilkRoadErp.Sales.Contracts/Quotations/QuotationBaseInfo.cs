@@ -18,5 +18,11 @@ public class QuotationBaseInfo
 
     [JsonPropertyName("totalTtc")]
     public decimal TotalTtc { get; set; }
+
+    [JsonPropertyName("statut")]
+    public int Statut { get; set; }
+
+    [JsonPropertyName("statutLibelle")]
+    public string StatutLibelle { get; set; } = string.Empty;
 }
 

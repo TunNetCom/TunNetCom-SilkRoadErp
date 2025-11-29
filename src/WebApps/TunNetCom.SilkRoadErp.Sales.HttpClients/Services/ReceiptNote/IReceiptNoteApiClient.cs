@@ -65,4 +65,6 @@ public interface IReceiptNoteApiClient
         int num,
         CreateReceiptNoteWithLinesRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<Result> ValidateReceiptNotesAsync(List<int> ids, CancellationToken cancellationToken = default);
 }

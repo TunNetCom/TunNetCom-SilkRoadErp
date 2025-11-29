@@ -25,4 +25,10 @@ public class GetDeliveryNoteBaseInfos
 
     [JsonPropertyName("customerName")]
     public string? CustomerName { get; set; }
+
+    [JsonPropertyName("statut")]
+    public int Statut { get; set; }
+
+    [JsonPropertyName("statutLibelle")]
+    public string StatutLibelle { get; set; } = string.Empty;
 }

@@ -5,6 +5,8 @@ public class FullInvoiceResponse
     public int Num { get; set; }
     public DateTime Date { get; set; }
     public int IdClient { get; set; }
+    public int Statut { get; set; }
+    public string StatutLibelle { get; set; } = string.Empty;
 
     public FullInvoiceCustomerResponse Client { get; set; } = null!;
     public List<FullInvoiceCustomerResponseDeliveryNoteResponse> DeliveryNotes { get; set; } = new();

@@ -96,10 +96,16 @@ public class AvoirFournisseurApiClient : IAvoirFournisseurApiClient
         string? searchKeyword,
         DateTime? startDate,
         DateTime? endDate,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        int? status = null)
     {
         _logger.LogInformation("Fetching avoir fournisseurs with summaries from API /avoir-fournisseur/summaries");
         var queryString = $"/avoir-fournisseur/summaries?pageNumber={pageNumber}&pageSize={pageSize}";
+
+        if (status.HasValue)
+        {
+            queryString += $"&status={status.Value}";
+        }
 
         if (fournisseurId.HasValue)
         {
@@ -169,6 +175,25 @@ public class AvoirFournisseurApiClient : IAvoirFournisseurApiClient
         }
 
         throw new Exception($"AvoirFournisseur: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
+    }
+
+    public async Task<Result> ValidateAvoirFournisseursAsync(List<int> ids, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Validating avoir fournisseurs via API /avoir-fournisseurs/validate");
+        var response = await _httpClient.PostAsJsonAsync("/avoir-fournisseurs/validate", ids, cancellationToken: cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.NoContent)
+        {
+            return Result.Ok();
+        }
+
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            var badRequest = await response.ReadJsonAsync<BadRequestResponse>();
+            return Result.Fail(badRequest.Detail ?? badRequest.Title ?? "Unknown error");
+        }
+
+        throw new Exception($"AvoirFournisseur validation: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
     }
 }
 

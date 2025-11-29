@@ -194,4 +194,38 @@ public class InvoicesApiClient : IInvoicesApiClient
             throw new InvalidOperationException("Failed to deserialize invoices summaries response.", ex);
         }
     }
+
+    public async Task<Result> ValidateInvoicesAsync(List<int> ids, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var request = new ValidateInvoicesRequest { Ids = ids };
+            var response = await _httpClient.PostAsJsonAsync("api/invoices/validate", request, cancellationToken);
+
+            if (response.IsSuccessStatusCode)
+            {
+                return Result.Ok();
+            }
+
+            if (response.StatusCode == HttpStatusCode.BadRequest)
+            {
+                var problemDetails = await response.Content.ReadFromJsonAsync<BadRequestResponse>(
+                    cancellationToken);
+
+                if (problemDetails?.errors != null)
+                {
+                    var errors = problemDetails.errors
+                        .SelectMany(kvp => kvp.Value.Select(v => $"{kvp.Key}: {v}"));
+                    return Result.Fail(errors);
+                }
+                return Result.Fail("Validation failed but no error details provided");
+            }
+
+            return Result.Fail($"Failed to validate invoices: {response.StatusCode}");
+        }
+        catch (Exception ex)
+        {
+            return Result.Fail($"Unexpected error: {ex.Message}");
+        }
+    }
 }

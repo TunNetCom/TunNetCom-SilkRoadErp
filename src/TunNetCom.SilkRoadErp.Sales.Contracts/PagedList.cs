@@ -9,7 +9,7 @@ public class PagedList<T>
     public int TotalPages { get; set; }
     public int PageSize { get; set; }
 
-    public List<T> Items { get; set; }
+    public List<T> Items { get; set; } = new();
 
 
     [JsonPropertyName("totalCount")]

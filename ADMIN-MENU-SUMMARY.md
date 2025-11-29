@@ -261,3 +261,4 @@ Afficher un badge rouge avec le nombre d'erreurs non lues dans le journal d'audi
 Redémarre le WebApp et connecte-toi avec différents rôles pour voir les différences de permissions ! 🎉
 
 
+

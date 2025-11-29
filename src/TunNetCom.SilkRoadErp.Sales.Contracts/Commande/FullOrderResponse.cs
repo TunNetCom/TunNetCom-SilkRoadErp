@@ -9,6 +9,8 @@ public class FullOrderResponse
     public decimal TotalExcludingVat { get; set; }
     public decimal TotalVat { get; set; }
     public decimal NetToPay { get; set; }
+    public int Statut { get; set; }
+    public string StatutLibelle { get; set; } = string.Empty;
 }
 
 public class SupplierInfos

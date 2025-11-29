@@ -5,6 +5,8 @@ public class FullProviderInvoiceResponse
     public int ProviderInvoiceNumber { get; set; }
     public DateTime Date { get; set; }
     public int ProviderId { get; set; }
+    public int Statut { get; set; }
+    public string StatutLibelle { get; set; } = string.Empty;
 
     public ProviderInfos Provider { get; set; } = null!;
     public List<FullProviderInvoiceReceiptNotes> ReceiptNotes { get; set; } = new();

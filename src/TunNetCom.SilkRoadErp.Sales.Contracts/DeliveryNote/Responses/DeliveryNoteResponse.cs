@@ -34,6 +34,12 @@ public class DeliveryNoteResponse
     [JsonPropertyName("totalAmount")]
     public decimal TotalAmount { get; set; }
 
+    [JsonPropertyName("statut")]
+    public int Statut { get; set; }
+
+    [JsonPropertyName("statutLibelle")]
+    public string StatutLibelle { get; set; } = string.Empty;
+
     [JsonPropertyName("items")]
     public List<DeliveryNoteDetailResponse> Items { get; set; } = new();
 }

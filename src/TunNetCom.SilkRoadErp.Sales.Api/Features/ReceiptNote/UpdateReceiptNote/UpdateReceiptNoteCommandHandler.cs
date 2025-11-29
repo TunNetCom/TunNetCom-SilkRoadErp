@@ -15,6 +15,12 @@ public class UpdateReceiptNoteCommandHandler(
 
             return Result.Fail(EntityNotFound.Error());
         }
+
+        if (receiptnote.Statut == DocumentStatus.Valide)
+        {
+            return Result.Fail("Le document est validé et ne peut plus être modifié.");
+        }
+
         // Get the active accounting year
         var activeAccountingYear = await _context.AccountingYear
             .FirstOrDefaultAsync(ay => ay.IsActive, cancellationToken);

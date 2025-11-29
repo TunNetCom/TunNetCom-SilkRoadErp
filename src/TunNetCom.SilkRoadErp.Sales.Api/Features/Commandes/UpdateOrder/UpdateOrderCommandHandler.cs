@@ -31,6 +31,11 @@ public class UpdateOrderCommandHandler : IRequestHandler<UpdateOrderCommand, Res
             return Result.Fail(EntityNotFound.Error());
         }
 
+        if (orderToUpdate.Statut == DocumentStatus.Valide)
+        {
+            return Result.Fail("Le document est validé et ne peut plus être modifié.");
+        }
+
         // Mettre à jour les propriétés
         orderToUpdate.UpdateCommandes(
             num: updateOrderCommand.Num,

@@ -95,10 +95,16 @@ public class AvoirsApiClient : IAvoirsApiClient
         string? searchKeyword,
         DateTime? startDate,
         DateTime? endDate,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        int? status = null)
     {
         _logger.LogInformation("Fetching avoirs with summaries from API /avoirs/summaries");
         var queryString = $"/avoirs/summaries?pageNumber={pageNumber}&pageSize={pageSize}";
+
+        if (status.HasValue)
+        {
+            queryString += $"&status={status.Value}";
+        }
 
         if (clientId.HasValue)
         {
@@ -163,6 +169,25 @@ public class AvoirsApiClient : IAvoirsApiClient
         }
 
         throw new Exception($"Avoirs: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
+    }
+
+    public async Task<Result> ValidateAvoirsAsync(List<int> ids, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Validating avoirs via API /avoirs/validate");
+        var response = await _httpClient.PostAsJsonAsync("/avoirs/validate", ids, cancellationToken: cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.NoContent)
+        {
+            return Result.Ok();
+        }
+
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            var badRequest = await response.ReadJsonAsync<BadRequestResponse>();
+            return Result.Fail(badRequest.Detail ?? badRequest.Title ?? "Unknown error");
+        }
+
+        throw new Exception($"Avoirs validation: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
     }
 }
 

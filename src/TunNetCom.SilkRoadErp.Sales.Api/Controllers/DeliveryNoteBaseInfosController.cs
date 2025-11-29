@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.AspNetCore.OData.Routing.Controllers;
 using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
+using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Controllers;
 
@@ -79,7 +80,9 @@ public class DeliveryNoteBaseInfosController : ODataController
                                         GrossAmount = bdl.TotHTva,
                                         VatAmount = bdl.TotTva,
                                         NumFacture = bdl.NumFacture,
-                                        CustomerId = bdl.ClientId
+                                        CustomerId = bdl.ClientId,
+                                        Statut = (int)bdl.Statut,
+                                        StatutLibelle = bdl.Statut == DocumentStatus.Brouillon ? "Brouillon" : "Validé"
                                     })
                                     .AsQueryable();
 

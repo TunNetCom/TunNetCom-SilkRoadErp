@@ -18,8 +18,18 @@ public partial class AvoirFournisseur : IAccountingYearEntity
             Date = date,
             FournisseurId = fournisseurId,
             NumFactureAvoirFournisseur = numFactureAvoirFournisseur,
-            AccountingYearId = accountingYearId
+            AccountingYearId = accountingYearId,
+            Statut = DocumentStatus.Brouillon
         };
+    }
+
+    public void Valider()
+    {
+        if (Statut != DocumentStatus.Brouillon)
+        {
+            throw new InvalidOperationException("Seul un document en brouillon peut être validé.");
+        }
+        Statut = DocumentStatus.Valide;
     }
 
     public void UpdateAvoirFournisseur(
@@ -47,6 +57,8 @@ public partial class AvoirFournisseur : IAccountingYearEntity
     public int NumAvoirFournisseur { get; set; }
 
     public int AccountingYearId { get; set; }
+
+    public DocumentStatus Statut { get; private set; }
 
     public virtual Fournisseur? Fournisseur { get; set; }
 

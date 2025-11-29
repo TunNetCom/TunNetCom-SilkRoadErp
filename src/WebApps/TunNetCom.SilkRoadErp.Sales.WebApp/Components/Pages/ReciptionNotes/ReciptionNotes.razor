@@ -18,6 +18,9 @@
 @inject NavigationManager NavigationManager
 @inject ODataService ODataService
 @inject ITagsApiClient TagsService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+@using TunNetCom.SilkRoadErp.Sales.Domain.Entites
 
 
 <div class="delivery-notes-list-container">
@@ -46,19 +49,37 @@
         </div>
         <TagSearchFilter SelectedTagIds="@searchCriteria.SelectedTagIds"
                        SelectedTagIdsChanged="@OnTagIdsChanged" />
-        <div class="search-button">
+        <div class="search-field">
+            <label>Statut</label>
+            <RadzenDropDown @bind-Value="@searchCriteria.Status"
+                            Data="@(Enum.GetValues(typeof(DocumentStatus)).Cast<DocumentStatus>().Select(e => new { Value = (int?)e, Text = e.ToString() }).Prepend(new { Value = (int?)null, Text = "Tous" }))"
+                            TextProperty="Text"
+                            ValueProperty="Value"
+                            class="w-100 search-input" />
+        </div>
+        <div class="search-button" style="display: flex; gap: 8px;">
             <RadzenButton Text="@Localizer["search"]"
                           Icon="search"
                           ButtonStyle="ButtonStyle.Primary"
                           Click="@SearchReceiptNotes"
                           class="action-button" />
+            <RadzenButton Icon="check_circle"
+                          ButtonStyle="ButtonStyle.Success"
+                          Click="@ValidateSelectedReceiptNotes"
+                          Disabled="@(selectedReceiptNotes == null || !selectedReceiptNotes.Any())"
+                          Title="Valider la sélection"
+                          AriaLabel="Valider la sélection"
+                          class="action-button" />
         </div>
     </div>
     <div class="list-card">
         <h2>Bons de réception</h2>
-        <RadzenDataGrid Data="@receiptNotesList"
+        <RadzenDataGrid @ref="receiptNotesGrid"
+                        Data="@receiptNotesList"
                         LoadData="@Callback"
                         TItem="ReceiptNoteBaseInfo"
+                        SelectionMode="DataGridSelectionMode.Multiple"
+                        @bind-Value="selectedReceiptNotes"
                         AllowSorting="true"
                         AllowFiltering="true"
                         AllowPaging="true"
@@ -70,6 +91,23 @@
                 <p style="font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
             </EmptyTemplate>
             <Columns>
+                <RadzenDataGridColumn TItem="ReceiptNoteBaseInfo" Width="40px" Sortable="false" Filterable="false">
+                    <HeaderTemplate>
+                        <RadzenCheckBox TriState="false" TValue="bool" Value="@(receiptNotesList != null && receiptNotesList.Any() && selectedReceiptNotes != null && receiptNotesList.All(i => selectedReceiptNotes.Contains(i)))"
+                                        Change="@(args => { if(args == true) { selectedReceiptNotes = receiptNotesList.ToList(); } else { selectedReceiptNotes = new List<ReceiptNoteBaseInfo>(); } })" />
+                    </HeaderTemplate>
+                    <Template Context="data">
+                        <RadzenCheckBox TriState="false" Value="@(selectedReceiptNotes != null && selectedReceiptNotes.Contains(data))" 
+                                        TValue="bool" Change="@(args => { if(selectedReceiptNotes == null) selectedReceiptNotes = new List<ReceiptNoteBaseInfo>(); if(args) { if(!selectedReceiptNotes.Contains(data)) selectedReceiptNotes.Add(data); } else { selectedReceiptNotes.Remove(data); } })" />
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ReceiptNoteBaseInfo" Property="Statut" Title="Statut" Width="100px">
+                    <Template Context="item">
+                        <span class="status-tag" style="@GetStatusStyle(item.Statut)">
+                            @(item.Statut == 1 ? "Validé" : "Brouillon")
+                        </span>
+                    </Template>
+                </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="ReceiptNoteBaseInfo"
                                       Property="@nameof(ReceiptNoteBaseInfo.Number)"
                                       Title="Numéro"
@@ -132,8 +170,18 @@
                                       Variant="Variant.Flat"
                                       Size="ButtonSize.Small"
                                       Click="@(() => ViewReceiptNote(item.Number.ToString()))"
+                                      Disabled="@(item.Statut == 1)"
                                       Title="@Localizer["Edit"]"
-                                      AriaLabel="@Localizer["Edit"]" />
+                                      AriaLabel="@Localizer["Edit"]"
+                                      Style="margin-right: 4px;" />
+                        <RadzenButton Icon="check_circle"
+                                      ButtonStyle="ButtonStyle.Success"
+                                      Variant="Variant.Flat"
+                                      Size="ButtonSize.Small"
+                                      Click="@(() => ValidateReceiptNote(item))"
+                                      Disabled="@(item.Statut == 1)"
+                                      Title="Valider"
+                                      AriaLabel="Valider" />
                     </Template>
                 </RadzenDataGridColumn>
             </Columns>
@@ -324,10 +372,24 @@
             font-size: 12px;
         }
     }
+
+    /* Style pour le bouton "Oui" dans les modals de confirmation */
+    ::deep .rz-dialog-footer button:first-child {
+        background-color: #4CAF50 !important;
+        color: white !important;
+        border-color: #4CAF50 !important;
+    }
+
+    ::deep .rz-dialog-footer button:first-child:hover {
+        background-color: #45a049 !important;
+        border-color: #45a049 !important;
+    }
 </style>
 
 @code {
+    private RadzenDataGrid<ReceiptNoteBaseInfo> receiptNotesGrid = default!;
     private List<ReceiptNoteBaseInfo> receiptNotesList = new();
+    private IList<ReceiptNoteBaseInfo> selectedReceiptNotes = new List<ReceiptNoteBaseInfo>();
     private int totalCount = 0;
     private decimal totalGrossAmount = 0;
     private decimal totalVatAmount = 0;
@@ -389,6 +451,79 @@
         await Callback(new LoadDataArgs { Skip = 0, Top = pageSize });
     }
 
+    private async Task ValidateSelectedReceiptNotes()
+    {
+        if (selectedReceiptNotes == null || !selectedReceiptNotes.Any())
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Warning, Summary = Localizer["Attention"], Detail = Localizer["Select_At_Least_One_ReceiptNote"] });
+            return;
+        }
+
+        var count = selectedReceiptNotes.Count;
+        var confirmed = await DialogService.Confirm(
+            string.Format(Localizer["Confirmation_Validation_ReceiptNotes"], count, count > 1 ? "s" : ""),
+            Localizer["Confirmation_Validation_Titre"],
+            new ConfirmOptions() { OkButtonText = Localizer["Oui"], CancelButtonText = Localizer["Non"] });
+
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        var ids = selectedReceiptNotes.Select(d => d.Number).ToList();
+        var result = await receiptNoteService.ValidateReceiptNotesAsync(ids, default);
+        
+        if (result.IsSuccess)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = Localizer["Success"], Detail = Localizer["Validation_Success_ReceiptNotes"] });
+            selectedReceiptNotes.Clear();
+            if (receiptNotesGrid != null)
+            {
+                await receiptNotesGrid.Reload();
+            }
+            else
+            {
+                await SearchReceiptNotes();
+            }
+        }
+        else
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = Localizer["Error"], Detail = result.Errors.FirstOrDefault()?.Message ?? Localizer["Unexpected_Error"] });
+        }
+    }
+
+    private async Task ValidateReceiptNote(ReceiptNoteBaseInfo item)
+    {
+        var confirmed = await DialogService.Confirm(
+            string.Format(Localizer["Confirmation_Validation_ReceiptNote"], item.Number),
+            Localizer["Confirmation_Validation_Titre"],
+            new ConfirmOptions() { OkButtonText = Localizer["Oui"], CancelButtonText = Localizer["Non"] });
+
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        var result = await receiptNoteService.ValidateReceiptNotesAsync(new List<int> { item.Number }, default);
+        
+        if (result.IsSuccess)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = Localizer["Success"], Detail = Localizer["Validation_Success_ReceiptNote"] });
+            if (receiptNotesGrid != null)
+            {
+                await receiptNotesGrid.Reload();
+            }
+            else
+            {
+                await SearchReceiptNotes();
+            }
+        }
+        else
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = Localizer["Error"], Detail = result.Errors.FirstOrDefault()?.Message ?? Localizer["Unexpected_Error"] });
+        }
+    }
+
     private async Task Callback(LoadDataArgs args)
     {
         _logger.LogInformation("ReciptionNotes.Callback called with Skip: {Skip}, Top: {Top}", args.Skip, args.Top);
@@ -409,6 +544,21 @@
         try
         {
             _logger.LogInformation("Calling ODataService.QueryAsync for ReceiptNoteBaseInfos");
+            
+            // Add Status filter to args if selected
+            if (searchCriteria.Status.HasValue)
+            {
+                var statusFilter = $"Statut eq {searchCriteria.Status.Value}";
+                if (!string.IsNullOrEmpty(args.Filter))
+                {
+                    args.Filter = $"({args.Filter}) and ({statusFilter})";
+                }
+                else
+                {
+                    args.Filter = statusFilter;
+                }
+            }
+
             var response = await ODataService.QueryAsync<ReceiptNoteBaseInfo>(
                 entitySet: "ReceiptNoteBaseInfos",
                 args: args,
@@ -447,6 +597,7 @@
         public DateTime? EndDate { get; set; }
         public int? SelectedProviderId { get; set; }
         public List<int> SelectedTagIds { get; set; } = new();
+        public int? Status { get; set; }
     }
 
     private void OnPeriodFilterChanged()
@@ -458,5 +609,12 @@
     {
         searchCriteria.SelectedTagIds = tagIds;
         await SearchReceiptNotes();
+    }
+
+    private string GetStatusStyle(int statut)
+    {
+        return statut == 1 
+            ? "background-color: #388e3c; color: #fff;" 
+            : "background-color: #e1e1e1; color: #333;";
     }
 }

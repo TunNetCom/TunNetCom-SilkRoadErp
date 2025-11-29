@@ -34,4 +34,12 @@ namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Orders;
         /// <param name="cancellationToken">Cancellation token for the request.</param>
         /// <returns>A Result indicating success or failure.</returns>
         Task<Result> UpdateOrderAsync(int num, UpdateOrderRequest request, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Validates a list of orders.
+        /// </summary>
+        /// <param name="ids">The list of order IDs to validate.</param>
+        /// <param name="cancellationToken">Cancellation token for the request.</param>
+        /// <returns>A Result indicating success or failure.</returns>
+        Task<Result> ValidateOrdersAsync(List<int> ids, CancellationToken cancellationToken = default);
     }

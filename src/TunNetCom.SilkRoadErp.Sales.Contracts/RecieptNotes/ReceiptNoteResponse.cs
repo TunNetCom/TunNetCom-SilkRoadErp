@@ -24,6 +24,12 @@ public class ReceiptNoteResponse
     [JsonPropertyName("NumFactureFournisseur")]
     public int? NumFactureFournisseur { get; set; }
 
+    [JsonPropertyName("statut")]
+    public int Statut { get; set; }
+
+    [JsonPropertyName("statutLibelle")]
+    public string StatutLibelle { get; set; } = string.Empty;
+
     [JsonPropertyName("items")]
     public List<ReceiptNoteDetailResponse> Items { get; set; } = new();
 }

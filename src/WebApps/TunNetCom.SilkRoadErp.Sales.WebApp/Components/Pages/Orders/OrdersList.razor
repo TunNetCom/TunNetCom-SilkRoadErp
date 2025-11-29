@@ -13,8 +13,11 @@
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @inject NavigationManager NavigationManager
+@inject NotificationService NotificationService
+@inject DialogService DialogService
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Common
+@using TunNetCom.SilkRoadErp.Sales.Domain.Entites
 
 <div class="orders-list-container">
     <div class="search-header">
@@ -36,11 +39,26 @@
                 </Columns>
             </RadzenDropDownDataGrid>
         </div>
-        <div class="search-button">
+        <div class="search-field">
+            <label>Statut</label>
+            <RadzenDropDown @bind-Value="@selectedStatus"
+                            Data="@(Enum.GetValues(typeof(DocumentStatus)).Cast<DocumentStatus>().Select(e => new { Value = (int?)e, Text = e.ToString() }).Prepend(new { Value = (int?)null, Text = "Tous" }))"
+                            TextProperty="Text"
+                            ValueProperty="Value"
+                            class="w-100 search-input" />
+        </div>
+        <div class="search-button" style="display: flex; gap: 8px;">
             <RadzenButton Text="@Localizer["search"]"
                           Icon="search"
                           ButtonStyle="ButtonStyle.Primary"
                           Click="@SearchOrders"
+                          class="action-button" />
+            <RadzenButton Icon="check_circle"
+                          ButtonStyle="ButtonStyle.Success"
+                          Click="@ValidateSelectedOrders"
+                          Disabled="@(selectedOrders == null || !selectedOrders.Any())"
+                          Title="Valider la sélection"
+                          AriaLabel="Valider la sélection"
                           class="action-button" />
         </div>
         <div class="search-button">
@@ -53,9 +71,12 @@
     </div>
     <div class="list-card">
         <h2>Commandes fournisseur</h2>
-        <RadzenDataGrid Data="@ordersList"
+        <RadzenDataGrid @ref="ordersGrid"
+                        Data="@ordersList"
                         LoadData="@Callback"
                         TItem="OrderSummaryResponse"
+                        SelectionMode="DataGridSelectionMode.Multiple"
+                        @bind-Value="selectedOrders"
                         AllowSorting="true"
                         AllowFiltering="true"
                         AllowPaging="true"
@@ -67,6 +88,23 @@
                 <p style="font-size: 24px; text-align: center; margin: 2rem;">Aucune commande à afficher.</p>
             </EmptyTemplate>
             <Columns>
+                <RadzenDataGridColumn TItem="OrderSummaryResponse" Width="40px" Sortable="false" Filterable="false">
+                    <HeaderTemplate>
+                        <RadzenCheckBox TriState="false" TValue="bool" Value="@(ordersList != null && ordersList.Any() && selectedOrders != null && ordersList.All(i => selectedOrders.Contains(i)))"
+                                        Change="@(args => selectedOrders = args ? ordersList.ToList() : new List<OrderSummaryResponse>())" />
+                    </HeaderTemplate>
+                    <Template Context="data">
+                        <RadzenCheckBox TriState="false" Value="@(selectedOrders != null && selectedOrders.Contains(data))" 
+                                        TValue="bool" Change="@(args => { if(selectedOrders == null) selectedOrders = new List<OrderSummaryResponse>(); if(args) { if(!selectedOrders.Contains(data)) selectedOrders.Add(data); } else { selectedOrders.Remove(data); } })" />
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="OrderSummaryResponse" Property="Statut" Title="Statut" Width="100px">
+                    <Template Context="item">
+                        <span class="status-tag" style="@GetStatusStyle(item.Statut)">
+                            @(item.Statut == 1 ? "Validé" : "Brouillon")
+                        </span>
+                    </Template>
+                </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="OrderSummaryResponse"
                                       Property="@nameof(OrderSummaryResponse.OrderNumber)"
                                       Title="@Localizer["number"]"
@@ -86,7 +124,7 @@
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="OrderSummaryResponse"
                                       Title="@Localizer["actions_label"]"
-                                      Width="100px"
+                                      Width="120px"
                                       Sortable="false"
                                       Filterable="false">
                     <Template Context="item">
@@ -95,8 +133,18 @@
                                       Variant="Variant.Flat"
                                       Size="ButtonSize.Small"
                                       Click="@(() => ViewOrder(item.OrderNumber.ToString()))"
+                                      Disabled="@(item.Statut == 1)"
                                       Title="@Localizer["edit"]"
-                                      AriaLabel="@Localizer["edit"]" />
+                                      AriaLabel="@Localizer["edit"]" 
+                                      Style="margin-right: 4px;" />
+                        <RadzenButton Icon="check_circle"
+                                      ButtonStyle="ButtonStyle.Success"
+                                      Variant="Variant.Flat"
+                                      Size="ButtonSize.Small"
+                                      Click="@(() => ValidateOrder(item))"
+                                      Disabled="@(item.Statut == 1)"
+                                      Title="Valider"
+                                      AriaLabel="Valider" />
                     </Template>
                 </RadzenDataGridColumn>
             </Columns>
@@ -115,6 +163,16 @@
 </div>
 
 <style>
+    .status-tag {
+        font-size: 0.75rem;
+        padding: 0.125rem 0.5rem;
+        display: inline-flex;
+        align-items: center;
+        border-radius: 3px;
+        line-height: 1.5;
+        font-weight: 500;
+    }
+
     .orders-list-container {
         padding: 0;
         min-height: 100%;
@@ -253,13 +311,28 @@
             padding: 6px;
         }
     }
+
+    /* Style pour le bouton "Oui" dans les modals de confirmation */
+    ::deep .rz-dialog-footer button:first-child {
+        background-color: #4CAF50 !important;
+        color: white !important;
+        border-color: #4CAF50 !important;
+    }
+
+    ::deep .rz-dialog-footer button:first-child:hover {
+        background-color: #45a049 !important;
+        border-color: #45a049 !important;
+    }
 </style>
 
 @code {
+    private RadzenDataGrid<OrderSummaryResponse> ordersGrid = default!;
     private List<OrderSummaryResponse> ordersList = new();
+    private IList<OrderSummaryResponse> selectedOrders = new List<OrderSummaryResponse>();
     private int totalCount = 0;
     private int pageSize = GridPageSizeConstants.PageSize10;
     private int? selectedProviderId;
+    private int? selectedStatus;
     private List<ProviderResponse> _filteredProviders = new();
 
     protected override async Task OnInitializedAsync()
@@ -310,6 +383,79 @@
         await Callback(new LoadDataArgs { Skip = 0, Top = pageSize });
     }
 
+    private async Task ValidateSelectedOrders()
+    {
+        if (selectedOrders == null || !selectedOrders.Any())
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Warning, Summary = Localizer["Attention"], Detail = Localizer["Select_At_Least_One_Order"] });
+            return;
+        }
+
+        var count = selectedOrders.Count;
+        var confirmed = await DialogService.Confirm(
+            string.Format(Localizer["Confirmation_Validation_Orders"], count, count > 1 ? "s" : ""),
+            Localizer["Confirmation_Validation_Titre"],
+            new ConfirmOptions() { OkButtonText = Localizer["Oui"], CancelButtonText = Localizer["Non"] });
+
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        var ids = selectedOrders.Select(d => d.OrderNumber).ToList();
+        var result = await OrderService.ValidateOrdersAsync(ids, default);
+        
+        if (result.IsSuccess)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = Localizer["Success"], Detail = Localizer["Validation_Success_Orders"] });
+            selectedOrders.Clear();
+            if (ordersGrid != null)
+            {
+                await ordersGrid.Reload();
+            }
+            else
+            {
+                await SearchOrders();
+            }
+        }
+        else
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = Localizer["Error"], Detail = result.Errors.FirstOrDefault()?.Message ?? Localizer["Unexpected_Error"] });
+        }
+    }
+
+    private async Task ValidateOrder(OrderSummaryResponse item)
+    {
+        var confirmed = await DialogService.Confirm(
+            string.Format(Localizer["Confirmation_Validation_Order"], item.OrderNumber),
+            Localizer["Confirmation_Validation_Titre"],
+            new ConfirmOptions() { OkButtonText = Localizer["Oui"], CancelButtonText = Localizer["Non"] });
+
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        var result = await OrderService.ValidateOrdersAsync(new List<int> { item.OrderNumber }, default);
+        
+        if (result.IsSuccess)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = Localizer["Success"], Detail = Localizer["Validation_Success_Order"] });
+            if (ordersGrid != null)
+            {
+                await ordersGrid.Reload();
+            }
+            else
+            {
+                await SearchOrders();
+            }
+        }
+        else
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = Localizer["Error"], Detail = result.Errors.FirstOrDefault()?.Message ?? Localizer["Unexpected_Error"] });
+        }
+    }
+
     private async Task Callback(LoadDataArgs args)
     {
         _logger.LogInformation("OrdersList.Callback called with Skip: {Skip}, Top: {Top}", args.Skip, args.Top);
@@ -330,6 +476,12 @@
                 allOrders = allOrders.Where(o => o.SupplierId == selectedProviderId.Value).ToList();
             }
 
+            // Filter by status if selected
+            if (selectedStatus.HasValue)
+            {
+                allOrders = allOrders.Where(o => o.Statut == selectedStatus.Value).ToList();
+            }
+
             // Apply paging
             ordersList = allOrders.Skip(args.Skip ?? 0).Take(args.Top ?? pageSize).ToList();
             totalCount = allOrders.Count;
@@ -342,5 +494,12 @@
         }
 
         await InvokeAsync(StateHasChanged);
+    }
+
+    private string GetStatusStyle(int statut)
+    {
+        return statut == 1 
+            ? "background-color: #388e3c; color: #fff;" 
+            : "background-color: #e1e1e1; color: #333;";
     }
 }

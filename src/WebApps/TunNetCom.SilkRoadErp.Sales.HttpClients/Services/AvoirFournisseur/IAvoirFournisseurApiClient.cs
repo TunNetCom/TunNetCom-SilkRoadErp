@@ -26,11 +26,14 @@ public interface IAvoirFournisseurApiClient
         string? searchKeyword,
         DateTime? startDate,
         DateTime? endDate,
-        CancellationToken cancellationToken);
+        CancellationToken cancellationToken,
+        int? status = null);
 
     Task<Result> UpdateAvoirFournisseurAsync(
         int num,
         UpdateAvoirFournisseurRequest request,
         CancellationToken cancellationToken);
+
+    Task<Result> ValidateAvoirFournisseursAsync(List<int> ids, CancellationToken cancellationToken);
 }
 
