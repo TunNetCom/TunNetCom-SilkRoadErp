@@ -30,6 +30,13 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             entity.Property(e => e.RemiseAchat).HasColumnName("remiseAchat");
             entity.Property(e => e.Tva).HasColumnName("TVA");
             entity.Property(e => e.Visibilite).HasColumnName("visibilite");
+            entity.Property(e => e.SousFamilleProduitId).HasColumnName("SousFamilleProduitId");
+
+            entity.HasOne(d => d.SousFamilleProduit)
+                .WithMany(p => p.Produits)
+                .HasForeignKey(d => d.SousFamilleProduitId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK_dbo.Produit_dbo.SousFamilleProduit_SousFamilleProduitId");
 
             OnConfigurePartial(entity);
         }

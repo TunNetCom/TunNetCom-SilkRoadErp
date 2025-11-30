@@ -7,7 +7,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 public partial class Produit
 {
-    public Produit(string refe, string nom, int qteLimite, double remise, double remiseAchat, double tva, decimal prix, decimal prixAchat, bool visibilite)
+    public Produit(string refe, string nom, int qteLimite, double remise, double remiseAchat, double tva, decimal prix, decimal prixAchat, bool visibilite, int? sousFamilleProduitId = null)
     {
         Refe = refe;
         Nom = nom;
@@ -18,6 +18,7 @@ public partial class Produit
         Prix = prix;
         PrixAchat = prixAchat;
         Visibilite = visibilite;
+        SousFamilleProduitId = sousFamilleProduitId;
     }
 
     public static Produit CreateProduct(
@@ -29,7 +30,8 @@ public partial class Produit
      double tva,
      decimal prix,
      decimal prixAchat,
-     bool visibilite)
+     bool visibilite,
+     int? sousFamilleProduitId = null)
     {
         return new Produit
         (
@@ -41,7 +43,8 @@ public partial class Produit
             tva: tva,
             prix: prix,
             prixAchat: prixAchat,
-            visibilite: visibilite
+            visibilite: visibilite,
+            sousFamilleProduitId: sousFamilleProduitId
         );
 
     }
@@ -54,7 +57,8 @@ public partial class Produit
         double tva,
         decimal prix,
         decimal prixAchat,
-        bool visibilite)
+        bool visibilite,
+        int? sousFamilleProduitId = null)
     {
 
         Refe = refe;
@@ -66,6 +70,7 @@ public partial class Produit
         Prix = prix;
         PrixAchat = prixAchat;
         Visibilite = visibilite;
+        SousFamilleProduitId = sousFamilleProduitId;
 
     }
 
@@ -86,6 +91,10 @@ public partial class Produit
     public decimal PrixAchat { get; private set; }
 
     public bool Visibilite { get; private set; }
+
+    public int? SousFamilleProduitId { get; private set; }
+
+    public virtual SousFamilleProduit? SousFamilleProduit { get; set; }
 
     public virtual ICollection<LigneAvoirFournisseur> LigneAvoirFournisseur { get; set; } = new List<LigneAvoirFournisseur>();
 

@@ -57,6 +57,8 @@ public class DatabaseSeeder
             await SeedClientsAsync(context);
             await SeedFournisseursAsync(context);
             await SeedSystemeAsync(context);
+            await SeedFamilleProduitAsync(context);
+            await SeedSousFamilleProduitAsync(context);
             await SeedProduitsAsync(context);
             await SeedBanquesAsync(context);
             await SeedInstallationTechniciansAsync(context);
@@ -421,6 +423,91 @@ public class DatabaseSeeder
         catch (Exception ex)
         {
             _logger.LogError(ex, "✗ ERREUR lors de l'insertion des données système: {Message}", ex.Message);
+            throw;
+        }
+    }
+
+    private async Task SeedFamilleProduitAsync(SalesContext context)
+    {
+        var count = await context.FamilleProduit.CountAsync();
+        _logger.LogInformation("Table FamilleProduit - Nombre d'enregistrements actuels: {Count}", count);
+        
+        // On insère seulement si la table est vide
+        if (count > 0)
+        {
+            _logger.LogInformation("La table FamilleProduit contient déjà {Count} enregistrement(s). Seeding ignoré.", count);
+            return;
+        }
+
+        var familles = new[]
+        {
+            FamilleProduit.CreateFamilleProduit("Cables"),
+            FamilleProduit.CreateFamilleProduit("Lighting"),
+            FamilleProduit.CreateFamilleProduit("Somef")
+        };
+
+        _logger.LogInformation("Ajout de {Count} familles de produits à la base de données...", familles.Length);
+        try
+        {
+            await context.FamilleProduit.AddRangeAsync(familles);
+            var saved = await context.SaveChangesAsync();
+            _logger.LogInformation("✓ {Count} familles de produits insérées avec succès. {Saved} changements sauvegardés.", familles.Length, saved);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "✗ ERREUR lors de l'insertion des familles de produits: {Message}", ex.Message);
+            throw;
+        }
+    }
+
+    private async Task SeedSousFamilleProduitAsync(SalesContext context)
+    {
+        var count = await context.SousFamilleProduit.CountAsync();
+        _logger.LogInformation("Table SousFamilleProduit - Nombre d'enregistrements actuels: {Count}", count);
+        
+        // On insère seulement si la table est vide
+        if (count > 0)
+        {
+            _logger.LogInformation("La table SousFamilleProduit contient déjà {Count} enregistrement(s). Seeding ignoré.", count);
+            return;
+        }
+
+        // Récupérer les familles pour mapper les sous-familles
+        var familleCables = await context.FamilleProduit.FirstOrDefaultAsync(f => f.Nom == "Cables");
+        var familleLighting = await context.FamilleProduit.FirstOrDefaultAsync(f => f.Nom == "Lighting");
+        var familleSomef = await context.FamilleProduit.FirstOrDefaultAsync(f => f.Nom == "Somef");
+
+        if (familleCables == null || familleLighting == null || familleSomef == null)
+        {
+            _logger.LogError("✗ ERREUR: Impossible de trouver toutes les familles de produits. Assurez-vous que SeedFamilleProduitAsync a été exécuté avant.");
+            throw new InvalidOperationException("Les familles de produits doivent être créées avant les sous-familles.");
+        }
+
+        var sousFamilles = new[]
+        {
+            // Cables
+            SousFamilleProduit.CreateSousFamilleProduit("Fil", familleCables.Id),
+            SousFamilleProduit.CreateSousFamilleProduit("Cable souple", familleCables.Id),
+            SousFamilleProduit.CreateSousFamilleProduit("Cable réseaux", familleCables.Id),
+            SousFamilleProduit.CreateSousFamilleProduit("Cable CCTV", familleCables.Id),
+            // Lighting
+            SousFamilleProduit.CreateSousFamilleProduit("Spot led", familleLighting.Id),
+            // Somef
+            SousFamilleProduit.CreateSousFamilleProduit("Systeme 44", familleSomef.Id),
+            SousFamilleProduit.CreateSousFamilleProduit("Systeme 43", familleSomef.Id),
+            SousFamilleProduit.CreateSousFamilleProduit("Systeme 45", familleSomef.Id)
+        };
+
+        _logger.LogInformation("Ajout de {Count} sous-familles de produits à la base de données...", sousFamilles.Length);
+        try
+        {
+            await context.SousFamilleProduit.AddRangeAsync(sousFamilles);
+            var saved = await context.SaveChangesAsync();
+            _logger.LogInformation("✓ {Count} sous-familles de produits insérées avec succès. {Saved} changements sauvegardés.", sousFamilles.Length, saved);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "✗ ERREUR lors de l'insertion des sous-familles de produits: {Message}", ex.Message);
             throw;
         }
     }

@@ -74,6 +74,10 @@ public partial class SalesContext : DbContext
 
     public virtual DbSet<Produit> Produit { get; set; }
 
+    public virtual DbSet<FamilleProduit> FamilleProduit { get; set; }
+
+    public virtual DbSet<SousFamilleProduit> SousFamilleProduit { get; set; }
+
     public virtual DbSet<Systeme> Systeme { get; set; }
 
     public virtual DbSet<Transaction> Transaction { get; set; }
