@@ -1,4 +1,5 @@
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Inventaire
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Common
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Inventaire
 @using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
@@ -29,12 +30,12 @@
                 <RadzenDataGridColumn TItem="HistoriqueAchatVenteResponse" Property="@nameof(HistoriqueAchatVenteResponse.Quantite)" Title="@Localizer["quantite"]" Width="100px" />
                 <RadzenDataGridColumn TItem="HistoriqueAchatVenteResponse" Property="@nameof(HistoriqueAchatVenteResponse.PrixHt)" Title="@Localizer["prix_ht"]" Width="120px">
                     <Template Context="item">
-                        @item.PrixHt.ToString("N2")
+                        @item.PrixHt.ToString(DecimalFormatConstants.FORMAT_N3)
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="HistoriqueAchatVenteResponse" Property="@nameof(HistoriqueAchatVenteResponse.TotalHt)" Title="@Localizer["total_ht"]" Width="120px">
                     <Template Context="item">
-                        @item.TotalHt.ToString("N2")
+                        @item.TotalHt.ToString(DecimalFormatConstants.FORMAT_N3)
                     </Template>
                 </RadzenDataGridColumn>
             </Columns>

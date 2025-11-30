@@ -1,4 +1,5 @@
 ﻿using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
+using TunNetCom.SilkRoadErp.Sales.Domain.Services;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderReceiptNoteLine.CreateReceiptNoteWithLines;
 
@@ -68,8 +69,8 @@ internal class CreateReceiptNoteWithLinesCommandHandler(
                 // Add FODEC to TotTtc if provider is constructor
                 if (isConstructor && line.TotHt > 0)
                 {
-                    var fodecAmount = line.TotHt * (fodecRate / 100);
-                    line.TotTtc += fodecAmount;
+                    var fodecAmount = DecimalHelper.RoundAmount(line.TotHt * (fodecRate / 100));
+                    line.TotTtc = DecimalHelper.RoundAmount(line.TotTtc + fodecAmount);
                 }
 
                 return line;
@@ -78,9 +79,9 @@ internal class CreateReceiptNoteWithLinesCommandHandler(
             await salesContext.LigneBonReception.AddRangeAsync(receiptNoteLines, cancellationToken);
 
             // Calculate totals from lines
-            var totHTva = receiptNoteLines.Sum(l => l.TotHt);
-            var totTva = receiptNoteLines.Sum(l => l.TotTtc - l.TotHt);
-            var netPayer = receiptNoteLines.Sum(l => l.TotTtc);
+            var totHTva = DecimalHelper.RoundAmount(receiptNoteLines.Sum(l => l.TotHt));
+            var totTva = DecimalHelper.RoundAmount(receiptNoteLines.Sum(l => l.TotTtc - l.TotHt));
+            var netPayer = DecimalHelper.RoundAmount(receiptNoteLines.Sum(l => l.TotTtc));
 
             // Update receipt note with calculated totals
             recipetNote.TotHTva = totHTva;

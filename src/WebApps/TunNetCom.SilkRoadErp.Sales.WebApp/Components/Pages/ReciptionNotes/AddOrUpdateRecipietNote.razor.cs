@@ -20,6 +20,7 @@ using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags;
 using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared;
 using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers;
 using TunNetCom.SilkRoadErp.Sales.WebApp.Locales;
+using TunNetCom.SilkRoadErp.Sales.Domain.Services;
 
 namespace TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.ReciptionNotes;
 
@@ -485,16 +486,16 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
         foreach (var item in orders)
         {
             // Calculate base TotalIncludingTax (HT + VAT) without FODEC
-            var baseTotalIncludingTax = item.TotalExcludingTax + (item.TotalExcludingTax * (decimal)(item.VatPercentage / 100));
+            var baseTotalIncludingTax = DecimalHelper.RoundAmount(item.TotalExcludingTax + (item.TotalExcludingTax * (decimal)(item.VatPercentage / 100)));
             
             if (item.TotalExcludingTax > 0)
             {
                 // Calculate FODEC amount
-                var fodecAmount = item.TotalExcludingTax * (fodecRate / 100);
+                var fodecAmount = DecimalHelper.RoundAmount(item.TotalExcludingTax * (fodecRate / 100));
                 item.PrixHtFodec = fodecAmount;
                 
                 // Add FODEC to TotalIncludingTax
-                item.TotalIncludingTax = baseTotalIncludingTax + fodecAmount;
+                item.TotalIncludingTax = DecimalHelper.RoundAmount(baseTotalIncludingTax + fodecAmount);
             }
             else
             {

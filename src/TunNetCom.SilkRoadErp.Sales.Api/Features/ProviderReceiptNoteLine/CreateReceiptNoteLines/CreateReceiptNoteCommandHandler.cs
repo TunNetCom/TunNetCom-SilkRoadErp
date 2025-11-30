@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using TunNetCom.SilkRoadErp.Sales.Domain.Services;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderReceiptNoteLine.CreateReceiptNoteLines;
 
@@ -46,8 +47,8 @@ internal class CreateReceiptNoteCommandHandler(
                 var isConstructor = receiptNoteInfo.IdFournisseurNavigation?.Constructeur ?? false;
                 if (isConstructor && line.TotHt > 0)
                 {
-                    var fodecAmount = line.TotHt * (fodecRate / 100);
-                    line.TotTtc += fodecAmount;
+                    var fodecAmount = DecimalHelper.RoundAmount(line.TotHt * (fodecRate / 100));
+                    line.TotTtc = DecimalHelper.RoundAmount(line.TotTtc + fodecAmount);
                 }
 
                 receiptNoteLines.Add(line);
@@ -65,9 +66,9 @@ internal class CreateReceiptNoteCommandHandler(
             foreach (var receiptNote in receiptNotesToUpdate)
             {
                 var allLines = receiptNote.LigneBonReception.ToList();
-                receiptNote.TotHTva = allLines.Sum(l => l.TotHt);
-                receiptNote.TotTva = allLines.Sum(l => l.TotTtc - l.TotHt);
-                receiptNote.NetPayer = allLines.Sum(l => l.TotTtc);
+                receiptNote.TotHTva = DecimalHelper.RoundAmount(allLines.Sum(l => l.TotHt));
+                receiptNote.TotTva = DecimalHelper.RoundAmount(allLines.Sum(l => l.TotTtc - l.TotHt));
+                receiptNote.NetPayer = DecimalHelper.RoundAmount(allLines.Sum(l => l.TotTtc));
             }
 
             _ = await salesContext.SaveChangesAsync(cancellationToken);

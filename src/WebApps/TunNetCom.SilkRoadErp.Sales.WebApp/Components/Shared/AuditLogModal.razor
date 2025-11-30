@@ -1,4 +1,5 @@
 @using TunNetCom.SilkRoadErp.Sales.Contracts.AuditLogs
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Common
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AuditLogs
 @using System.Text.Json
 @inject IAuditLogsClient AuditLogsClient
@@ -175,7 +176,7 @@
             return jsonElement.ValueKind switch
             {
                 JsonValueKind.String => jsonElement.GetString() ?? "null",
-                JsonValueKind.Number => jsonElement.GetDouble().ToString("N2"),
+                JsonValueKind.Number => jsonElement.GetDouble().ToString(DecimalFormatConstants.FORMAT_N3),
                 JsonValueKind.True => "true",
                 JsonValueKind.False => "false",
                 JsonValueKind.Null => "null",
@@ -187,7 +188,7 @@
             return dateTime.ToString("dd/MM/yyyy HH:mm:ss");
 
         if (value is decimal || value is double || value is float)
-            return Convert.ToDecimal(value).ToString("N2");
+            return Convert.ToDecimal(value).ToString(DecimalFormatConstants.FORMAT_N3);
 
         return value.ToString() ?? "N/A";
     }

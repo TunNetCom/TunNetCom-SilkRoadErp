@@ -1,4 +1,5 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Common
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Quotations.PrintQuotation
 
 @code {
@@ -94,7 +95,7 @@
                     <td class="text-left">@line.DesignationLi</td>
                     <td>@line.QteLi</td>
                     <td class="text-right">@line.PrixHt.ToString($"N{Model.DecimalPlaces}", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</td>
-                    <td class="text-right">@line.Remise.ToString("N2", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</td>
+                    <td class="text-right">@line.Remise.ToString(DecimalFormatConstants.FORMAT_N2, System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</td>
                     <td class="text-right">@line.TotHt.ToString($"N{Model.DecimalPlaces}", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</td>
                     <td class="text-right">@line.Tva.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))%</td>
                     <td class="text-right">@line.TotTtc.ToString($"N{Model.DecimalPlaces}", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</td>

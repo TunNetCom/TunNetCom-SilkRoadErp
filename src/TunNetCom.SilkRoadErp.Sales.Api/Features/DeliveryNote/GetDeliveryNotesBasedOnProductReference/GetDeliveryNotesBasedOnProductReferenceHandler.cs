@@ -1,4 +1,5 @@
 ﻿using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
+using TunNetCom.SilkRoadErp.Sales.Domain.Services;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNotesBasedOnProductReference;
 
@@ -56,8 +57,8 @@ public class GetDeliveryNotesBasedOnProductReferenceHandler(
 
     private static decimal CalculateNetTtcUnitaire(LigneBl ligne)
     {
-        var valeurRemise = ligne.PrixHt * (decimal)ligne.Remise / 100;
-        var totTmp = ligne.PrixHt - valeurRemise;
-        return Math.Round(totTmp + (totTmp * (decimal)ligne.Tva / 100));
+        var valeurRemise = DecimalHelper.RoundAmount(ligne.PrixHt * (decimal)ligne.Remise / 100);
+        var totTmp = DecimalHelper.RoundAmount(ligne.PrixHt - valeurRemise);
+        return DecimalHelper.RoundAmount(totTmp + (totTmp * (decimal)ligne.Tva / 100));
     }
 }

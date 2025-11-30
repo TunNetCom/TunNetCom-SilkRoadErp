@@ -1,4 +1,5 @@
 ﻿@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Common
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Invoices.ProviderInvoices
 
 <!DOCTYPE html>
@@ -107,7 +108,7 @@
                         <td class="text-left">@line.Description</td>
                         <td>@line.ReceivedQuantity</td>
                         <td>@line.UnitPriceExclTax.FormatAmount()</td>
-                        <td>@line.Remise.ToString("N2", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</td>
+                        <td>@line.Remise.ToString(DecimalFormatConstants.FORMAT_N2, System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</td>
                         <td>@line.LineTotalExclTax.FormatAmount()</td>
                         <td>@((int)line.TaxRate)%</td>
                         <td>@line.LineTotalInclTax.FormatAmount()</td>
@@ -156,7 +157,7 @@
                 </tr>
                 <tr>
                     <td style="text-align: left; padding: 5px; border-bottom: 1px solid #eee;">Timbre:</td>
-                    <td style="text-align: right; padding: 5px; border-bottom: 1px solid #eee; font-family: monospace;">@Model.Timbre.ToString("N3", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</td>
+                    <td style="text-align: right; padding: 5px; border-bottom: 1px solid #eee; font-family: monospace;">@Model.Timbre.ToString(DecimalFormatConstants.FORMAT_N3, System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</td>
                 </tr>
                 <tr>
                     <td style="text-align: left; padding: 5px; font-weight: bold;">Total TTC:</td>

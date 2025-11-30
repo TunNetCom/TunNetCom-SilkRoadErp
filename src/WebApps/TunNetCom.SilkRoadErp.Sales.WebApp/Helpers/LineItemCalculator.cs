@@ -1,4 +1,5 @@
 using TunNetCom.SilkRoadErp.Sales.Contracts.Common;
+using TunNetCom.SilkRoadErp.Sales.Domain.Services;
 
 namespace TunNetCom.SilkRoadErp.Sales.WebApp.Helpers;
 
@@ -16,11 +17,11 @@ public static class LineItemCalculator
     {
         if (lineItem.Quantity > 0 && lineItem.UnitPriceExcludingTax > 0)
         {
-            decimal totalBeforeDiscount = lineItem.Quantity * lineItem.UnitPriceExcludingTax;
-            decimal discountAmount = totalBeforeDiscount * (decimal)(lineItem.DiscountPercentage / 100);
-            lineItem.TotalExcludingTax = totalBeforeDiscount - discountAmount;
-            decimal vatAmount = lineItem.TotalExcludingTax * (decimal)(lineItem.VatPercentage / 100);
-            lineItem.TotalIncludingTax = lineItem.TotalExcludingTax + vatAmount;
+            decimal totalBeforeDiscount = DecimalHelper.RoundAmount(lineItem.Quantity * lineItem.UnitPriceExcludingTax);
+            decimal discountAmount = DecimalHelper.RoundAmount(totalBeforeDiscount * (decimal)(lineItem.DiscountPercentage / 100));
+            lineItem.TotalExcludingTax = DecimalHelper.RoundAmount(totalBeforeDiscount - discountAmount);
+            decimal vatAmount = DecimalHelper.RoundAmount(lineItem.TotalExcludingTax * (decimal)(lineItem.VatPercentage / 100));
+            lineItem.TotalIncludingTax = DecimalHelper.RoundAmount(lineItem.TotalExcludingTax + vatAmount);
         }
         else
         {
@@ -41,9 +42,9 @@ public static class LineItemCalculator
         
         return new LineItemTotals
         {
-            TotalHt = itemsList.Sum(o => o.TotalExcludingTax),
-            TotalVat = itemsList.Sum(o => o.TotalIncludingTax - o.TotalExcludingTax),
-            TotalTtc = itemsList.Sum(o => o.TotalIncludingTax)
+            TotalHt = DecimalHelper.RoundAmount(itemsList.Sum(o => o.TotalExcludingTax)),
+            TotalVat = DecimalHelper.RoundAmount(itemsList.Sum(o => o.TotalIncludingTax - o.TotalExcludingTax)),
+            TotalTtc = DecimalHelper.RoundAmount(itemsList.Sum(o => o.TotalIncludingTax))
         };
     }
 
@@ -62,9 +63,9 @@ public static class LineItemCalculator
         out decimal totalTtc) where T : ILineItem
     {
         var totals = CalculateAggregatedTotals(lineItems);
-        totalHt = totals.TotalHt;
-        totalVat = totals.TotalVat;
-        totalTtc = totals.TotalTtc;
+        totalHt = DecimalHelper.RoundAmount(totals.TotalHt);
+        totalVat = DecimalHelper.RoundAmount(totals.TotalVat);
+        totalTtc = DecimalHelper.RoundAmount(totals.TotalTtc);
     }
 }
 

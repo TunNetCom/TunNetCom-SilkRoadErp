@@ -1,4 +1,5 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Common
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.DeliveryNotes.PrintDeliveryNote
 
 @code {
@@ -93,11 +94,11 @@
                     <td>@line.RefProduit</td>
                     <td class="text-left">@line.DesignationLi</td>
                     <td>@line.QteLi</td>
-                    <td class="text-right">@line.PrixHt.ToString("N3", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</td>
-                    <td class="text-right">@line.Remise.ToString("N2", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</td>
-                    <td class="text-right">@line.TotHt.ToString("N3", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</td>
+                    <td class="text-right">@line.PrixHt.ToString(DecimalFormatConstants.FORMAT_N3, System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</td>
+                    <td class="text-right">@line.Remise.ToString(DecimalFormatConstants.FORMAT_N2, System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</td>
+                    <td class="text-right">@line.TotHt.ToString(DecimalFormatConstants.FORMAT_N3, System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</td>
                     <td class="text-right">@line.Tva.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))%</td>
-                    <td class="text-right">@line.TotTtc.ToString("N3", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</td>
+                    <td class="text-right">@line.TotTtc.ToString(DecimalFormatConstants.FORMAT_N3, System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</td>
                 </tr>
             }
         </tbody>

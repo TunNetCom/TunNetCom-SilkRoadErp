@@ -1,4 +1,5 @@
 using TunNetCom.SilkRoadErp.Sales.Contracts.AvoirFournisseur;
+using TunNetCom.SilkRoadErp.Sales.Domain.Services;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.AvoirFournisseur.UpdateAvoirFournisseur;
 
@@ -81,10 +82,10 @@ public class UpdateAvoirFournisseurCommandHandler(
         // Create new lines
         foreach (var lineRequest in command.Lines)
         {
-            var remiseAmount = lineRequest.PrixHt * lineRequest.QteLi * (decimal)(lineRequest.Remise / 100.0);
-            var totHt = (lineRequest.PrixHt * lineRequest.QteLi) - remiseAmount;
-            var totTva = totHt * (decimal)(lineRequest.Tva / 100.0);
-            var totTtc = totHt + totTva;
+            var remiseAmount = DecimalHelper.RoundAmount(lineRequest.PrixHt * lineRequest.QteLi * (decimal)(lineRequest.Remise / 100.0));
+            var totHt = DecimalHelper.RoundAmount((lineRequest.PrixHt * lineRequest.QteLi) - remiseAmount);
+            var totTva = DecimalHelper.RoundAmount(totHt * (decimal)(lineRequest.Tva / 100.0));
+            var totTtc = DecimalHelper.RoundAmount(totHt + totTva);
 
             var ligne = new LigneAvoirFournisseur
             {

@@ -1,6 +1,7 @@
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote
 @using TunNetCom.SilkRoadErp.Sales.Contracts
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Common
 @using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses
 @using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNote.Responses
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
@@ -34,27 +35,27 @@
                         <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.Description)" Title="Description" Width="200px"/>
                         <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.UnitPriceExcludingTax)" Title="Unit Price (Excl. Tax)" Width="150px">
                             <Template Context="item">
-                                @item.UnitPriceExcludingTax.ToString("N3", CultureInfo.GetCultureInfo("fr-FR"))
+                                @item.UnitPriceExcludingTax.ToString(DecimalFormatConstants.FORMAT_N3, CultureInfo.GetCultureInfo("fr-FR"))
                             </Template>
                         </RadzenDataGridColumn>
                         <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.DiscountPercentage)" Title="Discount (%)" Width="100px">
                             <Template Context="item">
-                                @item.DiscountPercentage.ToString("N2", CultureInfo.GetCultureInfo("fr-FR"))
+                                @item.DiscountPercentage.ToString(DecimalFormatConstants.FORMAT_N2, CultureInfo.GetCultureInfo("fr-FR"))
                             </Template>
                         </RadzenDataGridColumn>
                         <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.VatPercentage)" Title="VAT (%)" Width="100px">
                             <Template Context="item">
-                                @item.VatPercentage.ToString("N2", CultureInfo.GetCultureInfo("fr-FR"))
+                                @item.VatPercentage.ToString(DecimalFormatConstants.FORMAT_N2, CultureInfo.GetCultureInfo("fr-FR"))
                             </Template>
                         </RadzenDataGridColumn>
                         <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.NetTtcUnitaire)" Title="Net TTC Unitaire" Width="150px">
                             <Template Context="item">
-                                @item.NetTtcUnitaire.ToString("N3", CultureInfo.GetCultureInfo("fr-FR"))
+                                @item.NetTtcUnitaire.ToString(DecimalFormatConstants.FORMAT_N3, CultureInfo.GetCultureInfo("fr-FR"))
                             </Template>
                         </RadzenDataGridColumn>
                         <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.PrixHtFodec)" Title="Price HT Fodec" Width="150px">
                             <Template Context="item">
-                                @(item.PrixHtFodec?.ToString("N3", CultureInfo.GetCultureInfo("fr-FR")) ?? "-")
+                                @(item.PrixHtFodec?.ToString(DecimalFormatConstants.FORMAT_N3, CultureInfo.GetCultureInfo("fr-FR")) ?? "-")
                             </Template>
                         </RadzenDataGridColumn>
                     </Columns>
@@ -82,27 +83,27 @@
                         <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailResponse.Description)" Title="Description" Width="200px"/>
                         <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailResponse.UnitPriceExcludingTax)" Title="Unit Price (Excl. Tax)" Width="150px">
                             <Template Context="item">
-                                @item.UnitPriceExcludingTax.ToString("N3", CultureInfo.GetCultureInfo("fr-FR"))
+                                @item.UnitPriceExcludingTax.ToString(DecimalFormatConstants.FORMAT_N3, CultureInfo.GetCultureInfo("fr-FR"))
                             </Template>
                         </RadzenDataGridColumn>
                         <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailResponse.DiscountPercentage)" Title="Discount (%)" Width="100px">
                             <Template Context="item">
-                                @item.DiscountPercentage.ToString("N2", CultureInfo.GetCultureInfo("fr-FR"))
+                                @item.DiscountPercentage.ToString(DecimalFormatConstants.FORMAT_N2, CultureInfo.GetCultureInfo("fr-FR"))
                             </Template>
                         </RadzenDataGridColumn>
                         <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailResponse.VatPercentage)" Title="VAT (%)" Width="100px">
                             <Template Context="item">
-                                @item.VatPercentage.ToString("N2", CultureInfo.GetCultureInfo("fr-FR"))
+                                @item.VatPercentage.ToString(DecimalFormatConstants.FORMAT_N2, CultureInfo.GetCultureInfo("fr-FR"))
                             </Template>
                         </RadzenDataGridColumn>
                         <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailResponse.TotalExcludingTax)" Title="Total HT" Width="150px">
                             <Template Context="item">
-                                @item.TotalExcludingTax.ToString("N3", CultureInfo.GetCultureInfo("fr-FR"))
+                                @item.TotalExcludingTax.ToString(DecimalFormatConstants.FORMAT_N3, CultureInfo.GetCultureInfo("fr-FR"))
                             </Template>
                         </RadzenDataGridColumn>
                         <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailResponse.TotalIncludingTax)" Title="Total TTC" Width="150px">
                             <Template Context="item">
-                                @item.TotalIncludingTax.ToString("N3", CultureInfo.GetCultureInfo("fr-FR"))
+                                @item.TotalIncludingTax.ToString(DecimalFormatConstants.FORMAT_N3, CultureInfo.GetCultureInfo("fr-FR"))
                             </Template>
                         </RadzenDataGridColumn>
                     </Columns>

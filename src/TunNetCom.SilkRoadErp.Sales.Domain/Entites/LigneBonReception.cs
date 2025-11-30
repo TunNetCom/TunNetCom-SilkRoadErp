@@ -2,6 +2,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using TunNetCom.SilkRoadErp.Sales.Domain.Services;
 
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
@@ -40,9 +41,10 @@ public partial class LigneBonReception
         double discount,
         double tax)
     {
-        var subtotalBeforeDiscount = quantity * unitPrice;
-        var discountAmount = subtotalBeforeDiscount * (decimal)(discount / 100);
-        var subtotalAfterDiscount = subtotalBeforeDiscount - discountAmount;
+        var subtotalBeforeDiscount = DecimalHelper.RoundAmount(quantity * unitPrice);
+        var discountAmount = DecimalHelper.RoundAmount(subtotalBeforeDiscount * (decimal)(discount / 100));
+        var subtotalAfterDiscount = DecimalHelper.RoundAmount(subtotalBeforeDiscount - discountAmount);
+        var totTtc = DecimalHelper.RoundAmount(subtotalAfterDiscount * (1 + (decimal)(tax / 100)));
         
         return new LigneBonReception
         {
@@ -53,7 +55,7 @@ public partial class LigneBonReception
             Remise = discount,
             TotHt = subtotalAfterDiscount,
             Tva = tax,
-            TotTtc = subtotalAfterDiscount * (1 + (decimal)(tax / 100)),
+            TotTtc = totTtc,
             BonDeReceptionId = bonDeReceptionId
         };
     }
