@@ -28,11 +28,3 @@ public interface IPaiementClientApiClient
         int id,
         CancellationToken cancellationToken);
 }
-
-
-
-
-
-
-
-

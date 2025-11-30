@@ -20,6 +20,3 @@ public class ValidateAvoirsEndpoint : ICarterModule
         .RequireAuthorization();
     }
 }
-
-
-

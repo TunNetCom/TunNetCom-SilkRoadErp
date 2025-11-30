@@ -31,4 +31,3 @@ public class GetAuditLogsByEntityEndpoint : ICarterModule
             .WithOpenApi();
     }
 }
-

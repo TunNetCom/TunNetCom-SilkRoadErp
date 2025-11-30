@@ -60,5 +60,3 @@ public class ValidateInvoicesCommandHandler(
         return Result.Ok();
     }
 }
-
-

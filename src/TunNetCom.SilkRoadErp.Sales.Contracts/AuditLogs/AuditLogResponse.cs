@@ -14,5 +14,3 @@ public record AuditLogResponse
     public DateTime Timestamp { get; init; }
     public List<string>? ChangedProperties { get; init; }
 }
-
-

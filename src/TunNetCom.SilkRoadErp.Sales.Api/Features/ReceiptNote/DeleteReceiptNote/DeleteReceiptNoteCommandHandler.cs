@@ -1,4 +1,6 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.DeleteReceiptNote;
+﻿using Microsoft.EntityFrameworkCore;
+
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.DeleteReceiptNote;
 
 public class DeleteReceiptNoteCommandHandler(SalesContext _context, ILogger<DeleteReceiptNoteCommandHandler> _logger) : IRequestHandler<DeleteReceiptNoteCommand, Result>
 {
@@ -6,7 +8,8 @@ public class DeleteReceiptNoteCommandHandler(SalesContext _context, ILogger<Dele
     {
         _logger.LogEntityDeletionAttempt(nameof(BonDeReception), deleteReceiptNoteCommand.Num);
 
-        var receiptnote = await _context.BonDeReception.FindAsync(deleteReceiptNoteCommand.Num);
+        var receiptnote = await _context.BonDeReception
+            .FirstOrDefaultAsync(b => b.Num == deleteReceiptNoteCommand.Num, cancellationToken);
 
         if (receiptnote is null)
         {

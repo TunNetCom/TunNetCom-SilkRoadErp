@@ -6,9 +6,3 @@ public interface ICurrentUserService
     string? GetUsername();
     bool IsAuthenticated();
 }
-
-
-
-
-
-

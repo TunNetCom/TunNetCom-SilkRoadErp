@@ -11,5 +11,3 @@ public record GetPrintHistoryQuery(
     string? PrintMode,
     int PageNumber,
     int PageSize) : IRequest<PagedList<PrintHistoryResponse>>;
-
-

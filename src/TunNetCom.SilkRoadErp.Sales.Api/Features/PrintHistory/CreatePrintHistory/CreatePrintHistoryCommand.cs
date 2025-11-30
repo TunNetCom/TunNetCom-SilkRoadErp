@@ -13,4 +13,3 @@ public record CreatePrintHistoryCommand(
     int Copies = 1,
     string? FileName = null,
     bool IsDuplicata = false) : IRequest<Result<long>>;
-

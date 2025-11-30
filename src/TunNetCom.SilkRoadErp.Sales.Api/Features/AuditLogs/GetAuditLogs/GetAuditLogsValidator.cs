@@ -33,5 +33,3 @@ public class GetAuditLogsValidator : AbstractValidator<GetAuditLogsQuery>
         return Enum.TryParse<AuditAction>(action, true, out _);
     }
 }
-
-

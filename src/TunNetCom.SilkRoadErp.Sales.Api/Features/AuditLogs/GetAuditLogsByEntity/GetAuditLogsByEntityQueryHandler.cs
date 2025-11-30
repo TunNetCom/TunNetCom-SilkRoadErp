@@ -45,4 +45,3 @@ public class GetAuditLogsByEntityQueryHandler(
         return response;
     }
 }
-

@@ -5,6 +5,3 @@ public enum DocumentStatus
     Brouillon = 0,
     Valide = 1
 }
-
-
-

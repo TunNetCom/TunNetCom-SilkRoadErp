@@ -67,9 +67,3 @@ public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
             .HasColumnName("ChangedProperties");
     }
 }
-
-
-
-
-
-

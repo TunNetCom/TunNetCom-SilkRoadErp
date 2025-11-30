@@ -5,4 +5,3 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.AuditLogs.GetAuditLogsByEntit
 public record GetAuditLogsByEntityQuery(
     string EntityName,
     string EntityId) : IRequest<List<AuditLogDetailResponse>>;
-

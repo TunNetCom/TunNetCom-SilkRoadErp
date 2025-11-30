@@ -16,5 +16,3 @@ public record AuditLogDetailResponse
     public Dictionary<string, object?>? NewValues { get; init; }
     public List<string>? ChangedProperties { get; init; }
 }
-
-

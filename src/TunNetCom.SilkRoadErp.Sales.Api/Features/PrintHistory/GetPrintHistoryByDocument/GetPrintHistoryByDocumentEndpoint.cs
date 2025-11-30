@@ -25,5 +25,3 @@ public class GetPrintHistoryByDocumentEndpoint : ICarterModule
             .WithOpenApi();
     }
 }
-
-

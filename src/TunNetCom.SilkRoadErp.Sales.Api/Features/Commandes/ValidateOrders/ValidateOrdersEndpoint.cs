@@ -20,6 +20,3 @@ public class ValidateOrdersEndpoint : ICarterModule
         .RequireAuthorization();
     }
 }
-
-
-

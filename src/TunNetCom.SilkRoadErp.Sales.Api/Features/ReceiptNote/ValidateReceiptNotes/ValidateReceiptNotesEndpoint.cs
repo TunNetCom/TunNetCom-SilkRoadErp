@@ -20,6 +20,3 @@ public class ValidateReceiptNotesEndpoint : ICarterModule
         .RequireAuthorization();
     }
 }
-
-
-

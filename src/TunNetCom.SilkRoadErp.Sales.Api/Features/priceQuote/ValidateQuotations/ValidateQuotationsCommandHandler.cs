@@ -60,5 +60,3 @@ public class ValidateQuotationsCommandHandler(
         return Result.Ok();
     }
 }
-
-

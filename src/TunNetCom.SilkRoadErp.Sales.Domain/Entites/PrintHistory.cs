@@ -68,5 +68,3 @@ public class PrintHistory
 
     public bool IsDuplicata { get; private set; }
 }
-
-

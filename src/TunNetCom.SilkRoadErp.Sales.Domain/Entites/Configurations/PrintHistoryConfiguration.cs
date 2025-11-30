@@ -88,5 +88,3 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
         partial void OnConfigurePartial(EntityTypeBuilder<PrintHistory> entity);
     }
 }
-
-

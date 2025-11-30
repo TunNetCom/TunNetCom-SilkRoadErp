@@ -2,6 +2,7 @@
 using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.CreateReceiptNote;
 using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Request;
 using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Response;
+using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNote.Requests;
 using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNote.Responses;
 using TunNetCom.SilkRoadErp.Sales.Contracts.RecieptNotes;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services;
@@ -317,20 +318,38 @@ class ReceiptNoteApiClient : IReceiptNoteApiClient
 
     public async Task<Result> ValidateReceiptNotesAsync(List<int> ids, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Validating receipt notes via API /receipt-notes/validate");
-        var response = await _httpClient.PostAsJsonAsync("/receipt-notes/validate", ids, cancellationToken: cancellationToken);
-
-        if (response.StatusCode == HttpStatusCode.NoContent)
+        try
         {
-            return Result.Ok();
-        }
+            var request = new ValidateReceiptNotesRequest { Ids = ids };
+            var response = await _httpClient.PostAsJsonAsync(
+                "api/receipt-notes/validate",
+                request,
+                cancellationToken);
 
-        if (response.StatusCode == HttpStatusCode.BadRequest)
+            if (response.IsSuccessStatusCode)
+            {
+                return Result.Ok();
+            }
+
+            if (response.StatusCode == HttpStatusCode.BadRequest)
+            {
+                var problemDetails = await response.Content.ReadFromJsonAsync<BadRequestResponse>(
+                    cancellationToken);
+
+                if (problemDetails?.errors != null)
+                {
+                    var errors = problemDetails.errors
+                        .SelectMany(kvp => kvp.Value.Select(v => $"{kvp.Key}: {v}"));
+                    return Result.Fail(errors);
+                }
+                return Result.Fail("Validation failed but no error details provided");
+            }
+
+            return Result.Fail($"Failed to validate receipt notes: {response.StatusCode}");
+        }
+        catch (Exception ex)
         {
-            var badRequest = await response.ReadJsonAsync<BadRequestResponse>();
-            return Result.Fail(badRequest.Detail ?? badRequest.Title ?? "Unknown error");
+            return Result.Fail($"Unexpected error: {ex.Message}");
         }
-
-        throw new Exception($"Receipt notes validation: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
     }
 }

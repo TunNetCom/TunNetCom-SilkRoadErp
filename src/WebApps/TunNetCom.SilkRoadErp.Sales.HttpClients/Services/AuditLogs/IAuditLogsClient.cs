@@ -13,5 +13,3 @@ public interface IAuditLogsClient
         string entityId,
         CancellationToken cancellationToken);
 }
-
-

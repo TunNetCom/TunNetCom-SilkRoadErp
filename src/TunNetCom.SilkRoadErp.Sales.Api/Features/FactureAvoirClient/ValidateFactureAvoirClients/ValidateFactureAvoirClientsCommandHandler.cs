@@ -60,5 +60,3 @@ public class ValidateFactureAvoirClientsCommandHandler(
         return Result.Ok();
     }
 }
-
-

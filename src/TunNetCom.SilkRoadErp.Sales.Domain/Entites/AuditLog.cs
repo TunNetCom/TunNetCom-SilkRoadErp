@@ -65,9 +65,3 @@ public class AuditLog
 
     public string? ChangedProperties { get; private set; }
 }
-
-
-
-
-
-

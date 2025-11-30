@@ -18,6 +18,7 @@ public class ValidateReceiptNotesCommandHandler(
         }
 
         var receiptNotes = await _context.BonDeReception
+            .AsTracking() // S'assurer que les entités sont trackées
             .Where(b => command.Ids.Contains(b.Num))
             .ToListAsync(cancellationToken);
 
@@ -39,7 +40,22 @@ public class ValidateReceiptNotesCommandHandler(
                 {
                     receiptNote.Valider();
                     // Marquer explicitement la propriété comme modifiée car le setter est privé
-                    _context.Entry(receiptNote).Property(x => x.Statut).IsModified = true;
+                    var entry = _context.Entry(receiptNote);
+                    entry.Property(x => x.Statut).IsModified = true;
+
+                    // Forcer l'état de l'entité à Modified pour s'assurer que les changements sont sauvegardés
+                    if (entry.State == Microsoft.EntityFrameworkCore.EntityState.Unchanged)
+                    {
+                        entry.State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+                    }
+
+                    _logger.LogInformation("Marked Statut as modified for receipt note {Num}. Current status: {Statut}, Entry state: {State}",
+                        receiptNote.Num, receiptNote.Statut, entry.State);
+                }
+                else
+                {
+                    _logger.LogWarning("Receipt note {Num} is not in draft status (current: {Statut}), skipping validation",
+                        receiptNote.Num, receiptNote.Statut);
                 }
             }
             catch (Exception ex)
@@ -54,11 +70,15 @@ public class ValidateReceiptNotesCommandHandler(
             return Result.Fail(errors);
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
-        _logger.LogInformation("Validated {Count} receipt notes", receiptNotes.Count);
+        var savedChanges = await _context.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Saved {SavedChanges} changes. Validated {Count} receipt notes", savedChanges, receiptNotes.Count);
+
+        // Vérifier que les statuts ont bien été mis à jour
+        foreach (var receiptNote in receiptNotes)
+        {
+            _logger.LogInformation("Receipt note {Num} status after save: {Statut}", receiptNote.Num, receiptNote.Statut);
+        }
 
         return Result.Ok();
     }
 }
-
-

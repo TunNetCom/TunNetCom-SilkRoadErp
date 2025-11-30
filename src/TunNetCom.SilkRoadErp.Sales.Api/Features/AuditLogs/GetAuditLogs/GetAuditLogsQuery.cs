@@ -11,4 +11,3 @@ public record GetAuditLogsQuery(
     string? Action,
     int PageNumber,
     int PageSize) : IRequest<PagedList<AuditLogResponse>>;
-

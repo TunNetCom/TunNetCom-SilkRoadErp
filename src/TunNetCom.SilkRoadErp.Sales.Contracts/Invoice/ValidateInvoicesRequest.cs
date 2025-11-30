@@ -7,6 +7,3 @@ public class ValidateInvoicesRequest
     [JsonPropertyName("ids")]
     public List<int> Ids { get; set; } = new();
 }
-
-
-

@@ -20,6 +20,3 @@ public class ValidateProviderInvoicesEndpoint : ICarterModule
         .RequireAuthorization();
     }
 }
-
-
-

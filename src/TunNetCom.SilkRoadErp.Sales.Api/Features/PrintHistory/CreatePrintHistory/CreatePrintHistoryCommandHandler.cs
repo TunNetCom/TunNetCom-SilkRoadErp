@@ -33,4 +33,3 @@ public class CreatePrintHistoryCommandHandler(
         return Result.Ok(printHistory.Id);
     }
 }
-

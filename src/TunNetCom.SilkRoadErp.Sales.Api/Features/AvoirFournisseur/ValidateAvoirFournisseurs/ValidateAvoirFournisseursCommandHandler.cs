@@ -60,5 +60,3 @@ public class ValidateAvoirFournisseursCommandHandler(
         return Result.Ok();
     }
 }
-
-

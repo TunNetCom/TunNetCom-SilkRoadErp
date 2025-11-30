@@ -20,6 +20,3 @@ public class ValidateDeliveryNotesEndpoint : ICarterModule
         .RequireAuthorization();
     }
 }
-
-
-

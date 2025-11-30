@@ -60,5 +60,3 @@ public class ValidateDeliveryNotesCommandHandler(
         return Result.Ok();
     }
 }
-
-

@@ -60,5 +60,3 @@ public class ValidateOrdersCommandHandler(
         return Result.Ok();
     }
 }
-
-

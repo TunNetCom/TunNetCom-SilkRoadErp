@@ -20,6 +20,3 @@ public class ValidateFactureAvoirClientsEndpoint : ICarterModule
         .RequireAuthorization();
     }
 }
-
-
-

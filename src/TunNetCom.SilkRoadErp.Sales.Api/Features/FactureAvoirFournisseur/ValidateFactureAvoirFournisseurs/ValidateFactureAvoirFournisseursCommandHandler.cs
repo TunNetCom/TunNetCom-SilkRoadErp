@@ -60,5 +60,3 @@ public class ValidateFactureAvoirFournisseursCommandHandler(
         return Result.Ok();
     }
 }
-
-

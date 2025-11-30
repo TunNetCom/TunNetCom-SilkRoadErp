@@ -20,6 +20,3 @@ public class ValidateFactureAvoirFournisseursEndpoint : ICarterModule
         .RequireAuthorization();
     }
 }
-
-
-

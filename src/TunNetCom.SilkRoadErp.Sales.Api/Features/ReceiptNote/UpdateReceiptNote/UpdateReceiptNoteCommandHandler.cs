@@ -1,4 +1,6 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.UpdateReceiptNote;
+﻿using Microsoft.EntityFrameworkCore;
+
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.UpdateReceiptNote;
 
 public class UpdateReceiptNoteCommandHandler(
     SalesContext _context,
@@ -7,7 +9,8 @@ public class UpdateReceiptNoteCommandHandler(
     public async Task<Result> Handle(UpdateReceiptNoteCommand updateReceiptNoteCommand, CancellationToken cancellationToken)
     {
         _logger.LogEntityUpdateAttempt(nameof(BonDeReception), updateReceiptNoteCommand.Num);
-        var receiptnote = await _context.BonDeReception.FindAsync(updateReceiptNoteCommand.Num);
+        var receiptnote = await _context.BonDeReception
+            .FirstOrDefaultAsync(b => b.Num == updateReceiptNoteCommand.Num, cancellationToken);
 
         if (receiptnote is null)
         {
