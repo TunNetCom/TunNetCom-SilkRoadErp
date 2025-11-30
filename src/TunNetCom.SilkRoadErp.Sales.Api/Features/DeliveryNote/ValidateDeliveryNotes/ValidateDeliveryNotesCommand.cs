@@ -6,3 +6,4 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.ValidateDelivery
 public record ValidateDeliveryNotesCommand(List<int> Ids) : IRequest<Result>;
 
 
+

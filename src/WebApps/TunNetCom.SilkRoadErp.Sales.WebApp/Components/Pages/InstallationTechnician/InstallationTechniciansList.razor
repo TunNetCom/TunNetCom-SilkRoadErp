@@ -3,11 +3,15 @@
 @using TunNetCom.SilkRoadErp.Sales.Contracts.InstallationTechnician.Responses
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.InstallationTechnician
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using Radzen.Blazor
 @using Radzen
 @inject NavigationManager NavigationManager
 @inject IStringLocalizer<SharedResource> Localizer
 @inject IInstallationTechnicianApiClient TechnicianService
+@inject ODataService ODataService
+@inject ILogger<InstallationTechniciansList> Logger
 @inject ToastService ToastService
 @inject DialogService DialogService
 @inject NotificationService NotificationService
@@ -22,17 +26,41 @@
                           Class="btn-primary" />
         </div>
 
+        <div class="search-header">
+            <div class="search-field">
+                <label for="nomFilter">Nom</label>
+                <input id="nomFilter"
+                       type="text"
+                       @bind="@searchCriteria.NomFilter"
+                       @bind:event="oninput"
+                       @bind:after="OnFilterChanged"
+                       placeholder="Rechercher par nom..."
+                       class="w-100 search-input" />
+            </div>
+            <div class="search-field">
+                <label for="telFilter">Téléphone</label>
+                <input id="telFilter"
+                       type="text"
+                       @bind="@searchCriteria.TelFilter"
+                       @bind:event="oninput"
+                       @bind:after="OnFilterChanged"
+                       placeholder="Rechercher dans tous les téléphones..."
+                       class="w-100 search-input" />
+            </div>
+        </div>
+
         <RadzenDataGrid @ref="technicianGrid"
+                        Data="@technicians"
                         TItem="InstallationTechnicianResponse"
                         AllowFiltering="true"
-                        FilterMode="FilterMode.Simple"
                         AllowPaging="true"
                         PageSize="10"
+                        PageSizeOptions="@GridPageSizeConstants.PageSizeOptions"
                         AllowSorting="true"
                         IsLoading="@isLoadingTechnicians"
                         LoadData="@LoadTechnicians"
-                        Count="@count"
-                        Data="@technicians"
+                        Count="@totalCount"
+                        AllowColumnResize="true"
                         Class="technicians-grid">
             <Columns>
                 <RadzenDataGridColumn TItem="InstallationTechnicianResponse" Title="Photo" Width="100px" Sortable="false" Filterable="false">
@@ -99,22 +127,80 @@
         overflow: hidden;
         border: none;
     }
+
+    /* Search header styles */
+    .search-header {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+        margin: 0 0 16px 0;
+        align-items: end;
+        padding: 0;
+    }
+
+    .search-field {
+        display: flex;
+        flex-direction: column;
+    }
+
+        .search-field label {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+
+    .search-input {
+        width: 100% !important;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        padding: 8px;
+        font-size: 14px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+        .search-input:hover {
+            border-color: #9ca3af;
+        }
+
+        .search-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            outline: none;
+        }
+
+
+    /* Responsive adjustments */
+    @@media (max-width: 768px) {
+        .search-header {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .search-field {
+            min-width: 100%;
+        }
+    }
 </style>
 
 @code {
     private RadzenDataGrid<InstallationTechnicianResponse> technicianGrid = default!;
     private List<InstallationTechnicianResponse> technicians = new();
-    private List<InstallationTechnicianResponse> allTechnicians = new();
     private bool isLoadingTechnicians = false;
-    private int count;
+    private int totalCount = 0;
     private CancellationTokenSource cancellationTokenSource = new();
+    private SearchCriteria searchCriteria = new SearchCriteria();
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    public class SearchCriteria
     {
-        if (firstRender)
-        {
-            await technicianGrid.Reload();
-        }
+        public string? NomFilter { get; set; }
+        public string? TelFilter { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load initial data
+        await LoadTechnicians(new LoadDataArgs { Skip = 0, Top = 10 });
     }
 
     async Task LoadTechnicians(LoadDataArgs args)
@@ -124,54 +210,59 @@
 
         try
         {
-            // Load all technicians if not already loaded
-            if (!allTechnicians.Any())
+            // Ensure args is not null
+            args ??= new LoadDataArgs { Skip = 0, Top = 10 };
+
+            Logger.LogInformation("LoadTechnicians called with Skip: {Skip}, Top: {Top}, Filter: {Filter}, OrderBy: {OrderBy}", 
+                args.Skip, args.Top, args.Filter, args.OrderBy);
+
+            // Build OData filter from search criteria
+            var customFilters = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(searchCriteria.NomFilter))
             {
-                allTechnicians = await TechnicianService.GetInstallationTechniciansAsync(cancellationTokenSource.Token);
+                var nomValue = searchCriteria.NomFilter.Trim().Replace("'", "''");
+                customFilters.Add($"contains(Nom, '{nomValue}')");
             }
 
-            // Apply filtering
-            var query = allTechnicians.AsQueryable();
-
-            if (!string.IsNullOrEmpty(args?.Filter))
+            // Search in all three phone fields with OR logic
+            if (!string.IsNullOrWhiteSpace(searchCriteria.TelFilter))
             {
-                query = query.Where(t => 
-                    (t.Nom != null && t.Nom.Contains(args.Filter, StringComparison.OrdinalIgnoreCase)) ||
-                    (t.Tel != null && t.Tel.Contains(args.Filter, StringComparison.OrdinalIgnoreCase)) ||
-                    (t.Tel2 != null && t.Tel2.Contains(args.Filter, StringComparison.OrdinalIgnoreCase)) ||
-                    (t.Tel3 != null && t.Tel3.Contains(args.Filter, StringComparison.OrdinalIgnoreCase)) ||
-                    (t.Email != null && t.Email.Contains(args.Filter, StringComparison.OrdinalIgnoreCase)) ||
-                    (t.Description != null && t.Description.Contains(args.Filter, StringComparison.OrdinalIgnoreCase))
-                );
+                var telValue = searchCriteria.TelFilter.Trim().Replace("'", "''");
+                customFilters.Add($"(contains(Tel, '{telValue}') or contains(Tel2, '{telValue}') or contains(Tel3, '{telValue}'))");
             }
 
-            count = query.Count();
-
-            // Apply sorting
-            if (!string.IsNullOrEmpty(args?.OrderBy))
+            // Combine custom filters with existing DataGrid filters
+            if (customFilters.Any())
             {
-                query = query.OrderBy(args.OrderBy);
-            }
-            else
-            {
-                query = query.OrderBy(t => t.Nom);
-            }
-
-            // Apply paging
-            if (args?.Skip != null)
-            {
-                query = query.Skip(args.Skip.Value);
+                var customFilterString = string.Join(" and ", customFilters);
+                
+                // If there's already a filter from Radzen grid, combine them
+                if (!string.IsNullOrEmpty(args.Filter?.ToString()))
+                {
+                    args.Filter = $"({args.Filter}) and ({customFilterString})";
+                }
+                else
+                {
+                    args.Filter = customFilterString;
+                }
             }
 
-            if (args?.Top != null)
-            {
-                query = query.Take(args.Top.Value);
-            }
+            Logger.LogInformation("Final filter: {Filter}", args.Filter);
 
-            technicians = query.ToList();
+            var response = await ODataService.QueryAsync<InstallationTechnicianResponse>(
+                entitySet: "InstallationTechnicianBaseInfos",
+                args: args,
+                cancellationToken: cancellationTokenSource.Token);
+
+            technicians = response.Value ?? new List<InstallationTechnicianResponse>();
+            totalCount = response.ODataCount ?? technicians.Count;
+
+            Logger.LogInformation("Loaded {Count} technicians, total count: {TotalCount}", technicians.Count, totalCount);
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Error loading technicians: {Message}", ex.Message);
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Error,
@@ -179,11 +270,47 @@
                 Detail = $"Erreur lors du chargement des installateurs: {ex.Message}"
             });
             technicians = new List<InstallationTechnicianResponse>();
-            count = 0;
+            totalCount = 0;
         }
 
         isLoadingTechnicians = false;
         await InvokeAsync(StateHasChanged);
+    }
+
+    private CancellationTokenSource? _debounceCts;
+
+    private void OnFilterChanged()
+    {
+        _ = TriggerSearchAsync();
+    }
+
+    private async Task TriggerSearchAsync()
+    {
+        // Cancel previous debounce
+        _debounceCts?.Cancel();
+        _debounceCts?.Dispose();
+        _debounceCts = new CancellationTokenSource();
+
+        try
+        {
+            // Wait 300ms before searching (reduced from 500ms for better responsiveness)
+            await Task.Delay(300, _debounceCts.Token);
+            
+            if (technicianGrid != null && !_debounceCts.Token.IsCancellationRequested)
+            {
+                await InvokeAsync(async () =>
+                {
+                    if (technicianGrid != null)
+                    {
+                        await technicianGrid.Reload();
+                    }
+                });
+            }
+        }
+        catch (TaskCanceledException)
+        {
+            // Expected when user types again before delay completes
+        }
     }
 
     private void CreateTechnician()
@@ -221,8 +348,6 @@
                 Detail = "Installateur supprimé avec succès"
             });
 
-            // Reload data from server
-            allTechnicians.Clear();
             await technicianGrid.Reload();
         }
         catch (Exception ex)
@@ -238,6 +363,8 @@
 
     public void Dispose()
     {
+        _debounceCts?.Cancel();
+        _debounceCts?.Dispose();
         cancellationTokenSource?.Cancel();
         cancellationTokenSource?.Dispose();
     }

@@ -15,3 +15,4 @@ public record GetPrintHistoryRequest
     public int PageSize { get; init; } = 20;
 }
 
+

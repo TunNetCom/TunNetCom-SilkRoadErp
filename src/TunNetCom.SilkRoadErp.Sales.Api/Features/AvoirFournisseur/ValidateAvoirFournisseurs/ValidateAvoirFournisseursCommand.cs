@@ -6,3 +6,4 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.AvoirFournisseur.ValidateAvoi
 public record ValidateAvoirFournisseursCommand(List<int> Ids) : IRequest<Result>;
 
 
+

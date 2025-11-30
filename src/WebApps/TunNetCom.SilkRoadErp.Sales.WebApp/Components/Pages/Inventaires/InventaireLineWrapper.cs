@@ -27,11 +27,11 @@ public class InventaireLineWrapper : ILineItem
         set => PrixHt = value;
     }
 
-    // Pour l'inventaire, on n'utilise pas de remise, toujours 0
+    // Remise pour l'inventaire (utilisée pour le calcul des totaux mais non sauvegardée en base)
     public double DiscountPercentage
     {
-        get => 0;
-        set { } // Ignore les modifications
+        get => _discountPercentage;
+        set => _discountPercentage = value;
     }
 
     // Pour l'inventaire, on n'utilise pas de TVA, toujours 0
@@ -53,6 +53,7 @@ public class InventaireLineWrapper : ILineItem
     // Propriétés internes pour le mapping
     private int QuantiteReelle { get; set; }
     private decimal PrixHt { get; set; }
+    private double _discountPercentage = 0; // Stockage de la remise
 
     public string ProductReferenceAndDescription => $"{ProductReference} - {Description ?? string.Empty}";
 

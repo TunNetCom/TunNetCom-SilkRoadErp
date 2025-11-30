@@ -6,3 +6,4 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.ValidateReceiptNo
 public record ValidateReceiptNotesCommand(List<int> Ids) : IRequest<Result>;
 
 
+

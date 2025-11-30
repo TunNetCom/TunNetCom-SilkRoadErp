@@ -18,3 +18,4 @@ public interface IPrintHistoryClient
         CancellationToken cancellationToken);
 }
 
+

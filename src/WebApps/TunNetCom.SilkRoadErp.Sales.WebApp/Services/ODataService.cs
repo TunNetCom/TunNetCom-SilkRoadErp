@@ -75,27 +75,89 @@ public class ODataService
                 }
             }
 
-            // Add Radzen filter if provided
+            // Add Radzen filter if provided - OData will handle it automatically via [EnableQuery]
+            // Just pass it through as $filter parameter
             if (!string.IsNullOrEmpty(args?.Filter?.ToString()))
             {
-                // Convert Radzen filter to OData filter
-                var radzenFilter = args.Filter.ToString();
-                // Simple conversion - may need more sophisticated parsing
-                if (radzenFilter.Contains("contains", StringComparison.OrdinalIgnoreCase))
+                var radzenFilter = args.Filter.ToString()!;
+                _logger.LogInformation("Processing Radzen filter: {Filter}", radzenFilter);
+                
+                // Check if filter is already in OData format
+                // Remove leading/trailing parentheses and whitespace for detection
+                var trimmedFilter = radzenFilter.Trim();
+                while (trimmedFilter.StartsWith("(") && trimmedFilter.EndsWith(")"))
                 {
-                    // Handle contains filter
-                    var match = System.Text.RegularExpressions.Regex.Match(radzenFilter, @"contains\((\w+),\s*'([^']+)'\)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-                    if (match.Success)
-                    {
-                        var property = match.Groups[1].Value;
-                        var value = match.Groups[2].Value;
-                        filters.Add($"contains({property}, '{value}')");
-                    }
+                    trimmedFilter = trimmedFilter.Substring(1, trimmedFilter.Length - 2).Trim();
+                }
+                
+                // Check if it's OData format: contains function calls, comparison operators, or logical operators with OData functions
+                bool isODataFormat = trimmedFilter.StartsWith("contains(", StringComparison.OrdinalIgnoreCase) ||
+                                    trimmedFilter.StartsWith("startswith(", StringComparison.OrdinalIgnoreCase) ||
+                                    trimmedFilter.StartsWith("endswith(", StringComparison.OrdinalIgnoreCase) ||
+                                    radzenFilter.Contains(" eq ", StringComparison.OrdinalIgnoreCase) ||
+                                    radzenFilter.Contains(" ne ", StringComparison.OrdinalIgnoreCase) ||
+                                    radzenFilter.Contains(" gt ", StringComparison.OrdinalIgnoreCase) ||
+                                    radzenFilter.Contains(" ge ", StringComparison.OrdinalIgnoreCase) ||
+                                    radzenFilter.Contains(" lt ", StringComparison.OrdinalIgnoreCase) ||
+                                    radzenFilter.Contains(" le ", StringComparison.OrdinalIgnoreCase) ||
+                                    (radzenFilter.Contains(" and ", StringComparison.OrdinalIgnoreCase) && radzenFilter.Contains("contains(", StringComparison.OrdinalIgnoreCase)) ||
+                                    (radzenFilter.Contains(" or ", StringComparison.OrdinalIgnoreCase) && radzenFilter.Contains("contains(", StringComparison.OrdinalIgnoreCase));
+                
+                if (isODataFormat)
+                {
+                    // Filter is already in OData format, use it directly
+                    filters.Add(radzenFilter);
+                    _logger.LogInformation("Using filter as OData format: {Filter}", radzenFilter);
                 }
                 else
                 {
-                    // Try to parse as simple property filter
-                    filters.Add(radzenFilter);
+                    // Try to convert Radzen format to OData
+                    // Radzen FilterMode.Simple often sends: "Property contains 'value'" or "Property='value'"
+                    var radzenContainsMatch = System.Text.RegularExpressions.Regex.Match(
+                        radzenFilter, 
+                        @"(\w+)\s+contains\s+['""]([^'""]+)['""]", 
+                        System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                    
+                    if (radzenContainsMatch.Success)
+                    {
+                        var property = radzenContainsMatch.Groups[1].Value;
+                        var value = radzenContainsMatch.Groups[2].Value;
+                        var odataFilter = $"contains({property}, '{value}')";
+                        filters.Add(odataFilter);
+                        _logger.LogInformation("Converted Radzen contains format to OData: {ODataFilter}", odataFilter);
+                    }
+                    else if (radzenFilter.Contains('=') && !radzenFilter.Contains(" eq ") && !radzenFilter.Contains(" ne "))
+                    {
+                        // Property=value format
+                        var parts = radzenFilter.Split('=', 2);
+                        if (parts.Length == 2)
+                        {
+                            var property = parts[0].Trim();
+                            var value = parts[1].Trim().Trim('\'', '"');
+                            filters.Add($"contains({property}, '{value}')");
+                            _logger.LogInformation("Converted property=value filter to OData: contains({Property}, '{Value}')", property, value);
+                        }
+                        else
+                        {
+                            filters.Add(radzenFilter);
+                        }
+                    }
+                    else
+                    {
+                        // Plain text - for InstallationTechnician, create multi-column search
+                        if (entitySet == "InstallationTechnicianBaseInfos" && !string.IsNullOrWhiteSpace(radzenFilter))
+                        {
+                            var searchValue = radzenFilter.Trim().Trim('\'', '"');
+                            var multiColumnFilter = $"(contains(Nom, '{searchValue}') or contains(Tel, '{searchValue}') or contains(Tel2, '{searchValue}') or contains(Tel3, '{searchValue}') or contains(Email, '{searchValue}') or contains(Description, '{searchValue}'))";
+                            filters.Add(multiColumnFilter);
+                            _logger.LogInformation("Created multi-column search filter: {Filter}", multiColumnFilter);
+                        }
+                        else
+                        {
+                            // For other entities, skip plain text filters (OData needs structured filters)
+                            _logger.LogWarning("Plain text filter cannot be converted to OData. Filter: {Filter}", radzenFilter);
+                        }
+                    }
                 }
             }
 

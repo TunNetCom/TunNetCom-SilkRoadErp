@@ -6,3 +6,4 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.FactureAvoirClient.ValidateFa
 public record ValidateFactureAvoirClientsCommand(List<int> Ids) : IRequest<Result>;
 
 
+

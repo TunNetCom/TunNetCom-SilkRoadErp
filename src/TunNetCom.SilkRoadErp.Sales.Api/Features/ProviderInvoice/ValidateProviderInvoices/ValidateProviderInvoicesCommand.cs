@@ -6,3 +6,4 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderInvoice.ValidateProvi
 public record ValidateProviderInvoicesCommand(List<int> Ids) : IRequest<Result>;
 
 
+

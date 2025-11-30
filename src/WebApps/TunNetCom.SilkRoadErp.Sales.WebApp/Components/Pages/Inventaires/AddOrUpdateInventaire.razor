@@ -284,9 +284,12 @@
             order.QuantiteTheorique = quantiteTheorique;
             
             // Par défaut, utiliser le stock calculé pour la quantité réelle
-            if (order.Quantity == 1) // Si c'est la valeur par défaut
+            // Seulement si la quantité actuelle est 1 (valeur par défaut) ou 0
+            // Si l'utilisateur a déjà modifié la quantité, on la préserve
+            if (order.Quantity <= 1) // Si c'est la valeur par défaut (1) ou 0
             {
-                order.Quantity = quantiteTheorique;
+                // Utiliser la quantité théorique si elle est > 0, sinon garder 1
+                order.Quantity = quantiteTheorique > 0 ? quantiteTheorique : 1;
             }
             
             // Calculer les totaux

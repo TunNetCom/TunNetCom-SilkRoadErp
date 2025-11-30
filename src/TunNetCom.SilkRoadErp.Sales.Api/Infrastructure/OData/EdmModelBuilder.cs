@@ -4,6 +4,7 @@ using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 using TunNetCom.SilkRoadErp.Sales.Contracts.RecieptNotes;
 using TunNetCom.SilkRoadErp.Sales.Contracts.Quotations;
 using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;
+using TunNetCom.SilkRoadErp.Sales.Contracts.InstallationTechnician.Responses;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.OData;
 
@@ -62,6 +63,18 @@ public static class EdmModelBuilder
         providerInvoicesEntitySet.EntityType.Property(p => p.ProviderId).IsRequired();
         providerInvoicesEntitySet.EntityType.Property(p => p.NetAmount).IsRequired();
         providerInvoicesEntitySet.EntityType.Property(p => p.VatAmount).IsRequired();
+        
+        // Configure InstallationTechnicianResponse entity set
+        var techniciansEntitySet = builder.EntitySet<InstallationTechnicianResponse>("InstallationTechnicianBaseInfos");
+        techniciansEntitySet.EntityType.HasKey(t => t.Id);
+        techniciansEntitySet.EntityType.Property(t => t.Id).IsRequired();
+        techniciansEntitySet.EntityType.Property(t => t.Nom).IsRequired();
+        techniciansEntitySet.EntityType.Property(t => t.Tel);
+        techniciansEntitySet.EntityType.Property(t => t.Tel2);
+        techniciansEntitySet.EntityType.Property(t => t.Tel3);
+        techniciansEntitySet.EntityType.Property(t => t.Email);
+        techniciansEntitySet.EntityType.Property(t => t.Description);
+        techniciansEntitySet.EntityType.Property(t => t.Photo);
         
         return builder.GetEdmModel();
     }

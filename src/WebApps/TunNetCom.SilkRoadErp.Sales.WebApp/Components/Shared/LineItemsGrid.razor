@@ -672,6 +672,19 @@
 
             if (selectedProduct != null)
             {
+                // Preserve existing quantity for InventaireLineWrapper (unless it's the default value 1 or 0)
+                int? preservedQuantity = null;
+                bool isInventaire = order is InventaireLineWrapper;
+                if (isInventaire)
+                {
+                    // For inventaire, preserve quantity if it's not the default value (1) or 0
+                    // This ensures we don't lose user-entered quantities
+                    if (order.Quantity > 1)
+                    {
+                        preservedQuantity = order.Quantity;
+                    }
+                }
+                
                 if (SetProductDescription != null)
                 {
                     SetProductDescription(order, GetProductDescription(selectedProduct));
@@ -681,6 +694,17 @@
                     SetProductReference(order, productReference);
                 }
                 order.UnitPriceExcludingTax = selectedProduct.UnitPriceExcludingTax;
+                
+                // Restore preserved quantity for inventaire
+                if (preservedQuantity.HasValue && isInventaire)
+                {
+                    order.Quantity = preservedQuantity.Value;
+                }
+                // Ensure quantity is at least 1 for inventaire if it was 0
+                else if (isInventaire && order.Quantity <= 0)
+                {
+                    order.Quantity = 1;
+                }
                 
                 // Always use product's discount values (they come from the product data)
                 // If product discount is 0, use app parameters as fallback
@@ -692,13 +716,26 @@
                 // Only use product VAT if it's explicitly set and different from default
                 order.VatPercentage = (double)(AppParameters?.VatAmount ?? 0);
                 
-                LineItemCalculator.CalculateTotals(order);
-                await NotifyItemsChanged();
+                // For inventaire, don't calculate totals here - let OnProductSelectedHandler do it
+                // after updating the quantity with quantiteTheorique
+                if (!isInventaire)
+                {
+                    LineItemCalculator.CalculateTotals(order);
+                }
                 
+                // Call the callback first for inventaire so it can update quantity before we calculate totals
                 if (OnProductSelectedCallback.HasDelegate)
                 {
                     await OnProductSelectedCallback.InvokeAsync(order);
                 }
+                
+                // Calculate totals for inventaire after callback has updated quantity
+                if (isInventaire)
+                {
+                    LineItemCalculator.CalculateTotals(order);
+                }
+                
+                await NotifyItemsChanged();
             }
         }
     }
