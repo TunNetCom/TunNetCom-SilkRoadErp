@@ -1,5 +1,6 @@
 using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters;
 using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
+using TunNetCom.SilkRoadErp.Sales.Domain.Services;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote;
@@ -116,14 +117,19 @@ public class PrintDeliveryNoteService(
 
     private static void CalculateTotalAmounts(PrintDeliveryNoteModel printModel, GetAppParametersResponse appParameters)
     {
-        printModel.Base19 = printModel.Lines.Where(l => l.Tva == (int)appParameters.VatRate19).Sum(l => l.TotHt);
-        printModel.Base13 = printModel.Lines.Where(l => l.Tva == (int)appParameters.VatRate13).Sum(l => l.TotHt);
-        printModel.Base7 = printModel.Lines.Where(l => l.Tva == (int)appParameters.VatRate7).Sum(l => l.TotHt);
-        printModel.Tva19 = printModel.Lines.Where(l => l.Tva == (int)appParameters.VatRate19).Sum(l => l.TotTtc - l.TotHt);
-        printModel.Tva13 = printModel.Lines.Where(l => l.Tva == (int)appParameters.VatRate13).Sum(l => l.TotTtc - l.TotHt);
-        printModel.Tva7 = printModel.Lines.Where(l => l.Tva == (int)appParameters.VatRate7).Sum(l => l.TotTtc - l.TotHt);
+        printModel.Base19 = DecimalHelper.RoundAmount(printModel.Lines.Where(l => l.Tva == (int)appParameters.VatRate19).Sum(l => l.TotHt));
+        printModel.Base13 = DecimalHelper.RoundAmount(printModel.Lines.Where(l => l.Tva == (int)appParameters.VatRate13).Sum(l => l.TotHt));
+        printModel.Base7 = DecimalHelper.RoundAmount(printModel.Lines.Where(l => l.Tva == (int)appParameters.VatRate7).Sum(l => l.TotHt));
+        printModel.Tva19 = DecimalHelper.RoundAmount(printModel.Lines.Where(l => l.Tva == (int)appParameters.VatRate19).Sum(l => l.TotTtc - l.TotHt));
+        printModel.Tva13 = DecimalHelper.RoundAmount(printModel.Lines.Where(l => l.Tva == (int)appParameters.VatRate13).Sum(l => l.TotTtc - l.TotHt));
+        printModel.Tva7 = DecimalHelper.RoundAmount(printModel.Lines.Where(l => l.Tva == (int)appParameters.VatRate7).Sum(l => l.TotTtc - l.TotHt));
+        
+        // Calculate TotalExcludingTax and TotalVat from the rounded bases
+        printModel.TotalExcludingTax = DecimalHelper.RoundAmount(printModel.Base19 + printModel.Base13 + printModel.Base7);
+        printModel.TotalVat = DecimalHelper.RoundAmount(printModel.Tva19 + printModel.Tva13 + printModel.Tva7);
+        
         // Le timbre n'est PAS ajouté dans les BL, seulement dans les factures
-        printModel.TotalTTC = printModel.TotalAmount;
+        printModel.TotalTTC = DecimalHelper.RoundAmount(printModel.TotalExcludingTax + printModel.TotalVat);
     }
 
     private static PrintDeliveryNoteModel MapToPrintModel(DeliveryNoteResponse deliveryNote)

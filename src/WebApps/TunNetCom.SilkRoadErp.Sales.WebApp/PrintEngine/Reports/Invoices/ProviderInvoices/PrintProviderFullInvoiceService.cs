@@ -1,5 +1,6 @@
 ﻿using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters;
 using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;
+using TunNetCom.SilkRoadErp.Sales.Domain.Services;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProviderInvoice;
 
@@ -130,15 +131,19 @@ public class PrintProviderFullInvoiceService(
 
     private static void CalculateTotalAmounts(ProviderInvoiceModel printInvoiceWithDetailsModel, decimal timbre, GetAppParametersResponse appParameters)
     {
-        printInvoiceWithDetailsModel.TotalHT = printInvoiceWithDetailsModel.ReceiptNotes.Sum(dn => dn.Lines.Sum(l => l.LineTotalExclTax));
-        printInvoiceWithDetailsModel.TotalTVA = printInvoiceWithDetailsModel.ReceiptNotes.Sum(dn => dn.Lines.Sum(l => l.LineTotalInclTax - l.LineTotalExclTax));
-        printInvoiceWithDetailsModel.TotalTTC = printInvoiceWithDetailsModel.ReceiptNotes.Sum(dn => dn.Lines.Sum(l => l.LineTotalInclTax)) + timbre;
-        printInvoiceWithDetailsModel.Base19 = printInvoiceWithDetailsModel.ReceiptNotes.Sum(dn => dn.Lines.Where(l => l.TaxRate == (int)appParameters.VatRate19).Sum(l => l.LineTotalExclTax));
-        printInvoiceWithDetailsModel.Base13 = printInvoiceWithDetailsModel.ReceiptNotes.Sum(dn => dn.Lines.Where(l => l.TaxRate == (int)appParameters.VatRate13).Sum(l => l.LineTotalExclTax));
-        printInvoiceWithDetailsModel.Base7 = printInvoiceWithDetailsModel.ReceiptNotes.Sum(dn => dn.Lines.Where(l => l.TaxRate == (int)appParameters.VatRate7).Sum(l => l.LineTotalExclTax));
-        printInvoiceWithDetailsModel.Tva19 = printInvoiceWithDetailsModel.ReceiptNotes.Sum(dn => dn.Lines.Where(l => l.TaxRate == (int)appParameters.VatRate19).Sum(l => l.LineTotalInclTax - l.LineTotalExclTax));
-        printInvoiceWithDetailsModel.Tva13 = printInvoiceWithDetailsModel.ReceiptNotes.Sum(dn => dn.Lines.Where(l => l.TaxRate == (int)appParameters.VatRate13).Sum(l => l.LineTotalInclTax - l.LineTotalExclTax));
-        printInvoiceWithDetailsModel.Tva7 = printInvoiceWithDetailsModel.ReceiptNotes.Sum(dn => dn.Lines.Where(l => l.TaxRate == (int)appParameters.VatRate7).Sum(l => l.LineTotalInclTax - l.LineTotalExclTax));
+        printInvoiceWithDetailsModel.Base19 = DecimalHelper.RoundAmount(printInvoiceWithDetailsModel.ReceiptNotes.Sum(dn => dn.Lines.Where(l => l.TaxRate == (int)appParameters.VatRate19).Sum(l => l.LineTotalExclTax)));
+        printInvoiceWithDetailsModel.Base13 = DecimalHelper.RoundAmount(printInvoiceWithDetailsModel.ReceiptNotes.Sum(dn => dn.Lines.Where(l => l.TaxRate == (int)appParameters.VatRate13).Sum(l => l.LineTotalExclTax)));
+        printInvoiceWithDetailsModel.Base7 = DecimalHelper.RoundAmount(printInvoiceWithDetailsModel.ReceiptNotes.Sum(dn => dn.Lines.Where(l => l.TaxRate == (int)appParameters.VatRate7).Sum(l => l.LineTotalExclTax)));
+        printInvoiceWithDetailsModel.Tva19 = DecimalHelper.RoundAmount(printInvoiceWithDetailsModel.ReceiptNotes.Sum(dn => dn.Lines.Where(l => l.TaxRate == (int)appParameters.VatRate19).Sum(l => l.LineTotalInclTax - l.LineTotalExclTax)));
+        printInvoiceWithDetailsModel.Tva13 = DecimalHelper.RoundAmount(printInvoiceWithDetailsModel.ReceiptNotes.Sum(dn => dn.Lines.Where(l => l.TaxRate == (int)appParameters.VatRate13).Sum(l => l.LineTotalInclTax - l.LineTotalExclTax)));
+        printInvoiceWithDetailsModel.Tva7 = DecimalHelper.RoundAmount(printInvoiceWithDetailsModel.ReceiptNotes.Sum(dn => dn.Lines.Where(l => l.TaxRate == (int)appParameters.VatRate7).Sum(l => l.LineTotalInclTax - l.LineTotalExclTax)));
+        
+        // Calculate TotalHT and TotalTVA from the rounded bases
+        printInvoiceWithDetailsModel.TotalHT = DecimalHelper.RoundAmount(printInvoiceWithDetailsModel.Base19 + printInvoiceWithDetailsModel.Base13 + printInvoiceWithDetailsModel.Base7);
+        printInvoiceWithDetailsModel.TotalTVA = DecimalHelper.RoundAmount(printInvoiceWithDetailsModel.Tva19 + printInvoiceWithDetailsModel.Tva13 + printInvoiceWithDetailsModel.Tva7);
+        
+        // Calculate TotalTTC including timbre
+        printInvoiceWithDetailsModel.TotalTTC = DecimalHelper.RoundAmount(printInvoiceWithDetailsModel.TotalHT + printInvoiceWithDetailsModel.TotalTVA + timbre);
     }
 
     private async Task<Result<GetAppParametersResponse>> FetchAppParametersAsync(CancellationToken cancellationToken)

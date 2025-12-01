@@ -1,4 +1,5 @@
 ﻿using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters;
+using TunNetCom.SilkRoadErp.Sales.Domain.Services;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices;
 using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Invoices.RetenueSource;
@@ -94,15 +95,19 @@ public class PrintFullInvoiceService(
 
     private static void CalculateTotalAmounts(PrintFullInvoiceModel printInvoiceWithDetailsModel, decimal timbre, GetAppParametersResponse appParameters)
     {
-        printInvoiceWithDetailsModel.TotalHT = printInvoiceWithDetailsModel.DeliveryNotes.Sum(dn => dn.Lines.Sum(l => l.TotHt));
-        printInvoiceWithDetailsModel.TotalTVA = printInvoiceWithDetailsModel.DeliveryNotes.Sum(dn => dn.Lines.Sum(l => l.TotTtc - l.TotHt));
-        printInvoiceWithDetailsModel.TotalTTC = printInvoiceWithDetailsModel.DeliveryNotes.Sum(dn => dn.Lines.Sum(l => l.TotTtc)) + timbre;
-        printInvoiceWithDetailsModel.Base19 = printInvoiceWithDetailsModel.DeliveryNotes.Sum(dn => dn.Lines.Where(l => l.Tva == (int)appParameters.VatRate19).Sum(l => l.TotHt));
-        printInvoiceWithDetailsModel.Base13 = printInvoiceWithDetailsModel.DeliveryNotes.Sum(dn => dn.Lines.Where(l => l.Tva == (int)appParameters.VatRate13).Sum(l => l.TotHt));
-        printInvoiceWithDetailsModel.Base7 = printInvoiceWithDetailsModel.DeliveryNotes.Sum(dn => dn.Lines.Where(l => l.Tva == (int)appParameters.VatRate7).Sum(l => l.TotHt));
-        printInvoiceWithDetailsModel.Tva19 = printInvoiceWithDetailsModel.DeliveryNotes.Sum(dn => dn.Lines.Where(l => l.Tva == (int)appParameters.VatRate19).Sum(l => l.TotTtc - l.TotHt));
-        printInvoiceWithDetailsModel.Tva13 = printInvoiceWithDetailsModel.DeliveryNotes.Sum(dn => dn.Lines.Where(l => l.Tva == (int)appParameters.VatRate13).Sum(l => l.TotTtc - l.TotHt));
-        printInvoiceWithDetailsModel.Tva7 = printInvoiceWithDetailsModel.DeliveryNotes.Sum(dn => dn.Lines.Where(l => l.Tva == (int)appParameters.VatRate7).Sum(l => l.TotTtc - l.TotHt));
+        printInvoiceWithDetailsModel.Base19 = DecimalHelper.RoundAmount(printInvoiceWithDetailsModel.DeliveryNotes.Sum(dn => dn.Lines.Where(l => l.Tva == (int)appParameters.VatRate19).Sum(l => l.TotHt)));
+        printInvoiceWithDetailsModel.Base13 = DecimalHelper.RoundAmount(printInvoiceWithDetailsModel.DeliveryNotes.Sum(dn => dn.Lines.Where(l => l.Tva == (int)appParameters.VatRate13).Sum(l => l.TotHt)));
+        printInvoiceWithDetailsModel.Base7 = DecimalHelper.RoundAmount(printInvoiceWithDetailsModel.DeliveryNotes.Sum(dn => dn.Lines.Where(l => l.Tva == (int)appParameters.VatRate7).Sum(l => l.TotHt)));
+        printInvoiceWithDetailsModel.Tva19 = DecimalHelper.RoundAmount(printInvoiceWithDetailsModel.DeliveryNotes.Sum(dn => dn.Lines.Where(l => l.Tva == (int)appParameters.VatRate19).Sum(l => l.TotTtc - l.TotHt)));
+        printInvoiceWithDetailsModel.Tva13 = DecimalHelper.RoundAmount(printInvoiceWithDetailsModel.DeliveryNotes.Sum(dn => dn.Lines.Where(l => l.Tva == (int)appParameters.VatRate13).Sum(l => l.TotTtc - l.TotHt)));
+        printInvoiceWithDetailsModel.Tva7 = DecimalHelper.RoundAmount(printInvoiceWithDetailsModel.DeliveryNotes.Sum(dn => dn.Lines.Where(l => l.Tva == (int)appParameters.VatRate7).Sum(l => l.TotTtc - l.TotHt)));
+        
+        // Calculate TotalHT and TotalTVA from the rounded bases
+        printInvoiceWithDetailsModel.TotalHT = DecimalHelper.RoundAmount(printInvoiceWithDetailsModel.Base19 + printInvoiceWithDetailsModel.Base13 + printInvoiceWithDetailsModel.Base7);
+        printInvoiceWithDetailsModel.TotalTVA = DecimalHelper.RoundAmount(printInvoiceWithDetailsModel.Tva19 + printInvoiceWithDetailsModel.Tva13 + printInvoiceWithDetailsModel.Tva7);
+        
+        // Calculate TotalTTC including timbre
+        printInvoiceWithDetailsModel.TotalTTC = DecimalHelper.RoundAmount(printInvoiceWithDetailsModel.TotalHT + printInvoiceWithDetailsModel.TotalTVA + timbre);
     }
 
     private async Task<Result<GetAppParametersResponse>> FetchAppParametersAsync(CancellationToken cancellationToken)
