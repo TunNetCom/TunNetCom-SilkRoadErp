@@ -8,5 +8,6 @@ public record CreateProductCommand(
     double Tva,
     decimal Prix,
     decimal PrixAchat,
-    bool Visibilite
+    bool Visibilite,
+    int? SousFamilleProduitId = null
 ) : IRequest<Result<string>>;

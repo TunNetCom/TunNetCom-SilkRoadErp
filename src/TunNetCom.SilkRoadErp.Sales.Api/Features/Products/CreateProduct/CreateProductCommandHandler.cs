@@ -26,7 +26,8 @@ public class CreateProductCommandHandler(
             createProductCommand.Tva,
             createProductCommand.Prix,
             createProductCommand.PrixAchat,
-            createProductCommand.Visibilite
+            createProductCommand.Visibilite,
+            createProductCommand.SousFamilleProduitId
         );
 
         _ = _context.Produit.Add(product);

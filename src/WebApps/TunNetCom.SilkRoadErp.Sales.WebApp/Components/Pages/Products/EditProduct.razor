@@ -3,6 +3,7 @@
 @using Radzen.Blazor
 @using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProductSubFamilies
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Services
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
@@ -10,6 +11,7 @@
 @using System.Globalization
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services
 @inject IProductsApiClient ProductService
+@inject IProductSubFamiliesApiClient ProductSubFamiliesService
 @inject NavigationManager NavigationManager
 @inject IStringLocalizer<SharedResource> Localizer
 @inject ToastService ToastService
@@ -112,6 +114,14 @@
                         <RadzenRangeValidator Component="PurchasingPrice" Min="0" Text="@Localizer["positive_number"]" />
                     </Helper>
                 </RadzenFormField>
+
+                <RadzenFormField Text="Sous-famille" class="rz-col-12">
+                    <Start><RadzenIcon Icon="category" /></Start>
+                    <ChildContent>
+                        <RadzenDropDown @bind-Value="productModel.SousFamilleProduitId" Data="@subFamilies" TextProperty="Nom" ValueProperty="Id" 
+                                        Placeholder="Sélectionner une sous-famille" AllowClear="true" />
+                    </ChildContent>
+                </RadzenFormField>
             </RadzenColumn>
         </RadzenRow>
 
@@ -144,6 +154,7 @@
     private bool isSubmitting = false;
     private CancellationTokenSource cancellationTokenSource = new();
     private string priceFormat = AmountHelper.FORMAT_N3;
+    private List<TunNetCom.SilkRoadErp.Sales.Contracts.ProductFamilies.SousFamilleProduitResponse> subFamilies = new();
     private EventCallback<ProductModel> OnSubmit => EventCallback.Factory.Create<ProductModel>(this, HandleValidSubmit);
 
     // Product Model Definition
@@ -176,6 +187,8 @@
         public decimal PurchasingPrice { get; set; }
 
         public bool Visibility { get; set; }
+
+        public int? SousFamilleProduitId { get; set; }
     }
 
     // Lifecycle Methods
@@ -183,6 +196,16 @@
     {
         await base.OnInitializedAsync();
         priceFormat = await DecimalFormatService.GetDecimalFormatAsync();
+        
+        // Charger les sous-familles
+        try
+        {
+            subFamilies = await ProductSubFamiliesService.GetAllAsync();
+        }
+        catch (Exception)
+        {
+            // Ignorer l'erreur, on continuera sans les sous-familles
+        }
         
         if (string.IsNullOrEmpty(Refe)) return;
 
@@ -202,7 +225,8 @@
                     VatRate = product.VatRate,
                     Price = product.Price,
                     PurchasingPrice = product.PurchasingPrice,
-                    Visibility = product.Visibility
+                    Visibility = product.Visibility,
+                    SousFamilleProduitId = product.SousFamilleProduitId
                 };
             }
             else
@@ -237,7 +261,8 @@
                     Tva = model.VatRate,
                     Prix = model.Price,
                     PrixAchat = model.PurchasingPrice,
-                    Visibilite = model.Visibility
+                    Visibilite = model.Visibility,
+                    SousFamilleProduitId = model.SousFamilleProduitId
                 }, cancellationTokenSource.Token);
 
                 if (createResult.IsT0)
@@ -262,7 +287,8 @@
                 Tva = model.VatRate,
                 Prix = model.Price,
                 PrixAchat = model.PurchasingPrice,
-                Visibilite = model.Visibility
+                Visibilite = model.Visibility,
+                SousFamilleProduitId = model.SousFamilleProduitId
             }, model.Reference, cancellationTokenSource.Token);
 
             if (updateResult.IsT0)

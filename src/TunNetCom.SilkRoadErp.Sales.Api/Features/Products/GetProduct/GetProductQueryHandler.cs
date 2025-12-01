@@ -26,7 +26,8 @@ public class GetProductQueryHandler(
                 Price = t.Prix,
                 PurchasingPrice = t.PrixAchat,
                 Visibility = t.Visibilite,
-                
+                SousFamilleProduitId = t.SousFamilleProduitId,
+                SousFamilleProduitNom = t.SousFamilleProduit != null ? t.SousFamilleProduit.Nom : null
             })
             .AsQueryable();
         if (!string.IsNullOrEmpty(getProductQuery.SearchKeyword))

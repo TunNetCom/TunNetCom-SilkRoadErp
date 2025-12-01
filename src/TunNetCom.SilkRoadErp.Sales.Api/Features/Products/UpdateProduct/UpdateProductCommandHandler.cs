@@ -37,7 +37,8 @@ public class UpdateProductCommandHandler(
             tva: updateProductCommand.Tva,
             prix: updateProductCommand.Prix,
             prixAchat: updateProductCommand.PrixAchat,
-            visibilite: updateProductCommand.Visibilite
+            visibilite: updateProductCommand.Visibilite,
+            sousFamilleProduitId: updateProductCommand.SousFamilleProduitId
             );
 
         _ = await _context.SaveChangesAsync(cancellationToken);

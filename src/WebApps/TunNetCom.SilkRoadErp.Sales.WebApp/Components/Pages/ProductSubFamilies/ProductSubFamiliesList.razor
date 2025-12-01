@@ -1,0 +1,132 @@
+@page "/product-subfamilies"
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProductSubFamilies
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProductFamilies
+@using TunNetCom.SilkRoadErp.Sales.Contracts.ProductFamilies
+@using Radzen
+@using Radzen.Blazor
+@using BlazorBootstrap
+@inject IProductSubFamiliesApiClient ProductSubFamiliesService
+@inject IProductFamiliesApiClient ProductFamiliesService
+@inject NavigationManager NavigationManager
+@inject DialogService DialogService
+@inject ToastService ToastService
+
+<RadzenCard>
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center" Style="margin-bottom: 1rem;">
+        <h3 style="margin: 0;">Sous-familles de produits</h3>
+        <RadzenButton Icon="add" Text="Ajouter" ButtonStyle="ButtonStyle.Primary" Click="@CreateSubFamily" />
+    </RadzenStack>
+
+    <RadzenFormField Text="Filtrer par famille" class="rz-col-12" Style="margin-bottom: 1rem;">
+        <RadzenDropDown @bind-Value="@selectedFamilleId" Data="@families" TextProperty="Nom" ValueProperty="Id" 
+                        Placeholder="Toutes les familles" AllowClear="true" Change="@OnFamilleFilterChangedCallback" />
+    </RadzenFormField>
+
+    <RadzenDataGrid @ref="grid" TItem="SousFamilleProduitResponse" Data="@subFamilies" AllowPaging="true" PageSize="10" IsLoading="@isLoading">
+        <Columns>
+            <RadzenDataGridColumn TItem="SousFamilleProduitResponse" Property="Id" Title="ID" Width="100px" />
+            <RadzenDataGridColumn TItem="SousFamilleProduitResponse" Property="Nom" Title="Nom" />
+            <RadzenDataGridColumn TItem="SousFamilleProduitResponse" Property="FamilleProduitNom" Title="Famille" />
+            <RadzenDataGridColumn TItem="SousFamilleProduitResponse" Filterable="false" Sortable="false" Width="200px" TextAlign="TextAlign.Center">
+                <Template Context="subFamily">
+                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Success" Variant="Variant.Outlined" Size="ButtonSize.Small"
+                                  Click="@(() => EditSubFamily(subFamily))" />
+                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Outlined" Size="ButtonSize.Small"
+                                  Click="@(() => DeleteSubFamily(subFamily))" />
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+</RadzenCard>
+
+@code {
+    private RadzenDataGrid<SousFamilleProduitResponse>? grid;
+    private List<SousFamilleProduitResponse> subFamilies = new();
+    private List<FamilleProduitResponse> families = new();
+    private int? selectedFamilleId;
+    private bool isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadFamilies();
+        await LoadSubFamilies();
+    }
+
+    private async Task LoadFamilies()
+    {
+        try
+        {
+            families = await ProductFamiliesService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            ToastService.Notify(new(ToastType.Danger, $"Erreur lors du chargement des familles: {ex.Message}"));
+        }
+    }
+
+    private async Task LoadSubFamilies()
+    {
+        try
+        {
+            isLoading = true;
+            subFamilies = await ProductSubFamiliesService.GetAllAsync(selectedFamilleId);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            ToastService.Notify(new(ToastType.Danger, $"Erreur lors du chargement: {ex.Message}"));
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private EventCallback OnFamilleFilterChangedCallback => EventCallback.Factory.Create(this, async () =>
+    {
+        await LoadSubFamilies();
+    });
+    
+    private async Task OnFamilleFilterChanged(int? value)
+    {
+        selectedFamilleId = value;
+        await LoadSubFamilies();
+    }
+
+    private void CreateSubFamily()
+    {
+        NavigationManager.NavigateTo("/product-subfamilies/edit");
+    }
+
+    private void EditSubFamily(SousFamilleProduitResponse subFamily)
+    {
+        NavigationManager.NavigateTo($"/product-subfamilies/edit/{subFamily.Id}");
+    }
+
+    private async Task DeleteSubFamily(SousFamilleProduitResponse subFamily)
+    {
+        var result = await DialogService.Confirm("Êtes-vous sûr de vouloir supprimer cette sous-famille ?", "Confirmation", new ConfirmOptions { OkButtonText = "Oui", CancelButtonText = "Non" });
+        if (result == true)
+        {
+            try
+            {
+                var deleteResult = await ProductSubFamiliesService.DeleteAsync(subFamily.Id);
+                if (deleteResult.IsT0)
+                {
+                    ToastService.Notify(new(ToastType.Success, "Sous-famille supprimée avec succès"));
+                    await LoadSubFamilies();
+                }
+                else
+                {
+                    var error = deleteResult.AsT1;
+                    ToastService.Notify(new(ToastType.Danger, error.Detail ?? "Erreur lors de la suppression"));
+                }
+            }
+            catch (Exception ex)
+            {
+                ToastService.Notify(new(ToastType.Danger, $"Erreur: {ex.Message}"));
+            }
+        }
+    }
+}
+

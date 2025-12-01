@@ -28,4 +28,7 @@ public class CreateProductRequest
 
     [JsonPropertyName("visibilite")]
     public bool Visibilite { get; set; }
+
+    [JsonPropertyName("sousFamilleProduitId")]
+    public int? SousFamilleProduitId { get; set; }
 }

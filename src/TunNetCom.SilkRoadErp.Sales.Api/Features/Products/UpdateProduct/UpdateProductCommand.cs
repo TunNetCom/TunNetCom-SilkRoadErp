@@ -8,5 +8,6 @@ public record UpdateProductCommand(string? Refe,
     double Tva,
     decimal Prix,
     decimal PrixAchat,
-    bool Visibilite
+    bool Visibilite,
+    int? SousFamilleProduitId = null
 ) : IRequest<Result>;

@@ -1,0 +1,98 @@
+@page "/product-families"
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProductFamilies
+@using TunNetCom.SilkRoadErp.Sales.Contracts.ProductFamilies
+@using Radzen
+@using Radzen.Blazor
+@using BlazorBootstrap
+@inject IProductFamiliesApiClient ProductFamiliesService
+@inject NavigationManager NavigationManager
+@inject DialogService DialogService
+@inject ToastService ToastService
+
+<RadzenCard>
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center" Style="margin-bottom: 1rem;">
+        <h3 style="margin: 0;">Familles de produits</h3>
+        <RadzenButton Icon="add" Text="Ajouter" ButtonStyle="ButtonStyle.Primary" Click="@CreateFamily" />
+    </RadzenStack>
+
+    <RadzenDataGrid @ref="grid" TItem="FamilleProduitResponse" Data="@families" AllowPaging="true" PageSize="10" IsLoading="@isLoading">
+        <Columns>
+            <RadzenDataGridColumn TItem="FamilleProduitResponse" Property="Id" Title="ID" Width="100px" />
+            <RadzenDataGridColumn TItem="FamilleProduitResponse" Property="Nom" Title="Nom" />
+            <RadzenDataGridColumn TItem="FamilleProduitResponse" Filterable="false" Sortable="false" Width="200px" TextAlign="TextAlign.Center">
+                <Template Context="family">
+                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Success" Variant="Variant.Outlined" Size="ButtonSize.Small"
+                                  Click="@(() => EditFamily(family))" />
+                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Outlined" Size="ButtonSize.Small"
+                                  Click="@(() => DeleteFamily(family))" />
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+</RadzenCard>
+
+@code {
+    private RadzenDataGrid<FamilleProduitResponse>? grid;
+    private List<FamilleProduitResponse> families = new();
+    private bool isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadFamilies();
+    }
+
+    private async Task LoadFamilies()
+    {
+        try
+        {
+            isLoading = true;
+            families = await ProductFamiliesService.GetAllAsync();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            ToastService.Notify(new(ToastType.Danger, $"Erreur lors du chargement: {ex.Message}"));
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void CreateFamily()
+    {
+        NavigationManager.NavigateTo("/product-families/edit");
+    }
+
+    private void EditFamily(FamilleProduitResponse family)
+    {
+        NavigationManager.NavigateTo($"/product-families/edit/{family.Id}");
+    }
+
+    private async Task DeleteFamily(FamilleProduitResponse family)
+    {
+        var result = await DialogService.Confirm("Êtes-vous sûr de vouloir supprimer cette famille ?", "Confirmation", new ConfirmOptions { OkButtonText = "Oui", CancelButtonText = "Non" });
+        if (result == true)
+        {
+            try
+            {
+                var deleteResult = await ProductFamiliesService.DeleteAsync(family.Id);
+                if (deleteResult.IsT0)
+                {
+                    ToastService.Notify(new(ToastType.Success, "Famille supprimée avec succès"));
+                    await LoadFamilies();
+                }
+                else
+                {
+                    var error = deleteResult.AsT1;
+                    ToastService.Notify(new(ToastType.Danger, error.Detail ?? "Erreur lors de la suppression"));
+                }
+            }
+            catch (Exception ex)
+            {
+                ToastService.Notify(new(ToastType.Danger, $"Erreur: {ex.Message}"));
+            }
+        }
+    }
+}
+

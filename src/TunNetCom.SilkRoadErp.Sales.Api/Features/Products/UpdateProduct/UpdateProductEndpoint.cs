@@ -20,7 +20,8 @@ public class UpdateProductEndpoint : ICarterModule
                 Tva: updateProductRequest.Tva,
                 Prix: updateProductRequest.Prix,
                 PrixAchat: updateProductRequest.PrixAchat,
-                Visibilite: updateProductRequest.Visibilite
+                Visibilite: updateProductRequest.Visibilite,
+                SousFamilleProduitId: updateProductRequest.SousFamilleProduitId
             );
 
             var result = await mediator.Send(updateProductCommand, cancellationToken);

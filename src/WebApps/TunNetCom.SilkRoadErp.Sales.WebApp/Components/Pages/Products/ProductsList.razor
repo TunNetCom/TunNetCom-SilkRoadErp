@@ -2,11 +2,15 @@
 @using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.HttpClients
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProductSubFamilies
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Products
+@using TunNetCom.SilkRoadErp.Sales.Contracts.ProductFamilies
 @using Radzen
 @using Radzen.Blazor
+@using BlazorBootstrap
 @inject IProductsApiClient productService
+@inject IProductSubFamiliesApiClient productSubFamiliesService
 @inject NavigationManager navigationManager
 @inject IStringLocalizer<SharedResource> Localizer
 @inject DialogService DialogService
@@ -16,10 +20,19 @@
     <div class="products-card">
         <div class="products-header">
             <h3 class="products-title">@Localizer["products"]</h3>
-            <RadzenButton Icon="add" Text="@Localizer["add_product"]"
-                          ButtonStyle="ButtonStyle.Primary"
-                          Click="@CreateProduct"
-                          Class="btn-primary" />
+            <div style="display: flex; gap: 0.5rem;">
+                @if (selectedProducts.Any())
+                {
+                    <RadzenButton Icon="category" Text="Affecter sous-famille"
+                                  ButtonStyle="ButtonStyle.Info"
+                                  Click="@ShowAssignSubFamilyDialog"
+                                  Class="btn-info" />
+                }
+                <RadzenButton Icon="add" Text="@Localizer["add_product"]"
+                              ButtonStyle="ButtonStyle.Primary"
+                              Click="@CreateProduct"
+                              Class="btn-primary" />
+            </div>
         </div>
 
         <RadzenTextBox Placeholder="@Localizer["Search"]"
@@ -48,6 +61,11 @@
                 <p style="font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
             </EmptyTemplate>
             <Columns>
+                <RadzenDataGridColumn TItem="ProductResponse" Filterable="false" Sortable="false" Width="50px" TextAlign="TextAlign.Center">
+                    <Template Context="product">
+                        <RadzenCheckBox Value="@GetSelectedState(product)" ValueChanged="@((bool value) => OnProductSelectionChanged(product, value))" />
+                    </Template>
+                </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="ProductResponse" Property="@nameof(ProductResponse.Reference)" Title="@Localizer["product_refe"]" Width="200px">
                     <Template Context="product">
                         <span class="grid-cell">@product.Reference</span>
@@ -56,6 +74,11 @@
                 <RadzenDataGridColumn TItem="ProductResponse" Property="@nameof(ProductResponse.Name)" Title="@Localizer["product_name"]" Width="200px">
                     <Template Context="product">
                         <span class="grid-cell">@product.Name</span>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ProductResponse" Property="@nameof(ProductResponse.SousFamilleProduitNom)" Title="Sous-famille" Width="150px">
+                    <Template Context="product">
+                        <span class="grid-cell">@(product.SousFamilleProduitNom ?? "-")</span>
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="ProductResponse" Property="@nameof(ProductResponse.StockCalcule)" Title="@Localizer["stock_calcule"]" Width="150px">
@@ -245,10 +268,143 @@
     private string currentProductRefeToDelete;
     private CancellationTokenSource cancellationTokenSource = new();
     private int defaultPageSize = 10;
+    private HashSet<string> selectedProducts = new();
+    private List<SousFamilleProduitResponse> subFamilies = new();
 
     protected override async Task OnInitializedAsync()
     {
         await LoadProductData(new LoadDataArgs());
+        await LoadSubFamilies();
+    }
+
+    private async Task LoadSubFamilies()
+    {
+        try
+        {
+            subFamilies = await productSubFamiliesService.GetAllAsync();
+        }
+        catch (Exception)
+        {
+            // Ignorer l'erreur
+        }
+    }
+
+    private bool GetSelectedState(ProductResponse product)
+    {
+        return selectedProducts.Contains(product.Reference);
+    }
+
+    private void OnProductSelectionChanged(ProductResponse product, bool isSelected)
+    {
+        if (isSelected)
+        {
+            selectedProducts.Add(product.Reference);
+        }
+        else
+        {
+            selectedProducts.Remove(product.Reference);
+        }
+        StateHasChanged();
+    }
+
+    private async Task ShowAssignSubFamilyDialog()
+    {
+        var result = await DialogService.OpenAsync<AssignSubFamilyDialog>("Affecter une sous-famille",
+            new Dictionary<string, object> 
+            { 
+                { "SubFamilies", subFamilies },
+                { "ProductCount", selectedProducts.Count }
+            },
+            new DialogOptions() 
+            { 
+                Width = "500px", 
+                Height = "300px",
+                Resizable = true, 
+                Draggable = true 
+            });
+
+        if (result != null && result is int)
+        {
+            await AssignSubFamilyToSelectedProducts((int)result);
+        }
+    }
+
+    private async Task AssignSubFamilyToSelectedProducts(int subFamilyId)
+    {
+        try
+        {
+            isLoadingProducts = true;
+            StateHasChanged();
+
+            var productRefs = selectedProducts.ToList();
+            int successCount = 0;
+            int errorCount = 0;
+
+            foreach (var productRef in productRefs)
+            {
+                try
+                {
+                    // Récupérer le produit actuel
+                    var productResult = await productService.GetAsync(productRef, cancellationTokenSource.Token);
+                    if (productResult.IsT0)
+                    {
+                        var product = productResult.AsT0;
+                        var updateRequest = new UpdateProductRequest
+                        {
+                            Refe = product.Reference,
+                            Nom = product.Name,
+                            QteLimite = product.QteLimit,
+                            Remise = product.DiscountPourcentage,
+                            RemiseAchat = product.DiscountPourcentageOfPurchasing,
+                            Tva = product.VatRate,
+                            Prix = product.Price,
+                            PrixAchat = product.PurchasingPrice,
+                            Visibilite = product.Visibility,
+                            SousFamilleProduitId = subFamilyId
+                        };
+
+                        var updateResult = await productService.UpdateAsync(updateRequest, productRef, cancellationTokenSource.Token);
+                        if (updateResult.IsT0)
+                        {
+                            successCount++;
+                        }
+                        else
+                        {
+                            errorCount++;
+                        }
+                    }
+                    else
+                    {
+                        errorCount++;
+                    }
+                }
+                catch (Exception)
+                {
+                    errorCount++;
+                }
+            }
+
+            selectedProducts.Clear();
+            await productGrid.Reload();
+
+            if (successCount > 0)
+            {
+                toastService.Notify(new(ToastType.Success, $"{successCount} produit(s) mis à jour avec succès"));
+            }
+            if (errorCount > 0)
+            {
+                toastService.Notify(new(ToastType.Danger, $"{errorCount} erreur(s) lors de la mise à jour"));
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.Notify(new(ToastType.Danger, $"Erreur: {ex.Message}"));
+        }
+        finally
+        {
+            isLoadingProducts = false;
+            StateHasChanged();
+        }
     }
     private async Task LoadProductData(LoadDataArgs args)
     {
@@ -299,8 +455,8 @@
 
 	    if (confirmed == true)
 	    {
-		    await productService.DeleteAsync(currentProductRefeToDelete, cancellationTokenSource.Token);
-		    toastService.Notify(new(ToastType.Warning, $"{Localizer["customer"]} {Localizer["deleted_with_success"]}"));
+		    await productService.DeleteAsync(reference, cancellationTokenSource.Token);
+		    toastService.Notify(new(ToastType.Warning, $"{Localizer["product"]} {Localizer["deleted_with_success"]}"));
 		    await productGrid.Reload();
 	    }
 

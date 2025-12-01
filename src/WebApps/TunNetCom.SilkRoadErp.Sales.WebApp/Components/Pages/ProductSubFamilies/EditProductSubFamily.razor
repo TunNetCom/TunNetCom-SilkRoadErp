@@ -1,0 +1,108 @@
+@page "/product-subfamilies/edit"
+@page "/product-subfamilies/edit/{Id:int}"
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProductSubFamilies
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProductFamilies
+@using TunNetCom.SilkRoadErp.Sales.Contracts.ProductFamilies
+@using Radzen
+@using Radzen.Blazor
+@using BlazorBootstrap
+@inject IProductSubFamiliesApiClient ProductSubFamiliesService
+@inject IProductFamiliesApiClient ProductFamiliesService
+@inject NavigationManager NavigationManager
+@inject ToastService ToastService
+
+<RadzenCard Style="padding: 20px; max-width: 600px; margin: 2rem auto;">
+    <RadzenTemplateForm Data="@model" Submit="@((CreateSousFamilleProduitRequest m) => OnSubmit())">
+        <RadzenStack Gap="1rem">
+            <h3>@(Id == 0 ? "Créer une sous-famille" : "Modifier une sous-famille")</h3>
+            
+            <RadzenFormField Text="Famille" class="rz-col-12">
+                <RadzenDropDown @bind-Value="@model.FamilleProduitId" Data="@families" TextProperty="Nom" ValueProperty="Id" 
+                                Placeholder="Sélectionner une famille" />
+            </RadzenFormField>
+
+            <RadzenFormField Text="Nom" class="rz-col-12">
+                <RadzenTextBox @bind-Value="@model.Nom" Placeholder="Nom de la sous-famille" />
+            </RadzenFormField>
+
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End">
+                <RadzenButton Text="Annuler" ButtonStyle="ButtonStyle.Light" Click="@Cancel" />
+                <RadzenButton Text="@(Id == 0 ? "Créer" : "Modifier")" ButtonType="Radzen.ButtonType.Submit" ButtonStyle="ButtonStyle.Primary" IsBusy="@isSubmitting" />
+            </RadzenStack>
+        </RadzenStack>
+    </RadzenTemplateForm>
+</RadzenCard>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private CreateSousFamilleProduitRequest model = new();
+    private List<FamilleProduitResponse> families = new();
+    private bool isSubmitting = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        families = await ProductFamiliesService.GetAllAsync();
+        
+        if (Id > 0)
+        {
+            var subFamilies = await ProductSubFamiliesService.GetAllAsync();
+            var subFamily = subFamilies.FirstOrDefault(sf => sf.Id == Id);
+            if (subFamily != null)
+            {
+                model.Nom = subFamily.Nom;
+                model.FamilleProduitId = subFamily.FamilleProduitId;
+            }
+        }
+    }
+
+    private async Task OnSubmit()
+    {
+        isSubmitting = true;
+        try
+        {
+            if (Id == 0)
+            {
+                var result = await ProductSubFamiliesService.CreateAsync(model);
+                if (result.IsT0)
+                {
+                    ToastService.Notify(new(ToastType.Success, "Sous-famille créée avec succès"));
+                    NavigationManager.NavigateTo("/product-subfamilies");
+                }
+                else
+                {
+                    var error = result.AsT1;
+                    ToastService.Notify(new(ToastType.Danger, error.Detail ?? "Erreur lors de la création"));
+                }
+            }
+            else
+            {
+                var updateRequest = new UpdateSousFamilleProduitRequest { Nom = model.Nom, FamilleProduitId = model.FamilleProduitId };
+                var result = await ProductSubFamiliesService.UpdateAsync(Id, updateRequest);
+                if (result.IsT0)
+                {
+                    ToastService.Notify(new(ToastType.Success, "Sous-famille modifiée avec succès"));
+                    NavigationManager.NavigateTo("/product-subfamilies");
+                }
+                else
+                {
+                    var error = result.AsT1;
+                    ToastService.Notify(new(ToastType.Danger, error.Detail ?? "Erreur lors de la modification"));
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.Notify(new(ToastType.Danger, $"Erreur: {ex.Message}"));
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/product-subfamilies");
+    }
+}
+

@@ -19,7 +19,8 @@ public class CreateProductEndpoint : ICarterModule
                 Tva: request.Tva,
                 Prix: request.Prix,
                 PrixAchat: request.PrixAchat,
-                Visibilite: request.Visibilite
+                Visibilite: request.Visibilite,
+                SousFamilleProduitId: request.SousFamilleProduitId
              );
 
              var result = await mediator.Send(createProductCommand, cancellationToken);

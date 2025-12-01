@@ -37,4 +37,10 @@ public class ProductResponse
 
     [JsonPropertyName("isStockLow")]
     public bool IsStockLow { get; set; }
+
+    [JsonPropertyName("sousFamilleProduitId")]
+    public int? SousFamilleProduitId { get; set; }
+
+    [JsonPropertyName("sousFamilleProduitNom")]
+    public string? SousFamilleProduitNom { get; set; }
 }

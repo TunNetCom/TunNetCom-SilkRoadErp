@@ -1,0 +1,41 @@
+@using TunNetCom.SilkRoadErp.Sales.Contracts.ProductFamilies
+@using Radzen
+@using Radzen.Blazor
+@using BlazorBootstrap
+@inject DialogService DialogService
+@inject ToastService ToastService
+
+<RadzenStack Gap="1rem">
+    <p>Affecter une sous-famille à <strong>@ProductCount</strong> produit(s) sélectionné(s)</p>
+    
+    <RadzenFormField Text="Sous-famille" class="rz-col-12">
+        <RadzenDropDown @bind-Value="@selectedSubFamilyId" Data="@SubFamilies" TextProperty="Nom" ValueProperty="Id" 
+                        Placeholder="Sélectionner une sous-famille" />
+    </RadzenFormField>
+
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End">
+        <RadzenButton Text="Annuler" ButtonStyle="ButtonStyle.Light" Click="@Cancel" />
+        <RadzenButton Text="Valider" ButtonStyle="ButtonStyle.Primary" Click="@Validate" Disabled="@(!selectedSubFamilyId.HasValue)" />
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    [Parameter] public List<SousFamilleProduitResponse> SubFamilies { get; set; } = new();
+    [Parameter] public int ProductCount { get; set; }
+    
+    private int? selectedSubFamilyId;
+
+    private void Cancel()
+    {
+        DialogService.Close();
+    }
+
+    private void Validate()
+    {
+        if (selectedSubFamilyId.HasValue)
+        {
+            DialogService.Close(selectedSubFamilyId.Value);
+        }
+    }
+}
+
