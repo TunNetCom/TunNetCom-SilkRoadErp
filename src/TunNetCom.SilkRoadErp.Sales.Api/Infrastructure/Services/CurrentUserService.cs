@@ -1,8 +1,3 @@
-using System.Security.Claims;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
-using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
-
 namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
 
 public class CurrentUserService : ICurrentUserService, ICurrentUserProvider

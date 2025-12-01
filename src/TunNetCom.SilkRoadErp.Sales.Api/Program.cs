@@ -1,16 +1,3 @@
-using System.Threading.RateLimiting;
-using System.Reflection;
-using System.Text;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.OData;
-using Microsoft.IdentityModel.Tokens;
-using Scalar.AspNetCore;
-using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.DataSeeder;
-using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Middleware;
-using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.OData;
-using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
-
 var builder = WebApplication.CreateBuilder(args);
 
 var seqServerUrl = builder.Configuration["Seq:ServerUrl"];
@@ -47,7 +34,7 @@ builder.Services.AddDbContext<SalesContext>((serviceProvider, options) =>
         sqlServerOptions => sqlServerOptions.MigrationsAssembly("TunNetCom.SilkRoadErp.Sales.Domain"));
     
     // Add audit interceptor
-    var auditInterceptor = serviceProvider.GetRequiredService<TunNetCom.SilkRoadErp.Sales.Domain.Entites.Interceptors.AuditSaveChangesInterceptor>();
+    var auditInterceptor = serviceProvider.GetRequiredService<AuditSaveChangesInterceptor>();
     options.AddInterceptors(auditInterceptor);
 });
 
@@ -154,10 +141,10 @@ builder.Services.AddScoped<DatabaseSeeder>();
 builder.Services.AddScoped<INumberGeneratorService, NumberGeneratorService>();
 
 // Register ActiveAccountingYearService
-builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Domain.Entites.IActiveAccountingYearService, ActiveAccountingYearService>();
+builder.Services.AddScoped<IActiveAccountingYearService, ActiveAccountingYearService>();
 
 // Register StockCalculationService
-builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Domain.Services.IStockCalculationService, TunNetCom.SilkRoadErp.Sales.Domain.Services.StockCalculationService>();
+builder.Services.AddScoped<IStockCalculationService,StockCalculationService>();
 
 // Register SageErpExportService
 builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.SageErpExportService>();
@@ -168,10 +155,10 @@ builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 
 // Register CurrentUserService for audit logging (implements both ICurrentUserService and ICurrentUserProvider)
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
-builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Domain.Entites.ICurrentUserProvider, CurrentUserService>();
+builder.Services.AddScoped<ICurrentUserProvider, CurrentUserService>();
 
 // Register AuditSaveChangesInterceptor
-builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Domain.Entites.Interceptors.AuditSaveChangesInterceptor>();
+builder.Services.AddScoped<AuditSaveChangesInterceptor>();
 
 // Configure JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");

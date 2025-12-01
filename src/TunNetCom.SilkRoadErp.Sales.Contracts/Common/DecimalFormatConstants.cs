@@ -22,3 +22,4 @@ public static class DecimalFormatConstants
     /// </summary>
     public const string FORMAT_N3 = "N3";
 }
+

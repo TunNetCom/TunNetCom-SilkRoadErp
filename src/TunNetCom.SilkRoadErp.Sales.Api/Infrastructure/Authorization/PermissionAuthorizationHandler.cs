@@ -1,10 +1,3 @@
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
-
 namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Authorization;
 
 public class PermissionAuthorizationHandler : AuthorizationHandler<PermissionRequirement>

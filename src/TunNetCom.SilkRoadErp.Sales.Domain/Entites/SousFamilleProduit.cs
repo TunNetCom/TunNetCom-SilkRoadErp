@@ -43,3 +43,4 @@ public partial class SousFamilleProduit
     public virtual ICollection<Produit> Produits { get; set; } = new List<Produit>();
 }
 
+

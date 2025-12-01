@@ -1,5 +1,3 @@
-using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
-
 namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Middleware;
 
 /// <summary>

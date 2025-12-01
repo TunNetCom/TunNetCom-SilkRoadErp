@@ -30,3 +30,26 @@ global using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;
 global using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Constants;
 global using TunNetCom.SilkRoadErp.Sales.Contracts.Auth;
 global using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Authorization;
+global using System.Threading.RateLimiting;
+global using System.Reflection;
+global using System.Text;
+global using Microsoft.AspNetCore.Authentication.JwtBearer;
+global using Microsoft.AspNetCore.Authorization;
+global using Microsoft.AspNetCore.OData;
+global using Microsoft.IdentityModel.Tokens;
+global using Scalar.AspNetCore;
+global using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.DataSeeder;
+global using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Middleware;
+global using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.OData;
+global using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
+global using TunNetCom.SilkRoadErp.Sales.Domain.Entites.Interceptors;
+global using TunNetCom.SilkRoadErp.Sales.Domain.Services;
+global using System.Threading.Tasks;
+global using Microsoft.Extensions.Options;
+global using Microsoft.OData.Edm;
+global using Microsoft.OData.ModelBuilder;
+global using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
+global using TunNetCom.SilkRoadErp.Sales.Contracts.InstallationTechnician.Responses;
+global using System.Security.Claims;
+
+

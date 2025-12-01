@@ -37,3 +37,4 @@ public partial class FamilleProduit
     public virtual ICollection<SousFamilleProduit> SousFamilles { get; set; } = new List<SousFamilleProduit>();
 }
 
+

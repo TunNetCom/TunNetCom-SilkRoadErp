@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Authorization;
-
 namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Authorization;
 
 public class RequirePermissionAttribute : AuthorizeAttribute

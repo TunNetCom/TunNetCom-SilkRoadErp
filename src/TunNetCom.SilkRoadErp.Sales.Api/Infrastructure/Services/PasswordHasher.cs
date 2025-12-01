@@ -1,5 +1,3 @@
-using BCrypt.Net;
-
 namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
 
 public class PasswordHasher : IPasswordHasher

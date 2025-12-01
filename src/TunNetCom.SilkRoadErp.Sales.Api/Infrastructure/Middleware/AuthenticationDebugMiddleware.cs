@@ -1,5 +1,3 @@
-using System.Security.Claims;
-
 namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Middleware;
 
 /// <summary>

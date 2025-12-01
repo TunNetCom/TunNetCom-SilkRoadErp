@@ -1,7 +1,3 @@
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Options;
-
 namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Authorization;
 
 public class PermissionPolicyProvider : IAuthorizationPolicyProvider

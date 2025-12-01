@@ -1,11 +1,3 @@
-using Microsoft.OData.Edm;
-using Microsoft.OData.ModelBuilder;
-using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
-using TunNetCom.SilkRoadErp.Sales.Contracts.RecieptNotes;
-using TunNetCom.SilkRoadErp.Sales.Contracts.Quotations;
-using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;
-using TunNetCom.SilkRoadErp.Sales.Contracts.InstallationTechnician.Responses;
-
 namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.OData;
 
 public static class EdmModelBuilder

@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 #nullable disable
 

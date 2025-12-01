@@ -6,3 +6,4 @@ public class SousFamilleProduitSeedData
     public string FamilleProduitNom { get; set; } = null!;
 }
 
+

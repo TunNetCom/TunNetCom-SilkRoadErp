@@ -5,3 +5,4 @@ public class FamilleProduitSeedData
     public string Nom { get; set; } = null!;
 }
 
+
