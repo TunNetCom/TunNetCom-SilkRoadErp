@@ -76,7 +76,7 @@ public class ExportToSageErpEndpoint : ICarterModule
             if (!factureNums.Any())
             {
                 logger.LogInformation("No invoices found matching the criteria");
-                var emptyFileBytes = exportService.ExportInvoicesToSageFormat(Enumerable.Empty<InvoiceBaseInfo>());
+                var emptyFileBytes = exportService.ExportInvoicesToSageFormat(Enumerable.Empty<InvoiceBaseInfo>(), timbre);
                 return TypedResults.File(
                     emptyFileBytes,
                     contentType: "text/plain; charset=windows-1252",
@@ -121,7 +121,7 @@ public class ExportToSageErpEndpoint : ICarterModule
             logger.LogInformation("Exporting {Count} invoices to Sage ERP format", invoices.Count);
 
             // Generate the Sage ERP file with journal code "VTE" for sales
-            var fileBytes = exportService.ExportInvoicesToSageFormat(invoices, "VTE");
+            var fileBytes = exportService.ExportInvoicesToSageFormat(invoices, timbre, "VTE");
 
             // Generate filename with date range
             var filename = $"Factures_Sage_{DateTime.Now:yyyyMMdd_HHmmss}.txt";
