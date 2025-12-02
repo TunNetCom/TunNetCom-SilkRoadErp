@@ -35,7 +35,7 @@ public class ValidateQuotationsCommandHandler(
         {
             try
             {
-                if (quotation.Statut == DocumentStatus.Brouillon)
+                if (quotation.Statut == DocumentStatus.Draft)
                 {
                     quotation.Valider();
                     // Marquer explicitement la propriété comme modifiée car le setter est privé

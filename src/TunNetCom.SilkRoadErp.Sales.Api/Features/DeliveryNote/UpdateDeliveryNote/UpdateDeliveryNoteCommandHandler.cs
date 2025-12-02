@@ -26,7 +26,7 @@ public class UpdateDeliveryNoteCommandHandler(
             return Result.Fail(EntityNotFound.Error());
         }
 
-        if (deliveryNote.Statut == DocumentStatus.Valide)
+        if (deliveryNote.Statut == DocumentStatus.Valid)
         {
             return Result.Fail("Le document est validé et ne peut plus être modifié.");
         }

@@ -10,3 +10,4 @@ public interface ICurrentUserProvider
     string? GetUsername();
     bool IsAuthenticated();
 }
+

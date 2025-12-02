@@ -82,7 +82,7 @@ public class DeliveryNoteBaseInfosController : ODataController
                                         NumFacture = bdl.NumFacture,
                                         CustomerId = bdl.ClientId,
                                         Statut = (int)bdl.Statut,
-                                        StatutLibelle = bdl.Statut == DocumentStatus.Brouillon ? "Brouillon" : "Validé"
+                                        StatutLibelle = bdl.Statut.ToString()
                                     })
                                     .AsQueryable();
 

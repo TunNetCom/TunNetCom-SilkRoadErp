@@ -46,7 +46,7 @@ public class InvoiceBaseInfosController : ODataController
                                    NetAmount = g.Where(x => x.bdl != null).Sum(x => x.bdl!.NetPayer) + timbre,
                                    VatAmount = g.Where(x => x.bdl != null).Sum(x => x.bdl!.TotTva),
                                    Statut = (int)g.Key.Statut,
-                                   StatutLibelle = g.Key.Statut == DocumentStatus.Brouillon ? "Brouillon" : "Validé"
+                                   StatutLibelle = g.Key.Statut.ToString()
                                };
 
             // Apply tag filter if provided (OR logic: document must have at least one of the selected tags)

@@ -5,3 +5,4 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.PrintHistory.GetPrintHistoryB
 public record GetPrintHistoryByDocumentQuery(
     string DocumentType,
     int DocumentId) : IRequest<List<PrintHistoryResponse>>;
+

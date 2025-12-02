@@ -75,7 +75,7 @@ public class ReceiptNoteBaseInfosController : ODataController
                                         GrossAmount = br.TotHTva,
                                         VatAmount = br.TotTva,
                                         Statut = (int)br.Statut,
-                                        StatutLibelle = br.Statut == DocumentStatus.Brouillon ? "Brouillon" : "Validé"
+                                        StatutLibelle = br.Statut.ToString()
                                     })
                                     .AsQueryable();
 

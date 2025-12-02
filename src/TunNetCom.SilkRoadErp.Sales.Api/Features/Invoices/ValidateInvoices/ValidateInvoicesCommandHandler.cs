@@ -36,7 +36,7 @@ public class ValidateInvoicesCommandHandler(
         {
             try
             {
-                if (invoice.Statut == DocumentStatus.Brouillon)
+                if (invoice.Statut == DocumentStatus.Draft)
                 {
                     invoice.Valider();
                     // Marquer explicitement la propriété comme modifiée car le setter est privé

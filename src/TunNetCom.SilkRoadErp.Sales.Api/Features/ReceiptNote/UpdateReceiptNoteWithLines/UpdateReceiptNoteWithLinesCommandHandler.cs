@@ -23,7 +23,7 @@ public class UpdateReceiptNoteWithLinesCommandHandler(
             return Result.Fail(EntityNotFound.Error());
         }
 
-        if (receiptNote.Statut == DocumentStatus.Valide)
+        if (receiptNote.Statut == DocumentStatus.Valid)
         {
             return Result.Fail("Le document est validé et ne peut plus être modifié.");
         }

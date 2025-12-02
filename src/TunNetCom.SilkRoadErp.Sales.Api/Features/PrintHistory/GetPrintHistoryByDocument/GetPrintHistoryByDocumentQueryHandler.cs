@@ -39,3 +39,4 @@ public class GetPrintHistoryByDocumentQueryHandler(
         return response;
     }
 }
+

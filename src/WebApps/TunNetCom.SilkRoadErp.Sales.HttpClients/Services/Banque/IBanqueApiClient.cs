@@ -11,3 +11,4 @@ public interface IBanqueApiClient
     Task<List<BanqueResponse>> GetBanquesAsync(
         CancellationToken cancellationToken);
 }
+

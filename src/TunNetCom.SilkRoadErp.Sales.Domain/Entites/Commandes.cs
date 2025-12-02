@@ -27,17 +27,17 @@ public partial class Commandes
             Num = num,
             FournisseurId = fournisseurId,
             Date = date,
-            Statut = DocumentStatus.Brouillon
+            Statut = DocumentStatus.Draft
         };
     }
 
     public void Valider()
     {
-        if (Statut != DocumentStatus.Brouillon)
+        if (Statut != DocumentStatus.Draft)
         {
             throw new InvalidOperationException("Seul un document en brouillon peut être validé.");
         }
-        Statut = DocumentStatus.Valide;
+        Statut = DocumentStatus.Valid;
     }
 
     public int Num { get; set; }

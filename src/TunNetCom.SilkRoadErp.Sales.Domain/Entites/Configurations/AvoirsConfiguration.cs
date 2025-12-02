@@ -26,6 +26,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             .HasColumnType("datetime")
             .HasColumnName("date");
             entity.Property(e => e.NumFactureAvoirClient).HasColumnName("Num_FactureAvoirClient");
+            entity.Property(e => e.Statut)
+            .HasConversion<string>()
+            .HasMaxLength(50)
+            .IsRequired();
 
             entity.HasOne(d => d.Client).WithMany(p => p.Avoirs)
             .HasForeignKey(d => d.ClientId)

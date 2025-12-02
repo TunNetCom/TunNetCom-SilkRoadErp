@@ -58,17 +58,17 @@ public partial class BonDeReception : IAccountingYearEntity
             TotHTva = totHTva,
             TotTva = totTva,
             NetPayer = netPayer,
-            Statut = DocumentStatus.Brouillon
+            Statut = DocumentStatus.Draft
         };
     }
 
     public void Valider()
     {
-        if (Statut != DocumentStatus.Brouillon)
+        if (Statut != DocumentStatus.Draft)
         {
             throw new InvalidOperationException("Seul un document en brouillon peut être validé.");
         }
-        Statut = DocumentStatus.Valide;
+        Statut = DocumentStatus.Valid;
     }
     public int Id { get; set; }
 

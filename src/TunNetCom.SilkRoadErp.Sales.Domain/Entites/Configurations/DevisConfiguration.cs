@@ -28,6 +28,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             entity.Property(e => e.TotTva)
             .HasColumnType("decimal(18, 2)")
             .HasColumnName("tot_tva");
+            entity.Property(e => e.Statut)
+            .HasConversion<string>()
+            .HasMaxLength(50)
+            .IsRequired();
 
             entity.HasOne(d => d.IdClientNavigation).WithMany(p => p.Devis)
             .HasForeignKey(d => d.IdClient)

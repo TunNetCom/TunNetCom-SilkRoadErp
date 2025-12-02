@@ -21,11 +21,11 @@ public partial class Facture : IAccountingYearEntity
 
     public void Valider()
     {
-        if (Statut != DocumentStatus.Brouillon)
+        if (Statut != DocumentStatus.Draft)
         {
             throw new InvalidOperationException("Seul un document en brouillon peut être validé.");
         }
-        Statut = DocumentStatus.Valide;
+        Statut = DocumentStatus.Valid;
     }
 
     public virtual ICollection<BonDeLivraison> BonDeLivraison { get; set; } = new List<BonDeLivraison>();

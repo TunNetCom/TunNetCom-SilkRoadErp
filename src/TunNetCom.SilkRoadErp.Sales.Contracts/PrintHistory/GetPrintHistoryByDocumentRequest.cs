@@ -8,3 +8,4 @@ public record GetPrintHistoryByDocumentRequest
     public string DocumentType { get; init; } = string.Empty;
     public int DocumentId { get; init; }
 }
+

@@ -36,7 +36,7 @@ public class ValidateReceiptNotesCommandHandler(
         {
             try
             {
-                if (receiptNote.Statut == DocumentStatus.Brouillon)
+                if (receiptNote.Statut == DocumentStatus.Draft)
                 {
                     receiptNote.Valider();
                     // Marquer explicitement la propriété comme modifiée car le setter est privé

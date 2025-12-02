@@ -27,6 +27,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             entity.Property(e => e.FournisseurId).HasColumnName("fournisseurId");
             entity.Property(e => e.NumAvoirFournisseur).HasColumnName("Num_AvoirFournisseur");
             entity.Property(e => e.NumFactureAvoirFournisseur).HasColumnName("Num_FactureAvoirFournisseur");
+            entity.Property(e => e.Statut)
+            .HasConversion<string>()
+            .HasMaxLength(50)
+            .IsRequired();
 
             entity.HasOne(d => d.Fournisseur).WithMany(p => p.AvoirFournisseur)
             .HasForeignKey(d => d.FournisseurId)

@@ -39,6 +39,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             entity.Property(e => e.NetPayer)
                 .HasColumnType("decimal(18, 2)")
                 .HasColumnName("net_payer");
+            entity.Property(e => e.Statut)
+            .HasConversion<string>()
+            .HasMaxLength(50)
+            .IsRequired();
 
             entity.HasOne(d => d.IdFournisseurNavigation).WithMany(p => p.BonDeReception)
             .HasForeignKey(d => d.IdFournisseur)

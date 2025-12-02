@@ -17,3 +17,4 @@ public interface IPrintHistoryClient
         CreatePrintHistoryRequest request,
         CancellationToken cancellationToken);
 }
+

@@ -2,6 +2,6 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 public enum DocumentStatus
 {
-    Brouillon = 0,
-    Valide = 1
+    Draft = 0,
+    Valid = 1
 }

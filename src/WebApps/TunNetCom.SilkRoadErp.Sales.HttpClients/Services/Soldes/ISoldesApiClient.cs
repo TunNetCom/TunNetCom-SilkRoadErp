@@ -14,3 +14,4 @@ public interface ISoldesApiClient
         int? accountingYearId,
         CancellationToken cancellationToken);
 }
+

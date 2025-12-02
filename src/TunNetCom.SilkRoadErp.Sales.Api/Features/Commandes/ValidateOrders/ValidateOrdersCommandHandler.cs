@@ -35,7 +35,7 @@ public class ValidateOrdersCommandHandler(
         {
             try
             {
-                if (order.Statut == DocumentStatus.Brouillon)
+                if (order.Statut == DocumentStatus.Draft)
                 {
                     order.Valider();
                     // Marquer explicitement la propriété comme modifiée car le setter est privé

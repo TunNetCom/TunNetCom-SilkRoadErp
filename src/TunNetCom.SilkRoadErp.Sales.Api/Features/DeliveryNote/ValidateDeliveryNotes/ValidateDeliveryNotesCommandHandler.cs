@@ -35,7 +35,7 @@ public class ValidateDeliveryNotesCommandHandler(
         {
             try
             {
-                if (deliveryNote.Statut == DocumentStatus.Brouillon)
+                if (deliveryNote.Statut == DocumentStatus.Draft)
                 {
                     deliveryNote.Valider();
                     // Marquer explicitement la propriété comme modifiée car le setter est privé

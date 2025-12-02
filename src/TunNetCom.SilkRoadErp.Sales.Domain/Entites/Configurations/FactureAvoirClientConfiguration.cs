@@ -24,6 +24,10 @@ public partial class FactureAvoirClientConfiguration : IEntityTypeConfiguration<
         entity.Property(e => e.IdClient).HasColumnName("id_client");
         entity.Property(e => e.NumFactureAvoirClientSurPage).HasColumnName("Num_FactureAvoirClientSurPage");
         entity.Property(e => e.NumFacture).HasColumnName("Num_Facture");
+        entity.Property(e => e.Statut)
+            .HasConversion<string>()
+            .HasMaxLength(50)
+            .IsRequired();
 
         entity.ToTable("FactureAvoirClient");
 

@@ -28,7 +28,7 @@ public class GetDeliveryNoteByNumQueryHandler(
                 CreationTime = LigneBl.TempBl,
                 TotalExcludingTax = LigneBl.TotHTva,
                 Statut = (int)LigneBl.Statut,
-                StatutLibelle = LigneBl.Statut == Domain.Entites.DocumentStatus.Brouillon ? "Brouillon" : "Validé",
+                StatutLibelle = LigneBl.Statut.ToString(),
                 Items = LigneBl.LigneBl.Select(l => new DeliveryNoteDetailResponse
                 {
                     Id = l.IdLi,

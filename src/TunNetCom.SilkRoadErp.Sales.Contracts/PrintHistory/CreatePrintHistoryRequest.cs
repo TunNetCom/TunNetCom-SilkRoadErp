@@ -15,3 +15,4 @@ public record CreatePrintHistoryRequest
     public string? FileName { get; init; }
     public bool IsDuplicata { get; init; } = false;
 }
+

@@ -19,17 +19,17 @@ public partial class Avoirs : IAccountingYearEntity
             ClientId = clientId,
             AccountingYearId = accountingYearId,
             NumFactureAvoirClient = numFactureAvoirClient,
-            Statut = DocumentStatus.Brouillon
+            Statut = DocumentStatus.Draft
         };
     }
 
     public void Valider()
     {
-        if (Statut != DocumentStatus.Brouillon)
+        if (Statut != DocumentStatus.Draft)
         {
             throw new InvalidOperationException("Seul un document en brouillon peut être validé.");
         }
-        Statut = DocumentStatus.Valide;
+        Statut = DocumentStatus.Valid;
     }
 
     public void UpdateAvoir(

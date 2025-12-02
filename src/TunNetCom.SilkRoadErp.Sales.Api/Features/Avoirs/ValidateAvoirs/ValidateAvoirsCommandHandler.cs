@@ -35,7 +35,7 @@ public class ValidateAvoirsCommandHandler(
         {
             try
             {
-                if (avoir.Statut == DocumentStatus.Brouillon)
+                if (avoir.Statut == DocumentStatus.Draft)
                 {
                     avoir.Valider();
                     // Marquer explicitement la propriété comme modifiée car le setter est privé

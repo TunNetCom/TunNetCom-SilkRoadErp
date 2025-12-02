@@ -35,7 +35,7 @@ public class ValidateFactureAvoirFournisseursCommandHandler(
         {
             try
             {
-                if (facture.Statut == DocumentStatus.Brouillon)
+                if (facture.Statut == DocumentStatus.Draft)
                 {
                     facture.Valider();
                     // Marquer explicitement la propriété comme modifiée car le setter est privé

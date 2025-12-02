@@ -22,7 +22,7 @@ public class UpdateAvoirCommandHandler(
             return Result.Fail(EntityNotFound.Error());
         }
 
-        if (avoir.Statut == DocumentStatus.Valide)
+        if (avoir.Statut == DocumentStatus.Valid)
         {
             return Result.Fail("Le document est validé et ne peut plus être modifié.");
         }
