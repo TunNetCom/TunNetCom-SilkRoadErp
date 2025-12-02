@@ -18,7 +18,13 @@ public class GetProductEndpoint : ICarterModule
             paginationQueryParams.PageSize,
             paginationQueryParams.SearchKeyword,
             paginationQueryParams.SortProprety,
-            paginationQueryParams.SortOrder);
+            paginationQueryParams.SortOrder,
+            paginationQueryParams.FamilleProduitId,
+            paginationQueryParams.SousFamilleProduitId,
+            paginationQueryParams.Visibility,
+            paginationQueryParams.StockLowOnly,
+            paginationQueryParams.StockCalculeMin,
+            paginationQueryParams.StockCalculeMax);
 
         var pagedProducts = await mediator.Send(query, cancellationToken);
         var metadata = new

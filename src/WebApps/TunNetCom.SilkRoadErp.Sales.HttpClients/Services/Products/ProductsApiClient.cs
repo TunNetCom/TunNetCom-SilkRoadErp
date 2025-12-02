@@ -38,11 +38,35 @@ public class ProductsApiClient : IProductsApiClient
         var queryString = $"/products?pageNumber={queryParameters.PageNumber}&pageSize={queryParameters.PageSize}";
         if (!string.IsNullOrEmpty(queryParameters.SearchKeyword))
         {
-            queryString += $"&searchKeyword={queryParameters.SearchKeyword}";
+            queryString += $"&searchKeyword={Uri.EscapeDataString(queryParameters.SearchKeyword)}";
         }
         if (!string.IsNullOrEmpty(queryParameters.SortProprety))
         {
             queryString += $"&sortProprety={queryParameters.SortProprety}&sortOrder={queryParameters.SortOrder ?? "asc"}";
+        }
+        if (queryParameters.FamilleProduitId.HasValue)
+        {
+            queryString += $"&familleProduitId={queryParameters.FamilleProduitId.Value}";
+        }
+        if (queryParameters.SousFamilleProduitId.HasValue)
+        {
+            queryString += $"&sousFamilleProduitId={queryParameters.SousFamilleProduitId.Value}";
+        }
+        if (queryParameters.Visibility.HasValue)
+        {
+            queryString += $"&visibility={queryParameters.Visibility.Value.ToString().ToLower()}";
+        }
+        if (queryParameters.StockLowOnly == true)
+        {
+            queryString += $"&stockLowOnly=true";
+        }
+        if (queryParameters.StockCalculeMin.HasValue)
+        {
+            queryString += $"&stockCalculeMin={queryParameters.StockCalculeMin.Value}";
+        }
+        if (queryParameters.StockCalculeMax.HasValue)
+        {
+            queryString += $"&stockCalculeMax={queryParameters.StockCalculeMax.Value}";
         }
 
         var response = await _httpClient.GetAsync(queryString, cancellationToken: cancellationToken);

@@ -27,5 +27,17 @@ public class QueryStringParameters
 
     public string? SortOrder { get; set; }
 
+    public int? FamilleProduitId { get; set; }
+
+    public int? SousFamilleProduitId { get; set; }
+
+    public bool? Visibility { get; set; }
+
+    public bool? StockLowOnly { get; set; }
+
+    public int? StockCalculeMin { get; set; }
+
+    public int? StockCalculeMax { get; set; }
+
     private int _pageSize = 10;
 }

@@ -4,4 +4,10 @@ public record GetProductQuery(
      int PageSize,
      string? SearchKeyword,
      string? SortProprety,
-     string? SortOrder) : IRequest<PagedList<ProductResponse>> ;
+     string? SortOrder,
+     int? FamilleProduitId,
+     int? SousFamilleProduitId,
+     bool? Visibility,
+     bool? StockLowOnly,
+     int? StockCalculeMin,
+     int? StockCalculeMax) : IRequest<PagedList<ProductResponse>> ;

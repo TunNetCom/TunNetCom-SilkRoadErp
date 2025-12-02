@@ -3,6 +3,7 @@
 @using TunNetCom.SilkRoadErp.Sales.HttpClients
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProductSubFamilies
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProductFamilies
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Products
 @using TunNetCom.SilkRoadErp.Sales.Contracts.ProductFamilies
@@ -11,6 +12,7 @@
 @using BlazorBootstrap
 @inject IProductsApiClient productService
 @inject IProductSubFamiliesApiClient productSubFamiliesService
+@inject IProductFamiliesApiClient productFamiliesService
 @inject NavigationManager navigationManager
 @inject IStringLocalizer<SharedResource> Localizer
 @inject DialogService DialogService
@@ -39,6 +41,81 @@
                        @bind-Value="searchKeyword"
                        Change="@(async (string value) => await productGrid.Reload())"
                        Class="products-search" />
+
+        <RadzenCard Style="margin-bottom: 1.25rem; padding: 1.25rem;">
+            <RadzenStack Gap="1.25rem">
+                <h4 style="margin: 0; font-size: 1.1rem; font-weight: 600;">Filtres</h4>
+                <RadzenRow Gap="1rem">
+                    <RadzenColumn Size="12" SizeMD="3">
+                        <RadzenFormField Text="Famille" Style="margin-bottom: 0;">
+                            <RadzenDropDown Value="@selectedFamilleId" 
+                                          ValueChanged="@OnFamilleFilterChangedCallback"
+                                          Data="@families" 
+                                          TextProperty="Nom" 
+                                          ValueProperty="Id" 
+                                          Placeholder="Toutes les familles" 
+                                          AllowClear="true" />
+                        </RadzenFormField>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="3">
+                        <RadzenFormField Text="Sous-famille" Style="margin-bottom: 0;">
+                            <RadzenDropDown Value="@selectedSousFamilleId" 
+                                          ValueChanged="@OnSousFamilleFilterChangedCallback"
+                                          Data="@filteredSubFamilies" 
+                                          TextProperty="Nom" 
+                                          ValueProperty="Id" 
+                                          Placeholder="Toutes les sous-familles" 
+                                          AllowClear="true" />
+                        </RadzenFormField>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="2">
+                        <RadzenFormField Text="Visibilité" Style="margin-bottom: 0;">
+                            <RadzenDropDown Value="@selectedVisibility" 
+                                          ValueChanged="@OnVisibilityFilterChangedCallback"
+                                          Data="@visibilityOptions" 
+                                          TextProperty="Text" 
+                                          ValueProperty="Value" 
+                                          Placeholder="Tous" 
+                                          AllowClear="true" />
+                        </RadzenFormField>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="2">
+                        <RadzenFormField Text="Stock faible uniquement" Style="margin-bottom: 0;">
+                            <RadzenCheckBox Value="@stockLowOnly" ValueChanged="@OnStockLowOnlyChangedCallback" />
+                        </RadzenFormField>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="2" Style="display: flex; align-items: flex-end; padding-bottom: 0;">
+                        <RadzenButton Text="Réinitialiser" 
+                                    ButtonStyle="ButtonStyle.Secondary" 
+                                    Variant="Variant.Outlined"
+                                    Click="@ResetFilters" 
+                                    Icon="refresh"
+                                    Style="width: 100%; margin-top: 0;" />
+                    </RadzenColumn>
+                </RadzenRow>
+                <RadzenRow Gap="1rem">
+                    <RadzenColumn Size="12" SizeMD="3">
+                        <RadzenFormField Text="Stock calculé (min)" Style="margin-bottom: 0;">
+                            <RadzenNumeric Value="@stockCalculeMin" 
+                                         ValueChanged="@OnStockCalculeMinChangedCallback"
+                                         Placeholder="Min" 
+                                         Min="0" />
+                        </RadzenFormField>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="3">
+                        <RadzenFormField Text="Stock calculé (max)" Style="margin-bottom: 0;">
+                            <RadzenNumeric Value="@stockCalculeMax" 
+                                         ValueChanged="@OnStockCalculeMaxChangedCallback"
+                                         Placeholder="Max" 
+                                         Min="0" />
+                        </RadzenFormField>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="6">
+                        <!-- Espace vide pour l'alignement -->
+                    </RadzenColumn>
+                </RadzenRow>
+            </RadzenStack>
+        </RadzenCard>
 
         <RadzenDataGrid @ref="productGrid"
                         TItem="ProductResponse"
@@ -270,23 +347,104 @@
     private int defaultPageSize = 10;
     private HashSet<string> selectedProducts = new();
     private List<SousFamilleProduitResponse> subFamilies = new();
+    private List<FamilleProduitResponse> families = new();
+    private int? selectedFamilleId;
+    private int? selectedSousFamilleId;
+    private bool? selectedVisibility;
+    private bool stockLowOnly = false;
+    private int? stockCalculeMin;
+    private int? stockCalculeMax;
+
+    private List<SousFamilleProduitResponse> filteredSubFamilies => 
+        selectedFamilleId.HasValue 
+            ? subFamilies.Where(sf => sf.FamilleProduitId == selectedFamilleId.Value).ToList()
+            : subFamilies;
+
+    private List<VisibilityOption> visibilityOptions = new()
+    {
+        new VisibilityOption { Text = "Visible", Value = true },
+        new VisibilityOption { Text = "Non visible", Value = false }
+    };
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadProductData(new LoadDataArgs());
+        await LoadFamilies();
         await LoadSubFamilies();
+        await LoadProductData(new LoadDataArgs());
+    }
+
+    private async Task LoadFamilies()
+    {
+        try
+        {
+            families = await productFamiliesService.GetAllAsync();
+        }
+        catch (Exception)
+        {
+            // Ignorer l'erreur
+        }
     }
 
     private async Task LoadSubFamilies()
     {
         try
         {
-            subFamilies = await productSubFamiliesService.GetAllAsync();
+            subFamilies = await productSubFamiliesService.GetAllAsync(selectedFamilleId);
         }
         catch (Exception)
         {
             // Ignorer l'erreur
         }
+    }
+
+    private EventCallback<int?> OnFamilleFilterChangedCallback => EventCallback.Factory.Create<int?>(this, async (int? value) =>
+    {
+        selectedFamilleId = value;
+        selectedSousFamilleId = null; // Réinitialiser la sous-famille quand la famille change
+        await LoadSubFamilies();
+        await productGrid.Reload();
+    });
+
+    private EventCallback<int?> OnSousFamilleFilterChangedCallback => EventCallback.Factory.Create<int?>(this, async (int? value) =>
+    {
+        selectedSousFamilleId = value;
+        await productGrid.Reload();
+    });
+
+    private EventCallback<bool?> OnVisibilityFilterChangedCallback => EventCallback.Factory.Create<bool?>(this, async (bool? value) =>
+    {
+        selectedVisibility = value;
+        await productGrid.Reload();
+    });
+
+    private EventCallback<bool> OnStockLowOnlyChangedCallback => EventCallback.Factory.Create<bool>(this, async (bool value) =>
+    {
+        stockLowOnly = value;
+        await productGrid.Reload();
+    });
+
+    private EventCallback<int?> OnStockCalculeMinChangedCallback => EventCallback.Factory.Create<int?>(this, async (int? value) =>
+    {
+        stockCalculeMin = value;
+        await productGrid.Reload();
+    });
+
+    private EventCallback<int?> OnStockCalculeMaxChangedCallback => EventCallback.Factory.Create<int?>(this, async (int? value) =>
+    {
+        stockCalculeMax = value;
+        await productGrid.Reload();
+    });
+
+    private async Task ResetFilters()
+    {
+        selectedFamilleId = null;
+        selectedSousFamilleId = null;
+        selectedVisibility = null;
+        stockLowOnly = false;
+        stockCalculeMin = null;
+        stockCalculeMax = null;
+        await LoadSubFamilies();
+        await productGrid.Reload();
     }
 
     private bool GetSelectedState(ProductResponse product)
@@ -427,7 +585,13 @@
                 PageSize = defaultPageSize,
                 SearchKeyword = searchKeyword,
                 SortProprety = sortProperty,
-                SortOrder = sortOrder
+                SortOrder = sortOrder,
+                FamilleProduitId = selectedFamilleId,
+                SousFamilleProduitId = selectedSousFamilleId,
+                Visibility = selectedVisibility,
+                StockLowOnly = stockLowOnly ? true : null,
+                StockCalculeMin = stockCalculeMin,
+                StockCalculeMax = stockCalculeMax
             };
 
         var result = await productService.GetPagedAsync(productsParameters, cancellationTokenSource.Token);
@@ -476,4 +640,10 @@
 	        cancellationTokenSource.Cancel();
 	        cancellationTokenSource.Dispose();
 	    }
+
+    private class VisibilityOption
+    {
+        public string Text { get; set; } = string.Empty;
+        public bool? Value { get; set; }
+    }
 }
