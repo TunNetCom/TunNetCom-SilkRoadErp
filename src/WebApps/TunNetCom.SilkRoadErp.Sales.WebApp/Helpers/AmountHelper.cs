@@ -42,77 +42,135 @@ public static class AmountHelper
         return $"N{decimalPlaces}";
     }
 
-    public static string ConvertFloatToFrenchToWords(float chiffre, string type)
+    /// <summary>
+    /// Convertit un montant décimal en toutes lettres en français (dinars et millimes)
+    /// </summary>
+    /// <param name="montant">Le montant à convertir (en dinars avec 3 décimales pour les millimes)</param>
+    /// <param name="type">Le type de document (BL, Devis, Facture, etc.)</param>
+    /// <returns>Le montant en toutes lettres</returns>
+    public static string ConvertFloatToFrenchToWords(decimal montant, string type)
     {
-        int centaine, dizaine, unite, reste, y;
-        bool dix = false;
         string lettre = "";
+        
+        // Texte d'introduction selon le type de document
         if (type == "BL")
-            lettre = "Arrêté le present bon de livraison à la somme de ";
-        if (type == "Devis")
-            lettre = "Arrêté le present devis à la somme de ";
-        if (type == TYPE_FACTURE)
-            lettre = "Arrêté la présente facture à la somme  de ";
-        if (type == "BonDeReception")
-            lettre = "Arrêté le present bon de réception à la somme de ";
-        if (type == "Avoir")
-            lettre = "Arrêté le present Avoir à la somme de ";
+            lettre = "Arrêté le présent bon de livraison à la somme de ";
+        else if (type == "Devis")
+            lettre = "Arrêté le présent devis à la somme de ";
+        else if (type == TYPE_FACTURE)
+            lettre = "Arrêtée la présente facture à la somme de ";
+        else if (type == "BonDeReception")
+            lettre = "Arrêté le présent bon de réception à la somme de ";
+        else if (type == "Avoir")
+            lettre = "Arrêté le présent avoir à la somme de ";
+        else if (type == "Facture Fournisseur")
+            lettre = "Arrêtée la présente facture fournisseur à la somme de ";
 
-        if (type == "Facture Fournisseur")
-            lettre = "Arrêté la présente facture fournisseur à la somme de ";
-        //strcpy(lettre, "");
+        // Séparer la partie entière (dinars) de la partie décimale (millimes)
+        int dinars = (int)montant;
+        decimal partieDecimale = montant - dinars;
+        int millimes = (int)Math.Round(partieDecimale * 1000, 0);
 
-        reste = (int)chiffre / 1;
+        // Convertir les dinars en lettres
+        string dinarsEnLettres = ConvertNumberToWords(dinars);
+        if (!string.IsNullOrEmpty(dinarsEnLettres))
+        {
+            lettre += dinarsEnLettres;
+            if (dinars == 1)
+                lettre += " dinar";
+            else
+                lettre += " dinars";
+        }
 
+        // Convertir les millimes en lettres
+        if (millimes > 0)
+        {
+            if (dinars > 0)
+                lettre += " et ";
+            
+            string millimesEnLettres = ConvertNumberToWords(millimes);
+            lettre += millimesEnLettres;
+            if (millimes == 1)
+                lettre += " millime";
+            else
+                lettre += " millimes";
+        }
+
+        // Si le montant est zéro
+        if (dinars == 0 && millimes == 0)
+            lettre += "zéro dinars";
+
+        return lettre;
+    }
+
+    /// <summary>
+    /// Convertit un nombre entier en toutes lettres en français
+    /// </summary>
+    /// <param name="nombre">Le nombre à convertir (0 à 999 999 999)</param>
+    /// <returns>Le nombre en toutes lettres</returns>
+    private static string ConvertNumberToWords(int nombre)
+    {
+        if (nombre == 0)
+            return "";
+
+        string resultat = "";
+        int reste = nombre;
+        bool dix = false;
+
+        // Traiter les milliards, millions, milliers, puis les unités
         for (int i = 1000000000; i >= 1; i /= 1000)
         {
-            y = reste / i;
+            int y = reste / i;
             if (y != 0)
             {
-                centaine = y / 100;
-                dizaine = (y - (centaine * 100)) / 10;
-                unite = y - (centaine * 100) - (dizaine * 10);
+                int centaine = y / 100;
+                int dizaine = (y - (centaine * 100)) / 10;
+                int unite = y - (centaine * 100) - (dizaine * 10);
+
+                // Centaines
                 switch (centaine)
                 {
                     case 0:
                         break;
                     case 1:
-                        lettre += "cent ";
+                        resultat += "cent ";
                         break;
                     case 2:
-                        if ((dizaine == 0) && (unite == 0)) lettre += "deux cents ";
-                        else lettre += "deux cent ";
+                        if ((dizaine == 0) && (unite == 0)) resultat += "deux cents ";
+                        else resultat += "deux cent ";
                         break;
                     case 3:
-                        if ((dizaine == 0) && (unite == 0)) lettre += "trois cents ";
-                        else lettre += "trois cent ";
+                        if ((dizaine == 0) && (unite == 0)) resultat += "trois cents ";
+                        else resultat += "trois cent ";
                         break;
                     case 4:
-                        if ((dizaine == 0) && (unite == 0)) lettre += "quatre cents ";
-                        else lettre += "quatre cent ";
+                        if ((dizaine == 0) && (unite == 0)) resultat += "quatre cents ";
+                        else resultat += "quatre cent ";
                         break;
                     case 5:
-                        if ((dizaine == 0) && (unite == 0)) lettre += "cinq cents ";
-                        else lettre += "cinq cent ";
+                        if ((dizaine == 0) && (unite == 0)) resultat += "cinq cents ";
+                        else resultat += "cinq cent ";
                         break;
                     case 6:
-                        if ((dizaine == 0) && (unite == 0)) lettre += "six cents ";
-                        else lettre += "six cent ";
+                        if ((dizaine == 0) && (unite == 0)) resultat += "six cents ";
+                        else resultat += "six cent ";
                         break;
                     case 7:
-                        if ((dizaine == 0) && (unite == 0)) lettre += "sept cents ";
-                        else lettre += "sept cent ";
+                        if ((dizaine == 0) && (unite == 0)) resultat += "sept cents ";
+                        else resultat += "sept cent ";
                         break;
                     case 8:
-                        if ((dizaine == 0) && (unite == 0)) lettre += "huit cents ";
-                        else lettre += "huit cent ";
+                        if ((dizaine == 0) && (unite == 0)) resultat += "huit cents ";
+                        else resultat += "huit cent ";
                         break;
                     case 9:
-                        if ((dizaine == 0) && (unite == 0)) lettre += "neuf cents ";
-                        else lettre += "neuf cent ";
+                        if ((dizaine == 0) && (unite == 0)) resultat += "neuf cents ";
+                        else resultat += "neuf cent ";
                         break;
-                }// endSwitch(centaine)
+                }
 
+                // Dizaines
+                dix = false;
                 switch (dizaine)
                 {
                     case 0:
@@ -121,100 +179,94 @@ public static class AmountHelper
                         dix = true;
                         break;
                     case 2:
-                        lettre += "vingt ";
+                        resultat += "vingt ";
                         break;
                     case 3:
-                        lettre += "trente ";
+                        resultat += "trente ";
                         break;
                     case 4:
-                        lettre += "quarante ";
+                        resultat += "quarante ";
                         break;
                     case 5:
-                        lettre += "cinquante ";
+                        resultat += "cinquante ";
                         break;
                     case 6:
-                        lettre += "soixante ";
+                        resultat += "soixante ";
                         break;
                     case 7:
                         dix = true;
-                        lettre += "soixante ";
+                        resultat += "soixante ";
                         break;
                     case 8:
-                        lettre += "quatre-vingt ";
+                        resultat += "quatre-vingt ";
                         break;
                     case 9:
                         dix = true;
-                        lettre += "quatre-vingt ";
+                        resultat += "quatre-vingt ";
                         break;
-                } // endSwitch(dizaine)
+                }
 
+                // Unités
                 switch (unite)
                 {
                     case 0:
-                        if (dix) lettre += "dix ";
+                        if (dix) resultat += "dix ";
                         break;
                     case 1:
-                        if (dix) lettre += "onze ";
-                        else lettre += "un ";
+                        if (dix) resultat += "onze ";
+                        else resultat += "un ";
                         break;
                     case 2:
-                        if (dix) lettre += "douze ";
-                        else lettre += "deux ";
+                        if (dix) resultat += "douze ";
+                        else resultat += "deux ";
                         break;
                     case 3:
-                        if (dix) lettre += "treize ";
-                        else lettre += "trois ";
+                        if (dix) resultat += "treize ";
+                        else resultat += "trois ";
                         break;
                     case 4:
-                        if (dix) lettre += "quatorze ";
-                        else lettre += "quatre ";
+                        if (dix) resultat += "quatorze ";
+                        else resultat += "quatre ";
                         break;
                     case 5:
-                        if (dix) lettre += "quinze ";
-                        else lettre += "cinq ";
+                        if (dix) resultat += "quinze ";
+                        else resultat += "cinq ";
                         break;
                     case 6:
-                        if (dix) lettre += "seize ";
-                        else lettre += "six ";
+                        if (dix) resultat += "seize ";
+                        else resultat += "six ";
                         break;
                     case 7:
-                        if (dix) lettre += "dix-sept ";
-                        else lettre += "sept ";
+                        if (dix) resultat += "dix-sept ";
+                        else resultat += "sept ";
                         break;
                     case 8:
-                        if (dix) lettre += "dix-huit ";
-                        else lettre += "huit ";
+                        if (dix) resultat += "dix-huit ";
+                        else resultat += "huit ";
                         break;
                     case 9:
-                        if (dix) lettre += "dix-neuf ";
-                        else lettre += "neuf ";
+                        if (dix) resultat += "dix-neuf ";
+                        else resultat += "neuf ";
                         break;
-                } // endSwitch(unite)
+                }
 
+                // Ajouter les unités de grandeur (millions, milles)
                 switch (i)
                 {
                     case 1000000000:
-                        if (y > 1) lettre += "millions ";
-                        else lettre += "million ";
+                        if (y > 1) resultat += "millions ";
+                        else resultat += "million ";
                         break;
                     case 1000000:
-                        if (y > 1) lettre += "milles ";
-                        else lettre += "mille ";
-                        break;
-                    case 1000:
-                        lettre += "dinars et ";
-                        break;
-                    case 1:
-                        lettre += "millimes ";
+                        if (y > 1) resultat += "milles ";
+                        else resultat += "mille ";
                         break;
                 }
-            } // end if(y!=0)
+            }
+
             reste -= y * i;
-            dix = false;
-        } // end for
-        if (lettre.Length == 0) lettre += "zero";
+        }
 
-
-        return lettre;
+        return resultat;
     }
 }
