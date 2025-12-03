@@ -616,10 +616,13 @@
             try
             {
                 var retenueResult = await retenueSourceClientApiClient.GetRetenueSourceClientAsync(invoice.Number, _cancellationTokenSource.Token);
+                // Only set to true if the result is successful (IsSuccess = true means the API returned 200 OK with data)
+                // If IsSuccess = false, it means either 404 (not found) or another error
                 _retenueMap[invoice.Number] = retenueResult.IsSuccess;
             }
             catch
             {
+                // On any exception, assume no retenue exists
                 _retenueMap[invoice.Number] = false;
             }
         }
@@ -722,7 +725,7 @@
                     }
                 }
 
-                // Reload retenue status
+                // Reload retenue status from API to ensure accuracy
                 await LoadRetenueStatus();
                 await InvokeAsync(StateHasChanged);
             }

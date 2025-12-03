@@ -54,7 +54,12 @@ public class RetenueSourceFournisseurApiClient : IRetenueSourceFournisseurApiCli
         {
             var responseContent = await response.Content.ReadAsStringAsync();
             var retenue = JsonConvert.DeserializeObject<RetenueSourceFournisseurResponse>(responseContent);
-            return Result.Ok(retenue!);
+            if (retenue == null)
+            {
+                _logger.LogWarning("API returned 200 OK but deserialized object is null for FactureFournisseur {NumFactureFournisseur}", numFactureFournisseur);
+                return Result.Fail("retenue_source_fournisseur_not_found");
+            }
+            return Result.Ok(retenue);
         }
 
         if (response.StatusCode == HttpStatusCode.NotFound)
