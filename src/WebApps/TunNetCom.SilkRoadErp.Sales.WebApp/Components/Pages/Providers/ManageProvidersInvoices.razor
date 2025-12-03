@@ -750,9 +750,10 @@
             try
             {
                 var retenueResult = await retenueSourceFournisseurApiClient.GetRetenueSourceFournisseurAsync(invoiceWithBRs.Invoice.Num, _cancellationTokenSource.Token);
-                // Only set to true if the result is successful (IsSuccess = true means the API returned 200 OK with data)
+                // Only set to true if the result is successful AND has a value (not null)
                 // If IsSuccess = false, it means either 404 (not found) or another error
-                _retenueMap[invoiceWithBRs.Invoice.Num] = retenueResult.IsSuccess;
+                // If IsSuccess = true but Value is null, it means the API returned 200 OK but with null data
+                _retenueMap[invoiceWithBRs.Invoice.Num] = retenueResult.IsSuccess && retenueResult.Value != null;
             }
             catch
             {
