@@ -1,0 +1,205 @@
+using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters;
+using TunNetCom.SilkRoadErp.Sales.Contracts.PaiementFournisseur;
+using TunNetCom.SilkRoadErp.Sales.Contracts.Providers;
+using TunNetCom.SilkRoadErp.Sales.Contracts.Banque;
+using TunNetCom.SilkRoadErp.Sales.Domain.Services;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PaiementFournisseur;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Banque;
+using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers;
+
+namespace TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.PaiementFournisseur.PrintTraite;
+
+public class PrintTraiteService(
+    ILogger<PrintTraiteService> _logger,
+    IPaiementFournisseurApiClient _paiementFournisseurApiClient,
+    IProvidersApiClient _providersApiClient,
+    IAppParametersClient _appParametersClient,
+    IBanqueApiClient _banqueApiClient,
+    IPrintPdfService<PrintTraiteModel, PrintTraiteView> _printService)
+{
+    public async Task<Result<byte[]>> GenerateTraitePdfAsync(
+        int paiementId,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Generating Traite PDF for PaiementFournisseur {PaiementId}", paiementId);
+
+        // Récupérer le paiement
+        var paiementResult = await _paiementFournisseurApiClient.GetPaiementFournisseurAsync(
+            paiementId,
+            cancellationToken);
+
+        if (paiementResult.IsFailed)
+        {
+            _logger.LogError("Failed to retrieve PaiementFournisseur {PaiementId}", paiementId);
+            return Result.Fail("paiement_fournisseur_not_found");
+        }
+
+        var paiement = paiementResult.Value;
+
+        // Vérifier que c'est bien une Traite
+        if (paiement.MethodePaiement != "Traite")
+        {
+            _logger.LogWarning("PaiementFournisseur {PaiementId} is not a Traite (MethodePaiement: {MethodePaiement})", 
+                paiementId, paiement.MethodePaiement);
+            return Result.Fail("paiement_is_not_traite");
+        }
+
+        // Récupérer le fournisseur (tiré)
+        var fournisseurResult = await _providersApiClient.GetAsync(
+            paiement.FournisseurId,
+            cancellationToken);
+
+        if (fournisseurResult.IsT1 || fournisseurResult.AsT0 == null)
+        {
+            _logger.LogError("Failed to retrieve Fournisseur {FournisseurId}", paiement.FournisseurId);
+            return Result.Fail("fournisseur_not_found");
+        }
+
+        var fournisseur = fournisseurResult.AsT0;
+
+        // Récupérer les paramètres de l'application (tireur)
+        var appParametersResult = await FetchAppParametersAsync(cancellationToken);
+        if (appParametersResult.IsFailed)
+        {
+            _logger.LogError("Failed to retrieve app parameters");
+            return Result.Fail("failed_to_retrieve_app_parameters");
+        }
+
+        var appParameters = appParametersResult.Value;
+
+        // Récupérer la banque si disponible
+        BanqueResponse? banque = null;
+        if (paiement.BanqueId.HasValue)
+        {
+            try
+            {
+                var banques = await _banqueApiClient.GetBanquesAsync(cancellationToken);
+                banque = banques.FirstOrDefault(b => b.Id == paiement.BanqueId.Value);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to retrieve banque {BanqueId}, continuing without banque info", 
+                    paiement.BanqueId.Value);
+            }
+        }
+
+        // Créer le modèle
+        var printModel = new PrintTraiteModel
+        {
+            PaiementId = paiement.Id,
+            NumeroPaiement = paiement.Numero,
+            Montant = paiement.Montant,
+            DateCreation = paiement.DatePaiement,
+            DateEcheance = paiement.DateEcheance,
+            NumeroChequeTraite = paiement.NumeroChequeTraite,
+            
+            Tireur = new TireurModel
+            {
+                Nom = appParameters.NomSociete,
+                Adresse = appParameters.Adresse,
+                Tel = appParameters.Tel,
+                MatriculeFiscale = appParameters.MatriculeFiscale,
+                CodeTva = appParameters.CodeTva,
+                CodeCategorie = appParameters.CodeCategorie,
+                EtbSecondaire = appParameters.EtbSecondaire
+            },
+            
+            Tire = new TireModel
+            {
+                Id = fournisseur.Id,
+                Nom = fournisseur.Nom,
+                Adresse = fournisseur.Adresse,
+                Tel = fournisseur.Tel,
+                Matricule = fournisseur.Matricule,
+                Code = fournisseur.Code,
+                // Utiliser le RIB du paiement (pour traite ou virement)
+                RibCodeEtab = paiement.RibCodeEtab,
+                RibCodeAgence = paiement.RibCodeAgence,
+                RibNumeroCompte = paiement.RibNumeroCompte,
+                RibCle = paiement.RibCle
+            },
+            
+            Banque = banque != null ? new BanqueModel
+            {
+                Id = banque.Id,
+                Nom = banque.Nom,
+                Adresse = null // Banque entity doesn't have address yet
+            } : null
+        };
+
+        // Convertir le montant en lettres
+        printModel.MontantEnLettres = ConvertMontantToLetters(printModel.Montant);
+
+        // Préparer les options PDF
+        var printOptions = PreparePrintOptions();
+
+        // Générer le PDF
+        var pdfBytes = await _printService.GeneratePdfAsync(printModel, printOptions, cancellationToken);
+
+        _logger.LogInformation("Successfully generated Traite PDF for PaiementFournisseur {PaiementId}", paiementId);
+        return Result.Ok(pdfBytes);
+    }
+
+    private static string ConvertMontantToLetters(decimal montant)
+    {
+        // Utiliser directement AmountHelper qui gère déjà dinars et millimes
+        // On utilise un type vide pour éviter le préfixe "Arrêté..."
+        string resultat = AmountHelper.ConvertFloatToFrenchToWords(montant, "");
+        
+        // Nettoyer le préfixe "Arrêté..." qui est ajouté par la fonction si présent
+        resultat = resultat.Replace("Arrêté le présent  à la somme de ", "")
+                          .Replace("Arrêtée la présente  à la somme de ", "")
+                          .Trim();
+        
+        // Si le résultat est vide ou ne contient pas "dinar", on ajoute "tunisiens"
+        if (!string.IsNullOrWhiteSpace(resultat))
+        {
+            if (!resultat.Contains("tunisiens", StringComparison.OrdinalIgnoreCase))
+            {
+                resultat += " tunisiens";
+            }
+        }
+        else
+        {
+            resultat = "zéro dinars tunisiens";
+        }
+
+        return resultat;
+    }
+
+    private static SilkPdfOptions PreparePrintOptions()
+    {
+        // Format exact: 297mm x 210mm (A4 en paysage)
+        var printOptions = new SilkPdfOptions
+        {
+            Width = "297mm",
+            Height = "210mm",
+            PreferCSSPageSize = true,
+            PrintBackground = true,
+            MarginTop = "0mm",
+            MarginBottom = "0mm",
+            MarginLeft = "0mm",
+            MarginRight = "0mm"
+        };
+
+        return printOptions;
+    }
+
+    private async Task<Result<GetAppParametersResponse>> FetchAppParametersAsync(CancellationToken cancellationToken)
+    {
+        var appParametersResult = await _appParametersClient.GetAppParametersAsync(cancellationToken);
+
+        if (appParametersResult.IsT1)
+        {
+            return Result.Fail("Failed to retrieve app parameters");
+        }
+
+        var getAppParametersResponse = appParametersResult.AsT0;
+        _logger.LogInformation("Successfully retrieved app parameters.");
+
+        return Result.Ok(getAppParametersResponse);
+    }
+}
+

@@ -31,6 +31,10 @@ public class GetPaiementFournisseurQueryHandler(
                 BanqueNom = p.Banque != null ? p.Banque.Nom : null,
                 DateEcheance = p.DateEcheance,
                 Commentaire = p.Commentaire,
+                RibCodeEtab = p.RibCodeEtab,
+                RibCodeAgence = p.RibCodeAgence,
+                RibNumeroCompte = p.RibNumeroCompte,
+                RibCle = p.RibCle,
                 DateModification = p.DateModification
             })
             .FirstOrDefaultAsync(cancellationToken);

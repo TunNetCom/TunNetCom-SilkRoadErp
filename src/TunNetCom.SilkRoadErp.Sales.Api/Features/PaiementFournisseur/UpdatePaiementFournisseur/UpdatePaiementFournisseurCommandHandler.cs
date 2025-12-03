@@ -87,7 +87,11 @@ public class UpdatePaiementFournisseurCommandHandler(
             command.NumeroChequeTraite,
             command.BanqueId,
             command.DateEcheance,
-            command.Commentaire);
+            command.Commentaire,
+            command.RibCodeEtab,
+            command.RibCodeAgence,
+            command.RibNumeroCompte,
+            command.RibCle);
 
         await _context.SaveChangesAsync(cancellationToken);
 

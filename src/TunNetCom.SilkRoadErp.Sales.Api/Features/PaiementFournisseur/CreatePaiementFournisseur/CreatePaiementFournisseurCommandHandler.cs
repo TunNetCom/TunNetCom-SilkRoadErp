@@ -84,7 +84,11 @@ public class CreatePaiementFournisseurCommandHandler(
             command.NumeroChequeTraite,
             command.BanqueId,
             command.DateEcheance,
-            command.Commentaire);
+            command.Commentaire,
+            command.RibCodeEtab,
+            command.RibCodeAgence,
+            command.RibNumeroCompte,
+            command.RibCle);
 
         _context.PaiementFournisseur.Add(paiement);
         await _context.SaveChangesAsync(cancellationToken);

@@ -34,5 +34,17 @@ public class UpdatePaiementFournisseurRequest
 
     [JsonPropertyName("commentaire")]
     public string? Commentaire { get; set; }
+
+    [JsonPropertyName("ribCodeEtab")]
+    public string? RibCodeEtab { get; set; }
+
+    [JsonPropertyName("ribCodeAgence")]
+    public string? RibCodeAgence { get; set; }
+
+    [JsonPropertyName("ribNumeroCompte")]
+    public string? RibNumeroCompte { get; set; }
+
+    [JsonPropertyName("ribCle")]
+    public string? RibCle { get; set; }
 }
 

@@ -4,6 +4,7 @@ public enum MethodePaiement
 {
     Espece,
     Cheque,
-    Traite
+    Traite,
+    Virement
 }
 

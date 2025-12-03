@@ -118,6 +118,25 @@
                 }
             }
 
+            @if (selectedMethodePaiement == "Traite" || selectedMethodePaiement == "Virement")
+            {
+                <RadzenFormField Text="@Localizer["RIB_Code_Etablissement"]" class="rz-col-12 rz-md-3">
+                    <RadzenTextBox @bind-Value="paiement.RibCodeEtab" Placeholder="@Localizer["Code_Etab"]" MaxLength="10" />
+                </RadzenFormField>
+
+                <RadzenFormField Text="@Localizer["RIB_Code_Agence"]" class="rz-col-12 rz-md-3">
+                    <RadzenTextBox @bind-Value="paiement.RibCodeAgence" Placeholder="@Localizer["Code_Agence"]" MaxLength="10" />
+                </RadzenFormField>
+
+                <RadzenFormField Text="@Localizer["RIB_Numero_Compte"]" class="rz-col-12 rz-md-3">
+                    <RadzenTextBox @bind-Value="paiement.RibNumeroCompte" Placeholder="@Localizer["Numero_Compte"]" MaxLength="20" />
+                </RadzenFormField>
+
+                <RadzenFormField Text="@Localizer["RIB_Cle"]" class="rz-col-12 rz-md-3">
+                    <RadzenTextBox @bind-Value="paiement.RibCle" Placeholder="@Localizer["Cle"]" MaxLength="5" />
+                </RadzenFormField>
+            }
+
             <RadzenFormField Text="@Localizer["Facture_Fournisseur_Optionnel"]" class="rz-col-12 rz-md-6">
                 <RadzenDropDownDataGrid AllowClear="true"
                                         IsLoading="@isLoadingInvoices"
@@ -233,7 +252,8 @@
         {
             new MethodePaiementOption { Text = Localizer["Espece"], Value = "Espece" },
             new MethodePaiementOption { Text = Localizer["Cheque"], Value = "Cheque" },
-            new MethodePaiementOption { Text = Localizer["Traite"], Value = "Traite" }
+            new MethodePaiementOption { Text = Localizer["Traite"], Value = "Traite" },
+            new MethodePaiementOption { Text = Localizer["Virement"], Value = "Virement" }
         };
         
         await LoadActiveAccountingYearAsync();
@@ -312,7 +332,11 @@
                     NumeroChequeTraite = paiementResponse.NumeroChequeTraite,
                     BanqueId = paiementResponse.BanqueId,
                     DateEcheance = paiementResponse.DateEcheance,
-                    Commentaire = paiementResponse.Commentaire
+                    Commentaire = paiementResponse.Commentaire,
+                    RibCodeEtab = paiementResponse.RibCodeEtab,
+                    RibCodeAgence = paiementResponse.RibCodeAgence,
+                    RibNumeroCompte = paiementResponse.RibNumeroCompte,
+                    RibCle = paiementResponse.RibCle
                 };
                 selectedMethodePaiement = paiementResponse.MethodePaiement;
                 
@@ -485,6 +509,13 @@
                 paiement.BanqueId = null;
                 paiement.DateEcheance = null;
             }
+            if (methode != "Traite" && methode != "Virement")
+            {
+                paiement.RibCodeEtab = null;
+                paiement.RibCodeAgence = null;
+                paiement.RibNumeroCompte = null;
+                paiement.RibCle = null;
+            }
         }
     }
 
@@ -545,7 +576,11 @@
                     NumeroChequeTraite = paiement.NumeroChequeTraite,
                     BanqueId = paiement.BanqueId,
                     DateEcheance = paiement.DateEcheance,
-                    Commentaire = paiement.Commentaire
+                    Commentaire = paiement.Commentaire,
+                    RibCodeEtab = paiement.RibCodeEtab,
+                    RibCodeAgence = paiement.RibCodeAgence,
+                    RibNumeroCompte = paiement.RibNumeroCompte,
+                    RibCle = paiement.RibCle
                 };
 
                 var result = await PaiementFournisseurService.UpdatePaiementFournisseurAsync(Id.Value, updateRequest, cancellationTokenSource.Token);

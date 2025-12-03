@@ -22,7 +22,11 @@ public partial class PaiementFournisseur : IAccountingYearEntity
         string? numeroChequeTraite,
         int? banqueId,
         DateTime? dateEcheance,
-        string? commentaire)
+        string? commentaire,
+        string? ribCodeEtab,
+        string? ribCodeAgence,
+        string? ribNumeroCompte,
+        string? ribCle)
     {
         return new PaiementFournisseur
         {
@@ -37,7 +41,11 @@ public partial class PaiementFournisseur : IAccountingYearEntity
             NumeroChequeTraite = numeroChequeTraite,
             BanqueId = banqueId,
             DateEcheance = dateEcheance,
-            Commentaire = commentaire
+            Commentaire = commentaire,
+            RibCodeEtab = ribCodeEtab,
+            RibCodeAgence = ribCodeAgence,
+            RibNumeroCompte = ribNumeroCompte,
+            RibCle = ribCle
         };
     }
 
@@ -53,7 +61,11 @@ public partial class PaiementFournisseur : IAccountingYearEntity
         string? numeroChequeTraite,
         int? banqueId,
         DateTime? dateEcheance,
-        string? commentaire)
+        string? commentaire,
+        string? ribCodeEtab,
+        string? ribCodeAgence,
+        string? ribNumeroCompte,
+        string? ribCle)
     {
         this.Numero = numero;
         this.FournisseurId = fournisseurId;
@@ -67,6 +79,10 @@ public partial class PaiementFournisseur : IAccountingYearEntity
         this.BanqueId = banqueId;
         this.DateEcheance = dateEcheance;
         this.Commentaire = commentaire;
+        this.RibCodeEtab = ribCodeEtab;
+        this.RibCodeAgence = ribCodeAgence;
+        this.RibNumeroCompte = ribNumeroCompte;
+        this.RibCle = ribCle;
         this.DateModification = DateTime.UtcNow;
     }
 
@@ -95,6 +111,14 @@ public partial class PaiementFournisseur : IAccountingYearEntity
     public DateTime? DateEcheance { get; private set; }
 
     public string? Commentaire { get; private set; }
+
+    public string? RibCodeEtab { get; private set; }
+
+    public string? RibCodeAgence { get; private set; }
+
+    public string? RibNumeroCompte { get; private set; }
+
+    public string? RibCle { get; private set; }
 
     public DateTime? DateModification { get; private set; }
 

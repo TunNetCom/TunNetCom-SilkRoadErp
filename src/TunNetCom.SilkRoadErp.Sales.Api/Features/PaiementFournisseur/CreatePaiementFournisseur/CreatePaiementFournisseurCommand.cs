@@ -13,6 +13,10 @@ public record CreatePaiementFournisseurCommand(
     string? NumeroChequeTraite,
     int? BanqueId,
     DateTime? DateEcheance,
-    string? Commentaire
+    string? Commentaire,
+    string? RibCodeEtab,
+    string? RibCodeAgence,
+    string? RibNumeroCompte,
+    string? RibCle
 ) : IRequest<Result<int>>;
 

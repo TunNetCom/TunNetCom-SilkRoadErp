@@ -75,6 +75,22 @@ public partial class PaiementFournisseurConfiguration : IEntityTypeConfiguration
             .HasColumnName("Commentaire")
             .HasMaxLength(500);
 
+        entity.Property(e => e.RibCodeEtab)
+            .HasColumnName("RibCodeEtab")
+            .HasMaxLength(10);
+
+        entity.Property(e => e.RibCodeAgence)
+            .HasColumnName("RibCodeAgence")
+            .HasMaxLength(10);
+
+        entity.Property(e => e.RibNumeroCompte)
+            .HasColumnName("RibNumeroCompte")
+            .HasMaxLength(20);
+
+        entity.Property(e => e.RibCle)
+            .HasColumnName("RibCle")
+            .HasMaxLength(5);
+
         entity.Property(e => e.DateModification)
             .HasColumnName("DateModification")
             .HasColumnType("datetime");

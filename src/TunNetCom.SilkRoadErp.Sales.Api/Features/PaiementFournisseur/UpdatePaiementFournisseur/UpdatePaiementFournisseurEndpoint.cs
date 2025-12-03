@@ -28,7 +28,11 @@ public class UpdatePaiementFournisseurEndpoint : ICarterModule
             request.NumeroChequeTraite,
             request.BanqueId,
             request.DateEcheance,
-            request.Commentaire);
+            request.Commentaire,
+            request.RibCodeEtab,
+            request.RibCodeAgence,
+            request.RibNumeroCompte,
+            request.RibCle);
 
         var result = await mediator.Send(command, cancellationToken);
 

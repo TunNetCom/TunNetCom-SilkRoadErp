@@ -13,6 +13,10 @@
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Tags
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.PaiementFournisseur.PrintTraite
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
 @inject NavigationManager NavigationManager
 @inject ITagsApiClient TagsService
 @inject IStringLocalizer<SharedResource> Localizer
@@ -23,6 +27,9 @@
 @inject DialogService DialogService
 @inject NotificationService NotificationService
 @inject IDecimalFormatService DecimalFormatService
+@inject PrintTraiteService PrintTraiteService
+@inject IPrintService PrintService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <div class="paiements-container">
     <div class="paiements-card">
@@ -112,9 +119,15 @@
                                     SaveOnChange="true" />
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Filterable="false" Sortable="false" Width="200px" TextAlign="TextAlign.Center">
+                <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Filterable="false" Sortable="false" Width="250px" TextAlign="TextAlign.Center">
                     <Template Context="paiement">
-                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Success" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter"
+                        @if (paiement.MethodePaiement == "Traite")
+                        {
+                            <RadzenButton Icon="print" ButtonStyle="ButtonStyle.Info" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter"
+                                          Click="@(() => PrintTraite(paiement.Id))"
+                                          Title="Imprimer Traite" />
+                        }
+                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Success" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter" Class="rz-my-1 rz-ms-1"
                                       Click="@(() => EditPaiement(paiement.Id))"
                                       Title="@Localizer["Modifier"]" />
                         <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter" Class="rz-my-1 rz-ms-1"
@@ -332,6 +345,72 @@
             {
                 ToastService.Notify(new(ToastType.Danger, $"{Localizer["Erreur_Suppression"]}: {result.Errors.FirstOrDefault()?.Message}"));
             }
+        }
+    }
+
+    private async Task PrintTraite(int paiementId)
+    {
+        try
+        {
+            // Vérifier que le paiement est sauvegardé
+            if (paiementId <= 0)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = Localizer["warning"],
+                    Detail = "Le paiement doit être enregistré avant d'être imprimé."
+                });
+                return;
+            }
+
+            // Get current user info
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var userIdClaim = authState.User.FindFirst(ClaimTypes.NameIdentifier);
+            var usernameClaim = authState.User.FindFirst(ClaimTypes.Name);
+            int? userId = userIdClaim != null && int.TryParse(userIdClaim.Value, out var uid) ? uid : null;
+            string? username = usernameClaim?.Value;
+
+            // Générer le PDF
+            var pdfResult = await PrintTraiteService.GenerateTraitePdfAsync(
+                paiementId,
+                cancellationTokenSource.Token);
+
+            if (pdfResult.IsFailed)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["Erreur"],
+                    Detail = $"Erreur lors de la génération de la Traite: {pdfResult.Errors.FirstOrDefault()?.Message ?? "Erreur inconnue"}"
+                });
+                return;
+            }
+
+            var fileName = $"Traite_Paiement_{paiementId}.pdf";
+
+            // Utiliser le service d'impression centralisé avec suivi de document
+            var printOptions = new PrintOptions
+            {
+                Mode = PrintMode.Download,
+                FileName = fileName,
+                DocumentType = "PaiementFournisseur",
+                DocumentId = paiementId,
+                UserId = userId,
+                Username = username,
+                IsDuplicata = false
+            };
+
+            await PrintService.PrintAsync(pdfResult.Value, printOptions, cancellationTokenSource.Token);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = $"Erreur lors de l'impression de la Traite: {ex.Message}"
+            });
         }
     }
 
