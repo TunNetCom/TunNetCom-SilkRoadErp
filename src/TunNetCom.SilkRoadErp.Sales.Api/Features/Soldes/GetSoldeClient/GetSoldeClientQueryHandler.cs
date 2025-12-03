@@ -1,5 +1,6 @@
 using TunNetCom.SilkRoadErp.Sales.Api.Features.AppParameters.GetAppParameters;
 using TunNetCom.SilkRoadErp.Sales.Contracts.Soldes;
+using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Soldes.GetSoldeClient;
 
@@ -123,7 +124,7 @@ public class GetSoldeClientQueryHandler(
 
             return new DocumentSoldeClient
             {
-                Type = "Facture",
+                Type = DocumentTypes.Facture,
                 Id = f.Id,
                 Numero = f.Num,
                 Date = f.Date,

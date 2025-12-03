@@ -51,7 +51,7 @@ public static class AmountHelper
             lettre = "Arrêté le present bon de livraison à la somme de ";
         if (type == "Devis")
             lettre = "Arrêté le present devis à la somme de ";
-        if (type == "Facture")
+        if (type == TYPE_FACTURE)
             lettre = "Arrêté la présente facture à la somme  de ";
         if (type == "BonDeReception")
             lettre = "Arrêté le present bon de réception à la somme de ";

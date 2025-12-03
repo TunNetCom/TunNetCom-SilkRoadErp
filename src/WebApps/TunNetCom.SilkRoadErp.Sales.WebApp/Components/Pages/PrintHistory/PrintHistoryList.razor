@@ -1,6 +1,7 @@
 @page "/print-history"
 @using TunNetCom.SilkRoadErp.Sales.Contracts.PrintHistory
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PrintHistory
+@using static TunNetCom.SilkRoadErp.Sales.Domain.Entites.DocumentTypes
 @inject IPrintHistoryClient PrintHistoryClient
 @inject ILogger<PrintHistoryList> Logger
 
@@ -174,9 +175,9 @@
 
     private List<string> documentTypes = new()
     {
-        "Facture", "Devis", "Commande", "BonDeLivraison", 
-        "BonDeReception", "FactureFournisseur", "FactureAvoirClient",
-        "FactureAvoirFournisseur", "Avoirs", "AvoirFournisseur"
+        Facture, Devis, Commande, BonDeLivraison, 
+        BonDeReception, FactureFournisseur, FactureAvoirClient,
+        FactureAvoirFournisseur, Avoirs, AvoirFournisseur
     };
 
     private List<string> printModes = new() { "Download", "DirectPrint" };

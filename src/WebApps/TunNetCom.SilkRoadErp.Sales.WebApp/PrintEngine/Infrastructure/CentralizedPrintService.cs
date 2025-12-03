@@ -36,10 +36,19 @@ public class CentralizedPrintService : IPrintService
                 return PrintResult.Failure("Document must be saved before printing");
             }
 
-            // Check if it's a duplicata for customer invoices
+            // Use the isDuplicata flag from PrintOptions if provided (determined before PDF generation)
+            // Otherwise, fall back to checking print history for backward compatibility
             bool isDuplicata = false;
-            if (options.DocumentType == "Facture")
+            if (options.IsDuplicata.HasValue)
             {
+                isDuplicata = options.IsDuplicata.Value;
+                _logger.LogInformation("Invoice {DocumentId} isDuplicata={IsDuplicata} (from PrintOptions)", 
+                    options.DocumentId.Value, isDuplicata);
+            }
+            else if (options.DocumentType == DocumentTypes.Facture)
+            {
+                // Fallback: check print history if IsDuplicata was not provided
+                // This allows backward compatibility with code that doesn't set IsDuplicata
                 try
                 {
                     var existingHistory = await _printHistoryClient.GetPrintHistoryByDocumentAsync(
@@ -48,7 +57,7 @@ public class CentralizedPrintService : IPrintService
                         cancellationToken);
                     
                     isDuplicata = existingHistory.Any();
-                    _logger.LogInformation("Invoice {DocumentId} isDuplicata={IsDuplicata} (existing prints: {Count})", 
+                    _logger.LogInformation("Invoice {DocumentId} isDuplicata={IsDuplicata} (from history check, existing prints: {Count})", 
                         options.DocumentId.Value, isDuplicata, existingHistory.Count);
                 }
                 catch (Exception ex)

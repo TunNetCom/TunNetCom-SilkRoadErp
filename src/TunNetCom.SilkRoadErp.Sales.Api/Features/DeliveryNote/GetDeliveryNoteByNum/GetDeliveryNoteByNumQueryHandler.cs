@@ -13,48 +13,50 @@ public class GetDeliveryNoteByNumQueryHandler(
     {
         _logger.LogFetchingEntityById(nameof(BonDeLivraison), getDeliveryNoteByNumQuery.Num);
 
-        var deliveryNoteResponse = await _context.BonDeLivraison
-            .Select(LigneBl => new DeliveryNoteResponse
-            {
-                Id = LigneBl.Id,
-                DeliveryNoteNumber = LigneBl.Num,
-                Date = LigneBl.Date,
-                CustomerId = LigneBl.ClientId,
-                InstallationTechnicianId = LigneBl.InstallationTechnicianId,
-                InstallationTechnicianName = LigneBl.InstallationTechnician != null ? LigneBl.InstallationTechnician.Nom : null,
-                TotalVat = LigneBl.TotTva,
-                TotalAmount = LigneBl.NetPayer,
-                InvoiceNumber = LigneBl.NumFacture,
-                CreationTime = LigneBl.TempBl,
-                TotalExcludingTax = LigneBl.TotHTva,
-                Statut = (int)LigneBl.Statut,
-                StatutLibelle = LigneBl.Statut.ToString(),
-                Items = LigneBl.LigneBl.Select(l => new DeliveryNoteDetailResponse
-                {
-                    Id = l.IdLi,
-                    ProductReference = l.RefProduit,
-                    Description = l.DesignationLi,
-                    Quantity = l.QteLi,
-                    DeliveredQuantity = l.QteLivree ?? l.QteLi,
-                    HasPartialDelivery = l.QteLivree.HasValue && l.QteLivree.Value < l.QteLi,
-                    UnitPriceExcludingTax = l.PrixHt,
-                    DiscountPercentage = l.Remise,
-                    VatPercentage = l.Tva,
-                    TotalExcludingTax = l.TotHt,
-                    TotalIncludingTax = l.TotTtc
-                }).ToList(),
-            })
-            .FirstOrDefaultAsync(d => d.DeliveryNoteNumber == getDeliveryNoteByNumQuery.Num, cancellationToken);
+        var deliveryNote = await _context.BonDeLivraison
+            .Include(b => b.InstallationTechnician)
+            .Include(b => b.LigneBl)
+            .FirstOrDefaultAsync(d => d.Num == getDeliveryNoteByNumQuery.Num, cancellationToken);
 
-        if (deliveryNoteResponse is null)
+        if (deliveryNote is null)
         {
             _logger.LogEntityNotFound(nameof(BonDeLivraison), getDeliveryNoteByNumQuery.Num);
-
             return Result.Fail(EntityNotFound.Error());
         }
 
         _logger.LogEntityFetchedById(nameof(BonDeLivraison), getDeliveryNoteByNumQuery.Num);
 
-        return deliveryNoteResponse;
+        var deliveryNoteResponse = new DeliveryNoteResponse
+        {
+            Id = deliveryNote.Id,
+            DeliveryNoteNumber = deliveryNote.Num,
+            Date = deliveryNote.Date,
+            CustomerId = deliveryNote.ClientId,
+            InstallationTechnicianId = deliveryNote.InstallationTechnicianId,
+            InstallationTechnicianName = deliveryNote.InstallationTechnician?.Nom,
+            TotalVat = deliveryNote.TotTva,
+            TotalAmount = deliveryNote.NetPayer,
+            InvoiceNumber = deliveryNote.NumFacture,
+            CreationTime = deliveryNote.TempBl,
+            TotalExcludingTax = deliveryNote.TotHTva,
+            Statut = (int)deliveryNote.Statut,
+            StatutLibelle = deliveryNote.Statut.ToString(),
+            Items = deliveryNote.LigneBl.Select(l => new DeliveryNoteDetailResponse
+            {
+                Id = l.IdLi,
+                ProductReference = l.RefProduit,
+                Description = l.DesignationLi,
+                Quantity = l.QteLi,
+                DeliveredQuantity = l.QteLivree ?? l.QteLi,
+                HasPartialDelivery = l.QteLivree.HasValue && l.QteLivree.Value < l.QteLi,
+                UnitPriceExcludingTax = l.PrixHt,
+                DiscountPercentage = l.Remise,
+                VatPercentage = l.Tva,
+                TotalExcludingTax = l.TotHt,
+                TotalIncludingTax = l.TotTtc
+            }).ToList(),
+        };
+
+        return Result.Ok(deliveryNoteResponse);
     }
 }

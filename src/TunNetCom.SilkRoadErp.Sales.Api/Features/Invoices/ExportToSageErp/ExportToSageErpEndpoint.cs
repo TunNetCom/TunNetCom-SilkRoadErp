@@ -63,7 +63,7 @@ public class ExportToSageErpEndpoint : ICarterModule
             {
                 var tagIdsList = tagIds.ToList();
                 factureQuery = factureQuery.Where(f => context.DocumentTag
-                    .Any(dt => dt.DocumentType == "Facture"
+                    .Any(dt => dt.DocumentType == DocumentTypes.Facture
                         && dt.DocumentId == f.Num
                         && tagIdsList.Contains(dt.TagId)));
             }

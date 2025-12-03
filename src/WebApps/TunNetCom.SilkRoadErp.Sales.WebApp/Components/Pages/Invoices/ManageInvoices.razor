@@ -37,6 +37,7 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.PrintHistory
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.Security.Claims
+@using static TunNetCom.SilkRoadErp.Sales.Domain.Entites.DocumentTypes
 
 <div style="padding: 0.5rem 1.5rem 1.5rem 1.5rem; min-height: 100vh;">
     <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
@@ -958,7 +959,7 @@
         bool isDuplicata = false;
         try
         {
-            var existingHistory = await PrintHistoryClient.GetPrintHistoryByDocumentAsync("Facture", SelectedInvoiceId, _cancellationTokenSource.Token);
+            var existingHistory = await PrintHistoryClient.GetPrintHistoryByDocumentAsync(Facture, SelectedInvoiceId, _cancellationTokenSource.Token);
             isDuplicata = existingHistory.Any();
         }
         catch
@@ -976,10 +977,11 @@
         {
             Mode = TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure.PrintMode.Download,
             FileName = fileName,
-            DocumentType = "Facture",
+            DocumentType = Facture,
             DocumentId = SelectedInvoiceId,
             UserId = userId,
-            Username = username
+            Username = username,
+            IsDuplicata = isDuplicata
         };
 
         await PrintService.PrintAsync(pdfBytes.Value, printOptions, _cancellationTokenSource.Token);

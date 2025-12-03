@@ -18,6 +18,9 @@ public class PrintOptions
     public int? DocumentId { get; set; }
     public int? UserId { get; set; }
     public string? Username { get; set; }
+    
+    // Flag to indicate if this is a duplicate print (determined before PDF generation)
+    public bool? IsDuplicata { get; set; }
 }
 
 public enum PrintMode

@@ -12,6 +12,7 @@
 @using Radzen
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Customers
 @using System.Linq
+@using static TunNetCom.SilkRoadErp.Sales.Domain.Entites.DocumentTypes
 @inject NavigationManager NavigationManager
 @inject IStringLocalizer<SharedResource> Localizer
 @inject ISoldesApiClient SoldesService
@@ -364,7 +365,7 @@
     DataGridExpandMode expandMode = DataGridExpandMode.Multiple;
     RadzenDataGrid<DocumentSoldeClient>? facturesGrid;
     
-    private IEnumerable<DocumentSoldeClient> factures => solde?.Documents.Where(d => d.Type == "Facture" && d.BonsLivraison != null && d.BonsLivraison.Any()) ?? Enumerable.Empty<DocumentSoldeClient>();
+    private IEnumerable<DocumentSoldeClient> factures => solde?.Documents.Where(d => d.Type == Facture && d.BonsLivraison != null && d.BonsLivraison.Any()) ?? Enumerable.Empty<DocumentSoldeClient>();
 
     protected override async Task OnInitializedAsync()
     {

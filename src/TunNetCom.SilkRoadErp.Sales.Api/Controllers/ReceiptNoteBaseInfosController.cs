@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.AspNetCore.OData.Routing.Controllers;
+using Microsoft.EntityFrameworkCore;
 using TunNetCom.SilkRoadErp.Sales.Contracts.RecieptNotes;
 using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
@@ -21,7 +22,7 @@ public class ReceiptNoteBaseInfosController : ODataController
     }
 
     [EnableQuery(MaxExpansionDepth = 3, MaxAnyAllExpressionDepth = 3)]
-    public IActionResult Get(
+    public async Task<IActionResult> Get(
         [FromQuery] DateTime? startDate = null,
         [FromQuery] DateTime? endDate = null,
         [FromQuery] int? providerId = null,
@@ -61,23 +62,28 @@ public class ReceiptNoteBaseInfosController : ODataController
                         && tagIds.Contains(dt.TagId)));
             }
 
-            // Now project to DTO using stored totals from BonDeReception
-            var receiptNoteQuery = (from br in baseQuery
-                                    join f in _context.Fournisseur on br.IdFournisseur equals f.Id into providerGroup
-                                    from f in providerGroup.DefaultIfEmpty()
-                                    select new ReceiptNoteBaseInfo
-                                    {
-                                        Number = br.Num,
-                                        Date = new DateTimeOffset(br.Date, TimeSpan.Zero),
-                                        ProviderId = br.IdFournisseur,
-                                        ProviderName = f.Nom,
-                                        NetAmount = br.NetPayer,
-                                        GrossAmount = br.TotHTva,
-                                        VatAmount = br.TotTva,
-                                        Statut = (int)br.Statut,
-                                        StatutLibelle = br.Statut.ToString()
-                                    })
-                                    .AsQueryable();
+            // Load data first to avoid SQL conversion issues with Statut (string -> enum -> int)
+            var receiptNotes = await (from br in baseQuery
+                                     join f in _context.Fournisseur on br.IdFournisseur equals f.Id into providerGroup
+                                     from f in providerGroup.DefaultIfEmpty()
+                                     select new { br, f })
+                                     .ToListAsync();
+
+            // Map to DTO in memory to avoid SQL conversion issues
+            var receiptNoteQuery = receiptNotes
+                .Select(x => new ReceiptNoteBaseInfo
+                {
+                    Number = x.br.Num,
+                    Date = new DateTimeOffset(x.br.Date, TimeSpan.Zero),
+                    ProviderId = x.br.IdFournisseur,
+                    ProviderName = x.f != null ? x.f.Nom : null,
+                    NetAmount = x.br.NetPayer,
+                    GrossAmount = x.br.TotHTva,
+                    VatAmount = x.br.TotTva,
+                    Statut = (int)x.br.Statut,
+                    StatutLibelle = x.br.Statut.ToString()
+                })
+                .AsQueryable();
 
             _logger.LogInformation("Returning query for receipt notes");
             return Ok(receiptNoteQuery);

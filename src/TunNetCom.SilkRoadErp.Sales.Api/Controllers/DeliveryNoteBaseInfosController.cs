@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.AspNetCore.OData.Routing.Controllers;
+using Microsoft.EntityFrameworkCore;
 using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
@@ -21,7 +22,7 @@ public class DeliveryNoteBaseInfosController : ODataController
     }
 
     [EnableQuery(MaxExpansionDepth = 3, MaxAnyAllExpressionDepth = 3)]
-    public IActionResult Get(
+    public async Task<IActionResult> Get(
         [FromQuery] DateTime? startDate = null,
         [FromQuery] DateTime? endDate = null,
         [FromQuery] int? customerId = null,
@@ -67,24 +68,29 @@ public class DeliveryNoteBaseInfosController : ODataController
                         && tagIds.Contains(dt.TagId)));
             }
 
-            // Now project to DTO with join
-            var deliveryNoteQuery = (from bdl in baseQuery
-                                    join c in _context.Client on bdl.ClientId equals c.Id into clientGroup
-                                    from c in clientGroup.DefaultIfEmpty()
-                                    select new GetDeliveryNoteBaseInfos
-                                    {
-                                        Number = bdl.Num,
-                                        Date = new DateTimeOffset(bdl.Date, TimeSpan.Zero),
-                                        NetAmount = bdl.NetPayer,
-                                        CustomerName = c != null ? c.Nom : null,
-                                        GrossAmount = bdl.TotHTva,
-                                        VatAmount = bdl.TotTva,
-                                        NumFacture = bdl.NumFacture,
-                                        CustomerId = bdl.ClientId,
-                                        Statut = (int)bdl.Statut,
-                                        StatutLibelle = bdl.Statut.ToString()
-                                    })
-                                    .AsQueryable();
+            // Load data first to avoid SQL conversion issues with Statut (string -> enum -> int)
+            var deliveryNotes = await (from bdl in baseQuery
+                                      join c in _context.Client on bdl.ClientId equals c.Id into clientGroup
+                                      from c in clientGroup.DefaultIfEmpty()
+                                      select new { bdl, c })
+                                      .ToListAsync();
+
+            // Map to DTO in memory to avoid SQL conversion issues
+            var deliveryNoteQuery = deliveryNotes
+                .Select(x => new GetDeliveryNoteBaseInfos
+                {
+                    Number = x.bdl.Num,
+                    Date = new DateTimeOffset(x.bdl.Date, TimeSpan.Zero),
+                    NetAmount = x.bdl.NetPayer,
+                    CustomerName = x.c != null ? x.c.Nom : null,
+                    GrossAmount = x.bdl.TotHTva,
+                    VatAmount = x.bdl.TotTva,
+                    NumFacture = x.bdl.NumFacture,
+                    CustomerId = x.bdl.ClientId,
+                    Statut = (int)x.bdl.Statut,
+                    StatutLibelle = x.bdl.Statut.ToString()
+                })
+                .AsQueryable();
 
             _logger.LogInformation("Returning query for delivery notes");
             return Ok(deliveryNoteQuery);
