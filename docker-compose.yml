@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  # SQL Server Database
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: silkroaderp-sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrong@Passw0rd
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    networks:
+      - silkroaderp-network
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P YourStrong@Passw0rd -Q "SELECT 1" -C || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Seq Logging Server (Optional)
+  seq:
+    image: datalust/seq:latest
+    container_name: silkroaderp-seq
+    environment:
+      - ACCEPT_EULA=Y
+    ports:
+      - "5341:80"
+    volumes:
+      - seq-data:/data
+    networks:
+      - silkroaderp-network
+
+  # API Service
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api
+    container_name: silkroaderp-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=SlikRoadErpDB;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;
+      - Seq__ServerUrl=http://seq:80
+      - JwtSettings__SecretKey=CHANGE_THIS_IN_PRODUCTION_YourSuperSecretKeyForJWTTokenGenerationMustBeAtLeast32CharactersLong!
+      - JwtSettings__Issuer=SilkRoadErp
+      - JwtSettings__Audience=SilkRoadErp
+      - JwtSettings__AccessTokenExpirationMinutes=30
+      - JwtSettings__RefreshTokenExpirationDays=7
+    ports:
+      - "5000:8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      seq:
+        condition: service_started
+    networks:
+      - silkroaderp-network
+    restart: unless-stopped
+
+  # WebApp Service
+  webapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: webapp
+    container_name: silkroaderp-webapp
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - ApiSettings__BaseUrl=http://api:8080
+    ports:
+      - "5001:8080"
+    depends_on:
+      - api
+    networks:
+      - silkroaderp-network
+    restart: unless-stopped
+
+networks:
+  silkroaderp-network:
+    driver: bridge
+
+volumes:
+  sqlserver-data:
+  seq-data:
