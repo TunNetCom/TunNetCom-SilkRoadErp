@@ -29,7 +29,8 @@ public partial class Systeme
         decimal vatRate13,
         decimal vatRate19,
         bool bloquerVenteStockInsuffisant,
-        int decimalPlaces)
+        int decimalPlaces,
+        decimal seuilRetenueSource)
     {
         this.NomSociete = nomSociete;
         this.Timbre = timbre;
@@ -52,6 +53,7 @@ public partial class Systeme
         this.VatRate19 = vatRate19;
         this.BloquerVenteStockInsuffisant = bloquerVenteStockInsuffisant;
         this.DecimalPlaces = decimalPlaces;
+        this.SeuilRetenueSource = seuilRetenueSource;
     }
     public int Id { get; set; }
 
@@ -97,5 +99,7 @@ public partial class Systeme
 
     // Default value for database - matches DecimalFormatConstants.DEFAULT_DECIMAL_PLACES in Contracts
     public int DecimalPlaces { get; set; } = 3;
+
+    public decimal SeuilRetenueSource { get; set; } = 1000;
 
 }

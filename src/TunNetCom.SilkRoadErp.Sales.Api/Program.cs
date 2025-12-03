@@ -149,6 +149,22 @@ builder.Services.AddScoped<IStockCalculationService,StockCalculationService>();
 // Register SageErpExportService
 builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.SageErpExportService>();
 
+// Register Document Storage Service (configurable via appsettings.json, default: Base64)
+var documentStorageType = builder.Configuration["DocumentStorage:Type"] ?? "Base64";
+switch (documentStorageType)
+{
+    case "S3":
+        builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.DocumentStorage.IDocumentStorageService, TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.DocumentStorage.S3DocumentStorageService>();
+        break;
+    case "AzureBlob":
+        builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.DocumentStorage.IDocumentStorageService, TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.DocumentStorage.AzureBlobStorageService>();
+        break;
+    case "Base64":
+    default:
+        builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.DocumentStorage.IDocumentStorageService, TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.DocumentStorage.Base64DocumentStorageService>();
+        break;
+}
+
 // Register JWT and Password services
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();

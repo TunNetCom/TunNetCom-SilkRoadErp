@@ -1167,4 +1167,67 @@
   <data name="Unexpected_Error" xml:space="preserve">
     <value>Une erreur est survenue.</value>
   </data>
+  <data name="retenue_source" xml:space="preserve">
+    <value>Retenue à la source</value>
+  </data>
+  <data name="num_tej" xml:space="preserve">
+    <value>Numéro TEJ</value>
+  </data>
+  <data name="num_tej_placeholder" xml:space="preserve">
+    <value>Entrez le numéro TEJ</value>
+  </data>
+  <data name="montant_avant_retenu" xml:space="preserve">
+    <value>Montant avant retenue</value>
+  </data>
+  <data name="montant_apres_retenu" xml:space="preserve">
+    <value>Montant après retenue</value>
+  </data>
+  <data name="taux_retenu" xml:space="preserve">
+    <value>Taux de retenue (%)</value>
+  </data>
+  <data name="upload_pdf_tej" xml:space="preserve">
+    <value>Uploader le PDF TEJ</value>
+  </data>
+  <data name="seuil_non_atteint" xml:space="preserve">
+    <value>Seuil non atteint</value>
+  </data>
+  <data name="seuil" xml:space="preserve">
+    <value>Seuil</value>
+  </data>
+  <data name="file_too_large" xml:space="preserve">
+    <value>Le fichier est trop volumineux (max 10 MB)</value>
+  </data>
+  <data name="invalid_file_type" xml:space="preserve">
+    <value>Type de fichier invalide. Seuls les fichiers PDF sont acceptés.</value>
+  </data>
+  <data name="error_uploading_file" xml:space="preserve">
+    <value>Erreur lors du téléchargement du fichier</value>
+  </data>
+  <data name="montant_ttc" xml:space="preserve">
+    <value>Montant TTC</value>
+  </data>
+  <data name="retenue_status" xml:space="preserve">
+    <value>Statut retenue</value>
+  </data>
+  <data name="retenue_action" xml:space="preserve">
+    <value>Action</value>
+  </data>
+  <data name="retenue_exists" xml:space="preserve">
+    <value>Créée</value>
+  </data>
+  <data name="retenue_not_exists" xml:space="preserve">
+    <value>Non créée</value>
+  </data>
+  <data name="existing_pdf_loaded" xml:space="preserve">
+    <value>PDF existant chargé</value>
+  </data>
+  <data name="upload_new_pdf_to_replace" xml:space="preserve">
+    <value>Uploadez un nouveau PDF pour remplacer l'existant</value>
+  </data>
+  <data name="download_pdf" xml:space="preserve">
+    <value>Télécharger le PDF</value>
+  </data>
+  <data name="error_downloading_file" xml:space="preserve">
+    <value>Erreur lors du téléchargement du fichier</value>
+  </data>
 </root>

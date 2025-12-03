@@ -7,3 +7,4 @@ public interface ICurrentUserService
     bool IsAuthenticated();
 }
 
+

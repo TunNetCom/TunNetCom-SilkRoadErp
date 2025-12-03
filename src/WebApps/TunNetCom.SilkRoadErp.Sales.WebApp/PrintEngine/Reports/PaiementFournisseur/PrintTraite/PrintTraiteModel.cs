@@ -61,3 +61,4 @@ public class BanqueModel
     public string? Adresse { get; set; }
 }
 
+

@@ -1810,6 +1810,110 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.ToTable("RefreshTokens", (string)null);
                 });
 
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.RetenueSourceClient", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AccountingYearId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("DateCreation")
+                        .HasColumnType("datetime")
+                        .HasColumnName("DateCreation");
+
+                    b.Property<decimal>("MontantApresRetenu")
+                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnName("MontantApresRetenu");
+
+                    b.Property<decimal>("MontantAvantRetenu")
+                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnName("MontantAvantRetenu");
+
+                    b.Property<int>("NumFacture")
+                        .HasColumnType("int")
+                        .HasColumnName("NumFacture");
+
+                    b.Property<string>("NumTej")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("NumTej");
+
+                    b.Property<string>("PdfStoragePath")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("PdfStoragePath");
+
+                    b.Property<double>("TauxRetenu")
+                        .HasColumnType("float")
+                        .HasColumnName("TauxRetenu");
+
+                    b.HasKey("Id")
+                        .HasName("PK_dbo.RetenueSourceClient");
+
+                    b.HasIndex("AccountingYearId");
+
+                    b.HasIndex("NumFacture")
+                        .IsUnique()
+                        .HasDatabaseName("IX_RetenueSourceClient_NumFacture");
+
+                    b.ToTable("RetenueSourceClient");
+                });
+
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.RetenueSourceFournisseur", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AccountingYearId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("DateCreation")
+                        .HasColumnType("datetime")
+                        .HasColumnName("DateCreation");
+
+                    b.Property<decimal>("MontantApresRetenu")
+                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnName("MontantApresRetenu");
+
+                    b.Property<decimal>("MontantAvantRetenu")
+                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnName("MontantAvantRetenu");
+
+                    b.Property<int>("NumFactureFournisseur")
+                        .HasColumnType("int")
+                        .HasColumnName("NumFactureFournisseur");
+
+                    b.Property<string>("NumTej")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("NumTej");
+
+                    b.Property<string>("PdfStoragePath")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("PdfStoragePath");
+
+                    b.Property<double>("TauxRetenu")
+                        .HasColumnType("float")
+                        .HasColumnName("TauxRetenu");
+
+                    b.HasKey("Id")
+                        .HasName("PK_dbo.RetenueSourceFournisseur");
+
+                    b.HasIndex("AccountingYearId");
+
+                    b.HasIndex("NumFactureFournisseur")
+                        .IsUnique()
+                        .HasDatabaseName("IX_RetenueSourceFournisseur_NumFactureFournisseur");
+
+                    b.ToTable("RetenueSourceFournisseur");
+                });
+
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Role", b =>
                 {
                     b.Property<int>("Id")
@@ -1963,6 +2067,12 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Property<double>("PourcentageRetenu")
                         .HasColumnType("float")
                         .HasColumnName("pourcentageRetenu");
+
+                    b.Property<decimal>("SeuilRetenueSource")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(18, 2)")
+                        .HasDefaultValue(1000m)
+                        .HasColumnName("SeuilRetenueSource");
 
                     b.Property<string>("Tel")
                         .IsRequired()
@@ -2683,6 +2793,50 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.RetenueSourceClient", b =>
+                {
+                    b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.AccountingYear", "AccountingYear")
+                        .WithMany()
+                        .HasForeignKey("AccountingYearId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo.RetenueSourceClient_dbo.AccountingYear_AccountingYearId");
+
+                    b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Facture", "NumFactureNavigation")
+                        .WithMany()
+                        .HasForeignKey("NumFacture")
+                        .HasPrincipalKey("Num")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo.RetenueSourceClient_dbo.Facture_NumFacture");
+
+                    b.Navigation("AccountingYear");
+
+                    b.Navigation("NumFactureNavigation");
+                });
+
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.RetenueSourceFournisseur", b =>
+                {
+                    b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.AccountingYear", "AccountingYear")
+                        .WithMany()
+                        .HasForeignKey("AccountingYearId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo.RetenueSourceFournisseur_dbo.AccountingYear_AccountingYearId");
+
+                    b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.FactureFournisseur", "NumFactureFournisseurNavigation")
+                        .WithMany()
+                        .HasForeignKey("NumFactureFournisseur")
+                        .HasPrincipalKey("Num")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo.RetenueSourceFournisseur_dbo.FactureFournisseur_NumFactureFournisseur");
+
+                    b.Navigation("AccountingYear");
+
+                    b.Navigation("NumFactureFournisseurNavigation");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.RolePermission", b =>

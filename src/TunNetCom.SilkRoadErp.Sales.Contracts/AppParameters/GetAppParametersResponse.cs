@@ -66,4 +66,7 @@ public class GetAppParametersResponse
 
     [JsonPropertyName("decimalPlaces")]
     public int DecimalPlaces { get; set; } = DecimalFormatConstants.DEFAULT_DECIMAL_PLACES;
+
+    [JsonPropertyName("seuilRetenueSource")]
+    public decimal SeuilRetenueSource { get; set; } = 1000;
 }

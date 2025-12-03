@@ -11,3 +11,4 @@ public interface ICurrentUserProvider
     bool IsAuthenticated();
 }
 
+

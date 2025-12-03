@@ -1,0 +1,213 @@
+@using Radzen
+@using Radzen.Blazor
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using Microsoft.AspNetCore.Components.Forms
+@inject DialogService DialogService
+@inject IStringLocalizer<SharedResource> Localizer
+@inject IJSRuntime JSRuntime
+
+<RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
+    <RadzenText TextStyle="TextStyle.Body1" Style="font-weight: 600;">
+        @Localizer["retenue_source"]
+    </RadzenText>
+    
+    @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <RadzenAlert AlertStyle="AlertStyle.Danger" Title="Erreur">
+            @ErrorMessage
+        </RadzenAlert>
+    }
+
+    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+        <RadzenLabel Text="@Localizer["montant_ttc"]" />
+        <RadzenNumeric @bind-Value="MontantTTC" 
+                      ReadOnly="true"
+                      Format="@AmountHelper.FORMAT_N2"
+                      Style="width: 100%; background-color: #f5f5f5;" />
+    </RadzenStack>
+
+    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+        <RadzenLabel Text="@Localizer["taux_retenu"]" />
+        <RadzenNumeric @bind-Value="TauxRetenu" 
+                      ReadOnly="true"
+                      Format="@AmountHelper.FORMAT_N2"
+                      Style="width: 100%; background-color: #f5f5f5;" />
+    </RadzenStack>
+
+    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+        <RadzenLabel Text="@Localizer["montant_apres_retenu"]" />
+        <RadzenNumeric Value="MontantApresRetenu" 
+                      ReadOnly="true"
+                      Format="@AmountHelper.FORMAT_N2"
+                      Style="width: 100%; background-color: #e8f5e9; font-weight: 600;" />
+    </RadzenStack>
+
+    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+        <RadzenLabel Text="@Localizer["num_tej"]" />
+        <RadzenTextBox @bind-Value="NumTej" 
+                      Placeholder="@Localizer["num_tej_placeholder"]"
+                      Style="width: 100%;" />
+    </RadzenStack>
+
+    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+        <RadzenLabel Text="@Localizer["upload_pdf_tej"]" />
+        @if (IsEditMode && !string.IsNullOrEmpty(ExistingPdfBase64) && string.IsNullOrEmpty(SelectedFileName))
+        {
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                <RadzenText TextStyle="TextStyle.Body2" Style="color: #2196F3;">
+                    <RadzenIcon Icon="description" Style="margin-right: 0.25rem;" />
+                    @Localizer["existing_pdf_loaded"]
+                </RadzenText>
+                <RadzenButton Icon="download" 
+                              ButtonStyle="ButtonStyle.Info" 
+                              Size="ButtonSize.Small"
+                              Title="@Localizer["download_pdf"]"
+                              Click="@DownloadExistingPdf" />
+            </RadzenStack>
+            <RadzenText TextStyle="TextStyle.Caption" Style="color: #666; font-size: 0.75rem;">
+                @Localizer["upload_new_pdf_to_replace"]
+            </RadzenText>
+        }
+        <InputFile OnChange="@HandleFileSelected" accept=".pdf" />
+        @if (!string.IsNullOrEmpty(SelectedFileName))
+        {
+            <RadzenText TextStyle="TextStyle.Body2" Style="color: #4caf50;">
+                <RadzenIcon Icon="check_circle" Style="margin-right: 0.25rem;" />
+                @SelectedFileName
+            </RadzenText>
+        }
+    </RadzenStack>
+
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End" Style="margin-top: 1rem;">
+        <RadzenButton Text="@Localizer["Cancel"]" 
+                      ButtonStyle="ButtonStyle.Light" 
+                      Click="@(() => DialogService.Close(false))" />
+        <RadzenButton Text="@Localizer["confirm"]" 
+                      ButtonStyle="ButtonStyle.Success" 
+                      Click="@OnConfirm"
+                      Disabled="@(!CanConfirm)" />
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    [Parameter] public int NumFacture { get; set; }
+    [Parameter] public decimal MontantTTC { get; set; }
+    [Parameter] public double TauxRetenu { get; set; }
+    [Parameter] public decimal SeuilRetenueSource { get; set; }
+    [Parameter] public string? ExistingNumTej { get; set; }
+    [Parameter] public bool IsEditMode { get; set; } = false;
+    [Parameter] public string? ExistingPdfBase64 { get; set; }
+
+    private string? NumTej { get; set; }
+    private string? SelectedFileName { get; set; }
+    private string? PdfContentBase64 { get; set; }
+    private string? ErrorMessage { get; set; }
+    
+    private decimal MontantApresRetenu => MontantTTC * (1 - (decimal)TauxRetenu / 100);
+    private bool CanConfirm => !string.IsNullOrWhiteSpace(NumTej) && MontantTTC >= SeuilRetenueSource;
+
+    protected override void OnInitialized()
+    {
+        NumTej = ExistingNumTej;
+        
+        // Load existing PDF if in edit mode
+        if (IsEditMode && !string.IsNullOrEmpty(ExistingPdfBase64))
+        {
+            PdfContentBase64 = ExistingPdfBase64;
+        }
+        
+        if (MontantTTC < SeuilRetenueSource)
+        {
+            ErrorMessage = $"{Localizer["seuil_non_atteint"]}: {Localizer["montant_ttc"]} ({MontantTTC.FormatAmount()}) < {Localizer["seuil"]} ({SeuilRetenueSource.FormatAmount()})";
+        }
+    }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var file = e.File;
+            if (file != null)
+            {
+                // Limit file size to 10MB
+                const long maxFileSize = 10 * 1024 * 1024;
+                if (file.Size > maxFileSize)
+                {
+                    ErrorMessage = Localizer["file_too_large"];
+                    SelectedFileName = null;
+                    PdfContentBase64 = null;
+                    return;
+                }
+
+                // Check file type
+                if (!file.Name.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                {
+                    ErrorMessage = Localizer["invalid_file_type"];
+                    SelectedFileName = null;
+                    PdfContentBase64 = null;
+                    return;
+                }
+
+                SelectedFileName = file.Name;
+                ErrorMessage = null;
+
+                // Read file and convert to base64
+                using var stream = file.OpenReadStream(maxFileSize);
+                using var memoryStream = new MemoryStream();
+                await stream.CopyToAsync(memoryStream);
+                var fileBytes = memoryStream.ToArray();
+                PdfContentBase64 = Convert.ToBase64String(fileBytes);
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"{Localizer["error_uploading_file"]}: {ex.Message}";
+            SelectedFileName = null;
+            PdfContentBase64 = null;
+        }
+    }
+
+    private async Task DownloadExistingPdf()
+    {
+        if (string.IsNullOrEmpty(ExistingPdfBase64))
+        {
+            return;
+        }
+
+        try
+        {
+            var fileName = $"retenue_source_{NumFacture}.pdf";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileName, ExistingPdfBase64, "application/pdf");
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"{Localizer["error_downloading_file"]}: {ex.Message}";
+        }
+    }
+
+    private void OnConfirm()
+    {
+        if (!CanConfirm)
+        {
+            return;
+        }
+
+        var result = new RetenueSourceDialogResult
+        {
+            NumTej = NumTej ?? string.Empty,
+            // If a new file was selected, use it; otherwise keep existing PDF in edit mode
+            PdfContent = !string.IsNullOrEmpty(SelectedFileName) ? PdfContentBase64 : (IsEditMode ? ExistingPdfBase64 : PdfContentBase64)
+        };
+
+        DialogService.Close(result);
+    }
+
+    public class RetenueSourceDialogResult
+    {
+        public string? NumTej { get; set; }
+        public string? PdfContent { get; set; }
+    }
+}
+

@@ -111,6 +111,10 @@ public partial class SalesContext : DbContext
 
     public virtual DbSet<PrintHistory> PrintHistory { get; set; }
 
+    public virtual DbSet<RetenueSourceClient> RetenueSourceClient { get; set; }
+
+    public virtual DbSet<RetenueSourceFournisseur> RetenueSourceFournisseur { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(FactureConfiguration).Assembly);

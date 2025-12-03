@@ -55,6 +55,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             entity.Property(e => e.DecimalPlaces)
             .HasColumnName("DecimalPlaces")
             .HasDefaultValue(3);
+            entity.Property(e => e.SeuilRetenueSource)
+            .HasColumnType("decimal(18, 2)")
+            .HasColumnName("SeuilRetenueSource")
+            .HasDefaultValue(1000);
 
             OnConfigurePartial(entity);
         }

@@ -3,6 +3,7 @@
 @using Microsoft.Extensions.Localization
 @using Radzen.Blazor
 @using Radzen
+@using BlazorBootstrap
 @using System.Globalization
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Customers
 @using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote
@@ -13,6 +14,10 @@
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.RetenueSourceClient
+@using TunNetCom.SilkRoadErp.Sales.Contracts.RetenueSourceClient
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine
@@ -22,6 +27,8 @@
 @inject ICustomersApiClient customerService
 @inject IInvoicesApiClient invoicesService
 @inject IDeliveryNoteApiClient deliveryNoteService
+@inject IAppParametersClient appParametersClient
+@inject IRetenueSourceClientApiClient retenueSourceClientApiClient
 @inject NavigationManager navigationManager
 @inject IStringLocalizer<SharedResource> Localizer
 @inject ToastService toastService
@@ -224,6 +231,36 @@
                                 @detail.TotalIncludingTaxAmount.FormatAmount()
                             </Template>
                         </RadzenDataGridColumn>
+                        <RadzenDataGridColumn Title="@Localizer["retenue_status"]"
+                                              Width="120px">
+                            <Template Context="detail">
+                                @if (detail.TotalIncludingTaxAmount >= _seuilRetenueSource)
+                                {
+                                    var hasRetenue = _retenueMap.ContainsKey(detail.Number);
+                                    @if (hasRetenue)
+                                    {
+                                        <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="@Localizer["retenue_exists"]" />
+                                    }
+                                    else
+                                    {
+                                        <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="@Localizer["retenue_not_exists"]" />
+                                    }
+                                }
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn Title="@Localizer["retenue_action"]"
+                                              Width="120px">
+                            <Template Context="detail">
+                                @if (detail.TotalIncludingTaxAmount >= _seuilRetenueSource)
+                                {
+                                    <RadzenButton Icon="@(_retenueMap.ContainsKey(detail.Number) ? "edit" : "add")" 
+                                                  ButtonStyle="ButtonStyle.Info" 
+                                                  Size="ButtonSize.Small"
+                                                  Title="@Localizer["retenue_source"]"
+                                                  Click="@(() => OpenRetenueDialog(detail.Number, detail.TotalIncludingTaxAmount))" />
+                                }
+                            </Template>
+                        </RadzenDataGridColumn>
                     </Columns>
                 </RadzenDataGrid>
                 <!-- Invoice Summary -->
@@ -418,12 +455,39 @@
         get => _selectedDeliveryNoteIdsToDetach;
         set => _selectedDeliveryNoteIdsToDetach = value;
     }
+    private Dictionary<int, bool> _retenueMap = new Dictionary<int, bool>();
+    private decimal _seuilRetenueSource = 1000;
+    private double _tauxRetenu = 0;
     #endregion
 
     #region Lifecycle Methods
     protected override async Task OnInitializedAsync()
     {
         await SearchClients();
+        await LoadAppParameters();
+    }
+
+    private async Task LoadAppParameters()
+    {
+        try
+        {
+            var appParamsResult = await appParametersClient.GetAppParametersAsync(_cancellationTokenSource.Token);
+            if (appParamsResult.IsT0)
+            {
+                var appParams = appParamsResult.AsT0;
+                _seuilRetenueSource = appParams.SeuilRetenueSource;
+                _tauxRetenu = appParams.PourcentageRetenu;
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["error"],
+                Detail = $"Failed to load app parameters: {ex.Message}"
+            });
+        }
     }
 
     public void Dispose()
@@ -523,6 +587,8 @@
         if (result.IsT0)
         {
             getInvoiceListWithSummary = result.AsT0;
+            // Load retenue status for all invoices
+            await LoadRetenueStatus();
         }
 
         if (result.IsT1)
@@ -535,6 +601,141 @@
         }
 
         await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadRetenueStatus()
+    {
+        _retenueMap.Clear();
+        if (getInvoiceListWithSummary?.Invoices?.Items == null)
+        {
+            return;
+        }
+
+        foreach (var invoice in getInvoiceListWithSummary.Invoices.Items)
+        {
+            try
+            {
+                var retenueResult = await retenueSourceClientApiClient.GetRetenueSourceClientAsync(invoice.Number, _cancellationTokenSource.Token);
+                _retenueMap[invoice.Number] = retenueResult.IsSuccess;
+            }
+            catch
+            {
+                _retenueMap[invoice.Number] = false;
+            }
+        }
+    }
+
+    private async Task OpenRetenueDialog(int numFacture, decimal montantTTC)
+    {
+        try
+        {
+            // Check if retenue already exists
+            var existingRetenueResult = await retenueSourceClientApiClient.GetRetenueSourceClientAsync(numFacture, _cancellationTokenSource.Token);
+            var isEditMode = existingRetenueResult.IsSuccess;
+            var existingNumTej = isEditMode ? existingRetenueResult.Value?.NumTej : null;
+            
+            // Load existing PDF if in edit mode
+            string? existingPdfBase64 = null;
+            if (isEditMode && existingRetenueResult.Value?.HasPdf == true)
+            {
+                try
+                {
+                    var pdfResult = await retenueSourceClientApiClient.GetRetenueSourceClientPdfAsync(numFacture, _cancellationTokenSource.Token);
+                    if (pdfResult.IsSuccess)
+                    {
+                        existingPdfBase64 = Convert.ToBase64String(pdfResult.Value);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Log but don't block the dialog
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Warning,
+                        Summary = Localizer["warning"],
+                        Detail = $"Impossible de charger le PDF existant: {ex.Message}"
+                    });
+                }
+            }
+
+            var dialogOptions = new DialogOptions
+            {
+                Width = "500px",
+                Resizable = true,
+                Draggable = true
+            };
+
+            var result = await DialogService.OpenAsync<RetenueSourceDialog>(
+                Localizer["retenue_source"],
+                new Dictionary<string, object>
+                {
+                    { "NumFacture", numFacture },
+                    { "MontantTTC", montantTTC },
+                    { "TauxRetenu", _tauxRetenu },
+                    { "SeuilRetenueSource", _seuilRetenueSource },
+                    { "ExistingNumTej", existingNumTej },
+                    { "IsEditMode", isEditMode },
+                    { "ExistingPdfBase64", existingPdfBase64 }
+                },
+                dialogOptions);
+
+            if (result is RetenueSourceDialog.RetenueSourceDialogResult dialogResult)
+            {
+                if (isEditMode)
+                {
+                    // Update existing retenue
+                    var updateRequest = new UpdateRetenueSourceClientRequest
+                    {
+                        NumTej = dialogResult.NumTej ?? string.Empty,
+                        PdfContent = dialogResult.PdfContent
+                    };
+
+                    var updateResult = await retenueSourceClientApiClient.UpdateRetenueSourceClientAsync(numFacture, updateRequest, _cancellationTokenSource.Token);
+                    if (updateResult.IsSuccess)
+                    {
+                        toastService.Notify(new(ToastType.Success, Localizer["retenue_source"] + " " + Localizer["updated_with_success"]));
+                    }
+                    else
+                    {
+                        toastService.Notify(new(ToastType.Danger, updateResult.Errors.FirstOrDefault()?.Message ?? Localizer["Unexpected_Error"]));
+                    }
+                }
+                else
+                {
+                    // Create new retenue
+                    var createRequest = new CreateRetenueSourceClientRequest
+                    {
+                        NumFacture = numFacture,
+                        NumTej = dialogResult.NumTej ?? string.Empty,
+                        PdfContent = dialogResult.PdfContent
+                    };
+
+                    var createResult = await retenueSourceClientApiClient.CreateRetenueSourceClientAsync(createRequest, _cancellationTokenSource.Token);
+                    if (createResult.IsT0)
+                    {
+                        toastService.Notify(new(ToastType.Success, Localizer["retenue_source"] + " " + Localizer["created_with_success"]));
+                    }
+                    else
+                    {
+                        var badRequest = createResult.AsT1;
+                        toastService.Notify(new(ToastType.Danger, badRequest.Detail ?? "Erreur lors de la création"));
+                    }
+                }
+
+                // Reload retenue status
+                await LoadRetenueStatus();
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Error"],
+                Detail = $"Erreur: {ex.Message}"
+            });
+        }
     }
 
     private async Task LoadUninvoicedDeliveryNotes(int selectedCustomerId)

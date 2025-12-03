@@ -30,7 +30,8 @@ public class UpdateAppParametersRequest
         decimal? vatRate13,
         decimal? vatRate19,
         bool? bloquerVenteStockInsuffisant,
-        int? decimalPlaces)
+        int? decimalPlaces,
+        decimal? seuilRetenueSource)
     {
         NomSociete = nomSociete;
         Timbre = (decimal)timbre;
@@ -53,6 +54,7 @@ public class UpdateAppParametersRequest
         VatRate19 = vatRate19 ?? 19;
         BloquerVenteStockInsuffisant = bloquerVenteStockInsuffisant ?? true;
         DecimalPlaces = decimalPlaces ?? DecimalFormatConstants.DEFAULT_DECIMAL_PLACES;
+        SeuilRetenueSource = seuilRetenueSource ?? 1000;
     }
 
     public string NomSociete { get; set; } = null!;
@@ -96,4 +98,6 @@ public class UpdateAppParametersRequest
     public bool BloquerVenteStockInsuffisant { get; set; }
 
     public int DecimalPlaces { get; set; } = DecimalFormatConstants.DEFAULT_DECIMAL_PLACES;
+
+    public decimal SeuilRetenueSource { get; set; } = 1000;
 }
