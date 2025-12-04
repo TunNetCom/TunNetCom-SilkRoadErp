@@ -18,8 +18,10 @@ public class GetProvidersInvoicesQueryHandler(
                               from br in brGroup.DefaultIfEmpty()
                               join lbr in _context.LigneBonReception on br.Id equals lbr.BonDeReceptionId into lbrGroup
                               from lbr in lbrGroup.DefaultIfEmpty()
+                              join retenue in _context.RetenueSourceFournisseur on ff.Num equals retenue.NumFactureFournisseur into retenueGroup
+                              from retenue in retenueGroup.DefaultIfEmpty()
                               where ff.IdFournisseur == query.IdFournisseur
-                              group lbr by new
+                              group new { lbr, retenue } by new
                               {
                                   ff.Num,
                                   ff.IdFournisseur,
@@ -32,9 +34,10 @@ public class GetProvidersInvoicesQueryHandler(
                                   ProviderId = g.Key.IdFournisseur,
                                   Date = g.Key.Date,
                                   ProviderInvoiceNumber = g.Key.NumFactureFournisseur,
-                                  TotHTva = g.Sum(x => x.TotHt),
-                                  TotTTC = g.Sum(x => x.TotTtc),
-                                  TotTva = g.Sum(x => x.TotTtc) - g.Sum(x => x.TotHt)
+                                  TotHTva = g.Sum(x => x.lbr != null ? x.lbr.TotHt : 0),
+                                  TotTTC = g.Sum(x => x.lbr != null ? x.lbr.TotTtc : 0),
+                                  TotTva = g.Sum(x => x.lbr != null ? x.lbr.TotTtc : 0) - g.Sum(x => x.lbr != null ? x.lbr.TotHt : 0),
+                                  HasRetenueSource = g.Any(x => x.retenue != null)
                               })
         .AsNoTracking().AsQueryable();
 

@@ -25,4 +25,7 @@ public class InvoiceResponse
 
     [JsonPropertyName("statutLibelle")]
     public string StatutLibelle { get; set; } = string.Empty;
+
+    [JsonPropertyName("hasRetenueSource")]
+    public bool HasRetenueSource { get; set; }
 }

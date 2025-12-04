@@ -30,7 +30,8 @@ public class GetInvoicesByCustomerWithSummaryQueryHandler(
                 Date = f.Date,
                 TotalExcludingTaxAmount = f.BonDeLivraison.Sum(d => d.TotHTva),
                 TotalVATAmount = f.BonDeLivraison.Sum(d => d.TotTva),
-                TotalIncludingTaxAmount = f.BonDeLivraison.Sum(d => d.NetPayer) + appParams.Value.Timbre
+                TotalIncludingTaxAmount = f.BonDeLivraison.Sum(d => d.NetPayer) + appParams.Value.Timbre,
+                HasRetenueSource = _context.RetenueSourceClient.Any(r => r.NumFacture == f.Num)
             })
             .AsQueryable();
 

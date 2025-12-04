@@ -229,8 +229,7 @@
                             <Template Context="invoiceWithBRs">
                                 @if (invoiceWithBRs.Invoice.TotTTC >= _seuilRetenueSource)
                                 {
-                                    var hasRetenue = _retenueMap.ContainsKey(invoiceWithBRs.Invoice.Num);
-                                    @if (hasRetenue)
+                                    @if (invoiceWithBRs.Invoice.HasRetenueSource)
                                     {
                                         <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="@Localizer["retenue_exists"]" />
                                     }
@@ -246,7 +245,7 @@
                             <Template Context="invoiceWithBRs">
                                 @if (invoiceWithBRs.Invoice.TotTTC >= _seuilRetenueSource)
                                 {
-                                    <RadzenButton Icon="@(_retenueMap.ContainsKey(invoiceWithBRs.Invoice.Num) ? "edit" : "add")" 
+                                    <RadzenButton Icon="@(invoiceWithBRs.Invoice.HasRetenueSource ? "edit" : "add")" 
                                                   ButtonStyle="ButtonStyle.Info" 
                                                   Size="ButtonSize.Small"
                                                   Title="@Localizer["retenue_source"]"
@@ -470,7 +469,6 @@
     private RadzenDataGrid<ProviderInvoiceWithReceiptNotes> ProviderInvoiceGrid;
     private GetProviderInvoicesWithSummary _invoicesList = new GetProviderInvoicesWithSummary();
     private ReceiptNotesWithSummaryResponse _uninvoicedReceiptNotesWithSummary = new ReceiptNotesWithSummaryResponse();
-    private Dictionary<int, bool> _retenueMap = new Dictionary<int, bool>();
     private decimal _seuilRetenueSource = 1000;
     private double _tauxRetenu = 0;
     
@@ -652,8 +650,6 @@
             ReceiptNotesLoaded = false
         }).ToList();
         
-        // Load retenue status for all invoices
-        await LoadRetenueStatus();
         await InvokeAsync(StateHasChanged);
     }
 
@@ -686,8 +682,6 @@
             ReceiptNotesLoaded = false
         }).ToList();
         
-        // Load retenue status for all invoices
-        await LoadRetenueStatus();
         await InvokeAsync(StateHasChanged);
     }
     
@@ -735,32 +729,6 @@
     {
         // Make row expandable
         args.Expandable = true;
-    }
-
-    private async Task LoadRetenueStatus()
-    {
-        _retenueMap.Clear();
-        if (_invoicesWithReceiptNotes == null || !_invoicesWithReceiptNotes.Any())
-        {
-            return;
-        }
-
-        foreach (var invoiceWithBRs in _invoicesWithReceiptNotes)
-        {
-            try
-            {
-                var retenueResult = await retenueSourceFournisseurApiClient.GetRetenueSourceFournisseurAsync(invoiceWithBRs.Invoice.Num, _cancellationTokenSource.Token);
-                // Only set to true if the result is successful AND has a value (not null)
-                // If IsSuccess = false, it means either 404 (not found) or another error
-                // If IsSuccess = true but Value is null, it means the API returned 200 OK but with null data
-                _retenueMap[invoiceWithBRs.Invoice.Num] = retenueResult.IsSuccess && retenueResult.Value != null;
-            }
-            catch
-            {
-                // On any exception, assume no retenue exists
-                _retenueMap[invoiceWithBRs.Invoice.Num] = false;
-            }
-        }
     }
 
     private async Task OpenRetenueDialog(int numFactureFournisseur, decimal montantTTC)
@@ -860,8 +828,8 @@
                     }
                 }
 
-                // Reload retenue status from API to ensure accuracy
-                await LoadRetenueStatus();
+                // Reload invoices to get updated retenue status
+                await LoadInvoices(SelectedProviderId);
                 await InvokeAsync(StateHasChanged);
             }
         }
