@@ -150,6 +150,34 @@ public class AuthHttpClientHandler : DelegatingHandler
         {
             _logger.LogError("AuthHttpClientHandler: ===== 401 UNAUTHORIZED DETECTED: {Method} {Uri} =====", request.Method, request.RequestUri);
             
+            // Check if this is a large request (likely with images) - don't auto-logout for these
+            // as they might fail due to timeout or size issues, not necessarily auth issues
+            var isLargeRequest = request.Content != null && 
+                                 request.Content.Headers.ContentLength.HasValue && 
+                                 request.Content.Headers.ContentLength.Value > 1024 * 1024; // > 1MB
+            
+            if (isLargeRequest)
+            {
+                _logger.LogWarning("AuthHttpClientHandler: Large request (>{Size}MB) returned 401 - may be due to timeout/size, not auth. Attempting token refresh first.", 
+                    request.Content.Headers.ContentLength.Value / (1024 * 1024));
+                
+                // Try to refresh token first before clearing
+                try
+                {
+                    var refreshed = await _authService.RefreshTokenAsync();
+                    if (refreshed)
+                    {
+                        _logger.LogInformation("AuthHttpClientHandler: Token refreshed successfully for large request");
+                        // Don't clear token or logout - let the caller retry
+                        return response;
+                    }
+                }
+                catch (Exception refreshEx)
+                {
+                    _logger.LogWarning(refreshEx, "AuthHttpClientHandler: Token refresh failed for large request");
+                }
+            }
+            
             // Clear token immediately - this will cause Blazor components to detect unauthenticated state
             try
             {

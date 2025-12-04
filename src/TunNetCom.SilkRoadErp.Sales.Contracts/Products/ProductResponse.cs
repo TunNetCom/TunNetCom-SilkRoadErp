@@ -43,4 +43,13 @@ public class ProductResponse
 
     [JsonPropertyName("sousFamilleProduitNom")]
     public string? SousFamilleProduitNom { get; set; }
+
+    [JsonPropertyName("image1StoragePath")]
+    public string? Image1StoragePath { get; set; }
+
+    [JsonPropertyName("image2StoragePath")]
+    public string? Image2StoragePath { get; set; }
+
+    [JsonPropertyName("image3StoragePath")]
+    public string? Image3StoragePath { get; set; }
 }

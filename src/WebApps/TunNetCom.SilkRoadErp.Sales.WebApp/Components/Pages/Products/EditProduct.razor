@@ -10,12 +10,15 @@
 @using System.ComponentModel.DataAnnotations
 @using System.Globalization
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services
+@using Microsoft.JSInterop
+@using System.Net.Http
 @inject IProductsApiClient ProductService
 @inject IProductSubFamiliesApiClient ProductSubFamiliesService
 @inject NavigationManager NavigationManager
 @inject IStringLocalizer<SharedResource> Localizer
 @inject ToastService ToastService
 @inject IDecimalFormatService DecimalFormatService
+@inject IJSRuntime JSRuntime
 
 <RadzenCard Style="padding: 20px; max-width: 900px; margin: 2rem auto;">
     <RadzenTemplateForm Data="@productModel" Submit="@OnSubmit">
@@ -125,6 +128,128 @@
             </RadzenColumn>
         </RadzenRow>
 
+        <!-- Product Images Section -->
+        <RadzenRow Style="margin-top: 30px;">
+            <RadzenColumn Size="12">
+                <h4 style="margin-bottom: 20px;">Images du produit</h4>
+                <RadzenRow>
+                    <!-- Image 1 -->
+                    <RadzenColumn Size="12" SizeMD="4" Style="margin-bottom: 20px;">
+                        <RadzenCard Style="padding: 15px;">
+                            <RadzenStack Gap="10px">
+                                <div style="font-weight: bold;">Image 1</div>
+                                @if (!string.IsNullOrEmpty(image1Preview))
+                                {
+                                    <div style="position: relative; width: 100%; max-width: 200px; margin: 0 auto;">
+                                        <img src="@image1Preview" alt="Image 1" style="width: 100%; height: auto; border-radius: 5px;" />
+                                        <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
+                                                    Click="@(async () => await RemoveImage(1))" 
+                                                    Style="position: absolute; top: 5px; right: 5px;" />
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div style="min-height: 150px; border: 2px dashed #ccc; border-radius: 5px; display: flex; align-items: center; justify-content: center; color: #999;">
+                                        Aucune image
+                                    </div>
+                                }
+                                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" JustifyContent="JustifyContent.Center">
+                                    <RadzenButton Text="Caméra" Icon="camera_alt" Size="ButtonSize.Small" 
+                                                Click="@(() => CaptureImageFromCamera(1))" 
+                                                Disabled="@isSubmitting" />
+                                    <RadzenButton Text="Fichier" Icon="attach_file" Size="ButtonSize.Small" 
+                                                ButtonStyle="ButtonStyle.Secondary"
+                                                Click="@(() => TriggerFileInput(1))" 
+                                                Disabled="@isSubmitting" />
+                                </RadzenStack>
+                                <InputFile OnChange="@((e) => HandleFileSelected(e, 1))" 
+                                         accept="image/*" 
+                                         style="display: none;" 
+                                         id="fileInput1"
+                                         @ref="fileInput1Element" />
+                            </RadzenStack>
+                        </RadzenCard>
+                    </RadzenColumn>
+
+                    <!-- Image 2 -->
+                    <RadzenColumn Size="12" SizeMD="4" Style="margin-bottom: 20px;">
+                        <RadzenCard Style="padding: 15px;">
+                            <RadzenStack Gap="10px">
+                                <div style="font-weight: bold;">Image 2</div>
+                                @if (!string.IsNullOrEmpty(image2Preview))
+                                {
+                                    <div style="position: relative; width: 100%; max-width: 200px; margin: 0 auto;">
+                                        <img src="@image2Preview" alt="Image 2" style="width: 100%; height: auto; border-radius: 5px;" />
+                                        <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
+                                                    Click="@(async () => await RemoveImage(2))" 
+                                                    Style="position: absolute; top: 5px; right: 5px;" />
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div style="min-height: 150px; border: 2px dashed #ccc; border-radius: 5px; display: flex; align-items: center; justify-content: center; color: #999;">
+                                        Aucune image
+                                    </div>
+                                }
+                                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" JustifyContent="JustifyContent.Center">
+                                    <RadzenButton Text="Caméra" Icon="camera_alt" Size="ButtonSize.Small" 
+                                                Click="@(() => CaptureImageFromCamera(2))" 
+                                                Disabled="@isSubmitting" />
+                                    <RadzenButton Text="Fichier" Icon="attach_file" Size="ButtonSize.Small" 
+                                                ButtonStyle="ButtonStyle.Secondary"
+                                                Click="@(() => TriggerFileInput(2))" 
+                                                Disabled="@isSubmitting" />
+                                </RadzenStack>
+                                <InputFile OnChange="@((e) => HandleFileSelected(e, 2))" 
+                                         accept="image/*" 
+                                         style="display: none;" 
+                                         id="fileInput2"
+                                         @ref="fileInput2Element" />
+                            </RadzenStack>
+                        </RadzenCard>
+                    </RadzenColumn>
+
+                    <!-- Image 3 -->
+                    <RadzenColumn Size="12" SizeMD="4" Style="margin-bottom: 20px;">
+                        <RadzenCard Style="padding: 15px;">
+                            <RadzenStack Gap="10px">
+                                <div style="font-weight: bold;">Image 3</div>
+                                @if (!string.IsNullOrEmpty(image3Preview))
+                                {
+                                    <div style="position: relative; width: 100%; max-width: 200px; margin: 0 auto;">
+                                        <img src="@image3Preview" alt="Image 3" style="width: 100%; height: auto; border-radius: 5px;" />
+                                        <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
+                                                    Click="@(async () => await RemoveImage(3))" 
+                                                    Style="position: absolute; top: 5px; right: 5px;" />
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div style="min-height: 150px; border: 2px dashed #ccc; border-radius: 5px; display: flex; align-items: center; justify-content: center; color: #999;">
+                                        Aucune image
+                                    </div>
+                                }
+                                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="5px" JustifyContent="JustifyContent.Center">
+                                    <RadzenButton Text="Caméra" Icon="camera_alt" Size="ButtonSize.Small" 
+                                                Click="@(() => CaptureImageFromCamera(3))" 
+                                                Disabled="@isSubmitting" />
+                                    <RadzenButton Text="Fichier" Icon="attach_file" Size="ButtonSize.Small" 
+                                                ButtonStyle="ButtonStyle.Secondary"
+                                                Click="@(() => TriggerFileInput(3))" 
+                                                Disabled="@isSubmitting" />
+                                </RadzenStack>
+                                <InputFile OnChange="@((e) => HandleFileSelected(e, 3))" 
+                                         accept="image/*" 
+                                         style="display: none;" 
+                                         id="fileInput3"
+                                         @ref="fileInput3Element" />
+                            </RadzenStack>
+                        </RadzenCard>
+                    </RadzenColumn>
+                </RadzenRow>
+            </RadzenColumn>
+        </RadzenRow>
+
         <!-- Form Actions -->
         <RadzenRow Style="margin-top: 30px;">
             <RadzenColumn Size="12" Style="text-align: right;">
@@ -156,6 +281,14 @@
     private string priceFormat = AmountHelper.FORMAT_N3;
     private List<TunNetCom.SilkRoadErp.Sales.Contracts.ProductFamilies.SousFamilleProduitResponse> subFamilies = new();
     private EventCallback<ProductModel> OnSubmit => EventCallback.Factory.Create<ProductModel>(this, HandleValidSubmit);
+    
+    // Image handling
+    private string? image1Preview;
+    private string? image2Preview;
+    private string? image3Preview;
+    private InputFile? fileInput1Element;
+    private InputFile? fileInput2Element;
+    private InputFile? fileInput3Element;
 
     // Product Model Definition
     public class ProductModel
@@ -189,6 +322,12 @@
         public bool Visibility { get; set; }
 
         public int? SousFamilleProduitId { get; set; }
+
+        public string? Image1Base64 { get; set; }
+
+        public string? Image2Base64 { get; set; }
+
+        public string? Image3Base64 { get; set; }
     }
 
     // Lifecycle Methods
@@ -228,6 +367,20 @@
                     Visibility = product.Visibility,
                     SousFamilleProduitId = product.SousFamilleProduitId
                 };
+
+                // Load existing images
+                if (!string.IsNullOrEmpty(product.Image1StoragePath))
+                {
+                    image1Preview = $"data:image/jpeg;base64,{product.Image1StoragePath}";
+                }
+                if (!string.IsNullOrEmpty(product.Image2StoragePath))
+                {
+                    image2Preview = $"data:image/jpeg;base64,{product.Image2StoragePath}";
+                }
+                if (!string.IsNullOrEmpty(product.Image3StoragePath))
+                {
+                    image3Preview = $"data:image/jpeg;base64,{product.Image3StoragePath}";
+                }
             }
             else
             {
@@ -262,7 +415,10 @@
                     Prix = model.Price,
                     PrixAchat = model.PurchasingPrice,
                     Visibilite = model.Visibility,
-                    SousFamilleProduitId = model.SousFamilleProduitId
+                    SousFamilleProduitId = model.SousFamilleProduitId,
+                    Image1Base64 = model.Image1Base64,
+                    Image2Base64 = model.Image2Base64,
+                    Image3Base64 = model.Image3Base64
                 }, cancellationTokenSource.Token);
 
                 if (createResult.IsT0)
@@ -288,7 +444,10 @@
                 Prix = model.Price,
                 PrixAchat = model.PurchasingPrice,
                 Visibilite = model.Visibility,
-                SousFamilleProduitId = model.SousFamilleProduitId
+                SousFamilleProduitId = model.SousFamilleProduitId,
+                Image1Base64 = model.Image1Base64,
+                Image2Base64 = model.Image2Base64,
+                Image3Base64 = model.Image3Base64
             }, model.Reference, cancellationTokenSource.Token);
 
             if (updateResult.IsT0)
@@ -301,7 +460,31 @@
                 ShowErrorsToast(updateResult.AsT1.ToErrorsList());
             }
         }
-        catch (Exception)
+        catch (HttpRequestException httpEx)
+        {
+            // Check if it's an authentication error
+            if (httpEx.Message.Contains("401") || httpEx.Message.Contains("Unauthorized"))
+            {
+                ShowErrorToast("Erreur d'authentification. Veuillez réessayer. Si le problème persiste, reconnectez-vous.");
+            }
+            else if (httpEx.Message.Contains("413") || httpEx.Message.Contains("Request Entity Too Large"))
+            {
+                ShowErrorToast("Les images sont trop volumineuses. Veuillez réduire leur taille.");
+            }
+            else if (httpEx.Message.Contains("timeout") || httpEx.Message.Contains("Timeout"))
+            {
+                ShowErrorToast("La requête a pris trop de temps. Veuillez réessayer avec des images plus petites.");
+            }
+            else
+            {
+                ShowErrorToast($"Erreur réseau: {httpEx.Message}");
+            }
+        }
+        catch (TaskCanceledException)
+        {
+            ShowErrorToast("La requête a été annulée ou a pris trop de temps. Veuillez réessayer.");
+        }
+        catch (Exception ex)
         {
             ShowErrorToast(Localizer["unexpected_error"]);
         }
@@ -350,6 +533,147 @@
     private void ShowErrorToast(string message)
     {
         ToastService.Notify(new(ToastType.Danger, message));
+    }
+
+    // Image handling methods
+    private async Task TriggerFileInput(int imageNumber)
+    {
+        var elementId = imageNumber switch
+        {
+            1 => "fileInput1",
+            2 => "fileInput2",
+            3 => "fileInput3",
+            _ => throw new ArgumentException("Invalid image number")
+        };
+        
+        await JSRuntime.InvokeVoidAsync("eval", $"document.getElementById('{elementId}')?.click()");
+    }
+
+    private async Task CaptureImageFromCamera(int imageNumber)
+    {
+        try
+        {
+            var base64Image = await JSRuntime.InvokeAsync<string>("window.captureImageFromCamera");
+            
+            if (string.IsNullOrEmpty(base64Image))
+            {
+                ShowErrorToast("Erreur lors de la capture de l'image");
+                return;
+            }
+
+            // Check image size (base64 is ~33% larger than binary)
+            var imageSizeBytes = (base64Image.Length * 3) / 4;
+            const long maxImageSize = 5 * 1024 * 1024; // 5MB
+            
+            if (imageSizeBytes > maxImageSize)
+            {
+                ShowErrorToast($"L'image est trop grande ({(imageSizeBytes / 1024 / 1024):F2} MB). Taille maximale: 5 MB");
+                return;
+            }
+
+            await SetImage(imageNumber, base64Image);
+            
+            // Show success message
+            ToastService.Notify(new(ToastType.Success, $"Image {imageNumber} capturée avec succès"));
+        }
+        catch (JSException ex)
+        {
+            var errorMessage = ex.Message.Contains("cancelled") || ex.Message.Contains("annulée") || ex.Message.Contains("cancelled")
+                ? "Capture annulée" 
+                : $"Erreur lors de l'accès à la caméra: {ex.Message}";
+            ShowErrorToast(errorMessage);
+        }
+        catch (Exception ex)
+        {
+            ShowErrorToast($"Erreur: {ex.Message}");
+        }
+    }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e, int imageNumber)
+    {
+        try
+        {
+            var file = e.File;
+            if (file == null) return;
+
+            // Limit file size to 5MB
+            const long maxFileSize = 5 * 1024 * 1024;
+            if (file.Size > maxFileSize)
+            {
+                ShowErrorToast("La taille maximale du fichier est de 5 MB");
+                return;
+            }
+
+            // Check file type
+            if (!file.ContentType.StartsWith("image/"))
+            {
+                ShowErrorToast("Veuillez sélectionner un fichier image");
+                return;
+            }
+
+            // Read file and convert to base64
+            using var stream = file.OpenReadStream(maxFileSize);
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            var fileBytes = memoryStream.ToArray();
+            var base64 = Convert.ToBase64String(fileBytes);
+
+            await SetImage(imageNumber, base64);
+        }
+        catch (Exception ex)
+        {
+            ShowErrorToast($"Erreur lors du téléchargement de l'image: {ex.Message}");
+        }
+    }
+
+    private async Task SetImage(int imageNumber, string base64)
+    {
+        if (string.IsNullOrWhiteSpace(base64))
+        {
+            return;
+        }
+
+        var preview = $"data:image/jpeg;base64,{base64}";
+        
+        switch (imageNumber)
+        {
+            case 1:
+                image1Preview = preview;
+                productModel.Image1Base64 = base64;
+                break;
+            case 2:
+                image2Preview = preview;
+                productModel.Image2Base64 = base64;
+                break;
+            case 3:
+                image3Preview = preview;
+                productModel.Image3Base64 = base64;
+                break;
+        }
+        
+        // Force UI update
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task RemoveImage(int imageNumber)
+    {
+        switch (imageNumber)
+        {
+            case 1:
+                image1Preview = null;
+                productModel.Image1Base64 = null;
+                break;
+            case 2:
+                image2Preview = null;
+                productModel.Image2Base64 = null;
+                break;
+            case 3:
+                image3Preview = null;
+                productModel.Image3Base64 = null;
+                break;
+        }
+        
+        await InvokeAsync(StateHasChanged);
     }
 
     // Cleanup

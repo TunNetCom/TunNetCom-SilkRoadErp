@@ -28,7 +28,11 @@ public class GetProductByRefQueryHandler(
             QteLimit = product.QteLimite,
             Reference = product.Refe,
             VatRate = product.Tva,
-            Visibility = product.Visibilite
+            Visibility = product.Visibilite,
+            SousFamilleProduitId = product.SousFamilleProduitId,
+            Image1StoragePath = product.Image1StoragePath,
+            Image2StoragePath = product.Image2StoragePath,
+            Image3StoragePath = product.Image3StoragePath
         };
         return productResponse;
     }

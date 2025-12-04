@@ -97,3 +97,163 @@ window.setupOrderLinesGridKeyboard = (refId, dotNetRef) => {
     document.addEventListener('keydown', handler);
     window['orderLinesGridHandler_' + refId] = handler;
 };
+
+// Camera capture functionality
+window.captureImageFromCamera = function() {
+    return new Promise(async (resolve, reject) => {
+        try {
+            // Check if getUserMedia is available
+            // Support for older browsers (Firefox, Safari)
+            const getUserMedia = navigator.mediaDevices?.getUserMedia || 
+                                 navigator.getUserMedia || 
+                                 navigator.webkitGetUserMedia || 
+                                 navigator.mozGetUserMedia || 
+                                 navigator.msGetUserMedia;
+            
+            if (!getUserMedia) {
+                reject(new Error('Camera access is not supported in this browser. Please use Chrome, Edge, or Firefox with HTTPS.'));
+                return;
+            }
+            
+            // Wrap getUserMedia for compatibility
+            const getUserMediaWrapper = (constraints) => {
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    return navigator.mediaDevices.getUserMedia(constraints);
+                } else {
+                    // Legacy API
+                    return new Promise((resolve, reject) => {
+                        const legacyGetUserMedia = navigator.getUserMedia || 
+                                                   navigator.webkitGetUserMedia || 
+                                                   navigator.mozGetUserMedia || 
+                                                   navigator.msGetUserMedia;
+                        legacyGetUserMedia.call(navigator, constraints, resolve, reject);
+                    });
+                }
+            };
+
+            // Request camera access
+            const stream = await getUserMediaWrapper({ 
+                video: { 
+                    facingMode: 'environment' // Use back camera on mobile devices
+                } 
+            });
+
+            // Create video element to show camera preview
+            const video = document.createElement('video');
+            video.srcObject = stream;
+            video.autoplay = true;
+            video.playsInline = true;
+            video.style.width = '100%';
+            video.style.maxWidth = '640px';
+            video.style.height = 'auto';
+
+            // Create container for preview and controls
+            const container = document.createElement('div');
+            container.style.position = 'fixed';
+            container.style.top = '0';
+            container.style.left = '0';
+            container.style.width = '100%';
+            container.style.height = '100%';
+            container.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+            container.style.display = 'flex';
+            container.style.flexDirection = 'column';
+            container.style.alignItems = 'center';
+            container.style.justifyContent = 'center';
+            container.style.zIndex = '10000';
+
+            // Create canvas for capturing
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Create capture button
+            const captureButton = document.createElement('button');
+            captureButton.textContent = 'Capturer';
+            captureButton.style.padding = '15px 30px';
+            captureButton.style.marginTop = '20px';
+            captureButton.style.fontSize = '18px';
+            captureButton.style.backgroundColor = '#4CAF50';
+            captureButton.style.color = 'white';
+            captureButton.style.border = 'none';
+            captureButton.style.borderRadius = '5px';
+            captureButton.style.cursor = 'pointer';
+
+            // Create cancel button
+            const cancelButton = document.createElement('button');
+            cancelButton.textContent = 'Annuler';
+            cancelButton.style.padding = '15px 30px';
+            cancelButton.style.marginTop = '10px';
+            cancelButton.style.fontSize = '18px';
+            cancelButton.style.backgroundColor = '#f44336';
+            cancelButton.style.color = 'white';
+            cancelButton.style.border = 'none';
+            cancelButton.style.borderRadius = '5px';
+            cancelButton.style.cursor = 'pointer';
+
+            // Create button container
+            const buttonContainer = document.createElement('div');
+            buttonContainer.style.display = 'flex';
+            buttonContainer.style.gap = '10px';
+            buttonContainer.appendChild(captureButton);
+            buttonContainer.appendChild(cancelButton);
+
+            container.appendChild(video);
+            container.appendChild(buttonContainer);
+            document.body.appendChild(container);
+
+            const cleanup = () => {
+                stream.getTracks().forEach(track => track.stop());
+                if (document.body.contains(container)) {
+                    document.body.removeChild(container);
+                }
+            };
+
+            captureButton.onclick = () => {
+                try {
+                    // Set canvas dimensions to match video, but limit max size to reduce file size
+                    const maxWidth = 1920;
+                    const maxHeight = 1920;
+                    let width = video.videoWidth;
+                    let height = video.videoHeight;
+
+                    // Scale down if too large
+                    if (width > maxWidth || height > maxHeight) {
+                        const ratio = Math.min(maxWidth / width, maxHeight / height);
+                        width = width * ratio;
+                        height = height * ratio;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+
+                    // Draw video frame to canvas with scaling
+                    ctx.drawImage(video, 0, 0, width, height);
+
+                    // Convert to base64 with compression (0.7 quality for smaller file size)
+                    const base64Image = canvas.toDataURL('image/jpeg', 0.7);
+                    
+                    // Extract base64 data (remove data:image/jpeg;base64, prefix)
+                    const base64Data = base64Image.split(',')[1];
+                    
+                    cleanup();
+                    resolve(base64Data);
+                } catch (error) {
+                    cleanup();
+                    reject(error);
+                }
+            };
+
+            cancelButton.onclick = () => {
+                cleanup();
+                reject(new Error('Camera capture cancelled'));
+            };
+
+            // Handle errors
+            video.onerror = (error) => {
+                cleanup();
+                reject(error);
+            };
+        } catch (error) {
+            reject(new Error(`Failed to access camera: ${error.message}`));
+        }
+    });
+};

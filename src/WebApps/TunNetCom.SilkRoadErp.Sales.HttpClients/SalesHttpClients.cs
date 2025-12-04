@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System;
+using Microsoft.Extensions.DependencyInjection;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AccountingYear;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Avoirs;
@@ -46,6 +47,8 @@ public static class SalesHttpClients
             where TImplementation : class, TInterface
         {
             var builder = services.AddHttpClient<TInterface, TImplementation>(configureClient);
+            // Configure timeout for large requests (images, etc.) - 5 minutes
+            builder.ConfigureHttpClient(client => client.Timeout = TimeSpan.FromMinutes(5));
             configureBuilder?.Invoke(builder);
             return builder;
         }

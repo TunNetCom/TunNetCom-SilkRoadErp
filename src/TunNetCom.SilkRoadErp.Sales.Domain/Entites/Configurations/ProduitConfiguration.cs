@@ -31,6 +31,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             entity.Property(e => e.Tva).HasColumnName("TVA");
             entity.Property(e => e.Visibilite).HasColumnName("visibilite");
             entity.Property(e => e.SousFamilleProduitId).HasColumnName("SousFamilleProduitId");
+            entity.Property(e => e.Image1StoragePath).HasColumnName("Image1StoragePath");
+            entity.Property(e => e.Image2StoragePath).HasColumnName("Image2StoragePath");
+            entity.Property(e => e.Image3StoragePath).HasColumnName("Image3StoragePath");
 
             entity.HasOne(d => d.SousFamilleProduit)
                 .WithMany(p => p.Produits)

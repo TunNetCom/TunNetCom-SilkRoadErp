@@ -31,4 +31,13 @@ public class UpdateProductRequest
 
     [JsonPropertyName("sousFamilleProduitId")]
     public int? SousFamilleProduitId { get; set; }
+
+    [JsonPropertyName("image1Base64")]
+    public string? Image1Base64 { get; set; }
+
+    [JsonPropertyName("image2Base64")]
+    public string? Image2Base64 { get; set; }
+
+    [JsonPropertyName("image3Base64")]
+    public string? Image3Base64 { get; set; }
 }

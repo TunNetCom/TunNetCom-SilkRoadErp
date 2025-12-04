@@ -21,7 +21,10 @@ public class UpdateProductEndpoint : ICarterModule
                 Prix: updateProductRequest.Prix,
                 PrixAchat: updateProductRequest.PrixAchat,
                 Visibilite: updateProductRequest.Visibilite,
-                SousFamilleProduitId: updateProductRequest.SousFamilleProduitId
+                SousFamilleProduitId: updateProductRequest.SousFamilleProduitId,
+                Image1Base64: updateProductRequest.Image1Base64,
+                Image2Base64: updateProductRequest.Image2Base64,
+                Image3Base64: updateProductRequest.Image3Base64
             );
 
             var result = await mediator.Send(updateProductCommand, cancellationToken);

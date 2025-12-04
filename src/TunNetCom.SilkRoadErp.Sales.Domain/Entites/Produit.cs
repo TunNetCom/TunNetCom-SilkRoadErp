@@ -7,7 +7,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 public partial class Produit
 {
-    public Produit(string refe, string nom, int qteLimite, double remise, double remiseAchat, double tva, decimal prix, decimal prixAchat, bool visibilite, int? sousFamilleProduitId = null)
+    public Produit(string refe, string nom, int qteLimite, double remise, double remiseAchat, double tva, decimal prix, decimal prixAchat, bool visibilite, int? sousFamilleProduitId = null, string? image1StoragePath = null, string? image2StoragePath = null, string? image3StoragePath = null)
     {
         Refe = refe;
         Nom = nom;
@@ -19,6 +19,9 @@ public partial class Produit
         PrixAchat = prixAchat;
         Visibilite = visibilite;
         SousFamilleProduitId = sousFamilleProduitId;
+        Image1StoragePath = image1StoragePath;
+        Image2StoragePath = image2StoragePath;
+        Image3StoragePath = image3StoragePath;
     }
 
     public static Produit CreateProduct(
@@ -31,7 +34,10 @@ public partial class Produit
      decimal prix,
      decimal prixAchat,
      bool visibilite,
-     int? sousFamilleProduitId = null)
+     int? sousFamilleProduitId = null,
+     string? image1StoragePath = null,
+     string? image2StoragePath = null,
+     string? image3StoragePath = null)
     {
         return new Produit
         (
@@ -44,7 +50,10 @@ public partial class Produit
             prix: prix,
             prixAchat: prixAchat,
             visibilite: visibilite,
-            sousFamilleProduitId: sousFamilleProduitId
+            sousFamilleProduitId: sousFamilleProduitId,
+            image1StoragePath: image1StoragePath,
+            image2StoragePath: image2StoragePath,
+            image3StoragePath: image3StoragePath
         );
 
     }
@@ -58,7 +67,10 @@ public partial class Produit
         decimal prix,
         decimal prixAchat,
         bool visibilite,
-        int? sousFamilleProduitId = null)
+        int? sousFamilleProduitId = null,
+        string? image1StoragePath = null,
+        string? image2StoragePath = null,
+        string? image3StoragePath = null)
     {
 
         Refe = refe;
@@ -71,6 +83,9 @@ public partial class Produit
         PrixAchat = prixAchat;
         Visibilite = visibilite;
         SousFamilleProduitId = sousFamilleProduitId;
+        Image1StoragePath = image1StoragePath;
+        Image2StoragePath = image2StoragePath;
+        Image3StoragePath = image3StoragePath;
 
     }
 
@@ -93,6 +108,12 @@ public partial class Produit
     public bool Visibilite { get; private set; }
 
     public int? SousFamilleProduitId { get; private set; }
+
+    public string? Image1StoragePath { get; private set; }
+
+    public string? Image2StoragePath { get; private set; }
+
+    public string? Image3StoragePath { get; private set; }
 
     public virtual SousFamilleProduit? SousFamilleProduit { get; set; }
 

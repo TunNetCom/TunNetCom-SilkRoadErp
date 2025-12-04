@@ -24,6 +24,20 @@ builder.Services.AddControllers()
         .Count()
         .AddRouteComponents("odata", EdmModelBuilder.GetEdmModel()));
 
+// Configure Kestrel to allow larger request bodies for image uploads (50MB)
+builder.Services.Configure<Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerOptions>(options =>
+{
+    options.Limits.MaxRequestBodySize = 50 * 1024 * 1024; // 50MB
+});
+
+// Configure form options for larger requests
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 50 * 1024 * 1024; // 50MB
+    options.ValueLengthLimit = int.MaxValue;
+    options.ValueCountLimit = int.MaxValue;
+});
+
 // Add HttpContextAccessor for accessing current user in services
 builder.Services.AddHttpContextAccessor();
 

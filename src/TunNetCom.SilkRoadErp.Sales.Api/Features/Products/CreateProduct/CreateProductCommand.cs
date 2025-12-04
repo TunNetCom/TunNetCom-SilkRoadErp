@@ -9,5 +9,8 @@ public record CreateProductCommand(
     decimal Prix,
     decimal PrixAchat,
     bool Visibilite,
-    int? SousFamilleProduitId = null
+    int? SousFamilleProduitId = null,
+    string? Image1Base64 = null,
+    string? Image2Base64 = null,
+    string? Image3Base64 = null
 ) : IRequest<Result<string>>;

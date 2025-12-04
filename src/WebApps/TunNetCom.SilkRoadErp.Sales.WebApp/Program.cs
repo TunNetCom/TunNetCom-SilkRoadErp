@@ -78,6 +78,7 @@ builder.Services.AddSalesHttpClients(baseUrl, builder => builder.AddHttpMessageH
 builder.Services.AddHttpClient<ODataService>(client =>
 {
     client.BaseAddress = new Uri(baseUrl);
+    client.Timeout = TimeSpan.FromMinutes(5); // Increase timeout for large requests
 })
 .AddHttpMessageHandler<AuthHttpClientHandler>();
 

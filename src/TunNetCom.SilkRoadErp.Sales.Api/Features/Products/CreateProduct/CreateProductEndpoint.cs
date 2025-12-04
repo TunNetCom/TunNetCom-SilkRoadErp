@@ -20,7 +20,10 @@ public class CreateProductEndpoint : ICarterModule
                 Prix: request.Prix,
                 PrixAchat: request.PrixAchat,
                 Visibilite: request.Visibilite,
-                SousFamilleProduitId: request.SousFamilleProduitId
+                SousFamilleProduitId: request.SousFamilleProduitId,
+                Image1Base64: request.Image1Base64,
+                Image2Base64: request.Image2Base64,
+                Image3Base64: request.Image3Base64
              );
 
              var result = await mediator.Send(createProductCommand, cancellationToken);

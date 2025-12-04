@@ -48,7 +48,10 @@ public class GetProductQueryHandler(
                 PurchasingPrice = t.PrixAchat,
                 Visibility = t.Visibilite,
                 SousFamilleProduitId = t.SousFamilleProduitId,
-                SousFamilleProduitNom = t.SousFamilleProduit != null ? t.SousFamilleProduit.Nom : null
+                SousFamilleProduitNom = t.SousFamilleProduit != null ? t.SousFamilleProduit.Nom : null,
+                Image1StoragePath = t.Image1StoragePath,
+                Image2StoragePath = t.Image2StoragePath,
+                Image3StoragePath = t.Image3StoragePath
             })
             .AsQueryable();
 
