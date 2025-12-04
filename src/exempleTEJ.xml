@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DeclarationsRS VersionSchema="1.0">
+  <Declarant>
+    <TypeIdentifiant>1</TypeIdentifiant>
+    <Identifiant>1187738B</Identifiant>
+    <CategorieContribuable>PM</CategorieContribuable>
+  </Declarant>
+  <ReferenceDeclaration>
+    <ActeDepot>0</ActeDepot>
+    <AnneeDepot>2025</AnneeDepot>
+    <MoisDepot>11</MoisDepot>
+  </ReferenceDeclaration>
+  <AjouterCertificats>
+    <Certificat>
+      <Beneficiaire>
+        <IdTaxpayer>
+          <MatriculeFiscal>
+            <TypeIdentifiant>1</TypeIdentifiant>
+            <Identifiant>1446379R</Identifiant>
+            <CategorieContribuable>PP</CategorieContribuable>
+          </MatriculeFiscal>
+        </IdTaxpayer>
+        <Resident>1</Resident>
+        <NometprenonOuRaisonsociale>STE GENERAL TRADING    COMPANY "GTC+"</NometprenonOuRaisonsociale>
+        <Adresse>090 AV CARTHAGE AIN ZAGH JARDIN CARTHAGE 2035</Adresse>
+        <Activite>VTE GROS MATERIEL ELECTRIQUE</Activite>
+        <InfosContact>
+          <AdresseMail>ghamguimajed@hotmail.com</AdresseMail>
+          <NumTel>29666567</NumTel>
+        </InfosContact>
+      </Beneficiaire>
+      <DatePayement>13/11/2025</DatePayement>
+      <Ref_certif_chez_declarant>250325</Ref_certif_chez_declarant>
+      <ListeOperations>
+        <Operation IdTypeOperation="RS7_000002">
+          <AnneeFacturation>2025</AnneeFacturation>
+          <CNPC>0</CNPC>
+          <P_Charge>0</P_Charge>
+          <MontantHT>2048117</MontantHT>
+          <TauxRS>1</TauxRS>
+          <TauxTVA>19</TauxTVA>
+          <MontantTVA>389142</MontantTVA>
+          <MontantTTC>2437259</MontantTTC>
+          <MontantRS>24372</MontantRS>
+          <MontantNetServi>2412887</MontantNetServi>
+        </Operation>
+      </ListeOperations>
+      <TotalPayement>
+        <TotalMontantHT>2048117</TotalMontantHT>
+        <TotalMontantTVA>389142</TotalMontantTVA>
+        <TotalMontantTTC>2437259</TotalMontantTTC>
+        <TotalMontantRS>24372</TotalMontantRS>
+        <TotalMontantNetServi>2412887</TotalMontantNetServi>
+      </TotalPayement>
+    </Certificat>
+  </AjouterCertificats>
+</DeclarationsRS>

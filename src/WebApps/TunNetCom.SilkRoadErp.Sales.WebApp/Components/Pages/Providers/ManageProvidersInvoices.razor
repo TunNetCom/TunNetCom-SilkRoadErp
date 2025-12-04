@@ -48,6 +48,8 @@
 @inject PrintFullInvoiceService PrintFullInvoiceService
 @inject DialogService DialogService
 @inject IJSRuntime JS
+@inject HttpClient HttpClient
+@inject IConfiguration Configuration
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.DeliveryNotes
 
 <div style="padding: 0.5rem 1.5rem 1.5rem 1.5rem; min-height: 100vh;">
@@ -87,7 +89,8 @@
             <RadzenButton ButtonStyle="ButtonStyle.Light"
                           Size="ButtonSize.Small"
                           Style="padding: 0.25rem 0.75rem; border-radius: 4px;"
-                          Click="@PrintRetenuSourceClick">
+                          Click="@PrintRetenuSourceClick"
+                          Disabled="@(SelectedInvoiceId <= _minValueId)">
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
                     <RadzenIcon Icon="description" Style="font-size: 14px;" />
                     <span style="font-size: 0.85rem;">Retenu</span>
@@ -96,10 +99,25 @@
             <RadzenButton ButtonStyle="ButtonStyle.Light"
                           Size="ButtonSize.Small"
                           Style="padding: 0.25rem 0.75rem; border-radius: 4px;"
-                          Click="@PrintInvoiceClick">
+                          Click="@PrintInvoiceClick"
+                          Disabled="@(SelectedInvoiceId <= _minValueId)">
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
                     <RadzenIcon Icon="get_app" Style="font-size: 14px;" />
                     <span style="font-size: 0.85rem;">Facture</span>
+                </div>
+            </RadzenButton>
+            @{
+                var selectedInvoice = SelectedInvoices?.FirstOrDefault();
+                var canExportTej = selectedInvoice != null && selectedInvoice.Invoice.TotTTC >= _seuilRetenueSource;
+            }
+            <RadzenButton ButtonStyle="ButtonStyle.Light"
+                          Size="ButtonSize.Small"
+                          Style="padding: 0.25rem 0.75rem; border-radius: 4px;"
+                          Click="@ExportToTejXmlClick"
+                          Disabled="@(!canExportTej)">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <RadzenIcon Icon="code" Style="font-size: 14px;" />
+                    <span style="font-size: 0.85rem;">XML TEJ</span>
                 </div>
             </RadzenButton>
         </div>
@@ -1115,6 +1133,98 @@
         var fileName = $"Invoice {SelectedInvoiceId}.pdf";
         await JS.InvokeVoidAsync("downloadFile", fileName, Convert.ToBase64String(pdfBytes.Value), "application/pdf");
         
+    }
+
+    private async Task ExportToTejXmlClick()
+    {
+        if (SelectedInvoiceId <= _minValueId)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["warning"],
+                Detail = Localizer["select_invoice"]
+            });
+            return;
+        }
+
+        var selectedInvoice = SelectedInvoices?.FirstOrDefault();
+        if (selectedInvoice == null)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["warning"],
+                Detail = Localizer["select_invoice"]
+            });
+            return;
+        }
+
+        if (selectedInvoice.Invoice.TotTTC < _seuilRetenueSource)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["warning"],
+                Detail = $"Le montant TTC ({selectedInvoice.Invoice.TotTTC:F2}) doit être supérieur ou égal au seuil ({_seuilRetenueSource:F2}) pour pouvoir exporter en XML TEJ."
+            });
+            return;
+        }
+
+        try
+        {
+            var baseUrl = Configuration.GetValue<string>("BaseUrl")
+                ?? throw new InvalidOperationException("BaseUrl configuration is missing");
+
+            var url = $"{baseUrl.TrimEnd('/')}/api/provider-invoices/{SelectedInvoiceId}/export/tej-xml";
+
+            var response = await HttpClient.GetAsync(url, _cancellationTokenSource.Token);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync(_cancellationTokenSource.Token);
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = response.StatusCode == System.Net.HttpStatusCode.BadRequest
+                        ? errorContent
+                        : "Erreur lors de l'export en XML TEJ. Veuillez réessayer.",
+                    Duration = 4000
+                });
+                return;
+            }
+
+            // Get the file content
+            var fileBytes = await response.Content.ReadAsByteArrayAsync(_cancellationTokenSource.Token);
+            var fileName = response.Content.Headers.ContentDisposition?.FileName
+                ?? $"Facture_Fournisseur_{SelectedInvoiceId}_TEJ_{DateTime.Now:yyyyMMdd_HHmmss}.xml";
+
+            // Remove quotes from filename if present
+            fileName = fileName.Trim('"');
+
+            // Download the file using JavaScript
+            var base64String = Convert.ToBase64String(fileBytes);
+            await JS.InvokeVoidAsync("downloadFile", fileName, base64String, "application/xml; charset=utf-8");
+
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = Localizer["success"],
+                Detail = "Export en XML TEJ réussi.",
+                Duration = 3000
+            });
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Erreur lors de l'export: {ex.Message}",
+                Duration = 4000
+            });
+        }
     }
     #endregion
 }

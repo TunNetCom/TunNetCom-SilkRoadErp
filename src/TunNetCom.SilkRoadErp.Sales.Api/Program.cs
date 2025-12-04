@@ -149,6 +149,9 @@ builder.Services.AddScoped<IStockCalculationService,StockCalculationService>();
 // Register SageErpExportService
 builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.SageErpExportService>();
 
+// Register TejXmlExportService
+builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.TejXmlExportService>();
+
 // Register Document Storage Service (configurable via appsettings.json, default: Base64)
 var documentStorageType = builder.Configuration["DocumentStorage:Type"] ?? "Base64";
 switch (documentStorageType)

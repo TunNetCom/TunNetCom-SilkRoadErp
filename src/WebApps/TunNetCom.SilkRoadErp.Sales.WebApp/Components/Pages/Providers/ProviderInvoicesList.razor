@@ -201,7 +201,7 @@
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="ProviderInvoiceBaseInfo"
                                       Title="@Localizer["actions_label"]"
-                                      Width="100px"
+                                      Width="150px"
                                       Sortable="false"
                                       Filterable="false">
                     <Template Context="item">
@@ -221,7 +221,21 @@
                                       Click="@(() => ValidateInvoice(item))"
                                       Disabled="@(item.Statut == 1)"
                                       Title="Valider"
-                                      AriaLabel="Valider" />
+                                      AriaLabel="Valider"
+                                      Style="margin-right: 4px;" />
+                        @{
+                            var montantTTC = item.NetAmount + item.VatAmount;
+                        }
+                        @if (montantTTC >= _seuilRetenueSource)
+                        {
+                            <RadzenButton Icon="file_download"
+                                          ButtonStyle="ButtonStyle.Info"
+                                          Variant="Variant.Flat"
+                                          Size="ButtonSize.Small"
+                                          Click="@(() => ExportToTejXmlAsync(item.Number))"
+                                          Title="Exporter en XML TEJ"
+                                          AriaLabel="Exporter en XML TEJ" />
+                        }
                     </Template>
                 </RadzenDataGridColumn>
             </Columns>
@@ -916,6 +930,74 @@
         return statut == 1 
             ? "background-color: #388e3c; color: #fff;" 
             : "background-color: #e1e1e1; color: #333;";
+    }
+
+    private async Task ExportToTejXmlAsync(int invoiceNumber)
+    {
+        try
+        {
+            _logger.LogInformation("ExportToTejXmlAsync called for invoice {InvoiceNumber}", invoiceNumber);
+
+            var baseUrl = Configuration.GetValue<string>("BaseUrl") 
+                ?? throw new InvalidOperationException("BaseUrl configuration is missing");
+            
+            var url = $"{baseUrl.TrimEnd('/')}/api/provider-invoices/{invoiceNumber}/export/tej-xml";
+
+            _logger.LogInformation("Calling TEJ XML export endpoint: {Url}", url);
+
+            var response = await HttpClient.GetAsync(url);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                _logger.LogError("TEJ XML export failed with status {StatusCode}. Response: {ErrorContent}", 
+                    response.StatusCode, errorContent);
+                
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Erreur",
+                    Detail = response.StatusCode == System.Net.HttpStatusCode.BadRequest 
+                        ? errorContent 
+                        : "Erreur lors de l'export en XML TEJ. Veuillez réessayer.",
+                    Duration = 4000
+                });
+                return;
+            }
+
+            // Get the file content
+            var fileBytes = await response.Content.ReadAsByteArrayAsync();
+            var fileName = response.Content.Headers.ContentDisposition?.FileName 
+                ?? $"Facture_Fournisseur_{invoiceNumber}_TEJ_{DateTime.Now:yyyyMMdd_HHmmss}.xml";
+
+            // Remove quotes from filename if present
+            fileName = fileName.Trim('"');
+
+            // Download the file using JavaScript
+            var base64String = Convert.ToBase64String(fileBytes);
+            await JS.InvokeVoidAsync("downloadFile", fileName, base64String, "application/xml; charset=utf-8");
+
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Succès",
+                Detail = "Export en XML TEJ réussi.",
+                Duration = 3000
+            });
+
+            _logger.LogInformation("TEJ XML export completed successfully for invoice {InvoiceNumber}", invoiceNumber);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error exporting invoice {InvoiceNumber} to TEJ XML", invoiceNumber);
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Erreur",
+                Detail = $"Erreur lors de l'export: {ex.Message}",
+                Duration = 4000
+            });
+        }
     }
 }
 
