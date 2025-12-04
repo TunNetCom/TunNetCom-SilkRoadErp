@@ -194,7 +194,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false),
                     NomSociete = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    Timbre = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Timbre = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
                     adresse = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     tel = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     fax = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -207,14 +207,14 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     adresseRetenu = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     pourcentageRetenu = table.Column<double>(type: "float", nullable: false),
                     DiscountPercentage = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    VatAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    VatAmount = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
                     VatRate0 = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     VatRate7 = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     VatRate13 = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     VatRate19 = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     BloquerVenteStockInsuffisant = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     DecimalPlaces = table.Column<int>(type: "int", nullable: false, defaultValue: 3),
-                    SeuilRetenueSource = table.Column<decimal>(type: "decimal(18,2)", nullable: false, defaultValue: 1000m)
+                    SeuilRetenueSource = table.Column<decimal>(type: "decimal(18,3)", nullable: false, defaultValue: 1000m)
                 },
                 constraints: table =>
                 {
@@ -287,9 +287,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     id_client = table.Column<int>(type: "int", nullable: false),
                     date = table.Column<DateTime>(type: "datetime", nullable: false),
-                    tot_H_tva = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    tot_tva = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    tot_ttc = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    tot_H_tva = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
+                    tot_tva = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
+                    tot_ttc = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
                     Statut = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false)
                 },
                 constraints: table =>
@@ -380,7 +380,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     dateEcheance = table.Column<DateTime>(type: "datetime", nullable: false),
                     numCheque = table.Column<long>(type: "bigint", nullable: false),
-                    montant = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    montant = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
                     fournisseur_id = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -528,9 +528,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Num = table.Column<int>(type: "int", nullable: false),
                     date = table.Column<DateTime>(type: "datetime", nullable: false),
-                    tot_H_tva = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    tot_tva = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    net_payer = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    tot_H_tva = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
+                    tot_tva = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
+                    net_payer = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
                     temp_bl = table.Column<TimeOnly>(type: "time", nullable: false),
                     Num_Facture = table.Column<int>(type: "int", nullable: true),
                     clientId = table.Column<int>(type: "int", nullable: true),
@@ -610,9 +610,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     NumFacture = table.Column<int>(type: "int", nullable: false),
                     NumTej = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    MontantAvantRetenu = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    MontantAvantRetenu = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
                     TauxRetenu = table.Column<double>(type: "float", nullable: false),
-                    MontantApresRetenu = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    MontantApresRetenu = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
                     PdfStoragePath = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     DateCreation = table.Column<DateTime>(type: "datetime", nullable: false),
                     AccountingYearId = table.Column<int>(type: "int", nullable: false)
@@ -668,7 +668,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     NumSurPage = table.Column<int>(type: "int", nullable: false),
                     date = table.Column<DateTime>(type: "datetime", nullable: false),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    tot_ttc = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
+                    tot_ttc = table.Column<decimal>(type: "decimal(18,3)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -693,9 +693,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     id_fournisseur = table.Column<int>(type: "int", nullable: false),
                     date = table.Column<DateTime>(type: "datetime", nullable: false),
                     Num_Facture_fournisseur = table.Column<int>(type: "int", nullable: true),
-                    tot_H_tva = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    tot_tva = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    net_payer = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    tot_H_tva = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
+                    tot_tva = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
+                    net_payer = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
                     AccountingYearId = table.Column<int>(type: "int", nullable: false),
                     Statut = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false)
                 },
@@ -765,9 +765,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     NumFactureFournisseur = table.Column<int>(type: "int", nullable: false),
                     NumTej = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    MontantAvantRetenu = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    MontantAvantRetenu = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
                     TauxRetenu = table.Column<double>(type: "float", nullable: false),
-                    MontantApresRetenu = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    MontantApresRetenu = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
                     PdfStoragePath = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     DateCreation = table.Column<DateTime>(type: "datetime", nullable: false),
                     AccountingYearId = table.Column<int>(type: "int", nullable: false)
@@ -798,7 +798,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     Numero = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     ClientId = table.Column<int>(type: "int", nullable: false),
                     AccountingYearId = table.Column<int>(type: "int", nullable: false),
-                    Montant = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Montant = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
                     DatePaiement = table.Column<DateTime>(type: "datetime", nullable: false),
                     MethodePaiement = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     FactureId = table.Column<int>(type: "int", nullable: true),
@@ -851,7 +851,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     BonDeLivraisonId = table.Column<int>(type: "int", nullable: false),
                     type = table.Column<int>(type: "int", nullable: false),
                     date_tr = table.Column<DateTime>(type: "datetime", nullable: false),
-                    montant = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
+                    montant = table.Column<decimal>(type: "decimal(18,3)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -1070,7 +1070,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     Numero = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     FournisseurId = table.Column<int>(type: "int", nullable: false),
                     AccountingYearId = table.Column<int>(type: "int", nullable: false),
-                    Montant = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Montant = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
                     DatePaiement = table.Column<DateTime>(type: "datetime", nullable: false),
                     MethodePaiement = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     FactureFournisseurId = table.Column<int>(type: "int", nullable: true),

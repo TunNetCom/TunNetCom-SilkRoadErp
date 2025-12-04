@@ -12,7 +12,7 @@ using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 {
     [DbContext(typeof(SalesContext))]
-    [Migration("20251203114035_InitMigration")]
+    [Migration("20251204145825_InitMigration")]
     partial class InitMigration
     {
         /// <inheritdoc />
@@ -144,7 +144,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("TotTtc")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("tot_ttc");
 
                     b.HasKey("Num")
@@ -298,7 +298,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("NetPayer")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("net_payer");
 
                     b.Property<int>("Num")
@@ -318,11 +318,11 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnName("temp_bl");
 
                     b.Property<decimal>("TotHTva")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("tot_H_tva");
 
                     b.Property<decimal>("TotTva")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("tot_tva");
 
                     b.HasKey("Id")
@@ -367,7 +367,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnName("id_fournisseur");
 
                     b.Property<decimal>("NetPayer")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("net_payer");
 
                     b.Property<int>("Num")
@@ -387,11 +387,11 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<decimal>("TotHTva")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("tot_H_tva");
 
                     b.Property<decimal>("TotTva")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("tot_tva");
 
                     b.HasKey("Id")
@@ -511,15 +511,15 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<decimal>("TotHTva")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("tot_H_tva");
 
                     b.Property<decimal>("TotTtc")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("tot_ttc");
 
                     b.Property<decimal>("TotTva")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("tot_tva");
 
                     b.HasKey("Num")
@@ -587,7 +587,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnName("fournisseur_id");
 
                     b.Property<decimal>("Montant")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("montant");
 
                     b.Property<long>("NumCheque")
@@ -1437,7 +1437,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnName("MethodePaiement");
 
                     b.Property<decimal>("Montant")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("Montant");
 
                     b.Property<string>("Numero")
@@ -1533,7 +1533,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnName("MethodePaiement");
 
                     b.Property<decimal>("Montant")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("Montant");
 
                     b.Property<string>("Numero")
@@ -1829,11 +1829,11 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnName("DateCreation");
 
                     b.Property<decimal>("MontantApresRetenu")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("MontantApresRetenu");
 
                     b.Property<decimal>("MontantAvantRetenu")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("MontantAvantRetenu");
 
                     b.Property<int>("NumFacture")
@@ -1881,11 +1881,11 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnName("DateCreation");
 
                     b.Property<decimal>("MontantApresRetenu")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("MontantApresRetenu");
 
                     b.Property<decimal>("MontantAvantRetenu")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("MontantAvantRetenu");
 
                     b.Property<int>("NumFactureFournisseur")
@@ -2073,7 +2073,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 
                     b.Property<decimal>("SeuilRetenueSource")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasDefaultValue(1000m)
                         .HasColumnName("SeuilRetenueSource");
 
@@ -2083,10 +2083,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnName("tel");
 
                     b.Property<decimal>("Timbre")
-                        .HasColumnType("decimal(18, 2)");
+                        .HasColumnType("decimal(18, 3)");
 
                     b.Property<decimal>("VatAmount")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("VatAmount");
 
                     b.Property<decimal>("VatRate0")
@@ -2157,7 +2157,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnName("date_tr");
 
                     b.Property<decimal>("Montant")
-                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnType("decimal(18, 3)")
                         .HasColumnName("montant");
 
                     b.Property<int>("Type")

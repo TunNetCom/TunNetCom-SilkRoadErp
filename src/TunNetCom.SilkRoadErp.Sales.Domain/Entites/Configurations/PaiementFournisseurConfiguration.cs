@@ -40,7 +40,7 @@ public partial class PaiementFournisseurConfiguration : IEntityTypeConfiguration
 
         entity.Property(e => e.Montant)
             .HasColumnName("Montant")
-            .HasColumnType("decimal(18, 2)")
+            .HasColumnType("decimal(18, 3)")
             .IsRequired();
 
         entity.Property(e => e.DatePaiement)

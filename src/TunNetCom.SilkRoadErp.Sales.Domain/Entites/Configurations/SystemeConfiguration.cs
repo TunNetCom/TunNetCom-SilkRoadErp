@@ -30,9 +30,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             .HasColumnName("pourcentageFodec");
             entity.Property(e => e.PourcentageRetenu).HasColumnName("pourcentageRetenu");
             entity.Property(e => e.Tel).HasColumnName("tel");
-            entity.Property(e => e.Timbre).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.Timbre).HasColumnType("decimal(18, 3)");
             entity.Property(e => e.VatAmount)
-            .HasColumnType("decimal(18, 2)")
+            .HasColumnType("decimal(18, 3)")
             .HasColumnName("VatAmount");
             entity.Property(e => e.DiscountPercentage)
             .HasColumnType("decimal(18, 2)")
@@ -56,7 +56,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             .HasColumnName("DecimalPlaces")
             .HasDefaultValue(3);
             entity.Property(e => e.SeuilRetenueSource)
-            .HasColumnType("decimal(18, 2)")
+            .HasColumnType("decimal(18, 3)")
             .HasColumnName("SeuilRetenueSource")
             .HasDefaultValue(1000);
 

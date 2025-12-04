@@ -21,7 +21,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             .HasColumnName("dateEcheance");
             entity.Property(e => e.FournisseurId).HasColumnName("fournisseur_id");
             entity.Property(e => e.Montant)
-            .HasColumnType("decimal(18, 2)")
+            .HasColumnType("decimal(18, 3)")
             .HasColumnName("montant");
             entity.Property(e => e.NumCheque).HasColumnName("numCheque");
 

@@ -22,7 +22,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             .HasColumnType("datetime")
             .HasColumnName("date_tr");
             entity.Property(e => e.Montant)
-            .HasColumnType("decimal(18, 2)")
+            .HasColumnType("decimal(18, 3)")
             .HasColumnName("montant");
             entity.Property(e => e.Type).HasColumnName("type");
 

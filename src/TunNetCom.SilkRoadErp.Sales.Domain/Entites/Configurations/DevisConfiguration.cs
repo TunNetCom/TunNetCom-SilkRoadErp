@@ -20,13 +20,13 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             .HasColumnName("date");
             entity.Property(e => e.IdClient).HasColumnName("id_client");
             entity.Property(e => e.TotHTva)
-            .HasColumnType("decimal(18, 2)")
+            .HasColumnType("decimal(18, 3)")
             .HasColumnName("tot_H_tva");
             entity.Property(e => e.TotTtc)
-            .HasColumnType("decimal(18, 2)")
+            .HasColumnType("decimal(18, 3)")
             .HasColumnName("tot_ttc");
             entity.Property(e => e.TotTva)
-            .HasColumnType("decimal(18, 2)")
+            .HasColumnType("decimal(18, 3)")
             .HasColumnName("tot_tva");
             entity.Property(e => e.Statut)
             .HasConversion<string>()

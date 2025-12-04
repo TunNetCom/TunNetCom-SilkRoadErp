@@ -20,7 +20,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             .HasColumnType("datetime")
             .HasColumnName("date");
             entity.Property(e => e.TotTtc)
-            .HasColumnType("decimal(18, 2)")
+            .HasColumnType("decimal(18, 3)")
             .HasColumnName("tot_ttc");
 
             entity.HasOne(d => d.NumNavigation).WithOne(p => p.AvoirFinancierFournisseurs)

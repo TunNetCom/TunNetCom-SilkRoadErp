@@ -26,14 +26,14 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
                 .HasColumnName("NumTej");
 
             entity.Property(e => e.MontantAvantRetenu)
-                .HasColumnType("decimal(18, 2)")
+                .HasColumnType("decimal(18, 3)")
                 .HasColumnName("MontantAvantRetenu");
 
             entity.Property(e => e.TauxRetenu)
                 .HasColumnName("TauxRetenu");
 
             entity.Property(e => e.MontantApresRetenu)
-                .HasColumnType("decimal(18, 2)")
+                .HasColumnType("decimal(18, 3)")
                 .HasColumnName("MontantApresRetenu");
 
             entity.Property(e => e.PdfStoragePath)
