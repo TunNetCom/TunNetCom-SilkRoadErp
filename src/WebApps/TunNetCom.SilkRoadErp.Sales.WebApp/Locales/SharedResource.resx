@@ -1012,4 +1012,13 @@
   <data name="Bons_Livraison" xml:space="preserve">
     <value />
   </data>
+  <data name="Clients_Avec_Problemes_Solde" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Quantites_Non_Livrees" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Date_Dernier_Document" xml:space="preserve">
+    <value />
+  </data>
 </root>

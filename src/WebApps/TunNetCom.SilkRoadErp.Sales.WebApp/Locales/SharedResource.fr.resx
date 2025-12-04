@@ -1230,4 +1230,16 @@
   <data name="error_downloading_file" xml:space="preserve">
     <value>Erreur lors du téléchargement du fichier</value>
   </data>
+  <data name="Clients_Avec_Problemes_Solde" xml:space="preserve">
+    <value>Clients avec problèmes de solde</value>
+  </data>
+  <data name="Quantites_Non_Livrees" xml:space="preserve">
+    <value>Quantités non livrées</value>
+  </data>
+  <data name="Date_Dernier_Document" xml:space="preserve">
+    <value>Date dernier document</value>
+  </data>
+  <data name="No_Records_To_Display" xml:space="preserve">
+    <value>Aucun enregistrement à afficher</value>
+  </data>
 </root>

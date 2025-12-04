@@ -1,0 +1,209 @@
+@page "/soldes-clients-problemes"
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Soldes
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Soldes
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using Radzen.Blazor
+@using Radzen
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<SharedResource> Localizer
+@inject ISoldesApiClient SoldesService
+@inject NotificationService NotificationService
+@inject IDecimalFormatService DecimalFormatService
+
+<div class="clients-problemes-container">
+    <div class="clients-problemes-card">
+        <div class="clients-problemes-header">
+            <h3 class="clients-problemes-title">@Localizer["Clients_Avec_Problemes_Solde"]</h3>
+        </div>
+
+        <RadzenDataGrid @ref="clientsGrid"
+                        TItem="ClientSoldeProblemeResponse"
+                        Data="@clients"
+                        Count="@totalCount"
+                        LoadData="@LoadClientsData"
+                        AllowFiltering="true"
+                        AllowPaging="true"
+                        AllowSorting="true"
+                        FilterPopupRenderMode="PopupRenderMode.OnDemand"
+                        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                        PageSize="@defaultPageSize"
+                        Density="Density.Compact"
+                        Class="clients-problemes-grid"
+                        IsLoading="@isLoading"
+                        ShowPagingSummary="true"
+                        Responsive="true">
+            <EmptyTemplate>
+                <p style="font-size: 24px; text-align: center; margin: 2rem;">@Localizer["no_records_to_display"]</p>
+            </EmptyTemplate>
+            <Columns>
+                <RadzenDataGridColumn TItem="ClientSoldeProblemeResponse" Property="ClientNom" Title="@Localizer["Nom"]" Width="200px">
+                    <Template Context="client">
+                        <span class="grid-cell client-name" @onclick="@(() => NavigateToSolde(client.ClientId))" style="cursor: pointer; color: #1a73e8; text-decoration: underline;">
+                            @client.ClientNom
+                        </span>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ClientSoldeProblemeResponse" Property="Solde" Title="@Localizer["Solde"]" Width="150px">
+                    <Template Context="client">
+                        <span class="grid-cell @(client.Solde < 0 ? "solde-negatif" : "solde-positif")">
+                            @client.Solde.FormatAmount(decimalPlaces) TND
+                        </span>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ClientSoldeProblemeResponse" Property="NombreQuantitesNonLivrees" Title="@Localizer["Quantites_Non_Livrees"]" Width="180px">
+                    <Template Context="client">
+                        <span class="grid-cell @(client.NombreQuantitesNonLivrees > 0 ? "quantite-non-livree" : "")">
+                            @client.NombreQuantitesNonLivrees
+                        </span>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ClientSoldeProblemeResponse" Property="TotalFactures" Title="@Localizer["Total_Factures"]" Width="150px">
+                    <Template Context="client">
+                        <span class="grid-cell">
+                            @client.TotalFactures.FormatAmount(decimalPlaces) TND
+                        </span>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ClientSoldeProblemeResponse" Property="TotalPaiements" Title="@Localizer["Total_Paiements"]" Width="150px">
+                    <Template Context="client">
+                        <span class="grid-cell">
+                            @client.TotalPaiements.FormatAmount(decimalPlaces) TND
+                        </span>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ClientSoldeProblemeResponse" Property="DateDernierDocument" Title="@Localizer["Date_Dernier_Document"]" Width="180px">
+                    <Template Context="client">
+                        <span class="grid-cell">
+                            @(client.DateDernierDocument?.ToString("dd/MM/yyyy") ?? "-")
+                        </span>
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    </div>
+</div>
+
+<style>
+    .clients-problemes-container {
+        padding: 0.25rem 1.25rem 1.25rem 1.25rem;
+        max-width: 1400px;
+        margin: 0.25rem auto 1rem auto;
+    }
+
+    .clients-problemes-card {
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        padding: 0.75rem 1.5rem 1.5rem 1.5rem;
+        border: none;
+    }
+
+    .clients-problemes-header {
+        margin-bottom: 1.25rem;
+    }
+
+    .clients-problemes-title {
+        font-weight: 600;
+        margin: 0;
+        font-size: 2rem;
+        line-height: 1.2;
+    }
+
+    .clients-problemes-grid {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .grid-cell {
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+
+    .client-name:hover {
+        color: #135ab6 !important;
+    }
+
+    .solde-positif {
+        color: #4caf50;
+        font-weight: 600;
+    }
+
+    .solde-negatif {
+        color: #f44336;
+        font-weight: 600;
+    }
+
+    .quantite-non-livree {
+        color: #f44336;
+        font-weight: 600;
+    }
+</style>
+
+@code {
+    private RadzenDataGrid<ClientSoldeProblemeResponse>? clientsGrid;
+    private IEnumerable<ClientSoldeProblemeResponse> clients = new List<ClientSoldeProblemeResponse>();
+    private int totalCount = 0;
+    private int defaultPageSize = 10;
+    private bool isLoading = false;
+    private CancellationTokenSource cancellationTokenSource = new();
+    private int decimalPlaces = AmountHelper.DEFAULT_DECIMAL_PLACES;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        decimalPlaces = await DecimalFormatService.GetDecimalPlacesAsync();
+        
+        // Load initial data
+        await LoadClientsData(new LoadDataArgs { Skip = 0, Top = defaultPageSize });
+    }
+
+    async Task LoadClientsData(LoadDataArgs args)
+    {
+        isLoading = true;
+        try
+        {
+            var pageNumber = (args.Skip ?? 0) / (args.Top ?? defaultPageSize) + 1;
+            var pageSize = args.Top ?? defaultPageSize;
+
+            var result = await SoldesService.GetClientsAvecProblemesSoldeAsync(
+                pageNumber,
+                pageSize,
+                null, // Use active accounting year
+                cancellationTokenSource.Token);
+
+            clients = result.Items;
+            totalCount = result.TotalCount;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = $"{Localizer["Erreur_Chargement_Clients"]}: {ex.Message}"
+            });
+            clients = new List<ClientSoldeProblemeResponse>();
+            totalCount = 0;
+        }
+        finally
+        {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    void NavigateToSolde(int clientId)
+    {
+        // Navigate to solde client page with clientId as query parameter
+        NavigationManager.NavigateTo($"/soldes-client?clientId={clientId}");
+    }
+
+    public void Dispose()
+    {
+        cancellationTokenSource.Cancel();
+        cancellationTokenSource.Dispose();
+    }
+}
+

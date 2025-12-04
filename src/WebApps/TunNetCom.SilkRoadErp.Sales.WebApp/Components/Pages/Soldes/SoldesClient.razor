@@ -1,5 +1,6 @@
 @page "/soldes-client"
 @using Microsoft.Extensions.Localization
+@using Microsoft.AspNetCore.WebUtilities
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Soldes
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Soldes
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
@@ -371,6 +372,17 @@
     {
         await base.OnInitializedAsync();
         decimalPlaces = await DecimalFormatService.GetDecimalPlacesAsync();
+        
+        // Check if clientId is provided in query string
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("clientId", out var clientIdValue))
+        {
+            if (int.TryParse(clientIdValue, out var clientId))
+            {
+                selectedClientId = clientId;
+                await LoadSolde();
+            }
+        }
     }
 
     async Task LoadCustomers(LoadDataArgs args)
