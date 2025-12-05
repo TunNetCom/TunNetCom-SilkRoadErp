@@ -8,8 +8,11 @@ variables:
   solution: '**/*.sln'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
+  dockerRepository: 'tunnetcom/silkroad'      
+  tag: '$(Build.BuildId)'                     # <--- Unique tag each run
 
 steps:
+# .NET
 - task: UseDotNet@2
   displayName: 'Use .NET 10 SDK'
   inputs:
@@ -30,7 +33,16 @@ steps:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
 
-- task: VSTest@2
+# -----------------------------
+# Docker Build & Push
+# -----------------------------
+- task: Docker@2
+  displayName: 'Build and Push Docker Image'
   inputs:
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
+    containerRegistry: 'TunNetCom_Dockerhub_Connection'   
+    command: buildAndPush
+    Dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
+    repository: '$(dockerRepository)'
+    tags: |
+      $(tag)
+      latest
