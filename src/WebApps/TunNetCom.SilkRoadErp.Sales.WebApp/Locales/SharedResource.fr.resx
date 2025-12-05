@@ -1242,4 +1242,25 @@
   <data name="No_Records_To_Display" xml:space="preserve">
     <value>Aucun enregistrement à afficher</value>
   </data>
+  <data name="Notifications" xml:space="preserve">
+    <value>Notifications</value>
+  </data>
+  <data name="Unread_Notifications" xml:space="preserve">
+    <value>Notifications non lues</value>
+  </data>
+  <data name="Mark_as_Read" xml:space="preserve">
+    <value>Marquer comme lu</value>
+  </data>
+  <data name="Mark_All_as_Read" xml:space="preserve">
+    <value>Tout marquer comme lu</value>
+  </data>
+  <data name="No_Notifications" xml:space="preserve">
+    <value>Aucune notification</value>
+  </data>
+  <data name="New" xml:space="preserve">
+    <value>Nouveau</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Fermer</value>
+  </data>
 </root>

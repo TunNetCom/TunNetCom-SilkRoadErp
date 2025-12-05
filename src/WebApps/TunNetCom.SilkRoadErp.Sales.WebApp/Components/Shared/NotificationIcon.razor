@@ -1,0 +1,118 @@
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
+@inject ISilkRoadNotificationService AppNotificationService
+@inject IAuthService AuthService
+@implements IDisposable
+
+<div style="position: relative; display: inline-block;">
+    <RadzenButton Icon="notifications" 
+                 Click="OpenNotificationPopup" 
+                 Size="ButtonSize.Medium"
+                 ButtonStyle="ButtonStyle.Light"
+                 Variant="Variant.Flat" />
+    @if (unreadCount > 0)
+    {
+        <RadzenBadge Text="@unreadCount.ToString()" 
+                     BadgeStyle="BadgeStyle.Danger" 
+                     Size="BadgeSize.Small"
+                     Style="position: absolute; top: -5px; right: -5px; min-width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold;" />
+    }
+</div>
+
+@if (showPopup)
+{
+    <NotificationPopup OnClose="ClosePopup" OnNotificationRead="OnNotificationRead" />
+}
+
+@code {
+    private int unreadCount = 0;
+    private bool showPopup = false;
+    private System.Threading.Timer? refreshTimer;
+    private int? userId;
+    private bool isAuthenticated = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Don't load anything during initialization - wait for authentication
+        // The component will be shown/hidden based on authentication state in MainLayout
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Only start loading after first render when authentication should be ready
+            await TryLoadNotificationsAsync();
+        }
+    }
+
+    private async Task TryLoadNotificationsAsync()
+    {
+        // Check if user is authenticated
+        if (!AuthService.IsAuthenticated)
+        {
+            return;
+        }
+
+        isAuthenticated = true;
+        
+        // Get user ID from auth service if available
+        var userInfo = AuthService.GetUserInfo();
+        // Note: UserId would need to be added to UserInfo if needed
+        // For now, we'll use null for global notifications
+
+        await LoadUnreadCountAsync();
+
+        // Refresh every 30 seconds
+        refreshTimer = new System.Threading.Timer(async _ =>
+        {
+            if (AuthService.IsAuthenticated)
+            {
+                await InvokeAsync(async () => await LoadUnreadCountAsync());
+            }
+        }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+    }
+
+    private async Task LoadUnreadCountAsync()
+    {
+        // Only load if authenticated
+        if (!AuthService.IsAuthenticated)
+        {
+            return;
+        }
+
+        try
+        {
+            unreadCount = await AppNotificationService.GetUnreadNotificationCountAsync(userId);
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception)
+        {
+            // Silently fail to avoid breaking the UI
+        }
+    }
+
+    private void OpenNotificationPopup()
+    {
+        showPopup = true;
+        StateHasChanged();
+    }
+
+    private void ClosePopup()
+    {
+        showPopup = false;
+        // Refresh count when popup closes
+        _ = Task.Run(async () => await LoadUnreadCountAsync());
+        StateHasChanged();
+    }
+
+    private async Task OnNotificationRead()
+    {
+        await LoadUnreadCountAsync();
+    }
+
+    public void Dispose()
+    {
+        refreshTimer?.Dispose();
+    }
+}
+

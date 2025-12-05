@@ -93,6 +93,7 @@ builder.Services.AddLocalization();
 builder.Services.AddControllers();
 builder.Services.AddScoped<GitHubService>();
 builder.Services.AddScoped<IDecimalFormatService, DecimalFormatService>();
+builder.Services.AddScoped<ISilkRoadNotificationService, TunNetCom.SilkRoadErp.Sales.WebApp.Services.SilkRoadNotificationService>();
 string[] supportedCultures = ["en", "fr", "ar"];
 var localizationOptions = new RequestLocalizationOptions()
     .SetDefaultCulture("fr")

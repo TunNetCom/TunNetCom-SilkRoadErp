@@ -64,5 +64,8 @@
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <!-- Playwright -->
     <PackageVersion Include="Microsoft.Playwright" Version="1.51.0" />
+    <!-- Quartz.NET for background jobs -->
+    <PackageVersion Include="Quartz" Version="3.13.1" />
+    <PackageVersion Include="Quartz.AspNetCore" Version="3.13.1" />
   </ItemGroup>
 </Project>

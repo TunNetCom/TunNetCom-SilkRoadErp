@@ -1131,4 +1131,25 @@
   <data name="Unexpected_Error" xml:space="preserve">
     <value>حدث خطأ.</value>
   </data>
+  <data name="Notifications" xml:space="preserve">
+    <value>الإشعارات</value>
+  </data>
+  <data name="Unread_Notifications" xml:space="preserve">
+    <value>الإشعارات غير المقروءة</value>
+  </data>
+  <data name="Mark_as_Read" xml:space="preserve">
+    <value>وضع علامة كمقروء</value>
+  </data>
+  <data name="Mark_All_as_Read" xml:space="preserve">
+    <value>وضع علامة على الكل كمقروء</value>
+  </data>
+  <data name="No_Notifications" xml:space="preserve">
+    <value>لا توجد إشعارات</value>
+  </data>
+  <data name="New" xml:space="preserve">
+    <value>جديد</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>إغلاق</value>
+  </data>
 </root>

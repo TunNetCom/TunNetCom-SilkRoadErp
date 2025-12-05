@@ -39,6 +39,8 @@
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
     <PackageReference Include="BCrypt.Net-Next" />
+    <PackageReference Include="Quartz" />
+    <PackageReference Include="Quartz.AspNetCore" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.console">
       <PrivateAssets>all</PrivateAssets>

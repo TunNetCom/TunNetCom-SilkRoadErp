@@ -1,4 +1,4 @@
-﻿@page "/AddOrUpdateDeliveryNote"
+@page "/AddOrUpdateDeliveryNote"
 @page "/AddOrUpdateDeliveryNote/{num?}"
 
 @using Radzen.Blazor
@@ -33,7 +33,7 @@
 
 @inject IStringLocalizer<SharedResource> Localizer
 @inject ToastService toastService
-@inject NotificationService NotificationService
+@inject Radzen.NotificationService NotificationService
 @inject IJSRuntime JSRuntime
 @inject IDeliveryNoteApiClient deliveryNoteApiClient
 @inject IProductsApiClient productsApiClient

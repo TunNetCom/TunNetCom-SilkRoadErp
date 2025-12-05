@@ -2,6 +2,7 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Services
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Constants
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 @inherits LayoutComponentBase
 @inject IStringLocalizer<SharedResource> Localizer
 @inject NavigationManager NavigationManager
@@ -24,6 +25,10 @@
                 <AccountingYearSelector />
                 <LanguageSelector />
                 <RadzenAppearanceToggle />
+                @if (userInfo != null && AuthService.IsAuthenticated)
+                {
+                    <NotificationIcon />
+                }
                 <RadzenButton Click="OpenAccountSettings" Icon="manage_accounts"  Size="ButtonSize.Medium" />
             </div>
         </div>

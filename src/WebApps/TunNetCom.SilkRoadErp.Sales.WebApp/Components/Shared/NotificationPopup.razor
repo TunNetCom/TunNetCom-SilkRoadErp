@@ -1,0 +1,188 @@
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Notifications
+@using Radzen
+@using Radzen.Blazor
+@inject ISilkRoadNotificationService AppNotificationService
+@inject IAuthService AuthService
+@inject Radzen.NotificationService RadzenNotificationService
+
+@if (showDialog)
+{
+    <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;"
+         @onclick="Close"
+         @onclick:stopPropagation="true">
+        <div style="background: var(--rz-base-background-color); border: 1px solid var(--rz-border-color); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); width: 500px; max-width: 90vw; max-height: 80vh; display: flex; flex-direction: column;"
+             @onclick:stopPropagation="true">
+            <!-- Header -->
+            <div style="padding: 16px; border-bottom: 1px solid var(--rz-border-color); display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 18px; font-weight: 600;">Notifications</span>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    @if (notifications.Any())
+                    {
+                        <RadzenButton Text="Tout marquer comme lu" 
+                                     Click="MarkAllAsRead" 
+                                     Size="ButtonSize.Small"
+                                     ButtonStyle="ButtonStyle.Light"
+                                     Variant="Variant.Flat" />
+                    }
+                    <RadzenButton Icon="close" 
+                                 Click="Close" 
+                                 Size="ButtonSize.Small"
+                                 ButtonStyle="ButtonStyle.Light"
+                                 Variant="Variant.Flat"
+                                 Style="min-width: 32px; padding: 0;" />
+                </div>
+            </div>
+            
+            <!-- Content -->
+            <div style="flex: 1; overflow-y: auto;">
+                @if (isLoading)
+                {
+                    <div style="text-align: center; padding: 40px;">
+                        <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+                    </div>
+                }
+                else if (!notifications.Any())
+                {
+                    <div style="text-align: center; padding: 40px; color: var(--rz-text-secondary-color);">
+                        Aucune notification
+                    </div>
+                }
+                else
+                {
+                    <div>
+                        @foreach (var notification in notifications)
+                        {
+                            <div style="padding: 12px 16px; border-bottom: 1px solid var(--rz-border-color); cursor: pointer; @(notification.IsRead ? "opacity: 0.6;" : "") @(hoveredNotificationId == notification.Id && !notification.IsRead ? "background-color: var(--rz-base-hover-background-color);" : "")"
+                                 @onclick="() => MarkAsRead(notification)"
+                                 @onmouseover="@(() => hoveredNotificationId = notification.Id)"
+                                 @onmouseout="@(() => hoveredNotificationId = null)">
+                                <div style="display: flex; justify-content: space-between; align-items: start; gap: 10px;">
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: @(notification.IsRead ? "normal" : "bold"); font-size: 14px; margin-bottom: 4px;">
+                                            @notification.Title
+                                        </div>
+                                        <div style="font-size: 12px; color: var(--rz-text-secondary-color); margin-bottom: 4px;">
+                                            @notification.Message
+                                        </div>
+                                        <div style="font-size: 11px; color: var(--rz-text-secondary-color);">
+                                            @notification.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                                        </div>
+                                    </div>
+                                    @if (!notification.IsRead)
+                                    {
+                                        <RadzenBadge Text="Nouveau" BadgeStyle="BadgeStyle.Info" Size="BadgeSize.Small" />
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public EventCallback OnNotificationRead { get; set; }
+
+    private bool showDialog = true;
+    private bool isLoading = true;
+    private List<NotificationResponse> notifications = new();
+    private int? userId;
+    private int? hoveredNotificationId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Get user ID from auth service if available
+        var userInfo = AuthService.GetUserInfo();
+        // Note: UserId would need to be added to UserInfo if needed
+        // For now, we'll use null for global notifications
+
+        await LoadNotificationsAsync();
+    }
+
+    private async Task LoadNotificationsAsync()
+    {
+        try
+        {
+            isLoading = true;
+            var result = await AppNotificationService.GetNotificationsAsync(
+                unreadOnly: null,
+                userId: userId,
+                pageNumber: 1,
+                pageSize: 50);
+            notifications = result.Items.ToList();
+        }
+        catch (Exception ex)
+        {
+            RadzenNotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Erreur", Detail = $"Erreur lors du chargement des notifications: {ex.Message}" });
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task MarkAsRead(NotificationResponse notification)
+    {
+        if (notification.IsRead)
+            return;
+
+        try
+        {
+            await AppNotificationService.MarkNotificationAsReadAsync(notification.Id, userId);
+            notification = notification with { IsRead = true, ReadAt = DateTime.UtcNow };
+            
+            // Update in list
+            var index = notifications.FindIndex(n => n.Id == notification.Id);
+            if (index >= 0)
+            {
+                notifications[index] = notification;
+            }
+
+            await OnNotificationRead.InvokeAsync();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            RadzenNotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Erreur", Detail = $"Erreur lors du marquage de la notification: {ex.Message}" });
+        }
+    }
+
+    private async Task MarkAllAsRead()
+    {
+        try
+        {
+            await AppNotificationService.MarkAllNotificationsAsReadAsync(userId);
+            
+            // Update all notifications in list
+            for (int i = 0; i < notifications.Count; i++)
+            {
+                if (!notifications[i].IsRead)
+                {
+                    notifications[i] = notifications[i] with { IsRead = true, ReadAt = DateTime.UtcNow };
+                }
+            }
+
+            await OnNotificationRead.InvokeAsync();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            RadzenNotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Erreur", Detail = $"Erreur lors du marquage de toutes les notifications: {ex.Message}" });
+        }
+    }
+
+    private async Task Close()
+    {
+        showDialog = false;
+        await OnClose.InvokeAsync();
+    }
+}
+

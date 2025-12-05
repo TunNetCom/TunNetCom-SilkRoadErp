@@ -1,4 +1,4 @@
-﻿@page "/providers_list"
+@page "/providers_list"
 @using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
@@ -16,7 +16,7 @@
 @inject IProvidersApiClient providerService
 @inject NavigationManager navigationManager
 @inject IStringLocalizer<SharedResource> Localizer
-@inject NotificationService NotificationService
+@inject Radzen.NotificationService NotificationService
 
 <div class="providers-container">
     <div class="providers-card">

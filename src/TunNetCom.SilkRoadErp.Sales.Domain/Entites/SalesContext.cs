@@ -115,6 +115,8 @@ public partial class SalesContext : DbContext
 
     public virtual DbSet<RetenueSourceFournisseur> RetenueSourceFournisseur { get; set; }
 
+    public virtual DbSet<Notification> Notification { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(FactureConfiguration).Assembly);

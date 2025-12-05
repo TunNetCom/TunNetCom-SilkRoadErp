@@ -28,6 +28,7 @@ using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProductFamilies;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProductSubFamilies;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.RetenueSourceClient;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.RetenueSourceFournisseur;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Notifications;
 
 
 public static class SalesHttpClients
@@ -170,6 +171,10 @@ public static class SalesHttpClients
         _ = AddClient<IRetenueSourceFournisseurApiClient, RetenueSourceFournisseurApiClient>(retenueSourceFournisseur =>
         {
             retenueSourceFournisseur.BaseAddress = new Uri(baseUrl);
+        });
+        _ = AddClient<INotificationApiClient, NotificationApiClient>(notifications =>
+        {
+            notifications.BaseAddress = new Uri(baseUrl);
         });
     }
 }

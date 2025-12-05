@@ -1,9 +1,9 @@
-﻿@page "/order/{OrderId:int}"
+@page "/order/{OrderId:int}"
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Commande
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Orders
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @inject IOrderApiClient OrderApiClient
-@inject NotificationService NotificationService
+@inject Radzen.NotificationService NotificationService
 @inject NavigationManager NavigationManager
 
 <PageTitle>Détails de la commande - @OrderId</PageTitle>

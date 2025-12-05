@@ -51,5 +51,7 @@ global using Microsoft.OData.ModelBuilder;
 global using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 global using TunNetCom.SilkRoadErp.Sales.Contracts.InstallationTechnician.Responses;
 global using System.Security.Claims;
+global using Quartz;
+global using Quartz.AspNetCore;
 
 
