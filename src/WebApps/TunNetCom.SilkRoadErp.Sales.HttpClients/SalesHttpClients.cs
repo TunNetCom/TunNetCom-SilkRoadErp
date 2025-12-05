@@ -4,6 +4,7 @@ using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AccountingYear;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Avoirs;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AvoirFournisseur;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AvoirFinancierFournisseurs;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.FactureAvoirFournisseur;
@@ -119,6 +120,10 @@ public static class SalesHttpClients
         _ = AddClient<IFactureAvoirFournisseurApiClient, FactureAvoirFournisseurApiClient>(factureAvoirFournisseur =>
         {
             factureAvoirFournisseur.BaseAddress = new Uri(baseUrl);
+        });
+        _ = AddClient<IAvoirFinancierFournisseursApiClient, AvoirFinancierFournisseursApiClient>(avoirFinancierFournisseurs =>
+        {
+            avoirFinancierFournisseurs.BaseAddress = new Uri(baseUrl);
         });
         _ = AddClient<IPaiementClientApiClient, PaiementClientApiClient>(paiementClient =>
         {

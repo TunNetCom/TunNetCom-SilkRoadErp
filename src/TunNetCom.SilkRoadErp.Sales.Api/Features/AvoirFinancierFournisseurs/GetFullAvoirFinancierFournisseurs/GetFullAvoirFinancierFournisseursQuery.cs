@@ -1,0 +1,4 @@
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.AvoirFinancierFournisseurs.GetFullAvoirFinancierFournisseurs;
+
+public record GetFullAvoirFinancierFournisseursQuery(int Num) : IRequest<Result<Contracts.AvoirFinancierFournisseurs.FullAvoirFinancierFournisseursResponse>>;
+

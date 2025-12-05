@@ -1,0 +1,462 @@
+@page "/AddOrUpdateAvoirFinancierFournisseurs"
+@page "/AddOrUpdateAvoirFinancierFournisseurs/{num?}"
+
+@using Radzen.Blazor
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.AvoirFinancierFournisseurs
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Providers
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Common
+@using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AvoirFinancierFournisseurs
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProviderInvoice
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+
+@inject IStringLocalizer<SharedResource> Localizer
+@inject Radzen.NotificationService NotificationService
+@inject IAvoirFinancierFournisseursApiClient avoirFinancierFournisseursApiClient
+@inject IProvidersApiClient providersApiClient
+@inject IProviderInvoiceApiClient providerInvoiceApiClient
+@inject ILogger<AddOrUpdateAvoirFinancierFournisseurs> logger
+@inject NavigationManager NavigationManager
+
+<style>
+    .avoir-financier-container {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .avoir-financier-form {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .form-row {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+</style>
+
+@if (isLoading)
+{
+    <RadzenProgressBarCircular ProgressBarStyle="ProgressBarStyle.Primary" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+}
+else
+{
+    <div class="avoir-financier-container">
+        <div class="avoir-financier-form">
+            <div class="form-row">
+                <RadzenLabel Text="Numéro avoir financier" />
+                <RadzenTextBox @bind-Value="avoirFinancierNumber" Style="width: 150px;" ReadOnly="true" />
+
+                <RadzenLabel Text="@Localizer["date"]" />
+                <RadzenDatePicker @bind-Value="avoirFinancierDate" Style="width: 200px;" DateFormat="d MMMM yyyy" ShowTime="false" />
+
+                <RadzenLabel Text="Numéro sur page" />
+                <RadzenNumeric @bind-Value="numSurPage" Style="width: 150px;" />
+            </div>
+
+            <div class="form-row">
+                <RadzenLabel Text="Fournisseur" />
+                <RadzenDropDownDataGrid AllowClear="true"
+                                        IsLoading="@isLoadingProviders"
+                                        @bind-Value="@selectedFournisseurId"
+                                        LoadData="@LoadProviders"
+                                        AllowFiltering="true"
+                                        Style="width: 350px;"
+                                        Data="@_filteredProviders"
+                                        TextProperty="@nameof(ProviderResponse.Nom)"
+                                        ValueProperty="@nameof(ProviderResponse.Id)"
+                                        Placeholder="Sélectionner un fournisseur"
+                                        Change="@OnFournisseurChanged"
+                                        Disabled="@isEditMode">
+                    <Columns>
+                        <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Id)" Title="ID" Width="80px" />
+                        <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Nom)" Title="@Localizer["name"]" Width="220px" />
+                    </Columns>
+                </RadzenDropDownDataGrid>
+
+                <RadzenLabel Text="Facture fournisseur *" />
+                <RadzenDropDownDataGrid AllowClear="false"
+                                        IsLoading="@isLoadingInvoices"
+                                        @bind-Value="@selectedFactureFournisseurNum"
+                                        LoadData="@LoadInvoices"
+                                        AllowFiltering="true"
+                                        Style="width: 350px;"
+                                        Data="@_filteredInvoices"
+                                        TextProperty="@nameof(ProviderInvoiceResponse.ProviderInvoiceNumber)"
+                                        ValueProperty="@nameof(ProviderInvoiceResponse.Num)"
+                                        Placeholder="Sélectionner une facture fournisseur"
+                                        Disabled="@(!selectedFournisseurId.HasValue || isEditMode)">
+                    <Columns>
+                        <RadzenDropDownDataGridColumn Property="@nameof(ProviderInvoiceResponse.ProviderInvoiceNumber)" Title="Numéro" Width="120px" />
+                        <RadzenDropDownDataGridColumn Property="@nameof(ProviderInvoiceResponse.Date)" Title="@Localizer["date"]" Width="100px" FormatString="{0:d MMM yyyy}" />
+                        <RadzenDropDownDataGridColumn Property="@nameof(ProviderInvoiceResponse.TotTTC)" Title="Total TTC" Width="120px">
+                            <Template Context="item">
+                                @item.TotTTC.FormatAmount()
+                            </Template>
+                        </RadzenDropDownDataGridColumn>
+                    </Columns>
+                </RadzenDropDownDataGrid>
+            </div>
+
+            <div class="form-row">
+                <RadzenLabel Text="Description" />
+                <RadzenTextArea @bind-Value="description" Style="width: 100%;" Rows="3" Placeholder="Description (optionnel)" />
+            </div>
+
+            <div class="form-row">
+                <RadzenLabel Text="Total TTC *" />
+                <RadzenNumeric @bind-Value="totTtc" Style="width: 200px;" FormatString="F2" />
+            </div>
+
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <RadzenButton Text="Enregistrer" 
+                          Icon="save" 
+                          ButtonStyle="ButtonStyle.Primary" 
+                          Click="@SaveAvoirFinancierFournisseurs"
+                          IsBusy="@isSaving" />
+            <RadzenButton Text="Annuler" 
+                          Icon="cancel" 
+                          ButtonStyle="ButtonStyle.Light" 
+                          Click="@(() => NavigationManager.NavigateTo("/avoir-financier-fournisseurs"))" />
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string? num { get; set; }
+    
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private bool isLoadingProviders = false;
+    private bool isLoadingInvoices = false;
+    private bool isEditMode => !string.IsNullOrEmpty(num) && int.TryParse(num, out _);
+    
+    private string avoirFinancierNumber = string.Empty;
+    private DateTime avoirFinancierDate = DateTime.Now;
+    private int numSurPage = 1;
+    private int? _selectedFournisseurId;
+    private int? selectedFournisseurId
+    {
+        get => _selectedFournisseurId;
+        set
+        {
+            if (_selectedFournisseurId != value)
+            {
+                _selectedFournisseurId = value;
+                selectedFactureFournisseurNum = null;
+                _filteredInvoices = new List<ProviderInvoiceResponse>();
+                _ = LoadInvoices(null);
+            }
+        }
+    }
+    
+    private int? selectedFactureFournisseurNum;
+    private string? description;
+    private decimal totTtc = 0;
+    
+    private List<ProviderResponse> _filteredProviders = new();
+    private List<ProviderInvoiceResponse> _filteredInvoices = new();
+    
+    private CancellationTokenSource _cancellationTokenSource = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await LoadProviders(null);
+        await FetchAvoirFinancierFournisseurs();
+        isLoading = false;
+    }
+
+    private async Task LoadProviders(LoadDataArgs args)
+    {
+        isLoadingProviders = true;
+        var parameters = new QueryStringParameters
+        {
+            PageNumber = 1,
+            PageSize = 100,
+            SearchKeyword = args?.Filter ?? string.Empty
+        };
+
+        try
+        {
+            var pagedProviders = await providersApiClient.GetPagedAsync(parameters, _cancellationTokenSource.Token);
+            _filteredProviders = pagedProviders.Items;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Échec du chargement des fournisseurs: {ex.Message}"
+            });
+            _filteredProviders = new List<ProviderResponse>();
+        }
+
+        isLoadingProviders = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnFournisseurChanged(object? value)
+    {
+        selectedFactureFournisseurNum = null;
+        _filteredInvoices = new List<ProviderInvoiceResponse>();
+        await LoadInvoices(null);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadInvoices(LoadDataArgs? args)
+    {
+        if (!selectedFournisseurId.HasValue)
+        {
+            _filteredInvoices = new List<ProviderInvoiceResponse>();
+            return;
+        }
+
+        isLoadingInvoices = true;
+        
+        try
+        {
+            var parameters = new QueryStringParameters
+            {
+                PageNumber = 1,
+                PageSize = 1000,
+                SearchKeyword = args?.Filter ?? string.Empty
+            };
+
+            var result = await providerInvoiceApiClient.GetProvidersInvoicesAsync(
+                selectedFournisseurId.Value,
+                parameters,
+                _cancellationTokenSource.Token);
+
+            if (result.IsT0)
+            {
+                _filteredInvoices = result.AsT0.Invoices.Items;
+                
+                // In edit mode, filter out invoices that already have an avoir financier (except the current one)
+                if (isEditMode && int.TryParse(num, out var currentNum))
+                {
+                    // Get all invoices that already have an avoir financier
+                    var invoicesWithAvoir = await avoirFinancierFournisseursApiClient.GetAvoirFinancierFournisseursWithSummariesAsync(
+                        selectedFournisseurId, null, null, null, 1, 1000, null, null, null, _cancellationTokenSource.Token);
+                    
+                    var excludedNums = invoicesWithAvoir.AvoirFinancierFournisseurs.Items
+                        .Where(a => a.Num != currentNum)
+                        .Select(a => a.NumFactureFournisseur)
+                        .ToList();
+                    
+                    _filteredInvoices = _filteredInvoices
+                        .Where(i => !excludedNums.Contains(i.Num))
+                        .ToList();
+                }
+                else
+                {
+                    // In create mode, filter out invoices that already have an avoir financier
+                    var invoicesWithAvoir = await avoirFinancierFournisseursApiClient.GetAvoirFinancierFournisseursWithSummariesAsync(
+                        selectedFournisseurId, null, null, null, 1, 1000, null, null, null, _cancellationTokenSource.Token);
+                    
+                    var excludedNums = invoicesWithAvoir.AvoirFinancierFournisseurs.Items
+                        .Select(a => a.NumFactureFournisseur)
+                        .ToList();
+                    
+                    _filteredInvoices = _filteredInvoices
+                        .Where(i => !excludedNums.Contains(i.Num))
+                        .ToList();
+                }
+            }
+            else
+            {
+                _filteredInvoices = new List<ProviderInvoiceResponse>();
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Échec du chargement des factures fournisseur: {ex.Message}"
+            });
+            _filteredInvoices = new List<ProviderInvoiceResponse>();
+        }
+
+        isLoadingInvoices = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task FetchAvoirFinancierFournisseurs()
+    {
+        var avoirFinancierNumToLoad = num;
+        if (string.IsNullOrEmpty(avoirFinancierNumToLoad))
+        {
+            return;
+        }
+
+        try
+        {
+            if (int.TryParse(avoirFinancierNumToLoad, out var numAsInt))
+            {
+                var avoirFinancier = await avoirFinancierFournisseursApiClient.GetFullAvoirFinancierFournisseursAsync(numAsInt, _cancellationTokenSource.Token);
+
+                if (avoirFinancier.IsSuccess && avoirFinancier.Value != null)
+                {
+                    var data = avoirFinancier.Value;
+                    avoirFinancierNumber = data.Num.ToString();
+                    avoirFinancierDate = data.Date;
+                    numSurPage = data.NumSurPage;
+                    description = data.Description;
+                    totTtc = data.TotTtc;
+                    selectedFactureFournisseurNum = data.FactureFournisseur.Num;
+                    selectedFournisseurId = data.FactureFournisseur.ProviderId;
+
+                    // Load invoices for the selected provider
+                    await LoadInvoices(null);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Échec du chargement: {e.Message}"
+            });
+
+            logger.LogError(e, "Failed to fetch avoir financier fournisseurs");
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SaveAvoirFinancierFournisseurs()
+    {
+        if (!selectedFactureFournisseurNum.HasValue)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["warning"],
+                Detail = "Veuillez sélectionner une facture fournisseur"
+            });
+            return;
+        }
+
+        if (totTtc <= 0)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["warning"],
+                Detail = "Le total TTC doit être supérieur à 0"
+            });
+            return;
+        }
+
+        try
+        {
+            isSaving = true;
+            StateHasChanged();
+
+            // Check if we're in edit mode
+            int avoirFinancierNum = 0;
+            bool isEdit = !string.IsNullOrEmpty(avoirFinancierNumber) && int.TryParse(avoirFinancierNumber, out avoirFinancierNum);
+
+            if (isEdit)
+            {
+                var updateRequest = new UpdateAvoirFinancierFournisseursRequest
+                {
+                    NumSurPage = numSurPage,
+                    Date = avoirFinancierDate,
+                    Description = description,
+                    TotTtc = totTtc
+                };
+
+                var updateResponse = await avoirFinancierFournisseursApiClient.UpdateAvoirFinancierFournisseursAsync(avoirFinancierNum, updateRequest, _cancellationTokenSource.Token);
+
+                if (updateResponse.IsSuccess)
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = Localizer["success"],
+                        Detail = "Avoir financier fournisseurs mis à jour avec succès"
+                    });
+                    NavigationManager.NavigateTo("/avoir-financier-fournisseurs");
+                }
+                else
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = Localizer["error"],
+                        Detail = $"Échec de la mise à jour: {updateResponse.Errors.First().Message}"
+                    });
+                }
+            }
+            else
+            {
+                var createRequest = new CreateAvoirFinancierFournisseursRequest
+                {
+                    NumFactureFournisseur = selectedFactureFournisseurNum.Value,
+                    NumSurPage = numSurPage,
+                    Date = avoirFinancierDate,
+                    Description = description,
+                    TotTtc = totTtc
+                };
+
+                var createResponse = await avoirFinancierFournisseursApiClient.CreateAvoirFinancierFournisseurs(createRequest, _cancellationTokenSource.Token);
+
+                if (createResponse.IsT0)
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = Localizer["success"],
+                        Detail = "Avoir financier fournisseurs créé avec succès"
+                    });
+                    NavigationManager.NavigateTo("/avoir-financier-fournisseurs");
+                }
+                else
+                {
+                    var badRequest = createResponse.AsT1;
+                    var errorMessage = badRequest.errors?.Any() == true
+                        ? string.Join(", ", badRequest.errors.SelectMany(e => e.Value))
+                        : (badRequest.Detail ?? "Échec de la création");
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = Localizer["error"],
+                        Detail = errorMessage
+                    });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Échec de la sauvegarde: {ex.Message}"
+            });
+            logger.LogError(ex, "Failed to save avoir financier fournisseurs");
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+}
+

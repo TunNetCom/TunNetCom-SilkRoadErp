@@ -7,9 +7,11 @@
 @using TunNetCom.SilkRoadErp.Sales.Contracts.AvoirFournisseur
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Providers
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Common
+@using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.FactureAvoirFournisseur
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AvoirFournisseur
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProviderInvoice
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 
@@ -18,6 +20,7 @@
 @inject IFactureAvoirFournisseurApiClient factureAvoirFournisseurApiClient
 @inject IAvoirFournisseurApiClient avoirFournisseurApiClient
 @inject IProvidersApiClient providersApiClient
+@inject IProviderInvoiceApiClient providerInvoiceApiClient
 @inject ILogger<AddOrUpdateFactureAvoirFournisseur> logger
 @inject NavigationManager NavigationManager
 
@@ -90,10 +93,34 @@ else
                                     Data="@_filteredProviders"
                                     TextProperty="@nameof(ProviderResponse.Nom)"
                                     ValueProperty="@nameof(ProviderResponse.Id)"
-                                    Placeholder="Sélectionner un fournisseur">
+                                    Placeholder="Sélectionner un fournisseur"
+                                    Change="@OnFournisseurChanged">
                 <Columns>
                     <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Id)" Title="ID" Width="80px" />
                     <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Nom)" Title="@Localizer["name"]" Width="220px" />
+                </Columns>
+            </RadzenDropDownDataGrid>
+
+            <RadzenLabel Text="Facture fournisseur" />
+            <RadzenDropDownDataGrid AllowClear="true"
+                                    IsLoading="@isLoadingInvoices"
+                                    @bind-Value="@selectedFactureFournisseurNum"
+                                    LoadData="@LoadInvoices"
+                                    AllowFiltering="true"
+                                    Style="width: 350px;"
+                                    Data="@_filteredInvoices"
+                                    TextProperty="@nameof(ProviderInvoiceResponse.ProviderInvoiceNumber)"
+                                    ValueProperty="@nameof(ProviderInvoiceResponse.Num)"
+                                    Placeholder="Sélectionner une facture fournisseur"
+                                    Disabled="@(!selectedFournisseurId.HasValue)">
+                <Columns>
+                    <RadzenDropDownDataGridColumn Property="@nameof(ProviderInvoiceResponse.ProviderInvoiceNumber)" Title="Numéro" Width="120px" />
+                    <RadzenDropDownDataGridColumn Property="@nameof(ProviderInvoiceResponse.Date)" Title="@Localizer["date"]" Width="100px" FormatString="{0:d MMM yyyy}" />
+                    <RadzenDropDownDataGridColumn Property="@nameof(ProviderInvoiceResponse.TotTTC)" Title="Total TTC" Width="120px">
+                        <Template Context="item">
+                            @item.TotTTC.FormatAmount()
+                        </Template>
+                    </RadzenDropDownDataGridColumn>
                 </Columns>
             </RadzenDropDownDataGrid>
         </div>
@@ -173,6 +200,7 @@ else
     private bool isLoading = true;
     private bool isSaving = false;
     private bool isLoadingProviders = false;
+    private bool isLoadingInvoices = false;
     
     private string factureAvoirNumber = string.Empty;
     private DateTime factureAvoirDate = DateTime.Now;
@@ -186,12 +214,18 @@ else
             {
                 _selectedFournisseurId = value;
                 selectedAvoirs = new List<AvoirFournisseurBaseInfo>();
+                selectedFactureFournisseurNum = null;
+                _filteredInvoices = new List<ProviderInvoiceResponse>();
                 _ = LoadAvailableAvoirs();
+                _ = LoadInvoices(null);
             }
         }
     }
     
+    private int? selectedFactureFournisseurNum;
+    
     private List<ProviderResponse> _filteredProviders = new();
+    private List<ProviderInvoiceResponse> _filteredInvoices = new();
     private List<AvoirFournisseurBaseInfo> availableAvoirs = new();
     private IList<AvoirFournisseurBaseInfo> selectedAvoirs = new List<AvoirFournisseurBaseInfo>();
     
@@ -236,6 +270,62 @@ else
         }
 
         isLoadingProviders = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnFournisseurChanged(object? value)
+    {
+        selectedFactureFournisseurNum = null;
+        _filteredInvoices = new List<ProviderInvoiceResponse>();
+        await LoadInvoices(null);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadInvoices(LoadDataArgs? args)
+    {
+        if (!selectedFournisseurId.HasValue)
+        {
+            _filteredInvoices = new List<ProviderInvoiceResponse>();
+            return;
+        }
+
+        isLoadingInvoices = true;
+        
+        try
+        {
+            var parameters = new QueryStringParameters
+            {
+                PageNumber = 1,
+                PageSize = 1000,
+                SearchKeyword = args?.Filter ?? string.Empty
+            };
+
+            var result = await providerInvoiceApiClient.GetProvidersInvoicesAsync(
+                selectedFournisseurId.Value,
+                parameters,
+                _cancellationTokenSource.Token);
+
+            if (result.IsT0)
+            {
+                _filteredInvoices = result.AsT0.Invoices.Items;
+            }
+            else
+            {
+                _filteredInvoices = new List<ProviderInvoiceResponse>();
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Échec du chargement des factures fournisseur: {ex.Message}"
+            });
+            _filteredInvoices = new List<ProviderInvoiceResponse>();
+        }
+
+        isLoadingInvoices = false;
         await InvokeAsync(StateHasChanged);
     }
 
@@ -338,6 +428,10 @@ else
                     factureAvoirNumber = factureAvoirData.Num.ToString();
                     factureAvoirDate = factureAvoirData.Date;
                     selectedFournisseurId = factureAvoirData.IdFournisseur;
+                    selectedFactureFournisseurNum = factureAvoirData.NumFactureFournisseur;
+
+                    // Load invoices for the selected provider
+                    await LoadInvoices(null);
 
                     // Load available avoirs and select the linked ones
                     await LoadAvailableAvoirs();
@@ -405,7 +499,7 @@ else
                 {
                     Date = factureAvoirDate,
                     IdFournisseur = selectedFournisseurId.Value,
-                    NumFactureFournisseur = null, // Can be added later if needed
+                    NumFactureFournisseur = selectedFactureFournisseurNum,
                     AvoirFournisseurIds = avoirFournisseurIds
                 };
 
@@ -437,7 +531,7 @@ else
                 {
                     Date = factureAvoirDate,
                     IdFournisseur = selectedFournisseurId.Value,
-                    NumFactureFournisseur = null, // Can be added later if needed
+                    NumFactureFournisseur = selectedFactureFournisseurNum,
                     AvoirFournisseurIds = avoirFournisseurIds
                 };
 
