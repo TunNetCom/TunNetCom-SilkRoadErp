@@ -37,7 +37,7 @@ if (builder.Environment.IsDevelopment())
     });
 }
 
-var baseUrl = builder.Configuration.GetValue<string>("BaseUrl")
+var baseUrl = builder.Configuration.GetValue<string>("ApiSettings:BaseUrl")
     ?? throw new ArgumentNullException("Sales base url was null!");
 
 // Add HttpContextAccessor for circuit tracking

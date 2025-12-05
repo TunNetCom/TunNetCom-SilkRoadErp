@@ -1173,8 +1173,8 @@
 
         try
         {
-            var baseUrl = Configuration.GetValue<string>("BaseUrl")
-                ?? throw new InvalidOperationException("BaseUrl configuration is missing");
+            var baseUrl = Configuration.GetValue<string>("ApiSettings:BaseUrl")
+                ?? throw new InvalidOperationException("ApiSettings:BaseUrl configuration is missing");
 
             var url = $"{baseUrl.TrimEnd('/')}/api/provider-invoices/{SelectedInvoiceId}/export/tej-xml";
 

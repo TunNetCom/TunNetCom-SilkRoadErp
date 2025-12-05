@@ -892,7 +892,7 @@
                 }
             }
 
-            var baseUrl = Configuration.GetValue<string>("BaseUrl") ?? throw new ArgumentNullException("BaseUrl is not configured.");
+            var baseUrl = Configuration.GetValue<string>("ApiSettings:BaseUrl") ?? throw new ArgumentNullException("ApiSettings:BaseUrl is not configured.");
             var url = $"{baseUrl}/api/provider-invoices/export/sage";
             if (queryParams.Any())
             {
@@ -938,8 +938,8 @@
         {
             _logger.LogInformation("ExportToTejXmlAsync called for invoice {InvoiceNumber}", invoiceNumber);
 
-            var baseUrl = Configuration.GetValue<string>("BaseUrl") 
-                ?? throw new InvalidOperationException("BaseUrl configuration is missing");
+            var baseUrl = Configuration.GetValue<string>("ApiSettings:BaseUrl") 
+                ?? throw new InvalidOperationException("ApiSettings:BaseUrl configuration is missing");
             
             var url = $"{baseUrl.TrimEnd('/')}/api/provider-invoices/{invoiceNumber}/export/tej-xml";
 
