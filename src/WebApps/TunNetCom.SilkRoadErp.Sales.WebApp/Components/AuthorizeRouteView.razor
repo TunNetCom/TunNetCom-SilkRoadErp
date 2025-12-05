@@ -56,12 +56,16 @@ else
         {
             Logger.LogWarning("AuthorizeRouteView: Token expiration event received, redirecting to login");
             
-            // Clear authorization state
-            IsAuthorized = false;
-            _hasCheckedAuth = false;
-            StateHasChanged();
+            // Use InvokeAsync to ensure we're on the Dispatcher thread
+            await InvokeAsync(() =>
+            {
+                // Clear authorization state
+                IsAuthorized = false;
+                _hasCheckedAuth = false;
+                StateHasChanged();
+            });
             
-            // Redirect to login
+            // Redirect to login (Navigation.NavigateTo is thread-safe)
             await Task.Delay(100); // Small delay to ensure state is updated
             Navigation.NavigateTo("/login", forceLoad: true);
         }
