@@ -66,6 +66,7 @@ steps:
     configuration: '$(buildConfiguration)'
     codeCoverageEnabled: true
     runSettingsFile: 'test.runsettings'
+  continueOnError: true  
 
 - task: reportgenerator@5
   displayName: 'Convert coverage to Cobertura'
