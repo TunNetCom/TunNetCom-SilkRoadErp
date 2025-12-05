@@ -2,12 +2,14 @@ trigger:
 - master
 
 pool:
-  vmImage: 'windows-latest'
+  vmImage: 'ubuntu-latest'
 
 variables:
   solution: '**/*.sln'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
+  dockerRepository: 'tunnetcom/silkroad'      
+  tag: '$(Build.BuildId)'
 
 steps:
 - task: UseDotNet@2
@@ -17,65 +19,32 @@ steps:
     version: '10.x'
     includePreviewVersions: false
 
-- task: NuGetToolInstaller@1
-
-- task: NuGetCommand@2
+# -----------------------------
+# Build and Push API Image
+# -----------------------------
+- task: Docker@2
+  displayName: 'Build and Push API Docker Image'
   inputs:
-    restoreSolution: '$(solution)'
+    containerRegistry: 'TunNetCom_Dockerhub_Connection'   
+    command: buildAndPush
+    Dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
+    repository: '$(dockerRepository)'
+    tags: |
+      $(tag)-api
+      latest-api
+    arguments: '--target api'
 
-- task: SonarCloudPrepare@3
+# -----------------------------
+# Build and Push WebApp Image
+# -----------------------------
+- task: Docker@2
+  displayName: 'Build and Push WebApp Docker Image'
   inputs:
-    SonarQube: 'Connexion-SonarCloud'
-    organization: 'tunnetcom'
-    scannerMode: 'dotnet'
-    projectKey: 'tunnetcom_silk-road-erp'
-    projectName: 'Silk_Road_ERP'
-    extraProperties: |
-      sonar.cs.opencover.reportsPaths=$(Build.SourcesDirectory)/CoverageConverted/Cobertura.xml
-
-- task: VSBuild@1
-  inputs:
-    solution: '$(solution)'
-    msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)"'
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
-
-# - powershell: |
-#     Invoke-WebRequest -Uri "https://github.com/jeremylong/DependencyCheck/releases/download/v8.4.0/dependency-check-8.4.0-release.zip" -OutFile "dependency-check.zip"
-#     Expand-Archive -Path "dependency-check.zip" -DestinationPath "$(Agent.ToolsDirectory)\dependency-check"
-#   displayName: 'Download OWASP Dependency-Check'
-
-# - powershell: |
-#     & "$(Agent.ToolsDirectory)\dependency-check\dependency-check\bin\dependency-check.bat" `
-#     --project "TunNetCom_Silk_Road_ERP" `
-#     --scan "$(Build.SourcesDirectory)" `
-#     --format "JSON" `
-#     --out "$(Build.ArtifactStagingDirectory)\odc-report"
-#   displayName: 'Scan dependencies with OWASP Dependency-Check (JSON format)'
-
-# - task: PublishBuildArtifacts@1
-#   inputs:
-#     PathtoPublish: '$(Build.ArtifactStagingDirectory)\odc-report'
-#     ArtifactName: 'OWASP-Dependency-Report'
-#     publishLocation: 'Container'
-#   displayName: 'Publish the vulnerability report'
-
-- task: VSTest@2
-  inputs:
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
-    codeCoverageEnabled: true
-    runSettingsFile: 'test.runsettings'
-
-- task: reportgenerator@5
-  displayName: 'Convert coverage to Cobertura'
-  inputs:
-    reports: '$(Agent.TempDirectory)/TestResults/**/*.coverage'
-    targetdir: '$(Build.SourcesDirectory)/CoverageConverted'
-    reporttypes: 'Cobertura'
-
-- task: SonarCloudAnalyze@3
-
-- task: SonarCloudPublish@3
-  inputs:
-    pollingTimeoutSec: '300'
+    containerRegistry: 'TunNetCom_Dockerhub_Connection'   
+    command: buildAndPush
+    Dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
+    repository: '$(dockerRepository)'
+    tags: |
+      $(tag)-webapp
+      latest-webapp
+    arguments: '--target webapp'
