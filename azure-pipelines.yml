@@ -2,17 +2,16 @@ trigger:
 - master
 
 pool:
-  vmImage: 'windows-latest'
+  vmImage: 'ubuntu-latest'  
 
 variables:
   solution: '**/*.sln'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
   dockerRepository: 'tunnetcom/silkroad'      
-  tag: '$(Build.BuildId)'                     # <--- Unique tag each run
+  tag: '$(Build.BuildId)'
 
 steps:
-# .NET
 - task: UseDotNet@2
   displayName: 'Use .NET 10 SDK'
   inputs:
@@ -20,22 +19,6 @@ steps:
     version: '10.x'
     includePreviewVersions: false
 
-- task: NuGetToolInstaller@1
-
-- task: NuGetCommand@2
-  inputs:
-    restoreSolution: '$(solution)'
-
-- task: VSBuild@1
-  inputs:
-    solution: '$(solution)'
-    msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)"'
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
-
-# -----------------------------
-# Docker Build & Push
-# -----------------------------
 - task: Docker@2
   displayName: 'Build and Push Docker Image'
   inputs:
