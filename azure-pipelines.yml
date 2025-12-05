@@ -23,16 +23,6 @@ steps:
   inputs:
     restoreSolution: '$(solution)'
 
-- task: SonarCloudPrepare@3
-  inputs:
-    SonarQube: 'Connexion-SonarCloud'
-    organization: 'tunnetcom'
-    scannerMode: 'dotnet'
-    projectKey: 'tunnetcom_silk-road-erp'
-    projectName: 'Silk_Road_ERP'
-    extraProperties: |
-      sonar.cs.opencover.reportsPaths=$(Build.SourcesDirectory)/CoverageConverted/Cobertura.xml
-
 - task: VSBuild@1
   inputs:
     solution: '$(solution)'
@@ -40,43 +30,7 @@ steps:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
 
-# - powershell: |
-#     Invoke-WebRequest -Uri "https://github.com/jeremylong/DependencyCheck/releases/download/v8.4.0/dependency-check-8.4.0-release.zip" -OutFile "dependency-check.zip"
-#     Expand-Archive -Path "dependency-check.zip" -DestinationPath "$(Agent.ToolsDirectory)\dependency-check"
-#   displayName: 'Download OWASP Dependency-Check'
-
-# - powershell: |
-#     & "$(Agent.ToolsDirectory)\dependency-check\dependency-check\bin\dependency-check.bat" `
-#     --project "TunNetCom_Silk_Road_ERP" `
-#     --scan "$(Build.SourcesDirectory)" `
-#     --format "JSON" `
-#     --out "$(Build.ArtifactStagingDirectory)\odc-report"
-#   displayName: 'Scan dependencies with OWASP Dependency-Check (JSON format)'
-
-# - task: PublishBuildArtifacts@1
-#   inputs:
-#     PathtoPublish: '$(Build.ArtifactStagingDirectory)\odc-report'
-#     ArtifactName: 'OWASP-Dependency-Report'
-#     publishLocation: 'Container'
-#   displayName: 'Publish the vulnerability report'
-
 - task: VSTest@2
   inputs:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
-    codeCoverageEnabled: true
-    runSettingsFile: 'test.runsettings'
-  continueOnError: true  
-
-- task: reportgenerator@5
-  displayName: 'Convert coverage to Cobertura'
-  inputs:
-    reports: '$(Agent.TempDirectory)/TestResults/**/*.coverage'
-    targetdir: '$(Build.SourcesDirectory)/CoverageConverted'
-    reporttypes: 'Cobertura'
-
-- task: SonarCloudAnalyze@3
-
-- task: SonarCloudPublish@3
-  inputs:
-    pollingTimeoutSec: '300'
