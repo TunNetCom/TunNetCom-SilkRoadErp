@@ -1,21 +1,683 @@
 @page "/manage-facture-avoir-fournisseur"
 @using Microsoft.Extensions.Localization
-@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using Radzen.Blazor
+@using Radzen
+@using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice
+@using TunNetCom.SilkRoadErp.Sales.Contracts.FactureAvoirFournisseur
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Providers
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Common
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProviderInvoice
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.FactureAvoirFournisseur
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+
+@inject IProvidersApiClient providersService
+@inject IProviderInvoiceApiClient providerInvoiceService
+@inject IFactureAvoirFournisseurApiClient factureAvoirFournisseurService
+@inject NavigationManager navigationManager
 @inject IStringLocalizer<SharedResource> Localizer
-@inject NavigationManager NavigationManager
+@inject Radzen.NotificationService NotificationService
+@inject DialogService DialogService
 
-<RadzenCard>
-    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
-        <RadzenText TextStyle="TextStyle.H3">Gérer les factures avoir fournisseur</RadzenText>
-        <RadzenText TextStyle="TextStyle.Body1">
-            Créer et modifier les factures avoir fournisseur.
-        </RadzenText>
-        <RadzenButton Text="Ajouter facture avoir fournisseur" 
-                      Icon="add" 
+<div style="padding: 0.5rem 1.5rem 1.5rem 1.5rem; min-height: 100vh;">
+    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+        <label style="font-weight: 600;
+                      font-size: 0.9rem;
+                      white-space: nowrap;
+                      margin: 0;">
+            @Localizer["select_provider"]
+        </label>
+        <RadzenDropDownDataGrid AllowClear="true"
+                                IsLoading="@isLoadingProviders"
+                                @bind-Value="@SelectedProviderId"
+                                LoadData="@LoadProviders"
+                                AllowFiltering="true"
+                                Style="flex: 1;
+                                       max-width: 500px;
+                                       border-radius: 8px;
+                                       border: 1px solid #e0e0e0;
+                                       transition: all 0.2s ease;"
+                                Data="@_providersList"
+                                TextProperty="@nameof(ProviderResponse.Nom)"
+                                ValueProperty="@nameof(ProviderResponse.Id)"
+                                Placeholder="@Localizer["select_provider"]"
+                                Class="custom-dropdown">
+            <Columns>
+                <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Id)"
+                                              Title="ID"
+                                              Width="100px" />
+                <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Nom)"
+                                              Title="Name"
+                                              Width="300px" />
+            </Columns>
+        </RadzenDropDownDataGrid>
+        <RadzenButton Icon="add"
+                      Text="Créer facture avoir fournisseur"
+                      ButtonStyle="ButtonStyle.Success"
+                      Size="ButtonSize.Small"
+                      Disabled="@(SelectedProviderId <= 0)"
+                      Click="@CreateNewFactureAvoirFournisseur"
+                      Style="border-radius: 6px; padding: 0.4rem 0.8rem; font-weight: 500; font-size: 0.85rem;" />
+    </div>
+
+    <!-- Main Content -->
+    <RadzenRow Gap="2rem">
+        <!-- Invoices Section with Master-Detail -->
+        <RadzenColumn Size="12">
+            <RadzenCard Variant="Variant.Flat"
+                        Style="padding: 1rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                <RadzenDataGrid @ref="ProviderInvoiceGrid"
+                                AllowFiltering="true"
+                                AllowPaging="true"
+                                PageSize="_defaultPageSize"
+                                PagerHorizontalAlign="HorizontalAlign.Left"
+                                ShowPagingSummary="true"
+                                AllowSorting="true"
+                                Count="@_invoicesList.Invoices.TotalCount"
+                                Data="@_invoicesWithFactureAvoir"
+                                LoadData="@LoadInvoices"
+                                RowRender="@RowRender"
+                                ExpandMode="@expandMode"
+                                @bind-Value="@SelectedInvoices"
+                                IsLoading="@isLoadingInvoices"
+                                SelectionMode="DataGridSelectionMode.Single"
+                                Style="border: none;"
+                                Class="custom-grid">
+                    <EmptyTemplate>
+                        <p style="font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
+                    </EmptyTemplate>
+                    <HeaderTemplate>
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 0.75rem;">
+                            <div style="font-size: 1.1rem; font-weight: 600;">
+                                Factures fournisseur
+                            </div>
+                        </div>
+                    </HeaderTemplate>
+                    <Template Context="invoiceWithFactureAvoirs">
+                        @{
+                            // Load facture avoir when template is rendered for the first time
+                            if (!invoiceWithFactureAvoirs.FactureAvoirLoaded && !invoiceWithFactureAvoirs.FactureAvoirLoading)
+                            {
+                                _ = LoadFactureAvoirForInvoiceAsync(invoiceWithFactureAvoirs.Invoice.Num);
+                            }
+                        }
+                        @if (invoiceWithFactureAvoirs.FactureAvoirLoading)
+                        {
+                            <div style="padding: 1rem; text-align: center; color: #666;">
+                                <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Medium" />
+                                <p style="margin-top: 0.5rem;">@Localizer["loading"]...</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <div style="font-weight: 600; font-size: 0.9rem;">
+                                    Factures avoir fournisseur liées
+                                </div>
+                                <RadzenButton Icon="link_off"
+                                              Text="Détacher"
+                                              ButtonStyle="ButtonStyle.Danger"
+                                              Size="ButtonSize.Small"
+                                              Disabled="@(!_selectedFactureAvoirToDetach.Any())"
+                                              Click="@(() => DetachFactureAvoirFromInvoice(invoiceWithFactureAvoirs.Invoice.Num))"
+                                              Style="border-radius: 6px; padding: 0.3rem 0.6rem; font-size: 0.8rem;" />
+                            </div>
+                            <RadzenDataGrid AllowFiltering="true" 
+                                            AllowPaging="true" 
+                                            AllowSorting="true" 
+                                            Data="@(invoiceWithFactureAvoirs.FactureAvoirs ?? new List<FactureAvoirFournisseurBaseInfo>())"
+                                            TItem="FactureAvoirFournisseurBaseInfo"
+                                            Style="margin: 0.5rem 0; border: 1px solid #e0e0e0; border-radius: 4px;"
+                                            Class="detail-grid"
+                                            SelectionMode="DataGridSelectionMode.Multiple"
+                                            @bind-Value="@_selectedFactureAvoirToDetach">
+                                <EmptyTemplate>
+                                    <p style="font-size: 14px; text-align: center; margin: 1rem; color: #666;">Aucune facture avoir fournisseur liée</p>
+                                </EmptyTemplate>
+                                <Columns>
+                                    <RadzenDataGridColumn Property="@nameof(FactureAvoirFournisseurBaseInfo.Num)"
+                                                          Title="Numéro"
+                                                          Width="120px" />
+                                    <RadzenDataGridColumn Property="@nameof(FactureAvoirFournisseurBaseInfo.Date)"
+                                                          Title="@Localizer["date"]"
+                                                          Width="140px"
+                                                          FormatString="{0:d}" />
+                                    <RadzenDataGridColumn Property="@nameof(FactureAvoirFournisseurBaseInfo.TotalIncludingTaxAmount)"
+                                                          Title="Total TTC"
+                                                          Width="140px">
+                                        <Template Context="factureAvoir">
+                                            @factureAvoir.TotalIncludingTaxAmount.FormatAmount()
+                                        </Template>
+                                    </RadzenDataGridColumn>
+                                    <RadzenDataGridColumn Property="@nameof(FactureAvoirFournisseurBaseInfo.StatutLibelle)"
+                                                          Title="Statut"
+                                                          Width="120px">
+                                        <Template Context="factureAvoir">
+                                            <RadzenBadge BadgeStyle="@(factureAvoir.Statut == 1 ? BadgeStyle.Success : BadgeStyle.Light)" 
+                                                         Text="@factureAvoir.StatutLibelle" />
+                                        </Template>
+                                    </RadzenDataGridColumn>
+                                </Columns>
+                            </RadzenDataGrid>
+                        }
+                    </Template>
+                    <Columns>
+                        <RadzenDataGridColumn Property="@nameof(ProviderInvoiceResponse.Num)"
+                                              Title="Numéro"
+                                              Width="120px">
+                            <Template Context="invoiceWithFactureAvoirs">
+                                @invoiceWithFactureAvoirs.Invoice.Num
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn Property="@nameof(ProviderInvoiceResponse.ProviderInvoiceNumber)"
+                                              Title="Numéro facture fournisseur"
+                                              Width="180px">
+                            <Template Context="invoiceWithFactureAvoirs">
+                                @invoiceWithFactureAvoirs.Invoice.ProviderInvoiceNumber
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn Property="@nameof(ProviderInvoiceResponse.Date)"
+                                              Title="@Localizer["date"]"
+                                              FormatString="{0:d}"
+                                              Width="140px">
+                            <Template Context="invoiceWithFactureAvoirs">
+                                @invoiceWithFactureAvoirs.Invoice.Date.ToString("d")
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn Property="@nameof(ProviderInvoiceResponse.TotTTC)"
+                                              Title="Total TTC"
+                                              Width="140px">
+                            <Template Context="invoiceWithFactureAvoirs">
+                                @invoiceWithFactureAvoirs.Invoice.TotTTC.FormatAmount()
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn Property="@nameof(ProviderInvoiceResponse.StatutLibelle)"
+                                              Title="Statut"
+                                              Width="120px">
+                            <Template Context="invoiceWithFactureAvoirs">
+                                <RadzenBadge BadgeStyle="@(invoiceWithFactureAvoirs.Invoice.Statut == 1 ? BadgeStyle.Success : BadgeStyle.Light)" 
+                                             Text="@invoiceWithFactureAvoirs.Invoice.StatutLibelle" />
+                            </Template>
+                        </RadzenDataGridColumn>
+                    </Columns>
+                </RadzenDataGrid>
+            </RadzenCard>
+        </RadzenColumn>
+    </RadzenRow>
+
+    <!-- Unlinked Facture Avoir Fournisseur Section -->
+    <RadzenRow Style="margin-top: 2rem;">
+        <RadzenColumn Size="12">
+            <RadzenCard Variant="Variant.Flat"
+                        Style="padding: 1rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                <RadzenDataGrid @ref="_factureAvoirGrid"
+                                AllowRowSelectOnRowClick="true"
+                                AllowFiltering="true"
+                                FilterPopupRenderMode="PopupRenderMode.OnDemand"
+                                FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                AllowPaging="true"
+                                PagerHorizontalAlign="HorizontalAlign.Left"
+                                ShowPagingSummary="true"
+                                PageSize="_defaultPageSize"
+                                Count="@_unlinkedFactureAvoirWithSummary.FactureAvoirFournisseurs.TotalCount"
+                                AllowSorting="true"
+                                Data="@_unlinkedFactureAvoirWithSummary.FactureAvoirFournisseurs.Items"
+                                LoadData="LoadUnlinkedFactureAvoir"
+                                IsLoading="@isLoadingUnlinkedFactureAvoir"
+                                SelectionMode="DataGridSelectionMode.Multiple"
+                                @bind-Value="@_selectedFactureAvoirToAttach"
+                                Style="border: none;"
+                                Class="custom-grid">
+                    <EmptyTemplate>
+                        <p style="font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
+                    </EmptyTemplate>
+                    <HeaderTemplate>
+                        <div style="display: flex; align-items: center; margin-bottom: 0.75rem; gap: 1rem;">
+                            <div style="font-size: 1.1rem; font-weight: 600;">
+                                Factures avoir fournisseur non liées
+                            </div>
+                            <div style="margin-left: auto;">
+                                <RadzenButton Click="@AttachFactureAvoirToInvoiceClick"
+                                              Text="Attacher à la facture sélectionnée"
+                                              Disabled="@(SelectedInvoiceId <= 0 || !_selectedFactureAvoirToAttach.Any())"
                       ButtonStyle="ButtonStyle.Primary" 
-                      Click="@(() => NavigationManager.NavigateTo("/AddOrUpdateFactureAvoirFournisseur"))"
-                      Size="ButtonSize.Large" />
-    </RadzenStack>
+                                              Size="ButtonSize.Small"
+                                              Style="border-radius: 6px; padding: 0.4rem 0.8rem; font-weight: 500; font-size: 0.85rem;" />
+                            </div>
+                        </div>
+                    </HeaderTemplate>
+                    <Columns>
+                        <RadzenDataGridColumn Property="@nameof(FactureAvoirFournisseurBaseInfo.Num)"
+                                              Title="Numéro"
+                                              Width="120px" />
+                        <RadzenDataGridColumn Property="@nameof(FactureAvoirFournisseurBaseInfo.Date)"
+                                              Title="@Localizer["date"]"
+                                              Width="140px"
+                                              FormatString="{0:d}" />
+                        <RadzenDataGridColumn Property="@nameof(FactureAvoirFournisseurBaseInfo.TotalIncludingTaxAmount)"
+                                              Title="Total TTC"
+                                              Width="140px">
+                            <Template Context="factureAvoir">
+                                @factureAvoir.TotalIncludingTaxAmount.FormatAmount()
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn Property="@nameof(FactureAvoirFournisseurBaseInfo.StatutLibelle)"
+                                              Title="Statut"
+                                              Width="120px">
+                            <Template Context="factureAvoir">
+                                <RadzenBadge BadgeStyle="@(factureAvoir.Statut == 1 ? BadgeStyle.Success : BadgeStyle.Light)" 
+                                             Text="@factureAvoir.StatutLibelle" />
+                            </Template>
+                        </RadzenDataGridColumn>
+                    </Columns>
+                </RadzenDataGrid>
 </RadzenCard>
+        </RadzenColumn>
+    </RadzenRow>
+</div>
 
+<style>
+    .custom-grid {
+        border: none;
+    }
+
+    .detail-grid {
+        background-color: #f9fafb;
+    }
+
+    .custom-dropdown {
+        transition: all 0.2s ease;
+    }
+
+    .custom-dropdown:hover {
+        border-color: #3b82f6;
+    }
+</style>
+
+@code {
+    #region Fields and Properties
+    private const int _defaultPageSize = 5;
+    private const int _minValueId = 0;
+    private int _selectedProviderId;
+    private int SelectedProviderId
+    {
+        get => _selectedProviderId;
+        set
+        {
+            if (_selectedProviderId != value)
+            {
+                _selectedProviderId = value;
+                SelectedInvoiceId = _minValueId;
+                SelectedInvoices = new List<ProviderInvoiceWithFactureAvoir>();
+                _invoicesList = new GetProviderInvoicesWithSummary();
+                _invoicesWithFactureAvoir = new List<ProviderInvoiceWithFactureAvoir>();
+                _unlinkedFactureAvoirWithSummary = new GetFactureAvoirFournisseurWithSummariesResponse();
+                if (value > 0)
+                {
+                    _ = LoadInvoicesForProvider();
+                    _ = LoadUnlinkedFactureAvoir(new LoadDataArgs { Skip = 0, Top = _defaultPageSize });
+                }
+            }
+        }
+    }
+    private int _selectedInvoiceId;
+    private int SelectedInvoiceId
+    {
+        get => _selectedInvoiceId;
+        set
+        {
+            if (_selectedInvoiceId != value)
+            {
+                _selectedInvoiceId = value;
+            }
+        }
+    }
+    private IList<ProviderInvoiceWithFactureAvoir> _selectedInvoices = new List<ProviderInvoiceWithFactureAvoir>();
+    private IList<ProviderInvoiceWithFactureAvoir> SelectedInvoices
+    {
+        get => _selectedInvoices;
+        set
+        {
+            _selectedInvoices = value;
+            SelectedInvoiceId = _selectedInvoices?.FirstOrDefault()?.Invoice?.Num ?? _minValueId;
+            var selectedInvoice = _selectedInvoices?.FirstOrDefault();
+            if (selectedInvoice != null && !selectedInvoice.FactureAvoirLoaded)
+            {
+                _ = LoadFactureAvoirForInvoiceAsync(selectedInvoice.Invoice.Num);
+            }
+        }
+    }
+
+    bool isLoadingProviders = false;
+    bool isLoadingInvoices = false;
+    bool isLoadingUnlinkedFactureAvoir = false;
+    private IList<ProviderResponse> _providersList = new List<ProviderResponse>();
+    private IList<FactureAvoirFournisseurBaseInfo> _selectedFactureAvoirToDetach = new List<FactureAvoirFournisseurBaseInfo>();
+    private IList<FactureAvoirFournisseurBaseInfo> _selectedFactureAvoirToAttach { get; set; } = new List<FactureAvoirFournisseurBaseInfo>();
+    private CancellationTokenSource _cancellationTokenSource = new();
+    private RadzenDataGrid<FactureAvoirFournisseurBaseInfo> _factureAvoirGrid;
+    private RadzenDataGrid<ProviderInvoiceWithFactureAvoir> ProviderInvoiceGrid;
+    private GetProviderInvoicesWithSummary _invoicesList = new GetProviderInvoicesWithSummary();
+    private GetFactureAvoirFournisseurWithSummariesResponse _unlinkedFactureAvoirWithSummary = new GetFactureAvoirFournisseurWithSummariesResponse();
+    
+    // Master-detail model
+    public class ProviderInvoiceWithFactureAvoir
+    {
+        public ProviderInvoiceResponse Invoice { get; set; } = null!;
+        public List<FactureAvoirFournisseurBaseInfo> FactureAvoirs { get; set; } = new();
+        public bool FactureAvoirLoaded { get; set; } = false;
+        public bool FactureAvoirLoading { get; set; } = false;
+    }
+    
+    private List<ProviderInvoiceWithFactureAvoir> _invoicesWithFactureAvoir = new List<ProviderInvoiceWithFactureAvoir>();
+    DataGridExpandMode expandMode = DataGridExpandMode.Multiple;
+    #endregion
+
+    #region Lifecycle Methods
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProviders(new LoadDataArgs { Skip = 0, Top = 100 });
+    }
+    #endregion
+
+    #region Load Methods
+    private async Task LoadProviders(LoadDataArgs args)
+    {
+        isLoadingProviders = true;
+        try
+        {
+            var parameters = new QueryStringParameters
+            {
+                PageNumber = 1,
+                PageSize = 100,
+                SearchKeyword = args?.Filter ?? string.Empty
+            };
+            var pagedProviders = await providersService.GetPagedAsync(parameters, _cancellationTokenSource.Token);
+            _providersList = pagedProviders.Items.ToList();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Erreur lors du chargement des fournisseurs: {ex.Message}"
+            });
+        }
+        finally
+        {
+            isLoadingProviders = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task LoadInvoicesForProvider()
+    {
+        if (SelectedProviderId <= 0) return;
+        await LoadInvoices(new LoadDataArgs { Skip = 0, Top = _defaultPageSize });
+    }
+
+    private async Task LoadInvoices(LoadDataArgs args)
+    {
+        if (SelectedProviderId <= 0)
+        {
+            _invoicesWithFactureAvoir = new List<ProviderInvoiceWithFactureAvoir>();
+            return;
+        }
+
+        isLoadingInvoices = true;
+        try
+        {
+            var pageNumber = (args.Skip ?? 0) / _defaultPageSize + 1;
+            var query = new QueryStringParameters
+            {
+                PageNumber = pageNumber,
+                PageSize = _defaultPageSize,
+                SearchKeyword = args.Filter
+            };
+
+            var invoicesResult = await providerInvoiceService.GetProvidersInvoicesAsync(SelectedProviderId, query, _cancellationTokenSource.Token);
+            if (invoicesResult.IsT0)
+            {
+                _invoicesList = invoicesResult.AsT0;
+                _invoicesWithFactureAvoir = _invoicesList.Invoices.Items.Select(inv => new ProviderInvoiceWithFactureAvoir
+                {
+                    Invoice = inv,
+                    FactureAvoirs = new List<FactureAvoirFournisseurBaseInfo>(),
+                    FactureAvoirLoaded = false,
+                    FactureAvoirLoading = false
+                }).ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Erreur lors du chargement des factures: {ex.Message}"
+            });
+        }
+        finally
+        {
+            isLoadingInvoices = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task LoadFactureAvoirForInvoiceAsync(int invoiceNum)
+    {
+        var invoiceWithFactureAvoirs = _invoicesWithFactureAvoir.FirstOrDefault(i => i.Invoice.Num == invoiceNum);
+        if (invoiceWithFactureAvoirs == null || invoiceWithFactureAvoirs.FactureAvoirLoading) return;
+
+        invoiceWithFactureAvoirs.FactureAvoirLoading = true;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            var factureAvoirResult = await factureAvoirFournisseurService.GetFactureAvoirFournisseurWithSummariesAsync(
+                idFournisseur: null,
+                numFactureFournisseur: invoiceNum,
+                sortOrder: null,
+                sortProperty: null,
+                pageNumber: 1,
+                pageSize: 100,
+                searchKeyword: null,
+                startDate: null,
+                endDate: null,
+                _cancellationTokenSource.Token);
+
+            invoiceWithFactureAvoirs.FactureAvoirs = factureAvoirResult.FactureAvoirFournisseurs.Items.ToList();
+            invoiceWithFactureAvoirs.FactureAvoirLoaded = true;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Erreur lors du chargement des factures avoir: {ex.Message}"
+            });
+        }
+        finally
+        {
+            invoiceWithFactureAvoirs.FactureAvoirLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task LoadUnlinkedFactureAvoir(LoadDataArgs args)
+    {
+        if (SelectedProviderId <= 0)
+        {
+            _unlinkedFactureAvoirWithSummary = new GetFactureAvoirFournisseurWithSummariesResponse();
+            return;
+        }
+
+        isLoadingUnlinkedFactureAvoir = true;
+        try
+        {
+            var pageNumber = (args.Skip ?? 0) / _defaultPageSize + 1;
+            var factureAvoirResult = await factureAvoirFournisseurService.GetFactureAvoirFournisseurWithSummariesAsync(
+                idFournisseur: SelectedProviderId,
+                numFactureFournisseur: null, // Only unlinked
+                sortOrder: null,
+                sortProperty: null,
+                pageNumber: pageNumber,
+                pageSize: _defaultPageSize,
+                searchKeyword: args.Filter,
+                startDate: null,
+                endDate: null,
+                _cancellationTokenSource.Token);
+
+            // Filter to only show unlinked facture avoir (NumFactureFournisseur is null)
+            factureAvoirResult.FactureAvoirFournisseurs.Items = factureAvoirResult.FactureAvoirFournisseurs.Items
+                .Where(f => !f.NumFactureFournisseur.HasValue)
+                .ToList();
+            factureAvoirResult.FactureAvoirFournisseurs.TotalCount = factureAvoirResult.FactureAvoirFournisseurs.Items.Count;
+
+            _unlinkedFactureAvoirWithSummary = factureAvoirResult;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Erreur lors du chargement des factures avoir non liées: {ex.Message}"
+            });
+        }
+        finally
+        {
+            isLoadingUnlinkedFactureAvoir = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+    #endregion
+
+    #region Action Methods
+    private void CreateNewFactureAvoirFournisseur()
+    {
+        navigationManager.NavigateTo("/AddOrUpdateFactureAvoirFournisseur");
+    }
+
+    private async Task AttachFactureAvoirToInvoiceClick()
+    {
+        if (SelectedInvoiceId <= 0 || !_selectedFactureAvoirToAttach.Any())
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["warning"],
+                Detail = "Veuillez sélectionner une facture fournisseur et au moins une facture avoir fournisseur"
+            });
+            return;
+        }
+
+        try
+        {
+            var factureAvoirIds = _selectedFactureAvoirToAttach.Select(f => f.Num).ToList();
+            var result = await factureAvoirFournisseurService.AttachFactureAvoirFournisseurToInvoiceAsync(
+                factureAvoirIds,
+                SelectedInvoiceId,
+                _cancellationTokenSource.Token);
+
+            if (result.IsSuccess)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = Localizer["success"],
+                    Detail = "Factures avoir fournisseur attachées avec succès"
+                });
+
+                // Reload data
+                _selectedFactureAvoirToAttach = new List<FactureAvoirFournisseurBaseInfo>();
+                await LoadFactureAvoirForInvoiceAsync(SelectedInvoiceId);
+                await LoadUnlinkedFactureAvoir(new LoadDataArgs { Skip = 0, Top = _defaultPageSize });
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = $"Erreur lors de l'attachement: {result.Errors.First().Message}"
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Erreur lors de l'attachement: {ex.Message}"
+            });
+        }
+    }
+
+    private async Task DetachFactureAvoirFromInvoice(int invoiceNum)
+    {
+        if (!_selectedFactureAvoirToDetach.Any())
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["warning"],
+                Detail = "Veuillez sélectionner au moins une facture avoir fournisseur à détacher"
+            });
+            return;
+        }
+
+        try
+        {
+            var factureAvoirIds = _selectedFactureAvoirToDetach.Select(f => f.Num).ToList();
+            var result = await factureAvoirFournisseurService.DetachFactureAvoirFournisseurFromInvoiceAsync(
+                factureAvoirIds,
+                invoiceNum,
+                _cancellationTokenSource.Token);
+
+            if (result.IsSuccess)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = Localizer["success"],
+                    Detail = "Factures avoir fournisseur détachées avec succès"
+                });
+
+                // Reload data
+                _selectedFactureAvoirToDetach = new List<FactureAvoirFournisseurBaseInfo>();
+                await LoadFactureAvoirForInvoiceAsync(invoiceNum);
+                await LoadUnlinkedFactureAvoir(new LoadDataArgs { Skip = 0, Top = _defaultPageSize });
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = $"Erreur lors du détachement: {result.Errors.First().Message}"
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Erreur lors du détachement: {ex.Message}"
+            });
+        }
+    }
+
+    void RowRender(RowRenderEventArgs<ProviderInvoiceWithFactureAvoir> args)
+    {
+        // Make row expandable
+        args.Expandable = true;
+    }
+    #endregion
+}

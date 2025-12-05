@@ -32,5 +32,15 @@ public interface IFactureAvoirFournisseurApiClient
         int num,
         UpdateFactureAvoirFournisseurRequest request,
         CancellationToken cancellationToken);
+
+    Task<Result> AttachFactureAvoirFournisseurToInvoiceAsync(
+        List<int> factureAvoirFournisseurIds,
+        int factureFournisseurId,
+        CancellationToken cancellationToken);
+
+    Task<Result> DetachFactureAvoirFournisseurFromInvoiceAsync(
+        List<int> factureAvoirFournisseurIds,
+        int factureFournisseurId,
+        CancellationToken cancellationToken);
 }
 

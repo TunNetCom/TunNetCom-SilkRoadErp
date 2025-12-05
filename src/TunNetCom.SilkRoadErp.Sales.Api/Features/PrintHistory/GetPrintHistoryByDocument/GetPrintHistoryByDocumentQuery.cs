@@ -7,3 +7,4 @@ public record GetPrintHistoryByDocumentQuery(
     int DocumentId) : IRequest<List<PrintHistoryResponse>>;
 
 
+

@@ -170,5 +170,71 @@ public class FactureAvoirFournisseurApiClient : IFactureAvoirFournisseurApiClien
 
         throw new Exception($"FactureAvoirFournisseur: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
     }
+
+    public async Task<Result> AttachFactureAvoirFournisseurToInvoiceAsync(
+        List<int> factureAvoirFournisseurIds,
+        int factureFournisseurId,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Attaching facture avoir fournisseur to invoice via API /facture-avoir-fournisseur/attach-to-invoice");
+        var request = new AttachFactureAvoirFournisseurToInvoiceRequest
+        {
+            FactureAvoirFournisseurIds = factureAvoirFournisseurIds,
+            FactureFournisseurId = factureFournisseurId
+        };
+
+        var response = await _httpClient.PutAsJsonAsync("/facture-avoir-fournisseur/attach-to-invoice", request, cancellationToken: cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.NoContent)
+        {
+            return Result.Ok();
+        }
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return Result.Fail("not_found");
+        }
+
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            var badRequest = await response.ReadJsonAsync<BadRequestResponse>();
+            return Result.Fail($"validation_error: {JsonConvert.SerializeObject(badRequest)}");
+        }
+
+        throw new Exception($"FactureAvoirFournisseur: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
+    }
+
+    public async Task<Result> DetachFactureAvoirFournisseurFromInvoiceAsync(
+        List<int> factureAvoirFournisseurIds,
+        int factureFournisseurId,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Detaching facture avoir fournisseur from invoice via API /facture-avoir-fournisseur/detach-from-invoice");
+        var request = new DetachFactureAvoirFournisseurFromInvoiceRequest
+        {
+            FactureAvoirFournisseurIds = factureAvoirFournisseurIds,
+            FactureFournisseurId = factureFournisseurId
+        };
+
+        var response = await _httpClient.PutAsJsonAsync("/facture-avoir-fournisseur/detach-from-invoice", request, cancellationToken: cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.NoContent)
+        {
+            return Result.Ok();
+        }
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return Result.Fail("not_found");
+        }
+
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            var badRequest = await response.ReadJsonAsync<BadRequestResponse>();
+            return Result.Fail($"validation_error: {JsonConvert.SerializeObject(badRequest)}");
+        }
+
+        throw new Exception($"FactureAvoirFournisseur: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
+    }
 }
 
