@@ -35,28 +35,30 @@ steps:
     configuration: '$(buildConfiguration)'
 
 # -----------------------------
-# Build API Docker Image
+# Build API Docker Image (target the "api" stage)
 # -----------------------------
 - task: Docker@2
   displayName: 'Build and Push API Docker Image'
   inputs:
     containerRegistry: 'TunNetCom_Dockerhub_Connection'   
     command: buildAndPush
-    Dockerfile: '$(Build.SourcesDirectory)/Dockerfile.api'  # <-- API Dockerfile
+    Dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
+    arguments: '--target api'  # <-- Target the API stage
     repository: '$(dockerRepository)'
     tags: |
       $(apiTag)
       latest-api
 
 # -----------------------------
-# Build WebApp Docker Image
+# Build WebApp Docker Image (target the "webapp" stage)
 # -----------------------------
 - task: Docker@2
   displayName: 'Build and Push WebApp Docker Image'
   inputs:
     containerRegistry: 'TunNetCom_Dockerhub_Connection'   
     command: buildAndPush
-    Dockerfile: '$(Build.SourcesDirectory)/Dockerfile.webapp'  # <-- WebApp Dockerfile
+    Dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
+    arguments: '--target webapp'  # <-- Target the WebApp stage
     repository: '$(dockerRepository)'
     tags: |
       $(webappTag)
