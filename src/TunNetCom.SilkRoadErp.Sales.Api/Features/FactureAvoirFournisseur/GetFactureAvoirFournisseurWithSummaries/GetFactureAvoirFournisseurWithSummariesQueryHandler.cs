@@ -10,6 +10,8 @@ public class GetFactureAvoirFournisseurWithSummariesQueryHandler(
     private const string _numColumnName = nameof(FactureAvoirFournisseurBaseInfo.Num);
     private const string _dateColumnName = nameof(FactureAvoirFournisseurBaseInfo.Date);
     private const string _totalExcludingTaxAmountColumnName = nameof(FactureAvoirFournisseurBaseInfo.TotalExcludingTaxAmount);
+    private const string _statutColumnName = nameof(FactureAvoirFournisseurBaseInfo.Statut);
+    private const string _statutLibelleColumnName = nameof(FactureAvoirFournisseurBaseInfo.StatutLibelle);
 
     public async Task<GetFactureAvoirFournisseurWithSummariesResponse> Handle(
         GetFactureAvoirFournisseurWithSummariesQuery request,
@@ -17,73 +19,132 @@ public class GetFactureAvoirFournisseurWithSummariesQueryHandler(
     {
         _logger.LogPaginationRequest(nameof(FactureAvoirFournisseur), request.PageNumber, request.PageSize);
 
-        var factureAvoirFournisseursQuery = (from f in _context.FactureAvoirFournisseur
-                                            join fournisseur in _context.Fournisseur on f.IdFournisseur equals fournisseur.Id
-                                            select new FactureAvoirFournisseurBaseInfo
-                                            {
-                                                Num = f.Num,
-                                                NumFactureAvoirFourSurPage = f.NumFactureAvoirFourSurPage,
-                                                Date = f.Date,
-                                                IdFournisseur = f.IdFournisseur,
-                                                FournisseurName = fournisseur.Nom,
-                                                NumFactureFournisseur = f.NumFactureFournisseur,
-                                                TotalExcludingTaxAmount = f.AvoirFournisseur.Sum(a => a.LigneAvoirFournisseur.Sum(l => l.TotHt)),
-                                                TotalVATAmount = f.AvoirFournisseur.Sum(a => a.LigneAvoirFournisseur.Sum(l => l.TotTtc - l.TotHt)),
-                                                TotalIncludingTaxAmount = f.AvoirFournisseur.Sum(a => a.LigneAvoirFournisseur.Sum(l => l.TotTtc))
-                                            })
-                                            .AsNoTracking()
-                                            .AsQueryable();
+        // Build base query with filters to avoid loading all data
+        var baseQuery = from f in _context.FactureAvoirFournisseur
+                        join fournisseur in _context.Fournisseur on f.IdFournisseur equals fournisseur.Id
+                        select new { f, fournisseur };
 
+        // Apply filters before loading
         if (request.IdFournisseur.HasValue)
         {
-            factureAvoirFournisseursQuery = factureAvoirFournisseursQuery.Where(f => f.IdFournisseur == request.IdFournisseur.Value);
+            baseQuery = baseQuery.Where(x => x.f.IdFournisseur == request.IdFournisseur.Value);
         }
 
         if (request.NumFactureFournisseur.HasValue)
         {
-            factureAvoirFournisseursQuery = factureAvoirFournisseursQuery.Where(f => f.NumFactureFournisseur == request.NumFactureFournisseur.Value);
+            baseQuery = baseQuery.Where(x => x.f.NumFactureFournisseur == request.NumFactureFournisseur.Value);
         }
 
         // Apply Date Range filters
         if (request.StartDate.HasValue)
         {
             _logger.LogInformation("Applying start date filter: {startDate}", request.StartDate);
-            factureAvoirFournisseursQuery = factureAvoirFournisseursQuery.Where(f => f.Date >= request.StartDate.Value);
+            baseQuery = baseQuery.Where(x => x.f.Date >= request.StartDate.Value);
         }
         if (request.EndDate.HasValue)
         {
             _logger.LogInformation("Applying end date filter: {endDate}", request.EndDate);
-            factureAvoirFournisseursQuery = factureAvoirFournisseursQuery.Where(f => f.Date <= request.EndDate.Value);
+            baseQuery = baseQuery.Where(x => x.f.Date <= request.EndDate.Value);
         }
 
         // Apply search keyword
         if (!string.IsNullOrEmpty(request.SearchKeyword))
         {
-            factureAvoirFournisseursQuery = factureAvoirFournisseursQuery.Where(f =>
-                (f.FournisseurName != null && f.FournisseurName.Contains(request.SearchKeyword)) ||
-                f.Num.ToString().Contains(request.SearchKeyword));
+            baseQuery = baseQuery.Where(x =>
+                (x.fournisseur.Nom != null && x.fournisseur.Nom.Contains(request.SearchKeyword)) ||
+                x.f.Num.ToString().Contains(request.SearchKeyword));
         }
 
-        // Apply Sorting
+        // Query 1: Get totals directly from database (OData-style aggregation)
+        // Calculate totals directly from line items without loading all data
+        _logger.LogInformation("Getting totals from database");
+        var totalsQuery = from x in baseQuery
+                          from a in x.f.AvoirFournisseur
+                          from l in a.LigneAvoirFournisseur
+                          select new
+                          {
+                              TotalExcludingTaxAmount = l.TotHt,
+                              TotalVATAmount = l.TotTtc - l.TotHt,
+                              TotalIncludingTaxAmount = l.TotTtc
+                          };
+
+        var totalVatAmount = await totalsQuery.SumAsync(x => x.TotalVATAmount, cancellationToken);
+        var totalNetAmount = await totalsQuery.SumAsync(x => x.TotalExcludingTaxAmount, cancellationToken);
+        var totalIncludingTaxAmount = await totalsQuery.SumAsync(x => x.TotalIncludingTaxAmount, cancellationToken);
+
+        // Query 2: Get paginated data with calculations
+        // Load data first to avoid SQL conversion issues with Statut (enum -> string -> int)
+        _logger.LogInformation("Getting paginated data from database");
+        
+        // Build query with calculations but without Statut/StatutLibelle to avoid SQL conversion issues
+        var factureAvoirQueryWithTotals = baseQuery
+            .Select(x => new
+            {
+                f = x.f,
+                fournisseur = x.fournisseur,
+                TotalExcludingTaxAmount = x.f.AvoirFournisseur.Sum(a => a.LigneAvoirFournisseur.Sum(l => l.TotHt)),
+                TotalVATAmount = x.f.AvoirFournisseur.Sum(a => a.LigneAvoirFournisseur.Sum(l => l.TotTtc - l.TotHt)),
+                TotalIncludingTaxAmount = x.f.AvoirFournisseur.Sum(a => a.LigneAvoirFournisseur.Sum(l => l.TotTtc))
+            });
+
+        // Apply sorting in SQL before loading (using Statut as int for sorting)
         if (request.SortOrder != null && request.SortProperty != null)
         {
             _logger.LogInformation(
                 "Sorting facture avoir fournisseurs column: {column} order: {order}",
                 request.SortProperty,
                 request.SortOrder);
-            factureAvoirFournisseursQuery = ApplySorting(factureAvoirFournisseursQuery, request.SortProperty, request.SortOrder);
+            
+            // Map StatutLibelle to Statut for SQL sorting
+            var sortProperty = request.SortProperty == _statutLibelleColumnName ? _statutColumnName : request.SortProperty;
+            var isAscending = request.SortOrder == SortConstants.Ascending;
+
+            factureAvoirQueryWithTotals = sortProperty switch
+            {
+                _numColumnName => isAscending 
+                    ? factureAvoirQueryWithTotals.OrderBy(x => x.f.Num)
+                    : factureAvoirQueryWithTotals.OrderByDescending(x => x.f.Num),
+                _dateColumnName => isAscending
+                    ? factureAvoirQueryWithTotals.OrderBy(x => x.f.Date)
+                    : factureAvoirQueryWithTotals.OrderByDescending(x => x.f.Date),
+                _totalExcludingTaxAmountColumnName => isAscending
+                    ? factureAvoirQueryWithTotals.OrderBy(x => x.TotalExcludingTaxAmount)
+                    : factureAvoirQueryWithTotals.OrderByDescending(x => x.TotalExcludingTaxAmount),
+                _statutColumnName => isAscending
+                    ? factureAvoirQueryWithTotals.OrderBy(x => (int)x.f.Statut)
+                    : factureAvoirQueryWithTotals.OrderByDescending(x => (int)x.f.Statut),
+                _ => factureAvoirQueryWithTotals
+            };
         }
 
-        _logger.LogInformation("Getting totals");
-        var totalVatAmount = await factureAvoirFournisseursQuery.SumAsync(f => f.TotalVATAmount, cancellationToken);
-        var totalNetAmount = await factureAvoirFournisseursQuery.SumAsync(f => f.TotalExcludingTaxAmount, cancellationToken);
-        var totalIncludingTaxAmount = await factureAvoirFournisseursQuery.SumAsync(f => f.TotalIncludingTaxAmount, cancellationToken);
+        // Get total count before pagination
+        var totalCount = await factureAvoirQueryWithTotals.CountAsync(cancellationToken);
 
-        var pagedFactureAvoirFournisseurs = await PagedList<FactureAvoirFournisseurBaseInfo>.ToPagedListAsync(
-            factureAvoirFournisseursQuery,
-            request.PageNumber,
-            request.PageSize,
-            cancellationToken);
+        // Apply pagination and load only the page needed
+        var factureAvoirData = await factureAvoirQueryWithTotals
+            .Skip((request.PageNumber - 1) * request.PageSize)
+            .Take(request.PageSize)
+            .ToListAsync(cancellationToken);
+
+        // Map to DTO in memory to avoid SQL conversion issues with Statut enum (like InvoiceBaseInfosController)
+        var items = factureAvoirData
+            .Select(x => new FactureAvoirFournisseurBaseInfo
+            {
+                Num = x.f.Num,
+                NumFactureAvoirFourSurPage = x.f.NumFactureAvoirFourSurPage,
+                Date = new DateTimeOffset(x.f.Date, TimeSpan.Zero),
+                IdFournisseur = x.f.IdFournisseur,
+                FournisseurName = x.fournisseur.Nom,
+                NumFactureFournisseur = x.f.NumFactureFournisseur,
+                TotalExcludingTaxAmount = x.TotalExcludingTaxAmount,
+                TotalVATAmount = x.TotalVATAmount,
+                TotalIncludingTaxAmount = x.TotalIncludingTaxAmount,
+                Statut = (int)x.f.Statut,
+                StatutLibelle = x.f.Statut.ToString()
+            })
+            .ToList();
+
+        var pagedFactureAvoirFournisseurs = new PagedList<FactureAvoirFournisseurBaseInfo>(items, totalCount, request.PageNumber, request.PageSize);
 
         var response = new GetFactureAvoirFournisseurWithSummariesResponse
         {
@@ -110,6 +171,10 @@ public class GetFactureAvoirFournisseurWithSummariesQueryHandler(
             (_dateColumnName, SortConstants.Descending) => factureQuery.OrderByDescending(f => f.Date),
             (_totalExcludingTaxAmountColumnName, SortConstants.Ascending) => factureQuery.OrderBy(f => f.TotalExcludingTaxAmount),
             (_totalExcludingTaxAmountColumnName, SortConstants.Descending) => factureQuery.OrderByDescending(f => f.TotalExcludingTaxAmount),
+            (_statutColumnName, SortConstants.Ascending) => factureQuery.OrderBy(f => f.Statut),
+            (_statutColumnName, SortConstants.Descending) => factureQuery.OrderByDescending(f => f.Statut),
+            (_statutLibelleColumnName, SortConstants.Ascending) => factureQuery.OrderBy(f => f.Statut), // Sort by Statut (int) when sorting by StatutLibelle
+            (_statutLibelleColumnName, SortConstants.Descending) => factureQuery.OrderByDescending(f => f.Statut), // Sort by Statut (int) when sorting by StatutLibelle
             _ => factureQuery
         };
     }

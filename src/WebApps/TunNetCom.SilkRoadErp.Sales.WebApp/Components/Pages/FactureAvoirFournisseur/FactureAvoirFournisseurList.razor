@@ -19,6 +19,7 @@
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
 @inject NavigationManager NavigationManager
 @inject ITagsApiClient TagsService
+@inject DialogService DialogService
 
 <div class="invoices-list-container">
     <div class="search-header">
@@ -452,9 +453,27 @@
         public int? SelectedFournisseurId { get; set; }
     }
 
-    private void EditFactureAvoirFournisseur(int num)
+    private async Task EditFactureAvoirFournisseur(int num)
     {
-        NavigationManager.NavigateTo($"/AddOrUpdateFactureAvoirFournisseur/{num}");
+        var result = await DialogService.OpenAsync<AddOrUpdateFactureAvoirFournisseurDialog>(
+            "Modifier la facture avoir fournisseur",
+            new Dictionary<string, object>
+            {
+                { "FactureAvoirNum", num }
+            },
+            new DialogOptions
+            {
+                Width = "1200px",
+                Height = "800px",
+                Resizable = true,
+                Draggable = true
+            });
+
+        if (result == true)
+        {
+            // Reload data after successful update
+            await Callback(new LoadDataArgs { Skip = 0, Top = pageSize });
+        }
     }
 }
 

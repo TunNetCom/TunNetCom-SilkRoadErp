@@ -157,8 +157,20 @@ public class AuthService : IAuthService
                 return;
             }
             
-            AccessToken = await loadTask;
-            _logger.LogInformation("LoadTokenFromStorageAsync: Token loaded. HasToken: {HasToken}", !string.IsNullOrEmpty(AccessToken));
+            var tokenFromStorage = await loadTask;
+            
+            if (!string.IsNullOrEmpty(tokenFromStorage))
+            {
+                // Set the token - this will store it in TokenStore with the current circuit ID
+                AccessToken = tokenFromStorage;
+                _logger.LogInformation("LoadTokenFromStorageAsync: Token loaded and stored in TokenStore. HasToken: {HasToken}, CircuitId: {CircuitId}", 
+                    !string.IsNullOrEmpty(AccessToken), _circuitIdService.GetCircuitId());
+            }
+            else
+            {
+                _logger.LogWarning("LoadTokenFromStorageAsync: No token found in localStorage");
+                AccessToken = null;
+            }
         }
         catch (JSDisconnectedException ex)
         {

@@ -1,0 +1,290 @@
+@using Radzen.Blazor
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.FactureAvoirFournisseur
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Providers
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Common
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.FactureAvoirFournisseur
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using Radzen
+
+@inject IStringLocalizer<SharedResource> Localizer
+@inject Radzen.NotificationService NotificationService
+@inject IFactureAvoirFournisseurApiClient factureAvoirFournisseurApiClient
+@inject IProvidersApiClient providersApiClient
+@inject ILogger<AddOrUpdateFactureAvoirFournisseurDialog> logger
+@inject DialogService DialogService
+
+<RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1.5rem" Style="min-width: 800px; max-width: 1200px;">
+    @if (isLoading)
+    {
+        <RadzenProgressBarCircular ProgressBarStyle="ProgressBarStyle.Primary" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+    }
+    else
+    {
+        <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" Style="flex-wrap: wrap; align-items: center;">
+                <RadzenLabel Text="Numéro facture avoir fournisseur" Style="min-width: 200px;" />
+                <RadzenTextBox @bind-Value="factureAvoirNumber" Style="width: 150px;" ReadOnly="true" />
+            </RadzenStack>
+
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" Style="flex-wrap: wrap; align-items: center;">
+                <RadzenLabel Text="@Localizer["date"]" Style="min-width: 200px;" />
+                <RadzenDatePicker @bind-Value="factureAvoirDate" Style="width: 200px;" DateFormat="d MMMM yyyy" ShowTime="false" />
+            </RadzenStack>
+
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" Style="flex-wrap: wrap; align-items: center;">
+                <RadzenLabel Text="Fournisseur" Style="min-width: 200px;" />
+                <RadzenDropDownDataGrid AllowClear="true"
+                                        IsLoading="@isLoadingProviders"
+                                        @bind-Value="@selectedFournisseurId"
+                                        LoadData="@LoadProviders"
+                                        AllowFiltering="true"
+                                        Style="width: 350px;"
+                                        Data="@_filteredProviders"
+                                        TextProperty="@nameof(ProviderResponse.Nom)"
+                                        ValueProperty="@nameof(ProviderResponse.Id)"
+                                        Placeholder="Sélectionner un fournisseur"
+                                        Change="@OnFournisseurChanged">
+                    <Columns>
+                        <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Id)" Title="ID" Width="80px" />
+                        <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Nom)" Title="@Localizer["name"]" Width="220px" />
+                    </Columns>
+                </RadzenDropDownDataGrid>
+            </RadzenStack>
+        </RadzenStack>
+
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End">
+            <RadzenButton Text="Annuler" 
+                          Icon="cancel" 
+                          ButtonStyle="ButtonStyle.Light" 
+                          Click="@(() => DialogService.Close(false))" />
+            <RadzenButton Text="Enregistrer" 
+                          Icon="save" 
+                          ButtonStyle="ButtonStyle.Primary" 
+                          Click="@SaveFactureAvoirFournisseur"
+                          IsBusy="@isSaving" />
+        </RadzenStack>
+    }
+</RadzenStack>
+
+@code {
+    [Parameter] public int? FactureAvoirNum { get; set; }
+    [Parameter] public int? InitialFournisseurId { get; set; }
+    
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private bool isLoadingProviders = false;
+    
+    private string factureAvoirNumber = string.Empty;
+    private DateTime factureAvoirDate = DateTime.Now;
+    private int? _selectedFournisseurId;
+    private int? selectedFournisseurId
+    {
+        get => _selectedFournisseurId;
+        set
+        {
+            _selectedFournisseurId = value;
+        }
+    }
+    
+    private List<ProviderResponse> _filteredProviders = new();
+    
+    private CancellationTokenSource _cancellationTokenSource = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        
+        // Set initial fournisseur if provided
+        if (InitialFournisseurId.HasValue)
+        {
+            _selectedFournisseurId = InitialFournisseurId.Value;
+        }
+        
+        await LoadProviders(null);
+        await FetchFactureAvoirFournisseur();
+        isLoading = false;
+    }
+
+    private async Task LoadProviders(LoadDataArgs args)
+    {
+        isLoadingProviders = true;
+        var parameters = new QueryStringParameters
+        {
+            PageNumber = 1,
+            PageSize = 100,
+            SearchKeyword = args?.Filter ?? string.Empty
+        };
+
+        try
+        {
+            var pagedProviders = await providersApiClient.GetPagedAsync(parameters, _cancellationTokenSource.Token);
+            _filteredProviders = pagedProviders.Items;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Échec du chargement des fournisseurs: {ex.Message}"
+            });
+            _filteredProviders = new List<ProviderResponse>();
+        }
+
+        isLoadingProviders = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnFournisseurChanged(object? value)
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+    private async Task FetchFactureAvoirFournisseur()
+    {
+        if (!FactureAvoirNum.HasValue)
+        {
+            return;
+        }
+
+        try
+        {
+            var factureAvoir = await factureAvoirFournisseurApiClient.GetFullFactureAvoirFournisseurAsync(FactureAvoirNum.Value, _cancellationTokenSource.Token);
+
+            if (factureAvoir.IsSuccess && factureAvoir.Value != null)
+            {
+                var factureAvoirData = factureAvoir.Value;
+                factureAvoirNumber = factureAvoirData.Num.ToString();
+                factureAvoirDate = factureAvoirData.Date;
+                selectedFournisseurId = factureAvoirData.IdFournisseur;
+            }
+        }
+        catch (Exception e)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Échec du chargement: {e.Message}"
+            });
+
+            logger.LogError(e, "Failed to fetch facture avoir fournisseur");
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SaveFactureAvoirFournisseur()
+    {
+        if (!selectedFournisseurId.HasValue)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["warning"],
+                Detail = "Veuillez sélectionner un fournisseur"
+            });
+            return;
+        }
+
+        try
+        {
+            isSaving = true;
+            StateHasChanged();
+
+            var avoirFournisseurIds = new List<int>();
+
+            // Check if we're in edit mode
+            bool isEditMode = FactureAvoirNum.HasValue;
+
+            if (isEditMode)
+            {
+                var updateRequest = new UpdateFactureAvoirFournisseurRequest
+                {
+                    Date = factureAvoirDate,
+                    IdFournisseur = selectedFournisseurId.Value,
+                    NumFactureFournisseur = null,
+                    AvoirFournisseurIds = avoirFournisseurIds
+                };
+
+                var updateResponse = await factureAvoirFournisseurApiClient.UpdateFactureAvoirFournisseurAsync(FactureAvoirNum.Value, updateRequest, _cancellationTokenSource.Token);
+
+                if (updateResponse.IsSuccess)
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = Localizer["success"],
+                        Detail = "Facture avoir fournisseur mise à jour avec succès"
+                    });
+                    DialogService.Close(true);
+                }
+                else
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = Localizer["error"],
+                        Detail = $"Échec de la mise à jour: {updateResponse.Errors.First().Message}"
+                    });
+                }
+            }
+            else
+            {
+                var createRequest = new CreateFactureAvoirFournisseurRequest
+                {
+                    Date = factureAvoirDate,
+                    IdFournisseur = selectedFournisseurId.Value,
+                    NumFactureFournisseur = null,
+                    AvoirFournisseurIds = avoirFournisseurIds
+                };
+
+                var createResponse = await factureAvoirFournisseurApiClient.CreateFactureAvoirFournisseur(createRequest, _cancellationTokenSource.Token);
+
+                if (createResponse.IsT0)
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = Localizer["success"],
+                        Detail = "Facture avoir fournisseur créée avec succès"
+                    });
+                    DialogService.Close(true);
+                }
+                else
+                {
+                    var badRequest = createResponse.AsT1;
+                    var errorMessage = badRequest.errors?.Any() == true
+                        ? string.Join(", ", badRequest.errors.SelectMany(e => e.Value))
+                        : (badRequest.Detail ?? "Échec de la création");
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = Localizer["error"],
+                        Detail = errorMessage
+                    });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Échec de la sauvegarde: {ex.Message}"
+            });
+            logger.LogError(ex, "Failed to save facture avoir fournisseur");
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+}
+

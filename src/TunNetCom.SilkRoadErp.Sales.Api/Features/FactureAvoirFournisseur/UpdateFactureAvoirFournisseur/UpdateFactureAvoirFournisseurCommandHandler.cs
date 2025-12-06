@@ -47,28 +47,32 @@ public class UpdateFactureAvoirFournisseurCommandHandler(
             existingAvoir.NumFactureAvoirFournisseur = null;
         }
 
-        // Validate new avoir fournisseurs exist and are not already linked to another facture avoir
-        var avoirFournisseurs = await _context.AvoirFournisseur
-            .Where(a => command.AvoirFournisseurIds.Contains(a.Num))
-            .ToListAsync(cancellationToken);
-
-        if (avoirFournisseurs.Count != command.AvoirFournisseurIds.Count)
+        // Validate new avoir fournisseurs exist and are not already linked to another facture avoir (only if provided)
+        List<Domain.Entites.AvoirFournisseur> avoirFournisseurs = new();
+        if (command.AvoirFournisseurIds != null && command.AvoirFournisseurIds.Any())
         {
-            var foundIds = avoirFournisseurs.Select(a => a.Num).ToList();
-            var missingIds = command.AvoirFournisseurIds.Except(foundIds).ToList();
-            _logger.LogWarning("AvoirFournisseurs not found: {Ids}", string.Join(", ", missingIds));
-            return Result.Fail($"avoir_fournisseurs_not_found: {string.Join(", ", missingIds)}");
-        }
+            avoirFournisseurs = await _context.AvoirFournisseur
+                .Where(a => command.AvoirFournisseurIds.Contains(a.Num))
+                .ToListAsync(cancellationToken);
 
-        // Check if any avoir fournisseur is already linked to another facture avoir
-        var alreadyLinked = avoirFournisseurs
-            .Where(a => a.NumFactureAvoirFournisseur.HasValue && a.NumFactureAvoirFournisseur.Value != command.Num)
-            .ToList();
-        if (alreadyLinked.Any())
-        {
-            var linkedIds = alreadyLinked.Select(a => a.Num).ToList();
-            _logger.LogWarning("AvoirFournisseurs already linked to another facture: {Ids}", string.Join(", ", linkedIds));
-            return Result.Fail($"avoir_fournisseurs_already_linked: {string.Join(", ", linkedIds)}");
+            if (avoirFournisseurs.Count != command.AvoirFournisseurIds.Count)
+            {
+                var foundIds = avoirFournisseurs.Select(a => a.Num).ToList();
+                var missingIds = command.AvoirFournisseurIds.Except(foundIds).ToList();
+                _logger.LogWarning("AvoirFournisseurs not found: {Ids}", string.Join(", ", missingIds));
+                return Result.Fail($"avoir_fournisseurs_not_found: {string.Join(", ", missingIds)}");
+            }
+
+            // Check if any avoir fournisseur is already linked to another facture avoir
+            var alreadyLinked = avoirFournisseurs
+                .Where(a => a.NumFactureAvoirFournisseur.HasValue && a.NumFactureAvoirFournisseur.Value != factureAvoirFournisseur.Id)
+                .ToList();
+            if (alreadyLinked.Any())
+            {
+                var linkedIds = alreadyLinked.Select(a => a.Num).ToList();
+                _logger.LogWarning("AvoirFournisseurs already linked to another facture: {Ids}", string.Join(", ", linkedIds));
+                return Result.Fail($"avoir_fournisseurs_already_linked: {string.Join(", ", linkedIds)}");
+            }
         }
 
         // Get the active accounting year
@@ -89,10 +93,13 @@ public class UpdateFactureAvoirFournisseurCommandHandler(
             command.NumFactureFournisseur,
             activeAccountingYear.Id);
 
-        // Link new avoir fournisseurs
-        foreach (var avoirFournisseur in avoirFournisseurs)
+        // Link new avoir fournisseurs (if any) - use Id, not Num
+        if (avoirFournisseurs.Any())
         {
-            avoirFournisseur.NumFactureAvoirFournisseur = command.Num;
+            foreach (var avoirFournisseur in avoirFournisseurs)
+            {
+                avoirFournisseur.NumFactureAvoirFournisseur = factureAvoirFournisseur.Id;
+            }
         }
 
         await _context.SaveChangesAsync(cancellationToken);

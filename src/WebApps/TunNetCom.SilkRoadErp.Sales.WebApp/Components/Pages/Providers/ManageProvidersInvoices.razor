@@ -29,6 +29,8 @@
 @using TunNetCom.SilkRoadErp.Sales.Contracts.RetenueSourceFournisseur
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.FactureAvoirFournisseur
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AvoirFinancierFournisseurs
 
 @inject IReceiptNoteApiClient receiptNoteService
 @inject IRetenueSourceFournisseurApiClient retenueSourceFournisseurApiClient
@@ -38,6 +40,8 @@
 @inject IInvoicesApiClient invoicesService
 @inject IDeliveryNoteApiClient deliveryNoteService
 @inject IProviderInvoiceApiClient providerInvoiceService
+@inject IFactureAvoirFournisseurApiClient factureAvoirFournisseurService
+@inject IAvoirFinancierFournisseursApiClient avoirFinancierFournisseursService
 @inject NavigationManager navigationManager
 @inject IStringLocalizer<SharedResource> Localizer
 @inject ToastService toastService
@@ -269,6 +273,16 @@
                                                   Title="@Localizer["retenue_source"]"
                                                   Click="@(() => OpenRetenueDialog(invoiceWithBRs.Invoice.Num, invoiceWithBRs.Invoice.TotTTC))" />
                                 }
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn Title="Facture avoir / Avoir financier"
+                                              Width="180px">
+                            <Template Context="invoiceWithBRs">
+                                <RadzenButton Icon="link" 
+                                              ButtonStyle="ButtonStyle.Secondary" 
+                                              Size="ButtonSize.Small"
+                                              Title="Rattacher facture avoir ou avoir financier"
+                                              Click="@(() => OpenAttachDialog(invoiceWithBRs.Invoice.Num, invoiceWithBRs.Invoice.ProviderId))" />
                             </Template>
                         </RadzenDataGridColumn>
                     </Columns>
@@ -862,7 +876,44 @@
         }
     }
 
+    private async Task OpenAttachDialog(int invoiceNum, int providerId)
+    {
+        try
+        {
+            var dialogOptions = new DialogOptions
+            {
+                Width = "1000px",
+                Height = "700px",
+                Resizable = true,
+                Draggable = true
+            };
 
+            var result = await DialogService.OpenAsync<AttachFactureAvoirAvoirFinancierDialog>(
+                "Rattacher facture avoir / avoir financier",
+                new Dictionary<string, object>
+                {
+                    { "InvoiceNum", invoiceNum },
+                    { "ProviderId", providerId }
+                },
+                dialogOptions);
+
+            if (result is true)
+            {
+                // Reload invoices to get updated links
+                await LoadInvoices(SelectedProviderId);
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Erreur lors de l'ouverture du popup: {ex.Message}"
+            });
+        }
+    }
 
     private async Task DetachReceiptNotesFromInvoice()
     {

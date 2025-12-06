@@ -17,81 +17,138 @@ public class GetAvoirFournisseurWithSummariesQueryHandler(
     {
         _logger.LogPaginationRequest(nameof(AvoirFournisseur), request.PageNumber, request.PageSize);
 
-        var avoirFournisseursQuery = (from a in _context.AvoirFournisseur
-                                     join f in _context.Fournisseur on a.FournisseurId equals f.Id into fournisseurGroup
-                                     from f in fournisseurGroup.DefaultIfEmpty()
-                                     select new AvoirFournisseurBaseInfo
-                                     {
-                                         Num = a.Num,
-                                         Date = a.Date,
-                                         FournisseurId = a.FournisseurId,
-                                         FournisseurName = f != null ? f.Nom : null,
-                                         NumFactureAvoirFournisseur = a.NumFactureAvoirFournisseur,
-                              TotalExcludingTaxAmount = a.LigneAvoirFournisseur.Sum(l => l.TotHt),
-                              TotalVATAmount = a.LigneAvoirFournisseur.Sum(l => l.TotTtc - l.TotHt),
-                              TotalIncludingTaxAmount = a.LigneAvoirFournisseur.Sum(l => l.TotTtc),
-                              Statut = (int)a.Statut
-                          })
-                                     .AsNoTracking()
-                                     .AsQueryable();
+        // Build base query with filters to avoid loading all data
+        var baseQuery = from a in _context.AvoirFournisseur
+                        join f in _context.Fournisseur on a.FournisseurId equals f.Id into fournisseurGroup
+                        from f in fournisseurGroup.DefaultIfEmpty()
+                        select new { a, f };
 
+        // Apply filters before loading
         if (request.FournisseurId.HasValue)
         {
-            avoirFournisseursQuery = avoirFournisseursQuery.Where(a => a.FournisseurId == request.FournisseurId.Value);
+            baseQuery = baseQuery.Where(x => x.a.FournisseurId == request.FournisseurId.Value);
         }
 
         if (request.NumFactureAvoirFournisseur.HasValue)
         {
-            avoirFournisseursQuery = avoirFournisseursQuery.Where(a => a.NumFactureAvoirFournisseur == request.NumFactureAvoirFournisseur.Value);
+            baseQuery = baseQuery.Where(x => x.a.NumFactureAvoirFournisseur == request.NumFactureAvoirFournisseur.Value);
         }
 
         // Apply Status filter
         if (request.Status.HasValue)
         {
             _logger.LogInformation("Applying status filter: {status}", request.Status);
-            avoirFournisseursQuery = avoirFournisseursQuery.Where(a => a.Statut == request.Status.Value);
+            baseQuery = baseQuery.Where(x => (int)x.a.Statut == request.Status.Value);
         }
 
         // Apply Date Range filters
         if (request.StartDate.HasValue)
         {
             _logger.LogInformation("Applying start date filter: {startDate}", request.StartDate);
-            avoirFournisseursQuery = avoirFournisseursQuery.Where(a => a.Date >= request.StartDate.Value);
+            baseQuery = baseQuery.Where(x => x.a.Date >= request.StartDate.Value);
         }
         if (request.EndDate.HasValue)
         {
             _logger.LogInformation("Applying end date filter: {endDate}", request.EndDate);
-            avoirFournisseursQuery = avoirFournisseursQuery.Where(a => a.Date <= request.EndDate.Value);
+            baseQuery = baseQuery.Where(x => x.a.Date <= request.EndDate.Value);
         }
 
         // Apply search keyword
         if (!string.IsNullOrEmpty(request.SearchKeyword))
         {
-            avoirFournisseursQuery = avoirFournisseursQuery.Where(a =>
-                (a.FournisseurName != null && a.FournisseurName.Contains(request.SearchKeyword)) ||
-                a.Num.ToString().Contains(request.SearchKeyword));
+            baseQuery = baseQuery.Where(x =>
+                (x.f != null && x.f.Nom != null && x.f.Nom.Contains(request.SearchKeyword)) ||
+                x.a.Num.ToString().Contains(request.SearchKeyword));
         }
 
-        // Apply Sorting
+        // Query 1: Get totals directly from database (OData-style aggregation)
+        // Calculate totals directly from line items without loading all data
+        _logger.LogInformation("Getting totals from database");
+        var totalsQuery = from x in baseQuery
+                          from l in x.a.LigneAvoirFournisseur
+                          select new
+                          {
+                              TotalExcludingTaxAmount = l.TotHt,
+                              TotalVATAmount = l.TotTtc - l.TotHt,
+                              TotalIncludingTaxAmount = l.TotTtc
+                          };
+
+        var totalVatAmount = await totalsQuery.SumAsync(x => x.TotalVATAmount, cancellationToken);
+        var totalNetAmount = await totalsQuery.SumAsync(x => x.TotalExcludingTaxAmount, cancellationToken);
+        var totalIncludingTaxAmount = await totalsQuery.SumAsync(x => x.TotalIncludingTaxAmount, cancellationToken);
+
+        // Query 2: Get paginated data with calculations
+        // Build query with calculations but without Statut/StatutLibelle to avoid SQL conversion issues
+        _logger.LogInformation("Getting paginated data from database");
+        var avoirFournisseursQueryWithTotals = baseQuery
+            .Select(x => new
+            {
+                a = x.a,
+                f = x.f,
+                TotalExcludingTaxAmount = x.a.LigneAvoirFournisseur.Sum(l => l.TotHt),
+                TotalVATAmount = x.a.LigneAvoirFournisseur.Sum(l => l.TotTtc - l.TotHt),
+                TotalIncludingTaxAmount = x.a.LigneAvoirFournisseur.Sum(l => l.TotTtc)
+            });
+
+        // Apply sorting in SQL before loading (using Statut as int for sorting)
         if (request.SortOrder != null && request.SortProperty != null)
         {
             _logger.LogInformation(
                 "Sorting avoir fournisseurs column: {column} order: {order}",
                 request.SortProperty,
                 request.SortOrder);
-            avoirFournisseursQuery = ApplySorting(avoirFournisseursQuery, request.SortProperty, request.SortOrder);
+            
+            // Map StatutLibelle to Statut for SQL sorting
+            var sortProperty = request.SortProperty == nameof(AvoirFournisseurBaseInfo.StatutLibelle) 
+                ? nameof(AvoirFournisseurBaseInfo.Statut) 
+                : request.SortProperty;
+            var isAscending = request.SortOrder == SortConstants.Ascending;
+
+            avoirFournisseursQueryWithTotals = sortProperty switch
+            {
+                _numColumnName => isAscending 
+                    ? avoirFournisseursQueryWithTotals.OrderBy(x => x.a.Num)
+                    : avoirFournisseursQueryWithTotals.OrderByDescending(x => x.a.Num),
+                _dateColumnName => isAscending
+                    ? avoirFournisseursQueryWithTotals.OrderBy(x => x.a.Date)
+                    : avoirFournisseursQueryWithTotals.OrderByDescending(x => x.a.Date),
+                _totalExcludingTaxAmountColumnName => isAscending
+                    ? avoirFournisseursQueryWithTotals.OrderBy(x => x.TotalExcludingTaxAmount)
+                    : avoirFournisseursQueryWithTotals.OrderByDescending(x => x.TotalExcludingTaxAmount),
+                nameof(AvoirFournisseurBaseInfo.Statut) => isAscending
+                    ? avoirFournisseursQueryWithTotals.OrderBy(x => (int)x.a.Statut)
+                    : avoirFournisseursQueryWithTotals.OrderByDescending(x => (int)x.a.Statut),
+                _ => avoirFournisseursQueryWithTotals
+            };
         }
 
-        _logger.LogInformation("Getting totals");
-        var totalVatAmount = await avoirFournisseursQuery.SumAsync(a => a.TotalVATAmount, cancellationToken);
-        var totalNetAmount = await avoirFournisseursQuery.SumAsync(a => a.TotalExcludingTaxAmount, cancellationToken);
-        var totalIncludingTaxAmount = await avoirFournisseursQuery.SumAsync(a => a.TotalIncludingTaxAmount, cancellationToken);
+        // Get total count before pagination
+        var totalCount = await avoirFournisseursQueryWithTotals.CountAsync(cancellationToken);
 
-        var pagedAvoirFournisseurs = await PagedList<AvoirFournisseurBaseInfo>.ToPagedListAsync(
-            avoirFournisseursQuery,
-            request.PageNumber,
-            request.PageSize,
-            cancellationToken);
+        // Apply pagination and load only the page needed
+        var avoirFournisseursData = await avoirFournisseursQueryWithTotals
+            .Skip((request.PageNumber - 1) * request.PageSize)
+            .Take(request.PageSize)
+            .ToListAsync(cancellationToken);
+
+        // Map to DTO in memory to avoid SQL conversion issues with Statut enum (like InvoiceBaseInfosController)
+        var items = avoirFournisseursData
+            .Select(x => new AvoirFournisseurBaseInfo
+            {
+                Num = x.a.Num,
+                Date = x.a.Date,
+                FournisseurId = x.a.FournisseurId,
+                FournisseurName = x.f != null ? x.f.Nom : null,
+                NumFactureAvoirFournisseur = x.a.NumFactureAvoirFournisseur,
+                TotalExcludingTaxAmount = x.TotalExcludingTaxAmount,
+                TotalVATAmount = x.TotalVATAmount,
+                TotalIncludingTaxAmount = x.TotalIncludingTaxAmount,
+                Statut = (int)x.a.Statut,
+                StatutLibelle = x.a.Statut.ToString()
+            })
+            .ToList();
+
+        var pagedAvoirFournisseurs = new PagedList<AvoirFournisseurBaseInfo>(items, totalCount, request.PageNumber, request.PageSize);
 
         var response = new GetAvoirFournisseurWithSummariesResponse
         {
@@ -103,23 +160,6 @@ public class GetAvoirFournisseurWithSummariesQueryHandler(
 
         _logger.LogEntitiesFetched(nameof(AvoirFournisseur), pagedAvoirFournisseurs.Items.Count);
         return response;
-    }
-
-    private IQueryable<AvoirFournisseurBaseInfo> ApplySorting(
-        IQueryable<AvoirFournisseurBaseInfo> avoirQuery,
-        string sortProperty,
-        string sortOrder)
-    {
-        return (sortProperty, sortOrder) switch
-        {
-            (_numColumnName, SortConstants.Ascending) => avoirQuery.OrderBy(a => a.Num),
-            (_numColumnName, SortConstants.Descending) => avoirQuery.OrderByDescending(a => a.Num),
-            (_dateColumnName, SortConstants.Ascending) => avoirQuery.OrderBy(a => a.Date),
-            (_dateColumnName, SortConstants.Descending) => avoirQuery.OrderByDescending(a => a.Date),
-            (_totalExcludingTaxAmountColumnName, SortConstants.Ascending) => avoirQuery.OrderBy(a => a.TotalExcludingTaxAmount),
-            (_totalExcludingTaxAmountColumnName, SortConstants.Descending) => avoirQuery.OrderByDescending(a => a.TotalExcludingTaxAmount),
-            _ => avoirQuery
-        };
     }
 }
 

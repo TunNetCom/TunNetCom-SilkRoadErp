@@ -10,9 +10,9 @@ public class CreateFactureAvoirFournisseurValidator : AbstractValidator<CreateFa
         _ = RuleFor(x => x.IdFournisseur)
             .GreaterThan(0).WithMessage("id_fournisseur_must_be_greater_than_zero");
 
+        // AvoirFournisseurIds is optional - avoirs can be added later
         _ = RuleFor(x => x.AvoirFournisseurIds)
-            .NotEmpty().WithMessage("avoir_fournisseur_ids_are_required")
-            .Must(ids => ids.Count > 0).WithMessage("at_least_one_avoir_fournisseur_is_required");
+            .NotNull().WithMessage("avoir_fournisseur_ids_cannot_be_null");
     }
 }
 

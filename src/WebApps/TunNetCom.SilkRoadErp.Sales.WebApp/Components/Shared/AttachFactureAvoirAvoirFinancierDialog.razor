@@ -1,0 +1,564 @@
+@using Radzen
+@using Radzen.Blazor
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.FactureAvoirFournisseur
+@using TunNetCom.SilkRoadErp.Sales.Contracts.AvoirFinancierFournisseurs
+@using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.FactureAvoirFournisseur
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AvoirFinancierFournisseurs
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+
+@inject DialogService DialogService
+@inject IStringLocalizer<SharedResource> Localizer
+@inject IFactureAvoirFournisseurApiClient factureAvoirFournisseurService
+@inject IAvoirFinancierFournisseursApiClient avoirFinancierFournisseursService
+@inject Radzen.NotificationService NotificationService
+
+<RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1.5rem" Style="min-width: 800px; max-width: 1000px;">
+    <RadzenText TextStyle="TextStyle.H5">Rattacher facture avoir / avoir financier</RadzenText>
+    
+    <RadzenTabs>
+        <RadzenTabsItem Text="Factures avoir fournisseur">
+            <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem" Style="padding: 1rem;">
+                <RadzenText TextStyle="TextStyle.Body2">Factures avoir fournisseur disponibles</RadzenText>
+                <RadzenDataGrid Data="@_availableFactureAvoirs"
+                                TItem="FactureAvoirFournisseurBaseInfo"
+                                AllowFiltering="true"
+                                AllowPaging="true"
+                                PageSize="10"
+                                AllowSorting="true"
+                                SelectionMode="DataGridSelectionMode.Multiple"
+                                @bind-Value="@_selectedFactureAvoirsToAttach"
+                                IsLoading="@isLoadingFactureAvoirs"
+                                Style="max-height: 400px;">
+                    <EmptyTemplate>
+                        <p style="font-size: 14px; text-align: center; margin: 1rem; color: #666;">Aucune facture avoir fournisseur disponible</p>
+                    </EmptyTemplate>
+                    <Columns>
+                        <RadzenDataGridColumn Property="@nameof(FactureAvoirFournisseurBaseInfo.Num)"
+                                              Title="Numéro"
+                                              Width="120px" />
+                        <RadzenDataGridColumn Property="@nameof(FactureAvoirFournisseurBaseInfo.Date)"
+                                              Title="@Localizer["date"]"
+                                              Width="140px"
+                                              FormatString="{0:d}" />
+                        <RadzenDataGridColumn Property="@nameof(FactureAvoirFournisseurBaseInfo.TotalIncludingTaxAmount)"
+                                              Title="Total TTC"
+                                              Width="140px">
+                            <Template Context="factureAvoir">
+                                @factureAvoir.TotalIncludingTaxAmount.FormatAmount()
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn Property="@nameof(FactureAvoirFournisseurBaseInfo.StatutLibelle)"
+                                              Title="Statut"
+                                              Width="120px">
+                            <Template Context="factureAvoir">
+                                <RadzenBadge BadgeStyle="@(factureAvoir.Statut == 1 ? BadgeStyle.Success : BadgeStyle.Light)" 
+                                             Text="@factureAvoir.StatutLibelle" />
+                            </Template>
+                        </RadzenDataGridColumn>
+                    </Columns>
+                </RadzenDataGrid>
+                
+                @if (_linkedFactureAvoirs.Any())
+                {
+                    <RadzenText TextStyle="TextStyle.Body2" Style="margin-top: 1rem;">Factures avoir fournisseur déjà liées</RadzenText>
+                    <RadzenDataGrid Data="@_linkedFactureAvoirs"
+                                    TItem="FactureAvoirFournisseurBaseInfo"
+                                    AllowFiltering="true"
+                                    AllowPaging="true"
+                                    PageSize="10"
+                                    AllowSorting="true"
+                                    SelectionMode="DataGridSelectionMode.Multiple"
+                                    @bind-Value="@_selectedFactureAvoirsToDetach"
+                                    Style="max-height: 300px;">
+                        <EmptyTemplate>
+                            <p style="font-size: 14px; text-align: center; margin: 1rem; color: #666;">Aucune facture avoir liée</p>
+                        </EmptyTemplate>
+                        <Columns>
+                            <RadzenDataGridColumn Property="@nameof(FactureAvoirFournisseurBaseInfo.Num)"
+                                                  Title="Numéro"
+                                                  Width="120px" />
+                            <RadzenDataGridColumn Property="@nameof(FactureAvoirFournisseurBaseInfo.Date)"
+                                                  Title="@Localizer["date"]"
+                                                  Width="140px"
+                                                  FormatString="{0:d}" />
+                            <RadzenDataGridColumn Property="@nameof(FactureAvoirFournisseurBaseInfo.TotalIncludingTaxAmount)"
+                                                  Title="Total TTC"
+                                                  Width="140px">
+                                <Template Context="factureAvoir">
+                                    @factureAvoir.TotalIncludingTaxAmount.FormatAmount()
+                                </Template>
+                            </RadzenDataGridColumn>
+                        </Columns>
+                    </RadzenDataGrid>
+                }
+            </RadzenStack>
+        </RadzenTabsItem>
+        
+        <RadzenTabsItem Text="Avoirs financiers fournisseur">
+            <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem" Style="padding: 1rem;">
+                <RadzenText TextStyle="TextStyle.Body2">Avoirs financiers fournisseur disponibles</RadzenText>
+                <RadzenDataGrid Data="@_availableAvoirsFinanciers"
+                                TItem="AvoirFinancierFournisseursBaseInfo"
+                                AllowFiltering="true"
+                                AllowPaging="true"
+                                PageSize="10"
+                                AllowSorting="true"
+                                SelectionMode="DataGridSelectionMode.Single"
+                                SelectedItem="@_selectedAvoirFinancierToAttach"
+                                SelectedItemChanged="@((AvoirFinancierFournisseursBaseInfo? value) => _selectedAvoirFinancierToAttach = value)"
+                                IsLoading="@isLoadingAvoirsFinanciers"
+                                Style="max-height: 400px;">
+                    <EmptyTemplate>
+                        <p style="font-size: 14px; text-align: center; margin: 1rem; color: #666;">Aucun avoir financier fournisseur disponible</p>
+                    </EmptyTemplate>
+                    <Columns>
+                        <RadzenDataGridColumn Property="@nameof(AvoirFinancierFournisseursBaseInfo.Num)"
+                                              Title="Numéro"
+                                              Width="120px" />
+                        <RadzenDataGridColumn Property="@nameof(AvoirFinancierFournisseursBaseInfo.Date)"
+                                              Title="@Localizer["date"]"
+                                              Width="140px"
+                                              FormatString="{0:d}" />
+                        <RadzenDataGridColumn Property="@nameof(AvoirFinancierFournisseursBaseInfo.TotTtc)"
+                                              Title="Total TTC"
+                                              Width="140px">
+                            <Template Context="avoirFinancier">
+                                @avoirFinancier.TotTtc.FormatAmount()
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn Property="@nameof(AvoirFinancierFournisseursBaseInfo.Description)"
+                                              Title="Description"
+                                              Width="200px" />
+                    </Columns>
+                </RadzenDataGrid>
+                
+                @if (_linkedAvoirFinancier != null)
+                {
+                    <RadzenText TextStyle="TextStyle.Body2" Style="margin-top: 1rem;">Avoir financier fournisseur déjà lié</RadzenText>
+                    <RadzenCard>
+                        <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+                            <RadzenText><strong>Numéro:</strong> @_linkedAvoirFinancier.Num</RadzenText>
+                            <RadzenText><strong>Date:</strong> @_linkedAvoirFinancier.Date.ToString("d")</RadzenText>
+                            <RadzenText><strong>Total TTC:</strong> @_linkedAvoirFinancier.TotTtc.FormatAmount()</RadzenText>
+                            <RadzenText><strong>Description:</strong> @_linkedAvoirFinancier.Description</RadzenText>
+                        </RadzenStack>
+                    </RadzenCard>
+                }
+            </RadzenStack>
+        </RadzenTabsItem>
+    </RadzenTabs>
+
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End" Style="margin-top: 1rem;">
+        <RadzenButton Text="@Localizer["Cancel"]" 
+                      ButtonStyle="ButtonStyle.Light" 
+                      Click="@(() => DialogService.Close(false))" />
+        <RadzenButton Text="Attacher factures avoir"
+                      ButtonStyle="ButtonStyle.Primary"
+                      Disabled="@(!_selectedFactureAvoirsToAttach.Any())"
+                      Click="@AttachFactureAvoirs" />
+        <RadzenButton Text="Détacher factures avoir"
+                      ButtonStyle="ButtonStyle.Danger"
+                      Disabled="@(!_selectedFactureAvoirsToDetach.Any())"
+                      Click="@DetachFactureAvoirs" />
+        <RadzenButton Text="Attacher avoir financier"
+                      ButtonStyle="ButtonStyle.Success"
+                      Disabled="@(_selectedAvoirFinancierToAttach == null || _linkedAvoirFinancier != null)"
+                      Click="@AttachAvoirFinancier" />
+        <RadzenButton Text="Détacher avoir financier"
+                      ButtonStyle="ButtonStyle.Danger"
+                      Disabled="@(_linkedAvoirFinancier == null)"
+                      Click="@DetachAvoirFinancier" />
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    [Parameter] public int InvoiceNum { get; set; }
+    [Parameter] public int ProviderId { get; set; }
+
+    private List<FactureAvoirFournisseurBaseInfo> _availableFactureAvoirs = new();
+    private List<FactureAvoirFournisseurBaseInfo> _linkedFactureAvoirs = new();
+    private IList<FactureAvoirFournisseurBaseInfo> _selectedFactureAvoirsToAttach = new List<FactureAvoirFournisseurBaseInfo>();
+    private IList<FactureAvoirFournisseurBaseInfo> _selectedFactureAvoirsToDetach = new List<FactureAvoirFournisseurBaseInfo>();
+    
+    private List<AvoirFinancierFournisseursBaseInfo> _availableAvoirsFinanciers = new();
+    private AvoirFinancierFournisseursBaseInfo? _selectedAvoirFinancierToAttach;
+    private AvoirFinancierFournisseursBaseInfo? _linkedAvoirFinancier;
+    
+    private bool isLoadingFactureAvoirs = false;
+    private bool isLoadingAvoirsFinanciers = false;
+    private CancellationTokenSource _cancellationTokenSource = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        await Task.WhenAll(
+            LoadAvailableFactureAvoirs(),
+            LoadLinkedFactureAvoirs(),
+            LoadAvailableAvoirsFinanciers(),
+            LoadLinkedAvoirFinancier()
+        );
+    }
+
+    private async Task LoadAvailableFactureAvoirs()
+    {
+        isLoadingFactureAvoirs = true;
+        try
+        {
+            var result = await factureAvoirFournisseurService.GetFactureAvoirFournisseurWithSummariesAsync(
+                idFournisseur: ProviderId,
+                numFactureFournisseur: null, // Available (not linked or linked to other invoices)
+                sortOrder: null,
+                sortProperty: null,
+                pageNumber: 1,
+                pageSize: 1000,
+                searchKeyword: null,
+                startDate: null,
+                endDate: null,
+                _cancellationTokenSource.Token);
+
+            // Filter to show factures avoir that are not linked to this invoice
+            _availableFactureAvoirs = result.FactureAvoirFournisseurs.Items
+                .Where(f => !f.NumFactureFournisseur.HasValue || f.NumFactureFournisseur.Value != InvoiceNum)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Erreur lors du chargement: {ex.Message}"
+            });
+        }
+        finally
+        {
+            isLoadingFactureAvoirs = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task LoadLinkedFactureAvoirs()
+    {
+        try
+        {
+            var result = await factureAvoirFournisseurService.GetFactureAvoirFournisseurWithSummariesAsync(
+                idFournisseur: null,
+                numFactureFournisseur: InvoiceNum,
+                sortOrder: null,
+                sortProperty: null,
+                pageNumber: 1,
+                pageSize: 1000,
+                searchKeyword: null,
+                startDate: null,
+                endDate: null,
+                _cancellationTokenSource.Token);
+
+            _linkedFactureAvoirs = result.FactureAvoirFournisseurs.Items.ToList();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Erreur lors du chargement: {ex.Message}"
+            });
+        }
+    }
+
+    private async Task LoadAvailableAvoirsFinanciers()
+    {
+        isLoadingAvoirsFinanciers = true;
+        try
+        {
+            var result = await avoirFinancierFournisseursService.GetAvoirFinancierFournisseursWithSummariesAsync(
+                providerId: ProviderId,
+                numFactureFournisseur: null, // Available (not linked or linked to other invoices)
+                sortOrder: null,
+                sortProperty: null,
+                pageNumber: 1,
+                pageSize: 1000,
+                searchKeyword: null,
+                startDate: null,
+                endDate: null,
+                _cancellationTokenSource.Token);
+
+            // Filter to show avoirs financiers that are not linked to this invoice
+            _availableAvoirsFinanciers = result.AvoirFinancierFournisseurs.Items
+                .Where(a => a.NumFactureFournisseur != InvoiceNum)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Erreur lors du chargement: {ex.Message}"
+            });
+        }
+        finally
+        {
+            isLoadingAvoirsFinanciers = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task LoadLinkedAvoirFinancier()
+    {
+        try
+        {
+            var result = await avoirFinancierFournisseursService.GetAvoirFinancierFournisseursWithSummariesAsync(
+                providerId: null,
+                numFactureFournisseur: InvoiceNum,
+                sortOrder: null,
+                sortProperty: null,
+                pageNumber: 1,
+                pageSize: 1,
+                searchKeyword: null,
+                startDate: null,
+                endDate: null,
+                _cancellationTokenSource.Token);
+
+            _linkedAvoirFinancier = result.AvoirFinancierFournisseurs.Items.FirstOrDefault();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Erreur lors du chargement: {ex.Message}"
+            });
+        }
+    }
+
+    private async Task AttachFactureAvoirs()
+    {
+        if (!_selectedFactureAvoirsToAttach.Any())
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["warning"],
+                Detail = "Veuillez sélectionner au moins une facture avoir fournisseur"
+            });
+            return;
+        }
+
+        try
+        {
+            var factureAvoirIds = _selectedFactureAvoirsToAttach.Select(f => f.Num).ToList();
+            var result = await factureAvoirFournisseurService.AttachFactureAvoirFournisseurToInvoiceAsync(
+                factureAvoirIds,
+                InvoiceNum,
+                _cancellationTokenSource.Token);
+
+            if (result.IsSuccess)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = Localizer["success"],
+                    Detail = "Factures avoir fournisseur attachées avec succès"
+                });
+
+                await LoadData();
+                DialogService.Close(true);
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = $"Erreur lors de l'attachement: {result.Errors.First().Message}"
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Erreur lors de l'attachement: {ex.Message}"
+            });
+        }
+    }
+
+    private async Task DetachFactureAvoirs()
+    {
+        if (!_selectedFactureAvoirsToDetach.Any())
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["warning"],
+                Detail = "Veuillez sélectionner au moins une facture avoir fournisseur à détacher"
+            });
+            return;
+        }
+
+        try
+        {
+            var factureAvoirIds = _selectedFactureAvoirsToDetach.Select(f => f.Num).ToList();
+            var result = await factureAvoirFournisseurService.DetachFactureAvoirFournisseurFromInvoiceAsync(
+                factureAvoirIds,
+                InvoiceNum,
+                _cancellationTokenSource.Token);
+
+            if (result.IsSuccess)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = Localizer["success"],
+                    Detail = "Factures avoir fournisseur détachées avec succès"
+                });
+
+                await LoadData();
+                DialogService.Close(true);
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = $"Erreur lors du détachement: {result.Errors.First().Message}"
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Erreur lors du détachement: {ex.Message}"
+            });
+        }
+    }
+
+    private async Task AttachAvoirFinancier()
+    {
+        if (_selectedAvoirFinancierToAttach == null)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["warning"],
+                Detail = "Veuillez sélectionner un avoir financier fournisseur"
+            });
+            return;
+        }
+
+        try
+        {
+            // Get the current avoir financier to update
+            var fullAvoirFinancier = await avoirFinancierFournisseursService.GetFullAvoirFinancierFournisseursAsync(
+                _selectedAvoirFinancierToAttach.Num,
+                _cancellationTokenSource.Token);
+
+            if (!fullAvoirFinancier.IsSuccess || fullAvoirFinancier.Value == null)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = "Erreur lors du chargement de l'avoir financier"
+                });
+                return;
+            }
+
+            // Since AvoirFinancierFournisseurs has a one-to-one relationship with FactureFournisseur via Num,
+            // we need to create a new one linked to this invoice
+            var createRequest = new CreateAvoirFinancierFournisseursRequest
+            {
+                NumFactureFournisseur = InvoiceNum,
+                NumSurPage = fullAvoirFinancier.Value.NumSurPage,
+                Date = fullAvoirFinancier.Value.Date,
+                Description = fullAvoirFinancier.Value.Description,
+                TotTtc = fullAvoirFinancier.Value.TotTtc
+            };
+
+            var createResult = await avoirFinancierFournisseursService.CreateAvoirFinancierFournisseurs(
+                createRequest,
+                _cancellationTokenSource.Token);
+
+            if (createResult.IsT0)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = Localizer["success"],
+                    Detail = "Avoir financier fournisseur attaché avec succès"
+                });
+
+                await LoadData();
+                DialogService.Close(true);
+            }
+            else
+            {
+                var badRequest = createResult.AsT1;
+                var errorMessage = badRequest.errors?.Any() == true
+                    ? string.Join(", ", badRequest.errors.SelectMany(e => e.Value))
+                    : (badRequest.Detail ?? "Échec de l'attachement");
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = errorMessage
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Erreur lors de l'attachement: {ex.Message}"
+            });
+        }
+    }
+
+    private async Task DetachAvoirFinancier()
+    {
+        if (_linkedAvoirFinancier == null)
+        {
+            return;
+        }
+
+        try
+        {
+            // Since AvoirFinancierFournisseurs has a one-to-one relationship with FactureFournisseur via Num,
+            // we cannot simply detach it. We would need to delete it or create a new one.
+            // For now, we'll show a message that this requires deletion
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["warning"],
+                Detail = "Le détachement d'un avoir financier nécessite sa suppression. Cette fonctionnalité sera implémentée."
+            });
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Erreur lors du détachement: {ex.Message}"
+            });
+        }
+    }
+}
+

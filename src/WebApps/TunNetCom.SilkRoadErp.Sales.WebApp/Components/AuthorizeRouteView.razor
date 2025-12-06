@@ -116,25 +116,9 @@ else
         try
         {
             Logger.LogInformation("AuthorizeRouteView: Starting authentication check");
-            _statusMessage = "Vérification du token...";
-            StateHasChanged();
             
-            // First check if token is already in memory
-            if (AuthService.IsAuthenticated)
-            {
-                Logger.LogInformation("AuthorizeRouteView: Token already in memory, user authenticated");
-                IsAuthorized = true;
-                _statusMessage = "Authentifié";
-                Logger.LogInformation("AuthorizeRouteView: IsAuthorized set to {IsAuthorized}, calling StateHasChanged", IsAuthorized);
-                StateHasChanged();
-                // Force a re-render by updating a dummy variable
-                await Task.Delay(100);
-                StateHasChanged();
-                Logger.LogInformation("AuthorizeRouteView: StateHasChanged called twice, IsAuthorized: {IsAuthorized}", IsAuthorized);
-                return;
-            }
-            
-            // Load token from storage with timeout
+            // ALWAYS load token from storage first (in case circuit ID changed after navigation)
+            // This ensures the token is available in TokenStore with the current circuit ID
             _statusMessage = "Chargement depuis localStorage...";
             StateHasChanged();
             
@@ -150,6 +134,7 @@ else
                 // Continue to check IsAuthenticated anyway
             }
             
+            // Now check if authenticated (token should be in TokenStore with current circuit ID)
             if (AuthService.IsAuthenticated)
             {
                 Logger.LogInformation("AuthorizeRouteView: User authenticated, setting IsAuthorized to true");
