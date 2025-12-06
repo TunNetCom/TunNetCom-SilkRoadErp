@@ -6,45 +6,92 @@ pool:
 
 variables:
   solution: '**/*.sln'
-  buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
   dockerRepository: 'tunnetcom/silkroad'      
-  tag: '$(Build.BuildId)'
+  apiTag: 'api-$(Build.BuildId)'
+  webappTag: 'webapp-$(Build.BuildId)'
 
 steps:
+# 1. Setup Docker Buildx for better multi-platform support
+- task: Docker@2
+  displayName: 'Set up Docker Buildx'
+  inputs:
+    command: login
+    containerRegistry: 'TunNetCom_Dockerhub_Connection'
+
+# 2. .NET Build with warnings as errors disabled
 - task: UseDotNet@2
   displayName: 'Use .NET 10 SDK'
   inputs:
     packageType: 'sdk'
     version: '10.x'
-    includePreviewVersions: false
+
+- task: DotNetCoreCLI@2
+  displayName: 'Restore'
+  inputs:
+    command: 'restore'
+    projects: '$(solution)'
+    arguments: '--verbosity normal'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Build'
+  inputs:
+    command: 'build'
+    projects: '$(solution)'
+    arguments: '--configuration $(buildConfiguration) --no-restore --verbosity normal'
 
 # -----------------------------
-# Build and Push API Image
+# Build API Image
 # -----------------------------
-- task: Docker@2
-  displayName: 'Build and Push API Docker Image'
-  inputs:
-    containerRegistry: 'TunNetCom_Dockerhub_Connection'   
-    command: buildAndPush
-    Dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
-    repository: '$(dockerRepository)'
-    tags: |
-      $(tag)-api
-      latest-api
-    arguments: '--target api'
+- script: |
+    echo "Building API image..."
+    docker build \
+      --progress=plain \
+      --target api \
+      -t $(dockerRepository):$(apiTag) \
+      -t $(dockerRepository):latest-api \
+      -f Dockerfile \
+      .
+    
+    echo "Built images:"
+    docker images | grep $(dockerRepository)
+  displayName: 'Build API Docker Image'
+  continueOnError: false
 
 # -----------------------------
-# Build and Push WebApp Image
+# Push API Image
 # -----------------------------
-- task: Docker@2
-  displayName: 'Build and Push WebApp Docker Image'
-  inputs:
-    containerRegistry: 'TunNetCom_Dockerhub_Connection'   
-    command: buildAndPush
-    Dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
-    repository: '$(dockerRepository)'
-    tags: |
-      $(tag)-webapp
-      latest-webapp
-    arguments: '--target webapp'
+- script: |
+    echo "Pushing API image..."
+    docker push $(dockerRepository):$(apiTag)
+    docker push $(dockerRepository):latest-api
+  displayName: 'Push API Docker Image'
+  continueOnError: false
+
+# -----------------------------
+# Build WebApp Image
+# -----------------------------
+- script: |
+    echo "Building WebApp image..."
+    docker build \
+      --progress=plain \
+      --target webapp \
+      -t $(dockerRepository):$(webappTag) \
+      -t $(dockerRepository):latest-webapp \
+      -f Dockerfile \
+      .
+    
+    echo "Built images:"
+    docker images | grep $(dockerRepository)
+  displayName: 'Build WebApp Docker Image'
+  continueOnError: false
+
+# -----------------------------
+# Push WebApp Image
+# -----------------------------
+- script: |
+    echo "Pushing WebApp image..."
+    docker push $(dockerRepository):$(webappTag)
+    docker push $(dockerRepository):latest-webapp
+  displayName: 'Push WebApp Docker Image'
+  continueOnError: false
