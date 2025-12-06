@@ -6,14 +6,13 @@ pool:
 
 variables:
   solution: '**/*.sln'
-  buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
   dockerRepository: 'tunnetcom/silkroad'      
   apiTag: 'api-$(Build.BuildId)'
   webappTag: 'webapp-$(Build.BuildId)'
 
 steps:
-# .NET
+# .NET Build steps (same as before)
 - task: UseDotNet@2
   displayName: 'Use .NET 10 SDK'
   inputs:
@@ -25,61 +24,62 @@ steps:
   inputs:
     command: 'restore'
     projects: '$(solution)'
-    feedsToUse: 'select'
 
 - task: DotNetCoreCLI@2
   displayName: 'Build'
   inputs:
     command: 'build'
     projects: '$(solution)'
-    arguments: '--configuration $(buildConfiguration) --no-restore'
+    arguments: '--configuration $(buildConfiguration)'
 
 # -----------------------------
-# Build API Docker Image (Separate build and push)
+# Build and Push API Image using script
 # -----------------------------
-- task: Docker@2
-  displayName: 'Build API Image'
+- task: Bash@3
+  displayName: 'Build and Push API Image'
   inputs:
-    containerRegistry: 'TunNetCom_Dockerhub_Connection'   
-    command: build
-    Dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
-    buildContext: '$(Build.SourcesDirectory)'
-    arguments: '--target api'
-    tags: |
-      $(dockerRepository):$(apiTag)
-      $(dockerRepository):latest-api
-
-- task: Docker@2
-  displayName: 'Push API Image'
-  inputs:
-    containerRegistry: 'TunNetCom_Dockerhub_Connection'
-    command: push
-    repository: '$(dockerRepository)'
-    tags: |
-      $(apiTag)
-      latest-api
+    targetType: 'inline'
+    script: |
+      # Login to Docker Hub
+      echo "$(dockerPassword)" | docker login -u "$(dockerUsername)" --password-stdin
+      
+      # Build API image with proper tagging
+      docker build \
+        --target api \
+        -t $(dockerRepository):$(apiTag) \
+        -t $(dockerRepository):latest-api \
+        -f Dockerfile \
+        .
+      
+      # Push both tags
+      docker push $(dockerRepository):$(apiTag)
+      docker push $(dockerRepository):latest-api
+  env:
+    dockerUsername: $(DOCKER_USERNAME)  # Set as pipeline variable
+    dockerPassword: $(DOCKER_PASSWORD)  # Set as secret variable
 
 # -----------------------------
-# Build WebApp Docker Image (Separate build and push)
+# Build and Push WebApp Image using script
 # -----------------------------
-- task: Docker@2
-  displayName: 'Build WebApp Image'
+- task: Bash@3
+  displayName: 'Build and Push WebApp Image'
   inputs:
-    containerRegistry: 'TunNetCom_Dockerhub_Connection'   
-    command: build
-    Dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
-    buildContext: '$(Build.SourcesDirectory)'
-    arguments: '--target webapp'
-    tags: |
-      $(dockerRepository):$(webappTag)
-      $(dockerRepository):latest-webapp
-
-- task: Docker@2
-  displayName: 'Push WebApp Image'
-  inputs:
-    containerRegistry: 'TunNetCom_Dockerhub_Connection'
-    command: push
-    repository: '$(dockerRepository)'
-    tags: |
-      $(webappTag)
-      latest-webapp
+    targetType: 'inline'
+    script: |
+      # Login to Docker Hub (already logged in, but just in case)
+      echo "$(dockerPassword)" | docker login -u "$(dockerUsername)" --password-stdin 2>/dev/null || true
+      
+      # Build WebApp image with proper tagging
+      docker build \
+        --target webapp \
+        -t $(dockerRepository):$(webappTag) \
+        -t $(dockerRepository):latest-webapp \
+        -f Dockerfile \
+        .
+      
+      # Push both tags
+      docker push $(dockerRepository):$(webappTag)
+      docker push $(dockerRepository):latest-webapp
+  env:
+    dockerUsername: $(DOCKER_USERNAME)
+    dockerPassword: $(DOCKER_PASSWORD)
