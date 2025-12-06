@@ -132,12 +132,18 @@ public class ProviderInvoiceApiClient : IProviderInvoiceApiClient
 
     public async Task<Result> ValidateProviderInvoicesAsync(List<int> ids, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Validating provider invoices via API /provider-invoices/validate");
-        var response = await _httpClient.PostAsJsonAsync("/provider-invoices/validate", ids, cancellationToken: cancellationToken);
+        _logger.LogInformation("Validating provider invoices via API api/provider-invoices/validate");
+        var request = new ValidateProviderInvoicesRequest { Ids = ids };
+        var response = await _httpClient.PostAsJsonAsync("api/provider-invoices/validate", request, cancellationToken: cancellationToken);
 
         if (response.StatusCode == HttpStatusCode.NoContent)
         {
             return Result.Ok();
+        }
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return Result.Fail("provider_invoices_not_found");
         }
 
         if (response.StatusCode == HttpStatusCode.BadRequest)

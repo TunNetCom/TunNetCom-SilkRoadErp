@@ -18,6 +18,7 @@ public class ValidateProviderInvoicesCommandHandler(
         }
 
         var invoices = await _context.FactureFournisseur
+            .AsTracking() // S'assurer que les entités sont trackées
             .Where(f => command.Ids.Contains(f.Num))
             .ToListAsync(cancellationToken);
 
@@ -39,7 +40,22 @@ public class ValidateProviderInvoicesCommandHandler(
                 {
                     invoice.Valider();
                     // Marquer explicitement la propriété comme modifiée car le setter est privé
-                    _context.Entry(invoice).Property(x => x.Statut).IsModified = true;
+                    var entry = _context.Entry(invoice);
+                    entry.Property(x => x.Statut).IsModified = true;
+
+                    // Forcer l'état de l'entité à Modified pour s'assurer que les changements sont sauvegardés
+                    if (entry.State == Microsoft.EntityFrameworkCore.EntityState.Unchanged)
+                    {
+                        entry.State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+                    }
+
+                    _logger.LogInformation("Marked Statut as modified for provider invoice {Num}. Current status: {Statut}, Entry state: {State}",
+                        invoice.Num, invoice.Statut, entry.State);
+                }
+                else
+                {
+                    _logger.LogWarning("Provider invoice {Num} is not in draft status (current: {Statut}), skipping validation",
+                        invoice.Num, invoice.Statut);
                 }
             }
             catch (Exception ex)
@@ -53,6 +69,9 @@ public class ValidateProviderInvoicesCommandHandler(
         {
             return Result.Fail(errors);
         }
+
+        // Forcer la détection des changements avant de sauvegarder
+        _context.ChangeTracker.DetectChanges();
 
         await _context.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("Validated {Count} provider invoices", invoices.Count);

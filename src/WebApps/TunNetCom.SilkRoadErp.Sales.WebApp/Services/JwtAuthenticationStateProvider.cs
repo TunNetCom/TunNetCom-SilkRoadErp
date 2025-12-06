@@ -46,27 +46,52 @@ public class JwtAuthenticationStateProvider : AuthenticationStateProvider
 
             var jwtToken = handler.ReadJwtToken(token);
             
-            // Check if token is expired
-            if (jwtToken.ValidTo < DateTime.UtcNow)
+            // Add a small buffer (30 seconds) to account for clock skew and timing issues
+            // This prevents false positives where a token is considered expired immediately after login
+            var expirationBuffer = TimeSpan.FromSeconds(30);
+            var timeUntilExpiration = jwtToken.ValidTo - DateTime.UtcNow;
+            
+            // Check if token is expired (accounting for buffer)
+            if (timeUntilExpiration <= expirationBuffer)
             {
-                _logger.LogWarning("Token has expired. ValidTo: {ValidTo}, Current: {Current}", 
-                    jwtToken.ValidTo, DateTime.UtcNow);
-                
-                // Handle token expiration in background (fire-and-forget)
-                // This will try to refresh the token or logout the user
-                _ = Task.Run(async () =>
+                // Token is expired or will expire very soon
+                if (timeUntilExpiration <= TimeSpan.Zero)
                 {
-                    try
+                    _logger.LogWarning("Token has expired. ValidTo: {ValidTo}, Current: {Current}, TimeSinceExpiration: {TimeSinceExpiration}", 
+                        jwtToken.ValidTo, DateTime.UtcNow, -timeUntilExpiration);
+                    
+                    // Only handle expiration if token is significantly expired (more than 5 seconds)
+                    // This prevents immediate logout right after login due to timing issues
+                    if (timeUntilExpiration <= TimeSpan.FromSeconds(-5))
                     {
-                        await _autoLogoutService.HandleTokenExpirationAsync();
+                        _logger.LogWarning("Token expired {TimeSinceExpiration} ago, handling expiration", -timeUntilExpiration);
+                        
+                        // Handle token expiration in background (fire-and-forget)
+                        // This will try to refresh the token or logout the user
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                await _autoLogoutService.HandleTokenExpirationAsync();
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(ex, "Error handling token expiration in JwtAuthenticationStateProvider");
+                            }
+                        });
+                        
+                        return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        _logger.LogError(ex, "Error handling token expiration in JwtAuthenticationStateProvider");
+                        _logger.LogInformation("Token expired but within grace period ({TimeSinceExpiration}), allowing authentication", -timeUntilExpiration);
                     }
-                });
-                
-                return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
+                }
+                else
+                {
+                    // Token is about to expire soon (within buffer), but still valid
+                    _logger.LogDebug("Token will expire soon ({TimeUntilExpiration}), but still valid", timeUntilExpiration);
+                }
             }
 
             // Extract all claims from the JWT token

@@ -224,8 +224,10 @@
                                       AriaLabel="Valider"
                                       Style="margin-right: 4px;" />
                         @{
+                            // Calculer le montant TTC (HT + TVA)
                             var montantTTC = item.NetAmount + item.VatAmount;
                         }
+                        @* Afficher le bouton Export TEJ uniquement si le montant TTC dépasse le seuil de retenue source *@
                         @if (montantTTC >= _seuilRetenueSource)
                         {
                             <RadzenButton Icon="file_download"
