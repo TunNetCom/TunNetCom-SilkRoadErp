@@ -2,7 +2,7 @@ trigger:
 - master
 
 pool:
-  vmImage: 'ubuntu-latest'  # <-- Change to Linux
+  vmImage: 'ubuntu-latest'
 
 variables:
   solution: '**/*.sln'
@@ -35,16 +35,16 @@ steps:
     arguments: '--configuration $(buildConfiguration) --no-restore'
 
 # -----------------------------
-# Build API Docker Image
+# Build API Docker Image (Separate build and push)
 # -----------------------------
 - task: Docker@2
-  displayName: 'Build and Push API Docker Image'
+  displayName: 'Build API Image'
   inputs:
     containerRegistry: 'TunNetCom_Dockerhub_Connection'   
     command: build
     Dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
     buildContext: '$(Build.SourcesDirectory)'
-    arguments: '--target api --platform linux/amd64'  # Specify platform
+    arguments: '--target api'
     tags: |
       $(dockerRepository):$(apiTag)
       $(dockerRepository):latest-api
@@ -60,16 +60,16 @@ steps:
       latest-api
 
 # -----------------------------
-# Build WebApp Docker Image
+# Build WebApp Docker Image (Separate build and push)
 # -----------------------------
 - task: Docker@2
-  displayName: 'Build and Push WebApp Docker Image'
+  displayName: 'Build WebApp Image'
   inputs:
     containerRegistry: 'TunNetCom_Dockerhub_Connection'   
     command: build
     Dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
     buildContext: '$(Build.SourcesDirectory)'
-    arguments: '--target webapp --platform linux/amd64'  # Specify platform
+    arguments: '--target webapp'
     tags: |
       $(dockerRepository):$(webappTag)
       $(dockerRepository):latest-webapp
