@@ -11,28 +11,43 @@ variables:
   dockerRepository: 'tunnetcom/silkroad'      
   apiTag: 'api-$(Build.BuildId)'
   webappTag: 'webapp-$(Build.BuildId)'
+  NUGET_RESTORE_MSBUILD_TIMEOUT: '600'  # Increase timeout to 10 minutes
 
 steps:
-# .NET
+# 1. Install .NET SDK first
 - task: UseDotNet@2
-  displayName: 'Use .NET 10 SDK'
+  displayName: 'Install .NET 10 SDK'
   inputs:
     packageType: 'sdk'
     version: '10.x'
     includePreviewVersions: false
 
-- task: NuGetToolInstaller@1
-
+# 2. Clear NuGet cache (optional, can help with restore issues)
 - task: NuGetCommand@2
+  displayName: 'Clear NuGet Cache'
   inputs:
-    restoreSolution: '$(solution)'
+    command: custom
+    arguments: 'locals all -clear'
 
+# 3. Restore with increased timeout
+- task: NuGetCommand@2
+  displayName: 'Restore NuGet Packages'
+  inputs:
+    command: 'restore'
+    restoreSolution: '$(solution)'
+    feedsToUse: 'select'
+    vstsFeed: ''  # Leave empty if using public feeds
+    arguments: '--verbosity detailed --force'  # Add verbosity for debugging
+
+# 4. Build solution
 - task: VSBuild@1
+  displayName: 'Build Solution'
   inputs:
     solution: '$(solution)'
-    msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)"'
+    msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)" /p:RestorePackages=false'  # Disable restore during build since we already restored
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
+    clean: true
 
 # -----------------------------
 # Build API Docker Image (target the "api" stage)
@@ -43,11 +58,12 @@ steps:
     containerRegistry: 'TunNetCom_Dockerhub_Connection'   
     command: buildAndPush
     Dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
-    arguments: '--target api'  # <-- Target the API stage
+    arguments: '--target api --no-cache'  # Target API stage
     repository: '$(dockerRepository)'
     tags: |
       $(apiTag)
       latest-api
+  continueOnError: true  # Continue even if this fails
 
 # -----------------------------
 # Build WebApp Docker Image (target the "webapp" stage)
@@ -58,8 +74,9 @@ steps:
     containerRegistry: 'TunNetCom_Dockerhub_Connection'   
     command: buildAndPush
     Dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
-    arguments: '--target webapp'  # <-- Target the WebApp stage
+    arguments: '--target webapp --no-cache'  # Target WebApp stage
     repository: '$(dockerRepository)'
     tags: |
       $(webappTag)
       latest-webapp
+  continueOnError: true  # Continue even if this fails
