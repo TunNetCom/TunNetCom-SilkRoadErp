@@ -2,7 +2,7 @@ trigger:
 - master
 
 pool:
-  vmImage: 'windows-latest'
+  vmImage: 'ubuntu-latest'  # <-- Change to Linux
 
 variables:
   solution: '**/*.sln'
@@ -11,72 +11,75 @@ variables:
   dockerRepository: 'tunnetcom/silkroad'      
   apiTag: 'api-$(Build.BuildId)'
   webappTag: 'webapp-$(Build.BuildId)'
-  NUGET_RESTORE_MSBUILD_TIMEOUT: '600'  # Increase timeout to 10 minutes
 
 steps:
-# 1. Install .NET SDK first
+# .NET
 - task: UseDotNet@2
-  displayName: 'Install .NET 10 SDK'
+  displayName: 'Use .NET 10 SDK'
   inputs:
     packageType: 'sdk'
     version: '10.x'
-    includePreviewVersions: false
 
-# 2. Clear NuGet cache (optional, can help with restore issues)
-- task: NuGetCommand@2
-  displayName: 'Clear NuGet Cache'
-  inputs:
-    command: custom
-    arguments: 'locals all -clear'
-
-# 3. Restore with increased timeout
-- task: NuGetCommand@2
-  displayName: 'Restore NuGet Packages'
+- task: DotNetCoreCLI@2
+  displayName: 'Restore'
   inputs:
     command: 'restore'
-    restoreSolution: '$(solution)'
+    projects: '$(solution)'
     feedsToUse: 'select'
-    vstsFeed: ''  # Leave empty if using public feeds
-    arguments: '--verbosity detailed --force'  # Add verbosity for debugging
 
-# 4. Build solution
-- task: VSBuild@1
-  displayName: 'Build Solution'
+- task: DotNetCoreCLI@2
+  displayName: 'Build'
   inputs:
-    solution: '$(solution)'
-    msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)" /p:RestorePackages=false'  # Disable restore during build since we already restored
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
-    clean: true
+    command: 'build'
+    projects: '$(solution)'
+    arguments: '--configuration $(buildConfiguration) --no-restore'
 
 # -----------------------------
-# Build API Docker Image (target the "api" stage)
+# Build API Docker Image
 # -----------------------------
 - task: Docker@2
   displayName: 'Build and Push API Docker Image'
   inputs:
     containerRegistry: 'TunNetCom_Dockerhub_Connection'   
-    command: buildAndPush
+    command: build
     Dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
-    arguments: '--target api --no-cache'  # Target API stage
+    buildContext: '$(Build.SourcesDirectory)'
+    arguments: '--target api --platform linux/amd64'  # Specify platform
+    tags: |
+      $(dockerRepository):$(apiTag)
+      $(dockerRepository):latest-api
+
+- task: Docker@2
+  displayName: 'Push API Image'
+  inputs:
+    containerRegistry: 'TunNetCom_Dockerhub_Connection'
+    command: push
     repository: '$(dockerRepository)'
     tags: |
       $(apiTag)
       latest-api
-  continueOnError: true  # Continue even if this fails
 
 # -----------------------------
-# Build WebApp Docker Image (target the "webapp" stage)
+# Build WebApp Docker Image
 # -----------------------------
 - task: Docker@2
   displayName: 'Build and Push WebApp Docker Image'
   inputs:
     containerRegistry: 'TunNetCom_Dockerhub_Connection'   
-    command: buildAndPush
+    command: build
     Dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
-    arguments: '--target webapp --no-cache'  # Target WebApp stage
+    buildContext: '$(Build.SourcesDirectory)'
+    arguments: '--target webapp --platform linux/amd64'  # Specify platform
+    tags: |
+      $(dockerRepository):$(webappTag)
+      $(dockerRepository):latest-webapp
+
+- task: Docker@2
+  displayName: 'Push WebApp Image'
+  inputs:
+    containerRegistry: 'TunNetCom_Dockerhub_Connection'
+    command: push
     repository: '$(dockerRepository)'
     tags: |
       $(webappTag)
       latest-webapp
-  continueOnError: true  # Continue even if this fails
