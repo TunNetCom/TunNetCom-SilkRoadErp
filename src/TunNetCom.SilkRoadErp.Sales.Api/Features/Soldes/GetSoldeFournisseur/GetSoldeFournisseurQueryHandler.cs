@@ -108,6 +108,20 @@ public class GetSoldeFournisseurQueryHandler(
             .ToListAsync(cancellationToken);
         documents.AddRange(facturesAvoir);
 
+        // Add retours marchandise fournisseur (note informative, doesn't affect balance calculation)
+        var retours = await _context.RetourMarchandiseFournisseur
+            .Where(r => r.IdFournisseur == query.FournisseurId && r.AccountingYearId == accountingYearId.Value)
+            .Select(r => new DocumentSoldeFournisseur
+            {
+                Type = "RetourMarchandiseFournisseur",
+                Id = r.Id,
+                Numero = r.Num,
+                Date = r.Date,
+                Montant = r.LigneRetourMarchandiseFournisseur.Sum(l => l.TotTtc)
+            })
+            .ToListAsync(cancellationToken);
+        documents.AddRange(retours);
+
         // Get payments
         var paiements = await _context.PaiementFournisseur
             .Where(p => p.FournisseurId == query.FournisseurId && p.AccountingYearId == accountingYearId.Value)

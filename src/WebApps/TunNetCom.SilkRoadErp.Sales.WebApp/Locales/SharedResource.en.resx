@@ -591,6 +591,30 @@
   <data name="Receipt_Notes_List" xml:space="preserve">
     <value>Receipt Notes List</value>
   </data>
+  <data name="Retour_Marchandise_Fournisseur" xml:space="preserve">
+    <value>Supplier Return</value>
+  </data>
+  <data name="Retours_Marchandise_Fournisseur_List" xml:space="preserve">
+    <value>Supplier Returns List</value>
+  </data>
+  <data name="Nouveau_Retour_Marchandise_Fournisseur" xml:space="preserve">
+    <value>New Supplier Return</value>
+  </data>
+  <data name="Select_At_Least_One_Retour" xml:space="preserve">
+    <value>Please select at least one return</value>
+  </data>
+  <data name="Confirmation_Validation_Retours" xml:space="preserve">
+    <value>Are you sure you want to validate {0} return{1}?</value>
+  </data>
+  <data name="Confirmation_Validation_Retour" xml:space="preserve">
+    <value>Are you sure you want to validate return {0}?</value>
+  </data>
+  <data name="Validation_Success_Retours" xml:space="preserve">
+    <value>Returns have been validated successfully</value>
+  </data>
+  <data name="Validation_Success_Retour" xml:space="preserve">
+    <value>Return has been validated successfully</value>
+  </data>
   <data name="Stock" xml:space="preserve">
     <value>Stock</value>
   </data>

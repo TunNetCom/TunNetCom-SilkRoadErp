@@ -24,6 +24,7 @@ public static class EndpointTags
     public const string Tags = "Tags";
     public const string DeliveryCars = "DeliveryCars";
     public const string Auth = "Authentication";
+    public const string RetourMarchandiseFournisseur = "RetourMarchandiseFournisseur";
 }
 
 

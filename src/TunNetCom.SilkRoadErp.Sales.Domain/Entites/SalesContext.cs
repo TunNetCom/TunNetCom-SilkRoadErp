@@ -64,6 +64,10 @@ public partial class SalesContext : DbContext
 
     public virtual DbSet<LigneBonReception> LigneBonReception { get; set; }
 
+    public virtual DbSet<RetourMarchandiseFournisseur> RetourMarchandiseFournisseur { get; set; }
+
+    public virtual DbSet<LigneRetourMarchandiseFournisseur> LigneRetourMarchandiseFournisseur { get; set; }
+
     public virtual DbSet<LigneCommandes> LigneCommandes { get; set; }
 
     public virtual DbSet<LigneDevis> LigneDevis { get; set; }

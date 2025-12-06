@@ -56,6 +56,17 @@ public static class EdmModelBuilder
         providerInvoicesEntitySet.EntityType.Property(p => p.NetAmount).IsRequired();
         providerInvoicesEntitySet.EntityType.Property(p => p.VatAmount).IsRequired();
         
+        // Configure RetourMarchandiseFournisseurBaseInfo entity set
+        var retoursEntitySet = builder.EntitySet<RetourMarchandiseFournisseurBaseInfo>("RetourMarchandiseFournisseurBaseInfos");
+        retoursEntitySet.EntityType.HasKey(r => r.Number);
+        retoursEntitySet.EntityType.Property(r => r.Number).IsRequired();
+        retoursEntitySet.EntityType.Property(r => r.Date).IsRequired();
+        retoursEntitySet.EntityType.Property(r => r.ProviderId).IsRequired();
+        retoursEntitySet.EntityType.Property(r => r.ProviderName);
+        retoursEntitySet.EntityType.Property(r => r.NetAmount).IsRequired();
+        retoursEntitySet.EntityType.Property(r => r.VatAmount).IsRequired();
+        retoursEntitySet.EntityType.Property(r => r.GrossAmount).IsRequired();
+        
         // Configure InstallationTechnicianResponse entity set
         var techniciansEntitySet = builder.EntitySet<InstallationTechnicianResponse>("InstallationTechnicianBaseInfos");
         techniciansEntitySet.EntityType.HasKey(t => t.Id);

@@ -1,0 +1,786 @@
+@page "/add_or_update_retour_marchandise_fournisseur"
+@page "/add_or_update_retour_marchandise_fournisseur/{num?}"
+
+@using Radzen.Blazor
+@using Microsoft.Extensions.Localization
+@using Microsoft.JSInterop
+@using TunNetCom.SilkRoadErp.Sales.Contracts.RetourMarchandiseFournisseur
+@using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Sorting
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.RetourMarchandiseFournisseur
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Tags
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
+@using TunNetCom.SilkRoadErp.Sales.Domain.Entites
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Common
+
+@inject IStringLocalizer<SharedResource> Localizer
+@inject ITagsApiClient TagsService
+@inject ToastService toastService
+@inject Radzen.NotificationService NotificationService
+@inject IJSRuntime JSRuntime
+@inject IRetourMarchandiseFournisseurApiClient RetourApiClient
+@inject IProductsApiClient productsApiClient
+@inject IProvidersApiClient providerApiClient
+@inject IAppParametersClient appParametersClient
+@inject ILogger<AddOrUpdateRetourMarchandiseFournisseur> logger
+@inject DialogService DialogService
+
+<style>
+    .header-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 24px;
+        border-bottom: 1px solid #e5e7eb;
+        width: 100%;
+    }
+
+    .action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .action-button {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 8px 12px;
+        border-radius: 6px;
+        transition: background-color 0.2s, box-shadow 0.2s;
+        background-color: #3b82f6;
+        border: none;
+    }
+
+        .action-button:hover:not(:disabled) {
+            background-color: #2563eb;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .action-button:disabled {
+            background-color: #d1d5db;
+            cursor: not-allowed;
+        }
+
+    .success-button {
+        background-color: #10b981;
+    }
+
+        .success-button:hover:not(:disabled) {
+            background-color: #059669;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+    .summary-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 8px 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        flex: 0 0 auto;
+    }
+
+    .summary-stack {
+        gap: 1.5rem;
+    }
+
+    .summary-text {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+        .summary-text strong {
+            font-weight: 600;
+        }
+
+    @@media (max-width: 768px) {
+        .header-actions {
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 12px 16px;
+            gap: 12px;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+            width: 100%;
+            gap: 8px;
+        }
+
+        .action-button,
+        .success-button {
+            width: 100%;
+            text-align: center;
+            font-size: 12px;
+            padding: 10px;
+        }
+
+        .summary-card {
+            width: 100%;
+            padding: 8px 12px;
+        }
+
+        .summary-stack {
+            flex-direction: column;
+            gap: 0.75rem;
+            align-items: flex-start;
+        }
+
+        .summary-text {
+            font-size: 12px;
+        }
+    }
+
+    .retour-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .retour-form {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        flex-wrap: wrap;
+        flex-grow: 1;
+    }
+</style>
+
+@if (isLoading)
+{
+    <RadzenProgressBarCircular ProgressBarStyle="ProgressBarStyle.Primary" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+}
+else
+{
+    <div class="retour-container">
+        <div class="retour-form">
+            <RadzenLabel Text="Numéro retour" Component="RetourNumber" AriaLabel="Numéro retour" />
+            <RadzenTextBox @bind-Value="retourNumber" Name="RetourNumber" Style="width: 120px;" ReadOnly="true" AriaReadOnly="true" />
+
+            <RadzenLabel Text="@Localizer["date"]" />
+            <RadzenDatePicker @bind-Value="retourDate" Name="RetourDate" Style="width: 200px;" DateFormat="d MMMM yyyy" ShowTime="false" />
+
+            <RadzenLabel Text="@Localizer["provider"]" />
+            <RadzenDropDownDataGrid AllowClear="true"
+                                    IsLoading="@isLoadingProvider"
+                                    @bind-Value="@selectedProviderId"
+                                    LoadData="@LoadProviders"
+                                    AllowFiltering="true"
+                                    Style="width: 350px;"
+                                    Data="@_filteredProviders"
+                                    TextProperty="@nameof(ProviderResponse.Nom)"
+                                    ValueProperty="@nameof(ProviderResponse.Id)"
+                                    Placeholder="@Localizer["select_provider"]">
+                <Columns>
+                    <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Id)" Title="ID" Width="80px" />
+                    <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Nom)" Title="@Localizer["name"]" Width="220px" />
+                </Columns>
+            </RadzenDropDownDataGrid>
+        </div>
+    </div>
+
+    <LineItemsGrid TItem="RetourLineItem"
+                   Items="@orders"
+                   ItemsChanged="@OnItemsChanged"
+                   OnDeleteItem="@DeleteRow"
+                   OnProductSelectedCallback="@OnProductSelectedHandler"
+                   LoadProducts="@LoadData"
+                   GetProductList="@GetCurrentProductList"
+                   ProductCount="@count"
+                   AppParameters="@getAppParametersResponse"
+                   OnShowPriceHistory="@ShowDialog"
+                   ShowPriceHistoryDialog="true"
+                   ShowPrintButton="false"
+                   ShowSaveButton="true"
+                   ShowSummary="true"
+                   OnSave="@SaveRetour"
+                   TotalHt="@totalHt"
+                   TotalVat="@totalVat"
+                   TotalTtc="@totalTtc"
+                   Localizer="@Localizer"
+                   GetProductReference="@(item => item.ProductReference)"
+                   SetProductReference="@((item, value) => item.ProductReference = value)"
+                   GetProductDescription="@(item => item.Description)"
+                   SetProductDescription="@((item, value) => item.Description = value)"
+                   ProductTextProperty="ProductReferenceAndDescription"
+                   ProductValueProperty="ProductReference"
+                   CreateNewItem="@(() => new RetourLineItem { Quantity = 1 })" />
+
+    @if (!string.IsNullOrEmpty(retourNumber) && int.TryParse(retourNumber, out var retourNum))
+    {
+        <TagSelector @ref="tagSelectorRef"
+                    DocumentType="@DocumentTypes.RetourMarchandiseFournisseur" 
+                    DocumentId="@retourNum"
+                    SaveOnChange="false" />
+    }
+}
+
+@code {
+    [Parameter] public string? num { get; set; }
+    
+    List<RetourLineItem> orders;
+    List<RetourLineItem> searchList;
+    int count;
+    private const int DefaultPageSize = 7;
+    private CancellationTokenSource _cancellationTokenSource = new();
+    private List<ProviderResponse> _filteredProviders { get; set; } = new();
+    private bool isLoading = true;
+    bool isLoadingProvider = false;
+    decimal totalHt;
+    decimal totalVat;
+    decimal totalTtc;
+    string retourNumber;
+    private TagSelector? tagSelectorRef;
+    DateTime retourDate = DateTime.Now;
+    private GetAppParametersResponse getAppParametersResponse;
+    private int? selectedProviderId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        searchList = new List<RetourLineItem>();
+        orders = new List<RetourLineItem>();
+        var param = await appParametersClient.GetAppParametersAsync(_cancellationTokenSource.Token);
+        getAppParametersResponse = param.AsT0;
+        await LoadProviders(null);
+        isLoading = false;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await FetchRetour();
+        await base.OnParametersSetAsync();
+    }
+
+    private async Task SaveRetour()
+    {
+        try
+        {
+            if (!selectedProviderId.HasValue)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = Localizer["select_provider"]
+                });
+                return;
+            }
+            isLoading = true;
+            StateHasChanged();
+
+            var request = new CreateRetourMarchandiseFournisseurRequest
+            {
+                Date = retourDate,
+                IdFournisseur = selectedProviderId.Value,
+                Lines = orders.Select(o => new RetourMarchandiseFournisseurLineRequest
+                {
+                    ProductRef = o.ProductReference,
+                    Description = o.Description,
+                    Quantity = o.Quantity,
+                    UnitPrice = o.UnitPriceExcludingTax,
+                    Discount = o.DiscountPercentage,
+                    Tax = o.VatPercentage
+                }).ToList()
+            };
+
+            int retourNum = 0;
+            bool isEditMode = !string.IsNullOrEmpty(retourNumber) && int.TryParse(retourNumber, out retourNum);
+            
+            if (isEditMode)
+            {
+                var updateRequest = new UpdateRetourMarchandiseFournisseurRequest
+                {
+                    Num = retourNum,
+                    Date = retourDate,
+                    IdFournisseur = selectedProviderId.Value,
+                    Lines = request.Lines
+                };
+
+                var updateResponse = await RetourApiClient.UpdateRetourMarchandiseFournisseurAsync(updateRequest, _cancellationTokenSource.Token);
+                
+                if (updateResponse.IsSuccess)
+                {
+                    retourNumber = retourNum.ToString();
+                    await InvokeAsync(StateHasChanged);
+                    
+                    orders = new List<RetourLineItem>();
+                    await InvokeAsync(StateHasChanged);
+                    
+                    await FetchRetour();
+                    await SaveTags();
+                    
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = Localizer["success"],
+                        Detail = Localizer["delivery_note_saved_successfully"]
+                    });
+                }
+                else
+                {
+                    var errorMessage = updateResponse.Errors.First().Message;
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = Localizer["error"],
+                        Detail = $"Échec de l'enregistrement: {errorMessage}"
+                    });
+                }
+            }
+            else
+            {
+                var createResponse = await RetourApiClient.CreateRetourMarchandiseFournisseurAsync(request, _cancellationTokenSource.Token);
+                
+                if (createResponse.IsSuccess)
+                {
+                    var newRetourNum = createResponse.ValueOrDefault;
+                    retourNumber = newRetourNum.ToString();
+                    await InvokeAsync(StateHasChanged);
+                    
+                    await FetchRetour();
+                    
+                    await Task.Delay(100);
+                    await SaveTags();
+                    
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = Localizer["success"],
+                        Detail = Localizer["delivery_note_saved_successfully"]
+                    });
+                }
+                else
+                {
+                    var errorMessage = createResponse.Errors.First().Message;
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = Localizer["error"],
+                        Detail = $"Échec de l'enregistrement: {errorMessage}"
+                    });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Erreur: {ex.Message}"
+            });
+            logger.LogError(ex, "Failed to save retour");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task FetchRetour()
+    {
+        var retourNumToLoad = num;
+        if (string.IsNullOrEmpty(retourNumToLoad) && !string.IsNullOrEmpty(retourNumber))
+        {
+            retourNumToLoad = retourNumber;
+        }
+        
+        if (string.IsNullOrEmpty(retourNumToLoad))
+        {
+            orders = new List<RetourLineItem>();
+            totalHt = 0;
+            totalVat = 0;
+            totalTtc = 0;
+            return;
+        }
+
+        try
+        {
+            if (int.TryParse(retourNumToLoad, out var numAsInt))
+            {
+                var retour = await RetourApiClient.GetRetourMarchandiseFournisseurAsync(
+                    numAsInt,
+                    _cancellationTokenSource.Token);
+
+                if (retour != null && retour.IsSuccess)
+                {
+                    retourNumber = retour.Value.Num.ToString();
+                    retourDate = retour.Value.Date;
+                    selectedProviderId = retour.Value.IdFournisseur;
+
+                    if (retour.Value.Lines != null && retour.Value.Lines.Any())
+                    {
+                        orders = retour.Value.Lines.Select(l => new RetourLineItem
+                        {
+                            Id = l.IdLigne,
+                            ProductReference = l.RefProduit,
+                            Description = l.DesignationLi,
+                            Quantity = l.QteLi,
+                            UnitPriceExcludingTax = l.PrixHt,
+                            DiscountPercentage = l.Remise,
+                            VatPercentage = l.Tva,
+                            TotalExcludingTax = l.TotHt,
+                            TotalIncludingTax = l.TotTtc
+                        }).ToList();
+                        
+                        totalHt = orders.Sum(o => o.TotalExcludingTax);
+                        totalVat = orders.Sum(o => o.TotalIncludingTax - o.TotalExcludingTax);
+                        totalTtc = orders.Sum(o => o.TotalIncludingTax);
+                    }
+                    else
+                    {
+                        orders = new List<RetourLineItem>();
+                        totalHt = 0;
+                        totalVat = 0;
+                        totalTtc = 0;
+                    }
+                }
+            }
+
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception e)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Erreur lors du chargement: {e.Message}"
+            });
+
+            logger.LogError(e, "Failed to fetch retour");
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    async Task DeleteRow(RetourLineItem order)
+    {
+        if (orders.Contains(order))
+        {
+            orders.Remove(order);
+        }
+        else if (order.Id > 0)
+        {
+            var itemToRemove = orders.FirstOrDefault(t => t.Id == order.Id && t.Id > 0);
+            if (itemToRemove != null)
+            {
+                orders.Remove(itemToRemove);
+            }
+        }
+
+        UpdateTotals();
+        await OnItemsChanged(orders);
+        StateHasChanged();
+    }
+
+    private List<RetourLineItem> GetCurrentProductList(RetourLineItem currentOrder)
+    {
+        var resultList = new List<RetourLineItem>();
+        
+        if (!string.IsNullOrEmpty(currentOrder.ProductReference))
+        {
+            var currentProduct = searchList.FirstOrDefault(p => p.ProductReference == currentOrder.ProductReference);
+            
+            if (currentProduct != null)
+            {
+                resultList.Add(currentProduct);
+            }
+            else
+            {
+                resultList.Add(new RetourLineItem
+                {
+                    ProductReference = currentOrder.ProductReference,
+                    Description = currentOrder.Description,
+                    UnitPriceExcludingTax = currentOrder.UnitPriceExcludingTax,
+                    Quantity = 1
+                });
+            }
+            
+            resultList.AddRange(searchList.Where(p => p.ProductReference != currentOrder.ProductReference));
+        }
+        else
+        {
+            resultList.AddRange(searchList);
+        }
+        
+        return resultList;
+    }
+
+    async Task LoadData(LoadDataArgs args)
+    {
+        string _sortProperty = null;
+        string _sortOrder = null;
+        if (args.Sorts != null && args.Sorts.Any())
+        {
+            var sort = args.Sorts.First();
+            _sortProperty = sort.Property;
+            _sortOrder = sort.SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending;
+        }
+        var parameters = new QueryStringParameters
+        {
+            PageNumber = (args.Skip.Value / DefaultPageSize) + 1,
+            PageSize = DefaultPageSize,
+            SearchKeyword = args.Filter,
+            SortOrder = _sortOrder,
+            SortProprety = _sortProperty
+        };
+
+        try
+        {
+            var pagedProducts = await productsApiClient.GetPagedAsync(parameters, _cancellationTokenSource.Token);
+            searchList = pagedProducts.Items.Select(
+                p => new RetourLineItem
+                {
+                    ProductReference = p.Reference,
+                    Description = p.Name,
+                    UnitPriceExcludingTax = p.Price,
+                    Quantity = 1,
+                    DiscountPercentage = p.DiscountPourcentage,
+                    VatPercentage = p.VatRate,
+                }).ToList();
+
+            count = pagedProducts.TotalCount;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"{Localizer["failed_to_load_products"]}: {ex.Message}"
+            });
+            searchList = new List<RetourLineItem>();
+            count = 0;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task LoadProviders(LoadDataArgs args)
+    {
+        isLoadingProvider = true;
+        var parameters = new QueryStringParameters
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            SearchKeyword = args?.Filter ?? string.Empty
+        };
+
+        try
+        {
+            var pagedProviders = await providerApiClient.GetPagedAsync(parameters, _cancellationTokenSource.Token);
+            _filteredProviders = pagedProviders.Items;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"{Localizer["failed_to_load_providers"]}: {ex.Message}"
+            });
+            _filteredProviders = new List<ProviderResponse>();
+        }
+
+        isLoadingProvider = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task OnProductSelectedHandler(RetourLineItem order)
+    {
+        UpdateTotals();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task OnItemsChanged(List<RetourLineItem> items)
+    {
+        orders = items;
+        UpdateTotals();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void UpdateTotals()
+    {
+        LineItemCalculator.UpdateTotals(orders, out totalHt, out totalVat, out totalTtc);
+    }
+
+    public async Task ShowDialog(string ProductReference)
+    {
+        await LoadStateAsync();
+
+        await DialogService.OpenAsync<ProductHistoryDialog>($"{Localizer["history"]} {Localizer["article"]} {ProductReference}",
+            new Dictionary<string, object>() { { "ProductReference", ProductReference } },
+            new DialogOptions()
+            {
+                Resizable = true,
+                Draggable = true,
+                Resize = OnResize,
+                Drag = OnDrag,
+                Width = Settings != null ? Settings.Width : "700px",
+                Height = Settings != null ? Settings.Height : "512px",
+                Left = Settings != null ? Settings.Left : null,
+                Top = Settings != null ? Settings.Top : null
+            });
+
+        await SaveStateAsync();
+    }
+
+    void OnDrag(System.Drawing.Point point)
+    {
+        JSRuntime.InvokeVoidAsync("eval", $"console.log('Dialog drag. Left:{point.X}, Top:{point.Y}')");
+
+        if (Settings == null)
+        {
+            Settings = new DialogSettings();
+        }
+
+        Settings.Left = $"{point.X}px";
+        Settings.Top = $"{point.Y}px";
+
+        InvokeAsync(SaveStateAsync);
+    }
+
+    void OnResize(System.Drawing.Size size)
+    {
+        JSRuntime.InvokeVoidAsync("eval", $"console.log('Dialog resize. Width:{size.Width}, Height:{size.Height}')");
+
+        if (Settings == null)
+        {
+            Settings = new DialogSettings();
+        }
+
+        Settings.Width = $"{size.Width}px";
+        Settings.Height = $"{size.Height}px";
+
+        InvokeAsync(SaveStateAsync);
+    }
+
+    DialogSettings _settings;
+    public DialogSettings Settings
+    {
+        get
+        {
+            return _settings;
+        }
+        set
+        {
+            if (_settings != value)
+            {
+                _settings = value;
+                InvokeAsync(SaveStateAsync);
+            }
+        }
+    }
+
+    private async Task LoadStateAsync()
+    {
+        await Task.CompletedTask;
+
+        var result = await JSRuntime.InvokeAsync<string>("window.localStorage.getItem", "DialogSettings");
+        if (!string.IsNullOrEmpty(result))
+        {
+            _settings = System.Text.Json.JsonSerializer.Deserialize<DialogSettings>(result);
+        }
+    }
+
+    private async Task SaveStateAsync()
+    {
+        await Task.CompletedTask;
+
+        await JSRuntime.InvokeVoidAsync("window.localStorage.setItem", "DialogSettings", System.Text.Json.JsonSerializer.Serialize<DialogSettings>(Settings));
+    }
+
+    public class DialogSettings
+    {
+        public string Left { get; set; }
+        public string Top { get; set; }
+        public string Width { get; set; }
+        public string Height { get; set; }
+    }
+
+    private async Task SaveTags()
+    {
+        if (tagSelectorRef == null || string.IsNullOrEmpty(retourNumber) || !int.TryParse(retourNumber, out var retourNum))
+        {
+            logger.LogWarning("Cannot save tags: tagSelectorRef={TagSelectorRef}, retourNumber={RetourNumber}", 
+                tagSelectorRef == null ? "null" : "not null", retourNumber);
+            return;
+        }
+
+        try
+        {
+            var tagsToAdd = tagSelectorRef.GetTagsToAdd();
+            var tagIdsToRemove = tagSelectorRef.GetTagIdsToRemove();
+
+            logger.LogInformation("Saving tags for retour {Number}: {AddCount} to add, {RemoveCount} to remove", 
+                retourNum, tagsToAdd.Count, tagIdsToRemove.Count);
+
+            var validTagIdsToRemove = tagIdsToRemove.Where(id => id > 0).ToList();
+            if (validTagIdsToRemove.Any())
+            {
+                var removeRequest = new RemoveTagsFromDocumentRequest { TagIds = validTagIdsToRemove };
+                var removeSuccess = await TagsService.RemoveTagsFromDocumentAsync(DocumentTypes.RetourMarchandiseFournisseur, retourNum, removeRequest);
+                if (!removeSuccess)
+                {
+                    logger.LogWarning("Failed to remove tags from retour {Number}", retourNum);
+                }
+            }
+
+            if (tagsToAdd.Any())
+            {
+                var addRequest = new AddTagsToDocumentByNameRequest { TagNames = tagsToAdd };
+                var addSuccess = await TagsService.AddTagsToDocumentByNameAsync(DocumentTypes.RetourMarchandiseFournisseur, retourNum, addRequest);
+                if (!addSuccess)
+                {
+                    logger.LogWarning("Failed to add tags to retour {Number}", retourNum);
+                }
+            }
+
+            if (tagSelectorRef != null)
+            {
+                await tagSelectorRef.LoadDocumentTags();
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to save tags for retour {Number}", retourNumber);
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["warning"] ?? "Warning",
+                Detail = "Les tags n'ont pas pu être sauvegardés, mais le document a été enregistré."
+            });
+        }
+    }
+
+    public class RetourLineItem : ILineItem
+    {
+        public int Id { get; set; }
+        public string ProductReference { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string ProductReferenceAndDescription => $"{ProductReference} - {Description}";
+        public int Quantity { get; set; }
+        public decimal UnitPriceExcludingTax { get; set; }
+        public double DiscountPercentage { get; set; }
+        public decimal TotalExcludingTax { get; set; }
+        public double VatPercentage { get; set; }
+        public decimal TotalIncludingTax { get; set; }
+    }
+}
+
