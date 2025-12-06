@@ -472,6 +472,33 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Notification",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Type = table.Column<int>(type: "int", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Message = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
+                    RelatedEntityId = table.Column<int>(type: "int", nullable: true),
+                    RelatedEntityType = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    IsRead = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    UserId = table.Column<int>(type: "int", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime", nullable: false),
+                    ReadAt = table.Column<DateTime>(type: "datetime", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Notification", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Notification_User",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "RefreshTokens",
                 columns: table => new
                 {
@@ -647,7 +674,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     prix = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
                     prixAchat = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
                     visibilite = table.Column<bool>(type: "bit", nullable: false),
-                    SousFamilleProduitId = table.Column<int>(type: "int", nullable: true)
+                    SousFamilleProduitId = table.Column<int>(type: "int", nullable: true),
+                    Image1StoragePath = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Image2StoragePath = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Image3StoragePath = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1547,6 +1577,26 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 column: "RefProduit");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Notification_CreatedAt",
+                table: "Notification",
+                column: "CreatedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notification_IsRead",
+                table: "Notification",
+                column: "IsRead");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notification_Type",
+                table: "Notification",
+                column: "Type");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notification_UserId",
+                table: "Notification",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_PaiementClient_AccountingYearId",
                 table: "PaiementClient",
                 column: "AccountingYearId");
@@ -1762,6 +1812,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 
             migrationBuilder.DropTable(
                 name: "LigneInventaire");
+
+            migrationBuilder.DropTable(
+                name: "Notification");
 
             migrationBuilder.DropTable(
                 name: "PaiementClient");

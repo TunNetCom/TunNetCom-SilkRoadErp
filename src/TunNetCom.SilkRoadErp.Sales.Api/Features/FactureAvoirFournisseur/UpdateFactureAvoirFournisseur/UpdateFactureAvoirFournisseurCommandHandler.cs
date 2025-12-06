@@ -44,7 +44,7 @@ public class UpdateFactureAvoirFournisseurCommandHandler(
         // Unlink existing avoir fournisseurs
         foreach (var existingAvoir in factureAvoirFournisseur.AvoirFournisseur)
         {
-            existingAvoir.NumFactureAvoirFournisseur = null;
+            existingAvoir.FactureAvoirFournisseurId = null;
         }
 
         // Validate new avoir fournisseurs exist and are not already linked to another facture avoir (only if provided)
@@ -65,7 +65,7 @@ public class UpdateFactureAvoirFournisseurCommandHandler(
 
             // Check if any avoir fournisseur is already linked to another facture avoir
             var alreadyLinked = avoirFournisseurs
-                .Where(a => a.NumFactureAvoirFournisseur.HasValue && a.NumFactureAvoirFournisseur.Value != factureAvoirFournisseur.Id)
+                .Where(a => a.FactureAvoirFournisseurId.HasValue && a.FactureAvoirFournisseurId.Value != factureAvoirFournisseur.Id)
                 .ToList();
             if (alreadyLinked.Any())
             {
@@ -98,7 +98,7 @@ public class UpdateFactureAvoirFournisseurCommandHandler(
         {
             foreach (var avoirFournisseur in avoirFournisseurs)
             {
-                avoirFournisseur.NumFactureAvoirFournisseur = factureAvoirFournisseur.Id;
+                avoirFournisseur.FactureAvoirFournisseurId = factureAvoirFournisseur.Id;
             }
         }
 

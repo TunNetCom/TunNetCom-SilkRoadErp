@@ -19,7 +19,7 @@ public class GetAvoirFournisseurQueryHandler(
                 Num = a.Num,
                 Date = a.Date,
                 FournisseurId = a.FournisseurId,
-                NumFactureAvoirFournisseur = a.NumFactureAvoirFournisseur,
+                NumFactureAvoirFournisseur = a.FactureAvoirFournisseurId,
                 NumAvoirFournisseur = a.NumAvoirFournisseur,
                 TotalExcludingTaxAmount = a.LigneAvoirFournisseur.Sum(l => l.TotHt),
                 TotalVATAmount = a.LigneAvoirFournisseur.Sum(l => l.TotTtc - l.TotHt),

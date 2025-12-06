@@ -12,7 +12,7 @@ using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 {
     [DbContext(typeof(SalesContext))]
-    [Migration("20251204145825_InitMigration")]
+    [Migration("20251206015916_InitMigration")]
     partial class InitMigration
     {
         /// <inheritdoc />
@@ -168,6 +168,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("datetime")
                         .HasColumnName("date");
 
+                    b.Property<int?>("FactureAvoirFournisseurId")
+                        .HasColumnType("int")
+                        .HasColumnName("Num_FactureAvoirFournisseur");
+
                     b.Property<int?>("FournisseurId")
                         .HasColumnType("int")
                         .HasColumnName("fournisseurId");
@@ -179,10 +183,6 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("int")
                         .HasColumnName("Num_AvoirFournisseur");
 
-                    b.Property<int?>("NumFactureAvoirFournisseur")
-                        .HasColumnType("int")
-                        .HasColumnName("Num_FactureAvoirFournisseur");
-
                     b.Property<string>("Statut")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -193,13 +193,13 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 
                     b.HasIndex("AccountingYearId");
 
+                    b.HasIndex("FactureAvoirFournisseurId");
+
                     b.HasIndex("FournisseurId");
 
                     b.HasIndex("Num")
                         .IsUnique()
                         .HasDatabaseName("IX_AvoirFournisseur_Num");
-
-                    b.HasIndex("NumFactureAvoirFournisseur");
 
                     b.ToTable("AvoirFournisseur");
                 });
@@ -1384,6 +1384,75 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.ToTable("LigneInventaire", (string)null);
                 });
 
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("Id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime")
+                        .HasColumnName("CreatedAt");
+
+                    b.Property<bool>("IsRead")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsRead");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)")
+                        .HasColumnName("Message");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("datetime")
+                        .HasColumnName("ReadAt");
+
+                    b.Property<int?>("RelatedEntityId")
+                        .HasColumnType("int")
+                        .HasColumnName("RelatedEntityId");
+
+                    b.Property<string>("RelatedEntityType")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("RelatedEntityType");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("Title");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int")
+                        .HasColumnName("Type");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int")
+                        .HasColumnName("UserId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("IX_Notification_CreatedAt");
+
+                    b.HasIndex("IsRead")
+                        .HasDatabaseName("IX_Notification_IsRead");
+
+                    b.HasIndex("Type")
+                        .HasDatabaseName("IX_Notification_Type");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("IX_Notification_UserId");
+
+                    b.ToTable("Notification", (string)null);
+                });
+
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.PaiementClient", b =>
                 {
                     b.Property<int>("Id")
@@ -1719,6 +1788,18 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("refe");
+
+                    b.Property<string>("Image1StoragePath")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("Image1StoragePath");
+
+                    b.Property<string>("Image2StoragePath")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("Image2StoragePath");
+
+                    b.Property<string>("Image3StoragePath")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("Image3StoragePath");
 
                     b.Property<string>("Nom")
                         .IsRequired()
@@ -2277,22 +2358,22 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_dbo.AvoirFournisseur_dbo.AccountingYear_AccountingYearId");
 
+                    b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.FactureAvoirFournisseur", "FactureAvoirFournisseur")
+                        .WithMany("AvoirFournisseur")
+                        .HasForeignKey("FactureAvoirFournisseurId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("FK_dbo.AvoirFournisseur_dbo.FactureAvoirFournisseur_Num_FactureAvoirFournisseur");
+
                     b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Fournisseur", "Fournisseur")
                         .WithMany("AvoirFournisseur")
                         .HasForeignKey("FournisseurId")
                         .HasConstraintName("FK_dbo.AvoirFournisseur_dbo.Fournisseur_fournisseurId");
 
-                    b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.FactureAvoirFournisseur", "NumFactureAvoirFournisseurNavigation")
-                        .WithMany("AvoirFournisseur")
-                        .HasForeignKey("NumFactureAvoirFournisseur")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .HasConstraintName("FK_dbo.AvoirFournisseur_dbo.FactureAvoirFournisseur_Num_FactureAvoirFournisseur");
-
                     b.Navigation("AccountingYear");
 
-                    b.Navigation("Fournisseur");
+                    b.Navigation("FactureAvoirFournisseur");
 
-                    b.Navigation("NumFactureAvoirFournisseurNavigation");
+                    b.Navigation("Fournisseur");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Avoirs", b =>
@@ -2684,6 +2765,17 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Navigation("Inventaire");
 
                     b.Navigation("RefProduitNavigation");
+                });
+
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Notification", b =>
+                {
+                    b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("FK_Notification_User");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.PaiementClient", b =>

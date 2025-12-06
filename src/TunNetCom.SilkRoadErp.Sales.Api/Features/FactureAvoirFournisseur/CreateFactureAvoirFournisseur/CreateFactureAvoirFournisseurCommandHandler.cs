@@ -45,7 +45,7 @@ public class CreateFactureAvoirFournisseurCommandHandler(
             }
 
             // Check if any avoir fournisseur is already linked to another facture avoir
-            var alreadyLinked = avoirFournisseurs.Where(a => a.NumFactureAvoirFournisseur.HasValue).ToList();
+            var alreadyLinked = avoirFournisseurs.Where(a => a.FactureAvoirFournisseurId.HasValue).ToList();
             if (alreadyLinked.Any())
             {
                 var linkedIds = alreadyLinked.Select(a => a.Num).ToList();
@@ -84,7 +84,7 @@ public class CreateFactureAvoirFournisseurCommandHandler(
         {
             foreach (var avoirFournisseur in avoirFournisseurs)
             {
-                avoirFournisseur.NumFactureAvoirFournisseur = factureAvoirFournisseur.Id;
+                avoirFournisseur.FactureAvoirFournisseurId = factureAvoirFournisseur.Id;
             }
         }
 

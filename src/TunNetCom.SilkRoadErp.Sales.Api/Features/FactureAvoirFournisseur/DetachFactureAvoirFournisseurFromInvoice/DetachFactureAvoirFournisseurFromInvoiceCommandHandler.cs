@@ -13,20 +13,20 @@ public class DetachFactureAvoirFournisseurFromInvoiceCommandHandler(
         _logger.LogInformation("Detaching facture avoir fournisseur {FactureAvoirIds} from invoice {InvoiceId}",
             string.Join(", ", command.FactureAvoirFournisseurIds), command.FactureFournisseurId);
 
-        // Verify invoice exists
-        var invoiceExists = await _context.FactureFournisseur
-            .AnyAsync(f => f.Num == command.FactureFournisseurId, cancellationToken);
+        // Verify invoice exists and get its Id
+        var invoice = await _context.FactureFournisseur
+            .FirstOrDefaultAsync(f => f.Num == command.FactureFournisseurId, cancellationToken);
 
-        if (!invoiceExists)
+        if (invoice == null)
         {
             _logger.LogWarning("FactureFournisseur with Num {Num} not found", command.FactureFournisseurId);
             return Result.Fail(EntityNotFound.Error());
         }
 
-        // Get facture avoir fournisseurs that are linked to this invoice
+        // Get facture avoir fournisseurs that are linked to this invoice - use Id, not Num
         var factureAvoirs = await _context.FactureAvoirFournisseur
             .Where(f => command.FactureAvoirFournisseurIds.Contains(f.Num) &&
-                       f.NumFactureFournisseur == command.FactureFournisseurId)
+                       f.NumFactureFournisseur == invoice.Id)
             .ToListAsync(cancellationToken);
 
         if (factureAvoirs.Count != command.FactureAvoirFournisseurIds.Count)

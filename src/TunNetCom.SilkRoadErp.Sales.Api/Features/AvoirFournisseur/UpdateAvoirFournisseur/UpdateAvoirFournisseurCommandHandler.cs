@@ -36,13 +36,15 @@ public class UpdateAvoirFournisseurCommandHandler(
             }
         }
 
+        int? factureAvoirFournisseurId = null;
         if (command.NumFactureAvoirFournisseur.HasValue)
         {
-            var factureAvoirExists = await _context.FactureAvoirFournisseur.AnyAsync(f => f.Num == command.NumFactureAvoirFournisseur.Value, cancellationToken);
-            if (!factureAvoirExists)
+            var factureAvoir = await _context.FactureAvoirFournisseur.FirstOrDefaultAsync(f => f.Num == command.NumFactureAvoirFournisseur.Value, cancellationToken);
+            if (factureAvoir == null)
             {
                 return Result.Fail("facture_avoir_fournisseur_not_found");
             }
+            factureAvoirFournisseurId = factureAvoir.Id;
         }
 
         // Validate products exist
@@ -73,7 +75,7 @@ public class UpdateAvoirFournisseurCommandHandler(
         avoirFournisseur.UpdateAvoirFournisseur(
             command.Date,
             command.FournisseurId,
-            command.NumFactureAvoirFournisseur,
+            factureAvoirFournisseurId, // Use Id instead of Num
             activeAccountingYear.Id);
 
         // Remove existing lines

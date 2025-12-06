@@ -10,14 +10,14 @@ public partial class AvoirFournisseur : IAccountingYearEntity
     public static AvoirFournisseur CreateAvoirFournisseur(
         DateTime date,
         int? fournisseurId,
-        int? numFactureAvoirFournisseur,
+        int? factureAvoirFournisseurId,
         int accountingYearId)
     {
         return new AvoirFournisseur
         {
             Date = date,
             FournisseurId = fournisseurId,
-            NumFactureAvoirFournisseur = numFactureAvoirFournisseur,
+            FactureAvoirFournisseurId = factureAvoirFournisseurId,
             AccountingYearId = accountingYearId,
             Statut = DocumentStatus.Draft
         };
@@ -35,12 +35,12 @@ public partial class AvoirFournisseur : IAccountingYearEntity
     public void UpdateAvoirFournisseur(
         DateTime date,
         int? fournisseurId,
-        int? numFactureAvoirFournisseur,
+        int? factureAvoirFournisseurId,
         int accountingYearId)
     {
         this.Date = date;
         this.FournisseurId = fournisseurId;
-        this.NumFactureAvoirFournisseur = numFactureAvoirFournisseur;
+        this.FactureAvoirFournisseurId = factureAvoirFournisseurId;
         this.AccountingYearId = accountingYearId;
     }
 
@@ -52,7 +52,7 @@ public partial class AvoirFournisseur : IAccountingYearEntity
 
     public int? FournisseurId { get; set; }
 
-    public int? NumFactureAvoirFournisseur { get; set; }
+    public int? FactureAvoirFournisseurId { get; set; }
 
     public int NumAvoirFournisseur { get; set; }
 
@@ -66,5 +66,5 @@ public partial class AvoirFournisseur : IAccountingYearEntity
 
     public virtual ICollection<LigneAvoirFournisseur> LigneAvoirFournisseur { get; set; } = new List<LigneAvoirFournisseur>();
 
-    public virtual FactureAvoirFournisseur? NumFactureAvoirFournisseurNavigation { get; set; }
+    public virtual FactureAvoirFournisseur? FactureAvoirFournisseur { get; set; }
 }

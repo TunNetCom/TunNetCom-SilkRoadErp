@@ -21,7 +21,7 @@ public class GetFullAvoirFournisseurQueryHandler(
                 Num = a.Num,
                 Date = a.Date,
                 FournisseurId = a.FournisseurId,
-                NumFactureAvoirFournisseur = a.NumFactureAvoirFournisseur,
+                NumFactureAvoirFournisseur = a.FactureAvoirFournisseurId,
                 NumAvoirFournisseur = a.NumAvoirFournisseur,
                 Fournisseur = a.Fournisseur != null ? new AvoirFournisseurProviderResponse
                 {

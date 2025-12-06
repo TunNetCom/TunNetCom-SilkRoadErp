@@ -165,6 +165,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("datetime")
                         .HasColumnName("date");
 
+                    b.Property<int?>("FactureAvoirFournisseurId")
+                        .HasColumnType("int")
+                        .HasColumnName("Num_FactureAvoirFournisseur");
+
                     b.Property<int?>("FournisseurId")
                         .HasColumnType("int")
                         .HasColumnName("fournisseurId");
@@ -176,10 +180,6 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("int")
                         .HasColumnName("Num_AvoirFournisseur");
 
-                    b.Property<int?>("NumFactureAvoirFournisseur")
-                        .HasColumnType("int")
-                        .HasColumnName("Num_FactureAvoirFournisseur");
-
                     b.Property<string>("Statut")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -190,13 +190,13 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 
                     b.HasIndex("AccountingYearId");
 
+                    b.HasIndex("FactureAvoirFournisseurId");
+
                     b.HasIndex("FournisseurId");
 
                     b.HasIndex("Num")
                         .IsUnique()
                         .HasDatabaseName("IX_AvoirFournisseur_Num");
-
-                    b.HasIndex("NumFactureAvoirFournisseur");
 
                     b.ToTable("AvoirFournisseur");
                 });
@@ -2355,22 +2355,22 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_dbo.AvoirFournisseur_dbo.AccountingYear_AccountingYearId");
 
+                    b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.FactureAvoirFournisseur", "FactureAvoirFournisseur")
+                        .WithMany("AvoirFournisseur")
+                        .HasForeignKey("FactureAvoirFournisseurId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("FK_dbo.AvoirFournisseur_dbo.FactureAvoirFournisseur_Num_FactureAvoirFournisseur");
+
                     b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Fournisseur", "Fournisseur")
                         .WithMany("AvoirFournisseur")
                         .HasForeignKey("FournisseurId")
                         .HasConstraintName("FK_dbo.AvoirFournisseur_dbo.Fournisseur_fournisseurId");
 
-                    b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.FactureAvoirFournisseur", "NumFactureAvoirFournisseurNavigation")
-                        .WithMany("AvoirFournisseur")
-                        .HasForeignKey("NumFactureAvoirFournisseur")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .HasConstraintName("FK_dbo.AvoirFournisseur_dbo.FactureAvoirFournisseur_Num_FactureAvoirFournisseur");
-
                     b.Navigation("AccountingYear");
 
-                    b.Navigation("Fournisseur");
+                    b.Navigation("FactureAvoirFournisseur");
 
-                    b.Navigation("NumFactureAvoirFournisseurNavigation");
+                    b.Navigation("Fournisseur");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Avoirs", b =>

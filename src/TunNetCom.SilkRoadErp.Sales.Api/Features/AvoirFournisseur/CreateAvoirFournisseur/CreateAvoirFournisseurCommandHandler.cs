@@ -23,13 +23,15 @@ public class CreateAvoirFournisseurCommandHandler(
             }
         }
 
+        int? factureAvoirFournisseurId = null;
         if (command.NumFactureAvoirFournisseur.HasValue)
         {
-            var factureAvoirExists = await _context.FactureAvoirFournisseur.AnyAsync(f => f.Num == command.NumFactureAvoirFournisseur.Value, cancellationToken);
-            if (!factureAvoirExists)
+            var factureAvoir = await _context.FactureAvoirFournisseur.FirstOrDefaultAsync(f => f.Num == command.NumFactureAvoirFournisseur.Value, cancellationToken);
+            if (factureAvoir == null)
             {
                 return Result.Fail("facture_avoir_fournisseur_not_found");
             }
+            factureAvoirFournisseurId = factureAvoir.Id;
         }
 
         // Validate products exist
@@ -61,7 +63,7 @@ public class CreateAvoirFournisseurCommandHandler(
         var avoirFournisseur = Domain.Entites.AvoirFournisseur.CreateAvoirFournisseur(
             command.Date,
             command.FournisseurId,
-            command.NumFactureAvoirFournisseur,
+            factureAvoirFournisseurId, // Use Id instead of Num
             activeAccountingYear.Id);
         avoirFournisseur.Num = num;
         avoirFournisseur.NumAvoirFournisseur = num; // Using the same number for simplicity

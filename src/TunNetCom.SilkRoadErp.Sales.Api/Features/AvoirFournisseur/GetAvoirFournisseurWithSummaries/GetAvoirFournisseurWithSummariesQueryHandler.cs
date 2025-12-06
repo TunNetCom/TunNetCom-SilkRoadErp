@@ -31,7 +31,18 @@ public class GetAvoirFournisseurWithSummariesQueryHandler(
 
         if (request.NumFactureAvoirFournisseur.HasValue)
         {
-            baseQuery = baseQuery.Where(x => x.a.NumFactureAvoirFournisseur == request.NumFactureAvoirFournisseur.Value);
+            // Convert Num to Id - request.NumFactureAvoirFournisseur contains the Num of FactureAvoirFournisseur
+            var factureAvoir = await _context.FactureAvoirFournisseur
+                .FirstOrDefaultAsync(f => f.Num == request.NumFactureAvoirFournisseur.Value, cancellationToken);
+            if (factureAvoir != null)
+            {
+                baseQuery = baseQuery.Where(x => x.a.FactureAvoirFournisseurId == factureAvoir.Id);
+            }
+            else
+            {
+                // If facture avoir not found, return empty result
+                baseQuery = baseQuery.Where(x => false);
+            }
         }
 
         // Apply Status filter
@@ -139,7 +150,7 @@ public class GetAvoirFournisseurWithSummariesQueryHandler(
                 Date = x.a.Date,
                 FournisseurId = x.a.FournisseurId,
                 FournisseurName = x.f != null ? x.f.Nom : null,
-                NumFactureAvoirFournisseur = x.a.NumFactureAvoirFournisseur,
+                NumFactureAvoirFournisseur = x.a.FactureAvoirFournisseurId,
                 TotalExcludingTaxAmount = x.TotalExcludingTaxAmount,
                 TotalVATAmount = x.TotalVATAmount,
                 TotalIncludingTaxAmount = x.TotalIncludingTaxAmount,
