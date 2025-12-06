@@ -26,6 +26,7 @@ public class UpdateDeliveryNoteEndpoint : ICarterModule
             NumFacture: updateDeliveryNoteRequest.InvoiceNumber,
             ClientId: updateDeliveryNoteRequest.CustomerId,
             InstallationTechnicianId: updateDeliveryNoteRequest.InstallationTechnicianId,
+            DeliveryCarId: updateDeliveryNoteRequest.DeliveryCarId,
             DeliveryNoteDetails: updateDeliveryNoteRequest.Items.Select(selector => new LigneBlSubCommand
             {
                 Id = selector.Id,

@@ -27,6 +27,7 @@ public class CreateDeliveryNoteEndpoint : ICarterModule
             NumFacture: createDeliveryNoteRequest.InvoiceNumber,
             ClientId: createDeliveryNoteRequest.CustomerId,
             InstallationTechnicianId: createDeliveryNoteRequest.InstallationTechnicianId,
+            DeliveryCarId: createDeliveryNoteRequest.DeliveryCarId,
             DeliveryNoteDetails: items.Select(selector => new LigneBlSubCommand
             {
                 RefProduit = selector.ProductReference ?? string.Empty,

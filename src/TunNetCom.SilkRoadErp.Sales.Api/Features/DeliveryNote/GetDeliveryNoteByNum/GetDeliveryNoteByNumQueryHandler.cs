@@ -34,6 +34,7 @@ public class GetDeliveryNoteByNumQueryHandler(
             CustomerId = deliveryNote.ClientId,
             InstallationTechnicianId = deliveryNote.InstallationTechnicianId,
             InstallationTechnicianName = deliveryNote.InstallationTechnician?.Nom,
+            DeliveryCarId = deliveryNote.DeliveryCarId,
             TotalVat = deliveryNote.TotTva,
             TotalAmount = deliveryNote.NetPayer,
             InvoiceNumber = deliveryNote.NumFacture,

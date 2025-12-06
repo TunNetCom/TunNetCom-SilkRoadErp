@@ -51,7 +51,8 @@ public partial class BonDeLivraison : IAccountingYearEntity
         int? numFacture,
         int? clientId,
         int accountingYearId,
-        int? installationTechnicianId = null) 
+        int? installationTechnicianId = null,
+        int? deliveryCarId = null) 
     {
         this.Date = date;
         this.TotHTva = totHTva;
@@ -62,6 +63,7 @@ public partial class BonDeLivraison : IAccountingYearEntity
         this.ClientId = clientId;
         this.AccountingYearId = accountingYearId;
         this.InstallationTechnicianId = installationTechnicianId;
+        this.DeliveryCarId = deliveryCarId;
     }
 
     public int Id { get; set; }
@@ -86,11 +88,15 @@ public partial class BonDeLivraison : IAccountingYearEntity
 
     public int? InstallationTechnicianId { get; set; }
 
+    public int? DeliveryCarId { get; set; }
+
     public DocumentStatus Statut { get; private set; }
 
     public virtual Client? Client { get; set; }
 
     public virtual InstallationTechnician? InstallationTechnician { get; set; }
+
+    public virtual DeliveryCar? DeliveryCar { get; set; }
 
     public virtual ICollection<LigneBl> LigneBl { get; set; } = new List<LigneBl>();
 

@@ -9,6 +9,7 @@ public record CreateDeliveryNoteCommand(
     int? NumFacture,
     int? ClientId,
     int? InstallationTechnicianId,
+    int? DeliveryCarId,
     IEnumerable<LigneBlSubCommand> DeliveryNoteDetails)
     : IRequest<Result<int>>;
 

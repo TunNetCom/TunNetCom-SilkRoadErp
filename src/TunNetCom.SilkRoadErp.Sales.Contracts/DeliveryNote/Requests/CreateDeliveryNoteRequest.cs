@@ -26,6 +26,9 @@ public class CreateDeliveryNoteRequest
     [JsonPropertyName("installationTechnicianId")]
     public int? InstallationTechnicianId { get; set; }
 
+    [JsonPropertyName("deliveryCarId")]
+    public int? DeliveryCarId { get; set; }
+
     [JsonPropertyName("items")]
     public List<DeliveryNoteItemRequest> Items { get; set; } = new();
 }

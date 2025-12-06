@@ -95,6 +95,8 @@ public partial class SalesContext : DbContext
 
     public virtual DbSet<InstallationTechnician> InstallationTechnician { get; set; }
 
+    public virtual DbSet<DeliveryCar> DeliveryCar { get; set; }
+
     public virtual DbSet<User> User { get; set; }
 
     public virtual DbSet<Role> Role { get; set; }

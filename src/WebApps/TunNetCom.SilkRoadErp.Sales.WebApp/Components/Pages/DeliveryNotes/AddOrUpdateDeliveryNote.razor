@@ -25,11 +25,14 @@
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
 @using TunNetCom.SilkRoadErp.Sales.Contracts.InstallationTechnician.Responses
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.InstallationTechnician
+@using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryCar
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryCar
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.PrintHistory
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.Security.Claims
 @inject ITagsApiClient TagsService
 @inject IInstallationTechnicianApiClient TechnicianService
+@inject IDeliveryCarApiClient DeliveryCarService
 
 @inject IStringLocalizer<SharedResource> Localizer
 @inject ToastService toastService
@@ -46,6 +49,7 @@
 @inject IPrintService PrintService
 @inject ITagsApiClient TagsService
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
 
 <style>
     /* Header actions container */
@@ -271,6 +275,41 @@ else
                 </Columns>
             </RadzenDropDownDataGrid>
 
+            <RadzenLabel Text="@Localizer["Delivery_Car"]" />
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" AlignItems="Radzen.AlignItems.Center">
+                <RadzenDropDownDataGrid AllowClear="true"
+                                        IsLoading="@isLoadingDeliveryCars"
+                                        @bind-Value="@selectedDeliveryCarId"
+                                        LoadData="@LoadDeliveryCars"
+                                        AllowFiltering="true"
+                                        Disabled="@isReadOnly"
+                                        Style="width: 350px;"
+                                        Data="@_filteredDeliveryCars"
+                                        TextProperty="@nameof(DeliveryCarResponse.Matricule)"
+                                        ValueProperty="@nameof(DeliveryCarResponse.Id)"
+                                        Placeholder="@Localizer["Select_Delivery_Car"]">
+                    <Template Context="car">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <RadzenIcon Icon="directions_car" Style="font-size: 16px;" />
+                            <span>@car.Matricule - @car.Owner</span>
+                        </div>
+                    </Template>
+                    <Columns>
+                        <RadzenDropDownDataGridColumn Property="@nameof(DeliveryCarResponse.Id)" Title="ID" Width="80px" />
+                        <RadzenDropDownDataGridColumn Property="@nameof(DeliveryCarResponse.Matricule)" Title="@Localizer["Matricule"]" Width="150px" />
+                        <RadzenDropDownDataGridColumn Property="@nameof(DeliveryCarResponse.Owner)" Title="@Localizer["Owner"]" Width="200px" />
+                    </Columns>
+                </RadzenDropDownDataGrid>
+                <RadzenButton Icon="add" 
+                              ButtonStyle="ButtonStyle.Success" 
+                              Variant="Variant.Flat"
+                              Size="ButtonSize.Medium"
+                              Disabled="@isReadOnly"
+                              Click="@CreateNewDeliveryCar"
+                              Title="@Localizer["Add_Delivery_Car"]"
+                              AriaLabel="@Localizer["Add_Delivery_Car"]" />
+            </RadzenStack>
+
             <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" AlignItems="Radzen.AlignItems.Center">
                 <RadzenLabel Text="@Localizer["invoice_number"]" />
                 <RadzenDropDownDataGrid AllowClear="true"
@@ -364,11 +403,14 @@ else
     private List<CustomerResponse> _filteredCustomers { get; set; } = new();
     private List<InvoiceResponse> _filteredInvoices { get; set; } = new();
     private List<InstallationTechnicianBaseInfo> _filteredTechnicians { get; set; } = new();
+    private List<DeliveryCarResponse> _filteredDeliveryCars { get; set; } = new();
     private bool isLoading = true;
     bool isLoadingCustomers = false;
     bool isLoadingInvoices = false;
     bool isLoadingTechnicians = false;
+    bool isLoadingDeliveryCars = false;
     private int? selectedTechnicianId;
+    private int? selectedDeliveryCarId;
     decimal totalHt;
     decimal totalVat;
     decimal totalTtc;
@@ -427,6 +469,7 @@ else
         getAppParametersResponse = param.AsT0;
         await LoadCustomers(null);
         await LoadTechnicians(null);
+        await LoadDeliveryCars(null);
         await FetchDeliveryNote();
         // Only load invoices if customer is already selected (edit mode or from quotation)
         if (selectedCustomerId.HasValue)
@@ -507,6 +550,7 @@ else
                 InvoiceNumber = _selectedInvoiceId,
                 CustomerId = _selectedCustomerId,
                 InstallationTechnicianId = selectedTechnicianId,
+                DeliveryCarId = selectedDeliveryCarId,
                 Items = orders.Select(o => new DeliveryNoteItemRequest
                 {
                     Id = o.Id,
@@ -691,6 +735,7 @@ else
                     deliveryNoteDate = deliveryNote.Date;
                     selectedCustomerId = deliveryNote.CustomerId;
                     selectedTechnicianId = deliveryNote.InstallationTechnicianId;
+                    selectedDeliveryCarId = deliveryNote.DeliveryCarId;
                     selectedInvoiceId = deliveryNote.InvoiceNumber;
                     documentStatut = deliveryNote.Statut; // Récupérer le statut
                     isReadOnly = documentStatut == 1; // Mettre à jour le mode lecture seule
@@ -904,6 +949,43 @@ else
 
         isLoadingTechnicians = false;
         await InvokeAsync(StateHasChanged);
+    }
+
+    async Task LoadDeliveryCars(LoadDataArgs args)
+    {
+        isLoadingDeliveryCars = true;
+
+        try
+        {
+            _filteredDeliveryCars = await DeliveryCarService.GetDeliveryCarsAsync(_cancellationTokenSource.Token);
+            
+            // Apply filter if provided
+            if (!string.IsNullOrEmpty(args?.Filter))
+            {
+                _filteredDeliveryCars = _filteredDeliveryCars
+                    .Where(c => c.Matricule.Contains(args.Filter, StringComparison.OrdinalIgnoreCase) ||
+                                c.Owner.Contains(args.Filter, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Erreur",
+                Detail = $"Erreur lors du chargement des voitures: {ex.Message}"
+            });
+            _filteredDeliveryCars = new List<DeliveryCarResponse>();
+        }
+
+        isLoadingDeliveryCars = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void CreateNewDeliveryCar()
+    {
+        NavigationManager.NavigateTo("/delivery-car/add");
     }
 
     async Task LoadCustomerInvoices(LoadDataArgs args)

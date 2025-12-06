@@ -1,0 +1,177 @@
+@page "/delivery-cars"
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryCar
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryCar
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using Radzen.Blazor
+@using Radzen
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<SharedResource> Localizer
+@inject IDeliveryCarApiClient DeliveryCarService
+@inject ToastService ToastService
+@inject DialogService DialogService
+@inject Radzen.NotificationService NotificationService
+
+<div class="delivery-cars-container">
+    <div class="delivery-cars-card">
+        <div class="delivery-cars-header">
+            <h3 class="delivery-cars-title">@Localizer["Delivery_Cars"]</h3>
+            <RadzenButton Icon="add" Text="@Localizer["Add_Delivery_Car"]"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Click="CreateDeliveryCar"
+                          Class="btn-primary" />
+        </div>
+
+        <RadzenDataGrid @ref="deliveryCarGrid"
+                        TItem="DeliveryCarResponse"
+                        Data="@deliveryCars"
+                        LoadData="@LoadDeliveryCars"
+                        AllowFiltering="true"
+                        AllowPaging="true"
+                        AllowSorting="true"
+                        FilterPopupRenderMode="PopupRenderMode.OnDemand"
+                        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                        PageSize="10"
+                        Density="Density.Compact"
+                        Class="delivery-cars-grid"
+                        IsLoading="@isLoadingDeliveryCars"
+                        ShowPagingSummary="true"
+                        Responsive="true">
+            <EmptyTemplate>
+                <p style="font-size: 24px; text-align: center; margin: 2rem;">@Localizer["No_Delivery_Cars"]</p>
+            </EmptyTemplate>
+            <Columns>
+                <RadzenDataGridColumn TItem="DeliveryCarResponse" Property="Id" Title="ID" Width="80px" />
+                <RadzenDataGridColumn TItem="DeliveryCarResponse" Property="Matricule" Title="@Localizer["Matricule"]" Width="200px" />
+                <RadzenDataGridColumn TItem="DeliveryCarResponse" Property="Owner" Title="@Localizer["Owner"]" Width="300px" />
+                <RadzenDataGridColumn TItem="DeliveryCarResponse" Filterable="false" Sortable="false" Width="150px" TextAlign="TextAlign.Center">
+                    <Template Context="deliveryCar">
+                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Success" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter"
+                                      Click="@(() => EditDeliveryCar(deliveryCar.Id))"
+                                      Title="@Localizer["Edit"]" />
+                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter" Class="rz-my-1 rz-ms-1"
+                                      Click="@(() => ConfirmDeleteDeliveryCar(deliveryCar.Id))"
+                                      Title="@Localizer["Delete"]" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    </div>
+</div>
+
+<style>
+    .delivery-cars-container {
+        padding: 0.25rem 1.25rem 1.25rem 1.25rem;
+        max-width: 1400px;
+        margin: 0.25rem auto 1rem auto;
+    }
+
+    .delivery-cars-card {
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        padding: 0.75rem 1.5rem 1.5rem 1.5rem;
+        border: none;
+    }
+
+    .delivery-cars-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.25rem;
+    }
+
+    .delivery-cars-title {
+        font-weight: 600;
+        margin: 0;
+        font-size: 2rem;
+        line-height: 1.2;
+    }
+
+    .delivery-cars-grid {
+        border-radius: 8px;
+        overflow: hidden;
+        border: none;
+    }
+</style>
+
+@code {
+    private RadzenDataGrid<DeliveryCarResponse> deliveryCarGrid = default!;
+    private List<DeliveryCarResponse> deliveryCars = new();
+    private bool isLoadingDeliveryCars = false;
+    private CancellationTokenSource cancellationTokenSource = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await deliveryCarGrid.Reload();
+        }
+    }
+
+    async Task LoadDeliveryCars(LoadDataArgs args)
+    {
+        isLoadingDeliveryCars = true;
+        await Task.Yield();
+
+        try
+        {
+            deliveryCars = await DeliveryCarService.GetDeliveryCarsAsync(cancellationTokenSource.Token);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Error"],
+                Detail = $"{Localizer["Error_Loading_Delivery_Cars"]}: {ex.Message}"
+            });
+            deliveryCars = new List<DeliveryCarResponse>();
+        }
+
+        isLoadingDeliveryCars = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void CreateDeliveryCar()
+    {
+        NavigationManager.NavigateTo("/delivery-car/add");
+    }
+
+    private void EditDeliveryCar(int id)
+    {
+        NavigationManager.NavigateTo($"/delivery-car/edit/{id}");
+    }
+
+    async Task ConfirmDeleteDeliveryCar(int deliveryCarId)
+    {
+        bool? confirmed = await DialogService.Confirm(Localizer["Confirm_Delete_Delivery_Car"],
+                                                      Localizer["Confirm_Delete_Title"],
+                                                      new ConfirmOptions() { OkButtonText = Localizer["Yes"], CancelButtonText = Localizer["No"] });
+
+        if (confirmed == true)
+        {
+            try
+            {
+                await DeliveryCarService.DeleteDeliveryCarAsync(deliveryCarId, cancellationTokenSource.Token);
+                ToastService.Notify(new(ToastType.Success, Localizer["Delivery_Car_Deleted"]));
+                await deliveryCarGrid.Reload();
+            }
+            catch (Exception ex)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["Error"],
+                    Detail = $"{Localizer["Error_Deleting_Delivery_Car"]}: {ex.Message}"
+                });
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        cancellationTokenSource.Cancel();
+        cancellationTokenSource.Dispose();
+    }
+}
+

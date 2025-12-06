@@ -1,0 +1,184 @@
+@page "/delivery-car/add"
+@page "/delivery-car/edit/{Id:int}"
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryCar
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryCar
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using Radzen.Blazor
+@using Radzen
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<SharedResource> Localizer
+@inject IDeliveryCarApiClient DeliveryCarService
+@inject ToastService ToastService
+@inject Radzen.NotificationService NotificationService
+
+<div class="delivery-car-form-container">
+    <div class="delivery-car-form-card">
+        <div class="delivery-car-form-header">
+            <h3>@(IsEditMode ? Localizer["Edit_Delivery_Car"] : Localizer["New_Delivery_Car"])</h3>
+            <RadzenButton Icon="arrow_back" Text="@Localizer["Back"]"
+                          ButtonStyle="ButtonStyle.Secondary"
+                          Click="GoBack"
+                          Variant="Variant.Outlined" />
+        </div>
+
+        <RadzenStack Gap="1.5rem">
+            <RadzenFormField Text="@($"{Localizer["Matricule"]} *")" class="rz-col-12">
+                <RadzenTextBox @bind-Value="deliveryCar.Matricule" Placeholder="@Localizer["Matricule_Placeholder"]" MaxLength="50" />
+            </RadzenFormField>
+
+            <RadzenFormField Text="@($"{Localizer["Owner"]} *")" class="rz-col-12">
+                <RadzenTextBox @bind-Value="deliveryCar.Owner" Placeholder="@Localizer["Owner_Placeholder"]" MaxLength="100" />
+            </RadzenFormField>
+
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" JustifyContent="Radzen.JustifyContent.End" class="rz-col-12">
+                <RadzenButton Text="@Localizer["Cancel"]" ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Outlined" Click="GoBack" />
+                <RadzenButton Text="@(IsEditMode ? Localizer["Update"] : Localizer["Create"])" 
+                              ButtonStyle="ButtonStyle.Primary" 
+                              Click="@SaveDeliveryCar"
+                              IsBusy="@isSaving" />
+            </RadzenStack>
+        </RadzenStack>
+    </div>
+</div>
+
+<style>
+    .delivery-car-form-container {
+        padding: 0;
+        margin: 0;
+    }
+
+    .delivery-car-form-card {
+        background: transparent;
+        border-radius: 0;
+        box-shadow: none;
+        padding: 1rem;
+    }
+
+    .delivery-car-form-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .delivery-car-form-header h3 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+</style>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+    
+    private bool IsEditMode => Id.HasValue;
+    private bool isSaving = false;
+    private CreateDeliveryCarRequest deliveryCar = new();
+    private CancellationTokenSource cancellationTokenSource = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (IsEditMode && Id.HasValue)
+        {
+            try
+            {
+                var existingCar = await DeliveryCarService.GetDeliveryCarByIdAsync(Id.Value, cancellationTokenSource.Token);
+                if (existingCar != null)
+                {
+                    deliveryCar = new CreateDeliveryCarRequest
+                    {
+                        Matricule = existingCar.Matricule,
+                        Owner = existingCar.Owner
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["Error"],
+                    Detail = $"{Localizer["Error_Loading_Delivery_Car"]}: {ex.Message}"
+                });
+            }
+        }
+    }
+
+    async Task SaveDeliveryCar()
+    {
+        if (string.IsNullOrWhiteSpace(deliveryCar.Matricule))
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["Validation"],
+                Detail = Localizer["Matricule_Required"]
+            });
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(deliveryCar.Owner))
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["Validation"],
+                Detail = Localizer["Owner_Required"]
+            });
+            return;
+        }
+
+        isSaving = true;
+        try
+        {
+            if (IsEditMode && Id.HasValue)
+            {
+                var updateRequest = new UpdateDeliveryCarRequest
+                {
+                    Matricule = deliveryCar.Matricule,
+                    Owner = deliveryCar.Owner
+                };
+                await DeliveryCarService.UpdateDeliveryCarAsync(Id.Value, updateRequest, cancellationTokenSource.Token);
+                ToastService.Notify(new(ToastType.Success, Localizer["Delivery_Car_Updated"]));
+                NavigationManager.NavigateTo("/delivery-cars");
+            }
+            else
+            {
+                var result = await DeliveryCarService.CreateDeliveryCarAsync(deliveryCar, cancellationTokenSource.Token);
+                if (result > 0)
+                {
+                    ToastService.Notify(new(ToastType.Success, Localizer["Delivery_Car_Created"]));
+                    NavigationManager.NavigateTo("/delivery-cars");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Error"],
+                Detail = $"{Localizer["Error_Saving"]}: {ex.Message}"
+            });
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    void GoBack()
+    {
+        NavigationManager.NavigateTo("/delivery-cars");
+    }
+
+    public void Dispose()
+    {
+        cancellationTokenSource.Cancel();
+        cancellationTokenSource.Dispose();
+    }
+}
+

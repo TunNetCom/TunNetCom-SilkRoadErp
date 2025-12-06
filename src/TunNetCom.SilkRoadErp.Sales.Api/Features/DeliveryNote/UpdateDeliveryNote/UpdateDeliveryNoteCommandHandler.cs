@@ -51,7 +51,8 @@ public class UpdateDeliveryNoteCommandHandler(
             updateDeliveryNoteCommand.NumFacture,
             updateDeliveryNoteCommand.ClientId,
             activeAccountingYear.Id,
-            updateDeliveryNoteCommand.InstallationTechnicianId
+            updateDeliveryNoteCommand.InstallationTechnicianId,
+            updateDeliveryNoteCommand.DeliveryCarId
         );
 
         // Récupérer les paramètres d'application pour vérifier si on doit bloquer la vente

@@ -30,6 +30,7 @@ using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProductSubFamilies;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.RetenueSourceClient;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.RetenueSourceFournisseur;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Notifications;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryCar;
 
 
 public static class SalesHttpClients
@@ -180,6 +181,10 @@ public static class SalesHttpClients
         _ = AddClient<INotificationApiClient, NotificationApiClient>(notifications =>
         {
             notifications.BaseAddress = new Uri(baseUrl);
+        });
+        _ = AddClient<IDeliveryCarApiClient, DeliveryCarApiClient>(deliveryCar =>
+        {
+            deliveryCar.BaseAddress = new Uri(baseUrl);
         });
     }
 }

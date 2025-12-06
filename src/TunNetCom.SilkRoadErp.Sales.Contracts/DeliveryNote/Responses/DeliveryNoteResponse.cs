@@ -25,6 +25,9 @@ public class DeliveryNoteResponse
     [JsonPropertyName("installationTechnicianName")]
     public string? InstallationTechnicianName { get; set; }
 
+    [JsonPropertyName("deliveryCarId")]
+    public int? DeliveryCarId { get; set; }
+
     [JsonPropertyName("invoiceNumber")]
     public int? InvoiceNumber { get; set; }
 

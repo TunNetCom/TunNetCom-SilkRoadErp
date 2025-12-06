@@ -40,6 +40,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             .HasConversion<string>()
             .HasMaxLength(50)
             .IsRequired();
+            entity.Property(e => e.DeliveryCarId).HasColumnName("DeliveryCarId");
 
             entity.HasOne(d => d.Client).WithMany(p => p.BonDeLivraison)
             .HasForeignKey(d => d.ClientId)
@@ -60,6 +61,11 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             .HasForeignKey(d => d.InstallationTechnicianId)
             .OnDelete(DeleteBehavior.SetNull)
             .HasConstraintName("FK_dbo.BonDeLivraison_dbo.InstallationTechnician_InstallationTechnicianId");
+
+            entity.HasOne(d => d.DeliveryCar).WithMany(p => p.BonDeLivraisons)
+            .HasForeignKey(d => d.DeliveryCarId)
+            .OnDelete(DeleteBehavior.SetNull)
+            .HasConstraintName("FK_dbo.BonDeLivraison_dbo.DeliveryCar_DeliveryCarId");
 
             OnConfigurePartial(entity);
         }

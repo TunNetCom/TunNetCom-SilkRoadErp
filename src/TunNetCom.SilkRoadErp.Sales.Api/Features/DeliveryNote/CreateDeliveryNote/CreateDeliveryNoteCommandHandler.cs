@@ -44,6 +44,7 @@ public class CreateDeliveryNoteCommandHandler(
                 createDeliveryNoteCommand.InstallationTechnicianId
             );
         deliveryNote.Num = num;
+        deliveryNote.DeliveryCarId = createDeliveryNoteCommand.DeliveryCarId;
 
         var deliveryNoteDetailsList = createDeliveryNoteCommand.DeliveryNoteDetails?.ToList() ?? new List<LigneBlSubCommand>();
         _logger.LogInformation($"Creating delivery note with {deliveryNoteDetailsList.Count} items");
