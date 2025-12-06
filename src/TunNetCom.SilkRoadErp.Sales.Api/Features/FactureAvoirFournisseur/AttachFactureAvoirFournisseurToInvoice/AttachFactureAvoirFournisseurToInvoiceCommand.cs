@@ -6,3 +6,4 @@ public record AttachFactureAvoirFournisseurToInvoiceCommand(
 ) : IRequest<Result>;
 
 
+

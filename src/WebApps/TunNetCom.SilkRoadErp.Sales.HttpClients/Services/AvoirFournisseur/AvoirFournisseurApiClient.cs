@@ -179,12 +179,17 @@ public class AvoirFournisseurApiClient : IAvoirFournisseurApiClient
 
     public async Task<Result> ValidateAvoirFournisseursAsync(List<int> ids, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Validating avoir fournisseurs via API /avoir-fournisseurs/validate");
-        var response = await _httpClient.PostAsJsonAsync("/avoir-fournisseurs/validate", ids, cancellationToken: cancellationToken);
+        _logger.LogInformation("Validating avoir fournisseurs via API api/avoir-fournisseurs/validate");
+        var response = await _httpClient.PostAsJsonAsync("api/avoir-fournisseurs/validate", ids, cancellationToken: cancellationToken);
 
         if (response.StatusCode == HttpStatusCode.NoContent)
         {
             return Result.Ok();
+        }
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return Result.Fail("avoir_fournisseurs_not_found");
         }
 
         if (response.StatusCode == HttpStatusCode.BadRequest)

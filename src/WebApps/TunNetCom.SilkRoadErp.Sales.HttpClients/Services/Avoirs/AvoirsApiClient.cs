@@ -173,12 +173,17 @@ public class AvoirsApiClient : IAvoirsApiClient
 
     public async Task<Result> ValidateAvoirsAsync(List<int> ids, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Validating avoirs via API /avoirs/validate");
-        var response = await _httpClient.PostAsJsonAsync("/avoirs/validate", ids, cancellationToken: cancellationToken);
+        _logger.LogInformation("Validating avoirs via API api/avoirs/validate");
+        var response = await _httpClient.PostAsJsonAsync("api/avoirs/validate", ids, cancellationToken: cancellationToken);
 
         if (response.StatusCode == HttpStatusCode.NoContent)
         {
             return Result.Ok();
+        }
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return Result.Fail("avoirs_not_found");
         }
 
         if (response.StatusCode == HttpStatusCode.BadRequest)

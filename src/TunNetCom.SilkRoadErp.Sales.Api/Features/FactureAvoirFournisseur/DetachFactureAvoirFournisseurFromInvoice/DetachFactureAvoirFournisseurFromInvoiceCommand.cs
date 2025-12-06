@@ -6,3 +6,4 @@ public record DetachFactureAvoirFournisseurFromInvoiceCommand(
 ) : IRequest<Result>;
 
 
+

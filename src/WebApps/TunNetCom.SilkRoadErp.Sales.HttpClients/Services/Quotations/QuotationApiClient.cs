@@ -231,12 +231,17 @@ public class QuotationApiClient(HttpClient httpClient, ILogger<QuotationApiClien
 
     public async Task<Result> ValidateQuotationsAsync(List<int> ids, CancellationToken cancellationToken)
     {
-        logger.LogInformation("Validating quotations via API /quotations/validate");
-        var response = await httpClient.PostAsJsonAsync("/quotations/validate", ids, cancellationToken: cancellationToken);
+        logger.LogInformation("Validating quotations via API api/quotations/validate");
+        var response = await httpClient.PostAsJsonAsync("api/quotations/validate", ids, cancellationToken: cancellationToken);
 
         if (response.StatusCode == HttpStatusCode.NoContent)
         {
             return Result.Ok();
+        }
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return Result.Fail("quotations_not_found");
         }
 
         if (response.StatusCode == HttpStatusCode.BadRequest)
