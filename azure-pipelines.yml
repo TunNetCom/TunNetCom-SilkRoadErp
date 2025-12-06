@@ -2,16 +2,18 @@ trigger:
 - master
 
 pool:
-  vmImage: 'ubuntu-latest'
+  vmImage: 'windows-latest'
 
 variables:
   solution: '**/*.sln'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
   dockerRepository: 'tunnetcom/silkroad'      
-  tag: '$(Build.BuildId)'
+  apiTag: 'api-$(Build.BuildId)'
+  webappTag: 'webapp-$(Build.BuildId)'
 
 steps:
+# .NET
 - task: UseDotNet@2
   displayName: 'Use .NET 10 SDK'
   inputs:
@@ -19,32 +21,43 @@ steps:
     version: '10.x'
     includePreviewVersions: false
 
+- task: NuGetToolInstaller@1
+
+- task: NuGetCommand@2
+  inputs:
+    restoreSolution: '$(solution)'
+
+- task: VSBuild@1
+  inputs:
+    solution: '$(solution)'
+    msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)"'
+    platform: '$(buildPlatform)'
+    configuration: '$(buildConfiguration)'
+
 # -----------------------------
-# Build and Push API Image
+# Build API Docker Image
 # -----------------------------
 - task: Docker@2
   displayName: 'Build and Push API Docker Image'
   inputs:
     containerRegistry: 'TunNetCom_Dockerhub_Connection'   
     command: buildAndPush
-    Dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
+    Dockerfile: '$(Build.SourcesDirectory)/Dockerfile.api'  # <-- API Dockerfile
     repository: '$(dockerRepository)'
     tags: |
-      $(tag)-api
+      $(apiTag)
       latest-api
-    arguments: '--target api'
 
 # -----------------------------
-# Build and Push WebApp Image
+# Build WebApp Docker Image
 # -----------------------------
 - task: Docker@2
   displayName: 'Build and Push WebApp Docker Image'
   inputs:
     containerRegistry: 'TunNetCom_Dockerhub_Connection'   
     command: buildAndPush
-    Dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
+    Dockerfile: '$(Build.SourcesDirectory)/Dockerfile.webapp'  # <-- WebApp Dockerfile
     repository: '$(dockerRepository)'
     tags: |
-      $(tag)-webapp
+      $(webappTag)
       latest-webapp
-    arguments: '--target webapp'
