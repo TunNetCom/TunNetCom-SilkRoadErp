@@ -9,7 +9,7 @@ public class JwtTokenService : IJwtTokenService
     private readonly SymmetricSecurityKey _key;
     private readonly string _issuer;
     private readonly string _audience;
-    private readonly int _accessTokenExpirationMinutes;
+    private const int _accessTokenExpirationMinutes = 240; // Hard-coded to 4 hours
 
     public JwtTokenService(IConfiguration configuration)
     {
@@ -19,7 +19,6 @@ public class JwtTokenService : IJwtTokenService
         _key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
         _issuer = _configuration["JwtSettings:Issuer"] ?? "SilkRoadErp";
         _audience = _configuration["JwtSettings:Audience"] ?? "SilkRoadErp";
-        _accessTokenExpirationMinutes = int.Parse(_configuration["JwtSettings:AccessTokenExpirationMinutes"] ?? "15");
     }
 
     public string GenerateAccessToken(User user, IList<string> roles, IList<string> permissions)

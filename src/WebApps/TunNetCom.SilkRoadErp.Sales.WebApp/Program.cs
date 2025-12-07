@@ -47,7 +47,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(1); // Set to 1 minute for testing
+    options.IdleTimeout = TimeSpan.FromHours(4); // Hard-coded to 4 hours
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
