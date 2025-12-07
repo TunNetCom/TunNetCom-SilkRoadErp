@@ -64,6 +64,17 @@ public class PrintPdfPlayWrightService<TModel, TView> : IPrintPdfService<TModel,
             }
 
             _logger.LogInformation("Checking Playwright browser installation...");
+            
+            // Check environment variable for custom browser path
+            var browsersPath = Environment.GetEnvironmentVariable("PLAYWRIGHT_BROWSERS_PATH");
+            if (!string.IsNullOrEmpty(browsersPath))
+            {
+                _logger.LogInformation("PLAYWRIGHT_BROWSERS_PATH is set to: {BrowsersPath}", browsersPath);
+            }
+            else
+            {
+                _logger.LogInformation("PLAYWRIGHT_BROWSERS_PATH not set, using default location");
+            }
 
             // Try to verify if browsers are already installed by checking the executable path
             bool browsersInstalled = false;
@@ -73,10 +84,38 @@ public class PrintPdfPlayWrightService<TModel, TView> : IPrintPdfService<TModel,
                 var browserType = playwright.Chromium;
                 var executablePath = browserType.ExecutablePath;
                 
-                if (!string.IsNullOrEmpty(executablePath) && System.IO.File.Exists(executablePath))
+                _logger.LogDebug("Playwright Chromium executable path: {ExecutablePath}", executablePath ?? "null");
+                
+                if (!string.IsNullOrEmpty(executablePath))
                 {
-                    _logger.LogInformation("Playwright browsers are already installed at: {ExecutablePath}", executablePath);
-                    browsersInstalled = true;
+                    if (System.IO.File.Exists(executablePath))
+                    {
+                        _logger.LogInformation("Playwright browsers are already installed at: {ExecutablePath}", executablePath);
+                        browsersInstalled = true;
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Executable path reported by Playwright does not exist: {ExecutablePath}", executablePath);
+                        // Check if the directory exists
+                        var dir = System.IO.Path.GetDirectoryName(executablePath);
+                        if (!string.IsNullOrEmpty(dir) && System.IO.Directory.Exists(dir))
+                        {
+                            _logger.LogInformation("Directory exists but executable not found. Directory contents:");
+                            try
+                            {
+                                var files = System.IO.Directory.GetFiles(dir, "*", System.IO.SearchOption.AllDirectories);
+                                foreach (var file in files.Take(10))
+                                {
+                                    _logger.LogDebug("Found file: {File}", file);
+                                }
+                            }
+                            catch { }
+                        }
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("Playwright returned null executable path");
                 }
             }
             catch (Exception ex)

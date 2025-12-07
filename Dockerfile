@@ -99,13 +99,36 @@ RUN dotnet publish "TunNetCom.SilkRoadErp.Sales.WebApp.csproj" \
 
 # Install Playwright browsers (Chromium only to reduce image size)
 WORKDIR /app/publish/webapp
-# Use dotnet tool to install Playwright CLI, then install Chromium browser
-# Ensure the cache directory exists even if installation fails
+# Set environment variable to control where Playwright installs browsers
+ENV PLAYWRIGHT_BROWSERS_PATH=/root/.cache/ms-playwright
+# Install Playwright CLI tool and install Chromium browser
+# Ensure the installation completes successfully before proceeding
 RUN mkdir -p /root/.cache/ms-playwright && \
+    echo "Installing Playwright CLI..." && \
     dotnet tool install --global Microsoft.Playwright.CLI && \
     export PATH="$PATH:/root/.dotnet/tools" && \
-    playwright install chromium || \
-    (echo "Warning: Playwright installation may have failed, but continuing..." && true)
+    echo "Installing Chromium browser to: $PLAYWRIGHT_BROWSERS_PATH" && \
+    /root/.dotnet/tools/playwright install chromium && \
+    echo "Installation command completed. Verifying..." && \
+    if [ -d "/root/.cache/ms-playwright" ]; then \
+        echo "Playwright cache directory exists"; \
+        echo "Directory structure:"; \
+        find /root/.cache/ms-playwright -maxdepth 3 -type d | head -10 || true; \
+        echo "Looking for browser executables:"; \
+        find /root/.cache/ms-playwright -type f \( -name "*headless_shell*" -o -name "*chrome*" -o -name "chromium" \) | head -5 || true; \
+        BROWSER_COUNT=$(find /root/.cache/ms-playwright -type f 2>/dev/null | wc -l); \
+        if [ "$BROWSER_COUNT" -eq 0 ]; then \
+            echo "ERROR: No Playwright browser files found in cache!"; \
+            echo "Cache directory contents:"; \
+            ls -laR /root/.cache/ms-playwright/ | head -20 || true; \
+            exit 1; \
+        else \
+            echo "SUCCESS: Found $BROWSER_COUNT files in Playwright cache"; \
+        fi; \
+    else \
+        echo "ERROR: Playwright cache directory not created!"; \
+        exit 1; \
+    fi
 
 # ==============================================================================
 # Stage 5: Final API Image
@@ -133,16 +156,23 @@ COPY --from=publish-webapp /app/publish/webapp .
 
 # Copy Playwright browsers from publish-webapp stage to appuser's cache directory
 # The browsers were installed in /root/.cache/ms-playwright during publish-webapp stage
-RUN mkdir -p /home/appuser/.cache/ms-playwright
+RUN mkdir -p /home/appuser/.cache
 
 # Copy Playwright cache from the publish stage
-# The directory should exist (created in publish-webapp stage), but if it doesn't, 
-# the service will install browsers at runtime
+# Verify the source exists before copying
 COPY --from=publish-webapp /root/.cache/ms-playwright /home/appuser/.cache/ms-playwright
 
-# Change ownership to non-root user (including Playwright cache)
-RUN chown -R appuser:appuser /app && \
-    chown -R appuser:appuser /home/appuser/.cache 2>/dev/null || true
+# Verify the copy was successful and set proper permissions
+RUN if [ ! -d "/home/appuser/.cache/ms-playwright" ] || [ -z "$(ls -A /home/appuser/.cache/ms-playwright 2>/dev/null)" ]; then \
+        echo "WARNING: Playwright browsers directory is empty or missing!"; \
+        echo "Contents of /home/appuser/.cache:"; \
+        ls -la /home/appuser/.cache/ || true; \
+    else \
+        echo "Playwright browsers copied successfully"; \
+        ls -la /home/appuser/.cache/ms-playwright/ | head -10; \
+    fi && \
+    chown -R appuser:appuser /app && \
+    chown -R appuser:appuser /home/appuser/.cache
 
 # Set environment variable for Playwright
 ENV PLAYWRIGHT_BROWSERS_PATH=/home/appuser/.cache/ms-playwright
