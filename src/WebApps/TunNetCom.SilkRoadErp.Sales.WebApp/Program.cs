@@ -28,7 +28,7 @@ var builder = WebApplication.CreateBuilder(args);
 var razorBuilder = builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-// Enable detailed errors in development
+// Configure circuit options
 if (builder.Environment.IsDevelopment())
 {
     razorBuilder.AddCircuitOptions(options =>

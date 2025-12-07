@@ -9,6 +9,8 @@ public class JwtAuthenticationStateProvider : AuthenticationStateProvider
     private readonly IAuthService _authService;
     private readonly ILogger<JwtAuthenticationStateProvider> _logger;
     private readonly IAutoLogoutService _autoLogoutService;
+    private DateTime _lastTokenLoadTime = DateTime.MinValue;
+    private readonly TimeSpan _tokenLoadCacheDuration = TimeSpan.FromMinutes(5); // Cache token load for 5 minutes
 
     public JwtAuthenticationStateProvider(
         IAuthService authService,
@@ -24,10 +26,18 @@ public class JwtAuthenticationStateProvider : AuthenticationStateProvider
     {
         try
         {
-            // Try to load token from storage first
-            await _authService.LoadTokenFromStorageAsync();
-            
+            // Only load from storage if token is not already in memory AND we haven't loaded recently
+            // This optimization prevents frequent JS interop calls that cause page refreshes
             var token = _authService.AccessToken;
+            var timeSinceLastLoad = DateTime.UtcNow - _lastTokenLoadTime;
+            
+            if (string.IsNullOrEmpty(token) && timeSinceLastLoad > _tokenLoadCacheDuration)
+            {
+                // Only try to load from storage if token is not in memory and cache expired
+                _lastTokenLoadTime = DateTime.UtcNow;
+                await _authService.LoadTokenFromStorageAsync();
+                token = _authService.AccessToken;
+            }
 
             if (string.IsNullOrEmpty(token))
             {
@@ -46,9 +56,9 @@ public class JwtAuthenticationStateProvider : AuthenticationStateProvider
 
             var jwtToken = handler.ReadJwtToken(token);
             
-            // Add a small buffer (30 seconds) to account for clock skew and timing issues
+            // Buffer increased to 5 minutes to match 4-hour token expiration
             // This prevents false positives where a token is considered expired immediately after login
-            var expirationBuffer = TimeSpan.FromSeconds(30);
+            var expirationBuffer = TimeSpan.FromMinutes(5);
             var timeUntilExpiration = jwtToken.ValidTo - DateTime.UtcNow;
             
             // Check if token is expired (accounting for buffer)
