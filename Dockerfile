@@ -99,9 +99,12 @@ RUN dotnet publish "TunNetCom.SilkRoadErp.Sales.WebApp.csproj" \
 # Install Playwright browsers (Chromium only to reduce image size)
 WORKDIR /app/publish/webapp
 # Use dotnet tool to install Playwright CLI, then install Chromium browser
-RUN dotnet tool install --global Microsoft.Playwright.CLI && \
+# Ensure the cache directory exists even if installation fails
+RUN mkdir -p /root/.cache/ms-playwright && \
+    dotnet tool install --global Microsoft.Playwright.CLI && \
     export PATH="$PATH:/root/.dotnet/tools" && \
-    playwright install chromium
+    playwright install chromium || \
+    (echo "Warning: Playwright installation may have failed, but continuing..." && true)
 
 # ==============================================================================
 # Stage 5: Final API Image
@@ -132,7 +135,8 @@ COPY --from=publish-webapp /app/publish/webapp .
 RUN mkdir -p /home/appuser/.cache/ms-playwright
 
 # Copy Playwright cache from the publish stage
-# This will copy the browsers installed during the publish-webapp stage
+# The directory should exist (created in publish-webapp stage), but if it doesn't, 
+# the service will install browsers at runtime
 COPY --from=publish-webapp /root/.cache/ms-playwright /home/appuser/.cache/ms-playwright
 
 # Change ownership to non-root user (including Playwright cache)
