@@ -12,10 +12,28 @@ EXPOSE 8080
 EXPOSE 8081
 
 # Install necessary dependencies and configure environment
+# Include Chromium dependencies for Playwright
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     curl \
-    ca-certificates && \
+    ca-certificates \
+    libnss3 \
+    libatk-bridge2.0-0 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libasound2 \
+    libpango-1.0-0 \
+    libcairo2 \
+    libatk1.0-0 \
+    libcups2 \
+    fonts-liberation \
+    libappindicator3-1 \
+    xdg-utils && \
     rm -rf /var/lib/apt/lists/*
 
 # Create a non-root user for security
@@ -78,6 +96,13 @@ RUN dotnet publish "TunNetCom.SilkRoadErp.Sales.WebApp.csproj" \
     --no-restore \
     /p:UseAppHost=false
 
+# Install Playwright browsers (Chromium only to reduce image size)
+WORKDIR /app/publish/webapp
+# Use dotnet tool to install Playwright CLI, then install Chromium browser
+RUN dotnet tool install --global Microsoft.Playwright.CLI && \
+    export PATH="$PATH:/root/.dotnet/tools" && \
+    playwright install chromium
+
 # ==============================================================================
 # Stage 5: Final API Image
 # ==============================================================================
@@ -102,8 +127,21 @@ FROM base AS webapp
 WORKDIR /app
 COPY --from=publish-webapp /app/publish/webapp .
 
-# Change ownership to non-root user
-RUN chown -R appuser:appuser /app
+# Copy Playwright browsers from publish-webapp stage to appuser's cache directory
+# The browsers were installed in /root/.cache/ms-playwright during publish-webapp stage
+RUN mkdir -p /home/appuser/.cache/ms-playwright
+
+# Copy Playwright cache from the publish stage
+# This will copy the browsers installed during the publish-webapp stage
+COPY --from=publish-webapp /root/.cache/ms-playwright /home/appuser/.cache/ms-playwright
+
+# Change ownership to non-root user (including Playwright cache)
+RUN chown -R appuser:appuser /app && \
+    chown -R appuser:appuser /home/appuser/.cache 2>/dev/null || true
+
+# Set environment variable for Playwright
+ENV PLAYWRIGHT_BROWSERS_PATH=/home/appuser/.cache/ms-playwright
+
 USER appuser
 
 # Health check endpoint
