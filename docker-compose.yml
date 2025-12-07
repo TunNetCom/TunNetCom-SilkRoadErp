@@ -22,18 +22,35 @@ services:
       retries: 5
       start_period: 30s
 
-  # Seq Logging Server (Optional)
-  seq:
-    image: datalust/seq:latest
-    container_name: silkroaderp-seq
-    environment:
-      - ACCEPT_EULA=Y
+  # Grafana Loki Logging Server
+  loki:
+    image: grafana/loki:latest
+    container_name: silkroaderp-loki
     ports:
-      - "5341:80"
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
     volumes:
-      - seq-data:/data
+      - loki-data:/loki
     networks:
       - silkroaderp-network
+    restart: unless-stopped
+
+  # Grafana for Log Visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: silkroaderp-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - silkroaderp-network
+    depends_on:
+      - loki
+    restart: unless-stopped
 
   # API Service
   api:
@@ -46,7 +63,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=SlikRoadErpDB;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;
-      - Seq__ServerUrl=http://seq:80
+      - Loki__ServerUrl=http://loki:3100
       - JwtSettings__SecretKey=CHANGE_THIS_IN_PRODUCTION_YourSuperSecretKeyForJWTTokenGenerationMustBeAtLeast32CharactersLong!
       - JwtSettings__Issuer=SilkRoadErp
       - JwtSettings__Audience=SilkRoadErp
@@ -57,7 +74,7 @@ services:
     depends_on:
       sqlserver:
         condition: service_healthy
-      seq:
+      loki:
         condition: service_started
     networks:
       - silkroaderp-network
@@ -88,4 +105,5 @@ networks:
 
 volumes:
   sqlserver-data:
-  seq-data:
+  loki-data:
+  grafana-data:

@@ -1,13 +1,15 @@
+using Serilog.Sinks.Grafana.Loki;
+
 var builder = WebApplication.CreateBuilder(args);
 
-var seqServerUrl = builder.Configuration["Seq:ServerUrl"];
+var lokiUrl = builder.Configuration["Loki:ServerUrl"];
 // Configure Serilog
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
     .Enrich.FromLogContext()
     .WriteTo.Console()
-    .WriteTo.Seq(seqServerUrl)
+    .WriteTo.GrafanaLoki(lokiUrl)
     .CreateLogger();
 
 builder.Host.UseSerilog();
