@@ -52,27 +52,9 @@ else
 
     private async Task HandleTokenExpiredAsync()
     {
-        try
-        {
-            Logger.LogWarning("AuthorizeRouteView: Token expiration event received, redirecting to login");
-            
-            // Use InvokeAsync to ensure we're on the Dispatcher thread
-            await InvokeAsync(() =>
-            {
-                // Clear authorization state
-                IsAuthorized = false;
-                _hasCheckedAuth = false;
-                StateHasChanged();
-            });
-            
-            // Redirect to login (Navigation.NavigateTo is thread-safe)
-            await Task.Delay(100); // Small delay to ensure state is updated
-            Navigation.NavigateTo("/login", forceLoad: true);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "AuthorizeRouteView: Error handling token expiration event");
-        }
+        // AUTO-LOGOUT DISABLED: Do nothing - no redirect to login
+        Logger.LogWarning("AuthorizeRouteView: Token expiration event received but auto-logout is disabled");
+        await Task.CompletedTask;
     }
 
     protected override async Task OnParametersSetAsync()
@@ -149,24 +131,20 @@ else
             }
             else
             {
-                // Not authenticated, redirect to login immediately
-                Logger.LogWarning("AuthorizeRouteView: User not authenticated, redirecting to login");
-                _statusMessage = "Non authentifié - redirection...";
+                // AUTO-LOGOUT DISABLED: Allow access even if not authenticated
+                Logger.LogWarning("AuthorizeRouteView: User not authenticated but auto-logout disabled - allowing access");
+                _statusMessage = "Non authentifié (accès autorisé)";
+                IsAuthorized = true; // Allow access anyway
                 StateHasChanged();
-                IsAuthorized = false;
-                await Task.Delay(100);
-                Navigation.NavigateTo("/login");
             }
         }
         catch (Exception ex)
         {
-            // If there's an error, redirect to login immediately
-            Logger.LogError(ex, "AuthorizeRouteView: Error during authentication check");
-            _statusMessage = "Erreur - redirection...";
+            // AUTO-LOGOUT DISABLED: Allow access even on error
+            Logger.LogError(ex, "AuthorizeRouteView: Error during authentication check but auto-logout disabled - allowing access");
+            _statusMessage = "Erreur (accès autorisé)";
+            IsAuthorized = true; // Allow access anyway
             StateHasChanged();
-            IsAuthorized = false;
-            await Task.Delay(100);
-            Navigation.NavigateTo("/login", forceLoad: true);
         }
     }
 
