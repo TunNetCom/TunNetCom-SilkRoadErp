@@ -13,6 +13,7 @@ EXPOSE 8081
 
 # Install necessary dependencies and configure environment
 # Include Chromium dependencies for Playwright
+# Note: Ubuntu 24.04+ uses "t64" suffix for some packages
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     curl \
@@ -26,7 +27,7 @@ RUN apt-get update && \
     libxfixes3 \
     libxrandr2 \
     libgbm1 \
-    libasound2 \
+    libasound2t64 \
     libpango-1.0-0 \
     libcairo2 \
     libatk1.0-0 \
