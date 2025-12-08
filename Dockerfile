@@ -1,5 +1,5 @@
 # ==================================================================
-# Stage 1: Build Stage (with SDK)
+# Stage 1: Build Stage (SDK)
 # ==================================================================
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 
@@ -18,26 +18,25 @@ RUN dotnet restore src/TunNetCom.SilkRoadErp.Sales.Api/TunNetCom.SilkRoadErp.Sal
     && dotnet restore src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp/TunNetCom.SilkRoadErp.Sales.WebApp.csproj
 
 # Build API and WebApp
-RUN dotnet build src/TunNetCom.SilkRoadErp.Sales.Api/TunNetCom.SilkRoadErp.Sales.Api.csproj -c Release -o /app/api \
-    && dotnet build src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp/TunNetCom.SilkRoadErp.Sales.WebApp.csproj -c Release -o /app/webapp
+RUN dotnet build src/TunNetCom.SilkRoadErp.Sales.Api/TunNetCom.SilkRoadErp.Sales.Api.csproj -c Release \
+    && dotnet build src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp/TunNetCom.SilkRoadErp.Sales.WebApp.csproj -c Release
 
 # Publish API
 RUN dotnet publish src/TunNetCom.SilkRoadErp.Sales.Api/TunNetCom.SilkRoadErp.Sales.Api.csproj \
     -c Release -o /app/api/publish
 
-# ------------------------
-# Install Playwright CLI & Chromium
-# ------------------------
-# Install Playwright CLI globally
-RUN dotnet tool install --global Microsoft.Playwright.CLI
+# Publish WebApp
+RUN dotnet publish src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp/TunNetCom.SilkRoadErp.Sales.WebApp.csproj \
+    -c Release -o /app/webapp/publish
 
-# Add .NET tools to PATH
+# ------------------------
+# Install Playwright CLI & Chromium (for API)
+# ------------------------
+RUN dotnet tool install --global Microsoft.Playwright.CLI
 ENV PATH="$PATH:/root/.dotnet/tools"
 
-# Switch to API project folder
+# Switch to API project folder for Playwright
 WORKDIR /src/src/TunNetCom.SilkRoadErp.Sales.Api
-
-# Add Playwright NuGet package and build before installing browsers
 RUN dotnet add package Microsoft.Playwright \
     && dotnet build -c Release \
     && playwright install chromium
@@ -49,7 +48,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS api
 
 WORKDIR /app
 
-# Copy published API from build stage
+# Copy published API
 COPY --from=build /app/api/publish ./
 
 # Copy Playwright tools
@@ -61,7 +60,7 @@ EXPOSE 5000
 ENV DOTNET_RUNNING_IN_CONTAINER=true
 ENV DOTNET_USE_POLLING_FILE_WATCHER=true
 
-# Entry point
+# Entry point for API
 ENTRYPOINT ["dotnet", "TunNetCom.SilkRoadErp.Sales.Api.dll"]
 
 # ==================================================================
@@ -71,10 +70,12 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS webapp
 
 WORKDIR /app
 
-# Copy built WebApp
-COPY --from=build /app/webapp ./webapp
+# Copy published WebApp
+COPY --from=build /app/webapp/publish ./
 
-# Expose WebApp port
-EXPOSE 80
+# Environment and port
+ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 8080
 
-# Optional: no ENTRYPOINT if served by API
+# Entry point for WebApp
+ENTRYPOINT ["dotnet", "TunNetCom.SilkRoadErp.Sales.WebApp.dll"]
