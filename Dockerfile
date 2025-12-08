@@ -1,5 +1,5 @@
 # ==================================================================
-# Stage 1: Build Stage (SDK)
+# Stage 1: Build and Publish Stage
 # ==================================================================
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 
@@ -13,28 +13,23 @@ COPY Directory.Packages.props ./
 # Copy all projects
 COPY src/ ./src/
 
-# Restore dependencies for API and WebApp
-RUN dotnet restore src/TunNetCom.SilkRoadErp.Sales.Api/TunNetCom.SilkRoadErp.Sales.Api.csproj \
-    && dotnet restore src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp/TunNetCom.SilkRoadErp.Sales.WebApp.csproj
+# Restore all projects
+RUN dotnet restore
 
-# Build API and WebApp
-RUN dotnet build src/TunNetCom.SilkRoadErp.Sales.Api/TunNetCom.SilkRoadErp.Sales.Api.csproj -c Release \
-    && dotnet build src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp/TunNetCom.SilkRoadErp.Sales.WebApp.csproj -c Release
-
-# Publish API and WebApp
+# Build and publish API
 RUN dotnet publish src/TunNetCom.SilkRoadErp.Sales.Api/TunNetCom.SilkRoadErp.Sales.Api.csproj \
     -c Release -o /app/api/publish
+
+# Build and publish WebApp
 RUN dotnet publish src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp/TunNetCom.SilkRoadErp.Sales.WebApp.csproj \
     -c Release -o /app/webapp/publish
 
-# ------------------------
-# Install Playwright CLI & Chromium
-# ------------------------
+# Install Playwright CLI globally
 RUN dotnet tool install --global Microsoft.Playwright.CLI
 ENV PATH="$PATH:/root/.dotnet/tools"
 
-# Switch to API project folder for Playwright
-WORKDIR /src/src/TunNetCom.SilkRoadErp.Sales.Api
+# Install Playwright for WebApp project and download Chromium
+WORKDIR /src/src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp
 RUN dotnet add package Microsoft.Playwright \
     && dotnet build -c Release \
     && playwright install chromium
@@ -49,20 +44,18 @@ WORKDIR /app
 # Copy published API
 COPY --from=build /app/api/publish ./
 
-# Copy Playwright tools (so API can run Playwright if needed)
+# Copy Playwright tools (optional if API needs it)
 COPY --from=build /root/.dotnet /root/.dotnet
 ENV PATH="$PATH:/root/.dotnet/tools"
 
-# Expose API port
 EXPOSE 5000
 ENV DOTNET_RUNNING_IN_CONTAINER=true
 ENV DOTNET_USE_POLLING_FILE_WATCHER=true
 
-# Entry point for API
 ENTRYPOINT ["dotnet", "TunNetCom.SilkRoadErp.Sales.Api.dll"]
 
 # ==================================================================
-# Stage 3: Runtime Stage for WebApp (with pre-installed Chromium)
+# Stage 3: Runtime Stage for WebApp
 # ==================================================================
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS webapp
 
@@ -71,13 +64,11 @@ WORKDIR /app
 # Copy published WebApp
 COPY --from=build /app/webapp/publish ./
 
-# Copy Playwright tools and browsers from build stage
+# Copy Playwright tools & Chromium
 COPY --from=build /root/.dotnet /root/.dotnet
-ENV PATH="$PATH:/root/.dotnet/tools"
-
-# Set Playwright browsers path explicitly (avoid downloading at runtime)
-ENV PLAYWRIGHT_BROWSERS_PATH=/root/.playwright
 COPY --from=build /root/.playwright /root/.playwright
+ENV PATH="$PATH:/root/.dotnet/tools"
+ENV PLAYWRIGHT_BROWSERS_PATH=/root/.playwright
 
 # Install Linux dependencies required by Chromium
 RUN apt-get update && apt-get install -y \
@@ -86,13 +77,11 @@ RUN apt-get update && apt-get install -y \
     libatk-bridge2.0-0 libgtk-3-0 libpangocairo-1.0-0 libxshmfence1 \
  && rm -rf /var/lib/apt/lists/*
 
-# Optional: set .NET environment
+# Set environment variables
 ENV DOTNET_RUNNING_IN_CONTAINER=true
 ENV DOTNET_USE_POLLING_FILE_WATCHER=true
 ENV ASPNETCORE_URLS=http://+:8080
 
-# Expose port
 EXPOSE 8080
 
-# Entry point
 ENTRYPOINT ["dotnet", "TunNetCom.SilkRoadErp.Sales.WebApp.dll"]
