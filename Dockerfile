@@ -68,22 +68,38 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS webapp
 
 WORKDIR /app
 
-# Copy published WebApp
+# Copy published WebApp from build stage
 COPY --from=build /app/webapp/publish ./
 
-# Copy Playwright tools (critical for PDF/printing)
+# Copy Playwright tools
 COPY --from=build /root/.dotnet /root/.dotnet
 ENV PATH="$PATH:/root/.dotnet/tools"
 
-# Install Linux dependencies required by Chromium
-RUN apt-get update && apt-get install -y \
-    libnss3 libatk1.0-0 libcups2 libxss1 libx11-xcb1 libxcomposite1 \
-    libxdamage1 libxrandr2 libgbm1 libasound2 fonts-liberation libappindicator3-1 \
-    libatk-bridge2.0-0 libgtk-3-0 libpangocairo-1.0-0 libxshmfence1 \
+# Install Linux dependencies required by Chromium (Playwright)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    wget \
+    ca-certificates \
+    fonts-liberation \
+    libasound2t64 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libgtk-3-0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    libgbm1 \
+    libnss3 \
+    libxss1 \
+    libx11-xcb1 \
+    libappindicator3-1 \
  && rm -rf /var/lib/apt/lists/*
 
-# Environment and port
+# Set environment for .NET in container
+ENV DOTNET_RUNNING_IN_CONTAINER=true
+ENV DOTNET_USE_POLLING_FILE_WATCHER=true
 ENV ASPNETCORE_URLS=http://+:8080
+
+# Expose WebApp port
 EXPOSE 8080
 
 # Entry point for WebApp
