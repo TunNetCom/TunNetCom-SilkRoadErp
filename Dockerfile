@@ -30,12 +30,33 @@ RUN dotnet publish src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp/TunNetCom.Silk
 # ==================================================================
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS playwright-prep
 
-# Install system dependencies required by Chromium FIRST
+# Install system dependencies required by Chromium
+# Using correct package names for Debian 12 (Bookworm)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libnss3 libatk1.0-0 libcups2 libxss1 libx11-xcb1 libxcomposite1 \
-    libxdamage1 libxrandr2 libgbm1 libasound2 fonts-liberation libappindicator3-1 \
-    libatk-bridge2.0-0 libgtk-3-0 libpangocairo-1.0-0 libxshmfence1 \
-    libxkbcommon0 libgconf-2-4 \
+    libnss3 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libatspi2.0-0 \
+    libcups2 \
+    libxss1 \
+    libx11-6 \
+    libx11-xcb1 \
+    libxcb1 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxext6 \
+    libxfixes3 \
+    libxi6 \
+    libxrandr2 \
+    libxrender1 \
+    libgbm1 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libxshmfence1 \
+    libxkbcommon0 \
+    fonts-liberation \
+    libappindicator3-1 \
+    ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
 # Set Playwright browsers path
@@ -45,15 +66,11 @@ ENV PATH="$PATH:/root/.dotnet/tools"
 # Install Playwright CLI globally
 RUN dotnet tool install --global Microsoft.Playwright.CLI
 
-# Install Playwright and download Chromium
-WORKDIR /src
-COPY src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp/TunNetCom.SilkRoadErp.Sales.WebApp.csproj ./
-RUN dotnet add package Microsoft.Playwright --version 1.48.0
+# Create Playwright browsers directory
+RUN mkdir -p /playwright-browsers
 
-# Download and install Chromium
-RUN mkdir -p /playwright-browsers && \
-    playwright install chromium --with-deps && \
-    playwright install-deps chromium
+# Install Playwright and download Chromium with all dependencies
+RUN playwright install --with-deps chromium
 
 # ==================================================================
 # Stage 3: Runtime Stage for API
@@ -80,11 +97,32 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS webapp
 WORKDIR /app
 
 # Install system dependencies required by Chromium at runtime
+# Using correct package names for Debian 12 (Bookworm)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libnss3 libatk1.0-0 libcups2 libxss1 libx11-xcb1 libxcomposite1 \
-    libxdamage1 libxrandr2 libgbm1 libasound2 fonts-liberation libappindicator3-1 \
-    libatk-bridge2.0-0 libgtk-3-0 libpangocairo-1.0-0 libxshmfence1 \
-    libxkbcommon0 libgconf-2-4 \
+    libnss3 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libatspi2.0-0 \
+    libcups2 \
+    libxss1 \
+    libx11-6 \
+    libx11-xcb1 \
+    libxcb1 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxext6 \
+    libxfixes3 \
+    libxi6 \
+    libxrandr2 \
+    libxrender1 \
+    libgbm1 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libxshmfence1 \
+    libxkbcommon0 \
+    fonts-liberation \
+    libappindicator3-1 \
+    ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
 # Copy published WebApp from build stage
