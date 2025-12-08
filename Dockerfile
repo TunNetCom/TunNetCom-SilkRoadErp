@@ -1,101 +1,70 @@
-# ==============================================================================
-# Multi-stage Dockerfile for SilkRoadErp Application (API + WebApp)
-# Includes Playwright + Chromium for PDF generation
-# ==============================================================================
-
-# ==============================================================================
-# Stage 1: Build
-# ==============================================================================
+# ==================================================================
+# Stage 1: Build Stage (with SDK)
+# ==================================================================
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+
 WORKDIR /src
 
-# Copy solution and props files
+# Copy solution and NuGet configuration
 COPY *.sln ./
+COPY NuGet.Config ./
+
+# Copy Directory props for central package versions
 COPY Directory.Build.props ./
 COPY Directory.Packages.props ./
 
-# Copy project files (for restore only)
-COPY src/TunNetCom.SilkRoadErp.Sales.Api/*.csproj src/TunNetCom.SilkRoadErp.Sales.Api/
-COPY src/TunNetCom.SilkRoadErp.Sales.Domain/*.csproj src/TunNetCom.SilkRoadErp.Sales.Domain/
-COPY src/TunNetCom.SilkRoadErp.Sales.Contracts/*.csproj src/TunNetCom.SilkRoadErp.Sales.Contracts/
-COPY src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp/*.csproj src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp/
-COPY src/WebApps/TunNetCom.SilkRoadErp.Sales.HttpClients/*.csproj src/WebApps/TunNetCom.SilkRoadErp.Sales.HttpClients/
+# Copy all projects
+COPY src/ ./src/
 
-# Restore dependencies (only projects we publish)
-RUN dotnet restore src/TunNetCom.SilkRoadErp.Sales.Api/TunNetCom.SilkRoadErp.Sales.Api.csproj
-RUN dotnet restore src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp/TunNetCom.SilkRoadErp.Sales.WebApp.csproj
+# Restore dependencies (all projects)
+RUN dotnet restore src/TunNetCom.SilkRoadErp.Sales.Api/TunNetCom.SilkRoadErp.Sales.Api.csproj \
+    && dotnet restore src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp/TunNetCom.SilkRoadErp.Sales.WebApp.csproj
 
-# Copy full source code
-COPY src/ src/
+# Build projects in Release mode
+RUN dotnet build src/TunNetCom.SilkRoadErp.Sales.Api/TunNetCom.SilkRoadErp.Sales.Api.csproj -c Release -o /app/api \
+    && dotnet build src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp/TunNetCom.SilkRoadErp.Sales.WebApp.csproj -c Release -o /app/webapp
 
 # Publish API
 RUN dotnet publish src/TunNetCom.SilkRoadErp.Sales.Api/TunNetCom.SilkRoadErp.Sales.Api.csproj \
-    -c Release -o /app/api /p:UseAppHost=false
+    -c Release -o /app/api/publish
 
-# Publish WebApp
-RUN dotnet publish src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp/TunNetCom.SilkRoadErp.Sales.WebApp.csproj \
-    -c Release -o /app/webapp /p:UseAppHost=false
-
-# ==============================================================================
-# Stage 2: Runtime API Image
-# ==============================================================================
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS api
-WORKDIR /app
-
-# Install system dependencies required by Playwright / Chromium
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libnss3 libatk1.0-0 libcups2 libdrm2 libxkbcommon0 libxcomposite1 \
-    libxdamage1 libxfixes3 libxrandr2 libgbm1 libpango-1.0-0 libcairo2 libasound2-plugins \
-    curl ca-certificates gnupg wget \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy published API
-COPY --from=build /app/api ./
-
-# Install Playwright CLI and Chromium
+# Install Playwright CLI and Chromium in build stage
 RUN dotnet tool install --global Microsoft.Playwright.CLI \
     && playwright install chromium
 
-# Use non-root user
-RUN groupadd -r appuser && useradd -r -g appuser appuser
-RUN chown -R appuser:appuser /app /root/.dotnet /root/.cache
-USER appuser
+# ==================================================================
+# Stage 2: Runtime Stage for API
+# ==================================================================
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS api
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
+WORKDIR /app
 
-# API entrypoint
+# Copy published API from build stage
+COPY --from=build /app/api/publish ./  
+
+# Copy Playwright tools from build stage
+COPY --from=build /root/.dotnet /root/.dotnet
+ENV PATH="$PATH:/root/.dotnet/tools"
+
+# Expose API port
+EXPOSE 5000
+ENV DOTNET_RUNNING_IN_CONTAINER=true
+ENV DOTNET_USE_POLLING_FILE_WATCHER=true
+
+# Entry point
 ENTRYPOINT ["dotnet", "TunNetCom.SilkRoadErp.Sales.Api.dll"]
 
-# ==============================================================================
-# Stage 3: Runtime WebApp Image
-# ==============================================================================
+# ==================================================================
+# Stage 3: Runtime Stage for WebApp (optional if separate)
+# ==================================================================
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS webapp
+
 WORKDIR /app
 
-# Install system dependencies required by Playwright / Chromium
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libnss3 libatk1.0-0 libcups2 libdrm2 libxkbcommon0 libxcomposite1 \
-    libxdamage1 libxfixes3 libxrandr2 libgbm1 libpango-1.0-0 libcairo2 libasound2-plugins \
-    curl ca-certificates gnupg wget \
-    && rm -rf /var/lib/apt/lists/*
+# Copy built WebApp
+COPY --from=build /app/webapp ./webapp
 
-# Copy published WebApp
-COPY --from=build /app/webapp ./
+# Expose WebApp port
+EXPOSE 80
 
-# Install Playwright CLI and Chromium
-RUN dotnet tool install --global Microsoft.Playwright.CLI \
-    && playwright install chromium
-
-# Use non-root user
-RUN groupadd -r appuser && useradd -r -g appuser appuser
-RUN chown -R appuser:appuser /app /root/.dotnet /root/.cache
-USER appuser
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
-
-# WebApp entrypoint
-ENTRYPOINT ["dotnet", "TunNetCom.SilkRoadErp.Sales.WebApp.dll"]
+# No ENTRYPOINT needed if serving static files via WebApp's API or server
