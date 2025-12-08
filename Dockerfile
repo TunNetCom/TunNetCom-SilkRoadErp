@@ -7,7 +7,6 @@ WORKDIR /src
 
 # Copy solution and NuGet configuration
 COPY *.sln ./
-COPY NuGet.Config ./
 
 # Copy Directory props for central package versions
 COPY Directory.Build.props ./
