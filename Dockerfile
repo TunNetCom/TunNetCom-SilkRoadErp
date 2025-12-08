@@ -21,16 +21,14 @@ RUN dotnet restore src/TunNetCom.SilkRoadErp.Sales.Api/TunNetCom.SilkRoadErp.Sal
 RUN dotnet build src/TunNetCom.SilkRoadErp.Sales.Api/TunNetCom.SilkRoadErp.Sales.Api.csproj -c Release \
     && dotnet build src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp/TunNetCom.SilkRoadErp.Sales.WebApp.csproj -c Release
 
-# Publish API
+# Publish API and WebApp
 RUN dotnet publish src/TunNetCom.SilkRoadErp.Sales.Api/TunNetCom.SilkRoadErp.Sales.Api.csproj \
     -c Release -o /app/api/publish
-
-# Publish WebApp
 RUN dotnet publish src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp/TunNetCom.SilkRoadErp.Sales.WebApp.csproj \
     -c Release -o /app/webapp/publish
 
 # ------------------------
-# Install Playwright CLI & Chromium (for API)
+# Install Playwright CLI & Chromium
 # ------------------------
 RUN dotnet tool install --global Microsoft.Playwright.CLI
 ENV PATH="$PATH:/root/.dotnet/tools"
@@ -51,7 +49,7 @@ WORKDIR /app
 # Copy published API
 COPY --from=build /app/api/publish ./
 
-# Copy Playwright tools
+# Copy Playwright tools (so API can run Playwright if needed)
 COPY --from=build /root/.dotnet /root/.dotnet
 ENV PATH="$PATH:/root/.dotnet/tools"
 
@@ -72,6 +70,17 @@ WORKDIR /app
 
 # Copy published WebApp
 COPY --from=build /app/webapp/publish ./
+
+# Copy Playwright tools (critical for PDF/printing)
+COPY --from=build /root/.dotnet /root/.dotnet
+ENV PATH="$PATH:/root/.dotnet/tools"
+
+# Install Linux dependencies required by Chromium
+RUN apt-get update && apt-get install -y \
+    libnss3 libatk1.0-0 libcups2 libxss1 libx11-xcb1 libxcomposite1 \
+    libxdamage1 libxrandr2 libgbm1 libasound2 fonts-liberation libappindicator3-1 \
+    libatk-bridge2.0-0 libgtk-3-0 libpangocairo-1.0-0 libxshmfence1 \
+ && rm -rf /var/lib/apt/lists/*
 
 # Environment and port
 ENV ASPNETCORE_URLS=http://+:8080
