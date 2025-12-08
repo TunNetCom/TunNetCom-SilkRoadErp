@@ -29,7 +29,7 @@ RUN dotnet publish src/TunNetCom.SilkRoadErp.Sales.Api/TunNetCom.SilkRoadErp.Sal
 
 # Install Playwright CLI and Chromium in build stage
 RUN dotnet tool install --global Microsoft.Playwright.CLI \
-    && playwright install chromium
+    && /root/.dotnet/tools/playwright install chromium
 
 # ==================================================================
 # Stage 2: Runtime Stage for API
