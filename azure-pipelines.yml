@@ -11,100 +11,157 @@ variables:
   apiTag: 'api-$(Build.BuildId)'
   webappTag: 'webapp-$(Build.BuildId)'
 
-steps:
-# -----------------------------
-# 1. Login to DockerHub
-# -----------------------------
-- task: Docker@2
-  displayName: 'Login to DockerHub'
-  inputs:
-    command: login
-    containerRegistry: 'TunNetCom_Dockerhub_Connection'
+stages:
+# ============================================================
+# 1️⃣ BUILD & PUSH STAGE
+# ============================================================
+- stage: BuildAndPush
+  displayName: Build and Push Docker Images
+  jobs:
+  - job: BuildPushJob
+    displayName: Build & Push
+    steps:
 
-# -----------------------------
-# 2. Use .NET SDK
-# -----------------------------
-- task: UseDotNet@2
-  displayName: 'Use .NET 10 SDK'
-  inputs:
-    packageType: 'sdk'
-    version: '10.x'
+    # -----------------------------
+    # Login to DockerHub
+    # -----------------------------
+    - task: Docker@2
+      displayName: 'Login to DockerHub'
+      inputs:
+        command: login
+        containerRegistry: 'TunNetCom_Dockerhub_Connection'
 
-# -----------------------------
-# 3. Restore & Build Solution
-# -----------------------------
-- task: DotNetCoreCLI@2
-  displayName: 'Restore'
-  inputs:
-    command: 'restore'
-    projects: '$(solution)'
-    arguments: '--verbosity normal'
+    # -----------------------------
+    # Use .NET SDK
+    # -----------------------------
+    - task: UseDotNet@2
+      displayName: 'Use .NET 10 SDK'
+      inputs:
+        packageType: 'sdk'
+        version: '10.x'
 
-- task: DotNetCoreCLI@2
-  displayName: 'Build'
-  inputs:
-    command: 'build'
-    projects: '$(solution)'
-    arguments: '--configuration $(buildConfiguration) --no-restore --verbosity normal'
+    # -----------------------------
+    # Restore & Build
+    # -----------------------------
+    - task: DotNetCoreCLI@2
+      displayName: 'Restore'
+      inputs:
+        command: 'restore'
+        projects: '$(solution)'
 
-# -----------------------------
-# 4. Build API Docker Image
-# -----------------------------
-- script: |
-    set -e
-    echo "Building API Docker image..."
-    docker build \
-      --progress=plain \
-      --target api \
-      -t $(dockerRepository):$(apiTag) \
-      -t $(dockerRepository):latest-api \
-      -f Dockerfile \
-      .
+    - task: DotNetCoreCLI@2
+      displayName: 'Build'
+      inputs:
+        command: 'build'
+        projects: '$(solution)'
+        arguments: '--configuration $(buildConfiguration) --no-restore'
 
-    echo "Built API images:"
-    docker images | grep $(dockerRepository)
-  displayName: 'Build API Docker Image'
+    # -----------------------------
+    # Build API Docker Image
+    # -----------------------------
+    - script: |
+        set -e
+        echo "Building API Docker image..."
+        docker build \
+          --progress=plain \
+          --target api \
+          -t $(dockerRepository):$(apiTag) \
+          -t $(dockerRepository):latest-api \
+          -f Dockerfile \
+          .
 
-# -----------------------------
-# 5. Push API Docker Image
-# -----------------------------
-- script: |
-    set -e
-    echo "Pushing API Docker image..."
-    docker push $(dockerRepository):$(apiTag)
-    docker push $(dockerRepository):latest-api
-  displayName: 'Push API Docker Image'
+        docker images | grep $(dockerRepository)
+      displayName: 'Build API Docker Image'
 
-# -----------------------------
-# 6. Build WebApp Docker Image
-# -----------------------------
-- script: |
-    set -e
-    WEBAPP_TAG=$(webappTag)
-    echo "Building WebApp Docker image with tag $WEBAPP_TAG..."
-    
-    # Make sure build artifacts exist
-    ls -la ./src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp/bin/Release/net10/publish || true
+    # -----------------------------
+    # Push API
+    # -----------------------------
+    - script: |
+        set -e
+        echo "Pushing API Docker image..."
+        docker push $(dockerRepository):$(apiTag)
+        docker push $(dockerRepository):latest-api
+      displayName: 'Push API Docker Image'
 
-    docker build \
-      --progress=plain \
-      --target webapp \
-      -t $(dockerRepository):$WEBAPP_TAG \
-      -t $(dockerRepository):latest-webapp \
-      -f Dockerfile \
-      .
+    # -----------------------------
+    # Build WebApp Docker Image
+    # -----------------------------
+    - script: |
+        set -e
+        WEBAPP_TAG=$(webappTag)
+        echo "Building WebApp Docker image with tag $WEBAPP_TAG..."
 
-    echo "Built WebApp images:"
-    docker images | grep $(dockerRepository)
-  displayName: 'Build WebApp Docker Image'
+        docker build \
+          --progress=plain \
+          --target webapp \
+          -t $(dockerRepository):$WEBAPP_TAG \
+          -t $(dockerRepository):latest-webapp \
+          -f Dockerfile \
+          .
 
-# -----------------------------
-# 7. Push WebApp Docker Image
-# -----------------------------
-- script: |
-    set -e
-    WEBAPP_TAG=$(webappTag)
-    echo "Pushing WebApp Docker image with tag $WEBAPP_TAG..."
-    docker push $(dockerRepository):$WEBAPP_TAG
-    docker push $(dockerRepository):latest-webapp
-  displayName: 'Push WebApp Docker Image'
+        docker images | grep $(dockerRepository)
+      displayName: 'Build WebApp Docker Image'
+
+    # -----------------------------
+    # Push WebApp
+    # -----------------------------
+    - script: |
+        set -e
+        WEBAPP_TAG=$(webappTag)
+        echo "Pushing WebApp Docker image with tag $WEBAPP_TAG..."
+        docker push $(dockerRepository):$WEBAPP_TAG
+        docker push $(dockerRepository):latest-webapp
+      displayName: 'Push WebApp Docker Image'
+
+
+# ============================================================
+# 2️⃣ DEPLOY STAGE TO ON-PREM KUBERNETES
+# ============================================================
+- stage: Deploy
+  displayName: Deploy to On-Prem Kubernetes
+  dependsOn: BuildAndPush
+  jobs:
+  - job: DeployJob
+    displayName: Deploy SilkRoad to prod-silkroad
+    pool:
+      name: OnPremAgents
+
+    steps:
+    - script: |
+        echo "📁 Navigating to deployment manifests..."
+        cd $(Build.SourcesDirectory)/src/deployments || { echo '❌ Deployment folder not found'; exit 1; }
+
+        echo "📂 Listing YAML files:"
+        ls -l *.yaml
+
+        echo "🔄 Updating deployment image tags..."
+        export API_TAG=$(apiTag)
+        export WEB_TAG=$(webappTag)
+
+        # Replace API image
+        sed -i "s|image: .*silkroad:.*api.*|image: tunnetcom/silkroad:${API_TAG}|" prod-deployment.yaml
+
+        # Replace WEB image
+        sed -i "s|image: .*silkroad:.*webapp.*|image: tunnetcom/silkroad:${WEB_TAG}|" prod-deployment.yaml
+
+        echo "🧾 New image lines:"
+        grep 'image:' prod-deployment.yaml
+
+        echo "🔐 Checking cluster access..."
+        kubectl version --client || { echo '❌ kubectl missing'; exit 1; }
+        kubectl cluster-info || { echo '❌ cluster unreachable'; exit 1; }
+
+        echo "🚀 Applying manifests..."
+        kubectl apply -f prod-deployment.yaml -n prod-silkroad
+        kubectl apply -f prod-service.yaml -n prod-silkroad || true
+
+        echo "🔁 Forcing rollout..."
+        kubectl rollout restart deployment/silkroad-api -n prod-silkroad || true
+        kubectl rollout restart deployment/silkroad-webapp -n prod-silkroad || true
+
+        echo "⏳ Waiting for rollout..."
+        kubectl rollout status deployment/silkroad-api -n prod-silkroad || { echo '❌ API rollout failed'; exit 1; }
+        kubectl rollout status deployment/silkroad-webapp -n prod-silkroad || { echo '❌ WebApp rollout failed'; exit 1; }
+
+        echo "✅ Successfully deployed SilkRoad to namespace: prod-silkroad"
+      displayName: Deploy to K8s
