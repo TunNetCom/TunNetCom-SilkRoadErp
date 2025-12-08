@@ -13,28 +13,28 @@ EXPOSE 8081
 
 # Playwright dependencies for Debian 12 (Bookworm)
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    libatk1.0-0 \
+    libcups2 \
+    libdbus-1-3 \
+    libnss3 \
+    libnspr4 \
     libdrm2 \
-    libgbm1 \
+    libxkbcommon0 \
     libxcomposite1 \
     libxdamage1 \
     libxfixes3 \
     libxrandr2 \
-    libatk1.0-0 \
-    libcups2 \
-    libdbus-1-3 \
-    libxkbcommon0 \
-    libgtk-3-0 \
     libasound2 \
-    libnss3 \
-    libnspr4 \
-    libxshmfence1 \
     libatspi2.0-0 \
+    libxshmfence1 \
     libxcursor1 \
+    libgbm1 \
     libpango-1.0-0 \
     libcairo2 \
     curl \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
+
 
 # Create a non-root user
 RUN groupadd -r appuser && useradd -r -g appuser appuser
