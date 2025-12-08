@@ -1,52 +1,44 @@
-# ======================================================================
+# ==============================================================================
 # Multi-stage Dockerfile for SilkRoadErp Application (API + WebApp)
 # Includes Playwright + Chromium for PDF generation
-# ======================================================================
+# ==============================================================================
 
-# ======================================================================
+# ==============================================================================
 # Stage 1: Build
-# ======================================================================
+# ==============================================================================
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-# --------------------------
-# Copy only project files for restore
-# --------------------------
-# API projects
-COPY src/TunNetCom.SilkRoadErp.Sales.Api/TunNetCom.SilkRoadErp.Sales.Api.csproj src/TunNetCom.SilkRoadErp.Sales.Api/
-COPY src/TunNetCom.SilkRoadErp.Sales.Domain/TunNetCom.SilkRoadErp.Sales.Domain.csproj src/TunNetCom.SilkRoadErp.Sales.Domain/
-COPY src/TunNetCom.SilkRoadErp.Sales.Contracts/TunNetCom.SilkRoadErp.Sales.Contracts.csproj src/TunNetCom.SilkRoadErp.Sales.Contracts/
+# Copy solution and props files
+COPY *.sln ./
+COPY Directory.Build.props ./
+COPY Directory.Packages.props ./
 
-# WebApp projects
-COPY src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp/TunNetCom.SilkRoadErp.Sales.WebApp.csproj src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp/
-COPY src/WebApps/TunNetCom.SilkRoadErp.Sales.HttpClients/TunNetCom.SilkRoadErp.Sales.HttpClients.csproj src/WebApps/TunNetCom.SilkRoadErp.Sales.HttpClients/
+# Copy project files (for restore only)
+COPY src/TunNetCom.SilkRoadErp.Sales.Api/*.csproj src/TunNetCom.SilkRoadErp.Sales.Api/
+COPY src/TunNetCom.SilkRoadErp.Sales.Domain/*.csproj src/TunNetCom.SilkRoadErp.Sales.Domain/
+COPY src/TunNetCom.SilkRoadErp.Sales.Contracts/*.csproj src/TunNetCom.SilkRoadErp.Sales.Contracts/
+COPY src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp/*.csproj src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp/
+COPY src/WebApps/TunNetCom.SilkRoadErp.Sales.HttpClients/*.csproj src/WebApps/TunNetCom.SilkRoadErp.Sales.HttpClients/
 
-# --------------------------
-# Restore dependencies (only for projects we publish)
-# --------------------------
+# Restore dependencies (only projects we publish)
 RUN dotnet restore src/TunNetCom.SilkRoadErp.Sales.Api/TunNetCom.SilkRoadErp.Sales.Api.csproj
 RUN dotnet restore src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp/TunNetCom.SilkRoadErp.Sales.WebApp.csproj
 
-# --------------------------
 # Copy full source code
-# --------------------------
 COPY src/ src/
 
-# --------------------------
 # Publish API
-# --------------------------
 RUN dotnet publish src/TunNetCom.SilkRoadErp.Sales.Api/TunNetCom.SilkRoadErp.Sales.Api.csproj \
     -c Release -o /app/api /p:UseAppHost=false
 
-# --------------------------
 # Publish WebApp
-# --------------------------
 RUN dotnet publish src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp/TunNetCom.SilkRoadErp.Sales.WebApp.csproj \
     -c Release -o /app/webapp /p:UseAppHost=false
 
-# ======================================================================
+# ==============================================================================
 # Stage 2: Runtime API Image
-# ======================================================================
+# ==============================================================================
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS api
 WORKDIR /app
 
@@ -76,9 +68,9 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
 # API entrypoint
 ENTRYPOINT ["dotnet", "TunNetCom.SilkRoadErp.Sales.Api.dll"]
 
-# ======================================================================
+# ==============================================================================
 # Stage 3: Runtime WebApp Image
-# ======================================================================
+# ==============================================================================
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS webapp
 WORKDIR /app
 
