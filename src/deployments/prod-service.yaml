@@ -1,0 +1,42 @@
+# ==============================================================================
+# Services for Production Environment
+# ==============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: silkroad-api-service
+  namespace: silkroad-prod
+  labels:
+    app: silkroad-api
+    environment: production
+spec:
+  type: ClusterIP
+  selector:
+    app: silkroad-api
+    environment: production
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  sessionAffinity: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: silkroad-webapp-service
+  namespace: silkroad-prod
+  labels:
+    app: silkroad-webapp
+    environment: production
+spec:
+  type: ClusterIP
+  selector:
+    app: silkroad-webapp
+    environment: production
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  sessionAffinity: None
