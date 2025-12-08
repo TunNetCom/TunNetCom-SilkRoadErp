@@ -29,6 +29,9 @@ RUN dotnet publish src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp/TunNetCom.Silk
 RUN dotnet tool install --global Microsoft.Playwright.CLI
 ENV PATH="$PATH:/root/.dotnet/tools"
 
+# Set Playwright browsers path explicitly BEFORE installation
+ENV PLAYWRIGHT_BROWSERS_PATH=/root/.playwright
+
 # Install Playwright for WebApp and download Chromium
 WORKDIR /src/src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp
 RUN dotnet add package Microsoft.Playwright \
@@ -65,7 +68,7 @@ WORKDIR /app
 # Copy published WebApp
 COPY --from=build /app/webapp/publish ./
 
-# Copy Playwright tools & browsers
+# Copy Playwright tools & browsers (now guaranteed to exist)
 COPY --from=build /root/.dotnet /root/.dotnet
 COPY --from=build /root/.playwright /root/.playwright
 ENV PATH="$PATH:/root/.dotnet/tools"
