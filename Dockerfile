@@ -44,10 +44,24 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS api
 WORKDIR /app
 
 # Install system dependencies required by Playwright / Chromium
-RUN apt-get update && apt-get install -y \
-    libnss3 libatk1.0-0 libcups2 libdrm2 libxkbcommon0 libxcomposite1 \
-    libxdamage1 libxfixes3 libxrandr2 libgbm1 libpango-1.0-0 libcairo2 libasound2 \
-    curl ca-certificates gnupg wget \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libnss3 \
+    libatk1.0-0 \
+    libcups2 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libpango-1.0-0 \
+    libcairo2 \
+    libasound2-plugins \
+    curl \
+    ca-certificates \
+    gnupg \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy published API
@@ -76,10 +90,24 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS webapp
 WORKDIR /app
 
 # Install system dependencies required by Playwright / Chromium
-RUN apt-get update && apt-get install -y \
-    libnss3 libatk1.0-0 libcups2 libdrm2 libxkbcommon0 libxcomposite1 \
-    libxdamage1 libxfixes3 libxrandr2 libgbm1 libpango-1.0-0 libcairo2 libasound2 \
-    curl ca-certificates gnupg wget \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libnss3 \
+    libatk1.0-0 \
+    libcups2 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libpango-1.0-0 \
+    libcairo2 \
+    libasound2-plugins \
+    curl \
+    ca-certificates \
+    gnupg \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy published WebApp
