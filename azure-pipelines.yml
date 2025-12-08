@@ -152,16 +152,16 @@ stages:
         kubectl cluster-info || { echo '❌ cluster unreachable'; exit 1; }
 
         echo "🚀 Applying manifests..."
-        kubectl apply -f prod-deployment.yaml -n prod-silkroad
-        kubectl apply -f prod-service.yaml -n prod-silkroad || true
+        kubectl apply -f prod-deployment.yaml -n silkroad-prod 
+        kubectl apply -f prod-service.yaml -n silkroad-prod  || true
 
         echo "🔁 Forcing rollout..."
-        kubectl rollout restart deployment/silkroad-api -n prod-silkroad || true
-        kubectl rollout restart deployment/silkroad-webapp -n prod-silkroad || true
+        kubectl rollout restart deployment/silkroad-api -n silkroad-prod  || true
+        kubectl rollout restart deployment/silkroad-webapp -n silkroad-prod  || true
 
         echo "⏳ Waiting for rollout..."
-        kubectl rollout status deployment/silkroad-api -n prod-silkroad || { echo '❌ API rollout failed'; exit 1; }
-        kubectl rollout status deployment/silkroad-webapp -n prod-silkroad || { echo '❌ WebApp rollout failed'; exit 1; }
+        kubectl rollout status deployment/silkroad-api -n silkroad-prod  || { echo '❌ API rollout failed'; exit 1; }
+        kubectl rollout status deployment/silkroad-webapp -n silkroad-prod  || { echo '❌ WebApp rollout failed'; exit 1; }
 
         echo "✅ Successfully deployed SilkRoad to namespace: prod-silkroad"
       displayName: Deploy to K8s
