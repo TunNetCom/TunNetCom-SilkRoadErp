@@ -56,6 +56,168 @@ window.printPdf = (blob, printerName) => {
     };
 };
 
+// Get available printers using browser APIs
+window.getAvailablePrinters = async () => {
+    try {
+        // Check if Print API is available (Chrome/Edge with experimental features)
+        // Note: This API is experimental and may not be available in all browsers
+        if (navigator.print && typeof navigator.print.getPrinters === 'function') {
+            try {
+                const printers = await navigator.print.getPrinters();
+                if (printers && printers.length > 0) {
+                    return printers.map(p => ({
+                        name: p.name || 'Unknown',
+                        status: p.status || 'Ready',
+                        isDefault: p.isDefault || false,
+                        location: p.location || ''
+                    }));
+                }
+            } catch (apiError) {
+                console.debug('Print API getPrinters failed:', apiError);
+            }
+        }
+        
+        // For browsers that don't support printer enumeration,
+        // we return an empty array and the C# code will provide a default option
+        // The browser print dialog will show all printers when window.print() is called
+        return [];
+    } catch (error) {
+        console.warn('Could not enumerate printers:', error);
+        return [];
+    }
+};
+
+// Enhanced print function that accepts base64 PDF and print options
+window.printPdfFromBase64 = (base64String, copies = 1, duplex = false) => {
+    try {
+        // Convert base64 to blob
+        const byteCharacters = atob(base64String);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'application/pdf' });
+        
+        // Create a new window for printing
+        const blobUrl = URL.createObjectURL(blob);
+        const printWindow = window.open(blobUrl, '_blank');
+        
+        if (!printWindow) {
+            // If popup was blocked, fall back to iframe method
+            console.warn('Popup blocked, using iframe method');
+            const iframe = document.createElement('iframe');
+            iframe.style.position = 'fixed';
+            iframe.style.right = '0';
+            iframe.style.bottom = '0';
+            iframe.style.width = '0';
+            iframe.style.height = '0';
+            iframe.style.border = '0';
+            document.body.appendChild(iframe);
+            
+            iframe.src = blobUrl;
+            
+            iframe.onload = () => {
+                try {
+                    // Wait a bit for PDF to load
+                    setTimeout(() => {
+                        iframe.contentWindow.focus();
+                        iframe.contentWindow.print();
+                        
+                        // Clean up after printing
+                        setTimeout(() => {
+                            if (document.body.contains(iframe)) {
+                                document.body.removeChild(iframe);
+                            }
+                            URL.revokeObjectURL(blobUrl);
+                        }, 1000);
+                    }, 500);
+                } catch (error) {
+                    console.error('Error printing PDF:', error);
+                    if (document.body.contains(iframe)) {
+                        document.body.removeChild(iframe);
+                    }
+                    URL.revokeObjectURL(blobUrl);
+                }
+            };
+            
+            iframe.onerror = () => {
+                console.error('Error loading PDF for printing');
+                if (document.body.contains(iframe)) {
+                    document.body.removeChild(iframe);
+                }
+                URL.revokeObjectURL(blobUrl);
+            };
+            
+            return;
+        }
+        
+        // Wait for the window to load, then print
+        printWindow.onload = () => {
+            try {
+                // Small delay to ensure PDF is fully loaded
+                setTimeout(() => {
+                    printWindow.focus();
+                    printWindow.print();
+                    
+                    // Clean up after printing
+                    // Note: We don't close the window immediately to allow user to interact with print dialog
+                    printWindow.addEventListener('afterprint', () => {
+                        setTimeout(() => {
+                            printWindow.close();
+                            URL.revokeObjectURL(blobUrl);
+                        }, 100);
+                    });
+                    
+                    // Fallback cleanup if afterprint event doesn't fire
+                    setTimeout(() => {
+                        if (!printWindow.closed) {
+                            printWindow.close();
+                            URL.revokeObjectURL(blobUrl);
+                        }
+                    }, 30000); // 30 second timeout
+                }, 500);
+            } catch (error) {
+                console.error('Error printing PDF:', error);
+                printWindow.close();
+                URL.revokeObjectURL(blobUrl);
+            }
+        };
+        
+        // Handle case where PDF loads before onload fires
+        printWindow.addEventListener('load', () => {
+            try {
+                setTimeout(() => {
+                    printWindow.focus();
+                    printWindow.print();
+                    
+                    printWindow.addEventListener('afterprint', () => {
+                        setTimeout(() => {
+                            printWindow.close();
+                            URL.revokeObjectURL(blobUrl);
+                        }, 100);
+                    });
+                    
+                    setTimeout(() => {
+                        if (!printWindow.closed) {
+                            printWindow.close();
+                            URL.revokeObjectURL(blobUrl);
+                        }
+                    }, 30000);
+                }, 500);
+            } catch (error) {
+                console.error('Error printing PDF:', error);
+                printWindow.close();
+                URL.revokeObjectURL(blobUrl);
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error in printPdfFromBase64:', error);
+        throw error;
+    }
+};
+
 window.setupOrderLinesGridKeyboard = (refId, dotNetRef) => {
     // Store the DotNetObjectReference
     window[refId] = dotNetRef;

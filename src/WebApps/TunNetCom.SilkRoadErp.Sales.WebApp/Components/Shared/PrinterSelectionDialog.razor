@@ -6,6 +6,7 @@
 @inject DialogService DialogService
 @inject IStringLocalizer<SharedResource> Localizer
 @inject IPrinterService PrinterService
+@inject IConfiguration Configuration
 
 <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
     <RadzenText TextStyle="TextStyle.Body1">
@@ -19,6 +20,28 @@
     }
     else if (printers.Any())
     {
+        @if (isBrowserPrinting)
+        {
+            <RadzenAlert AlertStyle="AlertStyle.Info">
+                <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+                    <RadzenText TextStyle="TextStyle.Body2" Style="font-weight: bold;">
+                        @Localizer["browser_print_info_title"] ?? "Toutes les imprimantes seront disponibles"
+                    </RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body2">
+                        @Localizer["browser_print_info"] ?? "Le dialogue d'impression du navigateur s'ouvrira avec toutes vos imprimantes disponibles, y compris:"
+                    </RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body2" Style="margin-left: 1rem;">
+                        • HP, Epson, Canon, etc.<br/>
+                        • Microsoft Print to PDF<br/>
+                        • Autres imprimantes installées
+                    </RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body2" Style="font-style: italic; margin-top: 0.5rem;">
+                        Vous pourrez sélectionner votre imprimante dans le dialogue du navigateur.
+                    </RadzenText>
+                </RadzenStack>
+            </RadzenAlert>
+        }
+
         <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
             <RadzenLabel Text="@Localizer["printer"]" />
             <RadzenDropDown @bind-Value="selectedPrinterName"
@@ -26,7 +49,8 @@
                            TextProperty="Name"
                            ValueProperty="Name"
                            Placeholder="@Localizer["select_printer"]"
-                           Style="width: 100%;" />
+                           Style="width: 100%;"
+                           Disabled="@isBrowserPrinting" />
         </RadzenStack>
 
         <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
@@ -67,6 +91,7 @@
     private int copies = 1;
     private bool duplex = false;
     private bool isLoadingPrinters = true;
+    private bool isBrowserPrinting = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -79,6 +104,11 @@
         try
         {
             printers = await PrinterService.GetAvailablePrintersAsync();
+            
+            // Check if we're using browser printing (when remote service is not configured)
+            var serviceUrl = Configuration["Printing:ServiceUrl"];
+            isBrowserPrinting = string.IsNullOrEmpty(serviceUrl) || 
+                               (printers.Count == 1 && printers[0].Name == "Browser Print Dialog");
             
             // Select default printer if available
             var defaultPrinter = printers.FirstOrDefault(p => p.IsDefault);
