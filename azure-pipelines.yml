@@ -7,25 +7,32 @@ pool:
 variables:
   solution: '**/*.sln'
   buildConfiguration: 'Release'
-  dockerRepository: 'tunnetcom/silkroad'      
+  dockerRepository: 'tunnetcom/silkroad'
   apiTag: 'api-$(Build.BuildId)'
   webappTag: 'webapp-$(Build.BuildId)'
 
 steps:
-# 1. Setup Docker Buildx for better multi-platform support
+# -----------------------------
+# 1. Login to DockerHub
+# -----------------------------
 - task: Docker@2
-  displayName: 'Set up Docker Buildx'
+  displayName: 'Login to DockerHub'
   inputs:
     command: login
     containerRegistry: 'TunNetCom_Dockerhub_Connection'
 
-# 2. .NET Build with warnings as errors disabled
+# -----------------------------
+# 2. Use .NET SDK
+# -----------------------------
 - task: UseDotNet@2
   displayName: 'Use .NET 10 SDK'
   inputs:
     packageType: 'sdk'
     version: '10.x'
 
+# -----------------------------
+# 3. Restore & Build Solution
+# -----------------------------
 - task: DotNetCoreCLI@2
   displayName: 'Restore'
   inputs:
@@ -41,10 +48,11 @@ steps:
     arguments: '--configuration $(buildConfiguration) --no-restore --verbosity normal'
 
 # -----------------------------
-# Build API Image
+# 4. Build API Docker Image
 # -----------------------------
 - script: |
-    echo "Building API image..."
+    set -e
+    echo "Building API Docker image..."
     docker build \
       --progress=plain \
       --target api \
@@ -52,46 +60,51 @@ steps:
       -t $(dockerRepository):latest-api \
       -f Dockerfile \
       .
-    
-    echo "Built images:"
+
+    echo "Built API images:"
     docker images | grep $(dockerRepository)
   displayName: 'Build API Docker Image'
-  continueOnError: false
 
 # -----------------------------
-# Push API Image
+# 5. Push API Docker Image
 # -----------------------------
 - script: |
-    echo "Pushing API image..."
+    set -e
+    echo "Pushing API Docker image..."
     docker push $(dockerRepository):$(apiTag)
     docker push $(dockerRepository):latest-api
   displayName: 'Push API Docker Image'
-  continueOnError: false
 
 # -----------------------------
-# Build WebApp Image
+# 6. Build WebApp Docker Image
 # -----------------------------
 - script: |
-    echo "Building WebApp image..."
+    set -e
+    WEBAPP_TAG=$(webappTag)
+    echo "Building WebApp Docker image with tag $WEBAPP_TAG..."
+    
+    # Make sure build artifacts exist
+    ls -la ./src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp/bin/Release/net10/publish || true
+
     docker build \
       --progress=plain \
       --target webapp \
-      -t $(dockerRepository):$(webappTag) \
+      -t $(dockerRepository):$WEBAPP_TAG \
       -t $(dockerRepository):latest-webapp \
       -f Dockerfile \
       .
-    
-    echo "Built images:"
+
+    echo "Built WebApp images:"
     docker images | grep $(dockerRepository)
   displayName: 'Build WebApp Docker Image'
-  continueOnError: false
 
 # -----------------------------
-# Push WebApp Image
+# 7. Push WebApp Docker Image
 # -----------------------------
 - script: |
-    echo "Pushing WebApp image..."
-    docker push $(dockerRepository):$(webappTag)
+    set -e
+    WEBAPP_TAG=$(webappTag)
+    echo "Pushing WebApp Docker image with tag $WEBAPP_TAG..."
+    docker push $(dockerRepository):$WEBAPP_TAG
     docker push $(dockerRepository):latest-webapp
   displayName: 'Push WebApp Docker Image'
-  continueOnError: false
