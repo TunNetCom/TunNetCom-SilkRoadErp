@@ -381,6 +381,24 @@
   <data name="apply_vat_to_all" xml:space="preserve">
     <value>Apply VAT to all lines</value>
   </data>
+  <data name="apply_purchase_info" xml:space="preserve">
+    <value>Apply purchase info</value>
+  </data>
+  <data name="apply_purchase_info_to_line" xml:space="preserve">
+    <value>Apply purchase info to line</value>
+  </data>
+  <data name="use_product_values" xml:space="preserve">
+    <value>Use product values</value>
+  </data>
+  <data name="use_last_purchase_info" xml:space="preserve">
+    <value>Use last purchase info</value>
+  </data>
+  <data name="purchase_info_from_product" xml:space="preserve">
+    <value>Purchase price, purchase discount and VAT from product</value>
+  </data>
+  <data name="purchase_info_from_receipt" xml:space="preserve">
+    <value>Price, discount and VAT from last receipt note</value>
+  </data>
   <data name="select_printer" xml:space="preserve">
     <value>Select a printer</value>
   </data>

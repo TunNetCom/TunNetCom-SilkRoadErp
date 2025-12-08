@@ -4,3 +4,5 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryCar.GetDeliveryCarByI
 
 public record GetDeliveryCarByIdQuery(int Id) : IRequest<Result<DeliveryCarResponse>>;
 
+
+

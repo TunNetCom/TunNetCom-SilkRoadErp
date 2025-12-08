@@ -381,6 +381,24 @@
   <data name="apply_vat_to_all" xml:space="preserve">
     <value>Appliquer la TVA à toutes les lignes</value>
   </data>
+  <data name="apply_purchase_info" xml:space="preserve">
+    <value>Appliquer infos achat</value>
+  </data>
+  <data name="apply_purchase_info_to_line" xml:space="preserve">
+    <value>Appliquer infos achat à la ligne</value>
+  </data>
+  <data name="use_product_values" xml:space="preserve">
+    <value>Utiliser les valeurs du produit</value>
+  </data>
+  <data name="use_last_purchase_info" xml:space="preserve">
+    <value>Utiliser les dernières infos d'achat</value>
+  </data>
+  <data name="purchase_info_from_product" xml:space="preserve">
+    <value>Prix d'achat, remise d'achat et TVA depuis le produit</value>
+  </data>
+  <data name="purchase_info_from_receipt" xml:space="preserve">
+    <value>Prix, remise et TVA depuis le dernier bon de réception</value>
+  </data>
   <data name="select_printer" xml:space="preserve">
     <value>Sélectionner une imprimante</value>
   </data>

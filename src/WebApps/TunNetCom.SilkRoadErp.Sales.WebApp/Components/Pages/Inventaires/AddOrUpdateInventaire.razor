@@ -165,7 +165,7 @@
         try
         {
             var pagedProducts = await productService.GetPagedAsync(parameters, _cancellationTokenSource.Token);
-            searchList = pagedProducts.Items.Select(
+            searchList = (pagedProducts?.Items ?? new List<ProductResponse>()).Select(
                 p => new InventaireLineWrapper
                 {
                     ProductReference = p.Reference,
@@ -174,7 +174,7 @@
                     Quantity = 1
                 }).ToList();
 
-            count = pagedProducts.TotalCount;
+            count = pagedProducts?.TotalCount ?? 0;
         }
         catch (Exception ex)
         {

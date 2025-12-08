@@ -387,7 +387,7 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
         try
         {
             var pagedProducts = await productsApiClient.GetPagedAsync(parameters, _cancellationTokenSource.Token);
-            searchList = pagedProducts.Items.Select(
+            searchList = (pagedProducts?.Items ?? new List<ProductResponse>()).Select(
                 p => new ReceiptNoteDetailResponse
                 {
                     ProductReference = p.Reference,
@@ -398,7 +398,7 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
                     VatPercentage = p.VatRate,
                 }).ToList();
 
-            count = pagedProducts.TotalCount;
+            count = pagedProducts?.TotalCount ?? 0;
         }
         catch (Exception ex)
         {

@@ -10,10 +10,14 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.Inventaires
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Services
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Products
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 @typeparam TItem where TItem : class, ILineItem
 @inject IJSRuntime JSRuntime
 @inject DialogService DialogService
 @inject IDecimalFormatService DecimalFormatService
+@inject IProductsApiClient ProductsApiClient
 
 <div id="@componentId">
 <RadzenDataGrid @ref="ordersGrid" 
@@ -52,6 +56,16 @@
                               Click="@OpenVatDialog"
                               class="action-button"
                               AriaLabel="@Localizer["apply_vat_to_all"]" />
+
+                <RadzenButton ButtonStyle="ButtonStyle.Info"
+                              Icon="shopping_cart"
+                              Text="@Localizer["apply_purchase_info"]"
+                              Variant="Variant.Flat"
+                              Size="ButtonSize.Small"
+                              Disabled="@(IsReadOnly || Items == null || !Items.Any())"
+                              Click="@OpenPurchaseInfoDialogForAll"
+                              class="action-button"
+                              AriaLabel="@Localizer["apply_purchase_info"]" />
 
                 @if (ShowPrintButton)
                 {
@@ -326,24 +340,38 @@
         }
 
         <RadzenDataGridColumn Context="order" 
-                              Width="80px"
+                              Width="120px"
                               Filterable="false" 
                               Sortable="false" 
                               TextAlign="TextAlign.Right"
                               Frozen="true" 
                               FrozenPosition="FrozenColumnPosition.Right">
             <Template Context="order">
-                <RadzenButton ButtonStyle="ButtonStyle.Danger" 
-                              Icon="delete" 
-                              Variant="Variant.Flat"
-                              Shade="Shade.Lighter" 
-                              Size="ButtonSize.Medium"
-                              Disabled="@IsReadOnly" 
-                              class="rz-my-1 rz-ms-1"
-                              Click="@(args => HandleDeleteItem(order))" 
-                              @onclick:stopPropagation="true"
-                              aria-label="Delete">
-                </RadzenButton>
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="4px" JustifyContent="JustifyContent.End">
+                    <RadzenButton ButtonStyle="ButtonStyle.Info" 
+                                  Icon="shopping_cart" 
+                                  Variant="Variant.Flat"
+                                  Shade="Shade.Lighter" 
+                                  Size="ButtonSize.Medium"
+                                  Disabled="@(IsReadOnly || string.IsNullOrEmpty(GetProductReference?.Invoke(order)))" 
+                                  class="rz-my-1"
+                                  Click="@(() => OpenPurchaseInfoDialogForLine(order))" 
+                                  @onclick:stopPropagation="true"
+                                  Title="@Localizer["apply_purchase_info_to_line"]"
+                                  aria-label="@Localizer["apply_purchase_info_to_line"]">
+                    </RadzenButton>
+                    <RadzenButton ButtonStyle="ButtonStyle.Danger" 
+                                  Icon="delete" 
+                                  Variant="Variant.Flat"
+                                  Shade="Shade.Lighter" 
+                                  Size="ButtonSize.Medium"
+                                  Disabled="@IsReadOnly" 
+                                  class="rz-my-1 rz-ms-1"
+                                  Click="@(args => HandleDeleteItem(order))" 
+                                  @onclick:stopPropagation="true"
+                                  aria-label="Delete">
+                    </RadzenButton>
+                </RadzenStack>
             </Template>
         </RadzenDataGridColumn>
     </Columns>
@@ -847,6 +875,111 @@
         {
             item.VatPercentage = vat;
             LineItemCalculator.CalculateTotals(item);
+        }
+
+        await NotifyItemsChanged();
+    }
+
+    private async Task OpenPurchaseInfoDialogForLine(TItem item)
+    {
+        if (item == null || string.IsNullOrEmpty(GetProductReference?.Invoke(item)))
+        {
+            return;
+        }
+
+        var result = await DialogService.OpenAsync<ApplyPurchaseInfoDialog>(
+            Localizer["apply_purchase_info_to_line"],
+            new Dictionary<string, object>(),
+            new DialogOptions() 
+            { 
+                Width = "400px",
+                Resizable = false,
+                Draggable = true
+            });
+
+        if (result is ApplyPurchaseInfoDialog.PurchaseInfoSource source)
+        {
+            await ApplyPurchaseInfoToItem(item, source);
+        }
+    }
+
+    private async Task OpenPurchaseInfoDialogForAll()
+    {
+        if (Items == null || !Items.Any())
+        {
+            return;
+        }
+
+        var result = await DialogService.OpenAsync<ApplyPurchaseInfoDialog>(
+            Localizer["apply_purchase_info"],
+            new Dictionary<string, object>(),
+            new DialogOptions() 
+            { 
+                Width = "400px",
+                Resizable = false,
+                Draggable = true
+            });
+
+        if (result is ApplyPurchaseInfoDialog.PurchaseInfoSource source)
+        {
+            // Apply to all items that have a product selected
+            foreach (var item in Items)
+            {
+                var productRef = GetProductReference?.Invoke(item);
+                if (!string.IsNullOrEmpty(productRef))
+                {
+                    await ApplyPurchaseInfoToItem(item, source);
+                }
+            }
+        }
+    }
+
+    private async Task ApplyPurchaseInfoToItem(TItem item, ApplyPurchaseInfoDialog.PurchaseInfoSource source)
+    {
+        var productRef = GetProductReference?.Invoke(item);
+        if (string.IsNullOrEmpty(productRef))
+        {
+            return;
+        }
+
+        if (source == ApplyPurchaseInfoDialog.PurchaseInfoSource.Product)
+        {
+            // Get product info
+            var productResult = await ProductsApiClient.GetAsync(productRef, CancellationToken.None);
+            if (productResult.IsT0)
+            {
+                var product = productResult.AsT0;
+                item.UnitPriceExcludingTax = product.PurchasingPrice;
+                item.DiscountPercentage = product.DiscountPourcentageOfPurchasing;
+                item.VatPercentage = product.VatRate;
+                LineItemCalculator.CalculateTotals(item);
+            }
+        }
+        else if (source == ApplyPurchaseInfoDialog.PurchaseInfoSource.LastReceipt)
+        {
+            // Get last purchase info from receipt notes
+            var purchaseInfoResult = await ProductsApiClient.GetDernieresInfosAchatAsync(productRef, CancellationToken.None);
+            if (purchaseInfoResult.IsT0)
+            {
+                var purchaseInfo = purchaseInfoResult.AsT0;
+                item.UnitPriceExcludingTax = purchaseInfo.PrixHt;
+                item.DiscountPercentage = purchaseInfo.Remise;
+                item.VatPercentage = purchaseInfo.Tva;
+                LineItemCalculator.CalculateTotals(item);
+            }
+            else
+            {
+                // Fallback to product values if no receipt note found
+                var productResult = await ProductsApiClient.GetAsync(productRef, CancellationToken.None);
+                if (productResult.IsT0)
+                {
+                    var product = productResult.AsT0;
+                    item.UnitPriceExcludingTax = product.PurchasingPrice;
+                    item.DiscountPercentage = product.DiscountPourcentageOfPurchasing;
+                    item.VatPercentage = product.VatRate;
+                    LineItemCalculator.CalculateTotals(item);
+                }
+            }
         }
 
         await NotifyItemsChanged();

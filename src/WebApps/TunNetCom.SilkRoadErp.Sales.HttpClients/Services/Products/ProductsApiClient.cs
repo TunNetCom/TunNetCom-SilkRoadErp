@@ -72,19 +72,27 @@ public class ProductsApiClient : IProductsApiClient
         var response = await _httpClient.GetAsync(queryString, cancellationToken: cancellationToken);
 
         var responseContent = await response.Content.ReadAsStringAsync();
-        var pagedProducts = JsonConvert.DeserializeObject<PagedList<ProductResponse>>(responseContent);
+        var pagedProducts = JsonConvert.DeserializeObject<PagedList<ProductResponse>>(responseContent) ?? new PagedList<ProductResponse>();
 
         if (response.Headers.TryGetValues("X-Pagination", out var headerValues))
         {
             var paginationMetadata = JsonConvert.DeserializeObject<PaginationMetadata>(headerValues.FirstOrDefault());
 
-            pagedProducts.TotalCount = paginationMetadata.TotalCount;
-            pagedProducts.PageSize = paginationMetadata.PageSize;
-            pagedProducts.TotalPages = paginationMetadata.TotalPages;
-            pagedProducts.CurrentPage = paginationMetadata.CurrentPage;
-
-            return pagedProducts;
+            if (paginationMetadata != null)
+            {
+                pagedProducts.TotalCount = paginationMetadata.TotalCount;
+                pagedProducts.PageSize = paginationMetadata.PageSize;
+                pagedProducts.TotalPages = paginationMetadata.TotalPages;
+                pagedProducts.CurrentPage = paginationMetadata.CurrentPage;
+            }
         }
+        
+        // Ensure Items is never null
+        if (pagedProducts.Items == null)
+        {
+            pagedProducts.Items = new List<ProductResponse>();
+        }
+        
         return pagedProducts;
     }
 
@@ -206,6 +214,28 @@ public class ProductsApiClient : IProductsApiClient
         {
             _logger.LogError(ex, "Error getting products stock");
             return new BadRequestResponse { Status = (int)HttpStatusCode.InternalServerError, Title = "Error", Detail = ex.Message };
+        }
+    }
+
+    public async Task<OneOf<GetDernieresInfosAchatResponse, bool>> GetDernieresInfosAchatAsync(string refProduit, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync($"/products/dernieres-infos-achat/{Uri.EscapeDataString(refProduit)}", cancellationToken: cancellationToken);
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                return await response.ReadJsonAsync<GetDernieresInfosAchatResponse>();
+            }
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return false;
+            }
+            throw new Exception($"Products/dernieres-infos-achat/{refProduit}: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync(cancellationToken)}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message, ex);
+            throw;
         }
     }
 

@@ -372,6 +372,24 @@
   <data name="apply_vat_to_all" xml:space="preserve">
     <value>تطبيق ضريبة القيمة المضافة على جميع الأسطر</value>
   </data>
+  <data name="apply_purchase_info" xml:space="preserve">
+    <value>تطبيق معلومات الشراء</value>
+  </data>
+  <data name="apply_purchase_info_to_line" xml:space="preserve">
+    <value>تطبيق معلومات الشراء على السطر</value>
+  </data>
+  <data name="use_product_values" xml:space="preserve">
+    <value>استخدام قيم المنتج</value>
+  </data>
+  <data name="use_last_purchase_info" xml:space="preserve">
+    <value>استخدام آخر معلومات الشراء</value>
+  </data>
+  <data name="purchase_info_from_product" xml:space="preserve">
+    <value>سعر الشراء وخصم الشراء وضريبة القيمة المضافة من المنتج</value>
+  </data>
+  <data name="purchase_info_from_receipt" xml:space="preserve">
+    <value>السعر والخصم وضريبة القيمة المضافة من آخر إيصال استلام</value>
+  </data>
   <data name="select_printer" xml:space="preserve">
     <value>اختر طابعة</value>
   </data>
