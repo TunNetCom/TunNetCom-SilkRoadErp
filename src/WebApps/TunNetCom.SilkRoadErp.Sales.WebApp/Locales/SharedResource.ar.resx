@@ -258,6 +258,15 @@
   <data name="provider_invoice_details" xml:space="preserve">
     <value>تفاصيل فاتورة المورد</value>
   </data>
+  <data name="create_new_invoice" xml:space="preserve">
+    <value>إنشاء فاتورة جديدة</value>
+  </data>
+  <data name="provider_invoice_number" xml:space="preserve">
+    <value>رقم الفاتورة لدى المورد</value>
+  </data>
+  <data name="edit_provider_invoice_number" xml:space="preserve">
+    <value>تعديل رقم الفاتورة لدى المورد</value>
+  </data>
   <data name="receipt_notes_details" xml:space="preserve">
     <value>تفاصيل بوالص الاستلام</value>
   </data>

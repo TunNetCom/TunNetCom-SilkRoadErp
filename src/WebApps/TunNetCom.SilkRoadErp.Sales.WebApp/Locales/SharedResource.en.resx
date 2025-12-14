@@ -258,6 +258,15 @@
   <data name="provider_invoice_details" xml:space="preserve">
     <value>Provider Invoice Details</value>
   </data>
+  <data name="create_new_invoice" xml:space="preserve">
+    <value>Create New Invoice</value>
+  </data>
+  <data name="provider_invoice_number" xml:space="preserve">
+    <value>Supplier Invoice Number</value>
+  </data>
+  <data name="edit_provider_invoice_number" xml:space="preserve">
+    <value>Edit Supplier Invoice Number</value>
+  </data>
   <data name="receipt_notes_details" xml:space="preserve">
     <value>Receipt Notes Details</value>
   </data>

@@ -19,7 +19,7 @@
     </RadzenStack>
 
     <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
-        <RadzenLabel Text="Numéro chez fournisseur *" />
+        <RadzenLabel Text="@($"{Localizer["provider_invoice_number"]} *")" />
         <RadzenNumeric @bind-Value="NumFactureFournisseur" 
                        Style="width: 100%;"
                        Min="1"
