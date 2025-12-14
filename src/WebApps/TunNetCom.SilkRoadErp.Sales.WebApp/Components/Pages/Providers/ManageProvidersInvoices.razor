@@ -31,6 +31,8 @@
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.FactureAvoirFournisseur
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AvoirFinancierFournisseurs
+@using TunNetCom.SilkRoadErp.Sales.HttpClients
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.Providers
 
 @inject IReceiptNoteApiClient receiptNoteService
 @inject IRetenueSourceFournisseurApiClient retenueSourceFournisseurApiClient
@@ -226,9 +228,17 @@
                         </RadzenDataGridColumn>
                         <RadzenDataGridColumn Property="@nameof(ProviderInvoiceResponse.ProviderInvoiceNumber)"
                                               Title="@Localizer["provider_invoice_number"]"
-                                              Width="180px">
+                                              Width="220px">
                             <Template Context="invoiceWithBRs">
-                                @invoiceWithBRs.Invoice.ProviderInvoiceNumber
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span>@invoiceWithBRs.Invoice.ProviderInvoiceNumber</span>
+                                    <RadzenButton Icon="edit"
+                                                  ButtonStyle="ButtonStyle.Light"
+                                                  Variant="Variant.Flat"
+                                                  Size="ButtonSize.ExtraSmall"
+                                                  Click="@(() => EditProviderInvoiceNumber(invoiceWithBRs.Invoice.Num, invoiceWithBRs.Invoice.ProviderInvoiceNumber))"
+                                                  Title="Modifier le numéro chez fournisseur" />
+                                </div>
                             </Template>
                         </RadzenDataGridColumn>
                         <RadzenDataGridColumn Property="@nameof(ProviderInvoiceResponse.Date)"
@@ -1080,13 +1090,13 @@
                 Draggable = true
             });
 
-        if (result is DateTime selectedDate)
+        if (result is CreateInvoiceDialogResult dialogResult)
         {
-            await CreateProviderInvoiceWithDate(selectedDate);
+            await CreateProviderInvoiceWithDate(dialogResult.Date, dialogResult.NumFactureFournisseur);
         }
     }
 
-    async Task CreateProviderInvoiceWithDate(DateTime invoiceDate)
+    async Task CreateProviderInvoiceWithDate(DateTime invoiceDate, long numFactureFournisseur)
     {
         isLoadingInvoices = true;
         await InvokeAsync(StateHasChanged);
@@ -1096,7 +1106,8 @@
             var request = new CreateProviderInvoiceRequest
             {
                 Date = invoiceDate,
-                ProviderId = SelectedProviderId
+                ProviderId = SelectedProviderId,
+                NumFactureFournisseur = numFactureFournisseur
             };
 
             var result = await providerInvoiceService.CreateProviderInvoice(request, _cancellationTokenSource.Token);
@@ -1274,6 +1285,83 @@
                 Summary = Localizer["error"],
                 Detail = $"Erreur lors de l'export: {ex.Message}",
                 Duration = 4000
+            });
+        }
+    }
+    #endregion
+
+    #region Edit Provider Invoice Number
+    async Task EditProviderInvoiceNumber(int invoiceNum, long currentNumFactureFournisseur)
+    {
+        var result = await DialogService.OpenAsync<EditProviderInvoiceNumberDialog>(
+            "Modifier le numéro chez fournisseur",
+            new Dictionary<string, object> 
+            { 
+                { "InvoiceNum", invoiceNum },
+                { "CurrentNumFactureFournisseur", currentNumFactureFournisseur }
+            },
+            new DialogOptions()
+            {
+                Width = "400px",
+                Resizable = false,
+                Draggable = true
+            });
+
+        if (result is EditProviderInvoiceNumberDialogResult dialogResult)
+        {
+            await UpdateProviderInvoiceNumber(invoiceNum, dialogResult.NumFactureFournisseur);
+        }
+    }
+
+    async Task UpdateProviderInvoiceNumber(int invoiceNum, long numFactureFournisseur)
+    {
+        try
+        {
+            var request = new UpdateProviderInvoiceRequest
+            {
+                NumFactureFournisseur = numFactureFournisseur
+            };
+
+            var result = await providerInvoiceService.UpdateProviderInvoiceAsync(invoiceNum, request, _cancellationTokenSource.Token);
+
+            if (result.IsT0 && result.AsT0 == ResponseTypes.Success)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = Localizer["success"],
+                    Detail = "Le numéro chez fournisseur a été mis à jour avec succès"
+                });
+
+                // Refresh invoice list
+                await LoadInvoices(SelectedProviderId);
+            }
+            else if (result.IsT0 && result.AsT0 == ResponseTypes.NotFound)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = Localizer["warning"],
+                    Detail = "Facture non trouvée"
+                });
+            }
+            else if (result.IsT1)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = result.AsT1.Detail ?? "Erreur lors de la mise à jour"
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Erreur lors de la mise à jour: {ex.Message}"
             });
         }
     }

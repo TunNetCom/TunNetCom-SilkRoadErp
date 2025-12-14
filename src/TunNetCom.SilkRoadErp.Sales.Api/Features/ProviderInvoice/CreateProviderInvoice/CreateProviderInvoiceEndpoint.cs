@@ -18,7 +18,7 @@ public class CreateProviderInvoiceEndpoint : ICarterModule
         CreateProviderInvoiceRequest createProviderInvoiceRequest,
         CancellationToken cancellationToken)
     {
-        var command = new CreateProviderInvoiceCommand(createProviderInvoiceRequest.Date, createProviderInvoiceRequest.ProviderId);
+        var command = new CreateProviderInvoiceCommand(createProviderInvoiceRequest.Date, createProviderInvoiceRequest.ProviderId, createProviderInvoiceRequest.NumFactureFournisseur);
         var result = await mediator.Send(command, cancellationToken);
 
         if (result.IsFailed)

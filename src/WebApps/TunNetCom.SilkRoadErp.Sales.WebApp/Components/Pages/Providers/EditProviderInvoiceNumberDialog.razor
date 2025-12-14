@@ -7,17 +7,9 @@
 
 <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
     <RadzenText TextStyle="TextStyle.Body1">
-        @Localizer["create_new_invoice"]
+        Modifier le numéro chez fournisseur
     </RadzenText>
     
-    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
-        <RadzenLabel Text="@Localizer["date"]" />
-        <RadzenDatePicker @bind-Value="InvoiceDate" 
-                          DateFormat="d MMMM yyyy" 
-                          ShowTime="false"
-                          Style="width: 100%;" />
-    </RadzenStack>
-
     <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
         <RadzenLabel Text="Numéro chez fournisseur *" />
         <RadzenNumeric @bind-Value="NumFactureFournisseur" 
@@ -38,14 +30,14 @@
 </RadzenStack>
 
 @code {
-    [Parameter] public DateTime InitialDate { get; set; } = DateTime.Now.Date;
+    [Parameter] public int InvoiceNum { get; set; }
+    [Parameter] public long CurrentNumFactureFournisseur { get; set; }
     
-    private DateTime InvoiceDate { get; set; }
     private long NumFactureFournisseur { get; set; } = 0;
 
     protected override void OnInitialized()
     {
-        InvoiceDate = InitialDate;
+        NumFactureFournisseur = CurrentNumFactureFournisseur;
     }
 
     private void OnConfirm()
@@ -54,9 +46,8 @@
         {
             return;
         }
-        DialogService.Close(new CreateInvoiceDialogResult 
+        DialogService.Close(new EditProviderInvoiceNumberDialogResult 
         { 
-            Date = InvoiceDate, 
             NumFactureFournisseur = NumFactureFournisseur 
         });
     }
