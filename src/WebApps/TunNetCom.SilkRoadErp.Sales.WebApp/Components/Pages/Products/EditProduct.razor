@@ -254,14 +254,10 @@
         <RadzenRow Style="margin-top: 30px;">
             <RadzenColumn Size="12" Style="text-align: right;">
                 <RadzenButton ButtonType="Radzen.ButtonType.Submit"
-                            Text="@Localizer["save_label"]"
-                            Icon="save"
+                            Icon="@(isSubmitting ? "hourglass_top" : "save")"
                             Style="margin-right: 10px;"
                             Disabled="@isSubmitting">
-                    @if (isSubmitting)
-                    {
-                        <RadzenIcon Icon="hourglass_top" Style="margin-right: 5px;" />
-                    }
+                    @Localizer["save_label"]
                 </RadzenButton>
                 <RadzenButton Text="@Localizer["cancel_label"]"
                             Click="@Cancel"
