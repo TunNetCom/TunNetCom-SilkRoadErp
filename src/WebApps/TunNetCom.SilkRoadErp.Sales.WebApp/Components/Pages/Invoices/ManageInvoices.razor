@@ -238,7 +238,7 @@
                                                   ButtonStyle="ButtonStyle.Info" 
                                                   Size="ButtonSize.Small"
                                                   Title="@Localizer["retenue_source"]"
-                                                  Click="@(() => OpenRetenueDialog(invoiceWithBLs.Invoice.Number, invoiceWithBLs.Invoice.TotalIncludingTaxAmount))" />
+                                                  Click="@(() => OpenRetenueDialog(invoiceWithBLs.Invoice.Number, invoiceWithBLs.Invoice.TotalIncludingTaxAmount - _timbre))" />
                                 }
                             </Template>
                         </RadzenDataGridColumn>
@@ -466,6 +466,7 @@
     }
     private decimal _seuilRetenueSource = 1000;
     private double _tauxRetenu = 0;
+    private decimal _timbre = 0;
     
     // Master-detail model
     public class InvoiceWithDeliveryNotes
@@ -497,6 +498,7 @@
                 var appParams = appParamsResult.AsT0;
                 _seuilRetenueSource = appParams.SeuilRetenueSource;
                 _tauxRetenu = appParams.PourcentageRetenu;
+                _timbre = appParams.Timbre;
             }
         }
         catch (Exception ex)

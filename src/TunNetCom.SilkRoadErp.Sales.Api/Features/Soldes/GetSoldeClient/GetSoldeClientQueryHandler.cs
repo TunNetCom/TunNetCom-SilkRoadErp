@@ -37,15 +37,38 @@ public class GetSoldeClientQueryHandler(
 
         var appParams = await mediator.Send(new GetAppParametersQuery());
 
+        // Get all retenues for factures of this client
+        var retenues = await _context.RetenueSourceClient
+            .Where(r => _context.Facture
+                .Where(f => f.IdClient == query.ClientId && f.AccountingYearId == accountingYearId.Value)
+                .Select(f => f.Num)
+                .Contains(r.NumFacture))
+            .ToDictionaryAsync(r => r.NumFacture, cancellationToken);
+
         // Calculate total from factures (factured BLs)
         var facturesCount = await _context.Facture
             .Where(f => f.IdClient == query.ClientId && f.AccountingYearId == accountingYearId.Value)
             .CountAsync(cancellationToken);
         
-        var totalFactures = await _context.Facture
+        // Calculate total factures: for factures with retenue, use montant après retenue; otherwise use NetPayer + Timbre
+        var factures = await _context.Facture
             .Where(f => f.IdClient == query.ClientId && f.AccountingYearId == accountingYearId.Value)
-            .SelectMany(f => f.BonDeLivraison)
-            .SumAsync(b => b.NetPayer, cancellationToken) + (appParams.Value.Timbre * facturesCount);
+            .Include(f => f.BonDeLivraison)
+            .ToListAsync(cancellationToken);
+
+        var totalFactures = factures.Sum(f =>
+        {
+            if (retenues.TryGetValue(f.Num, out var retenue))
+            {
+                // Use montant après retenue (which already includes timbre)
+                return retenue.MontantApresRetenu;
+            }
+            else
+            {
+                // Use NetPayer + Timbre for factures without retenue
+                return f.BonDeLivraison.Sum(b => b.NetPayer) + appParams.Value.Timbre;
+            }
+        });
 
         // Calculate total from non-factured BLs
         var totalBonsLivraisonNonFactures = await _context.BonDeLivraison
@@ -110,17 +133,22 @@ public class GetSoldeClientQueryHandler(
             };
         }
 
-        // Add factures with their BLs
-        var factures = await _context.Facture
-            .Where(f => f.IdClient == query.ClientId && f.AccountingYearId == accountingYearId.Value)
-            .Include(f => f.BonDeLivraison)
-                .ThenInclude(b => b.LigneBl)
-            .ToListAsync(cancellationToken);
-
+        // Add factures with their BLs (factures already loaded above)
         var documentsFactures = factures.Select(f =>
         {
             var bls = f.BonDeLivraison.Select(CreateBlDocument).ToList();
             var hasQuantitesNonLivrees = bls.Any(bl => bl.HasQuantitesNonLivrees);
+
+            // Use montant après retenue if retenue exists, otherwise use NetPayer + Timbre
+            decimal montant;
+            if (retenues.TryGetValue(f.Num, out var retenue))
+            {
+                montant = retenue.MontantApresRetenu;
+            }
+            else
+            {
+                montant = f.BonDeLivraison.Sum(b => b.NetPayer) + appParams.Value.Timbre;
+            }
 
             return new DocumentSoldeClient
             {
@@ -128,7 +156,7 @@ public class GetSoldeClientQueryHandler(
                 Id = f.Id,
                 Numero = f.Num,
                 Date = f.Date,
-                Montant = f.BonDeLivraison.Sum(b => b.NetPayer) + appParams.Value.Timbre,
+                Montant = montant,
                 BonsLivraison = bls,
                 HasQuantitesNonLivrees = hasQuantitesNonLivrees
             };

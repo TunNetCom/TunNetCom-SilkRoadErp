@@ -32,12 +32,35 @@ public class GetSoldeFournisseurQueryHandler(
             accountingYearId = activeYear.Id;
         }
 
+        // Get all retenues for factures fournisseur of this fournisseur
+        var retenues = await _context.RetenueSourceFournisseur
+            .Where(r => _context.FactureFournisseur
+                .Where(f => f.IdFournisseur == query.FournisseurId && f.AccountingYearId == accountingYearId.Value)
+                .Select(f => f.Num)
+                .Contains(r.NumFactureFournisseur))
+            .ToDictionaryAsync(r => r.NumFactureFournisseur, cancellationToken);
+
         // Calculate total from factures fournisseur (factured BRs)
-        var totalFactures = await _context.FactureFournisseur
+        // For factures with retenue, use montant après retenue; otherwise use TotTtc
+        var facturesFournisseur = await _context.FactureFournisseur
             .Where(f => f.IdFournisseur == query.FournisseurId && f.AccountingYearId == accountingYearId.Value)
-            .SelectMany(f => f.BonDeReception)
-            .SelectMany(br => br.LigneBonReception)
-            .SumAsync(l => l.TotTtc, cancellationToken);
+            .Include(f => f.BonDeReception)
+                .ThenInclude(br => br.LigneBonReception)
+            .ToListAsync(cancellationToken);
+
+        var totalFactures = facturesFournisseur.Sum(f =>
+        {
+            if (retenues.TryGetValue(f.Num, out var retenue))
+            {
+                // Use montant après retenue
+                return retenue.MontantApresRetenu;
+            }
+            else
+            {
+                // Use TotTtc for factures without retenue
+                return f.BonDeReception.SelectMany(br => br.LigneBonReception).Sum(l => l.TotTtc);
+            }
+        });
 
         // Calculate total from non-factured BRs
         var totalBonsReceptionNonFactures = await _context.BonDeReception
@@ -64,19 +87,30 @@ public class GetSoldeFournisseurQueryHandler(
         // Get documents
         var documents = new List<DocumentSoldeFournisseur>();
 
-        // Add factures fournisseur
-        var factures = await _context.FactureFournisseur
-            .Where(f => f.IdFournisseur == query.FournisseurId && f.AccountingYearId == accountingYearId.Value)
-            .Select(f => new DocumentSoldeFournisseur
+        // Add factures fournisseur (factures already loaded above)
+        var documentsFactures = facturesFournisseur.Select(f =>
+        {
+            // Use montant après retenue if retenue exists, otherwise use TotTtc
+            decimal montant;
+            if (retenues.TryGetValue(f.Num, out var retenue))
+            {
+                montant = retenue.MontantApresRetenu;
+            }
+            else
+            {
+                montant = f.BonDeReception.SelectMany(br => br.LigneBonReception).Sum(l => l.TotTtc);
+            }
+
+            return new DocumentSoldeFournisseur
             {
                 Type = "FactureFournisseur",
                 Id = f.Id,
                 Numero = f.Num,
                 Date = f.Date,
-                Montant = f.BonDeReception.SelectMany(br => br.LigneBonReception).Sum(l => l.TotTtc)
-            })
-            .ToListAsync(cancellationToken);
-        documents.AddRange(factures);
+                Montant = montant
+            };
+        }).ToList();
+        documents.AddRange(documentsFactures);
 
         // Add non-factured BRs
         var bonsReception = await _context.BonDeReception
