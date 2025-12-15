@@ -48,34 +48,59 @@ public class AuthService : IAuthService
     private readonly ILogger<AuthService> _logger;
     private readonly IJSRuntime _jsRuntime;
     private readonly ITokenStore _tokenStore;
-    private readonly ICircuitIdService _circuitIdService;
     private const string AccessTokenKey = "auth_access_token";
     private const string RefreshTokenKey = "auth_refresh_token";
+    
+    // Global key for TokenStore - shared across all circuits/sessions
+    // This is safe because each browser has its own localStorage
+    private const string GlobalTokenStoreKey = "global_access_token";
+    
+    // Local cache for this scoped service instance
+    private string? _localAccessToken;
 
     public AuthService(
         HttpClient httpClient, 
         ILogger<AuthService> logger, 
         IJSRuntime jsRuntime,
-        ITokenStore tokenStore,
-        ICircuitIdService circuitIdService)
+        ITokenStore tokenStore)
     {
         _httpClient = httpClient;
         _logger = logger;
         _jsRuntime = jsRuntime;
         _tokenStore = tokenStore;
-        _circuitIdService = circuitIdService;
+        
+        // Try to get token from global store on construction
+        _localAccessToken = _tokenStore.GetToken(GlobalTokenStoreKey);
     }
 
     public bool IsAuthenticated => !string.IsNullOrEmpty(AccessToken);
 
     public string? AccessToken
     {
-        get => _tokenStore.GetToken(_circuitIdService.GetCircuitId());
+        get
+        {
+            // First check local cache
+            if (!string.IsNullOrEmpty(_localAccessToken))
+            {
+                return _localAccessToken;
+            }
+            
+            // Then check global store
+            var globalToken = _tokenStore.GetToken(GlobalTokenStoreKey);
+            if (!string.IsNullOrEmpty(globalToken))
+            {
+                _localAccessToken = globalToken;
+                return _localAccessToken;
+            }
+            
+            return null;
+        }
         private set
         {
+            _localAccessToken = value;
             if (!string.IsNullOrEmpty(value))
             {
-                _tokenStore.SetToken(_circuitIdService.GetCircuitId(), value);
+                _tokenStore.SetToken(GlobalTokenStoreKey, value);
             }
         }
     }
@@ -83,9 +108,10 @@ public class AuthService : IAuthService
     // Public setter for AuthHttpClientHandler to set token directly (avoids timeout issues)
     public void SetAccessToken(string? token)
     {
+        _localAccessToken = token;
         if (!string.IsNullOrEmpty(token))
         {
-            _tokenStore.SetToken(_circuitIdService.GetCircuitId(), token);
+            _tokenStore.SetToken(GlobalTokenStoreKey, token);
         }
     }
 
@@ -158,7 +184,7 @@ public class AuthService : IAuthService
     {
         try
         {
-            _logger.LogInformation("LoadTokenFromStorageAsync: Attempting to load token from localStorage");
+            _logger.LogDebug("LoadTokenFromStorageAsync: Attempting to load token from localStorage");
             
             // Use a timeout to prevent indefinite blocking
             var loadValueTask = _jsRuntime.InvokeAsync<string>("localStorage.getItem", AccessTokenKey);
@@ -169,7 +195,6 @@ public class AuthService : IAuthService
             if (completedTask == timeoutTask)
             {
                 _logger.LogWarning("LoadTokenFromStorageAsync: Timeout loading token from localStorage");
-                AccessToken = null;
                 return;
             }
             
@@ -177,38 +202,41 @@ public class AuthService : IAuthService
             
             if (!string.IsNullOrEmpty(tokenFromStorage))
             {
-                // Set the token - this will store it in TokenStore with the current circuit ID
-                AccessToken = tokenFromStorage;
-                _logger.LogInformation("LoadTokenFromStorageAsync: Token loaded and stored in TokenStore. HasToken: {HasToken}, CircuitId: {CircuitId}", 
-                    !string.IsNullOrEmpty(AccessToken), _circuitIdService.GetCircuitId());
+                // Set the token in both local cache and global store
+                _localAccessToken = tokenFromStorage;
+                _tokenStore.SetToken(GlobalTokenStoreKey, tokenFromStorage);
+                _logger.LogInformation("LoadTokenFromStorageAsync: Token loaded successfully. Length: {Length}", tokenFromStorage.Length);
             }
             else
             {
-                _logger.LogWarning("LoadTokenFromStorageAsync: No token found in localStorage");
-                AccessToken = null;
+                _logger.LogDebug("LoadTokenFromStorageAsync: No token found in localStorage");
             }
         }
         catch (JSDisconnectedException ex)
         {
             // Component was disposed or circuit disconnected, ignore
-            _logger.LogWarning(ex, "LoadTokenFromStorageAsync: JSDisconnectedException - circuit disconnected");
-            AccessToken = null;
+            _logger.LogDebug(ex, "LoadTokenFromStorageAsync: JSDisconnectedException - circuit disconnected");
+        }
+        catch (InvalidOperationException ex) when (
+            ex.Message.Contains("prerendering") || 
+            ex.Message.Contains("statically rendered") || 
+            ex.Message.Contains("JavaScript interop calls cannot be issued"))
+        {
+            // JS interop not available during prerendering, this is expected
+            _logger.LogDebug("LoadTokenFromStorageAsync: JS interop not available during prerendering");
         }
         catch (InvalidOperationException ex)
         {
-            // JS interop not available, ignore
-            _logger.LogWarning(ex, "LoadTokenFromStorageAsync: InvalidOperationException - JS interop not available");
-            AccessToken = null;
+            // Other JS interop errors
+            _logger.LogWarning(ex, "LoadTokenFromStorageAsync: InvalidOperationException");
         }
         catch (TaskCanceledException)
         {
-            _logger.LogWarning("LoadTokenFromStorageAsync: Task was cancelled");
-            AccessToken = null;
+            _logger.LogDebug("LoadTokenFromStorageAsync: Task was cancelled");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "LoadTokenFromStorageAsync: Unexpected error loading token");
-            AccessToken = null;
         }
     }
 
@@ -357,14 +385,13 @@ public class AuthService : IAuthService
         }
         finally
         {
-            // Clear token from memory FIRST
-            AccessToken = null;
-            _logger.LogInformation("Logout: Token cleared from memory");
+            // Clear token from local cache
+            _localAccessToken = null;
+            _logger.LogInformation("Logout: Token cleared from local cache");
             
-            // Clear token from circuit store
-            var circuitId = _circuitIdService.GetCircuitId();
-            _tokenStore.ClearToken(circuitId);
-            _logger.LogInformation("Logout: Token cleared from TokenStore for circuit {CircuitId}", circuitId);
+            // Clear token from global store
+            _tokenStore.ClearToken(GlobalTokenStoreKey);
+            _logger.LogInformation("Logout: Token cleared from global TokenStore");
             
             // Clear tokens from localStorage
             try

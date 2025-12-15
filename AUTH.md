@@ -128,17 +128,7 @@ bool IsTokenValid() // Check if token expires within 5 minutes
 #### 2. TokenStore
 Location: `src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp/Services/TokenStore.cs`
 
-A singleton that stores JWT tokens keyed by circuit ID. This allows tokens to be shared across scoped services within the same user session.
-
-#### 3. CircuitIdService
-Location: `src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp/Services/CircuitIdService.cs`
-
-Generates a stable circuit ID per browser session:
-1. Stores circuit ID in HttpContext.Session (persists across requests)
-2. Falls back to Connection.Id if session unavailable
-3. Generates GUID as last resort
-
-This ensures all services within the same browser session share the same circuit ID.
+A singleton that stores JWT tokens in memory. Uses a global key (`global_access_token`) to share the token across all service instances. This is safe because each browser has its own localStorage as the source of truth.
 
 #### 4. AuthHttpClientHandler
 Location: `src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp/Services/AuthHttpClientHandler.cs`
@@ -199,8 +189,9 @@ Custom route view that:
 4. Backend generates Access Token (JWT) + Refresh Token
 5. Backend stores Refresh Token in database
 6. Frontend stores Access Token in:
-   - localStorage (persistence)
-   - TokenStore (fast in-memory access)
+   - localStorage (persistence across page reloads)
+   - TokenStore (fast in-memory access with global key)
+   - Local cache in AuthService instance
 7. Frontend stores Refresh Token in localStorage
 ```
 
@@ -209,10 +200,10 @@ Custom route view that:
 1. Component makes API call
 2. AuthHttpClientHandler intercepts request
 3. Checks if token is expiring soon → proactive refresh
-4. Gets token from TokenStore (keyed by session circuit ID)
-5. Falls back to localStorage if not in TokenStore
+4. Gets token from AuthService (checks local cache → global TokenStore)
+5. Falls back to localStorage if not in memory
 6. Adds Bearer token to request header
-7. If 401 response → attempts token refresh → retries request
+7. If 401 response → attempts token refresh → retries request once
 ```
 
 ### Token Refresh Flow
@@ -232,9 +223,12 @@ Custom route view that:
 
 ### Common Issues
 
-#### 1. "No token found for circuit X"
-**Cause**: Token stored under different circuit ID than the one being used.
-**Solution**: The CircuitIdService now uses HttpContext.Session for stable IDs.
+#### 1. "No token found" or User section hidden after deployment
+**Cause**: Token not loaded from localStorage before UI renders.
+**Solution**: 
+- AuthService now uses a global TokenStore key instead of circuit-based keys
+- Token is loaded from localStorage in `OnAfterRenderAsync`
+- Components wait for token to be loaded before making API calls
 
 #### 2. "JavaScript interop calls cannot be issued"
 **Cause**: JS interop called during prerendering.
