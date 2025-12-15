@@ -44,6 +44,17 @@
                       Style="width: 100%; font-weight: 600;" />
     </RadzenStack>
 
+    @if (Timbre > 0)
+    {
+        <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+            <RadzenLabel Text="@Localizer["montant_apres_retenu_plus_timbre"]" />
+            <RadzenNumeric Value="MontantApresRetenuAvecTimbre" 
+                          ReadOnly="true"
+                          Format="@AmountHelper.FORMAT_N2"
+                          Style="width: 100%; font-weight: 600; color: #4caf50;" />
+        </RadzenStack>
+    }
+
     <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
         <RadzenLabel Text="@Localizer["num_tej"]" />
         <RadzenTextBox @bind-Value="NumTej" 
@@ -96,6 +107,7 @@
     [Parameter] public decimal MontantTTC { get; set; }
     [Parameter] public double TauxRetenu { get; set; }
     [Parameter] public decimal SeuilRetenueSource { get; set; }
+    [Parameter] public decimal Timbre { get; set; } = 0;
     [Parameter] public string? ExistingNumTej { get; set; }
     [Parameter] public bool IsEditMode { get; set; } = false;
     [Parameter] public string? ExistingPdfBase64 { get; set; }
@@ -105,7 +117,10 @@
     private string? PdfContentBase64 { get; set; }
     private string? ErrorMessage { get; set; }
     
-    private decimal MontantApresRetenu => MontantTTC * (1 - (decimal)TauxRetenu / 100);
+    // MontantTTC inclut déjà le timbre, donc on calcule la retenue sur MontantTTC - Timbre
+    private decimal MontantTTCSansTimbre => MontantTTC - Timbre;
+    private decimal MontantApresRetenu => MontantTTCSansTimbre * (1 - (decimal)TauxRetenu / 100);
+    private decimal MontantApresRetenuAvecTimbre => MontantApresRetenu + Timbre;
     private bool CanConfirm => !string.IsNullOrWhiteSpace(NumTej) && MontantTTC >= SeuilRetenueSource;
 
     protected override void OnInitialized()
@@ -118,6 +133,7 @@
             PdfContentBase64 = ExistingPdfBase64;
         }
         
+        // MontantTTC inclut déjà le timbre
         if (MontantTTC < SeuilRetenueSource)
         {
             ErrorMessage = $"{Localizer["seuil_non_atteint"]}: {Localizer["montant_ttc"]} ({MontantTTC.FormatAmount()}) < {Localizer["seuil"]} ({SeuilRetenueSource.FormatAmount()})";

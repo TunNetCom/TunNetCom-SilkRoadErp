@@ -459,6 +459,7 @@
     private Dictionary<int, bool> _retenueMap = new Dictionary<int, bool>();
     private decimal _seuilRetenueSource = 1000;
     private double _tauxRetenu = 0;
+    private decimal _timbre = 0;
 
     protected override async Task OnInitializedAsync()
     {
@@ -491,6 +492,7 @@
                 var appParams = appParamsResult.AsT0;
                 _seuilRetenueSource = appParams.SeuilRetenueSource;
                 _tauxRetenu = appParams.PourcentageRetenu;
+                _timbre = appParams.Timbre;
             }
         }
         catch (Exception ex)
@@ -748,14 +750,18 @@
                 Draggable = true
             };
 
+            // MontantTTC doit inclure le timbre pour l'affichage
+            var montantTTCAvecTimbre = montantTTC + _timbre;
+            
             var result = await DialogService.OpenAsync<RetenueSourceDialog>(
                 Localizer["retenue_source"],
                 new Dictionary<string, object>
                 {
                     { "NumFacture", numFactureFournisseur },
-                    { "MontantTTC", montantTTC },
+                    { "MontantTTC", montantTTCAvecTimbre },
                     { "TauxRetenu", _tauxRetenu },
                     { "SeuilRetenueSource", _seuilRetenueSource },
+                    { "Timbre", _timbre },
                     { "ExistingNumTej", existingNumTej },
                     { "IsEditMode", isEditMode },
                     { "ExistingPdfBase64", existingPdfBase64 }

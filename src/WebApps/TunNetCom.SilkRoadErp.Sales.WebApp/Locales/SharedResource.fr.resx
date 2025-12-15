@@ -1233,6 +1233,9 @@
   <data name="montant_apres_retenu" xml:space="preserve">
     <value>Montant après retenue</value>
   </data>
+  <data name="montant_apres_retenu_plus_timbre" xml:space="preserve">
+    <value>Montant après retenue + timbre</value>
+  </data>
   <data name="taux_retenu" xml:space="preserve">
     <value>Taux de retenue (%)</value>
   </data>

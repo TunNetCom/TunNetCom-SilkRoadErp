@@ -654,14 +654,18 @@
                 Draggable = true
             };
 
+            // MontantTTC doit inclure le timbre pour l'affichage (montantTTC passé est sans timbre)
+            var montantTTCAvecTimbre = montantTTC + _timbre;
+            
             var result = await DialogService.OpenAsync<RetenueSourceDialog>(
                 Localizer["retenue_source"],
                 new Dictionary<string, object>
                 {
                     { "NumFacture", numFacture },
-                    { "MontantTTC", montantTTC },
+                    { "MontantTTC", montantTTCAvecTimbre },
                     { "TauxRetenu", _tauxRetenu },
                     { "SeuilRetenueSource", _seuilRetenueSource },
+                    { "Timbre", _timbre },
                     { "ExistingNumTej", existingNumTej },
                     { "IsEditMode", isEditMode },
                     { "ExistingPdfBase64", existingPdfBase64 }
