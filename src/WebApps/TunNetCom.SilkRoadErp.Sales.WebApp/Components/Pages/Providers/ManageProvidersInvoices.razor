@@ -1080,7 +1080,7 @@
             return;
         }
 
-        var result = await DialogService.OpenAsync<CreateInvoiceDialog>(
+        var result = await DialogService.OpenAsync<CreateProviderInvoiceDialog>(
             Localizer["create_new_invoice"],
             new Dictionary<string, object> { { "InitialDate", DateTime.Now.Date } },
             new DialogOptions()
