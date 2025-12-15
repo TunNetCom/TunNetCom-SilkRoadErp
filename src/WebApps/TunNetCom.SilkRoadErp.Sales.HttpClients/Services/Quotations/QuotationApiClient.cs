@@ -232,7 +232,8 @@ public class QuotationApiClient(HttpClient httpClient, ILogger<QuotationApiClien
     public async Task<Result> ValidateQuotationsAsync(List<int> ids, CancellationToken cancellationToken)
     {
         logger.LogInformation("Validating quotations via API api/quotations/validate");
-        var response = await httpClient.PostAsJsonAsync("api/quotations/validate", ids, cancellationToken: cancellationToken);
+        var request = new ValidateQuotationsRequest { Ids = ids };
+        var response = await httpClient.PostAsJsonAsync("api/quotations/validate", request, cancellationToken: cancellationToken);
 
         if (response.StatusCode == HttpStatusCode.NoContent)
         {
