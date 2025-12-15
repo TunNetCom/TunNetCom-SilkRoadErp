@@ -184,20 +184,6 @@
     bool showMenu = false;
     UserInfo? userInfo;
 
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadUserInfo();
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            await LoadUserInfo();
-            StateHasChanged();
-        }
-    }
-
     protected override void OnInitialized()
     {
         // Close menu when clicking outside
@@ -206,6 +192,16 @@
             showMenu = false;
             StateHasChanged();
         };
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Only load user info after first render when JS interop is available
+            await LoadUserInfo();
+            StateHasChanged();
+        }
     }
 
     private async Task LoadUserInfo()

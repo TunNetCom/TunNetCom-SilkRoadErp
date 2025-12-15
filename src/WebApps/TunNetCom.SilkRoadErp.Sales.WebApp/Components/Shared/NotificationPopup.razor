@@ -95,15 +95,27 @@
     private List<NotificationResponse> notifications = new();
     private int? userId;
     private int? hoveredNotificationId;
+    private bool _hasLoadedNotifications = false;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        // Get user ID from auth service if available
-        var userInfo = AuthService.GetUserInfo();
-        // Note: UserId would need to be added to UserInfo if needed
-        // For now, we'll use null for global notifications
+        if (firstRender && !_hasLoadedNotifications)
+        {
+            _hasLoadedNotifications = true;
+            
+            // Ensure token is loaded first
+            if (!AuthService.IsAuthenticated)
+            {
+                await AuthService.LoadTokenFromStorageAsync();
+            }
+            
+            // Get user ID from auth service if available
+            var userInfo = AuthService.GetUserInfo();
+            // Note: UserId would need to be added to UserInfo if needed
+            // For now, we'll use null for global notifications
 
-        await LoadNotificationsAsync();
+            await LoadNotificationsAsync();
+        }
     }
 
     private async Task LoadNotificationsAsync()

@@ -90,13 +90,14 @@ public class LoginQueryHandler : IRequestHandler<LoginQuery, Result<LoginRespons
         _context.RefreshToken.Add(refreshTokenEntity);
         await _context.SaveChangesAsync(cancellationToken);
 
-        const int accessTokenExpirationMinutes = 240; // Hard-coded to 4 hours
+        // Use the token expiration from JwtTokenService (configured via appsettings)
+        var accessTokenExpirationMinutes = _jwtTokenService.AccessTokenExpirationMinutes;
 
         return Result.Ok(new LoginResponse
         {
             AccessToken = accessToken,
             RefreshToken = refreshToken,
-            ExpiresIn = accessTokenExpirationMinutes * 60, // in seconds (14400)
+            ExpiresIn = accessTokenExpirationMinutes * 60, // in seconds
             TokenType = "Bearer"
         });
     }
