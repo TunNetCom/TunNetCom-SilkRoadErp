@@ -65,17 +65,32 @@
                     <div style="display: flex; align-items: center; gap: 8px;">
                         @if (!string.IsNullOrEmpty(technician.Photo))
                         {
-                            <img src="@technician.Photo" alt="@technician.Nom" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;" />
+                            <img src="@technician.Photo" alt="@technician.Nom" style="width: 18px; height: 18px; border-radius: 50%; object-fit: cover;" />
                         }
                         else
                         {
-                            <div style="width: 24px; height: 24px; border-radius: 50%; background-color: #e0e0e0; display: flex; align-items: center; justify-content: center;">
-                                <RadzenIcon Icon="person" Style="font-size: 12px;" />
+                            <div style="width: 18px; height: 18px; border-radius: 50%; background-color: #e0e0e0; display: flex; align-items: center; justify-content: center;">
+                                <RadzenIcon Icon="person" Style="font-size: 10px;" />
                             </div>
                         }
                         <span>@technician.Nom</span>
                     </div>
                 </Template>
+                <ValueTemplate Context="technician">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        @if (!string.IsNullOrEmpty(technician?.Photo))
+                        {
+                            <img src="@technician.Photo" alt="@technician.Nom" style="width: 18px; height: 18px; border-radius: 50%; object-fit: cover;" />
+                        }
+                        else
+                        {
+                            <div style="width: 18px; height: 18px; border-radius: 50%; background-color: #e0e0e0; display: flex; align-items: center; justify-content: center;">
+                                <RadzenIcon Icon="person" Style="font-size: 10px;" />
+                            </div>
+                        }
+                        <span>@technician?.Nom</span>
+                    </div>
+                </ValueTemplate>
                 <Columns>
                     <RadzenDropDownDataGridColumn Property="@nameof(InstallationTechnicianBaseInfo.Id)" Title="ID" Width="80px" />
                     <RadzenDropDownDataGridColumn Property="@nameof(InstallationTechnicianBaseInfo.Nom)" Title="Nom" Width="220px" />

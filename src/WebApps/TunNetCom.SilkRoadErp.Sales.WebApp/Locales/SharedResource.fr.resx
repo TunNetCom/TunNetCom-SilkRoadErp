@@ -360,6 +360,9 @@
   <data name="Select_Delivery_Car" xml:space="preserve">
     <value>Sélectionner un véhicule de livraison</value>
   </data>
+  <data name="Delivery_Car" xml:space="preserve">
+    <value>Véhicule de livraison</value>
+  </data>
   <data name="delivery_note_saved_successfully" xml:space="preserve">
     <value>Bon de livraison enregistré avec succés</value>
   </data>
