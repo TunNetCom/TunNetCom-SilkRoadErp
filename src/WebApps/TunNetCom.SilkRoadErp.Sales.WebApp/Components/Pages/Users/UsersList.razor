@@ -33,7 +33,7 @@
             <RadzenStack Orientation="Radzen.Orientation.Horizontal" Wrap="FlexWrap.Wrap" AlignItems="AlignItems.Center" Gap="1rem" Class="rz-mb-3">
                 <RadzenTextBox @bind-Value="searchKeyword" Placeholder="Rechercher..." Style="width: 300px;" 
                              @oninput="@(async args => { searchKeyword = args.Value?.ToString(); await Search(); })" />
-                <RadzenButton Icon="search" Text="Rechercher" Click="@Search" ButtonStyle="ButtonStyle.Primary" />
+                <RadzenButton Icon="search" Click="@Search" ButtonStyle="ButtonStyle.Primary" />
                 <RadzenButton Icon="clear" Text="Réinitialiser" Click="@ClearSearch" ButtonStyle="ButtonStyle.Secondary" />
             </RadzenStack>
 

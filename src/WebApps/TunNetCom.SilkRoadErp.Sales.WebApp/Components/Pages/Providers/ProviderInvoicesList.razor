@@ -66,8 +66,7 @@
                             class="w-100 search-input" />
         </div>
         <div class="search-button" style="display: flex; gap: 8px;">
-            <RadzenButton Text="@Localizer["search"]"
-                          Icon="search"
+            <RadzenButton Icon="search"
                           ButtonStyle="ButtonStyle.Primary"
                           Click="@SearchProviderInvoices"
                           class="action-button" />
@@ -78,11 +77,12 @@
                           Title="Valider la sélection"
                           AriaLabel="Valider la sélection"
                           class="action-button" />
-            <RadzenButton Text="Exporter vers Sage ERP"
-                          Icon="file_download"
+            <RadzenButton Icon="file_download"
                           ButtonStyle="ButtonStyle.Secondary"
                           Click="@ExportToSageErpAsync"
-                          class="action-button" />
+                          class="action-button"
+                          Title="Exporter vers Sage ERP"
+                          AriaLabel="Exporter vers Sage ERP" />
         </div>
     </div>
     <div class="list-card">
