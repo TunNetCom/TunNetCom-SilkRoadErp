@@ -520,10 +520,11 @@ else
             // Check if order is saved (has a number)
             if (!string.IsNullOrEmpty(orderNumber) && int.TryParse(orderNumber, out var orderNum))
             {
-                // Print saved order
+                // Print saved order - generate with header by default
                 pdfResult = await PrintOrderService.GenerateOrderPdfAsync(
                     orderNum,
-                    _cancellationTokenSource.Token);
+                    _cancellationTokenSource.Token,
+                    includeHeader: true);
             }
             else
             {
@@ -552,7 +553,8 @@ else
 
                 pdfResult = await PrintOrderService.GenerateOrderPdfFromDataAsync(
                     printModel,
-                    _cancellationTokenSource.Token);
+                    _cancellationTokenSource.Token,
+                    includeHeader: true);
             }
 
             if (pdfResult.IsSuccess)
@@ -572,15 +574,67 @@ else
                         Draggable = true
                     });
 
-                if (printModeResult is PrintMode selectedMode)
+                if (printModeResult is PrintModeResult result)
                 {
+                    // Regenerate PDF if header should be excluded
+                    if (!result.IncludeHeader)
+                    {
+                        if (!string.IsNullOrEmpty(orderNumber) && int.TryParse(orderNumber, out var orderNumForRegen))
+                        {
+                            pdfResult = await PrintOrderService.GenerateOrderPdfAsync(
+                                orderNumForRegen,
+                                _cancellationTokenSource.Token,
+                                includeHeader: false);
+                        }
+                        else
+                        {
+                            var printModel = new PrintOrderModel
+                            {
+                                Num = 0,
+                                Date = orderDate,
+                                SupplierId = selectedProviderId,
+                                TotalExcludingTax = totalHt,
+                                TotalVat = totalVat,
+                                TotalAmount = totalTtc,
+                                Lines = orders.Select(o => new OrderLineModel
+                                {
+                                    Id = o.Id,
+                                    RefProduit = o.ProductReference,
+                                    DesignationLi = o.Description,
+                                    QteLi = o.Quantity,
+                                    PrixHt = o.UnitPriceExcludingTax,
+                                    Remise = o.DiscountPercentage,
+                                    TotHt = o.TotalExcludingTax,
+                                    Tva = o.VatPercentage,
+                                    TotTtc = o.TotalIncludingTax
+                                }).ToList()
+                            };
+
+                            pdfResult = await PrintOrderService.GenerateOrderPdfFromDataAsync(
+                                printModel,
+                                _cancellationTokenSource.Token,
+                                includeHeader: false);
+                        }
+                        
+                        if (!pdfResult.IsSuccess)
+                        {
+                            NotificationService.Notify(new NotificationMessage
+                            {
+                                Severity = NotificationSeverity.Error,
+                                Summary = Localizer["error"],
+                                Detail = $"Échec de la régénération du PDF: {pdfResult.Errors.FirstOrDefault()?.Message ?? "Unknown error"}"
+                            });
+                            return;
+                        }
+                    }
+
                     var printOptions = new PrintOptions
                     {
-                        Mode = selectedMode,
+                        Mode = result.Mode,
                         FileName = fileName
                     };
 
-                    if (selectedMode == PrintMode.DirectPrint)
+                    if (result.Mode == PrintMode.DirectPrint)
                     {
                         // Show printer selection dialog
                         var printerResult = await DialogService.OpenAsync<PrinterSelectionDialog>(
@@ -616,7 +670,7 @@ else
                             Detail = $"Échec de l'impression de la commande: {printResult.ErrorMessage}"
                         });
                     }
-                    else if (selectedMode == PrintMode.DirectPrint)
+                    else if (result.Mode == PrintMode.DirectPrint)
                     {
                         NotificationService.Notify(new NotificationMessage
                         {

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -404,6 +404,9 @@
     <value />
   </data>
   <data name="print_directly" xml:space="preserve">
+    <value />
+  </data>
+  <data name="include_enterprise_header" xml:space="preserve">
     <value />
   </data>
   <data name="print_job_submitted" xml:space="preserve">

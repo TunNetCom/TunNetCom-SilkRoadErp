@@ -1262,10 +1262,11 @@ else
 
             Result<byte[]> pdfResult;
 
-            // Print saved delivery note
+            // Print saved delivery note - generate with header by default
             pdfResult = await PrintDeliveryNoteService.GenerateDeliveryNotePdfAsync(
                 deliveryNoteNum,
-                _cancellationTokenSource.Token);
+                _cancellationTokenSource.Token,
+                includeHeader: true);
 
             if (pdfResult.IsSuccess)
             {
@@ -1282,11 +1283,31 @@ else
                         Draggable = true
                     });
 
-                if (printModeResult is PrintMode selectedMode)
+                if (printModeResult is PrintModeResult result)
                 {
+                    // Regenerate PDF if header should be excluded
+                    if (!result.IncludeHeader)
+                    {
+                        pdfResult = await PrintDeliveryNoteService.GenerateDeliveryNotePdfAsync(
+                            deliveryNoteNum,
+                            _cancellationTokenSource.Token,
+                            includeHeader: false);
+                        
+                        if (!pdfResult.IsSuccess)
+                        {
+                            NotificationService.Notify(new NotificationMessage
+                            {
+                                Severity = NotificationSeverity.Error,
+                                Summary = Localizer["error"],
+                                Detail = $"Échec de la régénération du PDF: {pdfResult.Errors.FirstOrDefault()?.Message ?? "Unknown error"}"
+                            });
+                            return;
+                        }
+                    }
+
                     var printOptions = new PrintOptions
                     {
-                        Mode = selectedMode,
+                        Mode = result.Mode,
                         FileName = fileName,
                         DocumentType = "BonDeLivraison",
                         DocumentId = deliveryNoteNum,
@@ -1294,7 +1315,7 @@ else
                         Username = username
                     };
 
-                    if (selectedMode == PrintMode.DirectPrint)
+                    if (result.Mode == PrintMode.DirectPrint)
                     {
                         // Show printer selection dialog
                         var printerResult = await DialogService.OpenAsync<PrinterSelectionDialog>(
@@ -1330,7 +1351,7 @@ else
                             Detail = $"{Localizer["failed_to_print_delivery_note"] ?? "Failed to print delivery note"}: {printResult.ErrorMessage}"
                         });
                     }
-                    else if (selectedMode == PrintMode.DirectPrint)
+                    else if (result.Mode == PrintMode.DirectPrint)
                     {
                         NotificationService.Notify(new NotificationMessage
                         {

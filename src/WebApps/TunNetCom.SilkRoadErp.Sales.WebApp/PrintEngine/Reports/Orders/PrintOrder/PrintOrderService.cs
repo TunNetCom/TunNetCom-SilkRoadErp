@@ -16,7 +16,8 @@ public class PrintOrderService(
 {
     public async Task<Result<byte[]>> GenerateOrderPdfAsync(
         int orderNumber,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool includeHeader = true)
     {
         var orderResult = await _orderApiClient.GetFullOrderAsync(
             orderNumber,
@@ -56,7 +57,7 @@ public class PrintOrderService(
             return Result.Fail("Failed to retrieve app parameters");
         }
 
-        var printOptions = PreparePrintOptions(printModel, getAppParametersResponse.Value);
+        var printOptions = PreparePrintOptions(printModel, getAppParametersResponse.Value, includeHeader);
 
         var pdfBytes = await _printService.GeneratePdfAsync(printModel, printOptions, cancellationToken);
 
@@ -65,7 +66,8 @@ public class PrintOrderService(
 
     public async Task<Result<byte[]>> GenerateOrderPdfFromDataAsync(
         PrintOrderModel printModel,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool includeHeader = true)
     {
         // Load supplier if available
         if (printModel.SupplierId.HasValue && printModel.Supplier == null)
@@ -94,7 +96,7 @@ public class PrintOrderService(
             return Result.Fail("Failed to retrieve app parameters");
         }
 
-        var printOptions = PreparePrintOptions(printModel, getAppParametersResponse.Value);
+        var printOptions = PreparePrintOptions(printModel, getAppParametersResponse.Value, includeHeader);
 
         var pdfBytes = await _printService.GeneratePdfAsync(printModel, printOptions, cancellationToken);
 
@@ -128,8 +130,17 @@ public class PrintOrderService(
 
     private static SilkPdfOptions PreparePrintOptions(
         PrintOrderModel printModel,
-        GetAppParametersResponse appParameters)
+        GetAppParametersResponse appParameters,
+        bool includeHeader = true)
     {
+        var printOptions = SilkPdfOptions.Default;
+        
+        if (!includeHeader)
+        {
+            // No header, use default margin
+            return printOptions;
+        }
+
         // Build supplier info section conditionally
         var supplierInfo = "";
         if (printModel.Supplier != null)
@@ -188,7 +199,6 @@ public class PrintOrderService(
     </table>
 </div>";
 
-        var printOptions = SilkPdfOptions.Default;
         printOptions.MarginTop = "150px";
         printOptions.HeaderTemplate = headerContent;
         return printOptions;

@@ -17,7 +17,8 @@ public class PrintRetourFournisseurService(
 {
     public async Task<Result<byte[]>> GenerateRetourFournisseurPdfAsync(
         int retourNumber,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool includeHeader = true)
     {
         var retourResponse = await _retourApiClient.GetRetourMarchandiseFournisseurAsync(
             retourNumber,
@@ -66,7 +67,7 @@ public class PrintRetourFournisseurService(
         printModel.VatRate19 = (double)getAppParametersResponse.Value.VatRate19;
         CalculateTotalAmounts(printModel, getAppParametersResponse.Value);
 
-        var printOptions = PreparePrintOptions(printModel, getAppParametersResponse.Value);
+        var printOptions = PreparePrintOptions(printModel, getAppParametersResponse.Value, includeHeader);
 
         var pdfBytes = await _printService.GeneratePdfAsync(printModel, printOptions, cancellationToken);
 
@@ -116,8 +117,17 @@ public class PrintRetourFournisseurService(
 
     private static SilkPdfOptions PreparePrintOptions(
         PrintRetourFournisseurModel printModel,
-        GetAppParametersResponse appParameters)
+        GetAppParametersResponse appParameters,
+        bool includeHeader = true)
     {
+        var printOptions = SilkPdfOptions.Default;
+        
+        if (!includeHeader)
+        {
+            // No header, use default margin
+            return printOptions;
+        }
+
         // Build provider info section conditionally
         var providerInfo = "";
         if (printModel.Provider != null)
@@ -176,7 +186,6 @@ public class PrintRetourFournisseurService(
     </table>
 </div>";
 
-        var printOptions = SilkPdfOptions.Default;
         printOptions.MarginTop = "150px";
         printOptions.HeaderTemplate = headerContent;
         return printOptions;

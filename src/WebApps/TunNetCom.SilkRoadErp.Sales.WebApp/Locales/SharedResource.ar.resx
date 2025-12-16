@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -431,6 +431,9 @@
   </data>
   <data name="print_directly" xml:space="preserve">
     <value>طباعة مباشرة</value>
+  </data>
+  <data name="include_enterprise_header" xml:space="preserve">
+    <value>تضمين الرأس مع معلومات المؤسسة (الاسم، العنوان، الهاتف، الضريبة)</value>
   </data>
   <data name="print_job_submitted" xml:space="preserve">
     <value>تم إرسال مهمة الطباعة بنجاح</value>
