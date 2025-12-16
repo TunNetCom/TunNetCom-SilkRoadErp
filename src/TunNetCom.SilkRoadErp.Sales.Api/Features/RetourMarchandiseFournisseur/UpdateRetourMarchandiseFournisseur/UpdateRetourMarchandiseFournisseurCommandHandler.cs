@@ -1,4 +1,5 @@
 using TunNetCom.SilkRoadErp.Sales.Domain.Services;
+using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.RetourMarchandiseFournisseur.UpdateRetourMarchandiseFournisseur;
 
@@ -11,7 +12,7 @@ internal class UpdateRetourMarchandiseFournisseurCommandHandler(
         UpdateRetourMarchandiseFournisseurCommand command,
         CancellationToken cancellationToken)
     {
-        _logger.LogEntityUpdateAttempt(nameof(RetourMarchandiseFournisseur), command.Num);
+        _logger.LogEntityUpdateAttempt(nameof(Domain.Entites.RetourMarchandiseFournisseur), command.Num);
 
         var retour = await _context.RetourMarchandiseFournisseur
             .Include(r => r.LigneRetourMarchandiseFournisseur)
@@ -19,13 +20,15 @@ internal class UpdateRetourMarchandiseFournisseurCommandHandler(
 
         if (retour is null)
         {
-            _logger.LogEntityNotFound(nameof(RetourMarchandiseFournisseur), command.Num);
+            _logger.LogEntityNotFound(nameof(Domain.Entites.RetourMarchandiseFournisseur), command.Num);
             return Result.Fail(EntityNotFound.Error());
         }
 
-        if (retour.Statut == DocumentStatus.Valid)
+        // Utiliser StatutRetour au lieu de Statut (qui est ignoré par EF Core)
+        // Permettre la modification uniquement pour les brouillons
+        if (retour.StatutRetour != RetourFournisseurStatus.Draft)
         {
-            return Result.Fail("Le document est validé et ne peut plus être modifié.");
+            return Result.Fail("Le document n'est plus en brouillon et ne peut plus être modifié.");
         }
 
         // Get the active accounting year

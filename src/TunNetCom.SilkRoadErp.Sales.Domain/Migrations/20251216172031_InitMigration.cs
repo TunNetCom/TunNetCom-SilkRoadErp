@@ -872,6 +872,28 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ReceptionRetourFournisseur",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    RetourMarchandiseFournisseurId = table.Column<int>(type: "int", nullable: false),
+                    date_reception = table.Column<DateTime>(type: "datetime", nullable: false),
+                    utilisateur = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
+                    commentaire = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_dbo.ReceptionRetourFournisseur", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_dbo.ReceptionRetourFournisseur_dbo.RetourMarchandiseFournisseur_RetourMarchandiseFournisseurId",
+                        column: x => x.RetourMarchandiseFournisseurId,
+                        principalTable: "RetourMarchandiseFournisseur",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "PaiementClient",
                 columns: table => new
                 {
@@ -1125,7 +1147,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     remise = table.Column<double>(type: "float", nullable: false),
                     tot_HT = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
                     tva = table.Column<double>(type: "float", nullable: false),
-                    tot_TTC = table.Column<decimal>(type: "decimal(18,3)", nullable: false)
+                    tot_TTC = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
+                    qte_recue = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
+                    date_reception = table.Column<DateTime>(type: "datetime", nullable: true),
+                    utilisateur_reception = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1810,6 +1835,11 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 column: "SousFamilleProduitId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ReceptionRetourFournisseur_RetourMarchandiseFournisseurId",
+                table: "ReceptionRetourFournisseur",
+                column: "RetourMarchandiseFournisseurId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_RefreshTokens_Token",
                 table: "RefreshTokens",
                 column: "Token",
@@ -1950,6 +1980,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 name: "PrintHistory");
 
             migrationBuilder.DropTable(
+                name: "ReceptionRetourFournisseur");
+
+            migrationBuilder.DropTable(
                 name: "RefreshTokens");
 
             migrationBuilder.DropTable(
@@ -1992,13 +2025,13 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 name: "Produit");
 
             migrationBuilder.DropTable(
-                name: "RetourMarchandiseFournisseur");
-
-            migrationBuilder.DropTable(
                 name: "Banque");
 
             migrationBuilder.DropTable(
                 name: "BonDeReception");
+
+            migrationBuilder.DropTable(
+                name: "RetourMarchandiseFournisseur");
 
             migrationBuilder.DropTable(
                 name: "Permissions");

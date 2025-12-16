@@ -12,7 +12,7 @@ using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 {
     [DbContext(typeof(SalesContext))]
-    [Migration("20251210231106_InitMigration")]
+    [Migration("20251216172031_InitMigration")]
     partial class InitMigration
     {
         /// <inheritdoc />
@@ -1430,6 +1430,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdLigne"));
 
+                    b.Property<DateTime?>("DateReception")
+                        .HasColumnType("datetime")
+                        .HasColumnName("date_reception");
+
                     b.Property<string>("DesignationLi")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
@@ -1442,6 +1446,12 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Property<int>("QteLi")
                         .HasColumnType("int")
                         .HasColumnName("qte_li");
+
+                    b.Property<int>("QteRecue")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0)
+                        .HasColumnName("qte_recue");
 
                     b.Property<string>("RefProduit")
                         .IsRequired()
@@ -1468,6 +1478,11 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Property<double>("Tva")
                         .HasColumnType("float")
                         .HasColumnName("tva");
+
+                    b.Property<string>("UtilisateurReception")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)")
+                        .HasColumnName("utilisateur_reception");
 
                     b.HasKey("IdLigne")
                         .HasName("PK_dbo.LigneRetourMarchandiseFournisseur");
@@ -1941,6 +1956,42 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.ToTable("Produit");
                 });
 
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.ReceptionRetourFournisseur", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Commentaire")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)")
+                        .HasColumnName("commentaire");
+
+                    b.Property<DateTime>("DateReception")
+                        .HasColumnType("datetime")
+                        .HasColumnName("date_reception");
+
+                    b.Property<int>("RetourMarchandiseFournisseurId")
+                        .HasColumnType("int")
+                        .HasColumnName("RetourMarchandiseFournisseurId");
+
+                    b.Property<string>("Utilisateur")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)")
+                        .HasColumnName("utilisateur");
+
+                    b.HasKey("Id")
+                        .HasName("PK_dbo.ReceptionRetourFournisseur");
+
+                    b.HasIndex("RetourMarchandiseFournisseurId")
+                        .HasDatabaseName("IX_ReceptionRetourFournisseur_RetourMarchandiseFournisseurId");
+
+                    b.ToTable("ReceptionRetourFournisseur", (string)null);
+                });
+
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.RefreshToken", b =>
                 {
                     b.Property<int>("Id")
@@ -2119,10 +2170,11 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Property<int>("Num")
                         .HasColumnType("int");
 
-                    b.Property<string>("Statut")
+                    b.Property<string>("StatutRetour")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("Statut");
 
                     b.Property<decimal>("TotHTva")
                         .HasColumnType("decimal(18, 3)")
@@ -3055,6 +3107,18 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Navigation("SousFamilleProduit");
                 });
 
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.ReceptionRetourFournisseur", b =>
+                {
+                    b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.RetourMarchandiseFournisseur", "RetourMarchandiseFournisseurNavigation")
+                        .WithMany("ReceptionRetourFournisseur")
+                        .HasForeignKey("RetourMarchandiseFournisseurId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_dbo.ReceptionRetourFournisseur_dbo.RetourMarchandiseFournisseur_RetourMarchandiseFournisseurId");
+
+                    b.Navigation("RetourMarchandiseFournisseurNavigation");
+                });
+
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.RefreshToken", b =>
                 {
                     b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.User", "User")
@@ -3354,6 +3418,8 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.RetourMarchandiseFournisseur", b =>
                 {
                     b.Navigation("LigneRetourMarchandiseFournisseur");
+
+                    b.Navigation("ReceptionRetourFournisseur");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Role", b =>
