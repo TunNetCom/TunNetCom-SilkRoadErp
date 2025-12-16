@@ -357,6 +357,9 @@
   <data name="select_invoice" xml:space="preserve">
     <value>Selectionner une facture</value>
   </data>
+  <data name="Select_Delivery_Car" xml:space="preserve">
+    <value>Sélectionner un véhicule de livraison</value>
+  </data>
   <data name="delivery_note_saved_successfully" xml:space="preserve">
     <value>Bon de livraison enregistré avec succés</value>
   </data>

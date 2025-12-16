@@ -357,6 +357,9 @@
   <data name="select_invoice" xml:space="preserve">
     <value>Select an Invoice</value>
   </data>
+  <data name="Select_Delivery_Car" xml:space="preserve">
+    <value>Select a delivery car</value>
+  </data>
   <data name="delivery_note_saved_successfully" xml:space="preserve">
     <value>Delivery Note Saved Successfully</value>
   </data>

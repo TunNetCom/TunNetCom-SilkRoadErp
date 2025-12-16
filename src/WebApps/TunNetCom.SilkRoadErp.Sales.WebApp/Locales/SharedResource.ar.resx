@@ -357,6 +357,9 @@
   <data name="select_invoice" xml:space="preserve">
     <value>اختر فاتورة</value>
   </data>
+  <data name="Select_Delivery_Car" xml:space="preserve">
+    <value>اختر سيارة التوصيل</value>
+  </data>
   <data name="delivery_note_saved_successfully" xml:space="preserve">
     <value>تم حفظ بوليصة التسليم بنجاح</value>
   </data>
