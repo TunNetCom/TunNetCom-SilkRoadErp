@@ -250,16 +250,19 @@ public static class AmountHelper
                         break;
                 }
 
-                // Ajouter les unités de grandeur (millions, milles)
+                // Ajouter les unités de grandeur (milliards, millions, mille)
                 switch (i)
                 {
                     case 1000000000:
+                        if (y > 1) resultat += "milliards ";
+                        else resultat += "milliard ";
+                        break;
+                    case 1000000:
                         if (y > 1) resultat += "millions ";
                         else resultat += "million ";
                         break;
-                    case 1000000:
-                        if (y > 1) resultat += "milles ";
-                        else resultat += "mille ";
+                    case 1000:
+                        resultat += "mille ";
                         break;
                 }
             }
