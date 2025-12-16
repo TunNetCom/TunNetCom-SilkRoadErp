@@ -117,11 +117,13 @@
     private string? PdfContentBase64 { get; set; }
     private string? ErrorMessage { get; set; }
     
-    // MontantTTC inclut déjà le timbre, donc on calcule la retenue sur MontantTTC - Timbre
-    private decimal MontantTTCSansTimbre => MontantTTC - Timbre;
+    // Pour les clients, MontantTTC inclut le timbre, donc on calcule la retenue sur MontantTTC - Timbre
+    // Pour les fournisseurs, MontantTTC ne contient pas le timbre (Timbre = 0), donc on calcule directement sur MontantTTC
+    private decimal MontantTTCSansTimbre => Timbre > 0 ? MontantTTC - Timbre : MontantTTC;
     private decimal MontantApresRetenu => MontantTTCSansTimbre * (1 - (decimal)TauxRetenu / 100);
     private decimal MontantApresRetenuAvecTimbre => MontantApresRetenu + Timbre;
-    private bool CanConfirm => !string.IsNullOrWhiteSpace(NumTej) && MontantTTC >= SeuilRetenueSource;
+    // Pour la validation du seuil, on vérifie MontantTTC + Timbre (montant total de la facture)
+    private bool CanConfirm => !string.IsNullOrWhiteSpace(NumTej) && (MontantTTC + Timbre) >= SeuilRetenueSource;
 
     protected override void OnInitialized()
     {
@@ -133,10 +135,11 @@
             PdfContentBase64 = ExistingPdfBase64;
         }
         
-        // MontantTTC inclut déjà le timbre
-        if (MontantTTC < SeuilRetenueSource)
+        // Pour la validation du seuil, on vérifie MontantTTC + Timbre (montant total de la facture)
+        var montantTotalAvecTimbre = MontantTTC + Timbre;
+        if (montantTotalAvecTimbre < SeuilRetenueSource)
         {
-            ErrorMessage = $"{Localizer["seuil_non_atteint"]}: {Localizer["montant_ttc"]} ({MontantTTC.FormatAmount()}) < {Localizer["seuil"]} ({SeuilRetenueSource.FormatAmount()})";
+            ErrorMessage = $"{Localizer["seuil_non_atteint"]}: {Localizer["montant_ttc"]} ({montantTotalAvecTimbre.FormatAmount()}) < {Localizer["seuil"]} ({SeuilRetenueSource.FormatAmount()})";
         }
     }
 

@@ -154,8 +154,9 @@
                     <Template Context="item">
                         @{
                             var montantTTC = item.NetAmount + item.VatAmount;
+                            var montantTTCWithTimbre = montantTTC + _timbre;
                         }
-                        @if (montantTTC >= _seuilRetenueSource)
+                        @if (montantTTCWithTimbre >= _seuilRetenueSource)
                         {
                             var hasRetenue = _retenueMap.ContainsKey(item.Number);
                             @if (hasRetenue)
@@ -177,14 +178,15 @@
                     <Template Context="item">
                         @{
                             var montantTTC = item.NetAmount + item.VatAmount;
+                            var montantTTCWithTimbre = montantTTC + _timbre;
                         }
-                        @if (montantTTC >= _seuilRetenueSource)
+                        @if (montantTTCWithTimbre >= _seuilRetenueSource)
                         {
                             <RadzenButton Icon="@(_retenueMap.ContainsKey(item.Number) ? "edit" : "add")" 
                                           ButtonStyle="ButtonStyle.Info" 
                                           Size="ButtonSize.Small"
                                           Title="@Localizer["retenue_source"]"
-                                          Click="@(() => OpenRetenueDialog(item.Number, montantTTC))" />
+                                          Click="@(() => OpenRetenueDialog(item.Number, montantTTCWithTimbre))" />
                         }
                     </Template>
                 </RadzenDataGridColumn>
@@ -750,15 +752,13 @@
                 Draggable = true
             };
 
-            // MontantTTC doit inclure le timbre pour l'affichage
-            var montantTTCAvecTimbre = montantTTC + _timbre;
-            
+            // Le montantTTC passé est déjà avec timbre (depuis la liste), donc on le passe tel quel
             var result = await DialogService.OpenAsync<RetenueSourceDialog>(
                 Localizer["retenue_source"],
                 new Dictionary<string, object>
                 {
                     { "NumFacture", numFactureFournisseur },
-                    { "MontantTTC", montantTTCAvecTimbre },
+                    { "MontantTTC", montantTTC }, // Déjà avec timbre
                     { "TauxRetenu", _tauxRetenu },
                     { "SeuilRetenueSource", _seuilRetenueSource },
                     { "Timbre", _timbre },

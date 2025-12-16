@@ -1,8 +1,11 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderInvoice.GetProvidersInvoices;
+﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.AppParameters.GetAppParameters;
+
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderInvoice.GetProvidersInvoices;
 
 public class GetProvidersInvoicesQueryHandler(
     SalesContext _context,
-    ILogger<GetProvidersInvoicesQueryHandler> _logger) :
+    ILogger<GetProvidersInvoicesQueryHandler> _logger,
+    IMediator _mediator) :
     IRequestHandler<GetProvidersInvoicesQuery, GetProviderInvoicesWithSummary>
 {
     private const string _numColumName = "Num";
@@ -12,6 +15,9 @@ public class GetProvidersInvoicesQueryHandler(
     GetProvidersInvoicesQuery query,
     CancellationToken cancellationToken)
     {
+        // Get app parameters to get timbre
+        var appParamsResult = await _mediator.Send(new GetAppParametersQuery(), cancellationToken);
+        var timbre = appParamsResult.IsSuccess ? appParamsResult.Value.Timbre : 0;
 
         var invoiceQuery = (from ff in _context.FactureFournisseur
                               join br in _context.BonDeReception on ff.Num equals br.NumFactureFournisseur into brGroup
@@ -35,7 +41,7 @@ public class GetProvidersInvoicesQueryHandler(
                                   Date = g.Key.Date,
                                   ProviderInvoiceNumber = g.Key.NumFactureFournisseur,
                                   TotHTva = g.Sum(x => x.lbr != null ? x.lbr.TotHt : 0),
-                                  TotTTC = g.Sum(x => x.lbr != null ? x.lbr.TotTtc : 0),
+                                  TotTTC = g.Sum(x => x.lbr != null ? x.lbr.TotTtc : 0) + timbre, // Ajouter le timbre au TotTTC
                                   TotTva = g.Sum(x => x.lbr != null ? x.lbr.TotTtc : 0) - g.Sum(x => x.lbr != null ? x.lbr.TotHt : 0),
                                   HasRetenueSource = g.Any(x => x.retenue != null)
                               })
