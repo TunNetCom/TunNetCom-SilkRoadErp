@@ -3,10 +3,12 @@
 @using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
 @using Microsoft.AspNetCore.Components.Forms
 @inject DialogService DialogService
 @inject IStringLocalizer<SharedResource> Localizer
 @inject IJSRuntime JSRuntime
+@inject IDecimalFormatService DecimalFormatService
 
 <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
     <RadzenText TextStyle="TextStyle.Body1" Style="font-weight: 600;">
@@ -24,7 +26,7 @@
         <RadzenLabel Text="@Localizer["montant_ttc"]" />
         <RadzenNumeric @bind-Value="MontantTTC" 
                       ReadOnly="true"
-                      Format="@AmountHelper.FORMAT_N2"
+                      Format="@priceFormat"
                       Style="width: 100%;" />
     </RadzenStack>
 
@@ -40,7 +42,7 @@
         <RadzenLabel Text="@Localizer["montant_apres_retenu"]" />
         <RadzenNumeric Value="MontantApresRetenu" 
                       ReadOnly="true"
-                      Format="@AmountHelper.FORMAT_N2"
+                      Format="@priceFormat"
                       Style="width: 100%; font-weight: 600;" />
     </RadzenStack>
 
@@ -50,7 +52,7 @@
             <RadzenLabel Text="@Localizer["montant_apres_retenu_plus_timbre"]" />
             <RadzenNumeric Value="MontantApresRetenuAvecTimbre" 
                           ReadOnly="true"
-                          Format="@AmountHelper.FORMAT_N2"
+                          Format="@priceFormat"
                           Style="width: 100%; font-weight: 600; color: #4caf50;" />
         </RadzenStack>
     }
@@ -116,6 +118,7 @@
     private string? SelectedFileName { get; set; }
     private string? PdfContentBase64 { get; set; }
     private string? ErrorMessage { get; set; }
+    private string priceFormat = AmountHelper.FORMAT_N3; // Default format
     
     // Pour les clients, MontantTTC inclut le timbre, donc on calcule la retenue sur MontantTTC - Timbre
     // Pour les fournisseurs, MontantTTC ne contient pas le timbre (Timbre = 0), donc on calcule directement sur MontantTTC
@@ -125,9 +128,11 @@
     // Pour la validation du seuil, on vérifie MontantTTC + Timbre (montant total de la facture)
     private bool CanConfirm => !string.IsNullOrWhiteSpace(NumTej) && (MontantTTC + Timbre) >= SeuilRetenueSource;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         NumTej = ExistingNumTej;
+        // Get decimal format from app parameters
+        priceFormat = await DecimalFormatService.GetDecimalFormatAsync();
         
         // Load existing PDF if in edit mode
         if (IsEditMode && !string.IsNullOrEmpty(ExistingPdfBase64))
