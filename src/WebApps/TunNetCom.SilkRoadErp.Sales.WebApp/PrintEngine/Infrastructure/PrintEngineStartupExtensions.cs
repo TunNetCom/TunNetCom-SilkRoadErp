@@ -1,4 +1,4 @@
-﻿using Microsoft.JSInterop;
+using Microsoft.JSInterop;
 using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Invoices.PrintInvoiceWithDetails;
 using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Invoices.ProviderInvoices;
 using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Invoices.RetenueSource;
@@ -9,6 +9,7 @@ using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Orders.PrintOrder;
 using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Soldes.PrintSoldeClient;
 using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Soldes.PrintSoldeFournisseur;
 using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.PaiementFournisseur.PrintTraite;
+using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.RetourMarchandiseFournisseur;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PrintHistory;
 
 namespace TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure;
@@ -27,6 +28,7 @@ public static class PrintEngineStartupExtensions
         _ = services.AddScoped<PrintSoldeClientService>();
         _ = services.AddScoped<PrintSoldeFournisseurService>();
         _ = services.AddScoped<PrintTraiteService>();
+        _ = services.AddScoped<PrintRetourFournisseurService>();
         _ = services.AddScoped(typeof(IPrintPdfService<,>), typeof(PrintPdfPlayWrightService<,>));
 
         // Register printing services

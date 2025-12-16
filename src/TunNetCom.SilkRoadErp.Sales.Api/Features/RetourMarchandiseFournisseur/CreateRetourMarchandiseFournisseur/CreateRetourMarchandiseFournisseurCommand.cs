@@ -12,5 +12,6 @@ internal record class RetourMarchandiseFournisseurLigne(
     int Quantity,
     decimal UnitPrice,
     double Discount,
-    double Tax);
+    double Tax,
+    int? QteRecue = null);
 

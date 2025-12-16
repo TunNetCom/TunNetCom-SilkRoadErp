@@ -50,7 +50,8 @@ internal class UpdateRetourMarchandiseFournisseurCommandHandler(
                 quantity: line.Quantity,
                 unitPrice: line.UnitPrice,
                 discount: line.Discount,
-                tax: line.Tax
+                tax: line.Tax,
+                qteRecue: line.QteRecue
             )
         ).ToList();
 

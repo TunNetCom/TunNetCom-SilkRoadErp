@@ -32,7 +32,11 @@ public class StockCalculationService : IStockCalculationService
                 TotalAchats = 0,
                 TotalVentes = 0,
                 StockCalcule = 0,
-                StockDisponible = 0
+                StockDisponible = 0,
+                QteEnRetourFournisseur = 0,
+                QteEnReparation = 0,
+                QteEnAttenteReception = 0,
+                StockReel = 0
             };
         }
 
@@ -42,8 +46,6 @@ public class StockCalculationService : IStockCalculationService
             .Include(l => l.Inventaire)
             .Where(l => l.RefProduit == refProduit && l.Inventaire.AccountingYearId == accountingYearId && l.Inventaire.Statut == InventaireStatut.Valide)
             .SumAsync(l => (int?)l.QuantiteReelle, cancellationToken) ?? 0;
-
-        // Si aucun inventaire, stock initial = 0
 
         // Calculer les achats (BR) pour l'exercice en cours
         var totalAchats = await _context.LigneBonReception
@@ -59,11 +61,20 @@ public class StockCalculationService : IStockCalculationService
             .Where(l => l.RefProduit == refProduit && l.NumBlNavigation.AccountingYearId == accountingYearId)
             .SumAsync(l => (int?)l.QteLi, cancellationToken) ?? 0;
 
-        var stockCalcule = stockInitial + totalAchats - totalVentes;
-        var stockDisponible = Math.Max(0, stockCalcule);
+        // Calculer les quantités en retour fournisseur
+        var retourFournisseurData = await CalculateRetourFournisseurDataAsync(refProduit, accountingYearId, cancellationToken);
 
-        _logger.LogInformation("Stock calculated for product {RefProduit}: Initial={StockInitial}, Achats={TotalAchats}, Ventes={TotalVentes}, Calculé={StockCalcule}", 
-            refProduit, stockInitial, totalAchats, totalVentes, stockCalcule);
+        var stockCalcule = stockInitial + totalAchats - totalVentes;
+        
+        // Le stock disponible exclut les produits en retour fournisseur (non encore reçus)
+        var stockDisponible = Math.Max(0, stockCalcule - retourFournisseurData.QteEnReparation);
+        
+        // Stock réel = stock calculé - quantités chez le fournisseur
+        var stockReel = stockCalcule - retourFournisseurData.QteEnReparation;
+
+        _logger.LogInformation(
+            "Stock calculated for product {RefProduit}: Initial={StockInitial}, Achats={TotalAchats}, Ventes={TotalVentes}, Calculé={StockCalcule}, EnReparation={EnReparation}, Disponible={Disponible}", 
+            refProduit, stockInitial, totalAchats, totalVentes, stockCalcule, retourFournisseurData.QteEnReparation, stockDisponible);
 
         return new ProductStockResult
         {
@@ -72,7 +83,11 @@ public class StockCalculationService : IStockCalculationService
             TotalAchats = totalAchats,
             TotalVentes = totalVentes,
             StockCalcule = stockCalcule,
-            StockDisponible = stockDisponible
+            StockDisponible = stockDisponible,
+            QteEnRetourFournisseur = retourFournisseurData.QteEnRetourFournisseur,
+            QteEnReparation = retourFournisseurData.QteEnReparation,
+            QteEnAttenteReception = retourFournisseurData.QteEnAttenteReception,
+            StockReel = stockReel
         };
     }
 
@@ -116,17 +131,22 @@ public class StockCalculationService : IStockCalculationService
             .Select(g => new { RefProduit = g.Key, TotalVentes = g.Sum(l => l.QteLi) })
             .ToDictionaryAsync(x => x.RefProduit, x => x.TotalVentes, cancellationToken);
 
+        // Calculer les retours fournisseur pour tous les produits
+        var retoursFournisseur = await CalculateRetourFournisseurDataBatchAsync(refProduits, accountingYearId, cancellationToken);
+
         // Construire les résultats
         foreach (var refProduit in refProduits)
         {
             var stockInitial = stocksInitiaux.GetValueOrDefault(refProduit, 0);
-            
-            // Si aucun inventaire, stock initial = 0
-
             var totalAchats = achats.GetValueOrDefault(refProduit, 0);
             var totalVentes = ventes.GetValueOrDefault(refProduit, 0);
             var stockCalcule = stockInitial + totalAchats - totalVentes;
-            var stockDisponible = Math.Max(0, stockCalcule);
+            
+            var retourData = retoursFournisseur.GetValueOrDefault(refProduit, new RetourFournisseurData());
+            
+            // Le stock disponible exclut les produits en retour fournisseur
+            var stockDisponible = Math.Max(0, stockCalcule - retourData.QteEnReparation);
+            var stockReel = stockCalcule - retourData.QteEnReparation;
 
             results[refProduit] = new ProductStockResult
             {
@@ -135,12 +155,118 @@ public class StockCalculationService : IStockCalculationService
                 TotalAchats = totalAchats,
                 TotalVentes = totalVentes,
                 StockCalcule = stockCalcule,
-                StockDisponible = stockDisponible
+                StockDisponible = stockDisponible,
+                QteEnRetourFournisseur = retourData.QteEnRetourFournisseur,
+                QteEnReparation = retourData.QteEnReparation,
+                QteEnAttenteReception = retourData.QteEnAttenteReception,
+                StockReel = stockReel
             };
         }
 
         _logger.LogInformation("Stocks calculated for {Count} products", results.Count);
         return results;
     }
-}
 
+    /// <summary>
+    /// Calcule les données de retour fournisseur pour un seul produit
+    /// </summary>
+    private async Task<RetourFournisseurData> CalculateRetourFournisseurDataAsync(
+        string refProduit, 
+        int accountingYearId, 
+        CancellationToken cancellationToken)
+    {
+        // Statuts où le produit est considéré "en retour" (hors brouillon et clôturé)
+        var statutsEnRetour = new[] 
+        { 
+            RetourFournisseurStatus.Valid, 
+            RetourFournisseurStatus.EnReparation, 
+            RetourFournisseurStatus.ReceptionPartielle 
+        };
+
+        var lignesRetour = await _context.LigneRetourMarchandiseFournisseur
+            .IgnoreQueryFilters()
+            .Include(l => l.RetourMarchandiseFournisseurNavigation)
+            .Where(l => l.RefProduit == refProduit 
+                && l.RetourMarchandiseFournisseurNavigation.AccountingYearId == accountingYearId
+                && statutsEnRetour.Contains(l.RetourMarchandiseFournisseurNavigation.StatutRetour))
+            .Select(l => new
+            {
+                QteLi = l.QteLi,
+                QteRecue = l.QteRecue,
+                Statut = l.RetourMarchandiseFournisseurNavigation.StatutRetour
+            })
+            .ToListAsync(cancellationToken);
+
+        // Quantité totale envoyée en retour fournisseur
+        var qteEnRetourFournisseur = lignesRetour.Sum(l => l.QteLi);
+        
+        // Quantité actuellement chez le fournisseur (envoyée - reçue)
+        var qteEnReparation = lignesRetour.Sum(l => Math.Max(0, l.QteLi - l.QteRecue));
+        
+        // Quantité en attente de réception (pour les retours en réception partielle)
+        var qteEnAttenteReception = lignesRetour
+            .Where(l => l.Statut == RetourFournisseurStatus.ReceptionPartielle)
+            .Sum(l => Math.Max(0, l.QteLi - l.QteRecue));
+
+        return new RetourFournisseurData
+        {
+            QteEnRetourFournisseur = qteEnRetourFournisseur,
+            QteEnReparation = qteEnReparation,
+            QteEnAttenteReception = qteEnAttenteReception
+        };
+    }
+
+    /// <summary>
+    /// Calcule les données de retour fournisseur pour plusieurs produits en batch
+    /// </summary>
+    private async Task<Dictionary<string, RetourFournisseurData>> CalculateRetourFournisseurDataBatchAsync(
+        List<string> refProduits, 
+        int accountingYearId, 
+        CancellationToken cancellationToken)
+    {
+        var statutsEnRetour = new[] 
+        { 
+            RetourFournisseurStatus.Valid, 
+            RetourFournisseurStatus.EnReparation, 
+            RetourFournisseurStatus.ReceptionPartielle 
+        };
+
+        var lignesRetour = await _context.LigneRetourMarchandiseFournisseur
+            .IgnoreQueryFilters()
+            .Include(l => l.RetourMarchandiseFournisseurNavigation)
+            .Where(l => refProduits.Contains(l.RefProduit) 
+                && l.RetourMarchandiseFournisseurNavigation.AccountingYearId == accountingYearId
+                && statutsEnRetour.Contains(l.RetourMarchandiseFournisseurNavigation.StatutRetour))
+            .Select(l => new
+            {
+                RefProduit = l.RefProduit,
+                QteLi = l.QteLi,
+                QteRecue = l.QteRecue,
+                Statut = l.RetourMarchandiseFournisseurNavigation.StatutRetour
+            })
+            .ToListAsync(cancellationToken);
+
+        return lignesRetour
+            .GroupBy(l => l.RefProduit)
+            .ToDictionary(
+                g => g.Key,
+                g => new RetourFournisseurData
+                {
+                    QteEnRetourFournisseur = g.Sum(l => l.QteLi),
+                    QteEnReparation = g.Sum(l => Math.Max(0, l.QteLi - l.QteRecue)),
+                    QteEnAttenteReception = g
+                        .Where(l => l.Statut == RetourFournisseurStatus.ReceptionPartielle)
+                        .Sum(l => Math.Max(0, l.QteLi - l.QteRecue))
+                });
+    }
+
+    /// <summary>
+    /// Classe interne pour stocker les données de retour fournisseur
+    /// </summary>
+    private class RetourFournisseurData
+    {
+        public int QteEnRetourFournisseur { get; set; }
+        public int QteEnReparation { get; set; }
+        public int QteEnAttenteReception { get; set; }
+    }
+}

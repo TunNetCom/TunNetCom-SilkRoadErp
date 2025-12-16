@@ -35,10 +35,16 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             entity.Property(e => e.NetPayer)
                 .HasColumnType("decimal(18, 3)")
                 .HasColumnName("net_payer");
-            entity.Property(e => e.Statut)
+            
+            // Configuration du nouveau statut RetourFournisseurStatus
+            entity.Property(e => e.StatutRetour)
                 .HasConversion<string>()
+                .HasColumnName("Statut")
                 .HasMaxLength(50)
                 .IsRequired();
+
+            // Ignorer la propriété obsolète Statut (DocumentStatus)
+            entity.Ignore(e => e.Statut);
 
             entity.HasOne(d => d.IdFournisseurNavigation).WithMany()
                 .HasForeignKey(d => d.IdFournisseur)
@@ -56,4 +62,3 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
         partial void OnConfigurePartial(EntityTypeBuilder<RetourMarchandiseFournisseur> entity);
     }
 }
-

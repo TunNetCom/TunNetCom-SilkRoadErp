@@ -66,5 +66,23 @@ public class LigneRetourMarchandiseFournisseurResponse
 
     [JsonPropertyName("totTtc")]
     public decimal TotTtc { get; set; }
+
+    /// <summary>
+    /// Quantité déjà reçue après réparation (cumul de toutes les réceptions)
+    /// </summary>
+    [JsonPropertyName("qteRecue")]
+    public int QteRecue { get; set; }
+
+    /// <summary>
+    /// Date de la dernière réception
+    /// </summary>
+    [JsonPropertyName("dateReception")]
+    public DateTime? DateReception { get; set; }
+
+    /// <summary>
+    /// Quantité restant à recevoir
+    /// </summary>
+    [JsonPropertyName("qteRestante")]
+    public int QteRestante => QteLi - QteRecue;
 }
 

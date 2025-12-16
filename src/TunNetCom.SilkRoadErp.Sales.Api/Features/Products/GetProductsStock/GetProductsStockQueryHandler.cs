@@ -32,10 +32,13 @@ public class GetProductsStockQueryHandler(
             TotalAchats = s.TotalAchats,
             TotalVentes = s.TotalVentes,
             StockCalcule = s.StockCalcule,
-            StockDisponible = s.StockDisponible
+            StockDisponible = s.StockDisponible,
+            QteEnRetourFournisseur = s.QteEnRetourFournisseur,
+            QteEnReparation = s.QteEnReparation,
+            QteEnAttenteReception = s.QteEnAttenteReception,
+            StockReel = s.StockReel
         }).ToList();
 
         return Result.Ok(response);
     }
 }
-

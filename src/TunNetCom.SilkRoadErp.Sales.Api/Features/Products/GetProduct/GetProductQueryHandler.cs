@@ -1,4 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
+using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 using TunNetCom.SilkRoadErp.Sales.Domain.Services;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Products.GetProduct;
@@ -88,6 +88,9 @@ public class GetProductQueryHandler(
                     product.StockCalcule = stock.StockCalcule;
                     product.StockDisponible = stock.StockDisponible;
                     product.IsStockLow = stock.StockDisponible <= product.QteLimit;
+                    product.QteEnRetourFournisseur = stock.QteEnRetourFournisseur;
+                    product.QteEnReparation = stock.QteEnReparation;
+                    product.StockReel = stock.StockReel;
                 }
             }
         }

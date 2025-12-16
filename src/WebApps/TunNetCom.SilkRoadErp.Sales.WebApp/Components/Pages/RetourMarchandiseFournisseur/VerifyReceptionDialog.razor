@@ -1,0 +1,295 @@
+@using TunNetCom.SilkRoadErp.Sales.Contracts.RetourMarchandiseFournisseur
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.RetourMarchandiseFournisseur
+@using Radzen
+@using Radzen.Blazor
+@inject DialogService DialogService
+@inject IRetourMarchandiseFournisseurApiClient RetourService
+@inject Radzen.NotificationService NotificationService
+
+<RadzenStack Gap="1rem" Style="min-width: 600px;">
+    @if (isLoading)
+    {
+        <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+        <p style="text-align: center;">Chargement des données...</p>
+    }
+    else if (retour == null)
+    {
+        <RadzenAlert AlertStyle="AlertStyle.Danger" ShowIcon="true">
+            Impossible de charger les détails du retour.
+        </RadzenAlert>
+    }
+    else
+    {
+        <div class="reception-header">
+            <h4>Vérification de réception - Retour N° @retour.Num</h4>
+            <p><strong>Fournisseur:</strong> @retour.NomFournisseur</p>
+            <p><strong>Date du retour:</strong> @retour.Date.ToString("dd/MM/yyyy")</p>
+            <p><strong>Statut actuel:</strong> 
+                <RadzenBadge BadgeStyle="@GetStatusBadgeStyle(retour.Statut)" Text="@retour.StatutLibelle" />
+            </p>
+        </div>
+
+        <RadzenDataGrid @ref="grid" 
+                        Data="@receptionLines" 
+                        TItem="ReceptionLineModel"
+                        Density="Density.Compact"
+                        AllowFiltering="false"
+                        AllowPaging="false"
+                        AllowSorting="false"
+                        Style="margin-bottom: 1rem;">
+            <Columns>
+                <RadzenDataGridColumn TItem="ReceptionLineModel" Property="RefProduit" Title="Référence" Width="120px" />
+                <RadzenDataGridColumn TItem="ReceptionLineModel" Property="Designation" Title="Désignation" Width="200px" />
+                <RadzenDataGridColumn TItem="ReceptionLineModel" Property="QteRetournee" Title="Retournée" Width="90px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="ReceptionLineModel" Title="Déjà reçue" Width="100px" TextAlign="TextAlign.Center">
+                    <Template Context="line">
+                        @if (line.QteDejaRecue > 0)
+                        {
+                            <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@line.QteDejaRecue.ToString()" />
+                        }
+                        else
+                        {
+                            <span>0</span>
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ReceptionLineModel" Title="Cette réception" Width="130px">
+                    <Template Context="line">
+                        @if (line.QteRestante > 0)
+                        {
+                            <RadzenNumeric @bind-Value="line.QteRecue" 
+                                           Min="0" 
+                                           Max="@line.QteRestante" 
+                                           Style="width: 100%;"
+                                           Change="@((int _) => CalculateTotals())" />
+                        }
+                        else
+                        {
+                            <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="Complet" />
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ReceptionLineModel" Title="Restera" Width="90px" TextAlign="TextAlign.Center">
+                    <Template Context="line">
+                        @{
+                            var reste = line.GetResteApresReception();
+                        }
+                        <RadzenBadge BadgeStyle="@(reste == 0 ? BadgeStyle.Success : BadgeStyle.Warning)" 
+                                     Text="@reste.ToString()" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+
+        <RadzenCard Style="background-color: #f8f9fa; padding: 1rem;">
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" JustifyContent="JustifyContent.SpaceBetween">
+                <div>
+                    <strong>Total à recevoir:</strong> @totalARecevoir
+                </div>
+                <div>
+                    <strong>Restera en attente:</strong> @totalRestant
+                </div>
+            </RadzenStack>
+        </RadzenCard>
+
+        <RadzenFormField Text="Commentaire (optionnel)" Style="width: 100%;">
+            <RadzenTextArea @bind-Value="commentaire" Rows="2" Style="width: 100%;" />
+        </RadzenFormField>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <RadzenAlert AlertStyle="AlertStyle.Danger" ShowIcon="true" AllowClose="true" Close="@(() => errorMessage = null)">
+                @errorMessage
+            </RadzenAlert>
+        }
+
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End">
+            <RadzenButton Text="Annuler" ButtonStyle="ButtonStyle.Light" Click="@Cancel" Disabled="@isSaving" />
+            <RadzenButton Text="Recevoir tout le reste" ButtonStyle="ButtonStyle.Info" Click="@SetAllReceived" 
+                          Disabled="@(isSaving || !HasRemainingToReceive())" />
+            <RadzenButton Text="Valider la réception" ButtonStyle="ButtonStyle.Success" Click="@ValidateReception" 
+                          Disabled="@(isSaving || totalARecevoir == 0)" 
+                          IsBusy="@isSaving" />
+        </RadzenStack>
+    }
+</RadzenStack>
+
+<style>
+    .reception-header {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 4px;
+        margin-bottom: 1rem;
+    }
+    .reception-header h4 {
+        margin: 0 0 0.5rem 0;
+        color: #333;
+    }
+    .reception-header p {
+        margin: 0.25rem 0;
+        font-size: 0.9rem;
+    }
+</style>
+
+@code {
+    [Parameter] public int RetourNum { get; set; }
+
+    private RadzenDataGrid<ReceptionLineModel> grid = null!;
+    private RetourMarchandiseFournisseurResponse? retour;
+    private List<ReceptionLineModel> receptionLines = new();
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private string? errorMessage;
+    private string? commentaire;
+    private int totalARecevoir = 0;
+    private int totalRestant = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRetourDetails();
+    }
+
+    private async Task LoadRetourDetails()
+    {
+        isLoading = true;
+        try
+        {
+            var result = await RetourService.GetRetourMarchandiseFournisseurAsync(RetourNum);
+            if (result.IsSuccess && result.Value != null)
+            {
+                retour = result.Value;
+                receptionLines = retour.Lines.Select(l => new ReceptionLineModel
+                {
+                    IdLigne = l.IdLigne,
+                    RefProduit = l.RefProduit,
+                    Designation = l.DesignationLi,
+                    QteRetournee = l.QteLi,
+                    QteDejaRecue = l.QteRecue, // Quantité déjà reçue (cumul des réceptions précédentes)
+                    QteRecue = 0 // Quantité à recevoir dans cette réception
+                }).ToList();
+                
+                CalculateTotals();
+            }
+            else
+            {
+                errorMessage = "Impossible de charger les détails du retour.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erreur: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void CalculateTotals()
+    {
+        totalARecevoir = receptionLines.Sum(l => l.QteRecue);
+        totalRestant = receptionLines.Sum(l => l.GetResteApresReception());
+    }
+
+    private bool HasRemainingToReceive()
+    {
+        return receptionLines.Any(l => l.QteRestante > 0);
+    }
+
+    private void SetAllReceived()
+    {
+        foreach (var line in receptionLines)
+        {
+            line.QteRecue = line.QteRestante;
+        }
+        CalculateTotals();
+        StateHasChanged();
+    }
+
+    private void Cancel()
+    {
+        DialogService.Close();
+    }
+
+    private async Task ValidateReception()
+    {
+        if (totalARecevoir == 0)
+        {
+            errorMessage = "Veuillez saisir au moins une quantité à recevoir.";
+            return;
+        }
+
+        isSaving = true;
+        errorMessage = null;
+
+        try
+        {
+            var request = new VerifyReceptionRequest
+            {
+                Num = RetourNum,
+                Commentaire = commentaire,
+                Lines = receptionLines
+                    .Where(l => l.QteRecue > 0)
+                    .Select(l => new VerifyReceptionLineRequest
+                    {
+                        IdLigne = l.IdLigne,
+                        QteRecue = l.QteDejaRecue + l.QteRecue // Total reçu = déjà reçu + nouvelle réception
+                    })
+                    .ToList()
+            };
+
+            var result = await RetourService.VerifyReceptionAsync(request);
+
+            if (result.IsSuccess)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Succès",
+                    Detail = result.Value?.Message ?? "Réception enregistrée avec succès."
+                });
+                
+                DialogService.Close(true);
+            }
+            else
+            {
+                errorMessage = result.Errors.FirstOrDefault()?.Message ?? "Erreur lors de l'enregistrement de la réception.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erreur: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private BadgeStyle GetStatusBadgeStyle(int statut)
+    {
+        return statut switch
+        {
+            0 => BadgeStyle.Secondary, // Draft
+            1 => BadgeStyle.Info,      // Valid
+            2 => BadgeStyle.Warning,   // EnReparation
+            3 => BadgeStyle.Primary,   // ReceptionPartielle
+            4 => BadgeStyle.Success,   // Cloture
+            _ => BadgeStyle.Light
+        };
+    }
+
+    private class ReceptionLineModel
+    {
+        public int IdLigne { get; set; }
+        public string RefProduit { get; set; } = string.Empty;
+        public string Designation { get; set; } = string.Empty;
+        public int QteRetournee { get; set; }
+        public int QteDejaRecue { get; set; }
+        public int QteRecue { get; set; }
+        
+        public int QteRestante => QteRetournee - QteDejaRecue;
+        
+        public int GetResteApresReception() => Math.Max(0, QteRestante - QteRecue);
+    }
+}

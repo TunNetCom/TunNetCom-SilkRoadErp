@@ -19,5 +19,9 @@ public interface IRetourMarchandiseFournisseurApiClient
     Task<Result> ValidateRetourMarchandiseFournisseurAsync(
         List<int> ids,
         CancellationToken cancellationToken = default);
+
+    Task<Result<VerifyReceptionResponse>> VerifyReceptionAsync(
+        VerifyReceptionRequest request,
+        CancellationToken cancellationToken = default);
 }
 

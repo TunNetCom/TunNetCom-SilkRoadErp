@@ -219,6 +219,42 @@
             </RadzenDataGridColumn>
         }
 
+        @* Reception columns - generic implementation for any TItem with reception tracking *@
+        @if (ShowReceptionColumns && GetHasPartialReception != null && SetHasPartialReception != null)
+        {
+            <RadzenDataGridColumn Width="80px" 
+                                  Title="@ReceptionColumnTitle">
+                <Template Context="order">
+                    <RadzenCheckBox Value="@GetHasPartialReception(order)"
+                                    ValueChanged="@((bool value) => OnPartialReceptionCheckboxChanged(order, value))"
+                                    Disabled="@(IsReadOnly || string.IsNullOrEmpty(GetProductReference?.Invoke(order)))"
+                                    Title="Activer la réception partielle" />
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn Width="120px" 
+                                  Title="@ReceivedQuantityColumnTitle"
+                                  Visible="@showReceivedQuantityColumn">
+                <Template Context="order">
+                    @if (GetHasPartialReception(order) && GetReceivedQuantity != null && SetReceivedQuantity != null)
+                    {
+                        <RadzenNumeric TValue="int"
+                                       Value="@GetReceivedQuantity(order)"
+                                       Change="@(args => OnReceivedQuantityChanged(order, args))"
+                                       Disabled="@IsReadOnly"
+                                       Style="width:100%;"
+                                       Min="0"
+                                       Max="@order.Quantity"
+                                       Name="ReceivedQuantity"/>
+                    }
+                    else
+                    {
+                        <span style="color: #6b7280; visibility: hidden;">-</span>
+                    }
+                </Template>
+            </RadzenDataGridColumn>
+        }
+
         <RadzenDataGridColumn Width="200px" 
                               Title="@Localizer["unit_price_ht"]">
             <Template Context="order">
@@ -522,11 +558,21 @@
     [Parameter] public double MaxDiscountPercentage { get; set; } = 50.0;
     [Parameter] public double MaxVatPercentage { get; set; } = 50.0;
     [Parameter] public bool IsReadOnly { get; set; } = false;
+    
+    // Reception tracking parameters (for RetourMarchandiseFournisseur)
+    [Parameter] public bool ShowReceptionColumns { get; set; } = false;
+    [Parameter] public Func<TItem, bool>? GetHasPartialReception { get; set; }
+    [Parameter] public Action<TItem, bool>? SetHasPartialReception { get; set; }
+    [Parameter] public Func<TItem, int>? GetReceivedQuantity { get; set; }
+    [Parameter] public Action<TItem, int>? SetReceivedQuantity { get; set; }
+    [Parameter] public string ReceptionColumnTitle { get; set; } = "Réception partielle";
+    [Parameter] public string ReceivedQuantityColumnTitle { get; set; } = "Qté reçue";
 
     RadzenDataGrid<TItem> ordersGrid;
     private DotNetObjectReference<LineItemsGrid<TItem>>? objRef;
     private string componentId = Guid.NewGuid().ToString();
     private bool showDeliveredQuantityColumn = false;
+    private bool showReceivedQuantityColumn = false;
     private string priceFormat = AmountHelper.FORMAT_N3;
     private string discountFormat = AmountHelper.FORMAT_N2;
     private string vatFormat = AmountHelper.FORMAT_N2;
@@ -691,6 +737,70 @@
         }
     }
 
+    // Generic reception tracking handlers
+    private async Task OnPartialReceptionCheckboxChanged(TItem order, bool isChecked)
+    {
+        if (order == null || SetHasPartialReception == null) return;
+        
+        SetHasPartialReception(order, isChecked);
+        
+        if (isChecked)
+        {
+            // When checkbox is checked, initialize received quantity to 0 if not set
+            if (GetReceivedQuantity != null && SetReceivedQuantity != null)
+            {
+                var currentQty = GetReceivedQuantity(order);
+                if (currentQty == 0)
+                {
+                    // Keep it at 0, user will enter the received quantity
+                }
+            }
+            // Show the received quantity column
+            showReceivedQuantityColumn = true;
+        }
+        else
+        {
+            // When checkbox is unchecked, reset received quantity to 0
+            if (SetReceivedQuantity != null)
+            {
+                SetReceivedQuantity(order, 0);
+            }
+            // Hide the column if no checkboxes are checked
+            UpdateReceivedQuantityColumnVisibility();
+        }
+        await NotifyItemsChanged();
+    }
+
+    private async Task OnReceivedQuantityChanged(TItem order, object value)
+    {
+        if (order == null || SetReceivedQuantity == null) return;
+        
+        if (value != null && int.TryParse(value.ToString(), out int receivedQuantity))
+        {
+            // Ensure received quantity doesn't exceed Quantity
+            if (receivedQuantity > order.Quantity)
+            {
+                receivedQuantity = order.Quantity;
+            }
+            if (receivedQuantity < 0)
+            {
+                receivedQuantity = 0;
+            }
+            SetReceivedQuantity(order, receivedQuantity);
+            await NotifyItemsChanged();
+        }
+    }
+
+    private void UpdateReceivedQuantityColumnVisibility()
+    {
+        if (GetHasPartialReception == null)
+        {
+            showReceivedQuantityColumn = false;
+            return;
+        }
+        showReceivedQuantityColumn = Items?.Any(item => GetHasPartialReception(item)) ?? false;
+    }
+
     private async Task OnProductSelected(TItem order, object value)
     {
         if (value != null && value is string productReference)
@@ -770,6 +880,12 @@
 
     private async Task NotifyItemsChanged()
     {
+        // Update column visibility based on checkbox states for reception tracking
+        if (ShowReceptionColumns)
+        {
+            UpdateReceivedQuantityColumnVisibility();
+        }
+        
         // Update column visibility based on checkbox states
         if (typeof(TItem) == typeof(DeliveryNoteDetailResponse))
         {
