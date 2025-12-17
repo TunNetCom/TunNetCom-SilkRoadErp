@@ -28,6 +28,14 @@ var builder = WebApplication.CreateBuilder(args);
 var razorBuilder = builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+// Blazor Server/Interactive Server Components use SignalR under the hood.
+// Default max incoming message size is 32KB, which can cancel JS interop calls
+// when returning base64 payloads (camera capture).
+builder.Services.Configure<Microsoft.AspNetCore.SignalR.HubOptions>(options =>
+{
+    options.MaximumReceiveMessageSize = 8 * 1024 * 1024; // 8MB
+});
+
 // Configure circuit options
 if (builder.Environment.IsDevelopment())
 {
