@@ -65,23 +65,25 @@ public class ProviderInvoiceBaseInfosController : ODataController
 
             // Build query with joins before loading to memory
             var queryWithJoins = from ff in baseQuery
+                                join f in _context.Fournisseur on ff.IdFournisseur equals f.Id
                                 join br in _context.BonDeReception on ff.Num equals br.NumFactureFournisseur into receiptNotesGroup
                                 from br in receiptNotesGroup.DefaultIfEmpty()
                                 join lbr in _context.LigneBonReception on br.Id equals lbr.BonDeReceptionId into linesGroup
                                 from lbr in linesGroup.DefaultIfEmpty()
-                                select new { ff, lbr };
+                                select new { ff, f, lbr };
 
             // Load data to avoid SQL conversion issues with Statut (string -> enum -> int)
             var invoicesData = await queryWithJoins.ToListAsync(cancellationToken);
 
             // Group and calculate in memory to avoid SQL conversion issues
             var providerInvoiceQuery = invoicesData
-                .GroupBy(x => new { x.ff.Num, x.ff.Date, x.ff.IdFournisseur, x.ff.Statut })
+                .GroupBy(x => new { x.ff.Num, x.ff.Date, x.ff.IdFournisseur, x.ff.Statut, x.f.Nom })
                 .Select(g => new ProviderInvoiceBaseInfo
                 {
                     Number = g.Key.Num,
                     Date = new DateTimeOffset(g.Key.Date, TimeSpan.Zero),
                     ProviderId = g.Key.IdFournisseur,
+                    ProviderName = g.Key.Nom,
                     NetAmount = g.Where(x => x.lbr != null).Sum(x => x.lbr!.TotHt),
                     VatAmount = g.Where(x => x.lbr != null).Sum(x => x.lbr!.TotTtc) - g.Where(x => x.lbr != null).Sum(x => x.lbr!.TotHt),
                     Statut = (int)g.Key.Statut,

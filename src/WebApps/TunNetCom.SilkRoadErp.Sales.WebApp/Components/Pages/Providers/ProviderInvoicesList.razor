@@ -126,6 +126,10 @@
                                       Title="Numéro"
                                       Width="150px" />
                 <RadzenDataGridColumn TItem="ProviderInvoiceBaseInfo"
+                                      Property="@nameof(ProviderInvoiceBaseInfo.ProviderName)"
+                                      Title="@Localizer["Fournisseur"]"
+                                      Width="200px" />
+                <RadzenDataGridColumn TItem="ProviderInvoiceBaseInfo"
                                       Property="@nameof(ProviderInvoiceBaseInfo.Date)"
                                       Title="@Localizer["date"]"
                                       Width="150px"
