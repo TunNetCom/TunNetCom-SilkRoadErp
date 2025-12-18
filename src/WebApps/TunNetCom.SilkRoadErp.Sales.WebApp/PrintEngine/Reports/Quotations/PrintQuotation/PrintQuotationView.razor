@@ -71,6 +71,13 @@
             font-style: italic;
             font-size: 11px;
         }
+
+        .rib-footer {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 11px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -155,6 +162,12 @@
     <div class="footer">
         @AmountHelper.ConvertFloatToFrenchToWords(Model.TotalTTC, AmountHelper.TYPE_DEVIS)
     </div>
+    @if (!string.IsNullOrEmpty(Model.Rib))
+    {
+        <div class="rib-footer">
+            RIB: @Model.Rib
+        </div>
+    }
 </body>
 </html>
 

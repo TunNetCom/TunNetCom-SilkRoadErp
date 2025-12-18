@@ -24,6 +24,7 @@ public class PrintDeliveryNoteModel
     public decimal VatRate7 { get; set; }
     public decimal VatRate13 { get; set; }
     public decimal VatRate19 { get; set; }
+    public string? Rib { get; set; }
 
     public DeliveryNoteCustomerModel? Customer { get; set; }
     public List<DeliveryNoteLineModel> Lines { get; set; } = new();

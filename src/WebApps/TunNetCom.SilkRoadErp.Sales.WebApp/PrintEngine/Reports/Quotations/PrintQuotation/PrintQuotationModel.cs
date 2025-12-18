@@ -25,6 +25,7 @@ public class PrintQuotationModel
     public decimal VatRate13 { get; set; }
     public decimal VatRate19 { get; set; }
     public int DecimalPlaces { get; set; } = DecimalFormatConstants.DEFAULT_DECIMAL_PLACES;
+    public string? Rib { get; set; }
 
     public QuotationCustomerModel? Customer { get; set; }
     public List<QuotationLineModel> Lines { get; set; } = new();
