@@ -122,7 +122,12 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     mail = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     mail_deux = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     constructeur = table.Column<bool>(type: "bit", nullable: false),
-                    adresse = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    adresse = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    taux_retenu = table.Column<double>(type: "float", nullable: true),
+                    rib_code_etab = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
+                    rib_code_agence = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
+                    rib_numero_compte = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
+                    rib_cle = table.Column<string>(type: "nvarchar(5)", maxLength: 5, nullable: true)
                 },
                 constraints: table =>
                 {

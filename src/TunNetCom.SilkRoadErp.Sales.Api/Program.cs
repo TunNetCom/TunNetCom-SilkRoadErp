@@ -283,25 +283,194 @@ using (IServiceScope scope = app.Services.CreateScope())
     
     try
     {
+        // #region agent log
+        System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", 
+            System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "A", location = "Program.cs:287", message = "Checking database connection", data = new { }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
+        // #endregion
+        
         // Check if database exists and has tables
         var canConnect = await dbContext.Database.CanConnectAsync();
-        var migrationsApplied = await dbContext.Database.GetPendingMigrationsAsync();
         
-        if (canConnect && migrationsApplied.Any())
+        // #region agent log
+        System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", 
+            System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "A", location = "Program.cs:288", message = "canConnect result", data = new { canConnect = canConnect }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
+        // #endregion
+        
+        var migrationsApplied = await dbContext.Database.GetPendingMigrationsAsync();
+        var migrationsList = migrationsApplied.ToList();
+        
+        // #region agent log
+        System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", 
+            System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "B", location = "Program.cs:289", message = "Pending migrations detected", data = new { count = migrationsList.Count, migrations = migrationsList }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
+        // #endregion
+        
+        // #region agent log
+        System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", 
+            System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "C", location = "Program.cs:290", message = "Condition check", data = new { canConnect = canConnect, hasPendingMigrations = migrationsList.Any() }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
+        // #endregion
+        
+        if (canConnect && migrationsList.Any())
         {
+            // #region agent log
+            System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", 
+                System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "E", location = "Program.cs:291", message = "Entering migration apply branch", data = new { }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
+            // #endregion
+            
+            // Log pending migrations
+            logger.LogInformation("Migrations en attente détectées: {Count} migration(s)", migrationsList.Count);
+            foreach (var migration in migrationsList)
+            {
+                logger.LogInformation("  - {MigrationId}", migration);
+            }
+            
+            // FIRST: Add columns for AddTauxRetenuAndRibToFournisseur migration BEFORE MigrateAsync
+            // This prevents EF Core from trying to use columns that don't exist yet
+            if (migrationsList.Contains("20251218001616_AddTauxRetenuAndRibToFournisseur"))
+            {
+                logger.LogInformation("Ajout préalable des colonnes pour la migration AddTauxRetenuAndRibToFournisseur...");
+                
+                try
+                {
+                    // Add each column if it doesn't exist (IF NOT EXISTS ensures idempotency)
+                    await dbContext.Database.ExecuteSqlRawAsync(@"
+                        IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Fournisseur' AND COLUMN_NAME = 'taux_retenu')
+                        BEGIN
+                            ALTER TABLE [Fournisseur] ADD [taux_retenu] float NULL;
+                        END
+                    ");
+                    
+                    await dbContext.Database.ExecuteSqlRawAsync(@"
+                        IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Fournisseur' AND COLUMN_NAME = 'rib_code_etab')
+                        BEGIN
+                            ALTER TABLE [Fournisseur] ADD [rib_code_etab] nvarchar(10) NULL;
+                        END
+                    ");
+                    
+                    await dbContext.Database.ExecuteSqlRawAsync(@"
+                        IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Fournisseur' AND COLUMN_NAME = 'rib_code_agence')
+                        BEGIN
+                            ALTER TABLE [Fournisseur] ADD [rib_code_agence] nvarchar(10) NULL;
+                        END
+                    ");
+                    
+                    await dbContext.Database.ExecuteSqlRawAsync(@"
+                        IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Fournisseur' AND COLUMN_NAME = 'rib_numero_compte')
+                        BEGIN
+                            ALTER TABLE [Fournisseur] ADD [rib_numero_compte] nvarchar(20) NULL;
+                        END
+                    ");
+                    
+                    await dbContext.Database.ExecuteSqlRawAsync(@"
+                        IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Fournisseur' AND COLUMN_NAME = 'rib_cle')
+                        BEGIN
+                            ALTER TABLE [Fournisseur] ADD [rib_cle] nvarchar(5) NULL;
+                        END
+                    ");
+                    
+                    logger.LogInformation("Colonnes ajoutées avec succès avant MigrateAsync.");
+                }
+                catch (Exception colEx)
+                {
+                    logger.LogWarning(colEx, "Erreur lors de l'ajout préalable des colonnes, continuons avec MigrateAsync...");
+                }
+            }
+            
             // Try to apply migrations - if it fails because tables exist, mark them as applied
             try
             {
                 logger.LogInformation("Application des migrations en attente...");
+                
+                // #region agent log
+                System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", 
+                    System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "E", location = "Program.cs:360", message = "Before MigrateAsync", data = new { }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
+                // #endregion
+                
                 await dbContext.Database.MigrateAsync();
+                
+                // #region agent log
+                System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", 
+                    System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "E", location = "Program.cs:304", message = "After MigrateAsync - success", data = new { }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
+                // #endregion
+                
                 logger.LogInformation("Migrations appliquées avec succès.");
             }
             catch (Microsoft.Data.SqlClient.SqlException sqlEx) when (sqlEx.Number == 2714 || sqlEx.Number == 1913 || sqlEx.Message.Contains("already exists"))
             {
-                // Table already exists error - mark migrations as applied
-                logger.LogWarning("Les tables existent déjà. Marquage des migrations comme appliquées...");
+                // #region agent log
+                System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", 
+                    System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "F", location = "Program.cs:306", message = "Caught table exists exception", data = new { errorNumber = sqlEx.Number, errorMessage = sqlEx.Message }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
+                // #endregion
+                
+                // Table already exists error - FIRST add missing columns, THEN mark migrations as applied
+                logger.LogWarning("Les tables existent déjà. Vérification et ajout des colonnes manquantes...");
+                
+                // #region agent log
+                System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", 
+                    System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "F", location = "Program.cs:310", message = "Entering catch block - adding columns first", data = new { pendingMigrationsCount = migrationsList.Count }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
+                // #endregion
+                
                 try
                 {
+                    // FIRST: Add columns for AddTauxRetenuAndRibToFournisseur migration if needed
+                    // This must happen BEFORE any EF Core operations that might use these columns
+                    if (migrationsList.Contains("20251218001616_AddTauxRetenuAndRibToFournisseur"))
+                    {
+                        logger.LogInformation("Ajout des colonnes pour la migration AddTauxRetenuAndRibToFournisseur...");
+                        
+                        // #region agent log
+                        System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", 
+                            System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "F", location = "Program.cs:360", message = "Adding columns for AddTauxRetenuAndRibToFournisseur", data = new { }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
+                        // #endregion
+                        
+                        // Add each column if it doesn't exist (IF NOT EXISTS ensures idempotency)
+                        await dbContext.Database.ExecuteSqlRawAsync(@"
+                            IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Fournisseur' AND COLUMN_NAME = 'taux_retenu')
+                            BEGIN
+                                ALTER TABLE [Fournisseur] ADD [taux_retenu] float NULL;
+                            END
+                        ");
+                        
+                        await dbContext.Database.ExecuteSqlRawAsync(@"
+                            IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Fournisseur' AND COLUMN_NAME = 'rib_code_etab')
+                            BEGIN
+                                ALTER TABLE [Fournisseur] ADD [rib_code_etab] nvarchar(10) NULL;
+                            END
+                        ");
+                        
+                        await dbContext.Database.ExecuteSqlRawAsync(@"
+                            IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Fournisseur' AND COLUMN_NAME = 'rib_code_agence')
+                            BEGIN
+                                ALTER TABLE [Fournisseur] ADD [rib_code_agence] nvarchar(10) NULL;
+                            END
+                        ");
+                        
+                        await dbContext.Database.ExecuteSqlRawAsync(@"
+                            IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Fournisseur' AND COLUMN_NAME = 'rib_numero_compte')
+                            BEGIN
+                                ALTER TABLE [Fournisseur] ADD [rib_numero_compte] nvarchar(20) NULL;
+                            END
+                        ");
+                        
+                        await dbContext.Database.ExecuteSqlRawAsync(@"
+                            IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Fournisseur' AND COLUMN_NAME = 'rib_cle')
+                            BEGIN
+                                ALTER TABLE [Fournisseur] ADD [rib_cle] nvarchar(5) NULL;
+                            END
+                        ");
+                        
+                        // #region agent log
+                        System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", 
+                            System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "F", location = "Program.cs:395", message = "Columns added successfully", data = new { }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
+                        // #endregion
+                        
+                        logger.LogInformation("Colonnes ajoutées avec succès.");
+                    }
+                    
+                    // #region agent log
+                    System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", 
+                        System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "F", location = "Program.cs:400", message = "Before creating __EFMigrationsHistory table", data = new { }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
+                    // #endregion
+                    
                     // Create __EFMigrationsHistory table if it doesn't exist
                     await dbContext.Database.ExecuteSqlRawAsync(@"
                         IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '__EFMigrationsHistory')
@@ -314,36 +483,95 @@ using (IServiceScope scope = app.Services.CreateScope())
                         END
                     ");
                     
-                    // Mark migrations as applied
-                    await dbContext.Database.ExecuteSqlRawAsync(@"
-                        IF NOT EXISTS (SELECT * FROM __EFMigrationsHistory WHERE MigrationId = '20251122202247_Init')
-                        BEGIN
-                            INSERT INTO __EFMigrationsHistory (MigrationId, ProductVersion) VALUES ('20251122202247_Init', '10.0.0');
-                        END
-                    ");
-                    await dbContext.Database.ExecuteSqlRawAsync(@"
-                        IF NOT EXISTS (SELECT * FROM __EFMigrationsHistory WHERE MigrationId = '20251122202255_AddSqlViews')
-                        BEGIN
-                            INSERT INTO __EFMigrationsHistory (MigrationId, ProductVersion) VALUES ('20251122202255_AddSqlViews', '10.0.0');
-                        END
-                    ");
-                    logger.LogInformation("Migrations marquées comme appliquées.");
+                    // #region agent log
+                    System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", 
+                        System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "F", location = "Program.cs:415", message = "After creating __EFMigrationsHistory table, before marking migrations", data = new { migrationsToProcess = migrationsList }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
+                    // #endregion
+                    
+                    // NOW mark ALL pending migrations as applied
+                    foreach (var migration in migrationsList)
+                    {
+                        // #region agent log
+                        System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", 
+                            System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "F", location = "Program.cs:440", message = "Marking migration as applied", data = new { migrationId = migration }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
+                        // #endregion
+                        
+                        // Mark migration as applied
+                        var migrationId = migration.Replace("'", "''"); // Escape single quotes for SQL
+                        await dbContext.Database.ExecuteSqlRawAsync($@"
+                            IF NOT EXISTS (SELECT * FROM __EFMigrationsHistory WHERE MigrationId = '{migrationId}')
+                            BEGIN
+                                INSERT INTO __EFMigrationsHistory (MigrationId, ProductVersion) VALUES ('{migrationId}', '10.0.0');
+                            END
+                        ");
+                        
+                        // #region agent log
+                        System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", 
+                            System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "F", location = "Program.cs:400", message = "Migration marked as applied", data = new { migrationId = migration }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
+                        // #endregion
+                        
+                        logger.LogInformation("Migration {MigrationId} marquée comme appliquée.", migration);
+                    }
+                    
+                    // #region agent log
+                    System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", 
+                        System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "F", location = "Program.cs:345", message = "All migrations marked successfully", data = new { }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
+                    // #endregion
+                    
+                    logger.LogInformation("Toutes les migrations en attente ont été marquées comme appliquées.");
                 }
                 catch (Exception ex2)
                 {
+                    // #region agent log
+                    System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", 
+                        System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "F", location = "Program.cs:352", message = "Exception in catch block", data = new { exceptionType = ex2.GetType().Name, exceptionMessage = ex2.Message, stackTrace = ex2.StackTrace }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
+                    // #endregion
+                    
                     logger.LogError(ex2, "Erreur lors du marquage des migrations. Continuons quand même...");
                 }
+            }
+            catch (Exception ex)
+            {
+                // #region agent log
+                System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", 
+                    System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "D", location = "Program.cs:343", message = "Caught unexpected exception in MigrateAsync", data = new { exceptionType = ex.GetType().Name, exceptionMessage = ex.Message, stackTrace = ex.StackTrace }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
+                // #endregion
+                
+                logger.LogError(ex, "Erreur inattendue lors de l'application des migrations.");
+                throw;
             }
         }
         else if (!canConnect)
         {
+            // #region agent log
+            System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", 
+                System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "A", location = "Program.cs:345", message = "Entering database creation branch", data = new { }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
+            // #endregion
+            
             // Database doesn't exist, create it with migrations
             logger.LogInformation("Création de la base de données avec migrations...");
+            
+            // #region agent log
+            System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", 
+                System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "A", location = "Program.cs:349", message = "Before MigrateAsync in creation branch", data = new { }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
+            // #endregion
+            
             await dbContext.Database.MigrateAsync();
+            
+            // #region agent log
+            System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", 
+                System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "A", location = "Program.cs:350", message = "After MigrateAsync in creation branch", data = new { }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
+            // #endregion
+            
             logger.LogInformation("Base de données créée et migrations appliquées avec succès.");
         }
         else
         {
+            // #region agent log
+            System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", 
+                System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "C", location = "Program.cs:352", message = "Entering 'database up to date' branch", data = new { canConnect = canConnect, hasPendingMigrations = migrationsList.Any() }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
+            // #endregion
+            
             logger.LogInformation("Base de données à jour, aucune migration en attente.");
         }
     }

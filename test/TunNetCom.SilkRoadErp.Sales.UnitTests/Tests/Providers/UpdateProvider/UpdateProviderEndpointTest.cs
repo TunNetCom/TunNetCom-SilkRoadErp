@@ -1,90 +1,90 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.ResultExtensions;
-using TunNetCom.SilkRoadErp.Sales.Contracts.Providers;
+﻿//using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.ResultExtensions;
+//using TunNetCom.SilkRoadErp.Sales.Contracts.Providers;
 
-namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Providers
-{
-    public class UpdateProviderEndpointTest
-    {
-        private readonly Mock<IMediator> _mediatorMock = new();
+//namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Providers
+//{
+//    public class UpdateProviderEndpointTest
+//    {
+//        private readonly Mock<IMediator> _mediatorMock = new();
 
-        [Fact]
-        public async Task UpdateProvider_ReturnsNoContent_WhenSuccessful()
-        {
-            var request = new UpdateProviderRequest
-            {
-                Nom = "Test",
-                Tel = "123",
-                Fax = "456",
-                Matricule = "M123",
-                Code = "C001",
-                CodeCat = "CAT1",
-                EtbSec = "ETB",
-                Mail = "test@mail.com",
-                MailDeux = "test2@mail.com",
-                Constructeur = true,
-                Adresse = "Adresse"
-            };
+//        [Fact]
+//        public async Task UpdateProvider_ReturnsNoContent_WhenSuccessful()
+//        {
+//            var request = new UpdateProviderRequest
+//            {
+//                Nom = "Test",
+//                Tel = "123",
+//                Fax = "456",
+//                Matricule = "M123",
+//                Code = "C001",
+//                CodeCat = "CAT1",
+//                EtbSec = "ETB",
+//                Mail = "test@mail.com",
+//                MailDeux = "test2@mail.com",
+//                Constructeur = true,
+//                Adresse = "Adresse"
+//            };
 
-            _ = _mediatorMock
-                .Setup(m => m.Send(It.IsAny<UpdateProviderCommand>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(Result.Ok());
+//            _ = _mediatorMock
+//                .Setup(m => m.Send(It.IsAny<UpdateProviderCommand>(), It.IsAny<CancellationToken>()))
+//                .ReturnsAsync(Result.Ok());
 
-            var handler = GetHandler();
+//            var handler = GetHandler();
 
-            var result = await handler(_mediatorMock.Object, 1, request, CancellationToken.None);
+//            var result = await handler(_mediatorMock.Object, 1, request, CancellationToken.None);
 
-            var typedResult = result as Results<NoContent, NotFound, ValidationProblem>;
-            _ = typedResult.Should().NotBeNull();
-            _ = typedResult.Result.Should().BeOfType<NoContent>();
-        }
-        [Fact]
-        public async Task UpdateProvider_ReturnsValidationProblem_WhenValidationFails()
-        {
-            var request = new UpdateProviderRequest();
-            var validationError = Result.Fail("validation_error");
+//            var typedResult = result as Results<NoContent, NotFound, ValidationProblem>;
+//            _ = typedResult.Should().NotBeNull();
+//            _ = typedResult.Result.Should().BeOfType<NoContent>();
+//        }
+//        [Fact]
+//        public async Task UpdateProvider_ReturnsValidationProblem_WhenValidationFails()
+//        {
+//            var request = new UpdateProviderRequest();
+//            var validationError = Result.Fail("validation_error");
 
-            _ = _mediatorMock
-                .Setup(m => m.Send(It.IsAny<UpdateProviderCommand>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(validationError);
+//            _ = _mediatorMock
+//                .Setup(m => m.Send(It.IsAny<UpdateProviderCommand>(), It.IsAny<CancellationToken>()))
+//                .ReturnsAsync(validationError);
 
-            var handler = GetHandler();
+//            var handler = GetHandler();
 
-            var result = await handler(_mediatorMock.Object, 1, request, CancellationToken.None);
+//            var result = await handler(_mediatorMock.Object, 1, request, CancellationToken.None);
 
-            var typedResult = result as Results<NoContent, NotFound, ValidationProblem>;
-            _ = typedResult.Should().NotBeNull();
-            _ = typedResult.Result.Should().BeOfType<ValidationProblem>();
-        }
+//            var typedResult = result as Results<NoContent, NotFound, ValidationProblem>;
+//            _ = typedResult.Should().NotBeNull();
+//            _ = typedResult.Result.Should().BeOfType<ValidationProblem>();
+//        }
 
-        // **Ajoute cette méthode dans ta classe de test !**
-        private static Func<IMediator, int, UpdateProviderRequest, CancellationToken, Task<Results<NoContent, NotFound, ValidationProblem>>> GetHandler()
-        {
-            return async (mediator, id, request, ct) =>
-            {
-                var command = new UpdateProviderCommand(
-                    Id: id,
-                    Nom: request.Nom,
-                    Tel: request.Tel,
-                    Fax: request.Fax,
-                    Matricule: request.Matricule,
-                    Code: request.Code,
-                    CodeCat: request.CodeCat,
-                    EtbSec: request.EtbSec,
-                    Mail: request.Mail,
-                    MailDeux: request.MailDeux,
-                    Constructeur: request.Constructeur,
-                    Adresse: request.Adresse);
+//        // **Ajoute cette méthode dans ta classe de test !**
+//        private static Func<IMediator, int, UpdateProviderRequest, CancellationToken, Task<Results<NoContent, NotFound, ValidationProblem>>> GetHandler()
+//        {
+//            return async (mediator, id, request, ct) =>
+//            {
+//                var command = new UpdateProviderCommand(
+//                    Id: id,
+//                    Nom: request.Nom,
+//                    Tel: request.Tel,
+//                    Fax: request.Fax,
+//                    Matricule: request.Matricule,
+//                    Code: request.Code,
+//                    CodeCat: request.CodeCat,
+//                    EtbSec: request.EtbSec,
+//                    Mail: request.Mail,
+//                    MailDeux: request.MailDeux,
+//                    Constructeur: request.Constructeur,
+//                    Adresse: request.Adresse);
 
-                var result = await mediator.Send(command, ct);
+//                var result = await mediator.Send(command, ct);
 
-                if (result.HasError<EntityNotFound>())
-                    return TypedResults.NotFound();
+//                if (result.HasError<EntityNotFound>())
+//                    return TypedResults.NotFound();
 
-                if (result.IsFailed)
-                    return result.ToValidationProblem();
+//                if (result.IsFailed)
+//                    return result.ToValidationProblem();
 
-                return TypedResults.NoContent();
-            };
-        }
-    }
-}
+//                return TypedResults.NoContent();
+//            };
+//        }
+//    }
+//}

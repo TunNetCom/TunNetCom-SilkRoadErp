@@ -12,8 +12,8 @@ using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 {
     [DbContext(typeof(SalesContext))]
-    [Migration("20251218001616_AddTauxRetenuAndRibToFournisseur")]
-    partial class AddTauxRetenuAndRibToFournisseur
+    [Migration("20251218095006_InitMigration")]
+    partial class InitMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
