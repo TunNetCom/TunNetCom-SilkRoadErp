@@ -24,11 +24,11 @@ stages:
 
     steps:
     - script: |
-        echo "📁 Navigating to Nizar deployment manifests..."
-        cd $(Build.SourcesDirectory)/deployments/prod-Nizar || { echo '❌ Nizar deployment folder not found'; exit 1; }
+        echo "📁 Navigating to deployment manifests..."
+        cd $(Build.SourcesDirectory)/src/deployments || { echo '❌ Deployment folder not found'; exit 1; }
 
-        echo "📂 Listing YAML files:"
-        ls -l *.yaml
+        echo "📂 Listing Nizar YAML files:"
+        ls -l *nizar*.yaml
 
         echo "🔐 Checking cluster access..."
         kubectl version --client || { echo '❌ kubectl missing'; exit 1; }
@@ -37,8 +37,10 @@ stages:
         echo "✅ Cluster accessible. Proceeding with Nizar deployment..."
 
         echo "🚀 Applying Nizar manifests..."
+        kubectl apply -f prod-configmap-nizar.yaml -n $(kubeNamespace)
         kubectl apply -f prod-deployment-nizar.yaml -n $(kubeNamespace)
         kubectl apply -f prod-service-nizar.yaml -n $(kubeNamespace)  || true
+        kubectl apply -f prod-ingress-nizar.yaml -n $(kubeNamespace)  || true
 
         echo "🔁 Forcing rollout for Nizar..."
         kubectl rollout restart deployment/$(deploymentApiName) -n $(kubeNamespace)  || true
