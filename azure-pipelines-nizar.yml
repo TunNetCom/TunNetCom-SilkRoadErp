@@ -1,0 +1,57 @@
+trigger:
+- master
+
+pool:
+  name: OnPremAgents
+
+variables:
+  dockerRepository: 'tunnetcom/silkroad'
+  apiTag: 'latest-api'
+  webappTag: 'latest-webapp'
+  kubeNamespace: 'silkroad-prod-nizar'
+  deploymentApiName: 'silkroad-api-nizar'
+  deploymentWebappName: 'silkroad-webapp-nizar'
+
+stages:
+# ============================================================
+# DEPLOY STAGE TO ON-PREM KUBERNETES (NIZAR NAMESPACE)
+# ============================================================
+- stage: Deploy
+  displayName: Deploy to Nizar Namespace
+  jobs:
+  - job: DeployJob
+    displayName: Deploy SilkRoad to silkroad-prod-nizar
+
+    steps:
+    - script: |
+        echo "📁 Navigating to Nizar deployment manifests..."
+        cd $(Build.SourcesDirectory)/src/deployments/prod-Nizar || { echo '❌ Nizar deployment folder not found'; exit 1; }
+
+        echo "📂 Listing YAML files:"
+        ls -l *.yaml
+
+        echo "🔐 Checking cluster access..."
+        kubectl version --client || { echo '❌ kubectl missing'; exit 1; }
+        kubectl cluster-info || { echo '❌ cluster unreachable'; exit 1; }
+
+        echo "✅ Cluster accessible. Proceeding with Nizar deployment..."
+
+        echo "🚀 Applying Nizar manifests..."
+        kubectl apply -f prod-deployment-nizar.yaml -n $(kubeNamespace)
+        kubectl apply -f prod-service-nizar.yaml -n $(kubeNamespace)  || true
+
+        echo "🔁 Forcing rollout for Nizar..."
+        kubectl rollout restart deployment/$(deploymentApiName) -n $(kubeNamespace)  || true
+        kubectl rollout restart deployment/$(deploymentWebappName) -n $(kubeNamespace)  || true
+
+        echo "⏳ Waiting for Nizar rollout..."
+        kubectl rollout status deployment/$(deploymentApiName) -n $(kubeNamespace) --timeout=5m || { echo '❌ API rollout failed'; exit 1; }
+        kubectl rollout status deployment/$(deploymentWebappName) -n $(kubeNamespace) --timeout=5m || { echo '❌ WebApp rollout failed'; exit 1; }
+
+        echo "✅ Successfully deployed SilkRoad to Nizar namespace: $(kubeNamespace)"
+        
+        echo "📊 Showing deployment status:"
+        kubectl get pods -n $(kubeNamespace)
+        kubectl get svc -n $(kubeNamespace)
+        kubectl get ingress -n $(kubeNamespace)
+      displayName: Deploy to Nizar K8s Namespace
