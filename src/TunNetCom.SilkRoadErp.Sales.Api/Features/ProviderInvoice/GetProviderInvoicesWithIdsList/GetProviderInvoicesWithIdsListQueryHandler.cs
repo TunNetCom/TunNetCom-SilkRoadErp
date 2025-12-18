@@ -1,4 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.AppParameters.GetAppParameters;
+using TunNetCom.SilkRoadErp.Sales.Api.Features.AppParameters.GetAppParameters;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderInvoice.GetProviderInvoicesWithIdsList
 {
@@ -34,12 +34,14 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderInvoice.GetProviderIn
                                   where request.InvoicesIds.Contains(ff.Num)
                                   group new { ff, br } by new
                                   {
+                                      ff.Id,
                                       ff.Num,
                                       ff.IdFournisseur,
                                       ff.Date
                                   } into g
                                   select new ProviderInvoiceResponse
                                   {
+                                      Id = g.Key.Id,
                                       Num = g.Key.Num,
                                       ProviderId = g.Key.IdFournisseur,
                                       Date = g.Key.Date,

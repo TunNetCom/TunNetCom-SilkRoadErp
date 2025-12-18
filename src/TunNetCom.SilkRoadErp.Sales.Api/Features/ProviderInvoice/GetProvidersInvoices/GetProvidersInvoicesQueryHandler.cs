@@ -1,4 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.AppParameters.GetAppParameters;
+using TunNetCom.SilkRoadErp.Sales.Api.Features.AppParameters.GetAppParameters;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderInvoice.GetProvidersInvoices;
 
@@ -27,8 +27,9 @@ public class GetProvidersInvoicesQueryHandler(
                               join retenue in _context.RetenueSourceFournisseur on ff.Num equals retenue.NumFactureFournisseur into retenueGroup
                               from retenue in retenueGroup.DefaultIfEmpty()
                               where ff.IdFournisseur == query.IdFournisseur
-                              group new { lbr, retenue } by new
+                              group new { lbr, retenue, ff } by new
                               {
+                                  ff.Id,
                                   ff.Num,
                                   ff.IdFournisseur,
                                   ff.Date,
@@ -36,6 +37,7 @@ public class GetProvidersInvoicesQueryHandler(
                               } into g
                               select new ProviderInvoiceResponse
                               {
+                                  Id = g.Key.Id,
                                   Num = g.Key.Num,
                                   ProviderId = g.Key.IdFournisseur,
                                   Date = g.Key.Date,

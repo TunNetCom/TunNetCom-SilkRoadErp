@@ -1,4 +1,4 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNoteWithDetails;
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNoteWithDetails;
 
 public class GetReceiptNotesWithSummaryQueryHandler(
     SalesContext _context,
@@ -20,6 +20,7 @@ public class GetReceiptNotesWithSummaryQueryHandler(
             join lbr in _context.LigneBonReception on rn.Id equals lbr.BonDeReceptionId
             group new { rn, lbr, f } by new
             {
+                rn.Id,
                 rn.Num,
                 rn.NumBonFournisseur,
                 rn.DateLivraison,
@@ -30,6 +31,7 @@ public class GetReceiptNotesWithSummaryQueryHandler(
             } into g
             select new ReceiptNoteDetailsResponse
             {
+                Id = g.Key.Id,
                 Num = (int)g.Key.Num,
                 NomFournisseur = g.Key.Nom,
                 NumBonFournisseur = g.Key.NumBonFournisseur,

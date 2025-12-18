@@ -79,6 +79,7 @@ public class DeliveryNoteBaseInfosController : ODataController
             var deliveryNoteQuery = deliveryNotes
                 .Select(x => new GetDeliveryNoteBaseInfos
                 {
+                    Id = x.bdl.Id,
                     Number = x.bdl.Num,
                     Date = new DateTimeOffset(x.bdl.Date, TimeSpan.Zero),
                     NetAmount = x.bdl.NetPayer,

@@ -1,7 +1,10 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Contracts.RecieptNotes;
+namespace TunNetCom.SilkRoadErp.Sales.Contracts.RecieptNotes;
 
 public class ReceiptNoteDetailsResponse
 {
+    [JsonPropertyName("id")]
+    public int Id { get; set; }
+
     [JsonPropertyName("num")]
     public int Num { get; set; }
 

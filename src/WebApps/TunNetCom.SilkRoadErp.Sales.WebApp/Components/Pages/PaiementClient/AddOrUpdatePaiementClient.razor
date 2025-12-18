@@ -128,7 +128,7 @@
                                         Style="width: 100%;"
                                         Data="@_filteredInvoices"
                                         TextProperty="@nameof(InvoiceResponse.Number)"
-                                        ValueProperty="@nameof(InvoiceResponse.Number)"
+                                        ValueProperty="@nameof(InvoiceResponse.Id)"
                                         Placeholder="@Localizer["Select_Facture"]"
                                         Disabled="@(paiement.ClientId <= 0)">
                     <Columns>
@@ -148,7 +148,7 @@
                                         Style="width: 100%;"
                                         Data="@_filteredDeliveryNotes"
                                         TextProperty="@nameof(GetDeliveryNoteBaseInfos.Number)"
-                                        ValueProperty="@nameof(GetDeliveryNoteBaseInfos.Number)"
+                                        ValueProperty="@nameof(GetDeliveryNoteBaseInfos.Id)"
                                         Placeholder="@Localizer["Select_Bon_Livraison"]"
                                         Disabled="@(paiement.ClientId <= 0)">
                     <Columns>

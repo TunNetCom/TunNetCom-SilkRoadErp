@@ -1,4 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
+using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNotesBaseInfosWithSummaries;
 
@@ -20,6 +20,7 @@ public class GetDeliveryNotesBaseInfosWithSummariesQueryHandler(
                                 join c in _context.Client on bdl.ClientId equals c.Id
                                 select new GetDeliveryNoteBaseInfos
                                 {
+                                    Id = bdl.Id,
                                     Number = bdl.Num,
                                     Date = bdl.Date,
                                     NetAmount = bdl.NetPayer,

@@ -1,7 +1,10 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
+namespace TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 
 public class GetDeliveryNoteBaseInfos
 {
+    [JsonPropertyName("id")]
+    public int Id { get; set; }
+
     [JsonPropertyName("number")]
     public int Number { get; set; }
 

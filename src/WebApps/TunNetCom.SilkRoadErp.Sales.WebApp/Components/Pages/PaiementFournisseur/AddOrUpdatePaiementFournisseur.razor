@@ -146,7 +146,7 @@
                                         Style="width: 100%;"
                                         Data="@_filteredInvoices"
                                         TextProperty="@nameof(ProviderInvoiceResponse.ProviderInvoiceNumber)"
-                                        ValueProperty="@nameof(ProviderInvoiceResponse.Num)"
+                                        ValueProperty="@nameof(ProviderInvoiceResponse.Id)"
                                         Placeholder="@Localizer["Select_Facture_Fournisseur"]"
                                         Disabled="@(paiement.FournisseurId <= 0)">
                     <Columns>
@@ -166,7 +166,7 @@
                                         Style="width: 100%;"
                                         Data="@_filteredReceiptNotes"
                                         TextProperty="@nameof(ReceiptNoteDetailsResponse.Num)"
-                                        ValueProperty="@nameof(ReceiptNoteDetailsResponse.Num)"
+                                        ValueProperty="@nameof(ReceiptNoteDetailsResponse.Id)"
                                         Placeholder="@Localizer["Select_Bon_Reception"]"
                                         Disabled="@(paiement.FournisseurId <= 0)">
                     <Columns>

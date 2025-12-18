@@ -1,4 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.AppParameters.GetAppParameters;
+using TunNetCom.SilkRoadErp.Sales.Api.Features.AppParameters.GetAppParameters;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetInvoicesByCustomerWithSummary;
 
@@ -26,6 +26,7 @@ public class GetInvoicesByCustomerWithSummaryQueryHandler(
         var invoicesQuery = invoicesQueryBase
             .Select(f => new InvoiceResponse
             {
+                Id = f.Id,
                 Number = f.Num,
                 Date = f.Date,
                 TotalExcludingTaxAmount = f.BonDeLivraison.Sum(d => d.TotHTva),
