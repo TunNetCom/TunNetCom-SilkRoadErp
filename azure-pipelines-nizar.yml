@@ -25,7 +25,7 @@ stages:
     steps:
     - script: |
         echo "📁 Navigating to Nizar deployment manifests..."
-        cd $(Build.SourcesDirectory)/src/deployments/prod-Nizar || { echo '❌ Nizar deployment folder not found'; exit 1; }
+        cd $(Build.SourcesDirectory)/deployments/prod-Nizar || { echo '❌ Nizar deployment folder not found'; exit 1; }
 
         echo "📂 Listing YAML files:"
         ls -l *.yaml
