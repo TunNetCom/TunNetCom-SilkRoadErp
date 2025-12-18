@@ -22,6 +22,7 @@ public class SystemeSeedData
     public decimal VatRate7 { get; set; }
     public decimal VatRate13 { get; set; }
     public decimal VatRate19 { get; set; }
+    public string? Rib { get; set; }
 }
 
 

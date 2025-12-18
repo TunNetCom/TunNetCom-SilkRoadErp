@@ -1,4 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.Common;
+using TunNetCom.SilkRoadErp.Sales.Contracts.Common;
 
 namespace TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters;
 
@@ -69,4 +69,7 @@ public class GetAppParametersResponse
 
     [JsonPropertyName("seuilRetenueSource")]
     public decimal SeuilRetenueSource { get; set; } = 1000;
+
+    [JsonPropertyName("rib")]
+    public string? Rib { get; set; }
 }
