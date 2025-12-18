@@ -27,22 +27,7 @@ public class AuthHttpClientHandler : DelegatingHandler
         HttpRequestMessage request,
         CancellationToken cancellationToken)
     {
-        // Proactively ensure token is valid before making the request
-        // This prevents unnecessary 401s when token is about to expire
-        try
-        {
-            if (!_authService.IsTokenValid() && _authService.IsAuthenticated)
-            {
-                _logger.LogDebug("AuthHttpClientHandler: Token expiring soon, attempting proactive refresh for {Method} {Uri}", 
-                    request.Method, request.RequestUri);
-                await _authService.EnsureValidTokenAsync();
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "AuthHttpClientHandler: Error during proactive token validation for {Method} {Uri}", 
-                request.Method, request.RequestUri);
-        }
+        // Token expiration disabled for simple auth - no proactive refresh needed
 
         // Add token to the request
         await AddTokenToRequestAsync(request, cancellationToken);

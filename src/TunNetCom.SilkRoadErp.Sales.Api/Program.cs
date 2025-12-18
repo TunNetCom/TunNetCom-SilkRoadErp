@@ -240,7 +240,7 @@ builder.Services.AddAuthentication(options =>
     {
         ValidateIssuer = true,
         ValidateAudience = true,
-        ValidateLifetime = true,
+        ValidateLifetime = false, // Token expiration disabled for simple auth
         ValidateIssuerSigningKey = true,
         ValidIssuer = jwtSettings["Issuer"] ?? "SilkRoadErp",
         ValidAudience = jwtSettings["Audience"] ?? "SilkRoadErp",

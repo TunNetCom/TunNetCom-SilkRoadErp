@@ -477,44 +477,18 @@ public class AuthService : IAuthService
     /// <inheritdoc />
     public bool IsTokenValid()
     {
-        var expiration = GetTokenExpiration();
-        if (expiration == null)
-            return false;
-
-        // Consider token invalid if it expires within 5 minutes
-        var bufferTime = TimeSpan.FromMinutes(5);
-        var isValid = expiration.Value > DateTime.UtcNow.Add(bufferTime);
-        
-        if (!isValid)
-        {
-            _logger.LogDebug("Token is expiring soon or already expired. Expiration: {Expiration}, Now: {Now}", 
-                expiration.Value, DateTime.UtcNow);
-        }
-
-        return isValid;
+        // Token expiration disabled for simple auth - token is valid if it exists
+        return !string.IsNullOrEmpty(AccessToken);
     }
 
     /// <inheritdoc />
     public async Task<bool> EnsureValidTokenAsync()
     {
-        // First, check if we have a valid token
+        // Token expiration disabled for simple auth - just check if token exists
         if (IsTokenValid())
         {
-            _logger.LogDebug("EnsureValidTokenAsync: Token is valid, no refresh needed");
+            _logger.LogDebug("EnsureValidTokenAsync: Token exists and is valid");
             return true;
-        }
-
-        // If we have a token but it's expiring soon, try to refresh
-        if (!string.IsNullOrEmpty(AccessToken))
-        {
-            _logger.LogInformation("EnsureValidTokenAsync: Token is expiring soon, attempting proactive refresh");
-            var refreshed = await RefreshTokenAsync();
-            if (refreshed)
-            {
-                _logger.LogInformation("EnsureValidTokenAsync: Proactive token refresh successful");
-                return true;
-            }
-            _logger.LogWarning("EnsureValidTokenAsync: Proactive token refresh failed");
         }
 
         // Try to load from storage if no token in memory
@@ -523,18 +497,11 @@ public class AuthService : IAuthService
         // Check again after loading
         if (IsTokenValid())
         {
-            _logger.LogDebug("EnsureValidTokenAsync: Token loaded from storage is valid");
+            _logger.LogDebug("EnsureValidTokenAsync: Token loaded from storage");
             return true;
         }
 
-        // If token exists but is expiring, try refresh one more time
-        if (!string.IsNullOrEmpty(AccessToken))
-        {
-            _logger.LogInformation("EnsureValidTokenAsync: Loaded token is expiring, attempting refresh");
-            return await RefreshTokenAsync();
-        }
-
-        _logger.LogWarning("EnsureValidTokenAsync: No valid token available");
+        _logger.LogWarning("EnsureValidTokenAsync: No token available");
         return false;
     }
 }
