@@ -27,6 +27,13 @@
                                Orientation="Radzen.Orientation.Vertical" />
     </RadzenStack>
 
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" Style="align-items: center;">
+        <RadzenCheckBox @bind-Value="includeHeader" Name="IncludeHeader" />
+        <RadzenText TextStyle="TextStyle.Body2" Style="flex: 1;">
+            @Localizer["include_enterprise_header"]
+        </RadzenText>
+    </RadzenStack>
+
     <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End" Style="margin-top: 1rem;">
         <RadzenButton Text="@Localizer["Cancel"]" 
                       ButtonStyle="ButtonStyle.Light" 
@@ -39,6 +46,7 @@
 
 @code {
     private PrintMode selectedMode = PrintMode.Download;
+    private bool includeHeader = true;
     
     private List<PrintModeOption> printModes = new();
 
@@ -53,6 +61,11 @@
 
     private void OnConfirm()
     {
-        DialogService.Close(selectedMode);
+        var result = new PrintModeResult
+        {
+            Mode = selectedMode,
+            IncludeHeader = includeHeader
+        };
+        DialogService.Close(result);
     }
 }

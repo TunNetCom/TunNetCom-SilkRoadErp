@@ -464,7 +464,7 @@ else
         try
         {
             var pagedProducts = await productsApiClient.GetPagedAsync(parameters, _cancellationTokenSource.Token);
-            searchList = pagedProducts.Items.Select(
+            searchList = (pagedProducts?.Items ?? new List<ProductResponse>()).Select(
                 p => new QuotationDetailResponse
                 {
                     ProductReference = p.Reference,
@@ -475,7 +475,7 @@ else
                     VatPercentage = p.VatRate,
                 }).ToList();
 
-            count = pagedProducts.TotalCount;
+            count = pagedProducts?.TotalCount ?? 0;
         }
         catch (Exception ex)
         {
@@ -762,10 +762,11 @@ else
 
             Result<byte[]> pdfResult;
 
-            // Print saved quotation
+            // Print saved quotation - generate with header by default
             pdfResult = await PrintQuotationService.GenerateQuotationPdfAsync(
                 quotationNum,
-                _cancellationTokenSource.Token);
+                _cancellationTokenSource.Token,
+                includeHeader: true);
 
             if (pdfResult.IsSuccess)
             {
@@ -782,11 +783,31 @@ else
                         Draggable = true
                     });
 
-                if (printModeResult is PrintMode selectedMode)
+                if (printModeResult is PrintModeResult result)
                 {
+                    // Regenerate PDF if header should be excluded
+                    if (!result.IncludeHeader)
+                    {
+                        pdfResult = await PrintQuotationService.GenerateQuotationPdfAsync(
+                            quotationNum,
+                            _cancellationTokenSource.Token,
+                            includeHeader: false);
+                        
+                        if (!pdfResult.IsSuccess)
+                        {
+                            NotificationService.Notify(new NotificationMessage
+                            {
+                                Severity = NotificationSeverity.Error,
+                                Summary = Localizer["error"],
+                                Detail = $"Échec de la régénération du PDF: {pdfResult.Errors.FirstOrDefault()?.Message ?? "Unknown error"}"
+                            });
+                            return;
+                        }
+                    }
+
                     var printOptions = new PrintOptions
                     {
-                        Mode = selectedMode,
+                        Mode = result.Mode,
                         FileName = fileName,
                         DocumentType = "Devis",
                         DocumentId = quotationNum,
@@ -794,7 +815,7 @@ else
                         Username = username
                     };
 
-                    if (selectedMode == PrintMode.DirectPrint)
+                    if (result.Mode == PrintMode.DirectPrint)
                     {
                         // Show printer selection dialog
                         var printerResult = await DialogService.OpenAsync<PrinterSelectionDialog>(
@@ -830,7 +851,7 @@ else
                             Detail = $"Échec de l'impression du devis: {printResult.ErrorMessage}"
                         });
                     }
-                    else if (selectedMode == PrintMode.DirectPrint)
+                    else if (result.Mode == PrintMode.DirectPrint)
                     {
                         NotificationService.Notify(new NotificationMessage
                         {

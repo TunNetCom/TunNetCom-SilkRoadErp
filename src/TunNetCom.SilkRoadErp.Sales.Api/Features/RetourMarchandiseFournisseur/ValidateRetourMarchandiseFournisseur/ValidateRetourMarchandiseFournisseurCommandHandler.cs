@@ -1,3 +1,5 @@
+using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
+
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.RetourMarchandiseFournisseur.ValidateRetourMarchandiseFournisseur;
 
 public class ValidateRetourMarchandiseFournisseurCommandHandler(
@@ -33,24 +35,26 @@ public class ValidateRetourMarchandiseFournisseurCommandHandler(
         {
             try
             {
-                if (retour.Statut == DocumentStatus.Draft)
+                // Utiliser StatutRetour au lieu de Statut (qui est ignoré par EF Core)
+                if (retour.StatutRetour == RetourFournisseurStatus.Draft)
                 {
                     retour.Valider();
                     var entry = _context.Entry(retour);
-                    entry.Property(x => x.Statut).IsModified = true;
+                    // Marquer StatutRetour comme modifié (pas Statut qui est ignoré)
+                    entry.Property(x => x.StatutRetour).IsModified = true;
 
                     if (entry.State == Microsoft.EntityFrameworkCore.EntityState.Unchanged)
                     {
                         entry.State = Microsoft.EntityFrameworkCore.EntityState.Modified;
                     }
 
-                    _logger.LogInformation("Marked Statut as modified for retour {Num}. Current status: {Statut}",
-                        retour.Num, retour.Statut);
+                    _logger.LogInformation("Marked StatutRetour as modified for retour {Num}. Current status: {Statut}",
+                        retour.Num, retour.StatutRetour);
                 }
                 else
                 {
                     _logger.LogWarning("Retour {Num} is not in draft status (current: {Statut}), skipping validation",
-                        retour.Num, retour.Statut);
+                        retour.Num, retour.StatutRetour);
                 }
             }
             catch (Exception ex)

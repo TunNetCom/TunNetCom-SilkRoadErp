@@ -80,8 +80,8 @@ public class RetourMarchandiseFournisseurBaseInfosController : ODataController
                     NetAmount = x.r.NetPayer,
                     GrossAmount = x.r.TotHTva,
                     VatAmount = x.r.TotTva,
-                    Statut = (int)x.r.Statut,
-                    StatutLibelle = x.r.Statut.ToString()
+                    Statut = (int)x.r.StatutRetour,
+                    StatutLibelle = GetStatutLibelle(x.r.StatutRetour)
                 })
                 .AsQueryable();
 
@@ -93,6 +93,19 @@ public class RetourMarchandiseFournisseurBaseInfosController : ODataController
             _logger.LogError(ex, "Error in RetourMarchandiseFournisseurBaseInfosController.Get");
             return BadRequest(new { Error = ex.Message });
         }
+    }
+
+    private static string GetStatutLibelle(RetourFournisseurStatus statut)
+    {
+        return statut switch
+        {
+            RetourFournisseurStatus.Draft => "Brouillon",
+            RetourFournisseurStatus.Valid => "Validé",
+            RetourFournisseurStatus.EnReparation => "En réparation",
+            RetourFournisseurStatus.ReceptionPartielle => "Réception partielle",
+            RetourFournisseurStatus.Cloture => "Clôturé",
+            _ => "Inconnu"
+        };
     }
 }
 

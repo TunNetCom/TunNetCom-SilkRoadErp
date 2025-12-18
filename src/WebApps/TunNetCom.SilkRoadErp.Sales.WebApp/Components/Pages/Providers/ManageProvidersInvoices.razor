@@ -31,6 +31,8 @@
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.FactureAvoirFournisseur
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AvoirFinancierFournisseurs
+@using TunNetCom.SilkRoadErp.Sales.HttpClients
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.Providers
 
 @inject IReceiptNoteApiClient receiptNoteService
 @inject IRetenueSourceFournisseurApiClient retenueSourceFournisseurApiClient
@@ -154,17 +156,17 @@
                         <p style="font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
                     </EmptyTemplate>
                     <HeaderTemplate>
-                        <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 0.75rem;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 0.75rem; gap: 1.5rem;">
                             <div style="font-size: 1.1rem; font-weight: 600;">
                                 @Localizer["provider_invoice_details"]
                             </div>
-                            <RadzenButton Icon="add"
+                            <RadzenButton Icon="add_circle"
                                           Text="@Localizer["create_new_invoice"]"
                                           ButtonStyle="ButtonStyle.Success"
-                                          Size="ButtonSize.Small"
+                                          Size="ButtonSize.Medium"
                                           Disabled="@(SelectedProviderId <= 0)"
                                           Click="@CreateNewProviderInvoice"
-                                          Style="border-radius: 6px; padding: 0.4rem 0.8rem; font-weight: 500; font-size: 0.85rem;" />
+                                          Style="border-radius: 8px; padding: 0.5rem 1rem; font-weight: 600; font-size: 0.9rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s ease; margin-left: auto;" />
                         </div>
                     </HeaderTemplate>
                     <Template Context="invoiceWithBRs">
@@ -226,9 +228,17 @@
                         </RadzenDataGridColumn>
                         <RadzenDataGridColumn Property="@nameof(ProviderInvoiceResponse.ProviderInvoiceNumber)"
                                               Title="@Localizer["provider_invoice_number"]"
-                                              Width="180px">
+                                              Width="220px">
                             <Template Context="invoiceWithBRs">
-                                @invoiceWithBRs.Invoice.ProviderInvoiceNumber
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span>@invoiceWithBRs.Invoice.ProviderInvoiceNumber</span>
+                                    <RadzenButton Icon="edit"
+                                                  ButtonStyle="ButtonStyle.Light"
+                                                  Variant="Variant.Flat"
+                                                  Size="ButtonSize.ExtraSmall"
+                                                  Click="@(() => EditProviderInvoiceNumber(invoiceWithBRs.Invoice.Num, invoiceWithBRs.Invoice.ProviderInvoiceNumber))"
+                                                  Title="Modifier le numéro chez fournisseur" />
+                                </div>
                             </Template>
                         </RadzenDataGridColumn>
                         <RadzenDataGridColumn Property="@nameof(ProviderInvoiceResponse.Date)"
@@ -503,6 +513,7 @@
     private ReceiptNotesWithSummaryResponse _uninvoicedReceiptNotesWithSummary = new ReceiptNotesWithSummaryResponse();
     private decimal _seuilRetenueSource = 1000;
     private double _tauxRetenu = 0;
+    private decimal _timbre = 0;
     
     // Master-detail model
     public class ProviderInvoiceWithReceiptNotes
@@ -541,6 +552,7 @@
                 var appParams = appParamsResult.AsT0;
                 _seuilRetenueSource = appParams.SeuilRetenueSource;
                 _tauxRetenu = appParams.PourcentageRetenu;
+                _timbre = appParams.Timbre;
             }
         }
         catch (Exception ex)
@@ -803,14 +815,16 @@
                 Draggable = true
             };
 
+            // Le montantTTC passé est déjà avec timbre (depuis la liste), donc on le passe tel quel
             var result = await DialogService.OpenAsync<RetenueSourceDialog>(
                 Localizer["retenue_source"],
                 new Dictionary<string, object>
                 {
                     { "NumFacture", numFactureFournisseur },
-                    { "MontantTTC", montantTTC },
+                    { "MontantTTC", montantTTC }, // Déjà avec timbre
                     { "TauxRetenu", _tauxRetenu },
                     { "SeuilRetenueSource", _seuilRetenueSource },
+                    { "Timbre", _timbre },
                     { "ExistingNumTej", existingNumTej },
                     { "IsEditMode", isEditMode },
                     { "ExistingPdfBase64", existingPdfBase64 }
@@ -1070,7 +1084,7 @@
             return;
         }
 
-        var result = await DialogService.OpenAsync<CreateInvoiceDialog>(
+        var result = await DialogService.OpenAsync<CreateProviderInvoiceDialog>(
             Localizer["create_new_invoice"],
             new Dictionary<string, object> { { "InitialDate", DateTime.Now.Date } },
             new DialogOptions()
@@ -1080,13 +1094,13 @@
                 Draggable = true
             });
 
-        if (result is DateTime selectedDate)
+        if (result is CreateInvoiceDialogResult dialogResult)
         {
-            await CreateProviderInvoiceWithDate(selectedDate);
+            await CreateProviderInvoiceWithDate(dialogResult.Date, dialogResult.NumFactureFournisseur);
         }
     }
 
-    async Task CreateProviderInvoiceWithDate(DateTime invoiceDate)
+    async Task CreateProviderInvoiceWithDate(DateTime invoiceDate, long numFactureFournisseur)
     {
         isLoadingInvoices = true;
         await InvokeAsync(StateHasChanged);
@@ -1096,7 +1110,8 @@
             var request = new CreateProviderInvoiceRequest
             {
                 Date = invoiceDate,
-                ProviderId = SelectedProviderId
+                ProviderId = SelectedProviderId,
+                NumFactureFournisseur = numFactureFournisseur
             };
 
             var result = await providerInvoiceService.CreateProviderInvoice(request, _cancellationTokenSource.Token);
@@ -1274,6 +1289,83 @@
                 Summary = Localizer["error"],
                 Detail = $"Erreur lors de l'export: {ex.Message}",
                 Duration = 4000
+            });
+        }
+    }
+    #endregion
+
+    #region Edit Provider Invoice Number
+    async Task EditProviderInvoiceNumber(int invoiceNum, long currentNumFactureFournisseur)
+    {
+        var result = await DialogService.OpenAsync<EditProviderInvoiceNumberDialog>(
+            Localizer["edit_provider_invoice_number"],
+            new Dictionary<string, object> 
+            { 
+                { "InvoiceNum", invoiceNum },
+                { "CurrentNumFactureFournisseur", currentNumFactureFournisseur }
+            },
+            new DialogOptions()
+            {
+                Width = "400px",
+                Resizable = false,
+                Draggable = true
+            });
+
+        if (result is EditProviderInvoiceNumberDialogResult dialogResult)
+        {
+            await UpdateProviderInvoiceNumber(invoiceNum, dialogResult.NumFactureFournisseur);
+        }
+    }
+
+    async Task UpdateProviderInvoiceNumber(int invoiceNum, long numFactureFournisseur)
+    {
+        try
+        {
+            var request = new UpdateProviderInvoiceRequest
+            {
+                NumFactureFournisseur = numFactureFournisseur
+            };
+
+            var result = await providerInvoiceService.UpdateProviderInvoiceAsync(invoiceNum, request, _cancellationTokenSource.Token);
+
+            if (result.IsT0 && result.AsT0 == ResponseTypes.Success)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = Localizer["success"],
+                    Detail = "Le numéro chez fournisseur a été mis à jour avec succès"
+                });
+
+                // Refresh invoice list
+                await LoadInvoices(SelectedProviderId);
+            }
+            else if (result.IsT0 && result.AsT0 == ResponseTypes.NotFound)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = Localizer["warning"],
+                    Detail = "Facture non trouvée"
+                });
+            }
+            else if (result.IsT1)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = result.AsT1.Detail ?? "Erreur lors de la mise à jour"
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Erreur lors de la mise à jour: {ex.Message}"
             });
         }
     }

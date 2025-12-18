@@ -157,5 +157,42 @@ class RetourMarchandiseFournisseurApiClient : IRetourMarchandiseFournisseurApiCl
             return Result.Fail("error_validating_retours");
         }
     }
+
+    public async Task<Result<VerifyReceptionResponse>> VerifyReceptionAsync(
+        VerifyReceptionRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync(
+                "/retour-marchandise-fournisseur/verify-reception",
+                request,
+                cancellationToken);
+
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                var content = await response.Content.ReadAsStringAsync(cancellationToken);
+                var result = System.Text.Json.JsonSerializer.Deserialize<VerifyReceptionResponse>(
+                    content,
+                    new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                return Result.Ok(result);
+            }
+
+            if (response.StatusCode == HttpStatusCode.BadRequest)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+                _logger.LogWarning("Bad request when verifying reception: {Error}", errorContent);
+                return Result.Fail("bad_request");
+            }
+
+            response.EnsureSuccessStatusCode();
+            return Result.Fail("unexpected_error");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error verifying reception for retour {Num}", request.Num);
+            return Result.Fail("error_verifying_reception");
+        }
+    }
 }
 

@@ -1,4 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters;
+using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters;
 using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;
 using TunNetCom.SilkRoadErp.Sales.Domain.Services;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters;
@@ -14,7 +14,8 @@ public class PrintProviderFullInvoiceService(
 {
     public async Task<Result<byte[]>> GenerateInvoicePdfAsync(
         int invoiceId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool includeHeader = true)
     {
         var providerInvoiceResponse = await _providerInvoiceService.GetFullProviderInvoiceByIdAsync(invoiceId, cancellationToken);
 
@@ -37,7 +38,7 @@ public class PrintProviderFullInvoiceService(
         printInvoiceWithDetailsModel.VatRate19 = getAppParametersResponse.Value.VatRate19;
         CalculateTotalAmounts(printInvoiceWithDetailsModel, getAppParametersResponse.Value.Timbre, getAppParametersResponse.Value);
 
-        SilkPdfOptions printOptions = PreparePrintOptions(printInvoiceWithDetailsModel, getAppParametersResponse.Value);
+        SilkPdfOptions printOptions = PreparePrintOptions(printInvoiceWithDetailsModel, getAppParametersResponse.Value, includeHeader);
 
         var pdfBytes = await _printService.GeneratePdfAsync(printInvoiceWithDetailsModel, printOptions, cancellationToken);
 
@@ -90,8 +91,17 @@ public class PrintProviderFullInvoiceService(
 
     private static SilkPdfOptions PreparePrintOptions(
         ProviderInvoiceModel printInvoiceWithDetailsModel,
-        GetAppParametersResponse getAppParametersResponse)
+        GetAppParametersResponse getAppParametersResponse,
+        bool includeHeader = true)
     {
+        var printOptions = SilkPdfOptions.Default;
+        
+        if (!includeHeader)
+        {
+            // No header, use default margin
+            return printOptions;
+        }
+
         var headerContent = $@"
 <div style='font-family: Arial; font-size: 12px; width: 90%; margin: 0 auto;'>
         <table style='width: 100%; border-collapse: collapse;'>
@@ -123,7 +133,6 @@ public class PrintProviderFullInvoiceService(
         </table>
 </div>";
 
-        var printOptions = SilkPdfOptions.Default;
         printOptions.MarginTop = "150px";
         printOptions.HeaderTemplate = headerContent;
         return printOptions;

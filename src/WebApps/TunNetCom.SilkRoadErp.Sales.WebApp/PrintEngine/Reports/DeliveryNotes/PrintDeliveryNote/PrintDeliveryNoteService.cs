@@ -16,7 +16,8 @@ public class PrintDeliveryNoteService(
 {
     public async Task<Result<byte[]>> GenerateDeliveryNotePdfAsync(
         int deliveryNoteNumber,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool includeHeader = true)
     {
         var deliveryNoteResponse = await _deliveryNoteApiClient.GetDeliveryNoteByNumAsync(
             deliveryNoteNumber,
@@ -63,7 +64,7 @@ public class PrintDeliveryNoteService(
         printModel.VatRate19 = getAppParametersResponse.Value.VatRate19;
         CalculateTotalAmounts(printModel, getAppParametersResponse.Value);
 
-        var printOptions = PreparePrintOptions(printModel, getAppParametersResponse.Value);
+        var printOptions = PreparePrintOptions(printModel, getAppParametersResponse.Value, includeHeader);
 
         var pdfBytes = await _printService.GeneratePdfAsync(printModel, printOptions, cancellationToken);
 
@@ -72,7 +73,8 @@ public class PrintDeliveryNoteService(
 
     public async Task<Result<byte[]>> GenerateDeliveryNotePdfFromDataAsync(
         PrintDeliveryNoteModel printModel,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool includeHeader = true)
     {
         // Load customer if available
         if (printModel.CustomerId.HasValue && printModel.Customer == null)
@@ -108,7 +110,7 @@ public class PrintDeliveryNoteService(
         printModel.VatRate19 = getAppParametersResponse.Value.VatRate19;
         CalculateTotalAmounts(printModel, getAppParametersResponse.Value);
 
-        var printOptions = PreparePrintOptions(printModel, getAppParametersResponse.Value);
+        var printOptions = PreparePrintOptions(printModel, getAppParametersResponse.Value, includeHeader);
 
         var pdfBytes = await _printService.GeneratePdfAsync(printModel, printOptions, cancellationToken);
 
@@ -161,8 +163,17 @@ public class PrintDeliveryNoteService(
 
     private static SilkPdfOptions PreparePrintOptions(
         PrintDeliveryNoteModel printModel,
-        GetAppParametersResponse appParameters)
+        GetAppParametersResponse appParameters,
+        bool includeHeader = true)
     {
+        var printOptions = SilkPdfOptions.Default;
+        
+        if (!includeHeader)
+        {
+            // No header, use default margin
+            return printOptions;
+        }
+
         // Build customer info section conditionally
         var customerInfo = "";
         if (printModel.Customer != null)
@@ -221,7 +232,6 @@ public class PrintDeliveryNoteService(
     </table>
 </div>";
 
-        var printOptions = SilkPdfOptions.Default;
         printOptions.MarginTop = "150px";
         printOptions.HeaderTemplate = headerContent;
         return printOptions;

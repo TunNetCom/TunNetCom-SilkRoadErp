@@ -130,6 +130,40 @@ public class ProviderInvoiceApiClient : IProviderInvoiceApiClient
         throw new Exception($"ProviderInvoice: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
     }
 
+    public async Task<OneOf<ResponseTypes, BadRequestResponse>> UpdateProviderInvoiceAsync(
+        int num,
+        UpdateProviderInvoiceRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var headers = new Dictionary<string, string>()
+            {
+                { $"Accept", $"application/problem+json" }
+            };
+
+            var response = await _httpClient.PutAsJsonAsync($"provider-invoice/{num}", request, headers, cancellationToken);
+            if (response.StatusCode == HttpStatusCode.NoContent)
+            {
+                return ResponseTypes.Success;
+            }
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return ResponseTypes.NotFound;
+            }
+            if (response.StatusCode == HttpStatusCode.BadRequest)
+            {
+                return await response.ReadJsonAsync<BadRequestResponse>();
+            }
+            throw new Exception($"UpdateProviderInvoice: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message, ex);
+            throw;
+        }
+    }
+
     public async Task<Result> ValidateProviderInvoicesAsync(List<int> ids, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Validating provider invoices via API api/provider-invoices/validate");

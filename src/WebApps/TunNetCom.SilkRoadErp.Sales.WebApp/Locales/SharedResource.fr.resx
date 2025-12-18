@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -258,6 +258,15 @@
   <data name="provider_invoice_details" xml:space="preserve">
     <value>Détails facture fournisseur</value>
   </data>
+  <data name="create_new_invoice" xml:space="preserve">
+    <value>Créer une nouvelle facture</value>
+  </data>
+  <data name="provider_invoice_number" xml:space="preserve">
+    <value>Numéro chez fournisseur</value>
+  </data>
+  <data name="edit_provider_invoice_number" xml:space="preserve">
+    <value>Modifier le numéro chez fournisseur</value>
+  </data>
   <data name="receipt_notes_details" xml:space="preserve">
     <value>Détails bons de réception</value>
   </data>
@@ -348,6 +357,12 @@
   <data name="select_invoice" xml:space="preserve">
     <value>Selectionner une facture</value>
   </data>
+  <data name="Select_Delivery_Car" xml:space="preserve">
+    <value>Sélectionner un véhicule de livraison</value>
+  </data>
+  <data name="Delivery_Car" xml:space="preserve">
+    <value>Véhicule de livraison</value>
+  </data>
   <data name="delivery_note_saved_successfully" xml:space="preserve">
     <value>Bon de livraison enregistré avec succés</value>
   </data>
@@ -381,6 +396,24 @@
   <data name="apply_vat_to_all" xml:space="preserve">
     <value>Appliquer la TVA à toutes les lignes</value>
   </data>
+  <data name="apply_purchase_info" xml:space="preserve">
+    <value>Appliquer infos achat</value>
+  </data>
+  <data name="apply_purchase_info_to_line" xml:space="preserve">
+    <value>Appliquer infos achat à la ligne</value>
+  </data>
+  <data name="use_product_values" xml:space="preserve">
+    <value>Utiliser les valeurs du produit</value>
+  </data>
+  <data name="use_last_purchase_info" xml:space="preserve">
+    <value>Utiliser les dernières infos d'achat</value>
+  </data>
+  <data name="purchase_info_from_product" xml:space="preserve">
+    <value>Prix d'achat, remise d'achat et TVA depuis le produit</value>
+  </data>
+  <data name="purchase_info_from_receipt" xml:space="preserve">
+    <value>Prix, remise et TVA depuis le dernier bon de réception</value>
+  </data>
   <data name="select_printer" xml:space="preserve">
     <value>Sélectionner une imprimante</value>
   </data>
@@ -407,6 +440,9 @@
   </data>
   <data name="print_directly" xml:space="preserve">
     <value>Imprimer directement</value>
+  </data>
+  <data name="include_enterprise_header" xml:space="preserve">
+    <value>Inclure l'en-tête avec les informations de l'entreprise (nom, adresse, téléphone, TVA)</value>
   </data>
   <data name="print_job_submitted" xml:space="preserve">
     <value>Tâche d'impression soumise avec succès</value>
@@ -1205,6 +1241,9 @@
   </data>
   <data name="montant_apres_retenu" xml:space="preserve">
     <value>Montant après retenue</value>
+  </data>
+  <data name="montant_apres_retenu_plus_timbre" xml:space="preserve">
+    <value>Montant après retenue + timbre</value>
   </data>
   <data name="taux_retenu" xml:space="preserve">
     <value>Taux de retenue (%)</value>

@@ -63,7 +63,8 @@ internal class CreateRetourMarchandiseFournisseurCommandHandler(
                     quantity: x.Quantity,
                     unitPrice: x.UnitPrice,
                     discount: x.Discount,
-                    tax: x.Tax)
+                    tax: x.Tax,
+                    qteRecue: x.QteRecue)
             ).ToList();
 
             await salesContext.LigneRetourMarchandiseFournisseur.AddRangeAsync(retourLines, cancellationToken);

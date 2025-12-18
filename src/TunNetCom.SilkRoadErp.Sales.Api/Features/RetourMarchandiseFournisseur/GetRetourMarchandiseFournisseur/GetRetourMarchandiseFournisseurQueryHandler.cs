@@ -1,4 +1,6 @@
 using TunNetCom.SilkRoadErp.Sales.Contracts.RetourMarchandiseFournisseur;
+using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
+using RetourEntity = TunNetCom.SilkRoadErp.Sales.Domain.Entites.RetourMarchandiseFournisseur;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.RetourMarchandiseFournisseur.GetRetourMarchandiseFournisseur;
 
@@ -11,7 +13,7 @@ public class GetRetourMarchandiseFournisseurQueryHandler(
         GetRetourMarchandiseFournisseurQuery query,
         CancellationToken cancellationToken)
     {
-        _logger.LogFetchingEntityById(nameof(RetourMarchandiseFournisseur), query.Num);
+        _logger.LogFetchingEntityById(nameof(RetourEntity), query.Num);
         
         // Load data first to avoid SQL conversion issues with Statut (string -> enum -> int)
         var retour = await _context.RetourMarchandiseFournisseur
@@ -21,7 +23,7 @@ public class GetRetourMarchandiseFournisseurQueryHandler(
             
         if (retour is null)
         {
-            _logger.LogEntityNotFound(nameof(RetourMarchandiseFournisseur), query.Num);
+            _logger.LogEntityNotFound(nameof(RetourEntity), query.Num);
             return Result.Fail(EntityNotFound.Error());
         }
         
@@ -36,8 +38,8 @@ public class GetRetourMarchandiseFournisseurQueryHandler(
             TotHTva = retour.TotHTva,
             TotTva = retour.TotTva,
             NetPayer = retour.NetPayer,
-            Statut = (int)retour.Statut,
-            StatutLibelle = retour.Statut == DocumentStatus.Valid ? "Validé" : "Brouillon",
+            Statut = (int)retour.StatutRetour,
+            StatutLibelle = GetStatutLibelle(retour.StatutRetour),
             Lines = retour.LigneRetourMarchandiseFournisseur.Select(l => new LigneRetourMarchandiseFournisseurResponse
             {
                 IdLigne = l.IdLigne,
@@ -48,12 +50,26 @@ public class GetRetourMarchandiseFournisseurQueryHandler(
                 Remise = l.Remise,
                 TotHt = l.TotHt,
                 Tva = l.Tva,
-                TotTtc = l.TotTtc
+                TotTtc = l.TotTtc,
+                QteRecue = l.QteRecue,
+                DateReception = l.DateReception
             }).ToList()
         };
         
-        _logger.LogEntityFetchedById(nameof(RetourMarchandiseFournisseur), query.Num);
+        _logger.LogEntityFetchedById(nameof(RetourEntity), query.Num);
         return retourResponse;
     }
-}
 
+    private static string GetStatutLibelle(RetourFournisseurStatus statut)
+    {
+        return statut switch
+        {
+            RetourFournisseurStatus.Draft => "Brouillon",
+            RetourFournisseurStatus.Valid => "Validé",
+            RetourFournisseurStatus.EnReparation => "En réparation",
+            RetourFournisseurStatus.ReceptionPartielle => "Réception partielle",
+            RetourFournisseurStatus.Cloture => "Clôturé",
+            _ => "Inconnu"
+        };
+    }
+}

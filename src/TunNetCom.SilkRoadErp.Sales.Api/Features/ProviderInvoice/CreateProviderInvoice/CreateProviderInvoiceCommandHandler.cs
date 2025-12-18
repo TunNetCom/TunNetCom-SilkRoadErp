@@ -24,7 +24,7 @@ public class CreateProviderInvoiceCommandHandler : IRequestHandler<CreateProvide
     
     public async Task<Result<int>> Handle(CreateProviderInvoiceCommand command, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("CreateProviderInvoiceCommand called with ProviderId {ProviderId} and Date {Date}", command.ProviderId, command.Date);
+        _logger.LogInformation("CreateProviderInvoiceCommand called with ProviderId {ProviderId}, Date {Date}, and NumFactureFournisseur {NumFactureFournisseur}", command.ProviderId, command.Date, command.NumFactureFournisseur);
         
         var providerExists = await _context.Fournisseur.AnyAsync(f => f.Id == command.ProviderId, cancellationToken);
         if (!providerExists)
@@ -49,7 +49,7 @@ public class CreateProviderInvoiceCommandHandler : IRequestHandler<CreateProvide
             Num = num,
             Date = command.Date,
             DateFacturationFournisseur = command.Date,
-            NumFactureFournisseur = num,
+            NumFactureFournisseur = command.NumFactureFournisseur,
             IdFournisseur = command.ProviderId,
             Paye = false,
             AccountingYearId = activeAccountingYear.Id
@@ -57,7 +57,7 @@ public class CreateProviderInvoiceCommandHandler : IRequestHandler<CreateProvide
         
         _ = _context.FactureFournisseur.Add(invoice);
         _ = await _context.SaveChangesAsync(cancellationToken);
-        _logger.LogInformation("FactureFournisseur created successfully with Id {Id} and Num {Num}", invoice.Id, invoice.Num);
+        _logger.LogInformation("FactureFournisseur created successfully with Id {Id}, Num {Num}, and NumFactureFournisseur {NumFactureFournisseur}", invoice.Id, invoice.Num, invoice.NumFactureFournisseur);
         return Result.Ok(invoice.Num);
     }
 }

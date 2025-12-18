@@ -33,5 +33,11 @@ public class RetourMarchandiseFournisseurLineRequest
 
     [JsonPropertyName("tax")]
     public double Tax { get; set; }
+
+    /// <summary>
+    /// Quantité reçue après réparation (optionnel, pour réception partielle)
+    /// </summary>
+    [JsonPropertyName("qteRecue")]
+    public int? QteRecue { get; set; }
 }
 

@@ -1,4 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters;
+using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters;
 using TunNetCom.SilkRoadErp.Sales.Domain.Services;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices;
@@ -14,7 +14,8 @@ public class PrintFullInvoiceService(
     public async Task<Result<byte[]>> GenerateInvoicePdfAsync(
     int invoiceId,
     CancellationToken cancellationToken,
-    bool isDuplicata = false)
+    bool isDuplicata = false,
+    bool includeHeader = true)
     {
         var invoiceResponse = await _invoicesService.GetFullInvoiceByIdAsync(invoiceId, cancellationToken);
 
@@ -38,7 +39,7 @@ public class PrintFullInvoiceService(
         printInvoiceWithDetailsModel.VatRate19 = getAppParametersResponse.Value.VatRate19;
         CalculateTotalAmounts(printInvoiceWithDetailsModel, getAppParametersResponse.Value.Timbre, getAppParametersResponse.Value);
 
-        SilkPdfOptions printOptions = PreparePrintOptions(printInvoiceWithDetailsModel, getAppParametersResponse.Value, isDuplicata);
+        SilkPdfOptions printOptions = PreparePrintOptions(printInvoiceWithDetailsModel, getAppParametersResponse.Value, isDuplicata, includeHeader);
 
         var pdfBytes = await _printService.GeneratePdfAsync(printInvoiceWithDetailsModel, printOptions, cancellationToken);
 
@@ -48,8 +49,17 @@ public class PrintFullInvoiceService(
     private static SilkPdfOptions PreparePrintOptions(
         PrintFullInvoiceModel printInvoiceWithDetailsModel,
         GetAppParametersResponse getAppParametersResponse,
-        bool isDuplicata = false)
+        bool isDuplicata = false,
+        bool includeHeader = true)
     {
+        var printOptions = SilkPdfOptions.Default;
+        
+        if (!includeHeader)
+        {
+            // No header, use default margin
+            return printOptions;
+        }
+
         var duplicataText = isDuplicata ? "<div style='font-weight: bold; font-size: 16px; color: red; margin-top: 10px;'>DUPLICATA</div>" : "";
         
         var headerContent = $@"
@@ -87,7 +97,6 @@ public class PrintFullInvoiceService(
     </table>
 </div>";
 
-        var printOptions = SilkPdfOptions.Default;
         printOptions.MarginTop = "150px";
         printOptions.HeaderTemplate = headerContent;
         return printOptions;

@@ -245,7 +245,8 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = jwtSettings["Issuer"] ?? "SilkRoadErp",
         ValidAudience = jwtSettings["Audience"] ?? "SilkRoadErp",
         IssuerSigningKey = new SymmetricSecurityKey(key),
-        ClockSkew = TimeSpan.Zero
+        // Allow 2 minutes clock skew to handle time drift between servers in production
+        ClockSkew = TimeSpan.FromMinutes(2)
     };
     
     // Add event handler for authentication failures

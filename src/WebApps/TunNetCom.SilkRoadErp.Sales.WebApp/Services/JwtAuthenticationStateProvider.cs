@@ -8,18 +8,17 @@ public class JwtAuthenticationStateProvider : AuthenticationStateProvider
 {
     private readonly IAuthService _authService;
     private readonly ILogger<JwtAuthenticationStateProvider> _logger;
-    private readonly IAutoLogoutService _autoLogoutService;
     private DateTime _lastTokenLoadTime = DateTime.MinValue;
-    private readonly TimeSpan _tokenLoadCacheDuration = TimeSpan.FromMinutes(5); // Cache token load for 5 minutes
+    
+    // Reduced cache duration to 1 minute for faster response to auth changes
+    private readonly TimeSpan _tokenLoadCacheDuration = TimeSpan.FromMinutes(1);
 
     public JwtAuthenticationStateProvider(
         IAuthService authService,
-        ILogger<JwtAuthenticationStateProvider> logger,
-        IAutoLogoutService autoLogoutService)
+        ILogger<JwtAuthenticationStateProvider> logger)
     {
         _authService = authService;
         _logger = logger;
-        _autoLogoutService = autoLogoutService;
     }
 
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
@@ -98,6 +97,9 @@ public class JwtAuthenticationStateProvider : AuthenticationStateProvider
 
     public void NotifyAuthenticationStateChanged()
     {
+        // Invalidate the cache when auth state changes
+        _lastTokenLoadTime = DateTime.MinValue;
+        _logger.LogInformation("JwtAuthenticationStateProvider: Authentication state change notified, cache invalidated");
         NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
     }
 }

@@ -10,10 +10,14 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.Inventaires
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Services
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Products
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 @typeparam TItem where TItem : class, ILineItem
 @inject IJSRuntime JSRuntime
 @inject DialogService DialogService
 @inject IDecimalFormatService DecimalFormatService
+@inject IProductsApiClient ProductsApiClient
 
 <div id="@componentId">
 <RadzenDataGrid @ref="ordersGrid" 
@@ -52,6 +56,16 @@
                               Click="@OpenVatDialog"
                               class="action-button"
                               AriaLabel="@Localizer["apply_vat_to_all"]" />
+
+                <RadzenButton ButtonStyle="ButtonStyle.Info"
+                              Icon="shopping_cart"
+                              Text="@Localizer["apply_purchase_info"]"
+                              Variant="Variant.Flat"
+                              Size="ButtonSize.Small"
+                              Disabled="@(IsReadOnly || Items == null || !Items.Any())"
+                              Click="@OpenPurchaseInfoDialogForAll"
+                              class="action-button"
+                              AriaLabel="@Localizer["apply_purchase_info"]" />
 
                 @if (ShowPrintButton)
                 {
@@ -205,6 +219,42 @@
             </RadzenDataGridColumn>
         }
 
+        @* Reception columns - generic implementation for any TItem with reception tracking *@
+        @if (ShowReceptionColumns && GetHasPartialReception != null && SetHasPartialReception != null)
+        {
+            <RadzenDataGridColumn Width="80px" 
+                                  Title="@ReceptionColumnTitle">
+                <Template Context="order">
+                    <RadzenCheckBox Value="@GetHasPartialReception(order)"
+                                    ValueChanged="@((bool value) => OnPartialReceptionCheckboxChanged(order, value))"
+                                    Disabled="@(IsReadOnly || string.IsNullOrEmpty(GetProductReference?.Invoke(order)))"
+                                    Title="Activer la réception partielle" />
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn Width="120px" 
+                                  Title="@ReceivedQuantityColumnTitle"
+                                  Visible="@showReceivedQuantityColumn">
+                <Template Context="order">
+                    @if (GetHasPartialReception(order) && GetReceivedQuantity != null && SetReceivedQuantity != null)
+                    {
+                        <RadzenNumeric TValue="int"
+                                       Value="@GetReceivedQuantity(order)"
+                                       Change="@(args => OnReceivedQuantityChanged(order, args))"
+                                       Disabled="@IsReadOnly"
+                                       Style="width:100%;"
+                                       Min="0"
+                                       Max="@order.Quantity"
+                                       Name="ReceivedQuantity"/>
+                    }
+                    else
+                    {
+                        <span style="color: #6b7280; visibility: hidden;">-</span>
+                    }
+                </Template>
+            </RadzenDataGridColumn>
+        }
+
         <RadzenDataGridColumn Width="200px" 
                               Title="@Localizer["unit_price_ht"]">
             <Template Context="order">
@@ -326,24 +376,38 @@
         }
 
         <RadzenDataGridColumn Context="order" 
-                              Width="80px"
+                              Width="120px"
                               Filterable="false" 
                               Sortable="false" 
                               TextAlign="TextAlign.Right"
                               Frozen="true" 
                               FrozenPosition="FrozenColumnPosition.Right">
             <Template Context="order">
-                <RadzenButton ButtonStyle="ButtonStyle.Danger" 
-                              Icon="delete" 
-                              Variant="Variant.Flat"
-                              Shade="Shade.Lighter" 
-                              Size="ButtonSize.Medium"
-                              Disabled="@IsReadOnly" 
-                              class="rz-my-1 rz-ms-1"
-                              Click="@(args => HandleDeleteItem(order))" 
-                              @onclick:stopPropagation="true"
-                              aria-label="Delete">
-                </RadzenButton>
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="4px" JustifyContent="JustifyContent.End">
+                    <RadzenButton ButtonStyle="ButtonStyle.Info" 
+                                  Icon="shopping_cart" 
+                                  Variant="Variant.Flat"
+                                  Shade="Shade.Lighter" 
+                                  Size="ButtonSize.Medium"
+                                  Disabled="@(IsReadOnly || string.IsNullOrEmpty(GetProductReference?.Invoke(order)))" 
+                                  class="rz-my-1"
+                                  Click="@(() => OpenPurchaseInfoDialogForLine(order))" 
+                                  @onclick:stopPropagation="true"
+                                  Title="@Localizer["apply_purchase_info_to_line"]"
+                                  aria-label="@Localizer["apply_purchase_info_to_line"]">
+                    </RadzenButton>
+                    <RadzenButton ButtonStyle="ButtonStyle.Danger" 
+                                  Icon="delete" 
+                                  Variant="Variant.Flat"
+                                  Shade="Shade.Lighter" 
+                                  Size="ButtonSize.Medium"
+                                  Disabled="@IsReadOnly" 
+                                  class="rz-my-1 rz-ms-1"
+                                  Click="@(args => HandleDeleteItem(order))" 
+                                  @onclick:stopPropagation="true"
+                                  aria-label="Delete">
+                    </RadzenButton>
+                </RadzenStack>
             </Template>
         </RadzenDataGridColumn>
     </Columns>
@@ -494,11 +558,21 @@
     [Parameter] public double MaxDiscountPercentage { get; set; } = 50.0;
     [Parameter] public double MaxVatPercentage { get; set; } = 50.0;
     [Parameter] public bool IsReadOnly { get; set; } = false;
+    
+    // Reception tracking parameters (for RetourMarchandiseFournisseur)
+    [Parameter] public bool ShowReceptionColumns { get; set; } = false;
+    [Parameter] public Func<TItem, bool>? GetHasPartialReception { get; set; }
+    [Parameter] public Action<TItem, bool>? SetHasPartialReception { get; set; }
+    [Parameter] public Func<TItem, int>? GetReceivedQuantity { get; set; }
+    [Parameter] public Action<TItem, int>? SetReceivedQuantity { get; set; }
+    [Parameter] public string ReceptionColumnTitle { get; set; } = "Réception partielle";
+    [Parameter] public string ReceivedQuantityColumnTitle { get; set; } = "Qté reçue";
 
     RadzenDataGrid<TItem> ordersGrid;
     private DotNetObjectReference<LineItemsGrid<TItem>>? objRef;
     private string componentId = Guid.NewGuid().ToString();
     private bool showDeliveredQuantityColumn = false;
+    private bool showReceivedQuantityColumn = false;
     private string priceFormat = AmountHelper.FORMAT_N3;
     private string discountFormat = AmountHelper.FORMAT_N2;
     private string vatFormat = AmountHelper.FORMAT_N2;
@@ -663,6 +737,70 @@
         }
     }
 
+    // Generic reception tracking handlers
+    private async Task OnPartialReceptionCheckboxChanged(TItem order, bool isChecked)
+    {
+        if (order == null || SetHasPartialReception == null) return;
+        
+        SetHasPartialReception(order, isChecked);
+        
+        if (isChecked)
+        {
+            // When checkbox is checked, initialize received quantity to 0 if not set
+            if (GetReceivedQuantity != null && SetReceivedQuantity != null)
+            {
+                var currentQty = GetReceivedQuantity(order);
+                if (currentQty == 0)
+                {
+                    // Keep it at 0, user will enter the received quantity
+                }
+            }
+            // Show the received quantity column
+            showReceivedQuantityColumn = true;
+        }
+        else
+        {
+            // When checkbox is unchecked, reset received quantity to 0
+            if (SetReceivedQuantity != null)
+            {
+                SetReceivedQuantity(order, 0);
+            }
+            // Hide the column if no checkboxes are checked
+            UpdateReceivedQuantityColumnVisibility();
+        }
+        await NotifyItemsChanged();
+    }
+
+    private async Task OnReceivedQuantityChanged(TItem order, object value)
+    {
+        if (order == null || SetReceivedQuantity == null) return;
+        
+        if (value != null && int.TryParse(value.ToString(), out int receivedQuantity))
+        {
+            // Ensure received quantity doesn't exceed Quantity
+            if (receivedQuantity > order.Quantity)
+            {
+                receivedQuantity = order.Quantity;
+            }
+            if (receivedQuantity < 0)
+            {
+                receivedQuantity = 0;
+            }
+            SetReceivedQuantity(order, receivedQuantity);
+            await NotifyItemsChanged();
+        }
+    }
+
+    private void UpdateReceivedQuantityColumnVisibility()
+    {
+        if (GetHasPartialReception == null)
+        {
+            showReceivedQuantityColumn = false;
+            return;
+        }
+        showReceivedQuantityColumn = Items?.Any(item => GetHasPartialReception(item)) ?? false;
+    }
+
     private async Task OnProductSelected(TItem order, object value)
     {
         if (value != null && value is string productReference)
@@ -742,6 +880,12 @@
 
     private async Task NotifyItemsChanged()
     {
+        // Update column visibility based on checkbox states for reception tracking
+        if (ShowReceptionColumns)
+        {
+            UpdateReceivedQuantityColumnVisibility();
+        }
+        
         // Update column visibility based on checkbox states
         if (typeof(TItem) == typeof(DeliveryNoteDetailResponse))
         {
@@ -847,6 +991,111 @@
         {
             item.VatPercentage = vat;
             LineItemCalculator.CalculateTotals(item);
+        }
+
+        await NotifyItemsChanged();
+    }
+
+    private async Task OpenPurchaseInfoDialogForLine(TItem item)
+    {
+        if (item == null || string.IsNullOrEmpty(GetProductReference?.Invoke(item)))
+        {
+            return;
+        }
+
+        var result = await DialogService.OpenAsync<ApplyPurchaseInfoDialog>(
+            Localizer["apply_purchase_info_to_line"],
+            new Dictionary<string, object>(),
+            new DialogOptions() 
+            { 
+                Width = "400px",
+                Resizable = false,
+                Draggable = true
+            });
+
+        if (result is ApplyPurchaseInfoDialog.PurchaseInfoSource source)
+        {
+            await ApplyPurchaseInfoToItem(item, source);
+        }
+    }
+
+    private async Task OpenPurchaseInfoDialogForAll()
+    {
+        if (Items == null || !Items.Any())
+        {
+            return;
+        }
+
+        var result = await DialogService.OpenAsync<ApplyPurchaseInfoDialog>(
+            Localizer["apply_purchase_info"],
+            new Dictionary<string, object>(),
+            new DialogOptions() 
+            { 
+                Width = "400px",
+                Resizable = false,
+                Draggable = true
+            });
+
+        if (result is ApplyPurchaseInfoDialog.PurchaseInfoSource source)
+        {
+            // Apply to all items that have a product selected
+            foreach (var item in Items)
+            {
+                var productRef = GetProductReference?.Invoke(item);
+                if (!string.IsNullOrEmpty(productRef))
+                {
+                    await ApplyPurchaseInfoToItem(item, source);
+                }
+            }
+        }
+    }
+
+    private async Task ApplyPurchaseInfoToItem(TItem item, ApplyPurchaseInfoDialog.PurchaseInfoSource source)
+    {
+        var productRef = GetProductReference?.Invoke(item);
+        if (string.IsNullOrEmpty(productRef))
+        {
+            return;
+        }
+
+        if (source == ApplyPurchaseInfoDialog.PurchaseInfoSource.Product)
+        {
+            // Get product info
+            var productResult = await ProductsApiClient.GetAsync(productRef, CancellationToken.None);
+            if (productResult.IsT0)
+            {
+                var product = productResult.AsT0;
+                item.UnitPriceExcludingTax = product.PurchasingPrice;
+                item.DiscountPercentage = product.DiscountPourcentageOfPurchasing;
+                item.VatPercentage = product.VatRate;
+                LineItemCalculator.CalculateTotals(item);
+            }
+        }
+        else if (source == ApplyPurchaseInfoDialog.PurchaseInfoSource.LastReceipt)
+        {
+            // Get last purchase info from receipt notes
+            var purchaseInfoResult = await ProductsApiClient.GetDernieresInfosAchatAsync(productRef, CancellationToken.None);
+            if (purchaseInfoResult.IsT0)
+            {
+                var purchaseInfo = purchaseInfoResult.AsT0;
+                item.UnitPriceExcludingTax = purchaseInfo.PrixHt;
+                item.DiscountPercentage = purchaseInfo.Remise;
+                item.VatPercentage = purchaseInfo.Tva;
+                LineItemCalculator.CalculateTotals(item);
+            }
+            else
+            {
+                // Fallback to product values if no receipt note found
+                var productResult = await ProductsApiClient.GetAsync(productRef, CancellationToken.None);
+                if (productResult.IsT0)
+                {
+                    var product = productResult.AsT0;
+                    item.UnitPriceExcludingTax = product.PurchasingPrice;
+                    item.DiscountPercentage = product.DiscountPourcentageOfPurchasing;
+                    item.VatPercentage = product.VatRate;
+                    LineItemCalculator.CalculateTotals(item);
+                }
+            }
         }
 
         await NotifyItemsChanged();

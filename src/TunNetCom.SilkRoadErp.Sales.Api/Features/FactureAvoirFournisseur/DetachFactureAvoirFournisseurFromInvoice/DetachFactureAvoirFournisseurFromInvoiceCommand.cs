@@ -7,3 +7,6 @@ public record DetachFactureAvoirFournisseurFromInvoiceCommand(
 
 
 
+
+
+

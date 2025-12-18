@@ -1,0 +1,63 @@
+@using Radzen
+@using Radzen.Blazor
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@inject DialogService DialogService
+@inject IStringLocalizer<SharedResource> Localizer
+
+<RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
+    <RadzenText TextStyle="TextStyle.Body1">
+        @Localizer["apply_purchase_info"]
+    </RadzenText>
+    
+    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+        <RadzenRadioButtonList @bind-Value="selectedOption" 
+                              Data="@options" 
+                              TextProperty="Label"
+                              ValueProperty="Value"
+                              Orientation="Radzen.Orientation.Vertical" />
+    </RadzenStack>
+
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End" Style="margin-top: 1rem;">
+        <RadzenButton Text="@Localizer["Cancel"]" 
+                      ButtonStyle="ButtonStyle.Light" 
+                      Click="@(() => DialogService.Close(false))" />
+        <RadzenButton Text="@Localizer["apply"]" 
+                      ButtonStyle="ButtonStyle.Success" 
+                      Click="@OnConfirm" />
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    public enum PurchaseInfoSource
+    {
+        Product,
+        LastReceipt
+    }
+
+    public class PurchaseInfoOption
+    {
+        public PurchaseInfoSource Value { get; set; }
+        public string Label { get; set; } = string.Empty;
+    }
+
+    private PurchaseInfoSource selectedOption = PurchaseInfoSource.Product;
+    
+    private List<PurchaseInfoOption> options = new();
+
+    protected override void OnInitialized()
+    {
+        options = new()
+        {
+            new PurchaseInfoOption { Value = PurchaseInfoSource.Product, Label = Localizer["use_product_values"] },
+            new PurchaseInfoOption { Value = PurchaseInfoSource.LastReceipt, Label = Localizer["use_last_purchase_info"] }
+        };
+    }
+
+    private void OnConfirm()
+    {
+        DialogService.Close(selectedOption);
+    }
+}
+
+

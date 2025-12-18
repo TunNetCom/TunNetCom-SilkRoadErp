@@ -3,10 +3,12 @@
 @using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
 @using Microsoft.AspNetCore.Components.Forms
 @inject DialogService DialogService
 @inject IStringLocalizer<SharedResource> Localizer
 @inject IJSRuntime JSRuntime
+@inject IDecimalFormatService DecimalFormatService
 
 <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
     <RadzenText TextStyle="TextStyle.Body1" Style="font-weight: 600;">
@@ -24,8 +26,8 @@
         <RadzenLabel Text="@Localizer["montant_ttc"]" />
         <RadzenNumeric @bind-Value="MontantTTC" 
                       ReadOnly="true"
-                      Format="@AmountHelper.FORMAT_N2"
-                      Style="width: 100%; background-color: #f5f5f5;" />
+                      Format="@priceFormat"
+                      Style="width: 100%;" />
     </RadzenStack>
 
     <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
@@ -33,16 +35,27 @@
         <RadzenNumeric @bind-Value="TauxRetenu" 
                       ReadOnly="true"
                       Format="@AmountHelper.FORMAT_N2"
-                      Style="width: 100%; background-color: #f5f5f5;" />
+                      Style="width: 100%;" />
     </RadzenStack>
 
     <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
         <RadzenLabel Text="@Localizer["montant_apres_retenu"]" />
         <RadzenNumeric Value="MontantApresRetenu" 
                       ReadOnly="true"
-                      Format="@AmountHelper.FORMAT_N2"
-                      Style="width: 100%; background-color: #e8f5e9; font-weight: 600;" />
+                      Format="@priceFormat"
+                      Style="width: 100%; font-weight: 600;" />
     </RadzenStack>
+
+    @if (Timbre > 0)
+    {
+        <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+            <RadzenLabel Text="@Localizer["montant_apres_retenu_plus_timbre"]" />
+            <RadzenNumeric Value="MontantApresRetenuAvecTimbre" 
+                          ReadOnly="true"
+                          Format="@priceFormat"
+                          Style="width: 100%; font-weight: 600; color: #4caf50;" />
+        </RadzenStack>
+    }
 
     <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
         <RadzenLabel Text="@Localizer["num_tej"]" />
@@ -96,6 +109,7 @@
     [Parameter] public decimal MontantTTC { get; set; }
     [Parameter] public double TauxRetenu { get; set; }
     [Parameter] public decimal SeuilRetenueSource { get; set; }
+    [Parameter] public decimal Timbre { get; set; } = 0;
     [Parameter] public string? ExistingNumTej { get; set; }
     [Parameter] public bool IsEditMode { get; set; } = false;
     [Parameter] public string? ExistingPdfBase64 { get; set; }
@@ -104,13 +118,21 @@
     private string? SelectedFileName { get; set; }
     private string? PdfContentBase64 { get; set; }
     private string? ErrorMessage { get; set; }
+    private string priceFormat = AmountHelper.FORMAT_N3; // Default format
     
-    private decimal MontantApresRetenu => MontantTTC * (1 - (decimal)TauxRetenu / 100);
-    private bool CanConfirm => !string.IsNullOrWhiteSpace(NumTej) && MontantTTC >= SeuilRetenueSource;
+    // Pour les clients, MontantTTC inclut le timbre, donc on calcule la retenue sur MontantTTC - Timbre
+    // Pour les fournisseurs, MontantTTC ne contient pas le timbre (Timbre = 0), donc on calcule directement sur MontantTTC
+    private decimal MontantTTCSansTimbre => Timbre > 0 ? MontantTTC - Timbre : MontantTTC;
+    private decimal MontantApresRetenu => MontantTTCSansTimbre * (1 - (decimal)TauxRetenu / 100);
+    private decimal MontantApresRetenuAvecTimbre => MontantApresRetenu + Timbre;
+    // Pour la validation du seuil, on vérifie MontantTTC + Timbre (montant total de la facture)
+    private bool CanConfirm => !string.IsNullOrWhiteSpace(NumTej) && (MontantTTC + Timbre) >= SeuilRetenueSource;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         NumTej = ExistingNumTej;
+        // Get decimal format from app parameters
+        priceFormat = await DecimalFormatService.GetDecimalFormatAsync();
         
         // Load existing PDF if in edit mode
         if (IsEditMode && !string.IsNullOrEmpty(ExistingPdfBase64))
@@ -118,9 +140,11 @@
             PdfContentBase64 = ExistingPdfBase64;
         }
         
-        if (MontantTTC < SeuilRetenueSource)
+        // Pour la validation du seuil, on vérifie MontantTTC + Timbre (montant total de la facture)
+        var montantTotalAvecTimbre = MontantTTC + Timbre;
+        if (montantTotalAvecTimbre < SeuilRetenueSource)
         {
-            ErrorMessage = $"{Localizer["seuil_non_atteint"]}: {Localizer["montant_ttc"]} ({MontantTTC.FormatAmount()}) < {Localizer["seuil"]} ({SeuilRetenueSource.FormatAmount()})";
+            ErrorMessage = $"{Localizer["seuil_non_atteint"]}: {Localizer["montant_ttc"]} ({montantTotalAvecTimbre.FormatAmount()}) < {Localizer["seuil"]} ({SeuilRetenueSource.FormatAmount()})";
         }
     }
 

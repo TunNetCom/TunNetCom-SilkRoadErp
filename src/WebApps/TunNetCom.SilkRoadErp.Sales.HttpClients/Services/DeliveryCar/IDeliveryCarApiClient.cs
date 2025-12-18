@@ -11,3 +11,6 @@ public interface IDeliveryCarApiClient
     Task DeleteDeliveryCarAsync(int id, CancellationToken cancellationToken = default);
 }
 
+
+
+

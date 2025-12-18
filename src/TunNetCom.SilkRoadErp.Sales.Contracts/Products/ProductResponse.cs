@@ -1,4 +1,4 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Contracts.Products;
+namespace TunNetCom.SilkRoadErp.Sales.Contracts.Products;
 
 public class ProductResponse
 {
@@ -37,6 +37,24 @@ public class ProductResponse
 
     [JsonPropertyName("isStockLow")]
     public bool IsStockLow { get; set; }
+
+    /// <summary>
+    /// Quantité en retour fournisseur (chez le fournisseur pour réparation)
+    /// </summary>
+    [JsonPropertyName("qteEnRetourFournisseur")]
+    public int? QteEnRetourFournisseur { get; set; }
+
+    /// <summary>
+    /// Quantité actuellement en réparation chez le fournisseur
+    /// </summary>
+    [JsonPropertyName("qteEnReparation")]
+    public int? QteEnReparation { get; set; }
+
+    /// <summary>
+    /// Stock réel (stock calculé - quantité en réparation)
+    /// </summary>
+    [JsonPropertyName("stockReel")]
+    public int? StockReel { get; set; }
 
     [JsonPropertyName("sousFamilleProduitId")]
     public int? SousFamilleProduitId { get; set; }

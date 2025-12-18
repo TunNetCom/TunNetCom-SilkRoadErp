@@ -14,7 +14,8 @@ public partial class LigneRetourMarchandiseFournisseur
         int quantity,
         decimal unitPrice,
         double discount,
-        double tax)
+        double tax,
+        int? qteRecue = null)
     {
         var subtotalBeforeDiscount = DecimalHelper.RoundAmount(quantity * unitPrice);
         var discountAmount = DecimalHelper.RoundAmount(subtotalBeforeDiscount * (decimal)(discount / 100));
@@ -31,9 +32,45 @@ public partial class LigneRetourMarchandiseFournisseur
             TotHt = subtotalAfterDiscount,
             Tva = tax,
             TotTtc = totTtc,
-            RetourMarchandiseFournisseurId = retourMarchandiseFournisseurId
+            RetourMarchandiseFournisseurId = retourMarchandiseFournisseurId,
+            QteRecue = qteRecue ?? 0
         };
     }
+
+    /// <summary>
+    /// Met à jour la quantité reçue après réparation
+    /// </summary>
+    /// <param name="quantiteRecue">La quantité reçue</param>
+    /// <param name="utilisateur">L'utilisateur ayant validé la réception</param>
+    public void EnregistrerReception(int quantiteRecue, string utilisateur)
+    {
+        if (quantiteRecue < 0)
+        {
+            throw new ArgumentException("La quantité reçue ne peut pas être négative.", nameof(quantiteRecue));
+        }
+        
+        if (quantiteRecue > QteLi)
+        {
+            throw new ArgumentException($"La quantité reçue ({quantiteRecue}) ne peut pas dépasser la quantité retournée ({QteLi}).", nameof(quantiteRecue));
+        }
+
+        QteRecue = quantiteRecue;
+        DateReception = DateTime.Now;
+        UtilisateurReception = utilisateur;
+    }
+
+    /// <summary>
+    /// Calcule la quantité encore en attente de réception
+    /// </summary>
+    public int GetQuantiteEnAttente()
+    {
+        return Math.Max(0, QteLi - QteRecue);
+    }
+
+    /// <summary>
+    /// Indique si la ligne est entièrement reçue
+    /// </summary>
+    public bool EstEntierementRecue => QteRecue >= QteLi;
 
     public int IdLigne { get; set; }
 
@@ -55,8 +92,22 @@ public partial class LigneRetourMarchandiseFournisseur
 
     public decimal TotTtc { get; set; }
 
+    /// <summary>
+    /// Quantité reçue après réparation
+    /// </summary>
+    public int QteRecue { get; set; }
+
+    /// <summary>
+    /// Date de réception après réparation
+    /// </summary>
+    public DateTime? DateReception { get; set; }
+
+    /// <summary>
+    /// Utilisateur ayant validé la réception
+    /// </summary>
+    public string? UtilisateurReception { get; set; }
+
     public virtual RetourMarchandiseFournisseur RetourMarchandiseFournisseurNavigation { get; set; } = null!;
 
     public virtual Produit RefProduitNavigation { get; set; } = null!;
 }
-

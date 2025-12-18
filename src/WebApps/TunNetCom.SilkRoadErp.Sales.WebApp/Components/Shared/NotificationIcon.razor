@@ -47,29 +47,43 @@
 
     private async Task TryLoadNotificationsAsync()
     {
-        // Check if user is authenticated
-        if (!AuthService.IsAuthenticated)
+        try
         {
-            return;
-        }
-
-        isAuthenticated = true;
-        
-        // Get user ID from auth service if available
-        var userInfo = AuthService.GetUserInfo();
-        // Note: UserId would need to be added to UserInfo if needed
-        // For now, we'll use null for global notifications
-
-        await LoadUnreadCountAsync();
-
-        // Refresh every 30 seconds
-        refreshTimer = new System.Threading.Timer(async _ =>
-        {
-            if (AuthService.IsAuthenticated)
+            // Ensure token is loaded from localStorage before checking authentication
+            // This is needed because the token might not be in memory yet after page refresh
+            if (!AuthService.IsAuthenticated)
             {
-                await InvokeAsync(async () => await LoadUnreadCountAsync());
+                await AuthService.LoadTokenFromStorageAsync();
             }
-        }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+            
+            // Check if user is authenticated after loading
+            if (!AuthService.IsAuthenticated)
+            {
+                return;
+            }
+
+            isAuthenticated = true;
+            
+            // Get user ID from auth service if available
+            var userInfo = AuthService.GetUserInfo();
+            // Note: UserId would need to be added to UserInfo if needed
+            // For now, we'll use null for global notifications
+
+            await LoadUnreadCountAsync();
+
+            // Refresh every 30 seconds
+            refreshTimer = new System.Threading.Timer(async _ =>
+            {
+                if (AuthService.IsAuthenticated)
+                {
+                    await InvokeAsync(async () => await LoadUnreadCountAsync());
+                }
+            }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+        }
+        catch (Exception)
+        {
+            // Silently fail during initialization
+        }
     }
 
     private async Task LoadUnreadCountAsync()

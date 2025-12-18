@@ -53,12 +53,15 @@ public class CreateRetenueSourceFournisseurCommandHandler(
             .SelectMany(br => br.LigneBonReception)
             .Sum(l => l.TotTtc);
 
-        // Validate threshold
-        if (montantTTC < appParams.SeuilRetenueSource)
+        // Calculate montant TTC with timbre for threshold validation
+        var montantTTCAvecTimbre = montantTTC + appParams.Timbre;
+
+        // Validate threshold (on the full TTC amount including timbre)
+        if (montantTTCAvecTimbre < appParams.SeuilRetenueSource)
         {
             _logger.LogWarning("Montant TTC {MontantTTC} is below threshold {Seuil} for FactureFournisseur {NumFactureFournisseur}",
-                montantTTC, appParams.SeuilRetenueSource, command.NumFactureFournisseur);
-            return Result.Fail($"seuil_non_atteint: Le montant TTC ({montantTTC}) doit être supérieur ou égal au seuil ({appParams.SeuilRetenueSource})");
+                montantTTCAvecTimbre, appParams.SeuilRetenueSource, command.NumFactureFournisseur);
+            return Result.Fail($"seuil_non_atteint: Le montant TTC ({montantTTCAvecTimbre}) doit être supérieur ou égal au seuil ({appParams.SeuilRetenueSource})");
         }
 
         // Get active accounting year
@@ -71,9 +74,15 @@ public class CreateRetenueSourceFournisseurCommandHandler(
             return Result.Fail("no_active_accounting_year");
         }
 
-        // Calculate montant après retenue
+        // Calculate montant TTC without timbre (retenue is calculated on amount without timbre)
+        var montantTTCHorsTimbre = montantTTC;
+
+        // Calculate montant après retenue (on amount without timbre)
         var tauxRetenu = appParams.PourcentageRetenu;
-        var montantApresRetenu = montantTTC * (1 - (decimal)tauxRetenu / 100);
+        var montantApresRetenuSansTimbre = montantTTCHorsTimbre * (1 - (decimal)tauxRetenu / 100);
+
+        // Add timbre after retenue calculation
+        var montantApresRetenuAvecTimbre = montantApresRetenuSansTimbre + appParams.Timbre;
 
         // Store PDF if provided
         string? pdfStoragePath = null;
@@ -102,9 +111,9 @@ public class CreateRetenueSourceFournisseurCommandHandler(
         {
             NumFactureFournisseur = command.NumFactureFournisseur,
             NumTej = command.NumTej,
-            MontantAvantRetenu = montantTTC,
+            MontantAvantRetenu = montantTTCAvecTimbre, // Montant TTC avec timbre (montant de la facture)
             TauxRetenu = tauxRetenu,
-            MontantApresRetenu = montantApresRetenu,
+            MontantApresRetenu = montantApresRetenuAvecTimbre,
             PdfStoragePath = pdfStoragePath,
             DateCreation = DateTime.UtcNow,
             AccountingYearId = activeAccountingYear.Id

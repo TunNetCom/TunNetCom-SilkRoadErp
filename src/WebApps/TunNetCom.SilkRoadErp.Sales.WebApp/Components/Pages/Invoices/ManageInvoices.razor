@@ -128,17 +128,17 @@
                         <p style="font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
                     </EmptyTemplate>
                     <HeaderTemplate>
-                        <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 0.75rem;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 0.75rem; gap: 1.5rem;">
                             <div style="font-size: 1.1rem; font-weight: 600;">
                                 @Localizer["customer_invoice_details"]
                             </div>
-                            <RadzenButton Icon="add"
+                            <RadzenButton Icon="add_circle"
                                           Text="@Localizer["create_new_invoice"]"
                                           ButtonStyle="ButtonStyle.Success"
-                                          Size="ButtonSize.Small"
+                                          Size="ButtonSize.Medium"
                                           Disabled="@(SelectedCustomerId <= 0)"
                                           Click="@CreateNewInvoice"
-                                          Style="border-radius: 6px; padding: 0.4rem 0.8rem; font-weight: 500; font-size: 0.85rem;" />
+                                          Style="border-radius: 8px; padding: 0.5rem 1rem; font-weight: 600; font-size: 0.9rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s ease; margin-left: auto;" />
                         </div>
                     </HeaderTemplate>
                     <Template Context="invoiceWithBLs">
@@ -238,7 +238,7 @@
                                                   ButtonStyle="ButtonStyle.Info" 
                                                   Size="ButtonSize.Small"
                                                   Title="@Localizer["retenue_source"]"
-                                                  Click="@(() => OpenRetenueDialog(invoiceWithBLs.Invoice.Number, invoiceWithBLs.Invoice.TotalIncludingTaxAmount))" />
+                                                  Click="@(() => OpenRetenueDialog(invoiceWithBLs.Invoice.Number, invoiceWithBLs.Invoice.TotalIncludingTaxAmount - _timbre))" />
                                 }
                             </Template>
                         </RadzenDataGridColumn>
@@ -466,6 +466,7 @@
     }
     private decimal _seuilRetenueSource = 1000;
     private double _tauxRetenu = 0;
+    private decimal _timbre = 0;
     
     // Master-detail model
     public class InvoiceWithDeliveryNotes
@@ -497,6 +498,7 @@
                 var appParams = appParamsResult.AsT0;
                 _seuilRetenueSource = appParams.SeuilRetenueSource;
                 _tauxRetenu = appParams.PourcentageRetenu;
+                _timbre = appParams.Timbre;
             }
         }
         catch (Exception ex)
@@ -652,14 +654,18 @@
                 Draggable = true
             };
 
+            // MontantTTC doit inclure le timbre pour l'affichage (montantTTC passé est sans timbre)
+            var montantTTCAvecTimbre = montantTTC + _timbre;
+            
             var result = await DialogService.OpenAsync<RetenueSourceDialog>(
                 Localizer["retenue_source"],
                 new Dictionary<string, object>
                 {
                     { "NumFacture", numFacture },
-                    { "MontantTTC", montantTTC },
+                    { "MontantTTC", montantTTCAvecTimbre },
                     { "TauxRetenu", _tauxRetenu },
                     { "SeuilRetenueSource", _seuilRetenueSource },
+                    { "Timbre", _timbre },
                     { "ExistingNumTej", existingNumTej },
                     { "IsEditMode", isEditMode },
                     { "ExistingPdfBase64", existingPdfBase64 }

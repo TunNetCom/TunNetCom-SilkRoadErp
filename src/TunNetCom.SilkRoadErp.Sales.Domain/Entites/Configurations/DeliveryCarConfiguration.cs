@@ -42,3 +42,6 @@ public partial class DeliveryCarConfiguration : IEntityTypeConfiguration<Deliver
     partial void OnConfigurePartial(EntityTypeBuilder<DeliveryCar> entity);
 }
 
+
+
+

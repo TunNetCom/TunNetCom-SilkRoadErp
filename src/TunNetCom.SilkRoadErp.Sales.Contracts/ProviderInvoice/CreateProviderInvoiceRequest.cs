@@ -9,5 +9,8 @@ public class CreateProviderInvoiceRequest
 
     [JsonPropertyName("providerid")]
     public int ProviderId { get; set; }
+
+    [JsonPropertyName("numFactureFournisseur")]
+    public long NumFactureFournisseur { get; set; }
 }
 

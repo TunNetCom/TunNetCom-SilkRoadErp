@@ -35,6 +35,21 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
                 .HasColumnName("tot_TTC");
             entity.Property(e => e.Tva).HasColumnName("tva");
 
+            // Nouveaux champs pour la réception après réparation
+            entity.Property(e => e.QteRecue)
+                .HasColumnName("qte_recue")
+                .HasDefaultValue(0);
+            
+            entity.Property(e => e.DateReception)
+                .HasColumnType("datetime")
+                .HasColumnName("date_reception")
+                .IsRequired(false);
+            
+            entity.Property(e => e.UtilisateurReception)
+                .HasMaxLength(256)
+                .HasColumnName("utilisateur_reception")
+                .IsRequired(false);
+
             entity.HasOne(d => d.RetourMarchandiseFournisseurNavigation).WithMany(p => p.LigneRetourMarchandiseFournisseur)
                 .HasForeignKey(d => d.RetourMarchandiseFournisseurId)
                 .HasConstraintName("FK_dbo.LigneRetourMarchandiseFournisseur_dbo.RetourMarchandiseFournisseur_RetourMarchandiseFournisseurId");
@@ -50,4 +65,3 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
         partial void OnConfigurePartial(EntityTypeBuilder<LigneRetourMarchandiseFournisseur> entity);
     }
 }
-

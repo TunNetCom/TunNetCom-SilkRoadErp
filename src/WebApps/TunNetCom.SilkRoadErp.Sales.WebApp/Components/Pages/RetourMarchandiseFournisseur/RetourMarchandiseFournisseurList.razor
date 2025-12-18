@@ -22,6 +22,10 @@
 @inject Radzen.NotificationService NotificationService
 @inject DialogService DialogService
 @using TunNetCom.SilkRoadErp.Sales.Domain.Entites
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.RetourMarchandiseFournisseur
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure
+@inject PrintRetourFournisseurService PrintService
+@inject IPrintService PrintServiceInfra
 
 <div class="delivery-notes-list-container">
     <div class="search-header">
@@ -58,8 +62,7 @@
                             class="w-100 search-input" />
         </div>
         <div class="search-button" style="display: flex; gap: 8px;">
-            <RadzenButton Text="@Localizer["search"]"
-                          Icon="search"
+            <RadzenButton Icon="search"
                           ButtonStyle="ButtonStyle.Primary"
                           Click="@SearchRetours"
                           class="action-button" />
@@ -101,10 +104,10 @@
                                         TValue="bool" Change="@(args => { if(selectedRetours == null) selectedRetours = new List<RetourMarchandiseFournisseurBaseInfo>(); if(args) { if(!selectedRetours.Contains(data)) selectedRetours.Add(data); } else { selectedRetours.Remove(data); } })" />
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="RetourMarchandiseFournisseurBaseInfo" Property="Statut" Title="Statut" Width="100px">
+                <RadzenDataGridColumn TItem="RetourMarchandiseFournisseurBaseInfo" Property="Statut" Title="Statut" Width="140px">
                     <Template Context="item">
                         <span class="status-tag" style="@GetStatusStyle(item.Statut)">
-                            @(item.Statut == 1 ? "Validé" : "Brouillon")
+                            @GetStatusLabel(item.Statut)
                         </span>
                     </Template>
                 </RadzenDataGridColumn>
@@ -161,7 +164,7 @@
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="RetourMarchandiseFournisseurBaseInfo"
                                       Title="@Localizer["actions_label"]"
-                                      Width="100px"
+                                      Width="220px"
                                       Sortable="false"
                                       Filterable="false">
                     <Template Context="item">
@@ -170,7 +173,7 @@
                                       Variant="Variant.Flat"
                                       Size="ButtonSize.Small"
                                       Click="@(() => ViewRetour(item.Number.ToString()))"
-                                      Disabled="@(item.Statut == 1)"
+                                      Disabled="@(item.Statut != 0)"
                                       Title="@Localizer["Edit"]"
                                       AriaLabel="@Localizer["Edit"]"
                                       Style="margin-right: 4px;" />
@@ -179,9 +182,26 @@
                                       Variant="Variant.Flat"
                                       Size="ButtonSize.Small"
                                       Click="@(() => ValidateRetour(item))"
-                                      Disabled="@(item.Statut == 1)"
+                                      Disabled="@(item.Statut != 0)"
                                       Title="Valider"
-                                      AriaLabel="Valider" />
+                                      AriaLabel="Valider"
+                                      Style="margin-right: 4px;" />
+                        <RadzenButton Icon="inventory_2"
+                                      ButtonStyle="ButtonStyle.Info"
+                                      Variant="Variant.Flat"
+                                      Size="ButtonSize.Small"
+                                      Click="@(() => OpenReceptionDialog(item))"
+                                      Disabled="@(!CanVerifyReception(item.Statut))"
+                                      Title="Vérifier réception"
+                                      AriaLabel="Vérifier réception"
+                                      Style="margin-right: 4px;" />
+                        <RadzenButton Icon="print"
+                                      ButtonStyle="ButtonStyle.Secondary"
+                                      Variant="Variant.Flat"
+                                      Size="ButtonSize.Small"
+                                      Click="@(() => PrintRetour(item.Number))"
+                                      Title="Imprimer"
+                                      AriaLabel="Imprimer" />
                     </Template>
                 </RadzenDataGridColumn>
             </Columns>
@@ -617,9 +637,107 @@
 
     private string GetStatusStyle(int statut)
     {
-        return statut == 1 
-            ? "background-color: #388e3c; color: #fff;" 
-            : "background-color: #e1e1e1; color: #333;";
+        return statut switch
+        {
+            0 => "background-color: #e1e1e1; color: #333;",  // Brouillon
+            1 => "background-color: #1976d2; color: #fff;",  // Validé
+            2 => "background-color: #ff9800; color: #fff;",  // En réparation
+            3 => "background-color: #9c27b0; color: #fff;",  // Réception partielle
+            4 => "background-color: #388e3c; color: #fff;",  // Clôturé
+            _ => "background-color: #e1e1e1; color: #333;"
+        };
+    }
+
+    private string GetStatusLabel(int statut)
+    {
+        return statut switch
+        {
+            0 => "Brouillon",
+            1 => "Validé",
+            2 => "En réparation",
+            3 => "Réception partielle",
+            4 => "Clôturé",
+            _ => "Inconnu"
+        };
+    }
+
+    private bool CanVerifyReception(int statut)
+    {
+        // La réception peut être vérifiée pour les statuts: Validé (1), En réparation (2), Réception partielle (3)
+        return statut >= 1 && statut <= 3;
+    }
+
+    private async Task OpenReceptionDialog(RetourMarchandiseFournisseurBaseInfo item)
+    {
+        var result = await DialogService.OpenAsync<VerifyReceptionDialog>(
+            "Vérification de réception après réparation",
+            new Dictionary<string, object> { { "RetourNum", item.Number } },
+            new DialogOptions 
+            { 
+                Width = "800px",
+                Height = "600px",
+                Resizable = true,
+                Draggable = true
+            });
+
+        if (result is true)
+        {
+            // Rafraîchir la liste après la réception
+            if (retoursGrid != null)
+            {
+                await retoursGrid.Reload();
+            }
+            else
+            {
+                await SearchRetours();
+            }
+        }
+    }
+
+    private async Task PrintRetour(int retourNum)
+    {
+        try
+        {
+            var pdfResult = await PrintService.GenerateRetourFournisseurPdfAsync(retourNum, default);
+            
+            if (pdfResult.IsSuccess)
+            {
+                var printOptions = new PrintOptions
+                {
+                    Mode = PrintMode.Download,
+                    FileName = $"RetourFournisseur_{retourNum}.pdf",
+                    DocumentType = "RetourFournisseur",
+                    DocumentId = retourNum
+                };
+                
+                await PrintServiceInfra.PrintAsync(pdfResult.Value, printOptions, default);
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Succès",
+                    Detail = "Le bon de retour a été généré avec succès."
+                });
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Erreur",
+                    Detail = pdfResult.Errors.FirstOrDefault()?.Message ?? "Erreur lors de la génération du PDF."
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error printing retour {RetourNum}", retourNum);
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Erreur",
+                Detail = $"Erreur lors de l'impression: {ex.Message}"
+            });
+        }
     }
 }
 

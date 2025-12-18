@@ -18,8 +18,12 @@
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
 @using TunNetCom.SilkRoadErp.Sales.Domain.Entites
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Common
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.RetourMarchandiseFournisseur
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure
 
 @inject IStringLocalizer<SharedResource> Localizer
+@inject PrintRetourFournisseurService PrintService
+@inject IPrintService PrintServiceInfra
 @inject ITagsApiClient TagsService
 @inject ToastService toastService
 @inject Radzen.NotificationService NotificationService
@@ -202,7 +206,8 @@ else
                    AppParameters="@getAppParametersResponse"
                    OnShowPriceHistory="@ShowDialog"
                    ShowPriceHistoryDialog="true"
-                   ShowPrintButton="false"
+                   ShowPrintButton="@(!string.IsNullOrEmpty(num))"
+                   OnPrint="@PrintRetour"
                    ShowSaveButton="true"
                    ShowSummary="true"
                    OnSave="@SaveRetour"
@@ -216,7 +221,102 @@ else
                    SetProductDescription="@((item, value) => item.Description = value)"
                    ProductTextProperty="ProductReferenceAndDescription"
                    ProductValueProperty="ProductReference"
-                   CreateNewItem="@(() => new RetourLineItem { Quantity = 1 })" />
+                   CreateNewItem="@(() => new RetourLineItem { Quantity = 1 })"
+                   ShowReceptionColumns="true"
+                   ReceptionColumnTitle="Réception"
+                   ReceivedQuantityColumnTitle="Qté reçue"
+                   GetHasPartialReception="@(item => item.HasPartialReception)"
+                   SetHasPartialReception="@((item, value) => item.HasPartialReception = value)"
+                   GetReceivedQuantity="@(item => item.QteRecue)"
+                   SetReceivedQuantity="@((item, value) => item.QteRecue = value)" />
+
+    @* Section Statut et Réception *@
+    @if (!string.IsNullOrEmpty(retourNumber) && orders.Any())
+    {
+        <RadzenCard Style="margin-top: 1rem; margin-bottom: 1rem;">
+            <RadzenStack Gap="1rem">
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" AlignItems="AlignItems.Center">
+                    <RadzenText TextStyle="TextStyle.Subtitle1" Style="margin: 0;">
+                        <strong>Statut:</strong>
+                    </RadzenText>
+                    <RadzenBadge BadgeStyle="@GetStatusBadgeStyle(currentStatut)" Text="@currentStatutLibelle" />
+                </RadzenStack>
+
+                @if (HasAnyReception())
+                {
+                    <RadzenText TextStyle="TextStyle.Subtitle1" Style="margin-bottom: 0.5rem;">
+                        <strong>Suivi des réceptions:</strong>
+                    </RadzenText>
+                    <RadzenDataGrid Data="@orders.Where(o => o.QteRecue > 0 || o.Quantity > 0)" 
+                                    TItem="RetourLineItem"
+                                    Density="Density.Compact"
+                                    AllowPaging="false"
+                                    AllowSorting="false"
+                                    Style="max-height: 300px;">
+                        <Columns>
+                            <RadzenDataGridColumn TItem="RetourLineItem" Property="ProductReference" Title="Référence" Width="120px" />
+                            <RadzenDataGridColumn TItem="RetourLineItem" Property="Description" Title="Désignation" Width="200px" />
+                            <RadzenDataGridColumn TItem="RetourLineItem" Property="Quantity" Title="Qté retournée" Width="100px" TextAlign="TextAlign.Center" />
+                            <RadzenDataGridColumn TItem="RetourLineItem" Title="Qté reçue" Width="100px" TextAlign="TextAlign.Center">
+                                <Template Context="line">
+                                    @if (line.QteRecue > 0)
+                                    {
+                                        <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@line.QteRecue.ToString()" />
+                                    }
+                                    else
+                                    {
+                                        <span style="color: #9ca3af;">0</span>
+                                    }
+                                </Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="RetourLineItem" Title="Reste" Width="100px" TextAlign="TextAlign.Center">
+                                <Template Context="line">
+                                    @{
+                                        var reste = line.QteRestante;
+                                    }
+                                    @if (reste == 0)
+                                    {
+                                        <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="Complet" />
+                                    }
+                                    else
+                                    {
+                                        <RadzenBadge BadgeStyle="BadgeStyle.Warning" Text="@reste.ToString()" />
+                                    }
+                                </Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="RetourLineItem" Title="Dernière réception" Width="150px">
+                                <Template Context="line">
+                                    @if (line.DateReception.HasValue)
+                                    {
+                                        @line.DateReception.Value.ToString("dd/MM/yyyy HH:mm")
+                                    }
+                                    else
+                                    {
+                                        <span style="color: #9ca3af;">-</span>
+                                    }
+                                </Template>
+                            </RadzenDataGridColumn>
+                        </Columns>
+                    </RadzenDataGrid>
+
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" Style="margin-top: 0.5rem;">
+                        <RadzenText>
+                            <strong>Total reçu:</strong> @orders.Sum(o => o.QteRecue) / @orders.Sum(o => o.Quantity)
+                        </RadzenText>
+                        <RadzenText>
+                            <strong>Reste à recevoir:</strong> @orders.Sum(o => o.QteRestante)
+                        </RadzenText>
+                    </RadzenStack>
+                }
+                else if (currentStatut >= 1) @* Validé ou plus *@
+                {
+                    <RadzenAlert AlertStyle="AlertStyle.Info" ShowIcon="true" Variant="Variant.Flat">
+                        Aucune réception enregistrée. Utilisez le bouton "Vérifier réception" dans la liste des retours pour enregistrer les réceptions.
+                    </RadzenAlert>
+                }
+            </RadzenStack>
+        </RadzenCard>
+    }
 
     @if (!string.IsNullOrEmpty(retourNumber) && int.TryParse(retourNumber, out var retourNum))
     {
@@ -246,6 +346,8 @@ else
     DateTime retourDate = DateTime.Now;
     private GetAppParametersResponse getAppParametersResponse;
     private int? selectedProviderId;
+    private int currentStatut = 0;
+    private string currentStatutLibelle = "Brouillon";
 
     protected override async Task OnInitializedAsync()
     {
@@ -293,7 +395,8 @@ else
                     Quantity = o.Quantity,
                     UnitPrice = o.UnitPriceExcludingTax,
                     Discount = o.DiscountPercentage,
-                    Tax = o.VatPercentage
+                    Tax = o.VatPercentage,
+                    QteRecue = o.HasPartialReception ? o.QteRecue : null
                 }).ToList()
             };
 
@@ -423,6 +526,10 @@ else
                     retourDate = retour.Value.Date;
                     selectedProviderId = retour.Value.IdFournisseur;
 
+                    // Stocker le statut et le libellé du retour
+                    currentStatut = retour.Value.Statut;
+                    currentStatutLibelle = retour.Value.StatutLibelle;
+
                     if (retour.Value.Lines != null && retour.Value.Lines.Any())
                     {
                         orders = retour.Value.Lines.Select(l => new RetourLineItem
@@ -435,7 +542,10 @@ else
                             DiscountPercentage = l.Remise,
                             VatPercentage = l.Tva,
                             TotalExcludingTax = l.TotHt,
-                            TotalIncludingTax = l.TotTtc
+                            TotalIncludingTax = l.TotTtc,
+                            HasPartialReception = l.QteRecue > 0 || l.QteRecue < l.QteLi,
+                            QteRecue = l.QteRecue,
+                            DateReception = l.DateReception
                         }).ToList();
                         
                         totalHt = orders.Sum(o => o.TotalExcludingTax);
@@ -543,7 +653,7 @@ else
         try
         {
             var pagedProducts = await productsApiClient.GetPagedAsync(parameters, _cancellationTokenSource.Token);
-            searchList = pagedProducts.Items.Select(
+            searchList = (pagedProducts?.Items ?? new List<ProductResponse>()).Select(
                 p => new RetourLineItem
                 {
                     ProductReference = p.Reference,
@@ -554,7 +664,7 @@ else
                     VatPercentage = p.VatRate,
                 }).ToList();
 
-            count = pagedProducts.TotalCount;
+            count = pagedProducts?.TotalCount ?? 0;
         }
         catch (Exception ex)
         {
@@ -769,6 +879,24 @@ else
         }
     }
 
+    private bool HasAnyReception()
+    {
+        return orders.Any(o => o.QteRecue > 0);
+    }
+
+    private BadgeStyle GetStatusBadgeStyle(int statut)
+    {
+        return statut switch
+        {
+            0 => BadgeStyle.Secondary, // Draft
+            1 => BadgeStyle.Info,      // Valid
+            2 => BadgeStyle.Warning,   // EnReparation
+            3 => BadgeStyle.Primary,   // ReceptionPartielle
+            4 => BadgeStyle.Success,   // Cloture
+            _ => BadgeStyle.Light
+        };
+    }
+
     public class RetourLineItem : ILineItem
     {
         public int Id { get; set; }
@@ -781,6 +909,70 @@ else
         public decimal TotalExcludingTax { get; set; }
         public double VatPercentage { get; set; }
         public decimal TotalIncludingTax { get; set; }
+        
+        // Champs pour le suivi des réceptions
+        public bool HasPartialReception { get; set; }
+        public int QteRecue { get; set; }
+        public DateTime? DateReception { get; set; }
+        public int QteRestante => Quantity - QteRecue;
+        public bool EstEntierementRecue => QteRecue >= Quantity;
+    }
+
+    private async Task PrintRetour()
+    {
+        if (string.IsNullOrEmpty(num) || !int.TryParse(num, out var retourNum))
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = "Attention",
+                Detail = "Veuillez d'abord enregistrer le retour avant de l'imprimer."
+            });
+            return;
+        }
+
+        try
+        {
+            var pdfResult = await PrintService.GenerateRetourFournisseurPdfAsync(retourNum, _cancellationTokenSource.Token);
+            
+            if (pdfResult.IsSuccess)
+            {
+                var printOptions = new PrintOptions
+                {
+                    Mode = PrintMode.Download,
+                    FileName = $"RetourFournisseur_{retourNum}.pdf",
+                    DocumentType = "RetourFournisseur",
+                    DocumentId = retourNum
+                };
+                
+                await PrintServiceInfra.PrintAsync(pdfResult.Value, printOptions, _cancellationTokenSource.Token);
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Succès",
+                    Detail = "Le bon de retour a été généré avec succès."
+                });
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Erreur",
+                    Detail = pdfResult.Errors.FirstOrDefault()?.Message ?? "Erreur lors de la génération du PDF."
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error printing retour {RetourNum}", retourNum);
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Erreur",
+                Detail = $"Erreur lors de l'impression: {ex.Message}"
+            });
+        }
     }
 }
 

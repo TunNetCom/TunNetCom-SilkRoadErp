@@ -258,17 +258,32 @@ else
                     <div style="display: flex; align-items: center; gap: 10px;">
                         @if (!string.IsNullOrEmpty(technician.Photo))
                         {
-                            <img src="@technician.Photo" alt="@technician.Nom" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;" />
+                            <img src="@technician.Photo" alt="@technician.Nom" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;" />
                         }
                         else
                         {
-                            <div style="width: 30px; height: 30px; border-radius: 50%; background-color: #e0e0e0; display: flex; align-items: center; justify-content: center;">
-                                <RadzenIcon Icon="person" Style="font-size: 16px;" />
+                            <div style="width: 20px; height: 20px; border-radius: 50%; background-color: #e0e0e0; display: flex; align-items: center; justify-content: center;">
+                                <RadzenIcon Icon="person" Style="font-size: 12px;" />
                             </div>
                         }
                         <span>@technician.Nom</span>
                     </div>
                 </Template>
+                <ValueTemplate Context="technician">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        @if (!string.IsNullOrEmpty(technician?.Photo))
+                        {
+                            <img src="@technician.Photo" alt="@technician.Nom" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;" />
+                        }
+                        else
+                        {
+                            <div style="width: 20px; height: 20px; border-radius: 50%; background-color: #e0e0e0; display: flex; align-items: center; justify-content: center;">
+                                <RadzenIcon Icon="person" Style="font-size: 12px;" />
+                            </div>
+                        }
+                        <span>@technician?.Nom</span>
+                    </div>
+                </ValueTemplate>
                 <Columns>
                     <RadzenDropDownDataGridColumn Property="@nameof(InstallationTechnicianBaseInfo.Id)" Title="ID" Width="80px" />
                     <RadzenDropDownDataGridColumn Property="@nameof(InstallationTechnicianBaseInfo.Nom)" Title="Nom" Width="220px" />
@@ -862,7 +877,7 @@ else
         try
         {
             var pagedProducts = await productsApiClient.GetPagedAsync(parameters, _cancellationTokenSource.Token);
-            searchList = pagedProducts.Items.Select(
+            searchList = (pagedProducts?.Items ?? new List<ProductResponse>()).Select(
                 p => new DeliveryNoteDetailResponse
                 {
                     ProductReference = p.Reference,
@@ -873,7 +888,7 @@ else
                     VatPercentage = p.VatRate,
                 }).ToList();
 
-            count = pagedProducts.TotalCount;
+            count = pagedProducts?.TotalCount ?? 0;
         }
         catch (Exception ex)
         {
@@ -1247,10 +1262,11 @@ else
 
             Result<byte[]> pdfResult;
 
-            // Print saved delivery note
+            // Print saved delivery note - generate with header by default
             pdfResult = await PrintDeliveryNoteService.GenerateDeliveryNotePdfAsync(
                 deliveryNoteNum,
-                _cancellationTokenSource.Token);
+                _cancellationTokenSource.Token,
+                includeHeader: true);
 
             if (pdfResult.IsSuccess)
             {
@@ -1267,11 +1283,31 @@ else
                         Draggable = true
                     });
 
-                if (printModeResult is PrintMode selectedMode)
+                if (printModeResult is PrintModeResult result)
                 {
+                    // Regenerate PDF if header should be excluded
+                    if (!result.IncludeHeader)
+                    {
+                        pdfResult = await PrintDeliveryNoteService.GenerateDeliveryNotePdfAsync(
+                            deliveryNoteNum,
+                            _cancellationTokenSource.Token,
+                            includeHeader: false);
+                        
+                        if (!pdfResult.IsSuccess)
+                        {
+                            NotificationService.Notify(new NotificationMessage
+                            {
+                                Severity = NotificationSeverity.Error,
+                                Summary = Localizer["error"],
+                                Detail = $"Échec de la régénération du PDF: {pdfResult.Errors.FirstOrDefault()?.Message ?? "Unknown error"}"
+                            });
+                            return;
+                        }
+                    }
+
                     var printOptions = new PrintOptions
                     {
-                        Mode = selectedMode,
+                        Mode = result.Mode,
                         FileName = fileName,
                         DocumentType = "BonDeLivraison",
                         DocumentId = deliveryNoteNum,
@@ -1279,7 +1315,7 @@ else
                         Username = username
                     };
 
-                    if (selectedMode == PrintMode.DirectPrint)
+                    if (result.Mode == PrintMode.DirectPrint)
                     {
                         // Show printer selection dialog
                         var printerResult = await DialogService.OpenAsync<PrinterSelectionDialog>(
@@ -1315,7 +1351,7 @@ else
                             Detail = $"{Localizer["failed_to_print_delivery_note"] ?? "Failed to print delivery note"}: {printResult.ErrorMessage}"
                         });
                     }
-                    else if (selectedMode == PrintMode.DirectPrint)
+                    else if (result.Mode == PrintMode.DirectPrint)
                     {
                         NotificationService.Notify(new NotificationMessage
                         {

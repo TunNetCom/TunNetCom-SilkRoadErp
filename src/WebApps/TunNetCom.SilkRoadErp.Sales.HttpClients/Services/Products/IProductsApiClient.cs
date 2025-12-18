@@ -1,4 +1,6 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products;
+﻿using TunNetCom.SilkRoadErp.Sales.Contracts.Products;
+
+namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products;
 
 public interface IProductsApiClient
 {
@@ -33,5 +35,9 @@ public interface IProductsApiClient
 
     Task<OneOf<List<ProductStockResponse>, BadRequestResponse>> GetProductsStockAsync(
         List<string> refProduits,
+        CancellationToken cancellationToken = default);
+
+    Task<OneOf<GetDernieresInfosAchatResponse, bool>> GetDernieresInfosAchatAsync(
+        string refProduit,
         CancellationToken cancellationToken = default);
 }

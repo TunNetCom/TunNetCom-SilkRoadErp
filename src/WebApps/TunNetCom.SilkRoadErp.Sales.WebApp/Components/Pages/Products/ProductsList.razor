@@ -158,7 +158,7 @@
                         <span class="grid-cell">@(product.SousFamilleProduitNom ?? "-")</span>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="ProductResponse" Property="@nameof(ProductResponse.StockCalcule)" Title="@Localizer["stock_calcule"]" Width="150px">
+                <RadzenDataGridColumn TItem="ProductResponse" Property="@nameof(ProductResponse.StockCalcule)" Title="@Localizer["stock_calcule"]" Width="120px">
                     <Template Context="product">
                         @if (product.StockCalcule.HasValue)
                         {
@@ -167,6 +167,37 @@
                                            stockValue > 0 ? "stock-badge-orange" : "stock-badge-red";
                             <RadzenBadge BadgeStyle="BadgeStyle.Info" Variant="Variant.Flat" Size="BadgeSize.Medium" Class="@badgeClass">
                                 @stockValue
+                            </RadzenBadge>
+                        }
+                        else
+                        {
+                            <span class="grid-cell">-</span>
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ProductResponse" Property="@nameof(ProductResponse.QteEnReparation)" Title="En réparation" Width="120px">
+                    <Template Context="product">
+                        @if (product.QteEnReparation.HasValue && product.QteEnReparation.Value > 0)
+                        {
+                            <RadzenBadge BadgeStyle="BadgeStyle.Warning" Variant="Variant.Flat" Size="BadgeSize.Medium">
+                                @product.QteEnReparation.Value
+                            </RadzenBadge>
+                        }
+                        else
+                        {
+                            <span class="grid-cell">-</span>
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ProductResponse" Property="@nameof(ProductResponse.StockReel)" Title="Stock réel" Width="120px">
+                    <Template Context="product">
+                        @if (product.StockReel.HasValue)
+                        {
+                            var stockReel = product.StockReel.Value;
+                            var badgeClass = stockReel > product.QteLimit ? "stock-badge-green" : 
+                                           stockReel > 0 ? "stock-badge-orange" : "stock-badge-red";
+                            <RadzenBadge BadgeStyle="BadgeStyle.Info" Variant="Variant.Flat" Size="BadgeSize.Medium" Class="@badgeClass">
+                                @stockReel
                             </RadzenBadge>
                         }
                         else

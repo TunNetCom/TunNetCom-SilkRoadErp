@@ -1,0 +1,55 @@
+@using Radzen
+@using Radzen.Blazor
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@inject DialogService DialogService
+@inject IStringLocalizer<SharedResource> Localizer
+
+<RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
+    <RadzenText TextStyle="TextStyle.Body1">
+        @Localizer["edit_provider_invoice_number"]
+    </RadzenText>
+    
+    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+        <RadzenLabel Text="@($"{Localizer["provider_invoice_number"]} *")" />
+        <RadzenNumeric @bind-Value="NumFactureFournisseur" 
+                       Style="width: 100%;"
+                       Min="1"
+                       Format="0" />
+    </RadzenStack>
+
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End" Style="margin-top: 1rem;">
+        <RadzenButton Text="@Localizer["Cancel"]" 
+                      ButtonStyle="ButtonStyle.Light" 
+                      Click="@(() => DialogService.Close(false))" />
+        <RadzenButton Text="@Localizer["yes"]" 
+                      ButtonStyle="ButtonStyle.Success" 
+                      Click="@OnConfirm"
+                      Disabled="@(NumFactureFournisseur <= 0)" />
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    [Parameter] public int InvoiceNum { get; set; }
+    [Parameter] public long CurrentNumFactureFournisseur { get; set; }
+    
+    private long NumFactureFournisseur { get; set; } = 0;
+
+    protected override void OnInitialized()
+    {
+        NumFactureFournisseur = CurrentNumFactureFournisseur;
+    }
+
+    private void OnConfirm()
+    {
+        if (NumFactureFournisseur <= 0)
+        {
+            return;
+        }
+        DialogService.Close(new EditProviderInvoiceNumberDialogResult 
+        { 
+            NumFactureFournisseur = NumFactureFournisseur 
+        });
+    }
+}
+

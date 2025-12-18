@@ -18,7 +18,8 @@ public class CreateRetourMarchandiseFournisseurEndpoint : ICarterModule
                     Quantity: x.Quantity,
                     UnitPrice: x.UnitPrice,
                     Discount: x.Discount,
-                    Tax: x.Tax
+                    Tax: x.Tax,
+                    QteRecue: x.QteRecue
                 )).ToList();
 
             var command = new CreateRetourMarchandiseFournisseurCommand(
