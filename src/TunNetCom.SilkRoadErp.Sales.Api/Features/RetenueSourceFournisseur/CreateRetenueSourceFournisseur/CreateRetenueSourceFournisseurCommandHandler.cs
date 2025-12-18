@@ -30,6 +30,7 @@ public class CreateRetenueSourceFournisseurCommandHandler(
         var factureFournisseur = await _context.FactureFournisseur
             .Include(f => f.BonDeReception)
                 .ThenInclude(br => br.LigneBonReception)
+            .Include(f => f.IdFournisseurNavigation)
             .FirstOrDefaultAsync(f => f.Num == command.NumFactureFournisseur, cancellationToken);
 
         if (factureFournisseur == null)
@@ -77,8 +78,12 @@ public class CreateRetenueSourceFournisseurCommandHandler(
         // Calculate montant TTC without timbre (retenue is calculated on amount without timbre)
         var montantTTCHorsTimbre = montantTTC;
 
+        // Get taux retenu: use supplier's rate if defined, otherwise use app params rate
+        var tauxRetenu = factureFournisseur.IdFournisseurNavigation.TauxRetenu ?? appParams.PourcentageRetenu;
+        _logger.LogInformation("Using taux retenu {TauxRetenu} for FactureFournisseur {NumFactureFournisseur} (from supplier: {FromSupplier})",
+            tauxRetenu, command.NumFactureFournisseur, factureFournisseur.IdFournisseurNavigation.TauxRetenu.HasValue ? "Yes" : "No (app params)");
+
         // Calculate montant après retenue (on amount without timbre)
-        var tauxRetenu = appParams.PourcentageRetenu;
         var montantApresRetenuSansTimbre = montantTTCHorsTimbre * (1 - (decimal)tauxRetenu / 100);
 
         // Add timbre after retenue calculation

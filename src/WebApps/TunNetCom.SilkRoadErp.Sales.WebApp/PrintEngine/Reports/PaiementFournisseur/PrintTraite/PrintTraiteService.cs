@@ -114,11 +114,19 @@ public class PrintTraiteService(
                 Tel = fournisseur.Tel,
                 Matricule = fournisseur.Matricule,
                 Code = fournisseur.Code,
-                // Utiliser le RIB du paiement (pour traite ou virement)
-                RibCodeEtab = paiement.RibCodeEtab,
-                RibCodeAgence = paiement.RibCodeAgence,
-                RibNumeroCompte = paiement.RibNumeroCompte,
-                RibCle = paiement.RibCle
+                // Utiliser le RIB du fournisseur en priorité, sinon celui du paiement
+                RibCodeEtab = !string.IsNullOrWhiteSpace(fournisseur.RibCodeEtab) 
+                    ? fournisseur.RibCodeEtab 
+                    : paiement.RibCodeEtab,
+                RibCodeAgence = !string.IsNullOrWhiteSpace(fournisseur.RibCodeEtab) 
+                    ? fournisseur.RibCodeAgence 
+                    : paiement.RibCodeAgence,
+                RibNumeroCompte = !string.IsNullOrWhiteSpace(fournisseur.RibCodeEtab) 
+                    ? fournisseur.RibNumeroCompte 
+                    : paiement.RibNumeroCompte,
+                RibCle = !string.IsNullOrWhiteSpace(fournisseur.RibCodeEtab) 
+                    ? fournisseur.RibCle 
+                    : paiement.RibCle
             },
             
             Banque = banque != null ? new BanqueModel

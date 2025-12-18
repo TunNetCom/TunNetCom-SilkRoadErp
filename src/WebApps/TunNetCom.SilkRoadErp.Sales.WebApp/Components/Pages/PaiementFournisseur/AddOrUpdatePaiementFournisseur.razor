@@ -84,7 +84,7 @@
                                 Placeholder="@Localizer["Select_Methode"]"
                                 AllowClear="false"
                                 Style="width: 100%;"
-                                Change="@OnMethodePaiementChanged" />
+                                Change="@OnMethodePaiementChangedAsync" />
             </RadzenFormField>
 
             @if (selectedMethodePaiement == "Cheque" || selectedMethodePaiement == "Traite")
@@ -404,6 +404,12 @@
         {
             await LoadInvoicesForProvider(providerId);
             await LoadReceiptNotesForProvider(providerId);
+            
+            // Auto-fill RIB from provider if method is Traite or Virement
+            if (selectedMethodePaiement == "Traite" || selectedMethodePaiement == "Virement")
+            {
+                await FillRibFromProvider(providerId);
+            }
         }
         else
         {
@@ -498,10 +504,11 @@
         }
     }
 
-    void OnMethodePaiementChanged(object? value)
+    async Task OnMethodePaiementChangedAsync(object? value)
     {
         if (value is string methode)
         {
+            selectedMethodePaiement = methode;
             paiement.MethodePaiement = methode;
             if (methode != "Cheque" && methode != "Traite")
             {
@@ -516,6 +523,38 @@
                 paiement.RibNumeroCompte = null;
                 paiement.RibCle = null;
             }
+            else if ((methode == "Traite" || methode == "Virement") && paiement.FournisseurId > 0)
+            {
+                // Auto-fill RIB from provider when method changes to Traite or Virement
+                await FillRibFromProvider(paiement.FournisseurId);
+            }
+        }
+    }
+
+    async Task FillRibFromProvider(int providerId)
+    {
+        try
+        {
+            var providerResult = await ProvidersService.GetAsync(providerId, cancellationTokenSource.Token);
+            if (providerResult.IsT0)
+            {
+                var provider = providerResult.AsT0;
+                // Only fill if RIB fields are not already filled and provider has RIB
+                if (string.IsNullOrWhiteSpace(paiement.RibCodeEtab) && 
+                    !string.IsNullOrWhiteSpace(provider.RibCodeEtab))
+                {
+                    paiement.RibCodeEtab = provider.RibCodeEtab;
+                    paiement.RibCodeAgence = provider.RibCodeAgence;
+                    paiement.RibNumeroCompte = provider.RibNumeroCompte;
+                    paiement.RibCle = provider.RibCle;
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            // Silently fail - RIB auto-fill is optional
+            System.Diagnostics.Debug.WriteLine($"Error loading provider RIB: {ex.Message}");
         }
     }
 

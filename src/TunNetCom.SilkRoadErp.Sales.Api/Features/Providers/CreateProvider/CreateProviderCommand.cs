@@ -1,4 +1,4 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.CreateProvider;
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.CreateProvider;
 public record CreateProviderCommand
 (
     string Nom,
@@ -11,5 +11,10 @@ public record CreateProviderCommand
     string? Mail,
     string? MailDeux,
     bool Constructeur,
-    string? Adresse
+    string? Adresse,
+    double? TauxRetenu,
+    string? RibCodeEtab,
+    string? RibCodeAgence,
+    string? RibNumeroCompte,
+    string? RibCle
     ) : IRequest<Result<int>>;

@@ -1,4 +1,4 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.UpdateProvider;
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.UpdateProvider;
 public class UpdateProviderCommandHandler(SalesContext _context, ILogger<UpdateProviderCommandHandler> _logger)
 : IRequestHandler<UpdateProviderCommand, Result>
 { 
@@ -33,7 +33,12 @@ public class UpdateProviderCommandHandler(SalesContext _context, ILogger<UpdateP
             mail: updateProviderCommand.Mail,
             mailDeux: updateProviderCommand.MailDeux,
             constructeur: updateProviderCommand.Constructeur,
-            adresse: updateProviderCommand.Adresse);
+            adresse: updateProviderCommand.Adresse,
+            tauxRetenu: updateProviderCommand.TauxRetenu,
+            ribCodeEtab: updateProviderCommand.RibCodeEtab,
+            ribCodeAgence: updateProviderCommand.RibCodeAgence,
+            ribNumeroCompte: updateProviderCommand.RibNumeroCompte,
+            ribCle: updateProviderCommand.RibCle);
 
         _ = await _context.SaveChangesAsync(cancellationToken);
 

@@ -1,4 +1,4 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.CreateProvider;
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.CreateProvider;
 public class CreateProviderEndPoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
@@ -17,7 +17,12 @@ public class CreateProviderEndPoint : ICarterModule
                  Mail: request.Mail,
                  MailDeux: request.MailDeux,
                  Constructeur: request.Constructeur,
-                 Adresse: request.Adresse);
+                 Adresse: request.Adresse,
+                 TauxRetenu: request.TauxRetenu,
+                 RibCodeEtab: request.RibCodeEtab,
+                 RibCodeAgence: request.RibCodeAgence,
+                 RibNumeroCompte: request.RibNumeroCompte,
+                 RibCle: request.RibCle);
 
             var result = await mediator.Send(createProviderCommand);
             if (result.IsFailed)

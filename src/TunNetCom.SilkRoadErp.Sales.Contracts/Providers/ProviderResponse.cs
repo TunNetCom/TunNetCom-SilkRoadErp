@@ -1,4 +1,4 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Contracts.Providers;
+namespace TunNetCom.SilkRoadErp.Sales.Contracts.Providers;
 
 public class ProviderResponse
 {
@@ -37,4 +37,19 @@ public class ProviderResponse
 
     [JsonPropertyName("adresse")]
     public string? Adresse { get; set; }
+
+    [JsonPropertyName("tauxRetenu")]
+    public double? TauxRetenu { get; set; }
+
+    [JsonPropertyName("ribCodeEtab")]
+    public string? RibCodeEtab { get; set; }
+
+    [JsonPropertyName("ribCodeAgence")]
+    public string? RibCodeAgence { get; set; }
+
+    [JsonPropertyName("ribNumeroCompte")]
+    public string? RibNumeroCompte { get; set; }
+
+    [JsonPropertyName("ribCle")]
+    public string? RibCle { get; set; }
 }
