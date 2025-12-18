@@ -28,6 +28,7 @@
 @using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryCar
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryCar
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.PrintHistory
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.DeliveryNotes
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.Security.Claims
 @inject ITagsApiClient TagsService
@@ -998,9 +999,78 @@ else
         await InvokeAsync(StateHasChanged);
     }
 
-    private void CreateNewDeliveryCar()
+    async Task CreateNewDeliveryCar()
     {
-        NavigationManager.NavigateTo("/delivery-car/add");
+        var result = await DialogService.OpenAsync<CreateDeliveryCarDialog>(
+            Localizer["Add_Delivery_Car"],
+            new Dictionary<string, object>(),
+            new DialogOptions()
+            {
+                Width = "400px",
+                Resizable = false,
+                Draggable = true
+            });
+
+        if (result is CreateDeliveryCarDialogResult dialogResult)
+        {
+            await CreateDeliveryCarWithData(dialogResult.Matricule, dialogResult.Owner);
+        }
+    }
+
+    async Task CreateDeliveryCarWithData(string matricule, string owner)
+    {
+        isLoadingDeliveryCars = true;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            var request = new CreateDeliveryCarRequest
+            {
+                Matricule = matricule,
+                Owner = owner
+            };
+
+            var result = await DeliveryCarService.CreateDeliveryCarAsync(request, _cancellationTokenSource.Token);
+
+            if (result > 0)
+            {
+                // Recharger la liste des voitures
+                await LoadDeliveryCars(new LoadDataArgs());
+                
+                // Sélectionner automatiquement la nouvelle voiture
+                selectedDeliveryCarId = result;
+                
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = Localizer["success"],
+                    Detail = $"{Localizer["Delivery_Car_Created"]}: {matricule}"
+                });
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = Localizer["failed_to_create_delivery_car"] ?? "Failed to create delivery car"
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"{Localizer["failed_to_create_delivery_car"] ?? "Failed to create delivery car"}: {ex.Message}"
+            });
+        }
+        finally
+        {
+            isLoadingDeliveryCars = false;
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     async Task LoadCustomerInvoices(LoadDataArgs args)

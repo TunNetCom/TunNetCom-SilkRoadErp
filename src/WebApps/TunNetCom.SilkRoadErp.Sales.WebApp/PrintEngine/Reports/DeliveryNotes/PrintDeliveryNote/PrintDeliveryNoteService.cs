@@ -4,6 +4,7 @@ using TunNetCom.SilkRoadErp.Sales.Domain.Services;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryCar;
 
 namespace TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.DeliveryNotes.PrintDeliveryNote;
 
@@ -12,6 +13,7 @@ public class PrintDeliveryNoteService(
     IDeliveryNoteApiClient _deliveryNoteApiClient,
     ICustomersApiClient _customersApiClient,
     IAppParametersClient _appParametersClient,
+    IDeliveryCarApiClient _deliveryCarApiClient,
     IPrintPdfService<PrintDeliveryNoteModel, PrintDeliveryNoteView> _printService)
 {
     public async Task<Result<byte[]>> GenerateDeliveryNotePdfAsync(
@@ -47,6 +49,31 @@ public class PrintDeliveryNoteService(
                     Matricule = customer.Matricule,
                     Code = customer.Code
                 };
+            }
+        }
+
+        // Load delivery car if available
+        if (deliveryNoteResponse.DeliveryCarId.HasValue)
+        {
+            try
+            {
+                var deliveryCar = await _deliveryCarApiClient.GetDeliveryCarByIdAsync(
+                    deliveryNoteResponse.DeliveryCarId.Value,
+                    cancellationToken);
+                if (deliveryCar != null)
+                {
+                    printModel.DeliveryCar = new DeliveryNoteCarModel
+                    {
+                        Matricule = deliveryCar.Matricule,
+                        Owner = deliveryCar.Owner
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to load delivery car {DeliveryCarId} for delivery note {DeliveryNoteNumber}", 
+                    deliveryNoteResponse.DeliveryCarId.Value, deliveryNoteNumber);
+                // Continue without car info - don't fail the print
             }
         }
 
@@ -96,6 +123,9 @@ public class PrintDeliveryNoteService(
                 };
             }
         }
+
+        // Note: Delivery car should be loaded before calling this method if needed
+        // This method is typically used with pre-populated data
 
         var getAppParametersResponse = await FetchAppParametersAsync(cancellationToken);
         if (getAppParametersResponse.IsFailed)
@@ -203,6 +233,18 @@ public class PrintDeliveryNoteService(
             {
                 customerInfo += $@"<div>Matricule: {printModel.Customer.Matricule}</div>";
             }
+        }
+
+        // Add delivery car info if available
+        if (printModel.DeliveryCar != null)
+        {
+            if (!string.IsNullOrEmpty(customerInfo))
+            {
+                customerInfo += "<div style='margin-top: 10px;'></div>";
+            }
+            customerInfo += $@"
+                <div style='font-weight: bold;'>Voiture :</div>
+                <div>{printModel.DeliveryCar.Matricule} - {printModel.DeliveryCar.Owner}</div>";
         }
 
         var headerContent = $@"

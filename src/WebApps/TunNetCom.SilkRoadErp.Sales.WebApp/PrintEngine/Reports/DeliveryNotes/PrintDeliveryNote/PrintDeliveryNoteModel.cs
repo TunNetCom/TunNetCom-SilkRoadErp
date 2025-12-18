@@ -27,6 +27,7 @@ public class PrintDeliveryNoteModel
     public string? Rib { get; set; }
 
     public DeliveryNoteCustomerModel? Customer { get; set; }
+    public DeliveryNoteCarModel? DeliveryCar { get; set; }
     public List<DeliveryNoteLineModel> Lines { get; set; } = new();
 }
 
@@ -38,6 +39,12 @@ public class DeliveryNoteCustomerModel
     public string? Adresse { get; set; }
     public string? Matricule { get; set; }
     public string? Code { get; set; }
+}
+
+public class DeliveryNoteCarModel
+{
+    public string Matricule { get; set; } = string.Empty;
+    public string Owner { get; set; } = string.Empty;
 }
 
 public class DeliveryNoteLineModel
