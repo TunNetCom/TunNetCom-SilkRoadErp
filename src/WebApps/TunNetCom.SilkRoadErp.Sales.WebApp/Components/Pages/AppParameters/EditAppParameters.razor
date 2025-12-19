@@ -176,9 +176,9 @@
                             </RadzenFormField>
 
                             <RadzenFormField Text="Nombre de décimales">
-                                <Start><RadzenIcon Icon="format_numbered_list" /></Start>
+                                <Start><RadzenIcon Icon="numbers" /></Start>
                                 <ChildContent>
-                                    <RadzenNumeric @bind-Value="system.DecimalPlaces" Name="DecimalPlaces" Style="width: 100%;" Min="2" Max="3" Step="1" />
+                                    <RadzenDropDown TValue="int" @bind-Value="system.DecimalPlaces" Data="@(new[] { new { Value = 2, Text = "2" }, new { Value = 3, Text = "3" } })" TextProperty="Text" ValueProperty="Value" Style="width: 100%;" Name="DecimalPlaces" />
                                 </ChildContent>
                             </RadzenFormField>
                         </RadzenColumn>
