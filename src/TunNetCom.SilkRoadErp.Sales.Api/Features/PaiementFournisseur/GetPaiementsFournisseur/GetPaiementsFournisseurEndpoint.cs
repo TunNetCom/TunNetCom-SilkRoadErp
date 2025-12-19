@@ -19,6 +19,10 @@ public class GetPaiementsFournisseurEndpoint : ICarterModule
         var query = new GetPaiementsFournisseurQuery(
             queryParams.FournisseurId,
             queryParams.AccountingYearId,
+            queryParams.DateEcheanceFrom,
+            queryParams.DateEcheanceTo,
+            queryParams.MontantMin,
+            queryParams.MontantMax,
             queryParams.PageNumber,
             queryParams.PageSize);
 
@@ -32,5 +36,9 @@ public class GetPaiementsFournisseurQueryParams : QueryStringParameters
 {
     public int? FournisseurId { get; set; }
     public int? AccountingYearId { get; set; }
+    public DateTime? DateEcheanceFrom { get; set; }
+    public DateTime? DateEcheanceTo { get; set; }
+    public decimal? MontantMin { get; set; }
+    public decimal? MontantMax { get; set; }
 }
 

@@ -62,6 +62,40 @@
                                 AllowClear="true"
                                 Style="width: 200px;" />
             </div>
+            <div class="search-field">
+                <label>Date Échéance Début</label>
+                <RadzenDatePicker @bind-Value="@selectedDateEcheanceFrom"
+                                  DateFormat="dd/MM/yyyy"
+                                  Placeholder="Date début"
+                                  AllowClear="true"
+                                  Style="width: 200px;" />
+            </div>
+            <div class="search-field">
+                <label>Date Échéance Fin</label>
+                <RadzenDatePicker @bind-Value="@selectedDateEcheanceTo"
+                                  DateFormat="dd/MM/yyyy"
+                                  Placeholder="Date fin"
+                                  AllowClear="true"
+                                  Style="width: 200px;" />
+            </div>
+            <div class="search-field">
+                <label>Montant Min</label>
+                <RadzenNumeric @bind-Value="@selectedMontantMin"
+                              Min="0"
+                              Format="@AmountHelper.FORMAT_N2"
+                              Step="0.01"
+                              Placeholder="Montant min"
+                              Style="width: 200px;" />
+            </div>
+            <div class="search-field">
+                <label>Montant Max</label>
+                <RadzenNumeric @bind-Value="@selectedMontantMax"
+                              Min="0"
+                              Format="@AmountHelper.FORMAT_N2"
+                              Step="0.01"
+                              Placeholder="Montant max"
+                              Style="width: 200px;" />
+            </div>
             <div class="search-button">
                 <RadzenButton Text="@Localizer["Rechercher"]"
                               Icon="search"
@@ -203,6 +237,10 @@
     private int decimalPlaces = AmountHelper.DEFAULT_DECIMAL_PLACES;
     private int? selectedClientId;
     private int? selectedAccountingYearId;
+    private DateTime? selectedDateEcheanceFrom;
+    private DateTime? selectedDateEcheanceTo;
+    private decimal? selectedMontantMin;
+    private decimal? selectedMontantMax;
     private List<CustomerResponse> _filteredCustomers = new();
     private List<GetAllAccountingYearsResponse> accountingYears = new();
     private CancellationTokenSource cancellationTokenSource = new();
@@ -268,6 +306,10 @@
             var result = await PaiementClientService.GetPaiementsClientAsync(
                 selectedClientId,
                 selectedAccountingYearId,
+                selectedDateEcheanceFrom,
+                selectedDateEcheanceTo,
+                selectedMontantMin,
+                selectedMontantMax,
                 (args.Skip.Value / _defaultPageSize) + 1,
                 args.Top ?? _defaultPageSize,
                 cancellationTokenSource.Token);

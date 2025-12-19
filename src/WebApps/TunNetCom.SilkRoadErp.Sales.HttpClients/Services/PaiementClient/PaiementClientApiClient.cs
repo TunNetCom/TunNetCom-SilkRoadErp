@@ -68,6 +68,10 @@ public class PaiementClientApiClient : IPaiementClientApiClient
     public async Task<PagedList<PaiementClientResponse>> GetPaiementsClientAsync(
         int? clientId,
         int? accountingYearId,
+        DateTime? dateEcheanceFrom,
+        DateTime? dateEcheanceTo,
+        decimal? montantMin,
+        decimal? montantMax,
         int pageNumber,
         int pageSize,
         CancellationToken cancellationToken)
@@ -83,6 +87,26 @@ public class PaiementClientApiClient : IPaiementClientApiClient
         if (accountingYearId.HasValue)
         {
             queryString += $"&accountingYearId={accountingYearId.Value}";
+        }
+
+        if (dateEcheanceFrom.HasValue)
+        {
+            queryString += $"&dateEcheanceFrom={Uri.EscapeDataString(dateEcheanceFrom.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}";
+        }
+
+        if (dateEcheanceTo.HasValue)
+        {
+            queryString += $"&dateEcheanceTo={Uri.EscapeDataString(dateEcheanceTo.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}";
+        }
+
+        if (montantMin.HasValue)
+        {
+            queryString += $"&montantMin={montantMin.Value}";
+        }
+
+        if (montantMax.HasValue)
+        {
+            queryString += $"&montantMax={montantMax.Value}";
         }
 
         var response = await _httpClient.GetAsync(queryString, cancellationToken: cancellationToken);
