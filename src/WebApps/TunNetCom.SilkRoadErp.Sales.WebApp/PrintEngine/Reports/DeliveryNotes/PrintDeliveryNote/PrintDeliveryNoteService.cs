@@ -257,7 +257,7 @@ public class PrintDeliveryNoteService(
                 <div>{appParameters.Adresse}</div>
                 <div>Tel: {appParameters.Tel}</div>
                 <div>TVA: {$"{appParameters.MatriculeFiscale}/{appParameters.CodeTva}/{appParameters.CodeCategorie}/{appParameters.EtbSecondaire}"}</div>
-                <div>E-mail: ste.nissaf@gmail.com</div>
+                <div>E-mail: {appParameters.Email ?? ""}</div>
             </td>
             
             <!-- Middle Column - Delivery Note Info -->

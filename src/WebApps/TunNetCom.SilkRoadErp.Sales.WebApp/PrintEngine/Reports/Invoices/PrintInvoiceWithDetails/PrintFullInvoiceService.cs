@@ -73,7 +73,7 @@ public class PrintFullInvoiceService(
                 <div>{getAppParametersResponse.Adresse}</div>
                 <div>Tel: {getAppParametersResponse.Tel}</div>
                 <div>TVA: {$"{getAppParametersResponse.MatriculeFiscale}/{getAppParametersResponse.CodeTva}/{getAppParametersResponse.CodeCategorie}/{getAppParametersResponse.EtbSecondaire}"}</div>
-                <div>E-mail: ste.nissaf@gmail.com</div>
+                <div>E-mail: {getAppParametersResponse.Email ?? ""}</div>
             </td>
             
             <!-- Middle Column - Invoice Info -->
