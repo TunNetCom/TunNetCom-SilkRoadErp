@@ -163,11 +163,24 @@
                                             AllowSorting="true" 
                                             Data="@(invoiceWithBLs.DeliveryNotes ?? new List<GetDeliveryNoteBaseInfos>())"
                                             TItem="GetDeliveryNoteBaseInfos"
+                                            SelectionMode="DataGridSelectionMode.Multiple"
+                                            @bind-Value="@_selectedDeliveryNotesToDetach"
                                             Style="margin: 0.5rem 0; border: 1px solid #e0e0e0; border-radius: 4px;"
                                             Class="detail-grid">
                                 <EmptyTemplate>
                                     <p style="font-size: 14px; text-align: center; margin: 1rem; color: #666;">@Localizer["no_receipt_notes_found"]</p>
                                 </EmptyTemplate>
+                                <HeaderTemplate>
+                                    <div style="display: flex; align-items: center; justify-content: flex-end; margin-bottom: 0.75rem; gap: 1rem;">
+                                        <RadzenButton 
+                                            Text="@Localizer["detach_from_invoice"]"
+                                            ButtonStyle="ButtonStyle.Danger"
+                                            Size="ButtonSize.Small"
+                                            Disabled="@(!_selectedDeliveryNotesToDetach.Any())"
+                                            Click="@DetachDeliveryNotesFromInvoice"
+                                            Style="border-radius: 6px; padding: 0.4rem 0.8rem; font-weight: 500; font-size: 0.85rem;" />
+                                    </div>
+                                </HeaderTemplate>
                                 <Columns>
                                     <RadzenDataGridColumn Property="@nameof(GetDeliveryNoteBaseInfos.Number)"
                                                           Title="@Localizer["number"]"
