@@ -1,4 +1,4 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices;
+namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices;
 
 public interface IInvoicesApiClient
 {
@@ -34,5 +34,9 @@ public interface IInvoicesApiClient
 
     Task<Result> ValidateInvoicesAsync(
         List<int> ids,
+        CancellationToken cancellationToken);
+
+    Task<Result<int>> GetInvoiceIdByNumberAsync(
+        int invoiceNumber,
         CancellationToken cancellationToken);
 }

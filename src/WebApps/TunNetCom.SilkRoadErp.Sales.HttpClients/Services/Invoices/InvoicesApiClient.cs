@@ -1,4 +1,4 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices;
+namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices;
 
 public class InvoicesApiClient : IInvoicesApiClient
 {
@@ -227,5 +227,28 @@ public class InvoicesApiClient : IInvoicesApiClient
         {
             return Result.Fail($"Unexpected error: {ex.Message}");
         }
+    }
+
+    public async Task<Result<int>> GetInvoiceIdByNumberAsync(
+        int invoiceNumber,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Fetching invoice ID by number {InvoiceNumber} from the API /invoices/{InvoiceNumber}/id", invoiceNumber, invoiceNumber);
+        
+        var response = await _httpClient.GetAsync(
+            $"/invoices/{invoiceNumber}/id",
+            cancellationToken: cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return Result.Fail("invoice_not_found");
+        }
+
+        _ = response.EnsureSuccessStatusCode();
+
+        var invoiceId = await response.Content.ReadFromJsonAsync<int>(
+            cancellationToken: cancellationToken);
+
+        return Result.Ok(invoiceId);
     }
 }
