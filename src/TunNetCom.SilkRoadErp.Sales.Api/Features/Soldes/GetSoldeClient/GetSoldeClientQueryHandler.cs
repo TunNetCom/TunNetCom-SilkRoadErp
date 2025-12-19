@@ -54,6 +54,7 @@ public class GetSoldeClientQueryHandler(
         var factures = await _context.Facture
             .Where(f => f.IdClient == query.ClientId && f.AccountingYearId == accountingYearId.Value)
             .Include(f => f.BonDeLivraison)
+                .ThenInclude(b => b.LigneBl)
             .ToListAsync(cancellationToken);
 
         var totalFactures = factures.Sum(f =>
@@ -107,7 +108,8 @@ public class GetSoldeClientQueryHandler(
         {
             var lignes = b.LigneBl.Select(l =>
             {
-                var qteLivree = l.QteLivree ?? l.QteLi;
+                // Si QteLivree est null, cela signifie qu'aucune quantité n'a été livrée
+                var qteLivree = l.QteLivree ?? 0;
                 var quantiteNonLivree = l.QteLi - qteLivree;
                 return new LigneBlSoldeClient
                 {
