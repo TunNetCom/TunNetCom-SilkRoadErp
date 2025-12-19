@@ -1,8 +1,11 @@
 @page "/audit-logs"
 @using TunNetCom.SilkRoadErp.Sales.Contracts.AuditLogs
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Users
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AuditLogs
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Users
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Constants
 @inject IAuditLogsClient AuditLogsClient
+@inject IUsersClient UsersClient
 @inject ILogger<AuditLogsList> Logger
 
 <PageTitle>Journal d'Audit</PageTitle>
@@ -49,6 +52,20 @@
                         Style="width: 100%;"
                         AllowClear="true"
                         Placeholder="Toutes les actions"
+                        Change="@OnFilterChanged" />
+                </RadzenFormField>
+            </RadzenColumn>
+
+            <RadzenColumn Size="12" SizeMD="2">
+                <RadzenFormField Text="Utilisateur" Style="width: 100%;">
+                    <RadzenDropDown 
+                        @bind-Value="@filterUserId" 
+                        Data="@userOptions" 
+                        TextProperty="Text"
+                        ValueProperty="Value"
+                        Style="width: 100%;"
+                        AllowClear="true"
+                        Placeholder="Tous les utilisateurs"
                         Change="@OnFilterChanged" />
                 </RadzenFormField>
             </RadzenColumn>
@@ -176,6 +193,7 @@
     private string? filterEntityName;
     private string? filterEntityId;
     private string? filterAction;
+    private int? filterUserId;
     private DateTime? filterDateFrom;
     private DateTime? filterDateTo;
 
@@ -190,10 +208,46 @@
     };
 
     private List<string> actions = new() { "Created", "Updated", "Deleted" };
+    private List<UserResponse> users = new();
+    private List<UserOption> userOptions = new();
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadUsers();
         await LoadData(new LoadDataArgs { Skip = 0, Top = pageSize });
+    }
+
+    private async Task LoadUsers()
+    {
+        try
+        {
+            var allUsers = new List<UserResponse>();
+            int pageNumber = 1;
+            const int pageSize = 100;
+            int totalCount = 0;
+
+            // Load all users in pages (max 100 per page)
+            do
+            {
+                var result = await UsersClient.GetUsersAsync(pageNumber, pageSize, null, CancellationToken.None);
+                allUsers.AddRange(result.Items);
+                totalCount = result.TotalCount;
+                pageNumber++;
+            }
+            while (allUsers.Count < totalCount);
+
+            users = allUsers.OrderBy(u => u.Username).ToList();
+            userOptions = users.Select(u => new UserOption { Value = u.Id, Text = u.Username }).ToList();
+            Logger.LogInformation("Loaded {Count} users for filter", users.Count);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading users for filter");
+            users = new List<UserResponse>();
+            userOptions = new List<UserOption>();
+            StateHasChanged();
+        }
     }
 
     private async Task LoadData(LoadDataArgs args)
@@ -208,6 +262,7 @@
                 EntityName = filterEntityName,
                 EntityId = filterEntityId,
                 Action = filterAction,
+                UserId = filterUserId,
                 DateFrom = filterDateFrom,
                 DateTo = filterDateTo,
                 PageNumber = pageNumber,
@@ -241,6 +296,7 @@
         filterEntityName = null;
         filterEntityId = null;
         filterAction = null;
+        filterUserId = null;
         filterDateFrom = null;
         filterDateTo = null;
         await grid!.Reload();
@@ -276,5 +332,11 @@
     }
 
     [Inject] DialogService DialogService { get; set; } = default!;
+
+    private class UserOption
+    {
+        public int? Value { get; set; }
+        public string Text { get; set; } = string.Empty;
+    }
 }
 
