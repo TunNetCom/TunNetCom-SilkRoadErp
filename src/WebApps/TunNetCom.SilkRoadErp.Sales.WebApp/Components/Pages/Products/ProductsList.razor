@@ -7,6 +7,7 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Products
 @using TunNetCom.SilkRoadErp.Sales.Contracts.ProductFamilies
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using Radzen
 @using Radzen.Blazor
 @using BlazorBootstrap
@@ -42,10 +43,9 @@
                        Change="@(async (string value) => await productGrid.Reload())"
                        Class="products-search" />
 
-        <RadzenCard Style="margin-bottom: 1.25rem; padding: 1.25rem;">
-            <RadzenStack Gap="1.25rem">
-                <h4 style="margin: 0; font-size: 1.1rem; font-weight: 600;">Filtres</h4>
-                <RadzenRow Gap="1rem">
+        <RadzenCard Style="margin-bottom: 0.75rem; padding: 0.75rem; flex-shrink: 0;">
+            <RadzenStack Gap="0.5rem">
+                <RadzenRow Gap="0.75rem">
                     <RadzenColumn Size="12" SizeMD="3">
                         <RadzenFormField Text="Famille" Style="margin-bottom: 0;">
                             <RadzenDropDown Value="@selectedFamilleId" 
@@ -93,7 +93,7 @@
                                     Style="width: 100%; margin-top: 0;" />
                     </RadzenColumn>
                 </RadzenRow>
-                <RadzenRow Gap="1rem">
+                <RadzenRow Gap="0.75rem">
                     <RadzenColumn Size="12" SizeMD="3">
                         <RadzenFormField Text="Stock calculé (min)" Style="margin-bottom: 0;">
                             <RadzenNumeric Value="@stockCalculeMin" 
@@ -109,9 +109,6 @@
                                          Placeholder="Max" 
                                          Min="0" />
                         </RadzenFormField>
-                    </RadzenColumn>
-                    <RadzenColumn Size="12" SizeMD="6">
-                        <!-- Espace vide pour l'alignement -->
                     </RadzenColumn>
                 </RadzenRow>
             </RadzenStack>
@@ -158,6 +155,16 @@
                         <span class="grid-cell">@(product.SousFamilleProduitNom ?? "-")</span>
                     </Template>
                 </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ProductResponse" Property="@nameof(ProductResponse.Price)" Title="@Localizer["product_prix"]" Width="120px">
+                    <Template Context="product">
+                        <span class="grid-cell">@product.Price.FormatAmount()</span>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ProductResponse" Property="@nameof(ProductResponse.PurchasingPrice)" Title="@Localizer["product_prixAchat"]" Width="120px">
+                    <Template Context="product">
+                        <span class="grid-cell">@product.PurchasingPrice.FormatAmount()</span>
+                    </Template>
+                </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="ProductResponse" Property="@nameof(ProductResponse.StockCalcule)" Title="@Localizer["stock_calcule"]" Width="120px">
                     <Template Context="product">
                         @if (product.StockCalcule.HasValue)
@@ -167,37 +174,6 @@
                                            stockValue > 0 ? "stock-badge-orange" : "stock-badge-red";
                             <RadzenBadge BadgeStyle="BadgeStyle.Info" Variant="Variant.Flat" Size="BadgeSize.Medium" Class="@badgeClass">
                                 @stockValue
-                            </RadzenBadge>
-                        }
-                        else
-                        {
-                            <span class="grid-cell">-</span>
-                        }
-                    </Template>
-                </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="ProductResponse" Property="@nameof(ProductResponse.QteEnReparation)" Title="En réparation" Width="120px">
-                    <Template Context="product">
-                        @if (product.QteEnReparation.HasValue && product.QteEnReparation.Value > 0)
-                        {
-                            <RadzenBadge BadgeStyle="BadgeStyle.Warning" Variant="Variant.Flat" Size="BadgeSize.Medium">
-                                @product.QteEnReparation.Value
-                            </RadzenBadge>
-                        }
-                        else
-                        {
-                            <span class="grid-cell">-</span>
-                        }
-                    </Template>
-                </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="ProductResponse" Property="@nameof(ProductResponse.StockReel)" Title="Stock réel" Width="120px">
-                    <Template Context="product">
-                        @if (product.StockReel.HasValue)
-                        {
-                            var stockReel = product.StockReel.Value;
-                            var badgeClass = stockReel > product.QteLimit ? "stock-badge-green" : 
-                                           stockReel > 0 ? "stock-badge-orange" : "stock-badge-red";
-                            <RadzenBadge BadgeStyle="BadgeStyle.Info" Variant="Variant.Flat" Size="BadgeSize.Medium" Class="@badgeClass">
-                                @stockReel
                             </RadzenBadge>
                         }
                         else
@@ -246,29 +222,38 @@
 
     }
     .products-container {
-        padding: 1.25rem;
-        max-width: 1280px;
-        margin: 1rem auto;
+        padding: 0.25rem 0.75rem 0.75rem 0.75rem;
+        width: 100%;
+        margin: 0 auto;
+        height: calc(100vh - 120px);
+        display: flex;
+        flex-direction: column;
     }
 
     .products-card {
         border-radius: var(--border-radius);
         box-shadow: var(--card-shadow);
-        padding: 1.5rem;
+        padding: 0.5rem 1rem 1rem 1rem;
         border: none;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        overflow: hidden;
     }
 
     .products-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 1.25rem;
+        margin-bottom: 0.5rem;
+        margin-top: 0;
+        flex-shrink: 0;
     }
 
     .products-title {
         font-weight: 600;
         margin: 0;
-        font-size: 2rem;
+        font-size: 1.75rem;
         line-height: 1.2;
     }
 
@@ -276,9 +261,10 @@
         width: 100%;
         border-radius: var(--border-radius);
         border: 1px solid var(--border-color);
-        padding: 0.75rem 1rem;
-        margin-bottom: 1.25rem;
+        padding: 0.5rem 0.75rem;
+        margin-bottom: 0.75rem;
         font-size: 0.95rem;
+        flex-shrink: 0;
     }
 
         .products-search:focus {
@@ -291,6 +277,23 @@
         border-radius: var(--border-radius);
         overflow: hidden;
         border: none;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .products-grid .rz-grid {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .products-grid .rz-datatable-wrapper {
+        flex: 1;
+        overflow: auto;
+        min-height: 0;
     }
 
         .products-grid .rz-datatable thead {
