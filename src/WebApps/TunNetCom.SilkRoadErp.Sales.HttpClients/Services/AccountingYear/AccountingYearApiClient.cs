@@ -1,3 +1,5 @@
+using TunNetCom.SilkRoadErp.Sales.Contracts.AccountingYear;
+
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AccountingYear;
 
 public class AccountingYearApiClient : IAccountingYearApiClient
@@ -66,6 +68,65 @@ public class AccountingYearApiClient : IAccountingYearApiClient
 
         _logger.LogInformation("Successfully set accounting year {Id} as active", accountingYearId);
         return true;
+    }
+
+    public async Task<AccountingYearResponse?> GetAccountingYearByIdAsync(int id, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Fetching accounting year with Id {Id}", id);
+
+        var response = await _httpClient.GetAsync($"accounting-years/{id}", cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("Accounting year with Id {Id} not found", id);
+            return null;
+        }
+
+        _ = response.EnsureSuccessStatusCode();
+
+        var accountingYear = await response.Content.ReadFromJsonAsync<AccountingYearResponse>(
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true },
+            cancellationToken);
+
+        _logger.LogInformation("Successfully retrieved accounting year: {Year}", accountingYear?.Year);
+        return accountingYear;
+    }
+
+    public async Task<int> CreateAccountingYearAsync(CreateAccountingYearRequest request, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Creating accounting year for year {Year}", request.Year);
+
+        var response = await _httpClient.PostAsJsonAsync("accounting-years", request, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var locationHeader = response.Headers.Location?.ToString();
+        if (locationHeader != null)
+        {
+            var id = int.Parse(locationHeader.Split('/').Last());
+            _logger.LogInformation("Successfully created accounting year with Id {Id}", id);
+            return id;
+        }
+        return 0;
+    }
+
+    public async Task UpdateAccountingYearAsync(int id, UpdateAccountingYearRequest request, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Updating accounting year {Id}", id);
+
+        var response = await _httpClient.PutAsJsonAsync($"accounting-years/{id}", request, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        _logger.LogInformation("Successfully updated accounting year {Id}", id);
+    }
+
+    public async Task DeleteAccountingYearAsync(int id, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Deleting accounting year {Id}", id);
+
+        var response = await _httpClient.DeleteAsync($"accounting-years/{id}", cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        _logger.LogInformation("Successfully deleted accounting year {Id}", id);
     }
 }
 

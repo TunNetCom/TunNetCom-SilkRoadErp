@@ -1,4 +1,4 @@
-﻿@using Microsoft.Extensions.Localization
+@using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Services
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Constants
@@ -84,6 +84,7 @@
                     <RadzenPanelMenuItem Text="Journal d'Audit" Icon="history" Path="/audit-logs" />
                 </HasPermission>
                 <RadzenPanelMenuItem Text="Historique d'Impression" Icon="print" Path="/print-history" />
+                <RadzenPanelMenuItem Text="Exercices Comptables" Icon="calendar_today" Path="/accounting-years" />
                 <HasPermission AnyPermissions="new[] { Permissions.ManageUsers, Permissions.ViewUsers }">
                     <RadzenPanelMenuItem Text="Utilisateurs" Icon="people" Path="/users" />
                 </HasPermission>

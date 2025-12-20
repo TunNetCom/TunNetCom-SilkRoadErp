@@ -1326,4 +1326,73 @@
   <data name="Close" xml:space="preserve">
     <value>Fermer</value>
   </data>
+  <data name="Accounting_Years" xml:space="preserve">
+    <value>Exercices Comptables</value>
+  </data>
+  <data name="Accounting_Year" xml:space="preserve">
+    <value>Exercice Comptable</value>
+  </data>
+  <data name="New_Accounting_Year" xml:space="preserve">
+    <value>Nouvel Exercice Comptable</value>
+  </data>
+  <data name="Edit_Accounting_Year" xml:space="preserve">
+    <value>Modifier l'Exercice Comptable</value>
+  </data>
+  <data name="No_Accounting_Years" xml:space="preserve">
+    <value>Aucun exercice comptable</value>
+  </data>
+  <data name="Error_Loading_Accounting_Years" xml:space="preserve">
+    <value>Erreur lors du chargement des exercices comptables</value>
+  </data>
+  <data name="Error_Loading_Accounting_Year" xml:space="preserve">
+    <value>Erreur lors du chargement de l'exercice comptable</value>
+  </data>
+  <data name="Error_Deleting_Accounting_Year" xml:space="preserve">
+    <value>Erreur lors de la suppression de l'exercice comptable</value>
+  </data>
+  <data name="Error_Saving" xml:space="preserve">
+    <value>Erreur lors de l'enregistrement</value>
+  </data>
+  <data name="Accounting_Year_Created" xml:space="preserve">
+    <value>Exercice comptable créé avec succès</value>
+  </data>
+  <data name="Accounting_Year_Updated" xml:space="preserve">
+    <value>Exercice comptable modifié avec succès</value>
+  </data>
+  <data name="Accounting_Year_Deleted" xml:space="preserve">
+    <value>Exercice comptable supprimé avec succès</value>
+  </data>
+  <data name="Confirm_Delete_Accounting_Year" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir supprimer cet exercice comptable ?</value>
+  </data>
+  <data name="Accounting_Year_Used_Cannot_Modify" xml:space="preserve">
+    <value>Cet exercice comptable est utilisé et ne peut pas être modifié</value>
+  </data>
+  <data name="Accounting_Year_Used_Cannot_Delete" xml:space="preserve">
+    <value>Cet exercice comptable est utilisé et ne peut pas être supprimé</value>
+  </data>
+  <data name="Accounting_Year_Already_Exists" xml:space="preserve">
+    <value>Un exercice comptable pour cette année existe déjà</value>
+  </data>
+  <data name="Year" xml:space="preserve">
+    <value>Année</value>
+  </data>
+  <data name="Year_Placeholder" xml:space="preserve">
+    <value>Ex: 2024</value>
+  </data>
+  <data name="Year_Required" xml:space="preserve">
+    <value>L'année est requise</value>
+  </data>
+  <data name="Year_Invalid_Range" xml:space="preserve">
+    <value>L'année doit être comprise entre 2000 et 2100</value>
+  </data>
+  <data name="Is_Active" xml:space="preserve">
+    <value>Actif</value>
+  </data>
+  <data name="Active" xml:space="preserve">
+    <value>Actif</value>
+  </data>
+  <data name="Inactive" xml:space="preserve">
+    <value>Inactif</value>
+  </data>
 </root>
