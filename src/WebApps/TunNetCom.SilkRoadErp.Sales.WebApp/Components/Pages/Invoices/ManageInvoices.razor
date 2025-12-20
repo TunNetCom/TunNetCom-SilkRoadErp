@@ -1188,13 +1188,6 @@
             return;
         }
 
-        // Get current user info
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var userIdClaim = authState.User.FindFirst(ClaimTypes.NameIdentifier);
-        var usernameClaim = authState.User.FindFirst(ClaimTypes.Name);
-        int? userId = userIdClaim != null && int.TryParse(userIdClaim.Value, out var uid) ? uid : null;
-        string? username = usernameClaim?.Value;
-
         // Check if invoice has been printed before (for duplicata)
         bool isDuplicata = false;
         try
@@ -1207,24 +1200,46 @@
             // If we can't check, assume it's not a duplicata
         }
 
-        var pdfBytes = await PrintFullInvoiceService
-            .GenerateInvoicePdfAsync(SelectedInvoiceId, cancellationToken: _cancellationTokenSource.Token, isDuplicata: isDuplicata);
+        // Generate PDF with header by default
+        var pdfResult = await PrintFullInvoiceService
+            .GenerateInvoicePdfAsync(SelectedInvoiceId, cancellationToken: _cancellationTokenSource.Token, isDuplicata: isDuplicata, includeHeader: true);
 
-        var fileName = $"Invoice {SelectedInvoiceId}.pdf";
-        
-        // Use centralized print service with document tracking
-        var printOptions = new TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure.PrintOptions
+        if (pdfResult.IsSuccess)
         {
-            Mode = TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure.PrintMode.Download,
-            FileName = fileName,
-            DocumentType = Facture,
-            DocumentId = SelectedInvoiceId,
-            UserId = userId,
-            Username = username,
-            IsDuplicata = isDuplicata
-        };
+            var fileName = $"Invoice {SelectedInvoiceId}.pdf";
 
-        await PrintService.PrintAsync(pdfBytes.Value, printOptions, _cancellationTokenSource.Token);
+            // Show PDF viewer dialog
+            await DialogService.OpenAsync<PdfViewerDialog>(
+                Localizer["print_mode"],
+                new Dictionary<string, object>
+                {
+                    { "PdfBytes", pdfResult.Value },
+                    { "FileName", fileName },
+                    { "RegeneratePdfAsync", new Func<bool, Task<Result<byte[]>>>(async (includeHeader) =>
+                        await PrintFullInvoiceService.GenerateInvoicePdfAsync(
+                            SelectedInvoiceId,
+                            _cancellationTokenSource.Token,
+                            isDuplicata: isDuplicata,
+                            includeHeader: includeHeader))
+                    }
+                },
+                new DialogOptions()
+                {
+                    Width = "800px",
+                    Height = "700px",
+                    Resizable = true,
+                    Draggable = true
+                });
+        }
+        else
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Échec de la génération du PDF: {pdfResult.Errors.FirstOrDefault()?.Message ?? "Unknown error"}"
+            });
+        }
     }
     #endregion
 }

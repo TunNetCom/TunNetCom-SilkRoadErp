@@ -1204,14 +1204,46 @@
                 });
             return;
         }
-        // Print functionality commented out for display-only version
-        
-        var invoices = new List<int>() { SelectedInvoiceId };
-        var pdfBytes = await PrintProviderFullInvoiceService
-        .GenerateInvoicePdfAsync(SelectedInvoiceId, cancellationToken: _cancellationTokenSource.Token);
-        var fileName = $"Invoice {SelectedInvoiceId}.pdf";
-        await JS.InvokeVoidAsync("downloadFile", fileName, Convert.ToBase64String(pdfBytes.Value), "application/pdf");
-        
+
+        // Generate PDF with header by default
+        var pdfResult = await PrintProviderFullInvoiceService
+            .GenerateInvoicePdfAsync(SelectedInvoiceId, cancellationToken: _cancellationTokenSource.Token, includeHeader: true);
+
+        if (pdfResult.IsSuccess)
+        {
+            var fileName = $"Invoice {SelectedInvoiceId}.pdf";
+
+            // Show PDF viewer dialog
+            await DialogService.OpenAsync<PdfViewerDialog>(
+                Localizer["print_mode"],
+                new Dictionary<string, object>
+                {
+                    { "PdfBytes", pdfResult.Value },
+                    { "FileName", fileName },
+                    { "RegeneratePdfAsync", new Func<bool, Task<Result<byte[]>>>(async (includeHeader) =>
+                        await PrintProviderFullInvoiceService.GenerateInvoicePdfAsync(
+                            SelectedInvoiceId,
+                            _cancellationTokenSource.Token,
+                            includeHeader: includeHeader))
+                    }
+                },
+                new DialogOptions()
+                {
+                    Width = "800px",
+                    Height = "700px",
+                    Resizable = true,
+                    Draggable = true
+                });
+        }
+        else
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Échec de la génération du PDF: {pdfResult.Errors.FirstOrDefault()?.Message ?? "Unknown error"}"
+            });
+        }
     }
 
     private async Task ExportToTejXmlClick()
