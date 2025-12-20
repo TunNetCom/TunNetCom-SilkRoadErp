@@ -470,6 +470,15 @@
                 
                 if (paiement.FournisseurId > 0)
                 {
+                    // Load the selected provider into the filtered list so the dropdown can display it
+                    var providerResult = await ProvidersService.GetAsync(paiement.FournisseurId, cancellationTokenSource.Token);
+                    if (providerResult.IsT0)
+                    {
+                        var provider = providerResult.AsT0;
+                        _filteredProviders = new List<ProviderResponse> { provider };
+                        await InvokeAsync(StateHasChanged);
+                    }
+                    
                     await LoadInvoicesForProvider(paiement.FournisseurId);
                     await LoadReceiptNotesForProvider(paiement.FournisseurId);
                 }

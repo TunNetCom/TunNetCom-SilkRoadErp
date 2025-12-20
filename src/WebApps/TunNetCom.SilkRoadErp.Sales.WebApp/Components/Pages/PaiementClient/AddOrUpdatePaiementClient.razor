@@ -448,6 +448,15 @@
                 
                 if (paiement.ClientId > 0)
                 {
+                    // Load the selected client into the filtered list so the dropdown can display it
+                    var clientResult = await CustomersService.GetAsync(paiement.ClientId, cancellationTokenSource.Token);
+                    if (clientResult.IsT0)
+                    {
+                        var client = clientResult.AsT0;
+                        _filteredCustomers = new List<CustomerResponse> { client };
+                        await InvokeAsync(StateHasChanged);
+                    }
+                    
                     await LoadInvoicesForClient(paiement.ClientId);
                     await LoadDeliveryNotesForClient(paiement.ClientId);
                 }
