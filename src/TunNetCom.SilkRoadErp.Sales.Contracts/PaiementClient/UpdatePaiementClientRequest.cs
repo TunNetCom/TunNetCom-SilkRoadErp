@@ -34,5 +34,8 @@ public class UpdatePaiementClientRequest
 
     [JsonPropertyName("commentaire")]
     public string? Commentaire { get; set; }
+
+    [JsonPropertyName("documentBase64")]
+    public string? DocumentBase64 { get; set; }
 }
 

@@ -26,7 +26,8 @@ public partial class PaiementFournisseur : IAccountingYearEntity
         string? ribCodeEtab,
         string? ribCodeAgence,
         string? ribNumeroCompte,
-        string? ribCle)
+        string? ribCle,
+        string? documentStoragePath)
     {
         return new PaiementFournisseur
         {
@@ -45,7 +46,8 @@ public partial class PaiementFournisseur : IAccountingYearEntity
             RibCodeEtab = ribCodeEtab,
             RibCodeAgence = ribCodeAgence,
             RibNumeroCompte = ribNumeroCompte,
-            RibCle = ribCle
+            RibCle = ribCle,
+            DocumentStoragePath = documentStoragePath
         };
     }
 
@@ -65,7 +67,8 @@ public partial class PaiementFournisseur : IAccountingYearEntity
         string? ribCodeEtab,
         string? ribCodeAgence,
         string? ribNumeroCompte,
-        string? ribCle)
+        string? ribCle,
+        string? documentStoragePath)
     {
         this.Numero = numero;
         this.FournisseurId = fournisseurId;
@@ -83,6 +86,7 @@ public partial class PaiementFournisseur : IAccountingYearEntity
         this.RibCodeAgence = ribCodeAgence;
         this.RibNumeroCompte = ribNumeroCompte;
         this.RibCle = ribCle;
+        this.DocumentStoragePath = documentStoragePath;
         this.DateModification = DateTime.UtcNow;
     }
 
@@ -119,6 +123,8 @@ public partial class PaiementFournisseur : IAccountingYearEntity
     public string? RibNumeroCompte { get; private set; }
 
     public string? RibCle { get; private set; }
+
+    public string? DocumentStoragePath { get; private set; }
 
     public DateTime? DateModification { get; private set; }
 

@@ -32,7 +32,8 @@ public class UpdatePaiementFournisseurEndpoint : ICarterModule
             request.RibCodeEtab,
             request.RibCodeAgence,
             request.RibNumeroCompte,
-            request.RibCle);
+            request.RibCle,
+            request.DocumentBase64);
 
         var result = await mediator.Send(command, cancellationToken);
 

@@ -75,6 +75,10 @@ public partial class PaiementClientConfiguration : IEntityTypeConfiguration<Paie
             .HasColumnName("Commentaire")
             .HasMaxLength(500);
 
+        entity.Property(e => e.DocumentStoragePath)
+            .HasColumnName("DocumentStoragePath")
+            .HasColumnType("nvarchar(max)");
+
         entity.Property(e => e.DateModification)
             .HasColumnName("DateModification")
             .HasColumnType("datetime");

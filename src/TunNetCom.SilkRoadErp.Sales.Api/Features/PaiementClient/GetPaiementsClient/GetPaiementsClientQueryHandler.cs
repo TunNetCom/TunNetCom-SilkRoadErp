@@ -64,6 +64,7 @@ public class GetPaiementsClientQueryHandler(
                 BanqueNom = p.Banque != null ? p.Banque.Nom : null,
                 DateEcheance = p.DateEcheance,
                 Commentaire = p.Commentaire,
+                DocumentStoragePath = p.DocumentStoragePath,
                 DateModification = p.DateModification
             })
             .OrderByDescending(p => p.DatePaiement);

@@ -18,6 +18,7 @@ public record UpdatePaiementFournisseurCommand(
     string? RibCodeEtab,
     string? RibCodeAgence,
     string? RibNumeroCompte,
-    string? RibCle
+    string? RibCle,
+    string? DocumentBase64
 ) : IRequest<Result>;
 

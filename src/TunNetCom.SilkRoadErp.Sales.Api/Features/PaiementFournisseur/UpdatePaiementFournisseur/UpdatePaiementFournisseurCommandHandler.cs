@@ -1,3 +1,4 @@
+using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.DocumentStorage;
 using TunNetCom.SilkRoadErp.Sales.Contracts.PaiementFournisseur;
 using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
@@ -5,7 +6,8 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.PaiementFournisseur.UpdatePai
 
 public class UpdatePaiementFournisseurCommandHandler(
     SalesContext _context,
-    ILogger<UpdatePaiementFournisseurCommandHandler> _logger)
+    ILogger<UpdatePaiementFournisseurCommandHandler> _logger,
+    IDocumentStorageService _documentStorageService)
     : IRequestHandler<UpdatePaiementFournisseurCommand, Result>
 {
     public async Task<Result> Handle(UpdatePaiementFournisseurCommand command, CancellationToken cancellationToken)
@@ -75,6 +77,41 @@ public class UpdatePaiementFournisseurCommandHandler(
             }
         }
 
+        // Process document if provided
+        string? documentStoragePath = paiement.DocumentStoragePath; // Keep existing if no new document
+        if (!string.IsNullOrWhiteSpace(command.DocumentBase64))
+        {
+            try
+            {
+                // Delete old document if exists
+                if (!string.IsNullOrWhiteSpace(paiement.DocumentStoragePath))
+                {
+                    try
+                    {
+                        await _documentStorageService.DeleteAsync(paiement.DocumentStoragePath, cancellationToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Error deleting old document, continuing with new document");
+                    }
+                }
+
+                var documentBytes = Convert.FromBase64String(command.DocumentBase64);
+                var fileName = $"paiement_fournisseur_{command.Numero}_{DateTime.UtcNow:yyyyMMddHHmmss}";
+                documentStoragePath = await _documentStorageService.SaveAsync(documentBytes, fileName, cancellationToken);
+            }
+            catch (FormatException ex)
+            {
+                _logger.LogError(ex, "Invalid Base64 format for document");
+                return Result.Fail("invalid_document_format");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error storing document");
+                return Result.Fail("error_storing_document");
+            }
+        }
+
         paiement.UpdatePaiementFournisseur(
             command.Numero,
             command.FournisseurId,
@@ -91,7 +128,8 @@ public class UpdatePaiementFournisseurCommandHandler(
             command.RibCodeEtab,
             command.RibCodeAgence,
             command.RibNumeroCompte,
-            command.RibCle);
+            command.RibCle,
+            documentStoragePath);
 
         await _context.SaveChangesAsync(cancellationToken);
 

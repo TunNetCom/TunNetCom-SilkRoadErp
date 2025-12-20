@@ -59,6 +59,9 @@ public class PaiementFournisseurResponse
     [JsonPropertyName("ribCle")]
     public string? RibCle { get; set; }
 
+    [JsonPropertyName("documentStoragePath")]
+    public string? DocumentStoragePath { get; set; }
+
     [JsonPropertyName("dateModification")]
     public DateTime? DateModification { get; set; }
 }

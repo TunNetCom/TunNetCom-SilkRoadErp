@@ -47,6 +47,9 @@ public class PaiementClientResponse
     [JsonPropertyName("commentaire")]
     public string? Commentaire { get; set; }
 
+    [JsonPropertyName("documentStoragePath")]
+    public string? DocumentStoragePath { get; set; }
+
     [JsonPropertyName("dateModification")]
     public DateTime? DateModification { get; set; }
 }

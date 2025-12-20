@@ -22,7 +22,8 @@ public partial class PaiementClient : IAccountingYearEntity
         string? numeroChequeTraite,
         int? banqueId,
         DateTime? dateEcheance,
-        string? commentaire)
+        string? commentaire,
+        string? documentStoragePath)
     {
         return new PaiementClient
         {
@@ -37,7 +38,8 @@ public partial class PaiementClient : IAccountingYearEntity
             NumeroChequeTraite = numeroChequeTraite,
             BanqueId = banqueId,
             DateEcheance = dateEcheance,
-            Commentaire = commentaire
+            Commentaire = commentaire,
+            DocumentStoragePath = documentStoragePath
         };
     }
 
@@ -53,7 +55,8 @@ public partial class PaiementClient : IAccountingYearEntity
         string? numeroChequeTraite,
         int? banqueId,
         DateTime? dateEcheance,
-        string? commentaire)
+        string? commentaire,
+        string? documentStoragePath)
     {
         this.Numero = numero;
         this.ClientId = clientId;
@@ -67,6 +70,7 @@ public partial class PaiementClient : IAccountingYearEntity
         this.BanqueId = banqueId;
         this.DateEcheance = dateEcheance;
         this.Commentaire = commentaire;
+        this.DocumentStoragePath = documentStoragePath;
         this.DateModification = DateTime.UtcNow;
     }
 
@@ -95,6 +99,8 @@ public partial class PaiementClient : IAccountingYearEntity
     public DateTime? DateEcheance { get; private set; }
 
     public string? Commentaire { get; private set; }
+
+    public string? DocumentStoragePath { get; private set; }
 
     public DateTime? DateModification { get; private set; }
 

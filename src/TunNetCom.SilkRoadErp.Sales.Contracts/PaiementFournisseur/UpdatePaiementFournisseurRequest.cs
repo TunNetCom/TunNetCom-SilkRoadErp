@@ -46,5 +46,8 @@ public class UpdatePaiementFournisseurRequest
 
     [JsonPropertyName("ribCle")]
     public string? RibCle { get; set; }
+
+    [JsonPropertyName("documentBase64")]
+    public string? DocumentBase64 { get; set; }
 }
 

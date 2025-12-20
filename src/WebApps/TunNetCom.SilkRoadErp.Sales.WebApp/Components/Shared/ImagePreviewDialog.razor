@@ -1,0 +1,18 @@
+@using Radzen
+@using Radzen.Blazor
+@inject DialogService DialogService
+
+<RadzenStack Gap="1rem">
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="Radzen.JustifyContent.SpaceBetween" Style="align-items: center;">
+        <RadzenText TextStyle="TextStyle.H6">Aperçu de l'image</RadzenText>
+        <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Variant="Variant.Text" Click="@(() => DialogService.Close())" />
+    </RadzenStack>
+    <div style="text-align: center; background-color: #f5f5f5; padding: 20px; border-radius: 4px; overflow: auto; max-height: 80vh;">
+        <img src="@ImageUrl" alt="Image preview" style="max-width: 100%; max-height: 80vh; border-radius: 4px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);" />
+    </div>
+</RadzenStack>
+
+@code {
+    [Parameter]
+    public string ImageUrl { get; set; } = string.Empty;
+}

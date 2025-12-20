@@ -28,7 +28,8 @@ public class UpdatePaiementClientEndpoint : ICarterModule
             request.NumeroChequeTraite,
             request.BanqueId,
             request.DateEcheance,
-            request.Commentaire);
+            request.Commentaire,
+            request.DocumentBase64);
 
         var result = await mediator.Send(command, cancellationToken);
 

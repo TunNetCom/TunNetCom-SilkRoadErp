@@ -1,4 +1,4 @@
-﻿// wwwroot/js/site.js
+// wwwroot/js/site.js
 window.downloadFile = (fileName, base64String, contentType) => {
     const byteCharacters = atob(base64String);
     const byteNumbers = new Array(byteCharacters.length);
@@ -418,4 +418,93 @@ window.captureImageFromCamera = function() {
             reject(new Error(`Failed to access camera: ${error.message}`));
         }
     });
+};
+
+// Open document in new tab using blob URL (better for large files)
+window.openDocumentInNewTab = function(dataUrl) {
+    try {
+        // Extract base64 data and content type
+        const [header, base64Data] = dataUrl.split(',');
+        const contentType = header.match(/data:([^;]+)/)?.[1] || 'application/octet-stream';
+        
+        // Convert base64 to blob
+        const byteCharacters = atob(base64Data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: contentType });
+        
+        // Create blob URL
+        const blobUrl = URL.createObjectURL(blob);
+        
+        // For images, create an HTML page with the image
+        // For PDFs, open directly
+        if (contentType.startsWith('image/')) {
+            // Create a new window with HTML containing the image
+            const newWindow = window.open('', '_blank');
+            if (newWindow) {
+                newWindow.document.write(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Image Preview</title>
+                        <style>
+                            body {
+                                margin: 0;
+                                padding: 20px;
+                                display: flex;
+                                justify-content: center;
+                                align-items: center;
+                                min-height: 100vh;
+                                background-color: #f5f5f5;
+                            }
+                            img {
+                                max-width: 100%;
+                                max-height: 100vh;
+                                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                                border-radius: 4px;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <img src="${blobUrl}" alt="Document preview" />
+                    </body>
+                    </html>
+                `);
+                newWindow.document.close();
+                
+                // Clean up blob URL after window loads
+                newWindow.addEventListener('load', () => {
+                    setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+                });
+            } else {
+                // If popup blocked, try opening data URL directly
+                window.open(dataUrl, '_blank');
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+            }
+        } else {
+            // For PDFs and other documents, open blob URL directly
+            const newWindow = window.open(blobUrl, '_blank');
+            
+            // Clean up blob URL after a delay (give browser time to load)
+            if (newWindow) {
+                newWindow.addEventListener('load', () => {
+                    setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+                });
+            } else {
+                // If popup blocked, try direct download
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.target = '_blank';
+                link.click();
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+            }
+        }
+    } catch (error) {
+        console.error('Error opening document:', error);
+        // Fallback: try opening data URL directly
+        window.open(dataUrl, '_blank');
+    }
 };

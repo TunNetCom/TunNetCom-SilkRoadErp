@@ -91,6 +91,10 @@ public partial class PaiementFournisseurConfiguration : IEntityTypeConfiguration
             .HasColumnName("RibCle")
             .HasMaxLength(5);
 
+        entity.Property(e => e.DocumentStoragePath)
+            .HasColumnName("DocumentStoragePath")
+            .HasColumnType("nvarchar(max)");
+
         entity.Property(e => e.DateModification)
             .HasColumnName("DateModification")
             .HasColumnType("datetime");

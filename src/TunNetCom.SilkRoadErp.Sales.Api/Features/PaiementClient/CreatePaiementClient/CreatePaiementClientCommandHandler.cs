@@ -1,3 +1,4 @@
+using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.DocumentStorage;
 using TunNetCom.SilkRoadErp.Sales.Contracts.PaiementClient;
 using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
@@ -5,7 +6,8 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.PaiementClient.CreatePaiement
 
 public class CreatePaiementClientCommandHandler(
     SalesContext _context,
-    ILogger<CreatePaiementClientCommandHandler> _logger)
+    ILogger<CreatePaiementClientCommandHandler> _logger,
+    IDocumentStorageService _documentStorageService)
     : IRequestHandler<CreatePaiementClientCommand, Result<int>>
 {
     public async Task<Result<int>> Handle(CreatePaiementClientCommand command, CancellationToken cancellationToken)
@@ -72,6 +74,28 @@ public class CreatePaiementClientCommandHandler(
             }
         }
 
+        // Process document if provided
+        string? documentStoragePath = null;
+        if (!string.IsNullOrWhiteSpace(command.DocumentBase64))
+        {
+            try
+            {
+                var documentBytes = Convert.FromBase64String(command.DocumentBase64);
+                var fileName = $"paiement_client_{command.Numero}_{DateTime.UtcNow:yyyyMMddHHmmss}";
+                documentStoragePath = await _documentStorageService.SaveAsync(documentBytes, fileName, cancellationToken);
+            }
+            catch (FormatException ex)
+            {
+                _logger.LogError(ex, "Invalid Base64 format for document");
+                return Result.Fail("invalid_document_format");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error storing document");
+                return Result.Fail("error_storing_document");
+            }
+        }
+
         var paiement = Domain.Entites.PaiementClient.CreatePaiementClient(
             command.Numero,
             command.ClientId,
@@ -84,7 +108,8 @@ public class CreatePaiementClientCommandHandler(
             command.NumeroChequeTraite,
             command.BanqueId,
             command.DateEcheance,
-            command.Commentaire);
+            command.Commentaire,
+            documentStoragePath);
 
         _context.PaiementClient.Add(paiement);
         await _context.SaveChangesAsync(cancellationToken);

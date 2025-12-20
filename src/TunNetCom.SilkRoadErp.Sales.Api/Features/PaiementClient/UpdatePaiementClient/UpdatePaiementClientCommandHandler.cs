@@ -1,3 +1,4 @@
+using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.DocumentStorage;
 using TunNetCom.SilkRoadErp.Sales.Contracts.PaiementClient;
 using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
@@ -5,7 +6,8 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.PaiementClient.UpdatePaiement
 
 public class UpdatePaiementClientCommandHandler(
     SalesContext _context,
-    ILogger<UpdatePaiementClientCommandHandler> _logger)
+    ILogger<UpdatePaiementClientCommandHandler> _logger,
+    IDocumentStorageService _documentStorageService)
     : IRequestHandler<UpdatePaiementClientCommand, Result>
 {
     public async Task<Result> Handle(UpdatePaiementClientCommand command, CancellationToken cancellationToken)
@@ -75,6 +77,41 @@ public class UpdatePaiementClientCommandHandler(
             }
         }
 
+        // Process document if provided
+        string? documentStoragePath = paiement.DocumentStoragePath; // Keep existing if no new document
+        if (!string.IsNullOrWhiteSpace(command.DocumentBase64))
+        {
+            try
+            {
+                // Delete old document if exists
+                if (!string.IsNullOrWhiteSpace(paiement.DocumentStoragePath))
+                {
+                    try
+                    {
+                        await _documentStorageService.DeleteAsync(paiement.DocumentStoragePath, cancellationToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Error deleting old document, continuing with new document");
+                    }
+                }
+
+                var documentBytes = Convert.FromBase64String(command.DocumentBase64);
+                var fileName = $"paiement_client_{command.Numero}_{DateTime.UtcNow:yyyyMMddHHmmss}";
+                documentStoragePath = await _documentStorageService.SaveAsync(documentBytes, fileName, cancellationToken);
+            }
+            catch (FormatException ex)
+            {
+                _logger.LogError(ex, "Invalid Base64 format for document");
+                return Result.Fail("invalid_document_format");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error storing document");
+                return Result.Fail("error_storing_document");
+            }
+        }
+
         paiement.UpdatePaiementClient(
             command.Numero,
             command.ClientId,
@@ -87,7 +124,8 @@ public class UpdatePaiementClientCommandHandler(
             command.NumeroChequeTraite,
             command.BanqueId,
             command.DateEcheance,
-            command.Commentaire);
+            command.Commentaire,
+            documentStoragePath);
 
         await _context.SaveChangesAsync(cancellationToken);
 
