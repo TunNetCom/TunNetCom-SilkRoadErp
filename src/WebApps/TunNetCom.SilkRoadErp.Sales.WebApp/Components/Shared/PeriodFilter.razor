@@ -20,7 +20,8 @@
     <div class="search-field" style="margin-right: 15px;">
         <label for="startDate">@Localizer["start_date"]</label>
         <RadzenDatePicker id="startDate"
-                          @bind-Value="StartDate"
+                          Value="@StartDate"
+                          ValueChanged="EventCallback.Factory.Create<DateTime?>(this, OnStartDateChanged)"
                           DateFormat="dd/MM/yyyy"
                           Placeholder="@Localizer["start_date"]"
                           class="w-100 " />
@@ -28,7 +29,8 @@
     <div class="search-field" style="margin-right: 15px;">
         <label for="endDate">@Localizer["end_date"]</label>
         <RadzenDatePicker id="endDate"
-                          @bind-Value="EndDate"
+                          Value="@EndDate"
+                          ValueChanged="EventCallback.Factory.Create<DateTime?>(this, OnEndDateChanged)"
                           DateFormat="dd/MM/yyyy"
                           Placeholder="@Localizer["end_date"]"
                           class="w-100 " />
@@ -71,6 +73,20 @@
             await EndDateChanged.InvokeAsync(EndDate);
             await OnPeriodChanged.InvokeAsync();
         }
+    }
+
+    private async Task OnStartDateChanged(DateTime? value)
+    {
+        StartDate = value;
+        await StartDateChanged.InvokeAsync(StartDate);
+        await OnPeriodChanged.InvokeAsync();
+    }
+
+    private async Task OnEndDateChanged(DateTime? value)
+    {
+        EndDate = value;
+        await EndDateChanged.InvokeAsync(EndDate);
+        await OnPeriodChanged.InvokeAsync();
     }
 
     public class PeriodOption

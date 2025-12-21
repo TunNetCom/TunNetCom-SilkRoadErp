@@ -33,12 +33,13 @@
         <PeriodFilter @bind-SelectedPeriod="searchCriteria.PeriodFilter"
                      @bind-StartDate="searchCriteria.StartDate"
                      @bind-EndDate="searchCriteria.EndDate"
-                     OnPeriodChanged="@OnPeriodFilterChanged" />
+                     OnPeriodChanged="@OnPeriodFilterChangedAsync" />
         <div class="search-field">
             <label for="provider">Fournisseur</label>
             <RadzenDropDownDataGrid id="provider"
                                     AllowClear="true"
-                                    @bind-Value="@searchCriteria.SelectedProviderId"
+                                    Value="@searchCriteria.SelectedProviderId"
+                                    ValueChanged="EventCallback.Factory.Create<int?>(this, OnProviderChanged)"
                                     LoadData="@LoadProviders"
                                     AllowFiltering="true"
                                     class="w-100 search-input"
@@ -56,7 +57,8 @@
                        SelectedTagIdsChanged="@OnTagIdsChanged" />
         <div class="search-field">
             <label>Statut</label>
-            <RadzenDropDown @bind-Value="@searchCriteria.Status"
+            <RadzenDropDown Value="@searchCriteria.Status"
+                            ValueChanged="EventCallback.Factory.Create<int?>(this, OnStatusChanged)"
                             Data="@(Enum.GetValues(typeof(DocumentStatus)).Cast<DocumentStatus>().Select(e => new { Value = (int?)e, Text = e.ToString() }).Prepend(new { Value = (int?)null, Text = "Tous" }))"
                             TextProperty="Text"
                             ValueProperty="Value"
@@ -95,6 +97,8 @@
                         TItem="ProviderInvoiceBaseInfo"
                         AllowSorting="true"
                         AllowFiltering="true"
+                        FilterMode="FilterMode.Advanced"
+                        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
                         AllowPaging="true"
                         PageSize="@pageSize"
                         PageSizeOptions="@GridPageSizeConstants.PageSizeOptions"
@@ -124,6 +128,7 @@
                                       Property="@nameof(ProviderInvoiceBaseInfo.NetAmount)"
                                       Title="@Localizer["total_net"]"
                                       Width="150px"
+                                      Filterable="true"
                                       Visible="@GetColumnVisibility("NetAmount")">
                     <Template Context="item">
                         @item.NetAmount.FormatAmount()
@@ -133,6 +138,7 @@
                                       Property="@nameof(ProviderInvoiceBaseInfo.VatAmount)"
                                       Title="@Localizer["total_vat"]"
                                       Width="150px"
+                                      Filterable="true"
                                       Visible="@GetColumnVisibility("VatAmount")">
                     <Template Context="item">
                         @item.VatAmount.FormatAmount()
@@ -152,16 +158,33 @@
             </Columns>
         </RadzenDataGrid>
         <RadzenCard class="summary-card" Variant="Variant.Outlined">
-            <RadzenStack Orientation="Radzen.Orientation.Horizontal"
-                         Gap="1.5rem"
-                         JustifyContent="JustifyContent.End"
-                         class="summary-stack">
-                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                    @Localizer["total_net"]: <strong>@totalNetAmount.FormatAmount()</strong>
-                </RadzenText>
-                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                    @Localizer["total_vat"]: <strong>@totalVatAmount.FormatAmount()</strong>
-                </RadzenText>
+            <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem" class="summary-stack">
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" JustifyContent="JustifyContent.End">
+                    <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                        <strong>Total HT:</strong> @totalNetAmount.FormatAmount()
+                    </RadzenText>
+                </RadzenStack>
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" JustifyContent="JustifyContent.End">
+                    <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                        TVA 7%: @totalVat7.FormatAmount()
+                    </RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                        TVA 13%: @totalVat13.FormatAmount()
+                    </RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                        TVA 19%: @totalVat19.FormatAmount()
+                    </RadzenText>
+                </RadzenStack>
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" JustifyContent="JustifyContent.End">
+                    <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                        <strong>Total TVA:</strong> @totalVatAmount.FormatAmount()
+                    </RadzenText>
+                </RadzenStack>
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" JustifyContent="JustifyContent.End">
+                    <RadzenText TextStyle="TextStyle.H6" class="summary-text">
+                        <strong>Total TTC:</strong> @totalTtc.FormatAmount()
+                    </RadzenText>
+                </RadzenStack>
             </RadzenStack>
         </RadzenCard>
     </div>
@@ -296,6 +319,10 @@
     private List<ColumnInfo> availableColumns = new();
     private decimal totalNetAmount = 0;
     private decimal totalVatAmount = 0;
+    private decimal totalVat7 = 0;
+    private decimal totalVat13 = 0;
+    private decimal totalVat19 = 0;
+    private decimal totalTtc = 0;
 
     protected override async Task OnInitializedAsync()
     {
@@ -350,14 +377,97 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    private void OnPeriodFilterChanged()
+    private async Task OnPeriodFilterChangedAsync()
     {
         StateHasChanged();
+        await SearchProviderInvoices();
+    }
+
+    private async Task OnProviderChanged(int? value)
+    {
+        searchCriteria.SelectedProviderId = value;
+        await SearchProviderInvoices();
+    }
+
+    private async Task OnStatusChanged(int? value)
+    {
+        searchCriteria.Status = value;
+        await SearchProviderInvoices();
     }
 
     private async Task SearchProviderInvoices()
     {
         await Callback(new LoadDataArgs { Skip = 0, Top = pageSize });
+    }
+
+    private async Task LoadTotalsAsync()
+    {
+        try
+        {
+            var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
+                searchCriteria.PeriodFilter,
+                searchCriteria.StartDate,
+                searchCriteria.EndDate);
+
+            var queryParams = new List<string>();
+
+            if (startDate.HasValue)
+            {
+                queryParams.Add($"startDate={Uri.EscapeDataString(startDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+            }
+
+            if (endDate.HasValue)
+            {
+                queryParams.Add($"endDate={Uri.EscapeDataString(endDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+            }
+
+            if (searchCriteria.SelectedProviderId.HasValue)
+            {
+                queryParams.Add($"providerId={searchCriteria.SelectedProviderId.Value}");
+            }
+
+            if (searchCriteria.SelectedTagIds != null && searchCriteria.SelectedTagIds.Any())
+            {
+                foreach (var tagId in searchCriteria.SelectedTagIds)
+                {
+                    queryParams.Add($"tagIds={tagId}");
+                }
+            }
+
+            if (searchCriteria.Status.HasValue)
+            {
+                queryParams.Add($"status={searchCriteria.Status.Value}");
+            }
+
+            var baseUrl = Configuration.GetValue<string>("ApiSettings:BaseUrl")
+                ?? throw new InvalidOperationException("ApiSettings:BaseUrl configuration is missing");
+            
+            var url = $"{baseUrl.TrimEnd('/')}/api/provider-invoices/totals";
+            if (queryParams.Any())
+            {
+                url += "?" + string.Join("&", queryParams);
+            }
+
+            _logger.LogInformation("Calling provider invoice totals endpoint: {Url}", url);
+
+            var response = await HttpClient.GetAsync(url);
+            response.EnsureSuccessStatusCode();
+
+            var totals = await response.Content.ReadFromJsonAsync<ProviderInvoiceTotalsResponse>();
+            if (totals != null)
+            {
+                totalNetAmount = totals.TotalHT;
+                totalVat7 = totals.TotalVat7;
+                totalVat13 = totals.TotalVat13;
+                totalVat19 = totals.TotalVat19;
+                totalVatAmount = totals.TotalVat;
+                totalTtc = totals.TotalTTC;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading provider invoice totals");
+        }
     }
 
     private async Task OpenColumnSelector()
@@ -382,7 +492,8 @@
 
     private async Task Callback(LoadDataArgs args)
     {
-        _logger.LogInformation("ProviderInvoicesAdvancedList.Callback called with Skip: {Skip}, Top: {Top}", args.Skip, args.Top);
+        _logger.LogInformation("ProviderInvoicesAdvancedList.Callback called with Skip: {Skip}, Top: {Top}, Filter: {Filter}, OrderBy: {OrderBy}", 
+            args.Skip, args.Top, args.Filter, args.OrderBy);
         
         if (args.Top.HasValue)
         {
@@ -426,9 +537,12 @@
             totalCount = response.ODataCount ?? response.Value.Count;
 
             // Calculate totals from current page (for display)
-            // Note: For accurate totals across all pages, we'd need a separate aggregation endpoint
             totalNetAmount = invoicesList.Sum(i => i.NetAmount);
             totalVatAmount = invoicesList.Sum(i => i.VatAmount);
+            totalTtc = totalNetAmount + totalVatAmount;
+            
+            // Fetch exact totals by VAT rate from API
+            await LoadTotalsAsync();
         }
         catch (Exception ex)
         {
@@ -437,6 +551,10 @@
             totalCount = 0;
             totalNetAmount = 0;
             totalVatAmount = 0;
+            totalVat7 = 0;
+            totalVat13 = 0;
+            totalVat19 = 0;
+            totalTtc = 0;
         }
 
         await InvokeAsync(StateHasChanged);

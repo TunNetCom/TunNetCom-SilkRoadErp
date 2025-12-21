@@ -22,13 +22,16 @@ public class PdfListExportService
         decimal? totalNetAmount = null,
         decimal? totalVatAmount = null,
         decimal? totalTtcAmount = null,
+        decimal? totalVat7 = null,
+        decimal? totalVat13 = null,
+        decimal? totalVat19 = null,
         CancellationToken cancellationToken = default)
     {
         try
         {
             await EnsurePlaywrightInstalledAsync(cancellationToken);
 
-            var html = GenerateHtmlTable(data, columns, title, decimalPlaces, totalNetAmount, totalVatAmount, totalTtcAmount);
+                var html = GenerateHtmlTable(data, columns, title, decimalPlaces, totalNetAmount, totalVatAmount, totalTtcAmount, totalVat7, totalVat13, totalVat19);
             _logger.LogDebug("HTML generated successfully, length: {HtmlLength} characters", html?.Length ?? 0);
 
             return await GeneratePdfFromHtmlAsync(html, cancellationToken);
@@ -40,7 +43,7 @@ public class PdfListExportService
         }
     }
 
-    private string GenerateHtmlTable<T>(IEnumerable<T> data, List<ColumnMapping> columns, string title, int decimalPlaces = 3, decimal? totalNetAmount = null, decimal? totalVatAmount = null, decimal? totalTtcAmount = null)
+    private string GenerateHtmlTable<T>(IEnumerable<T> data, List<ColumnMapping> columns, string title, int decimalPlaces = 3, decimal? totalNetAmount = null, decimal? totalVatAmount = null, decimal? totalTtcAmount = null, decimal? totalVat7 = null, decimal? totalVat13 = null, decimal? totalVat19 = null)
     {
         var html = new StringBuilder();
         html.AppendLine("<!DOCTYPE html>");
@@ -109,41 +112,57 @@ public class PdfListExportService
         }
         html.AppendLine("</tbody>");
         
-        // Add totals row if totals are provided
+        // Add totals section if totals are provided
         if (totalNetAmount.HasValue || totalVatAmount.HasValue || totalTtcAmount.HasValue)
         {
             html.AppendLine("<tfoot>");
-            html.AppendLine("<tr style='background-color: #f2f2f2; font-weight: bold;'>");
-            foreach (var column in columns)
+            
+            // Total HT row
+            if (totalNetAmount.HasValue)
             {
-                if (column.PropertyName.Equals("NetAmount", StringComparison.OrdinalIgnoreCase) && totalNetAmount.HasValue)
-                {
-                    var formattedValue = FormatValue(totalNetAmount.Value, decimalPlaces);
-                    html.AppendLine($"<td>{System.Net.WebUtility.HtmlEncode(formattedValue)}</td>");
-                }
-                else if (column.PropertyName.Equals("VatAmount", StringComparison.OrdinalIgnoreCase) && totalVatAmount.HasValue)
-                {
-                    var formattedValue = FormatValue(totalVatAmount.Value, decimalPlaces);
-                    html.AppendLine($"<td>{System.Net.WebUtility.HtmlEncode(formattedValue)}</td>");
-                }
-                else if (columns.IndexOf(column) == 0)
-                {
-                    html.AppendLine("<td>Total</td>");
-                }
-                else
-                {
-                    html.AppendLine("<td></td>");
-                }
+                html.AppendLine("<tr style='background-color: #f9f9f9;'>");
+                html.AppendLine($"<td colspan='{columns.Count + (hasNetAmount && hasVatAmount ? 1 : 0)}' style='text-align: right; padding-right: 10px;'><strong>Total HT:</strong> {FormatValue(totalNetAmount.Value, decimalPlaces)}</td>");
+                html.AppendLine("</tr>");
             }
             
-            // Add TTC column if NetAmount and VatAmount columns exist
-            if (hasNetAmount && hasVatAmount && totalTtcAmount.HasValue)
+            // TVA detail rows
+            if (totalVat7.HasValue && totalVat7.Value > 0)
             {
-                var formattedTtc = FormatValue(totalTtcAmount.Value, decimalPlaces);
-                html.AppendLine($"<td>{System.Net.WebUtility.HtmlEncode(formattedTtc)}</td>");
+                html.AppendLine("<tr style='background-color: #f9f9f9;'>");
+                html.AppendLine($"<td colspan='{columns.Count + (hasNetAmount && hasVatAmount ? 1 : 0)}' style='text-align: right; padding-right: 10px;'>TVA 7%: {FormatValue(totalVat7.Value, decimalPlaces)}</td>");
+                html.AppendLine("</tr>");
             }
             
-            html.AppendLine("</tr>");
+            if (totalVat13.HasValue && totalVat13.Value > 0)
+            {
+                html.AppendLine("<tr style='background-color: #f9f9f9;'>");
+                html.AppendLine($"<td colspan='{columns.Count + (hasNetAmount && hasVatAmount ? 1 : 0)}' style='text-align: right; padding-right: 10px;'>TVA 13%: {FormatValue(totalVat13.Value, decimalPlaces)}</td>");
+                html.AppendLine("</tr>");
+            }
+            
+            if (totalVat19.HasValue && totalVat19.Value > 0)
+            {
+                html.AppendLine("<tr style='background-color: #f9f9f9;'>");
+                html.AppendLine($"<td colspan='{columns.Count + (hasNetAmount && hasVatAmount ? 1 : 0)}' style='text-align: right; padding-right: 10px;'>TVA 19%: {FormatValue(totalVat19.Value, decimalPlaces)}</td>");
+                html.AppendLine("</tr>");
+            }
+            
+            // Total TVA row
+            if (totalVatAmount.HasValue)
+            {
+                html.AppendLine("<tr style='background-color: #f9f9f9;'>");
+                html.AppendLine($"<td colspan='{columns.Count + (hasNetAmount && hasVatAmount ? 1 : 0)}' style='text-align: right; padding-right: 10px;'><strong>Total TVA:</strong> {FormatValue(totalVatAmount.Value, decimalPlaces)}</td>");
+                html.AppendLine("</tr>");
+            }
+            
+            // Total TTC row
+            if (totalTtcAmount.HasValue)
+            {
+                html.AppendLine("<tr style='background-color: #e0e0e0; font-weight: bold;'>");
+                html.AppendLine($"<td colspan='{columns.Count + (hasNetAmount && hasVatAmount ? 1 : 0)}' style='text-align: right; padding-right: 10px; font-size: 1.1em;'><strong>Total TTC:</strong> {FormatValue(totalTtcAmount.Value, decimalPlaces)}</td>");
+                html.AppendLine("</tr>");
+            }
+            
             html.AppendLine("</tfoot>");
         }
         

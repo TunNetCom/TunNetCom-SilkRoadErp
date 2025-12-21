@@ -141,12 +141,27 @@ public class ExportProviderInvoicesToExcelEndpoint : ICarterModule
 
             logger.LogInformation("Exporting {Count} provider invoices to Excel with {ColumnCount} columns", invoiceList.Count, columnsToExport.Count);
 
-            // Calculate totals
-            var totalNetAmount = invoiceList.Sum(i => i.NetAmount);
-            var totalVatAmount = invoiceList.Sum(i => i.VatAmount);
+            // Calculate totals with VAT details
+            var vatRate7 = (int)appParams.Value.VatRate7;
+            var vatRate13 = (int)appParams.Value.VatRate13;
+            var vatRate19 = (int)appParams.Value.VatRate19;
+
+            var invoiceNumbers = invoiceList.Select(i => i.Number).ToList();
+            var linesQuery = from br in context.BonDeReception
+                            where br.NumFactureFournisseur.HasValue && invoiceNumbers.Contains(br.NumFactureFournisseur.Value)
+                            join line in context.LigneBonReception on br.Id equals line.BonDeReceptionId
+                            select new { line.TotHt, line.TotTtc, Tva = (int)line.Tva };
+
+            var lines = await linesQuery.ToListAsync(cancellationToken);
+
+            var totalNetAmount = lines.Sum(l => l.TotHt);
+            var totalVat7 = lines.Where(l => l.Tva == vatRate7).Sum(l => l.TotTtc - l.TotHt);
+            var totalVat13 = lines.Where(l => l.Tva == vatRate13).Sum(l => l.TotTtc - l.TotHt);
+            var totalVat19 = lines.Where(l => l.Tva == vatRate19).Sum(l => l.TotTtc - l.TotHt);
+            var totalVatAmount = totalVat7 + totalVat13 + totalVat19;
             var totalTtcAmount = totalNetAmount + totalVatAmount;
 
-            var fileBytes = exportService.ExportToExcel(invoiceList, columnsToExport, "Factures Fournisseurs", decimalPlaces, totalNetAmount, totalVatAmount, totalTtcAmount);
+            var fileBytes = exportService.ExportToExcel(invoiceList, columnsToExport, "Factures Fournisseurs", decimalPlaces, totalNetAmount, totalVatAmount, totalTtcAmount, totalVat7, totalVat13, totalVat19);
 
             var filename = $"Factures_Fournisseurs_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
 
