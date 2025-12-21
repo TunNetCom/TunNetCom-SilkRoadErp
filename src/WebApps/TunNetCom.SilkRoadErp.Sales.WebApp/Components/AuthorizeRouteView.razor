@@ -52,8 +52,8 @@ else
 
     private async Task HandleTokenExpiredAsync()
     {
-        // AUTO-LOGOUT DISABLED: Do nothing - no redirect to login
-        Logger.LogWarning("AuthorizeRouteView: Token expiration event received but auto-logout is disabled");
+        Logger.LogWarning("AuthorizeRouteView: Token expired, redirecting to login");
+        RedirectToLogin();
         await Task.CompletedTask;
     }
 
@@ -131,20 +131,20 @@ else
             }
             else
             {
-                // AUTO-LOGOUT DISABLED: Allow access even if not authenticated
-                Logger.LogWarning("AuthorizeRouteView: User not authenticated but auto-logout disabled - allowing access");
-                _statusMessage = "Non authentifié (accès autorisé)";
-                IsAuthorized = true; // Allow access anyway
+                // User not authenticated - redirect to login
+                Logger.LogWarning("AuthorizeRouteView: User not authenticated, redirecting to login");
+                _statusMessage = "Non authentifié - redirection...";
                 StateHasChanged();
+                RedirectToLogin();
             }
         }
         catch (Exception ex)
         {
-            // AUTO-LOGOUT DISABLED: Allow access even on error
-            Logger.LogError(ex, "AuthorizeRouteView: Error during authentication check but auto-logout disabled - allowing access");
-            _statusMessage = "Erreur (accès autorisé)";
-            IsAuthorized = true; // Allow access anyway
+            // Error during authentication check - redirect to login for safety
+            Logger.LogError(ex, "AuthorizeRouteView: Error during authentication check, redirecting to login");
+            _statusMessage = "Erreur - redirection...";
             StateHasChanged();
+            RedirectToLogin();
         }
     }
 
@@ -167,6 +167,28 @@ else
         if (!IsLoginPage && !IsAuthorized && !_hasCheckedAuth)
         {
             IsAuthorized = false;
+        }
+    }
+
+    private void RedirectToLogin()
+    {
+        // Get current URI to use as return URL
+        var currentUri = Navigation.Uri;
+        var returnUrl = Uri.EscapeDataString(currentUri);
+        
+        // Don't include returnUrl if we're already on login or if it's the base URL
+        var uri = new Uri(currentUri);
+        var path = uri.AbsolutePath.ToLowerInvariant();
+        
+        if (path == "/" || path == "/login" || path == "/login/")
+        {
+            Logger.LogInformation("AuthorizeRouteView: Redirecting to /login (no return URL)");
+            Navigation.NavigateTo("/login", forceLoad: true);
+        }
+        else
+        {
+            Logger.LogInformation("AuthorizeRouteView: Redirecting to /login with return URL: {ReturnUrl}", currentUri);
+            Navigation.NavigateTo($"/login?returnUrl={returnUrl}", forceLoad: true);
         }
     }
 
