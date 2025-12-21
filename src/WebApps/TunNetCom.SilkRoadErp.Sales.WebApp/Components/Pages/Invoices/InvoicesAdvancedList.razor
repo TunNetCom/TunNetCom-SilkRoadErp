@@ -1,0 +1,686 @@
+@page "/invoices-advanced"
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Invoice
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@inject IInvoicesApiClient InvoicesService
+@inject ICustomersApiClient CustomersService
+@inject IStringLocalizer<SharedResource> Localizer
+@inject ODataService ODataService
+@inject ILogger<InvoicesAdvancedList> _logger
+@using Radzen.Blazor
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Customers
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Common
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Tags
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
+@using Microsoft.JSInterop
+@using Microsoft.AspNetCore.Components
+@using Microsoft.Extensions.Configuration
+@using TunNetCom.SilkRoadErp.Sales.Domain.Entites
+@inject ITagsApiClient TagsService
+@inject IJSRuntime JS
+@inject HttpClient HttpClient
+@inject IConfiguration Configuration
+@inject Radzen.NotificationService NotificationService
+@inject DialogService DialogService
+
+<div class="invoices-list-container">
+    <div class="search-header">
+        <PeriodFilter @bind-SelectedPeriod="searchCriteria.PeriodFilter"
+                     @bind-StartDate="searchCriteria.StartDate"
+                     @bind-EndDate="searchCriteria.EndDate"
+                     OnPeriodChanged="@OnPeriodFilterChanged" />
+        <div class="search-field">
+            <label for="customer">Client</label>
+            <RadzenDropDownDataGrid id="customer"
+                                    AllowClear="true"
+                                    @bind-Value="@searchCriteria.SelectedCustomerId"
+                                    LoadData="@LoadCustomers"
+                                    AllowFiltering="true"
+                                    class="w-100 search-input"
+                                    Data="@_filteredCustomers"
+                                    TextProperty="@nameof(CustomerResponse.Name)"
+                                    ValueProperty="@nameof(CustomerResponse.Id)"
+                                    Placeholder="@Localizer["select_customer"]">
+                <Columns>
+                    <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Id)" Title="ID" Width="80px" />
+                    <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Name)" Title="@Localizer["name"]" Width="220px" />
+                </Columns>
+            </RadzenDropDownDataGrid>
+        </div>
+        <TagSearchFilter SelectedTagIds="@searchCriteria.SelectedTagIds"
+                       SelectedTagIdsChanged="@OnTagIdsChanged" />
+        <div class="search-field">
+            <label>Statut</label>
+            <RadzenDropDown @bind-Value="@searchCriteria.Status"
+                            Data="@(Enum.GetValues(typeof(DocumentStatus)).Cast<DocumentStatus>().Select(e => new { Value = (int?)e, Text = e.ToString() }).Prepend(new { Value = (int?)null, Text = "Tous" }))"
+                            TextProperty="Text"
+                            ValueProperty="Value"
+                            class="w-100 search-input" />
+        </div>
+        <div class="search-button">
+            <RadzenButton Icon="search"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Click="@SearchInvoices"
+                          class="action-button" />
+            <RadzenButton Icon="view_column"
+                          ButtonStyle="ButtonStyle.Info"
+                          Click="@OpenColumnSelector"
+                          class="action-button"
+                          Title="Sélectionner les colonnes"
+                          AriaLabel="Sélectionner les colonnes" />
+            <RadzenButton Icon="picture_as_pdf"
+                          ButtonStyle="ButtonStyle.Danger"
+                          Click="@ExportToPdfAsync"
+                          class="action-button"
+                          Title="Exporter en PDF"
+                          AriaLabel="Exporter en PDF" />
+            <RadzenButton Icon="table_chart"
+                          ButtonStyle="ButtonStyle.Success"
+                          Click="@ExportToExcelAsync"
+                          class="action-button"
+                          Title="Exporter en Excel"
+                          AriaLabel="Exporter en Excel" />
+        </div>
+    </div>
+    <div class="list-card">
+        <h2>Factures - Liste Avancée</h2>
+        <RadzenDataGrid @ref="invoicesGrid"
+                        Data="@invoicesList"
+                        LoadData="@Callback"
+                        TItem="InvoiceBaseInfo"
+                        AllowSorting="true"
+                        AllowFiltering="true"
+                        AllowPaging="true"
+                        PageSize="@pageSize"
+                        PageSizeOptions="@GridPageSizeConstants.PageSizeOptions"
+                        Count="@totalCount"
+                        AllowColumnResize="true">
+            <EmptyTemplate>
+                <p style="font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
+            </EmptyTemplate>
+            <Columns>
+                <RadzenDataGridColumn TItem="InvoiceBaseInfo" 
+                                      Property="@nameof(InvoiceBaseInfo.Number)"
+                                      Title="Numéro"
+                                      Width="150px"
+                                      Visible="@GetColumnVisibility("Number")" />
+                <RadzenDataGridColumn TItem="InvoiceBaseInfo"
+                                      Property="@nameof(InvoiceBaseInfo.Date)"
+                                      Title="@Localizer["date"]"
+                                      Width="150px"
+                                      FormatString="{0:d MMMM yyyy}"
+                                      Visible="@GetColumnVisibility("Date")" />
+                <RadzenDataGridColumn TItem="InvoiceBaseInfo"
+                                      Property="@nameof(InvoiceBaseInfo.CustomerName)"
+                                      Title="Client"
+                                      Width="200px"
+                                      Visible="@GetColumnVisibility("CustomerName")" />
+                <RadzenDataGridColumn TItem="InvoiceBaseInfo"
+                                      Property="@nameof(InvoiceBaseInfo.NetAmount)"
+                                      Title="@Localizer["total_net"]"
+                                      Width="150px"
+                                      Visible="@GetColumnVisibility("NetAmount")">
+                    <Template Context="item">
+                        @item.NetAmount.FormatAmount()
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="InvoiceBaseInfo"
+                                      Property="@nameof(InvoiceBaseInfo.VatAmount)"
+                                      Title="@Localizer["total_vat"]"
+                                      Width="150px"
+                                      Visible="@GetColumnVisibility("VatAmount")">
+                    <Template Context="item">
+                        @item.VatAmount.FormatAmount()
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="InvoiceBaseInfo" 
+                                      Property="@nameof(InvoiceBaseInfo.StatutLibelle)"
+                                      Title="Statut"
+                                      Width="100px"
+                                      Visible="@GetColumnVisibility("StatutLibelle")">
+                    <Template Context="item">
+                        <span class="status-tag" style="@GetStatusStyle(item.Statut)">
+                            @(item.Statut == 1 ? "Validé" : "Brouillon")
+                        </span>
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+        <RadzenCard class="summary-card" Variant="Variant.Outlined">
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal"
+                         Gap="1.5rem"
+                         JustifyContent="JustifyContent.End"
+                         class="summary-stack">
+                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                    @Localizer["total_net"]: <strong>@totalNetAmount.FormatAmount()</strong>
+                </RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                    @Localizer["total_vat"]: <strong>@totalVatAmount.FormatAmount()</strong>
+                </RadzenText>
+            </RadzenStack>
+        </RadzenCard>
+    </div>
+</div>
+
+<style>
+    .status-tag {
+        font-size: 0.75rem;
+        padding: 0.125rem 0.5rem;
+        display: inline-flex;
+        align-items: center;
+        border-radius: 3px;
+        line-height: 1.5;
+        font-weight: 500;
+    }
+
+    .invoices-list-container {
+        padding: 0;
+        min-height: 100%;
+    }
+
+    .list-card {
+        width: 100%;
+        margin: 0;
+    }
+
+    h2 {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 20px;
+        margin: 0 0 16px 0;
+        padding: 0;
+    }
+
+    .action-button {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 6px 12px;
+        border-radius: 6px;
+        background-color: #3b82f6;
+        border: none;
+        transition: background-color 0.2s, box-shadow 0.2s;
+    }
+
+        .action-button:hover:not(:disabled) {
+            background-color: #2563eb;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .action-button:disabled {
+            background-color: #d1d5db;
+            cursor: not-allowed;
+        }
+
+    .search-header {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+        margin: 0 0 16px 0;
+        align-items: end;
+        padding: 0;
+    }
+
+    .search-field {
+        display: flex;
+        flex-direction: column;
+    }
+
+        .search-field label {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+
+    .search-input {
+        width: 100% !important;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        padding: 8px;
+        font-size: 14px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+        .search-input:hover {
+            border-color: #9ca3af;
+        }
+
+        .search-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            outline: none;
+        }
+
+    .search-button {
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+    }
+
+    .summary-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 8px 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        flex: 0 0 auto;
+        margin-top: 16px;
+    }
+
+    .summary-stack {
+        gap: 1.5rem;
+    }
+
+    .summary-text {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+        .summary-text strong {
+            font-weight: 600;
+        }
+</style>
+
+@code {
+    private RadzenDataGrid<InvoiceBaseInfo> invoicesGrid = default!;
+    private List<InvoiceBaseInfo> invoicesList = new();
+    private int totalCount = 0;
+    private int pageSize = GridPageSizeConstants.PageSize10;
+    private SearchCriteria searchCriteria = new SearchCriteria();
+    private List<CustomerResponse> _filteredCustomers = new();
+    private List<ColumnInfo> availableColumns = new();
+    private decimal totalNetAmount = 0;
+    private decimal totalVatAmount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _logger.LogInformation("InvoicesAdvancedList.OnInitializedAsync called");
+        
+        await LoadCustomers(new LoadDataArgs { Filter = string.Empty });
+
+        // Initialize column visibility
+        availableColumns = new List<ColumnInfo>
+        {
+            new() { PropertyName = "Number", DisplayName = "Numéro", IsVisible = true },
+            new() { PropertyName = "Date", DisplayName = "Date", IsVisible = true },
+            new() { PropertyName = "CustomerName", DisplayName = "Client", IsVisible = true },
+            new() { PropertyName = "NetAmount", DisplayName = "Montant HT", IsVisible = true },
+            new() { PropertyName = "VatAmount", DisplayName = "Montant TVA", IsVisible = true },
+            new() { PropertyName = "StatutLibelle", DisplayName = "Statut", IsVisible = true }
+        };
+
+        // Set default period to CurrentMonth and calculate dates
+        searchCriteria.PeriodFilter = "CurrentMonth";
+        var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
+            searchCriteria.PeriodFilter, 
+            searchCriteria.StartDate, 
+            searchCriteria.EndDate);
+        searchCriteria.StartDate = startDate;
+        searchCriteria.EndDate = endDate;
+
+        // Load initial data
+        _logger.LogInformation("Calling Callback to load initial data");
+        await Callback(new LoadDataArgs { Skip = 0, Top = pageSize });
+    }
+
+    async Task LoadCustomers(LoadDataArgs args)
+    {
+        var parameters = new QueryStringParameters
+        {
+            PageNumber = 1,
+            PageSize = 7,
+            SearchKeyword = args?.Filter ?? string.Empty
+        };
+
+        try
+        {
+            var pagedCustomers = await CustomersService.SearchCustomers(parameters, default);
+            _filteredCustomers = pagedCustomers.Items.ToList();
+        }
+        catch (Exception ex)
+        {
+            _filteredCustomers = new List<CustomerResponse>();
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void OnPeriodFilterChanged()
+    {
+        StateHasChanged();
+    }
+
+    private async Task SearchInvoices()
+    {
+        await Callback(new LoadDataArgs { Skip = 0, Top = pageSize });
+    }
+
+    private async Task OpenColumnSelector()
+    {
+        var result = await DialogService.OpenAsync<ColumnSelectorDialog>(
+            "Sélectionner les colonnes",
+            new Dictionary<string, object> { { "AvailableColumns", availableColumns } },
+            new DialogOptions { Width = "400px", Resizable = true, Draggable = true });
+
+        if (result is List<ColumnInfo> updatedColumns)
+        {
+            availableColumns = updatedColumns;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private bool GetColumnVisibility(string propertyName)
+    {
+        var column = availableColumns.FirstOrDefault(c => c.PropertyName == propertyName);
+        return column?.IsVisible ?? true;
+    }
+
+    private async Task Callback(LoadDataArgs args)
+    {
+        _logger.LogInformation("InvoicesAdvancedList.Callback called with Skip: {Skip}, Top: {Top}", args.Skip, args.Top);
+        
+        if (args.Top.HasValue)
+        {
+            pageSize = args.Top.Value;
+        }
+        
+        var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
+            searchCriteria.PeriodFilter,
+            searchCriteria.StartDate,
+            searchCriteria.EndDate);
+
+        _logger.LogInformation("Date range: StartDate: {StartDate}, EndDate: {EndDate}", startDate, endDate);
+
+        try
+        {
+            _logger.LogInformation("Calling ODataService.QueryAsync for InvoiceBaseInfos");
+            
+            if (searchCriteria.Status.HasValue)
+            {
+                var statusFilter = $"Statut eq {searchCriteria.Status.Value}";
+                if (!string.IsNullOrEmpty(args.Filter))
+                {
+                    args.Filter = $"({args.Filter}) and ({statusFilter})";
+                }
+                else
+                {
+                    args.Filter = statusFilter;
+                }
+            }
+
+            var response = await ODataService.QueryAsync<InvoiceBaseInfo>(
+                entitySet: "InvoiceBaseInfos",
+                args: args,
+                startDate: startDate,
+                endDate: endDate,
+                customerId: searchCriteria.SelectedCustomerId,
+                tagIds: searchCriteria.SelectedTagIds,
+                cancellationToken: default);
+
+            invoicesList = response.Value;
+            totalCount = response.ODataCount ?? response.Value.Count;
+
+            // Calculate totals from current page (for display)
+            // Note: For accurate totals across all pages, we'd need a separate aggregation endpoint
+            totalNetAmount = invoicesList.Sum(i => i.NetAmount);
+            totalVatAmount = invoicesList.Sum(i => i.VatAmount);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading invoices");
+            invoicesList = new List<InvoiceBaseInfo>();
+            totalCount = 0;
+            totalNetAmount = 0;
+            totalVatAmount = 0;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public class SearchCriteria
+    {
+        public string PeriodFilter { get; set; } = "CurrentMonth";
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public int? SelectedCustomerId { get; set; }
+        public List<int> SelectedTagIds { get; set; } = new();
+        public int? Status { get; set; }
+    }
+
+    private async Task OnTagIdsChanged(List<int> tagIds)
+    {
+        searchCriteria.SelectedTagIds = tagIds;
+        await SearchInvoices();
+    }
+
+    private async Task ExportToPdfAsync()
+    {
+        try
+        {
+            _logger.LogInformation("ExportToPdfAsync called");
+
+            var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
+                searchCriteria.PeriodFilter,
+                searchCriteria.StartDate,
+                searchCriteria.EndDate);
+
+            var queryParams = new List<string>();
+
+            if (startDate.HasValue)
+            {
+                queryParams.Add($"startDate={Uri.EscapeDataString(startDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+            }
+
+            if (endDate.HasValue)
+            {
+                queryParams.Add($"endDate={Uri.EscapeDataString(endDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+            }
+
+            if (searchCriteria.SelectedCustomerId.HasValue)
+            {
+                queryParams.Add($"customerId={searchCriteria.SelectedCustomerId.Value}");
+            }
+
+            if (searchCriteria.SelectedTagIds != null && searchCriteria.SelectedTagIds.Any())
+            {
+                foreach (var tagId in searchCriteria.SelectedTagIds)
+                {
+                    queryParams.Add($"tagIds={tagId}");
+                }
+            }
+
+            if (searchCriteria.Status.HasValue)
+            {
+                queryParams.Add($"status={searchCriteria.Status.Value}");
+            }
+
+            // Add selected columns
+            var selectedColumnNames = availableColumns.Where(c => c.IsVisible).Select(c => c.PropertyName).ToList();
+            foreach (var columnName in selectedColumnNames)
+            {
+                queryParams.Add($"selectedColumns={Uri.EscapeDataString(columnName)}");
+            }
+
+            var baseUrl = Configuration.GetValue<string>("ApiSettings:BaseUrl")
+                ?? throw new InvalidOperationException("ApiSettings:BaseUrl configuration is missing");
+            
+            var url = $"{baseUrl.TrimEnd('/')}/api/invoices/export/pdf";
+            if (queryParams.Any())
+            {
+                url += "?" + string.Join("&", queryParams);
+            }
+
+            _logger.LogInformation("Calling PDF export endpoint: {Url}", url);
+
+            var response = await HttpClient.GetAsync(url);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                _logger.LogError("PDF export failed with status {StatusCode}. Response: {ErrorContent}", 
+                    response.StatusCode, errorContent);
+                
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Erreur",
+                    Detail = "Erreur lors de l'export PDF. Veuillez réessayer.",
+                    Duration = 4000
+                });
+                return;
+            }
+
+            var fileBytes = await response.Content.ReadAsByteArrayAsync();
+            var fileName = response.Content.Headers.ContentDisposition?.FileName 
+                ?? $"Factures_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+
+            fileName = fileName.Trim('"');
+
+            var base64String = Convert.ToBase64String(fileBytes);
+            await JS.InvokeVoidAsync("downloadFile", fileName, base64String, "application/pdf");
+
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Succès",
+                Detail = "Export PDF réussi.",
+                Duration = 3000
+            });
+
+            _logger.LogInformation("PDF export completed successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error exporting to PDF");
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Erreur",
+                Detail = $"Erreur lors de l'export: {ex.Message}",
+                Duration = 4000
+            });
+        }
+    }
+
+    private async Task ExportToExcelAsync()
+    {
+        try
+        {
+            _logger.LogInformation("ExportToExcelAsync called");
+
+            var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
+                searchCriteria.PeriodFilter,
+                searchCriteria.StartDate,
+                searchCriteria.EndDate);
+
+            var queryParams = new List<string>();
+
+            if (startDate.HasValue)
+            {
+                queryParams.Add($"startDate={Uri.EscapeDataString(startDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+            }
+
+            if (endDate.HasValue)
+            {
+                queryParams.Add($"endDate={Uri.EscapeDataString(endDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+            }
+
+            if (searchCriteria.SelectedCustomerId.HasValue)
+            {
+                queryParams.Add($"customerId={searchCriteria.SelectedCustomerId.Value}");
+            }
+
+            if (searchCriteria.SelectedTagIds != null && searchCriteria.SelectedTagIds.Any())
+            {
+                foreach (var tagId in searchCriteria.SelectedTagIds)
+                {
+                    queryParams.Add($"tagIds={tagId}");
+                }
+            }
+
+            if (searchCriteria.Status.HasValue)
+            {
+                queryParams.Add($"status={searchCriteria.Status.Value}");
+            }
+
+            // Add selected columns
+            var selectedColumnNames = availableColumns.Where(c => c.IsVisible).Select(c => c.PropertyName).ToList();
+            foreach (var columnName in selectedColumnNames)
+            {
+                queryParams.Add($"selectedColumns={Uri.EscapeDataString(columnName)}");
+            }
+
+            var baseUrl = Configuration.GetValue<string>("ApiSettings:BaseUrl")
+                ?? throw new InvalidOperationException("ApiSettings:BaseUrl configuration is missing");
+            
+            var url = $"{baseUrl.TrimEnd('/')}/api/invoices/export/excel";
+            if (queryParams.Any())
+            {
+                url += "?" + string.Join("&", queryParams);
+            }
+
+            _logger.LogInformation("Calling Excel export endpoint: {Url}", url);
+
+            var response = await HttpClient.GetAsync(url);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                _logger.LogError("Excel export failed with status {StatusCode}. Response: {ErrorContent}", 
+                    response.StatusCode, errorContent);
+                
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Erreur",
+                    Detail = "Erreur lors de l'export Excel. Veuillez réessayer.",
+                    Duration = 4000
+                });
+                return;
+            }
+
+            var fileBytes = await response.Content.ReadAsByteArrayAsync();
+            var fileName = response.Content.Headers.ContentDisposition?.FileName 
+                ?? $"Factures_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+
+            fileName = fileName.Trim('"');
+
+            var base64String = Convert.ToBase64String(fileBytes);
+            await JS.InvokeVoidAsync("downloadFile", fileName, base64String, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Succès",
+                Detail = "Export Excel réussi.",
+                Duration = 3000
+            });
+
+            _logger.LogInformation("Excel export completed successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error exporting to Excel");
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Erreur",
+                Detail = $"Erreur lors de l'export: {ex.Message}",
+                Duration = 4000
+            });
+        }
+    }
+
+    private string GetStatusStyle(int statut)
+    {
+        return statut == 1 
+            ? "background-color: #388e3c; color: #fff;" 
+            : "background-color: #e1e1e1; color: #333;";
+    }
+}
+

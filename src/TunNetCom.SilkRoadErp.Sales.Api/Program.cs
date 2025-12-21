@@ -168,6 +168,12 @@ builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Servic
 // Register TejXmlExportService
 builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.TejXmlExportService>();
 
+// Register ExcelExportService
+builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.ExcelExportService>();
+
+// Register PdfListExportService
+builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.PdfListExportService>();
+
 // Register Document Storage Service (configurable via appsettings.json, default: Base64)
 var documentStorageType = builder.Configuration["DocumentStorage:Type"] ?? "Base64";
 switch (documentStorageType)
