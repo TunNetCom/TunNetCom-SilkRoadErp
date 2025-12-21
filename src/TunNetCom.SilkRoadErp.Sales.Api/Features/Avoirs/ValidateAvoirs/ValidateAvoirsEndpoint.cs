@@ -2,6 +2,7 @@ using Carter;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Extensions;
 
@@ -11,8 +12,9 @@ public class ValidateAvoirsEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapPost("api/avoirs/validate", async (ValidateAvoirsCommand command, ISender sender) =>
+        app.MapPost("api/avoirs/validate", async ([FromBody] List<int> ids, ISender sender) =>
         {
+            var command = new ValidateAvoirsCommand(ids);
             var result = await sender.Send(command);
             return result.ToResponse();
         })
