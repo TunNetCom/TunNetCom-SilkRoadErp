@@ -61,5 +61,11 @@ public class ActiveAccountingYearService : IActiveAccountingYearService
         // Cette méthode est utilisée par les Global Query Filters qui ne supportent pas async
         return _cachedActiveYearId;
     }
+
+    public void InvalidateCache()
+    {
+        _logger.LogInformation("Invalidating active accounting year cache");
+        _cachedActiveYearId = null;
+    }
 }
 

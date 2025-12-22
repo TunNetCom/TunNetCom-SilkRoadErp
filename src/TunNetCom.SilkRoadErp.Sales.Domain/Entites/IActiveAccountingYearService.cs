@@ -20,5 +20,12 @@ public interface IActiveAccountingYearService
     /// </summary>
     /// <returns>L'ID de l'exercice comptable actif, ou null si non disponible.</returns>
     int? GetActiveAccountingYearId();
+
+    /// <summary>
+    /// Invalide le cache de l'exercice comptable actif.
+    /// Cette méthode doit être appelée après avoir changé l'exercice comptable actif
+    /// pour forcer le rechargement de la nouvelle valeur à la prochaine requête.
+    /// </summary>
+    void InvalidateCache();
 }
 

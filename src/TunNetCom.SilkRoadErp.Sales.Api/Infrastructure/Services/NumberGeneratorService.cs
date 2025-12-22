@@ -33,6 +33,7 @@ public class NumberGeneratorService : INumberGeneratorService
 
         var year = accountingYear.Year;
         var lastNum = await _context.Facture
+            .IgnoreQueryFilters() // Désactiver le filtre global pour contrôler explicitement le filtre
             .Where(f => f.AccountingYearId == accountingYearId)
             .OrderByDescending(f => f.Num)
             .Select(f => f.Num)
@@ -55,6 +56,7 @@ public class NumberGeneratorService : INumberGeneratorService
 
         var year = accountingYear.Year;
         var lastNum = await _context.FactureFournisseur
+            .IgnoreQueryFilters() // Désactiver le filtre global pour contrôler explicitement le filtre
             .Where(f => f.AccountingYearId == accountingYearId)
             .OrderByDescending(f => f.Num)
             .Select(f => f.Num)
@@ -77,6 +79,7 @@ public class NumberGeneratorService : INumberGeneratorService
 
         var year = accountingYear.Year;
         var lastNum = await _context.BonDeLivraison
+            .IgnoreQueryFilters() // Désactiver le filtre global pour contrôler explicitement le filtre
             .Where(b => b.AccountingYearId == accountingYearId)
             .OrderByDescending(b => b.Num)
             .Select(b => b.Num)
@@ -99,6 +102,7 @@ public class NumberGeneratorService : INumberGeneratorService
 
         var year = accountingYear.Year;
         var lastNum = await _context.BonDeReception
+            .IgnoreQueryFilters() // Désactiver le filtre global pour contrôler explicitement le filtre
             .Where(b => b.AccountingYearId == accountingYearId)
             .OrderByDescending(b => b.Num)
             .Select(b => b.Num)
@@ -121,6 +125,8 @@ public class NumberGeneratorService : INumberGeneratorService
 
         var year = accountingYear.Year;
         var lastNum = await _context.Avoirs
+            .IgnoreQueryFilters() // Désactiver le filtre global pour contrôler explicitement le filtre
+            .Where(a => a.AccountingYearId == accountingYearId)
             .OrderByDescending(a => a.Num)
             .Select(a => a.Num)
             .FirstOrDefaultAsync(cancellationToken);
@@ -142,6 +148,8 @@ public class NumberGeneratorService : INumberGeneratorService
 
         var year = accountingYear.Year;
         var lastNum = await _context.AvoirFournisseur
+            .IgnoreQueryFilters() // Désactiver le filtre global pour contrôler explicitement le filtre
+            .Where(a => a.AccountingYearId == accountingYearId)
             .OrderByDescending(a => a.Num)
             .Select(a => a.Num)
             .FirstOrDefaultAsync(cancellationToken);
@@ -163,6 +171,8 @@ public class NumberGeneratorService : INumberGeneratorService
 
         var year = accountingYear.Year;
         var lastNum = await _context.FactureAvoirFournisseur
+            .IgnoreQueryFilters() // Désactiver le filtre global pour contrôler explicitement le filtre
+            .Where(f => f.AccountingYearId == accountingYearId)
             .OrderByDescending(f => f.Num)
             .Select(f => f.Num)
             .FirstOrDefaultAsync(cancellationToken);
@@ -184,6 +194,7 @@ public class NumberGeneratorService : INumberGeneratorService
 
         var year = accountingYear.Year;
         var lastNum = await _context.RetourMarchandiseFournisseur
+            .IgnoreQueryFilters() // Désactiver le filtre global pour contrôler explicitement le filtre
             .Where(r => r.AccountingYearId == accountingYearId)
             .OrderByDescending(r => r.Num)
             .Select(r => r.Num)
