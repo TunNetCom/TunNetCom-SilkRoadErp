@@ -48,29 +48,48 @@ public class AuthService : IAuthService
     private readonly ILogger<AuthService> _logger;
     private readonly IJSRuntime _jsRuntime;
     private readonly ITokenStore _tokenStore;
+    private readonly ICircuitIdService _circuitIdService;
     private const string AccessTokenKey = "auth_access_token";
     private const string RefreshTokenKey = "auth_refresh_token";
     
-    // Global key for TokenStore - shared across all circuits/sessions
-    // This is safe because each browser has its own localStorage
-    private const string GlobalTokenStoreKey = "global_access_token";
-    
     // Local cache for this scoped service instance
+    // Each circuit will have its own isolated cache
     private string? _localAccessToken;
 
     public AuthService(
         HttpClient httpClient, 
         ILogger<AuthService> logger, 
         IJSRuntime jsRuntime,
-        ITokenStore tokenStore)
+        ITokenStore tokenStore,
+        ICircuitIdService circuitIdService)
     {
         _httpClient = httpClient;
         _logger = logger;
         _jsRuntime = jsRuntime;
         _tokenStore = tokenStore;
+        _circuitIdService = circuitIdService;
         
-        // Try to get token from global store on construction
-        _localAccessToken = _tokenStore.GetToken(GlobalTokenStoreKey);
+        // DO load token from circuit-specific TokenStore on construction
+        // This allows token to persist within the same circuit across service recreations
+        try
+        {
+            var circuitId = _circuitIdService.GetCircuitId();
+            _localAccessToken = _tokenStore.GetToken(circuitId);
+            
+            // #region agent log
+            var logPath = "d:\\Workspaces\\SilkRoad\\TunNetCom-SilkRoadErp\\.cursor\\debug.log";
+            try {
+                var hasToken = !string.IsNullOrEmpty(_localAccessToken);
+                var logData = "{\"location\":\"AuthService.cs:constructor\",\"message\":\"Constructor loaded token from TokenStore\",\"data\":{\"hasToken\":" + hasToken.ToString().ToLower() + ",\"tokenLength\":" + (_localAccessToken?.Length ?? 0) + ",\"circuitId\":\"" + circuitId.Substring(0, Math.Min(8, circuitId.Length)) + "\"},\"timestamp\":" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + ",\"sessionId\":\"debug-session\",\"hypothesisId\":\"FIX\"}\n";
+                System.IO.File.AppendAllText(logPath, logData);
+            } catch { }
+            // #endregion
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not load token from TokenStore in constructor");
+            _localAccessToken = null;
+        }
     }
 
     public bool IsAuthenticated => !string.IsNullOrEmpty(AccessToken);
@@ -79,28 +98,36 @@ public class AuthService : IAuthService
     {
         get
         {
-            // First check local cache
-            if (!string.IsNullOrEmpty(_localAccessToken))
-            {
-                return _localAccessToken;
-            }
+            // Only return the local cache value
+            // Do NOT try to load from TokenStore here to avoid shared sessions
             
-            // Then check global store
-            var globalToken = _tokenStore.GetToken(GlobalTokenStoreKey);
-            if (!string.IsNullOrEmpty(globalToken))
-            {
-                _localAccessToken = globalToken;
-                return _localAccessToken;
-            }
+            // #region agent log
+            var tokenValue = _localAccessToken;
+            var logPath = "d:\\Workspaces\\SilkRoad\\TunNetCom-SilkRoadErp\\.cursor\\debug.log";
+            try {
+                var logData = "{\"location\":\"AuthService.cs:82\",\"message\":\"AccessToken GET\",\"data\":{\"tokenIsNull\":" + (tokenValue == null ? "true" : "false") + ",\"tokenLength\":" + (tokenValue?.Length ?? 0) + "},\"timestamp\":" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + ",\"sessionId\":\"debug-session\",\"hypothesisId\":\"D,E\"}\n";
+                System.IO.File.AppendAllText(logPath, logData);
+            } catch { }
+            // #endregion
             
-            return null;
+            return _localAccessToken;
         }
         private set
         {
             _localAccessToken = value;
+            // Cache in TokenStore using circuit-specific key for performance only
+            // This is optional - if it fails, token is still available in memory
             if (!string.IsNullOrEmpty(value))
             {
-                _tokenStore.SetToken(GlobalTokenStoreKey, value);
+                try
+                {
+                    var circuitId = _circuitIdService.GetCircuitId();
+                    _tokenStore.SetToken(circuitId, value);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to cache token in TokenStore, but token is available in memory");
+                }
             }
         }
     }
@@ -111,7 +138,15 @@ public class AuthService : IAuthService
         _localAccessToken = token;
         if (!string.IsNullOrEmpty(token))
         {
-            _tokenStore.SetToken(GlobalTokenStoreKey, token);
+            try
+            {
+                var circuitId = _circuitIdService.GetCircuitId();
+                _tokenStore.SetToken(circuitId, token);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to cache token in TokenStore, but token is available in memory");
+            }
         }
     }
 
@@ -200,12 +235,38 @@ public class AuthService : IAuthService
             
             var tokenFromStorage = await loadTask;
             
+            // #region agent log
+            var logPath = "d:\\Workspaces\\SilkRoad\\TunNetCom-SilkRoadErp\\.cursor\\debug.log";
+            try {
+                var logData = "{\"location\":\"AuthService.cs:218\",\"message\":\"Token loaded from localStorage\",\"data\":{\"tokenIsNull\":" + (tokenFromStorage == null ? "true" : "false") + ",\"tokenIsEmpty\":" + (string.IsNullOrEmpty(tokenFromStorage) ? "true" : "false") + ",\"tokenLength\":" + (tokenFromStorage?.Length ?? 0) + "},\"timestamp\":" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + ",\"sessionId\":\"debug-session\",\"hypothesisId\":\"C,D\"}\n";
+                System.IO.File.AppendAllText(logPath, logData);
+            } catch { }
+            // #endregion
+            
             if (!string.IsNullOrEmpty(tokenFromStorage))
             {
-                // Set the token in both local cache and global store
+                // Set the token in local cache first (this is critical)
                 _localAccessToken = tokenFromStorage;
-                _tokenStore.SetToken(GlobalTokenStoreKey, tokenFromStorage);
-                _logger.LogInformation("LoadTokenFromStorageAsync: Token loaded successfully. Length: {Length}", tokenFromStorage.Length);
+                
+                // #region agent log
+                try {
+                    var logData2 = "{\"location\":\"AuthService.cs:223\",\"message\":\"Token set in _localAccessToken\",\"data\":{\"tokenLength\":" + tokenFromStorage.Length + "},\"timestamp\":" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + ",\"sessionId\":\"debug-session\",\"hypothesisId\":\"E\"}\n";
+                    System.IO.File.AppendAllText(logPath, logData2);
+                } catch { }
+                // #endregion
+                
+                // Try to cache in circuit-specific TokenStore (optional, for performance)
+                try
+                {
+                    var circuitId = _circuitIdService.GetCircuitId();
+                    _tokenStore.SetToken(circuitId, tokenFromStorage);
+                    _logger.LogInformation("LoadTokenFromStorageAsync: Token loaded successfully for circuit {CircuitId}. Length: {Length}", 
+                        circuitId.Substring(0, Math.Min(8, circuitId.Length)), tokenFromStorage.Length);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "LoadTokenFromStorageAsync: Could not cache in TokenStore, but token is loaded in memory. Length: {Length}", tokenFromStorage.Length);
+                }
             }
             else
             {
@@ -389,9 +450,18 @@ public class AuthService : IAuthService
             _localAccessToken = null;
             _logger.LogInformation("Logout: Token cleared from local cache");
             
-            // Clear token from global store
-            _tokenStore.ClearToken(GlobalTokenStoreKey);
-            _logger.LogInformation("Logout: Token cleared from global TokenStore");
+            // Try to clear token from circuit-specific TokenStore cache (optional)
+            try
+            {
+                var circuitId = _circuitIdService.GetCircuitId();
+                _tokenStore.ClearToken(circuitId);
+                _logger.LogInformation("Logout: Token cleared from TokenStore for circuit {CircuitId}", 
+                    circuitId.Substring(0, Math.Min(8, circuitId.Length)));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Logout: Could not clear TokenStore, but local cache is cleared");
+            }
             
             // Clear tokens from localStorage
             try

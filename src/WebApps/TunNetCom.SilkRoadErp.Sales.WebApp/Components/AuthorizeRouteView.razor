@@ -1,9 +1,11 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Services
 @using Microsoft.Extensions.Logging
+@using Microsoft.JSInterop
 @inject IAuthService AuthService
 @inject NavigationManager Navigation
 @inject ILogger<AuthorizeRouteView> Logger
 @inject ITokenExpirationNotifier TokenExpirationNotifier
+@inject IJSRuntime JSRuntime
 
 @if (IsLoginPage)
 {
@@ -38,6 +40,14 @@ else
 
     protected override void OnInitialized()
     {
+        // #region agent log
+        var logPath = "d:\\Workspaces\\SilkRoad\\TunNetCom-SilkRoadErp\\.cursor\\debug.log";
+        try {
+            var logData = "{\"location\":\"AuthorizeRouteView.razor:41\",\"message\":\"OnInitialized ENTRY\",\"data\":{\"IsLoginPage\":" + IsLoginPage.ToString().ToLower() + ",\"IsAuthorized\":" + IsAuthorized.ToString().ToLower() + ",\"_hasCheckedAuth\":" + _hasCheckedAuth.ToString().ToLower() + "},\"timestamp\":" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + ",\"sessionId\":\"debug-session\",\"hypothesisId\":\"B\"}\n";
+            System.IO.File.AppendAllText(logPath, logData);
+        } catch { }
+        // #endregion
+        
         UpdateLoginPageStatus();
         
         // Subscribe to token expiration events
@@ -88,6 +98,10 @@ else
     
     private async Task CheckAuthenticationAsync()
     {
+        // #region agent log
+        try { await JSRuntime.InvokeVoidAsync("eval", "fetch('http://127.0.0.1:7242/ingest/828035cf-0af7-4e40-819b-86f707b081bc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AuthorizeRouteView.razor:89',message:'CheckAuthenticationAsync ENTRY',data:{_hasCheckedAuth:" + _hasCheckedAuth.ToString().ToLower() + ",IsAuthorized:" + IsAuthorized.ToString().ToLower() + ",IsLoginPage:" + IsLoginPage.ToString().ToLower() + "},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});"); } catch { }
+        // #endregion
+        
         if (_hasCheckedAuth)
             return;
             
@@ -97,42 +111,78 @@ else
 
         try
         {
-            Logger.LogInformation("AuthorizeRouteView: Starting authentication check");
+            Logger.LogInformation("AuthorizeRouteView: Starting authentication check for new circuit");
             
-            // ALWAYS load token from storage first (in case circuit ID changed after navigation)
-            // This ensures the token is available in TokenStore with the current circuit ID
-            _statusMessage = "Chargement depuis localStorage...";
+            // CRITICAL: Always load token from localStorage first
+            // This ensures each browser/device uses its OWN localStorage, not a shared server-side cache
+            // Each new circuit (browser/phone) will load its own token from its own localStorage
+            _statusMessage = "Vérification de l'authentification depuis localStorage...";
             StateHasChanged();
             
             try
             {
-                // LoadTokenFromStorageAsync has its own timeout, so we just await it
+                var isAuthBefore = AuthService.IsAuthenticated;
+                var hasTokenBefore = AuthService.AccessToken != null;
+                
+                // #region agent log
+                try { await JSRuntime.InvokeVoidAsync("eval", $"fetch('http://127.0.0.1:7242/ingest/828035cf-0af7-4e40-819b-86f707b081bc',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify({{location:'AuthorizeRouteView.razor:111',message:'BEFORE LoadTokenFromStorageAsync',data:{{IsAuthenticatedBefore:{isAuthBefore.ToString().ToLower()},AccessTokenBefore:'{(hasTokenBefore ? "EXISTS" : "NULL")}'}},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'}})}})" + ".catch(()=>{});"); } catch { }
+                // #endregion
+                
+                // Force load from localStorage - this is the source of truth for each device
                 await AuthService.LoadTokenFromStorageAsync();
-                Logger.LogInformation("AuthorizeRouteView: Token loaded. IsAuthenticated: {IsAuthenticated}", AuthService.IsAuthenticated);
+                
+                var isAuthAfter = AuthService.IsAuthenticated;
+                var hasTokenAfter = AuthService.AccessToken != null;
+                
+                // #region agent log
+                try { await JSRuntime.InvokeVoidAsync("eval", $"fetch('http://127.0.0.1:7242/ingest/828035cf-0af7-4e40-819b-86f707b081bc',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify({{location:'AuthorizeRouteView.razor:111-after',message:'AFTER LoadTokenFromStorageAsync',data:{{IsAuthenticatedAfter:{isAuthAfter.ToString().ToLower()},AccessTokenAfter:'{(hasTokenAfter ? "EXISTS" : "NULL")}'}},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C,E'}})}})" + ".catch(()=>{});"); } catch { }
+                // #endregion
+                
+                Logger.LogInformation("AuthorizeRouteView: Token load completed. IsAuthenticated: {IsAuthenticated}", AuthService.IsAuthenticated);
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "AuthorizeRouteView: Error loading token from storage");
-                // Continue to check IsAuthenticated anyway
+                // #region agent log
+                try { await JSRuntime.InvokeVoidAsync("eval", $"fetch('http://127.0.0.1:7242/ingest/828035cf-0af7-4e40-819b-86f707b081bc',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify({{location:'AuthorizeRouteView.razor:115',message:'LoadTokenFromStorageAsync EXCEPTION',data:{{ExceptionMessage:'{ex.Message.Replace("'", "\\'")}',ExceptionType:'{ex.GetType().Name}'}},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'}})}})" + ".catch(()=>{});"); } catch { }
+                // #endregion
+                
+                Logger.LogError(ex, "AuthorizeRouteView: Error loading token from localStorage");
+                // Continue to check IsAuthenticated anyway - may be during prerendering
             }
             
-            // Now check if authenticated (token should be in TokenStore with current circuit ID)
+            var isAuth = AuthService.IsAuthenticated;
+            var tokenLen = AuthService.AccessToken?.Length ?? 0;
+            
+            // #region agent log
+            try { await JSRuntime.InvokeVoidAsync("eval", $"fetch('http://127.0.0.1:7242/ingest/828035cf-0af7-4e40-819b-86f707b081bc',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify({{location:'AuthorizeRouteView.razor:121',message:'BEFORE IsAuthenticated CHECK',data:{{IsAuthenticated:{isAuth.ToString().ToLower()},AccessTokenLen:{tokenLen}}},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,E'}})}})" + ".catch(()=>{});"); } catch { }
+            // #endregion
+            
+            // Now check if authenticated based on what was loaded from THIS device's localStorage
             if (AuthService.IsAuthenticated)
             {
-                Logger.LogInformation("AuthorizeRouteView: User authenticated, setting IsAuthorized to true");
+                // #region agent log
+                try { await JSRuntime.InvokeVoidAsync("eval", $"fetch('http://127.0.0.1:7242/ingest/828035cf-0af7-4e40-819b-86f707b081bc',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify({{location:'AuthorizeRouteView.razor:122',message:'AUTHENTICATED BRANCH - Setting IsAuthorized = true',data:{{IsAuthorizedBefore:{IsAuthorized.ToString().ToLower()}}},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'}})}})" + ".catch(()=>{});"); } catch { }
+                // #endregion
+                
+                Logger.LogInformation("AuthorizeRouteView: User authenticated from localStorage, granting access");
                 IsAuthorized = true;
                 _statusMessage = "Authentifié";
                 Logger.LogInformation("AuthorizeRouteView: IsAuthorized set to {IsAuthorized}, calling StateHasChanged", IsAuthorized);
                 StateHasChanged();
-                // Force a re-render by updating a dummy variable
+                // Force a re-render
                 await Task.Delay(100);
                 StateHasChanged();
-                Logger.LogInformation("AuthorizeRouteView: StateHasChanged called twice, IsAuthorized: {IsAuthorized}", IsAuthorized);
+                Logger.LogInformation("AuthorizeRouteView: StateHasChanged completed, IsAuthorized: {IsAuthorized}", IsAuthorized);
             }
             else
             {
+                // #region agent log
+                try { await JSRuntime.InvokeVoidAsync("eval", $"fetch('http://127.0.0.1:7242/ingest/828035cf-0af7-4e40-819b-86f707b081bc',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify({{location:'AuthorizeRouteView.razor:134',message:'NOT AUTHENTICATED BRANCH - Should redirect to login',data:{{IsAuthorizedBefore:{IsAuthorized.ToString().ToLower()}}},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'}})}})" + ".catch(()=>{});"); } catch { }
+                // #endregion
+                
                 // User not authenticated - redirect to login
-                Logger.LogWarning("AuthorizeRouteView: User not authenticated, redirecting to login");
+                // This happens when a new device opens the app without its own login
+                Logger.LogWarning("AuthorizeRouteView: No authentication token found in localStorage for this device, redirecting to login");
                 _statusMessage = "Non authentifié - redirection...";
                 StateHasChanged();
                 RedirectToLogin();
@@ -194,18 +244,49 @@ else
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        // #region agent log
+        var logPath = "d:\\Workspaces\\SilkRoad\\TunNetCom-SilkRoadErp\\.cursor\\debug.log";
+        try {
+            var logData = "{\"location\":\"AuthorizeRouteView.razor:237\",\"message\":\"OnAfterRenderAsync ENTRY\",\"data\":{\"firstRender\":" + firstRender.ToString().ToLower() + ",\"IsLoginPage\":" + IsLoginPage.ToString().ToLower() + ",\"IsAuthorized\":" + IsAuthorized.ToString().ToLower() + ",\"_hasCheckedAuth\":" + _hasCheckedAuth.ToString().ToLower() + "},\"timestamp\":" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + ",\"sessionId\":\"debug-session\",\"hypothesisId\":\"B\"}\n";
+            System.IO.File.AppendAllText(logPath, logData);
+        } catch { }
+        // #endregion
+        
         // Always allow login page without any async checks
         if (IsLoginPage)
         {
             _hasCheckedAuth = false; // Reset for next time
             _statusMessage = "Page de login";
+            
+            // #region agent log
+            try {
+                var logData = "{\"location\":\"AuthorizeRouteView.razor:240\",\"message\":\"IsLoginPage TRUE - returning early\",\"data\":{},\"timestamp\":" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + ",\"sessionId\":\"debug-session\",\"hypothesisId\":\"B\"}\n";
+                System.IO.File.AppendAllText(logPath, logData);
+            } catch { }
+            // #endregion
             return;
         }
 
         // Only check on first render if not already checked
         if (firstRender && !_hasCheckedAuth)
         {
+            // #region agent log
+            try {
+                var logData = "{\"location\":\"AuthorizeRouteView.razor:248\",\"message\":\"Calling CheckAuthenticationAsync\",\"data\":{\"firstRender\":" + firstRender.ToString().ToLower() + ",\"_hasCheckedAuth\":" + _hasCheckedAuth.ToString().ToLower() + "},\"timestamp\":" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + ",\"sessionId\":\"debug-session\",\"hypothesisId\":\"B\"}\n";
+                System.IO.File.AppendAllText(logPath, logData);
+            } catch { }
+            // #endregion
+            
             await CheckAuthenticationAsync();
+        }
+        else
+        {
+            // #region agent log
+            try {
+                var logData = "{\"location\":\"AuthorizeRouteView.razor:248-else\",\"message\":\"NOT calling CheckAuthenticationAsync\",\"data\":{\"firstRender\":" + firstRender.ToString().ToLower() + ",\"_hasCheckedAuth\":" + _hasCheckedAuth.ToString().ToLower() + ",\"reason\":\"" + (firstRender ? "hasCheckedAuth=true" : "not firstRender") + "\"},\"timestamp\":" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + ",\"sessionId\":\"debug-session\",\"hypothesisId\":\"B\"}\n";
+                System.IO.File.AppendAllText(logPath, logData);
+            } catch { }
+            // #endregion
         }
     }
 }

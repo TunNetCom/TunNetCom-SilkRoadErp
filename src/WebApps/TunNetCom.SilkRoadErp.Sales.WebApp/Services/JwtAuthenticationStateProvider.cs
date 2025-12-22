@@ -8,10 +8,7 @@ public class JwtAuthenticationStateProvider : AuthenticationStateProvider
 {
     private readonly IAuthService _authService;
     private readonly ILogger<JwtAuthenticationStateProvider> _logger;
-    private DateTime _lastTokenLoadTime = DateTime.MinValue;
-    
-    // Reduced cache duration to 1 minute for faster response to auth changes
-    private readonly TimeSpan _tokenLoadCacheDuration = TimeSpan.FromMinutes(1);
+    private bool _hasLoadedFromStorage = false;
 
     public JwtAuthenticationStateProvider(
         IAuthService authService,
@@ -25,15 +22,23 @@ public class JwtAuthenticationStateProvider : AuthenticationStateProvider
     {
         try
         {
-            // Only load from storage if token is not already in memory AND we haven't loaded recently
-            // This optimization prevents frequent JS interop calls that cause page refreshes
+            // Always load from localStorage on first call for this circuit
+            // This ensures each new browser/device starts with its own localStorage state
             var token = _authService.AccessToken;
-            var timeSinceLastLoad = DateTime.UtcNow - _lastTokenLoadTime;
             
-            if (string.IsNullOrEmpty(token) && timeSinceLastLoad > _tokenLoadCacheDuration)
+            if (!_hasLoadedFromStorage)
             {
-                // Only try to load from storage if token is not in memory and cache expired
-                _lastTokenLoadTime = DateTime.UtcNow;
+                _logger.LogInformation("First auth check for this circuit - loading from localStorage");
+                await _authService.LoadTokenFromStorageAsync();
+                token = _authService.AccessToken;
+                _hasLoadedFromStorage = true;
+            }
+            
+            // If still no token after loading from storage, try one more time
+            // This handles race conditions with JS interop
+            if (string.IsNullOrEmpty(token))
+            {
+                _logger.LogDebug("No token in memory, attempting to load from storage");
                 await _authService.LoadTokenFromStorageAsync();
                 token = _authService.AccessToken;
             }
@@ -97,9 +102,9 @@ public class JwtAuthenticationStateProvider : AuthenticationStateProvider
 
     public void NotifyAuthenticationStateChanged()
     {
-        // Invalidate the cache when auth state changes
-        _lastTokenLoadTime = DateTime.MinValue;
-        _logger.LogInformation("JwtAuthenticationStateProvider: Authentication state change notified, cache invalidated");
+        // Reset the flag so next check will reload from storage
+        _hasLoadedFromStorage = false;
+        _logger.LogInformation("JwtAuthenticationStateProvider: Authentication state change notified, will reload from storage on next check");
         NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
     }
 }
