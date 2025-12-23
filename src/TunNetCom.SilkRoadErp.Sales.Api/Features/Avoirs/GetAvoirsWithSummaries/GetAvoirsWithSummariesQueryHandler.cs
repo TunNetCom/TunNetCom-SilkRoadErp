@@ -18,7 +18,7 @@ public class GetAvoirsWithSummariesQueryHandler(
         _logger.LogPaginationRequest(nameof(Avoirs), request.PageNumber, request.PageSize);
 
         // Build base query with filters to avoid loading all data
-        var baseQuery = from a in _context.Avoirs
+        var baseQuery = from a in _context.Avoirs.FilterByActiveAccountingYear()
                         join c in _context.Client on a.ClientId equals c.Id into clientGroup
                         from c in clientGroup.DefaultIfEmpty()
                         select new { a, c };

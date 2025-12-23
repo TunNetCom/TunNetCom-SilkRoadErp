@@ -52,7 +52,12 @@ builder.Services.AddDbContext<SalesContext>((serviceProvider, options) =>
     // Add audit interceptor
     var auditInterceptor = serviceProvider.GetRequiredService<AuditSaveChangesInterceptor>();
     options.AddInterceptors(auditInterceptor);
+    
+    // Add active accounting year query interceptor to ensure AsyncLocal is set before queries
+    var activeYearInterceptor = serviceProvider.GetRequiredService<TunNetCom.SilkRoadErp.Sales.Domain.Entites.Interceptors.ActiveAccountingYearQueryInterceptor>();
+    options.AddInterceptors(activeYearInterceptor);
 });
+
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -156,8 +161,8 @@ builder.Services.AddScoped<DatabaseSeeder>();
 // Register NumberGeneratorService
 builder.Services.AddScoped<INumberGeneratorService, NumberGeneratorService>();
 
-// Register ActiveAccountingYearService
-builder.Services.AddScoped<IActiveAccountingYearService, ActiveAccountingYearService>();
+// Register ActiveAccountingYearService as Singleton to share cache across all requests
+builder.Services.AddSingleton<IActiveAccountingYearService, ActiveAccountingYearService>();
 
 // Register StockCalculationService
 builder.Services.AddScoped<IStockCalculationService,StockCalculationService>();
@@ -200,6 +205,9 @@ builder.Services.AddScoped<ICurrentUserProvider, CurrentUserService>();
 
 // Register AuditSaveChangesInterceptor
 builder.Services.AddScoped<AuditSaveChangesInterceptor>();
+
+// Register ActiveAccountingYearQueryInterceptor
+builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Domain.Entites.Interceptors.ActiveAccountingYearQueryInterceptor>();
 
 // Register NotificationService
 builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Notifications.NotificationService>();

@@ -2,16 +2,16 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
 
 public class ActiveAccountingYearService : IActiveAccountingYearService
 {
-    private readonly SalesContext _context;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly ILogger<ActiveAccountingYearService> _logger;
     private int? _cachedActiveYearId;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
     public ActiveAccountingYearService(
-        SalesContext context,
+        IServiceScopeFactory serviceScopeFactory,
         ILogger<ActiveAccountingYearService> logger)
     {
-        _context = context;
+        _serviceScopeFactory = serviceScopeFactory;
         _logger = logger;
     }
 
@@ -20,6 +20,7 @@ public class ActiveAccountingYearService : IActiveAccountingYearService
         // Si déjà en cache, retourner la valeur
         if (_cachedActiveYearId.HasValue)
         {
+            _logger.LogDebug("ActiveAccountingYearService: Returning cached active year ID {ActiveYearId}", _cachedActiveYearId.Value);
             return _cachedActiveYearId.Value;
         }
 
@@ -30,11 +31,19 @@ public class ActiveAccountingYearService : IActiveAccountingYearService
             // Double-check après avoir acquis le verrou
             if (_cachedActiveYearId.HasValue)
             {
+                _logger.LogDebug("ActiveAccountingYearService: Returning cached active year ID {ActiveYearId} (double-check)", _cachedActiveYearId.Value);
                 return _cachedActiveYearId.Value;
             }
 
+            _logger.LogInformation("ActiveAccountingYearService: Cache miss, loading active year from database");
+
+            // Créer un scope pour obtenir le DbContext (qui est Scoped)
+            // Cela permet au service Singleton d'utiliser des services Scoped à la demande
+            using var scope = _serviceScopeFactory.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<SalesContext>();
+            
             // Récupérer l'exercice actif en ignorant les filtres de requête
-            var activeYear = await _context.AccountingYear
+            var activeYear = await context.AccountingYear
                 .IgnoreQueryFilters()
                 .Where(ay => ay.IsActive)
                 .Select(ay => new { ay.Id })
@@ -42,11 +51,12 @@ public class ActiveAccountingYearService : IActiveAccountingYearService
 
             if (activeYear == null)
             {
-                _logger.LogWarning("No active accounting year found");
+                _logger.LogWarning("ActiveAccountingYearService: No active accounting year found in database");
                 return null;
             }
 
             _cachedActiveYearId = activeYear.Id;
+            _logger.LogInformation("ActiveAccountingYearService: Loaded and cached active year ID {ActiveYearId}", activeYear.Id);
             return _cachedActiveYearId.Value;
         }
         finally
@@ -66,6 +76,15 @@ public class ActiveAccountingYearService : IActiveAccountingYearService
     {
         _logger.LogInformation("Invalidating active accounting year cache");
         _cachedActiveYearId = null;
+    }
+
+    public void SetActiveAccountingYearId(int? accountingYearId)
+    {
+        var oldValue = _cachedActiveYearId;
+        _cachedActiveYearId = accountingYearId;
+        
+        _logger.LogInformation("ActiveAccountingYearService: Set active accounting year ID in cache from {OldValue} to {NewValue}", 
+            oldValue, accountingYearId);
     }
 }
 

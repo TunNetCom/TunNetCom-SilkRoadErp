@@ -21,6 +21,11 @@ public partial class SalesContext : DbContext
         _activeAccountingYearId.Value = yearId;
     }
 
+    public static int? GetActiveAccountingYearId()
+    {
+        return _activeAccountingYearId.Value;
+    }
+
     public SalesContext(DbContextOptions<SalesContext> options)
         : base(options)
     {
@@ -129,37 +134,18 @@ public partial class SalesContext : DbContext
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(FactureConfiguration).Assembly);
 
-        // Configurer les Global Query Filters pour toutes les entités qui implémentent IAccountingYearEntity
-        ConfigureAccountingYearFilters(modelBuilder);
+        // Désactivé : Les Global Query Filters ne peuvent pas utiliser des appels de méthode non traduisibles en SQL
+        // On utilise maintenant l'extension method FilterByActiveAccountingYear() dans les requêtes
+        // ConfigureAccountingYearFilters(modelBuilder);
 
         OnModelCreatingPartial(modelBuilder);
     }
 
     private void ConfigureAccountingYearFilters(ModelBuilder modelBuilder)
     {
-        // Trouver toutes les entités qui implémentent IAccountingYearEntity
-        var entityTypes = modelBuilder.Model.GetEntityTypes()
-            .Where(et => typeof(IAccountingYearEntity).IsAssignableFrom(et.ClrType))
-            .ToList();
-
-        foreach (var entityType in entityTypes)
-        {
-            var clrType = entityType.ClrType;
-            var parameter = Expression.Parameter(clrType, "e");
-            var property = Expression.Property(parameter, nameof(IAccountingYearEntity.AccountingYearId));
-
-            // Utiliser une variable capturée qui sera résolue au moment de l'exécution
-            // On crée une expression qui compare AccountingYearId avec une valeur qui sera résolue dynamiquement
-            // Pour cela, on utilise une méthode qui sera appelée via un interceptor ou un middleware
-            // Pour l'instant, on crée un filtre qui sera évalué à chaque requête via le service
-            
-            // Créer une expression qui utilise le service pour obtenir l'exercice actif
-            // On utilise une closure pour capturer le contexte
-            var filterExpression = CreateAccountingYearFilterExpression(clrType);
-            
-            // Appliquer le filtre
-            modelBuilder.Entity(clrType).HasQueryFilter(filterExpression);
-        }
+        // Cette méthode est désactivée car les Global Query Filters ne peuvent pas utiliser des appels de méthode non traduisibles en SQL
+        // On utilise maintenant l'extension method FilterByActiveAccountingYear() dans les requêtes
+        // Les entités qui implémentent IAccountingYearEntity doivent utiliser .FilterByActiveAccountingYear() dans leurs requêtes
     }
 
     private LambdaExpression CreateAccountingYearFilterExpression(Type entityType)
@@ -169,25 +155,25 @@ public partial class SalesContext : DbContext
         
         // Utiliser la variable statique thread-safe pour obtenir l'ID de l'exercice actif
         // Cette valeur sera mise à jour par le middleware au début de chaque requête HTTP
+        // EF Core ne peut pas traduire cet appel de méthode en SQL, mais il peut évaluer l'expression
+        // à chaque requête si on utilise une expression qui appelle la méthode
         var getActiveYearIdMethod = typeof(SalesContext).GetMethod(
             nameof(GetActiveAccountingYearId),
-            BindingFlags.NonPublic | BindingFlags.Static)!;
+            BindingFlags.Public | BindingFlags.Static)!;
         
         var methodCall = Expression.Call(getActiveYearIdMethod);
         
-        // Si la valeur est null, on retourne -1 pour que la comparaison échoue
+        // Créer une expression qui compare AccountingYearId avec la valeur retournée par GetActiveAccountingYearId()
+        // Si la valeur est null, on retourne false (pas de résultats) pour forcer le filtre à exclure toutes les entités
+        // Sinon, on compare AccountingYearId avec la valeur de l'AsyncLocal
+        // Note: EF Core ne peut pas traduire cet appel de méthode en SQL, donc on doit utiliser
+        // un interceptor qui modifie la requête SQL directement, ou utiliser une approche différente
         var nullCheck = Expression.Condition(
             Expression.Equal(methodCall, Expression.Constant(null, typeof(int?))),
-            Expression.Constant(-1),
-            Expression.Property(methodCall, "Value"));
+            Expression.Constant(false), // Si null, retourner false (exclure toutes les entités)
+            Expression.Equal(property, Expression.Property(methodCall, "Value"))); // Sinon, comparer avec la valeur
         
-        var equals = Expression.Equal(property, nullCheck);
-        return Expression.Lambda(equals, parameter);
-    }
-
-    private static int? GetActiveAccountingYearId()
-    {
-        return _activeAccountingYearId.Value;
+        return Expression.Lambda(nullCheck, parameter);
     }
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);

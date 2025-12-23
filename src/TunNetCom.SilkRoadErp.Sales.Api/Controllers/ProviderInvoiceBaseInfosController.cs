@@ -35,7 +35,9 @@ public class ProviderInvoiceBaseInfosController : ODataController
                 startDate, endDate, providerId, tagIds != null ? string.Join(",", tagIds) : "null");
 
             // Build base query with filters before projection
-            var baseQuery = _context.FactureFournisseur.AsNoTracking();
+            var baseQuery = _context.FactureFournisseur
+                .AsNoTracking()
+                .FilterByActiveAccountingYear();
 
             // Apply custom filters before projection (on entity properties)
             if (startDate.HasValue)

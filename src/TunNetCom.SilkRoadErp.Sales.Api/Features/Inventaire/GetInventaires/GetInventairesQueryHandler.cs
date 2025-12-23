@@ -19,6 +19,7 @@ public class GetInventairesQueryHandler(
         _logger.LogPaginationRequest(nameof(Domain.Entites.Inventaire), query.PageNumber, query.PageSize);
 
         var inventairesQuery = _context.Inventaire
+            .FilterByActiveAccountingYear()
             .Include(i => i.AccountingYear)
             .Select(i => new InventaireResponse
             {

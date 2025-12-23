@@ -27,5 +27,12 @@ public interface IActiveAccountingYearService
     /// pour forcer le rechargement de la nouvelle valeur à la prochaine requête.
     /// </summary>
     void InvalidateCache();
+
+    /// <summary>
+    /// Met à jour directement le cache avec une nouvelle valeur d'année comptable.
+    /// Cette méthode est utilisée pour mettre à jour immédiatement le cache après un changement d'année.
+    /// </summary>
+    /// <param name="accountingYearId">L'ID de la nouvelle année comptable active.</param>
+    void SetActiveAccountingYearId(int? accountingYearId);
 }
 

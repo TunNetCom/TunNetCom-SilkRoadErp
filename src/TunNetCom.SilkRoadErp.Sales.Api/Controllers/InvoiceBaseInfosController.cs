@@ -39,9 +39,11 @@ public class InvoiceBaseInfosController : ODataController
 
             var appParams = await _mediator.Send(new GetAppParametersQuery());
             var timbre = appParams.Value.Timbre;
-
+            
             // Build base query with filters BEFORE loading to memory
-            var baseQuery = _context.Facture.AsNoTracking();
+            var baseQuery = _context.Facture
+                .AsNoTracking()
+                .FilterByActiveAccountingYear();
 
             // Apply custom filters before projection (on entity properties)
             if (startDate.HasValue)
