@@ -13,6 +13,8 @@ public class GetPaiementFournisseurQueryHandler(
 
         var paiement = await _context.PaiementFournisseur
             .AsNoTracking()
+            .Include(p => p.FactureFournisseurs)
+            .Include(p => p.BonDeReceptions)
             .Where(p => p.Id == query.Id)
             .Select(p => new PaiementFournisseurResponse
             {
@@ -24,8 +26,8 @@ public class GetPaiementFournisseurQueryHandler(
                 Montant = p.Montant,
                 DatePaiement = p.DatePaiement,
                 MethodePaiement = p.MethodePaiement.ToString(),
-                FactureFournisseurId = p.FactureFournisseurId,
-                BonDeReceptionId = p.BonDeReceptionId,
+                FactureFournisseurIds = p.FactureFournisseurs.Select(f => f.FactureFournisseurId).ToList(),
+                BonDeReceptionIds = p.BonDeReceptions.Select(b => b.BonDeReceptionId).ToList(),
                 NumeroChequeTraite = p.NumeroChequeTraite,
                 BanqueId = p.BanqueId,
                 BanqueNom = p.Banque != null ? p.Banque.Nom : null,

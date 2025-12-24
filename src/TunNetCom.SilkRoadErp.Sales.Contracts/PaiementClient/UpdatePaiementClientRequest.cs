@@ -17,11 +17,11 @@ public class UpdatePaiementClientRequest
     [JsonPropertyName("methodePaiement")]
     public string MethodePaiement { get; set; } = string.Empty;
 
-    [JsonPropertyName("factureId")]
-    public int? FactureId { get; set; }
+    [JsonPropertyName("factureIds")]
+    public List<int>? FactureIds { get; set; }
 
-    [JsonPropertyName("bonDeLivraisonId")]
-    public int? BonDeLivraisonId { get; set; }
+    [JsonPropertyName("bonDeLivraisonIds")]
+    public List<int>? BonDeLivraisonIds { get; set; }
 
     [JsonPropertyName("numeroChequeTraite")]
     public string? NumeroChequeTraite { get; set; }

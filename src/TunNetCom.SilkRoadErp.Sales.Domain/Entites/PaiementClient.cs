@@ -17,8 +17,8 @@ public partial class PaiementClient : IAccountingYearEntity
         decimal montant,
         DateTime datePaiement,
         MethodePaiement methodePaiement,
-        int? factureId,
-        int? bonDeLivraisonId,
+        IReadOnlyList<int>? factureIds,
+        IReadOnlyList<int>? bonDeLivraisonIds,
         string? numeroChequeTraite,
         int? banqueId,
         DateTime? dateEcheance,
@@ -33,13 +33,13 @@ public partial class PaiementClient : IAccountingYearEntity
             Montant = montant,
             DatePaiement = datePaiement,
             MethodePaiement = methodePaiement,
-            FactureId = factureId,
-            BonDeLivraisonId = bonDeLivraisonId,
             NumeroChequeTraite = numeroChequeTraite,
             BanqueId = banqueId,
             DateEcheance = dateEcheance,
             Commentaire = commentaire,
-            DocumentStoragePath = documentStoragePath
+            DocumentStoragePath = documentStoragePath,
+            Factures = new List<PaiementClientFacture>(),
+            BonDeLivraisons = new List<PaiementClientBonDeLivraison>()
         };
     }
 
@@ -50,8 +50,8 @@ public partial class PaiementClient : IAccountingYearEntity
         decimal montant,
         DateTime datePaiement,
         MethodePaiement methodePaiement,
-        int? factureId,
-        int? bonDeLivraisonId,
+        IReadOnlyList<int>? factureIds,
+        IReadOnlyList<int>? bonDeLivraisonIds,
         string? numeroChequeTraite,
         int? banqueId,
         DateTime? dateEcheance,
@@ -64,14 +64,32 @@ public partial class PaiementClient : IAccountingYearEntity
         this.Montant = montant;
         this.DatePaiement = datePaiement;
         this.MethodePaiement = methodePaiement;
-        this.FactureId = factureId;
-        this.BonDeLivraisonId = bonDeLivraisonId;
         this.NumeroChequeTraite = numeroChequeTraite;
         this.BanqueId = banqueId;
         this.DateEcheance = dateEcheance;
         this.Commentaire = commentaire;
         this.DocumentStoragePath = documentStoragePath;
         this.DateModification = DateTime.UtcNow;
+
+        // Update Factures collection
+        if (factureIds != null)
+        {
+            this.Factures.Clear();
+            foreach (var factureId in factureIds)
+            {
+                this.Factures.Add(PaiementClientFacture.Create(this.Id, factureId));
+            }
+        }
+
+        // Update BonDeLivraisons collection
+        if (bonDeLivraisonIds != null)
+        {
+            this.BonDeLivraisons.Clear();
+            foreach (var bonDeLivraisonId in bonDeLivraisonIds)
+            {
+                this.BonDeLivraisons.Add(PaiementClientBonDeLivraison.Create(this.Id, bonDeLivraisonId));
+            }
+        }
     }
 
     public int Id { get; private set; }
@@ -87,10 +105,6 @@ public partial class PaiementClient : IAccountingYearEntity
     public DateTime DatePaiement { get; private set; }
 
     public MethodePaiement MethodePaiement { get; private set; }
-
-    public int? FactureId { get; private set; }
-
-    public int? BonDeLivraisonId { get; private set; }
 
     public string? NumeroChequeTraite { get; private set; }
 
@@ -110,8 +124,8 @@ public partial class PaiementClient : IAccountingYearEntity
 
     public virtual Banque? Banque { get; set; }
 
-    public virtual Facture? Facture { get; set; }
+    public virtual ICollection<PaiementClientFacture> Factures { get; set; } = new List<PaiementClientFacture>();
 
-    public virtual BonDeLivraison? BonDeLivraison { get; set; }
+    public virtual ICollection<PaiementClientBonDeLivraison> BonDeLivraisons { get; set; } = new List<PaiementClientBonDeLivraison>();
 }
 

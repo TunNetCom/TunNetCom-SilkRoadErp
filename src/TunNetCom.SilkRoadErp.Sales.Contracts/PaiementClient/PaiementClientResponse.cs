@@ -26,11 +26,11 @@ public class PaiementClientResponse
     [JsonPropertyName("methodePaiement")]
     public string MethodePaiement { get; set; } = string.Empty;
 
-    [JsonPropertyName("factureId")]
-    public int? FactureId { get; set; }
+    [JsonPropertyName("factureIds")]
+    public List<int> FactureIds { get; set; } = new();
 
-    [JsonPropertyName("bonDeLivraisonId")]
-    public int? BonDeLivraisonId { get; set; }
+    [JsonPropertyName("bonDeLivraisonIds")]
+    public List<int> BonDeLivraisonIds { get; set; } = new();
 
     [JsonPropertyName("numeroChequeTraite")]
     public string? NumeroChequeTraite { get; set; }

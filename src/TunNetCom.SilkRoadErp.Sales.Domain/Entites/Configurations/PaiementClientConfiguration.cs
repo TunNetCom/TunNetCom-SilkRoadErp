@@ -13,10 +13,6 @@ public partial class PaiementClientConfiguration : IEntityTypeConfiguration<Paie
         entity.ToTable("PaiementClient", t =>
         {
             t.HasCheckConstraint("CHK_PaiementClient_Montant", "Montant > 0");
-            t.HasCheckConstraint("CHK_PaiementClient_Document", 
-                "(FactureId IS NULL AND BonDeLivraisonId IS NULL) OR " +
-                "(FactureId IS NOT NULL AND BonDeLivraisonId IS NULL) OR " +
-                "(FactureId IS NULL AND BonDeLivraisonId IS NOT NULL)");
         });
 
         entity.HasKey(e => e.Id);
@@ -53,12 +49,6 @@ public partial class PaiementClientConfiguration : IEntityTypeConfiguration<Paie
             .HasMaxLength(20)
             .HasConversion<string>()
             .IsRequired();
-
-        entity.Property(e => e.FactureId)
-            .HasColumnName("FactureId");
-
-        entity.Property(e => e.BonDeLivraisonId)
-            .HasColumnName("BonDeLivraisonId");
 
         entity.Property(e => e.NumeroChequeTraite)
             .HasColumnName("NumeroChequeTraite")
@@ -114,17 +104,15 @@ public partial class PaiementClientConfiguration : IEntityTypeConfiguration<Paie
             .OnDelete(DeleteBehavior.SetNull)
             .HasConstraintName("FK_PaiementClient_Banque");
 
-        entity.HasOne(d => d.Facture)
-            .WithMany()
-            .HasForeignKey(d => d.FactureId)
-            .OnDelete(DeleteBehavior.NoAction)
-            .HasConstraintName("FK_PaiementClient_Facture");
+        entity.HasMany(d => d.Factures)
+            .WithOne(p => p.PaiementClient)
+            .HasForeignKey(p => p.PaiementClientId)
+            .OnDelete(DeleteBehavior.Cascade);
 
-        entity.HasOne(d => d.BonDeLivraison)
-            .WithMany()
-            .HasForeignKey(d => d.BonDeLivraisonId)
-            .OnDelete(DeleteBehavior.NoAction)
-            .HasConstraintName("FK_PaiementClient_BonDeLivraison");
+        entity.HasMany(d => d.BonDeLivraisons)
+            .WithOne(p => p.PaiementClient)
+            .HasForeignKey(p => p.PaiementClientId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         OnConfigurePartial(entity);
     }

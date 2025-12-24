@@ -128,43 +128,33 @@
             }
 
             <RadzenFormField Text="@Localizer["Facture_Optionnel"]" class="rz-col-12 rz-md-6">
-                <RadzenDropDownDataGrid AllowClear="true"
-                                        IsLoading="@isLoadingInvoices"
-                                        @bind-Value="@paiement.FactureId"
-                                        LoadData="@LoadInvoices"
-                                        AllowFiltering="true"
-                                        Style="width: 100%;"
-                                        Data="@_filteredInvoices"
-                                        TextProperty="@nameof(InvoiceResponse.Number)"
-                                        ValueProperty="@nameof(InvoiceResponse.Id)"
-                                        Placeholder="@Localizer["Select_Facture"]"
-                                        Disabled="@(paiement.ClientId <= 0)">
-                    <Columns>
-                        <RadzenDropDownDataGridColumn Property="@nameof(InvoiceResponse.Number)" Title="Num" Width="100px" />
-                        <RadzenDropDownDataGridColumn Property="@nameof(InvoiceResponse.Date)" Title="Date" Width="100px" />
-                        <RadzenDropDownDataGridColumn Property="@nameof(InvoiceResponse.TotalIncludingTaxAmount)" Title="Total TTC" Width="150px" />
-                    </Columns>
-                </RadzenDropDownDataGrid>
+                <RadzenListBox AllowMultipleSelection="true"
+                               IsLoading="@isLoadingInvoices"
+                               @bind-Value="@selectedFactureIds"
+                               LoadData="@LoadInvoices"
+                               AllowFiltering="true"
+                               Style="width: 100%;"
+                               Data="@_filteredInvoices"
+                               TextProperty="@nameof(InvoiceResponse.Number)"
+                               ValueProperty="@nameof(InvoiceResponse.Id)"
+                               Placeholder="@Localizer["Select_Facture"]"
+                               Disabled="@(paiement.ClientId <= 0)">
+                </RadzenListBox>
             </RadzenFormField>
 
             <RadzenFormField Text="@Localizer["Bon_Livraison_Optionnel"]" class="rz-col-12 rz-md-6">
-                <RadzenDropDownDataGrid AllowClear="true"
-                                        IsLoading="@isLoadingDeliveryNotes"
-                                        @bind-Value="@paiement.BonDeLivraisonId"
-                                        LoadData="@LoadDeliveryNotes"
-                                        AllowFiltering="true"
-                                        Style="width: 100%;"
-                                        Data="@_filteredDeliveryNotes"
-                                        TextProperty="@nameof(GetDeliveryNoteBaseInfos.Number)"
-                                        ValueProperty="@nameof(GetDeliveryNoteBaseInfos.Id)"
-                                        Placeholder="@Localizer["Select_Bon_Livraison"]"
-                                        Disabled="@(paiement.ClientId <= 0)">
-                    <Columns>
-                        <RadzenDropDownDataGridColumn Property="@nameof(GetDeliveryNoteBaseInfos.Number)" Title="@Localizer["Numero"]" Width="100px" />
-                        <RadzenDropDownDataGridColumn Property="@nameof(GetDeliveryNoteBaseInfos.Date)" Title="@Localizer["date"]" Width="100px" />
-                        <RadzenDropDownDataGridColumn Property="@nameof(GetDeliveryNoteBaseInfos.NetAmount)" Title="@Localizer["net_payer"]" Width="150px" />
-                    </Columns>
-                </RadzenDropDownDataGrid>
+                <RadzenListBox AllowMultipleSelection="true"
+                               IsLoading="@isLoadingDeliveryNotes"
+                               @bind-Value="@selectedBonDeLivraisonIds"
+                               LoadData="@LoadDeliveryNotes"
+                               AllowFiltering="true"
+                               Style="width: 100%;"
+                               Data="@_filteredDeliveryNotes"
+                               TextProperty="@nameof(GetDeliveryNoteBaseInfos.Number)"
+                               ValueProperty="@nameof(GetDeliveryNoteBaseInfos.Id)"
+                               Placeholder="@Localizer["Select_Bon_Livraison"]"
+                               Disabled="@(paiement.ClientId <= 0)">
+                </RadzenListBox>
             </RadzenFormField>
 
             <RadzenFormField Text="@Localizer["Commentaire"]" class="rz-col-12">
@@ -331,6 +321,8 @@
     private List<CustomerResponse> _filteredCustomers = new();
     private List<InvoiceResponse> _filteredInvoices = new();
     private List<GetDeliveryNoteBaseInfos> _filteredDeliveryNotes = new();
+    private List<int> selectedFactureIds = new();
+    private List<int> selectedBonDeLivraisonIds = new();
     private List<BanqueResponse> banques = new();
     private CancellationTokenSource cancellationTokenSource = new();
 
@@ -430,13 +422,15 @@
                     Montant = paiementResponse.Montant,
                     DatePaiement = paiementResponse.DatePaiement,
                     MethodePaiement = paiementResponse.MethodePaiement,
-                    FactureId = paiementResponse.FactureId,
-                    BonDeLivraisonId = paiementResponse.BonDeLivraisonId,
+                    FactureIds = paiementResponse.FactureIds,
+                    BonDeLivraisonIds = paiementResponse.BonDeLivraisonIds,
                     NumeroChequeTraite = paiementResponse.NumeroChequeTraite,
                     BanqueId = paiementResponse.BanqueId,
                     DateEcheance = paiementResponse.DateEcheance,
                     Commentaire = paiementResponse.Commentaire
                 };
+                selectedFactureIds = paiementResponse.FactureIds?.ToList() ?? new List<int>();
+                selectedBonDeLivraisonIds = paiementResponse.BonDeLivraisonIds?.ToList() ?? new List<int>();
                 selectedMethodePaiement = paiementResponse.MethodePaiement;
                 existingDocumentPath = paiementResponse.DocumentStoragePath;
                 
@@ -670,6 +664,19 @@
         {
             if (IsEditMode && Id.HasValue)
             {
+                // Validate exclusivity
+                if (selectedFactureIds.Count > 0 && selectedBonDeLivraisonIds.Count > 0)
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Warning,
+                        Summary = Localizer["Validation"],
+                        Detail = "Vous ne pouvez pas sélectionner à la fois des factures et des bons de livraison"
+                    });
+                    isSaving = false;
+                    return;
+                }
+
                 var updateRequest = new UpdatePaiementClientRequest
                 {
                     Numero = paiement.Numero,
@@ -677,8 +684,8 @@
                     Montant = paiement.Montant,
                     DatePaiement = paiement.DatePaiement,
                     MethodePaiement = paiement.MethodePaiement,
-                    FactureId = paiement.FactureId,
-                    BonDeLivraisonId = paiement.BonDeLivraisonId,
+                    FactureIds = selectedFactureIds.Count > 0 ? selectedFactureIds : null,
+                    BonDeLivraisonIds = selectedBonDeLivraisonIds.Count > 0 ? selectedBonDeLivraisonIds : null,
                     NumeroChequeTraite = paiement.NumeroChequeTraite,
                     BanqueId = paiement.BanqueId,
                     DateEcheance = paiement.DateEcheance,
@@ -699,6 +706,21 @@
             }
             else
             {
+                // Validate exclusivity
+                if (selectedFactureIds.Count > 0 && selectedBonDeLivraisonIds.Count > 0)
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Warning,
+                        Summary = Localizer["Validation"],
+                        Detail = "Vous ne pouvez pas sélectionner à la fois des factures et des bons de livraison"
+                    });
+                    isSaving = false;
+                    return;
+                }
+
+                paiement.FactureIds = selectedFactureIds.Count > 0 ? selectedFactureIds : null;
+                paiement.BonDeLivraisonIds = selectedBonDeLivraisonIds.Count > 0 ? selectedBonDeLivraisonIds : null;
                 paiement.DocumentBase64 = documentBase64;
                 var result = await PaiementClientService.CreatePaiementClientAsync(paiement, cancellationTokenSource.Token);
                 if (result.IsT0)

@@ -45,22 +45,43 @@ public class CreatePaiementFournisseurCommandHandler(
             return Result.Fail("invalid_methode_paiement");
         }
 
-        // Validate document links if provided
-        if (command.FactureFournisseurId.HasValue)
+        // Validate exclusivity: either FactureFournisseurIds or BonDeReceptionIds, but not both
+        var hasFactures = command.FactureFournisseurIds != null && command.FactureFournisseurIds.Count > 0;
+        var hasBonDeReceptions = command.BonDeReceptionIds != null && command.BonDeReceptionIds.Count > 0;
+        
+        if (hasFactures && hasBonDeReceptions)
         {
-            var factureExists = await _context.FactureFournisseur.AnyAsync(f => f.Id == command.FactureFournisseurId.Value, cancellationToken);
-            if (!factureExists)
+            return Result.Fail("cannot_have_both_factures_and_bon_de_receptions");
+        }
+
+        // Validate document links if provided
+        if (hasFactures)
+        {
+            var factureIds = command.FactureFournisseurIds!.Distinct().ToList();
+            var facturesExist = await _context.FactureFournisseur
+                .Where(f => factureIds.Contains(f.Id))
+                .Select(f => f.Id)
+                .ToListAsync(cancellationToken);
+            
+            var missingFactures = factureIds.Except(facturesExist).ToList();
+            if (missingFactures.Any())
             {
-                return Result.Fail("facture_fournisseur_not_found");
+                return Result.Fail($"factures_fournisseur_not_found: {string.Join(", ", missingFactures)}");
             }
         }
 
-        if (command.BonDeReceptionId.HasValue)
+        if (hasBonDeReceptions)
         {
-            var bonDeReceptionExists = await _context.BonDeReception.AnyAsync(b => b.Id == command.BonDeReceptionId.Value, cancellationToken);
-            if (!bonDeReceptionExists)
+            var bonDeReceptionIds = command.BonDeReceptionIds!.Distinct().ToList();
+            var bonDeReceptionsExist = await _context.BonDeReception
+                .Where(b => bonDeReceptionIds.Contains(b.Id))
+                .Select(b => b.Id)
+                .ToListAsync(cancellationToken);
+            
+            var missingBonDeReceptions = bonDeReceptionIds.Except(bonDeReceptionsExist).ToList();
+            if (missingBonDeReceptions.Any())
             {
-                return Result.Fail("bon_de_reception_not_found");
+                return Result.Fail($"bon_de_receptions_not_found: {string.Join(", ", missingBonDeReceptions)}");
             }
         }
 
@@ -103,8 +124,8 @@ public class CreatePaiementFournisseurCommandHandler(
             command.Montant,
             command.DatePaiement,
             methodePaiement,
-            command.FactureFournisseurId,
-            command.BonDeReceptionId,
+            command.FactureFournisseurIds,
+            command.BonDeReceptionIds,
             command.NumeroChequeTraite,
             command.BanqueId,
             command.DateEcheance,
@@ -116,6 +137,25 @@ public class CreatePaiementFournisseurCommandHandler(
             documentStoragePath);
 
         _context.PaiementFournisseur.Add(paiement);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        // Add junction entities after paiement has an ID
+        if (hasFactures)
+        {
+            foreach (var factureId in command.FactureFournisseurIds!)
+            {
+                paiement.FactureFournisseurs.Add(PaiementFournisseurFactureFournisseur.Create(paiement.Id, factureId));
+            }
+        }
+
+        if (hasBonDeReceptions)
+        {
+            foreach (var bonDeReceptionId in command.BonDeReceptionIds!)
+            {
+                paiement.BonDeReceptions.Add(PaiementFournisseurBonDeReception.Create(paiement.Id, bonDeReceptionId));
+            }
+        }
+
         await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("PaiementFournisseur created successfully with Id {Id}", paiement.Id);

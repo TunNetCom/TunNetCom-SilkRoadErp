@@ -146,43 +146,33 @@
             }
 
             <RadzenFormField Text="@Localizer["Facture_Fournisseur_Optionnel"]" class="rz-col-12 rz-md-6">
-                <RadzenDropDownDataGrid AllowClear="true"
-                                        IsLoading="@isLoadingInvoices"
-                                        @bind-Value="@paiement.FactureFournisseurId"
-                                        LoadData="@LoadInvoices"
-                                        AllowFiltering="true"
-                                        Style="width: 100%;"
-                                        Data="@_filteredInvoices"
-                                        TextProperty="@nameof(ProviderInvoiceResponse.ProviderInvoiceNumber)"
-                                        ValueProperty="@nameof(ProviderInvoiceResponse.Id)"
-                                        Placeholder="@Localizer["Select_Facture_Fournisseur"]"
-                                        Disabled="@(paiement.FournisseurId <= 0)">
-                    <Columns>
-                        <RadzenDropDownDataGridColumn Property="@nameof(ProviderInvoiceResponse.ProviderInvoiceNumber)" Title="Num" Width="100px" />
-                        <RadzenDropDownDataGridColumn Property="@nameof(ProviderInvoiceResponse.Date)" Title="@Localizer["date"]" Width="100px" />
-                        <RadzenDropDownDataGridColumn Property="@nameof(ProviderInvoiceResponse.TotTTC)" Title="Total TTC" Width="150px" />
-                    </Columns>
-                </RadzenDropDownDataGrid>
+                <RadzenListBox AllowMultipleSelection="true"
+                               IsLoading="@isLoadingInvoices"
+                               @bind-Value="@selectedFactureFournisseurIds"
+                               LoadData="@LoadInvoices"
+                               AllowFiltering="true"
+                               Style="width: 100%;"
+                               Data="@_filteredInvoices"
+                               TextProperty="@nameof(ProviderInvoiceResponse.ProviderInvoiceNumber)"
+                               ValueProperty="@nameof(ProviderInvoiceResponse.Id)"
+                               Placeholder="@Localizer["Select_Facture_Fournisseur"]"
+                               Disabled="@(paiement.FournisseurId <= 0)">
+                </RadzenListBox>
             </RadzenFormField>
 
             <RadzenFormField Text="@Localizer["Bon_Reception_Optionnel"]" class="rz-col-12 rz-md-6">
-                <RadzenDropDownDataGrid AllowClear="true"
-                                        IsLoading="@isLoadingReceiptNotes"
-                                        @bind-Value="@paiement.BonDeReceptionId"
-                                        LoadData="@LoadReceiptNotes"
-                                        AllowFiltering="true"
-                                        Style="width: 100%;"
-                                        Data="@_filteredReceiptNotes"
-                                        TextProperty="@nameof(ReceiptNoteDetailsResponse.Num)"
-                                        ValueProperty="@nameof(ReceiptNoteDetailsResponse.Id)"
-                                        Placeholder="@Localizer["Select_Bon_Reception"]"
-                                        Disabled="@(paiement.FournisseurId <= 0)">
-                    <Columns>
-                        <RadzenDropDownDataGridColumn Property="@nameof(ReceiptNoteDetailsResponse.Num)" Title="@Localizer["Numero"]" Width="100px" />
-                        <RadzenDropDownDataGridColumn Property="@nameof(ReceiptNoteDetailsResponse.Date)" Title="@Localizer["date"]" Width="100px" />
-                        <RadzenDropDownDataGridColumn Property="@nameof(ReceiptNoteDetailsResponse.TotTTC)" Title="Total TTC" Width="150px" />
-                    </Columns>
-                </RadzenDropDownDataGrid>
+                <RadzenListBox AllowMultipleSelection="true"
+                               IsLoading="@isLoadingReceiptNotes"
+                               @bind-Value="@selectedBonDeReceptionIds"
+                               LoadData="@LoadReceiptNotes"
+                               AllowFiltering="true"
+                               Style="width: 100%;"
+                               Data="@_filteredReceiptNotes"
+                               TextProperty="@nameof(ReceiptNoteDetailsResponse.Num)"
+                               ValueProperty="@nameof(ReceiptNoteDetailsResponse.Id)"
+                               Placeholder="@Localizer["Select_Bon_Reception"]"
+                               Disabled="@(paiement.FournisseurId <= 0)">
+                </RadzenListBox>
             </RadzenFormField>
 
             <RadzenFormField Text="@Localizer["Commentaire"]" class="rz-col-12">
@@ -349,6 +339,8 @@
     private List<ProviderResponse> _filteredProviders = new();
     private List<ProviderInvoiceResponse> _filteredInvoices = new();
     private List<ReceiptNoteDetailsResponse> _filteredReceiptNotes = new();
+    private List<int> selectedFactureFournisseurIds = new();
+    private List<int> selectedBonDeReceptionIds = new();
     private List<BanqueResponse> banques = new();
     private CancellationTokenSource cancellationTokenSource = new();
 
@@ -448,8 +440,8 @@
                     Montant = paiementResponse.Montant,
                     DatePaiement = paiementResponse.DatePaiement,
                     MethodePaiement = paiementResponse.MethodePaiement,
-                    FactureFournisseurId = paiementResponse.FactureFournisseurId,
-                    BonDeReceptionId = paiementResponse.BonDeReceptionId,
+                    FactureFournisseurIds = paiementResponse.FactureFournisseurIds,
+                    BonDeReceptionIds = paiementResponse.BonDeReceptionIds,
                     NumeroChequeTraite = paiementResponse.NumeroChequeTraite,
                     BanqueId = paiementResponse.BanqueId,
                     DateEcheance = paiementResponse.DateEcheance,
@@ -459,6 +451,8 @@
                     RibNumeroCompte = paiementResponse.RibNumeroCompte,
                     RibCle = paiementResponse.RibCle
                 };
+                selectedFactureFournisseurIds = paiementResponse.FactureFournisseurIds?.ToList() ?? new List<int>();
+                selectedBonDeReceptionIds = paiementResponse.BonDeReceptionIds?.ToList() ?? new List<int>();
                 selectedMethodePaiement = paiementResponse.MethodePaiement;
                 existingDocumentPath = paiementResponse.DocumentStoragePath;
                 
@@ -740,6 +734,19 @@
         {
             if (IsEditMode && Id.HasValue)
             {
+                // Validate exclusivity
+                if (selectedFactureFournisseurIds.Count > 0 && selectedBonDeReceptionIds.Count > 0)
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Warning,
+                        Summary = Localizer["Validation"],
+                        Detail = "Vous ne pouvez pas sélectionner à la fois des factures et des bons de réception"
+                    });
+                    isSaving = false;
+                    return;
+                }
+
                 var updateRequest = new UpdatePaiementFournisseurRequest
                 {
                     Numero = paiement.Numero,
@@ -747,8 +754,8 @@
                     Montant = paiement.Montant,
                     DatePaiement = paiement.DatePaiement,
                     MethodePaiement = paiement.MethodePaiement,
-                    FactureFournisseurId = paiement.FactureFournisseurId,
-                    BonDeReceptionId = paiement.BonDeReceptionId,
+                    FactureFournisseurIds = selectedFactureFournisseurIds.Count > 0 ? selectedFactureFournisseurIds : null,
+                    BonDeReceptionIds = selectedBonDeReceptionIds.Count > 0 ? selectedBonDeReceptionIds : null,
                     NumeroChequeTraite = paiement.NumeroChequeTraite,
                     BanqueId = paiement.BanqueId,
                     DateEcheance = paiement.DateEcheance,
@@ -773,6 +780,21 @@
             }
             else
             {
+                // Validate exclusivity
+                if (selectedFactureFournisseurIds.Count > 0 && selectedBonDeReceptionIds.Count > 0)
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Warning,
+                        Summary = Localizer["Validation"],
+                        Detail = "Vous ne pouvez pas sélectionner à la fois des factures et des bons de réception"
+                    });
+                    isSaving = false;
+                    return;
+                }
+
+                paiement.FactureFournisseurIds = selectedFactureFournisseurIds.Count > 0 ? selectedFactureFournisseurIds : null;
+                paiement.BonDeReceptionIds = selectedBonDeReceptionIds.Count > 0 ? selectedBonDeReceptionIds : null;
                 paiement.DocumentBase64 = documentBase64;
                 var result = await PaiementFournisseurService.CreatePaiementFournisseurAsync(paiement, cancellationTokenSource.Token);
                 if (result.IsT0)

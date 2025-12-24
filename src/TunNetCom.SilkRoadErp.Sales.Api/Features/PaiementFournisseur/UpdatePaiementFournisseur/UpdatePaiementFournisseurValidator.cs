@@ -36,7 +36,7 @@ public class UpdatePaiementFournisseurValidator : AbstractValidator<UpdatePaieme
             .When(x => !string.IsNullOrEmpty(x.Commentaire));
 
         _ = RuleFor(x => x)
-            .Must(x => !(x.FactureFournisseurId.HasValue && x.BonDeReceptionId.HasValue))
+            .Must(x => !(x.FactureFournisseurIds != null && x.FactureFournisseurIds.Count > 0 && x.BonDeReceptionIds != null && x.BonDeReceptionIds.Count > 0))
             .WithMessage("cannot_link_to_both_facture_fournisseur_and_bon_de_reception");
     }
 }
