@@ -75,15 +75,6 @@ public class AuthService : IAuthService
         {
             var circuitId = _circuitIdService.GetCircuitId();
             _localAccessToken = _tokenStore.GetToken(circuitId);
-            
-            // #region agent log
-            var logPath = "d:\\Workspaces\\SilkRoad\\TunNetCom-SilkRoadErp\\.cursor\\debug.log";
-            try {
-                var hasToken = !string.IsNullOrEmpty(_localAccessToken);
-                var logData = "{\"location\":\"AuthService.cs:constructor\",\"message\":\"Constructor loaded token from TokenStore\",\"data\":{\"hasToken\":" + hasToken.ToString().ToLower() + ",\"tokenLength\":" + (_localAccessToken?.Length ?? 0) + ",\"circuitId\":\"" + circuitId.Substring(0, Math.Min(8, circuitId.Length)) + "\"},\"timestamp\":" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + ",\"sessionId\":\"debug-session\",\"hypothesisId\":\"FIX\"}\n";
-                System.IO.File.AppendAllText(logPath, logData);
-            } catch { }
-            // #endregion
         }
         catch (Exception ex)
         {
@@ -100,15 +91,6 @@ public class AuthService : IAuthService
         {
             // Only return the local cache value
             // Do NOT try to load from TokenStore here to avoid shared sessions
-            
-            // #region agent log
-            var tokenValue = _localAccessToken;
-            var logPath = "d:\\Workspaces\\SilkRoad\\TunNetCom-SilkRoadErp\\.cursor\\debug.log";
-            try {
-                var logData = "{\"location\":\"AuthService.cs:82\",\"message\":\"AccessToken GET\",\"data\":{\"tokenIsNull\":" + (tokenValue == null ? "true" : "false") + ",\"tokenLength\":" + (tokenValue?.Length ?? 0) + "},\"timestamp\":" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + ",\"sessionId\":\"debug-session\",\"hypothesisId\":\"D,E\"}\n";
-                System.IO.File.AppendAllText(logPath, logData);
-            } catch { }
-            // #endregion
             
             return _localAccessToken;
         }
@@ -235,25 +217,10 @@ public class AuthService : IAuthService
             
             var tokenFromStorage = await loadTask;
             
-            // #region agent log
-            var logPath = "d:\\Workspaces\\SilkRoad\\TunNetCom-SilkRoadErp\\.cursor\\debug.log";
-            try {
-                var logData = "{\"location\":\"AuthService.cs:218\",\"message\":\"Token loaded from localStorage\",\"data\":{\"tokenIsNull\":" + (tokenFromStorage == null ? "true" : "false") + ",\"tokenIsEmpty\":" + (string.IsNullOrEmpty(tokenFromStorage) ? "true" : "false") + ",\"tokenLength\":" + (tokenFromStorage?.Length ?? 0) + "},\"timestamp\":" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + ",\"sessionId\":\"debug-session\",\"hypothesisId\":\"C,D\"}\n";
-                System.IO.File.AppendAllText(logPath, logData);
-            } catch { }
-            // #endregion
-            
             if (!string.IsNullOrEmpty(tokenFromStorage))
             {
                 // Set the token in local cache first (this is critical)
                 _localAccessToken = tokenFromStorage;
-                
-                // #region agent log
-                try {
-                    var logData2 = "{\"location\":\"AuthService.cs:223\",\"message\":\"Token set in _localAccessToken\",\"data\":{\"tokenLength\":" + tokenFromStorage.Length + "},\"timestamp\":" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + ",\"sessionId\":\"debug-session\",\"hypothesisId\":\"E\"}\n";
-                    System.IO.File.AppendAllText(logPath, logData2);
-                } catch { }
-                // #endregion
                 
                 // Try to cache in circuit-specific TokenStore (optional, for performance)
                 try
