@@ -74,12 +74,44 @@ public class ActiveAccountingYearQueryInterceptor : DbCommandInterceptor
         if (tableName == null)
             return;
 
-        // Ajouter la condition WHERE si elle n'existe pas déjà
-        // On cherche si AccountingYearId est déjà dans une clause WHERE (pas seulement dans SELECT)
+        // Détecter si la requête utilise IgnoreQueryFilters() en vérifiant si elle contient
+        // un filtre explicite sur AccountingYearId avec une valeur spécifique (pas une variable)
+        // Les requêtes avec IgnoreQueryFilters() ont souvent un pattern comme:
+        // WHERE [alias].[AccountingYearId] = @p0 ou WHERE [alias].[AccountingYearId] = 123
+        // Si on trouve un filtre explicite sur AccountingYearId, on ignore la modification
+        // car cela indique que la requête utilise IgnoreQueryFilters() puis un Where explicite
         var whereIndexCheck = commandText.LastIndexOf("WHERE", StringComparison.OrdinalIgnoreCase);
-        if (whereIndexCheck >= 0 && commandText.Substring(whereIndexCheck).Contains("AccountingYearId", StringComparison.OrdinalIgnoreCase))
+        if (whereIndexCheck >= 0)
         {
-            return; // Le filtre est déjà présent dans WHERE
+            var whereClause = commandText.Substring(whereIndexCheck);
+            // Vérifier si AccountingYearId est déjà filtré avec une valeur spécifique
+            // Pattern: [alias].[AccountingYearId] = @p0 ou [alias].[AccountingYearId] = 123
+            var accountingYearIdFilterPattern = @"\[(\w+)\]\.\[AccountingYearId\]\s*=\s*[@]?[\w\d]+";
+            var existingFilter = System.Text.RegularExpressions.Regex.Match(whereClause, accountingYearIdFilterPattern, 
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            
+            if (existingFilter.Success)
+            {
+                // Il y a déjà un filtre explicite sur AccountingYearId
+                // Cela indique probablement que la requête utilise IgnoreQueryFilters() puis un Where explicite
+                // On ne modifie pas ces requêtes
+                return;
+            }
+        }
+
+        // Ignorer les requêtes avec JOIN car elles sont généralement générées par Include()
+        // Les requêtes avec Include() génèrent des JOIN complexes et l'intercepteur ne peut pas
+        // les modifier correctement car les alias peuvent être différents dans les différentes parties
+        if (commandText.Contains("JOIN", StringComparison.OrdinalIgnoreCase) ||
+            commandText.Contains("INNER JOIN", StringComparison.OrdinalIgnoreCase) ||
+            commandText.Contains("LEFT JOIN", StringComparison.OrdinalIgnoreCase) ||
+            commandText.Contains("RIGHT JOIN", StringComparison.OrdinalIgnoreCase) ||
+            commandText.Contains("OUTER JOIN", StringComparison.OrdinalIgnoreCase))
+        {
+            // Les requêtes avec JOIN sont généralement des requêtes avec Include()
+            // On ne modifie pas ces requêtes pour éviter les erreurs SQL
+            // Les requêtes doivent utiliser .FilterByActiveAccountingYear() explicitement
+            return;
         }
 
         // Ignorer les requêtes complexes avec sous-requêtes EXISTS, IN, ou autres sous-SELECT
@@ -157,18 +189,52 @@ public class ActiveAccountingYearQueryInterceptor : DbCommandInterceptor
             return;
         }
 
-        // Trouver l'alias de la table principale (ex: "FROM [Facture] AS [f]" -> alias = "f")
+        // Trouver l'alias de la table principale (ex: "FROM [BonDeLivraison] AS [b0]" -> alias = "b0")
+        // EF Core génère des alias comme [b0], [b1], etc., pas juste [b]
         // On cherche seulement dans la requête principale, pas dans les sous-requêtes
+        // Pattern amélioré pour capturer l'alias réel (peut être b0, b1, f0, etc.)
         var fromPattern = $@"FROM\s+\[{tableName}\]\s+AS\s+\[(\w+)\]";
         var aliasMatches = System.Text.RegularExpressions.Regex.Matches(commandText, fromPattern, 
             System.Text.RegularExpressions.RegexOptions.IgnoreCase);
         
         // Utiliser le premier alias trouvé (celui de la requête principale)
-        var tableAlias = tableName; // Par défaut, utiliser le nom de la table
+        // Si aucun alias n'est trouvé, on ne peut pas modifier la requête de manière sûre
+        string? tableAlias = null;
         if (aliasMatches.Count > 0)
         {
             // Prendre le premier match qui devrait être la requête principale
             tableAlias = aliasMatches[0].Groups[1].Value;
+        }
+        
+        // Si aucun alias n'a été trouvé, on ne peut pas modifier la requête de manière sûre
+        if (string.IsNullOrEmpty(tableAlias))
+        {
+            return;
+        }
+        
+        // Valider que l'alias existe bien dans la requête avant de l'utiliser
+        // On vérifie que l'alias est référencé dans la requête (dans SELECT, WHERE, ORDER BY, etc.)
+        // Pattern pour vérifier que l'alias est utilisé: [alias]. ou [alias]
+        var aliasUsagePattern = $@"\[{System.Text.RegularExpressions.Regex.Escape(tableAlias)}\](\.|,|\s|$)";
+        var aliasUsageMatches = System.Text.RegularExpressions.Regex.Matches(commandText, aliasUsagePattern, 
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        
+        // Si l'alias n'est pas utilisé dans la requête, on ne peut pas l'utiliser
+        if (aliasUsageMatches.Count == 0)
+        {
+            return;
+        }
+        
+        // Vérifier que l'alias est bien défini dans une clause FROM principale (pas dans une sous-requête)
+        // On cherche le pattern "FROM [Table] AS [alias]" et on vérifie que l'alias correspond
+        var fromDefinitionPattern = $@"FROM\s+\[{System.Text.RegularExpressions.Regex.Escape(tableName)}\]\s+AS\s+\[{System.Text.RegularExpressions.Regex.Escape(tableAlias)}\]";
+        var fromDefinitionMatch = System.Text.RegularExpressions.Regex.Match(commandText, fromDefinitionPattern, 
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        
+        // Si l'alias n'est pas défini dans une clause FROM principale, on ne peut pas l'utiliser
+        if (!fromDefinitionMatch.Success)
+        {
+            return;
         }
 
         // Ajouter la condition WHERE seulement dans la requête principale
@@ -181,6 +247,12 @@ public class ActiveAccountingYearQueryInterceptor : DbCommandInterceptor
         if (whereMatches.Count > 0)
         {
             mainWhereIndex = whereMatches[0].Index;
+        }
+        
+        // À ce point, tableAlias ne peut pas être null car on a vérifié plus haut
+        if (tableAlias == null)
+        {
+            return;
         }
         
         if (mainWhereIndex >= 0)
