@@ -31,14 +31,21 @@ public class UpdatePaiementClientEndpoint : ICarterModule
             request.Commentaire,
             request.DocumentBase64);
 
-        var result = await mediator.Send(command, cancellationToken);
-
-        if (result.IsFailed)
+        try
         {
-            return result.ToValidationProblem();
-        }
+            var result = await mediator.Send(command, cancellationToken);
 
-        return TypedResults.NoContent();
+            if (result.IsFailed)
+            {
+                return result.ToValidationProblem();
+            }
+
+            return TypedResults.NoContent();
+        }
+        catch (Exception ex)
+        {
+            throw;
+        }
     }
 }
 

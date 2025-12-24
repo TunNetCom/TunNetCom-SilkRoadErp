@@ -26,9 +26,15 @@ public class GetPaiementsClientEndpoint : ICarterModule
             queryParams.PageNumber,
             queryParams.PageSize);
 
-        var result = await mediator.Send(query, cancellationToken);
-
-        return TypedResults.Ok(result.Value);
+        try
+        {
+            var result = await mediator.Send(query, cancellationToken);
+            return TypedResults.Ok(result.Value);
+        }
+        catch (Exception ex)
+        {
+            throw;
+        }
     }
 }
 

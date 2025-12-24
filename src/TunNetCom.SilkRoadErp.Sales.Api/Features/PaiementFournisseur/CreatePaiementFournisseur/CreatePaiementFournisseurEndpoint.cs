@@ -15,10 +15,6 @@ public class CreatePaiementFournisseurEndpoint : ICarterModule
         CreatePaiementFournisseurRequest request,
         CancellationToken cancellationToken)
     {
-        // #region agent log
-        System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "C", location = "CreatePaiementFournisseurEndpoint.cs:13", message = "Endpoint entry", data = new { requestNumero = request.Numero, requestFournisseurId = request.FournisseurId, requestFactureFournisseurIds = request.FactureFournisseurIds, requestBonDeReceptionIds = request.BonDeReceptionIds, factureFournisseurIdsCount = request.FactureFournisseurIds?.Count ?? 0, bonDeReceptionIdsCount = request.BonDeReceptionIds?.Count ?? 0 }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
-        // #endregion
-
         var command = new CreatePaiementFournisseurCommand(
             request.Numero,
             request.FournisseurId,
@@ -38,10 +34,6 @@ public class CreatePaiementFournisseurEndpoint : ICarterModule
             request.DocumentBase64);
 
         var result = await mediator.Send(command, cancellationToken);
-
-        // #region agent log
-        System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "D", location = "CreatePaiementFournisseurEndpoint.cs:36", message = "After mediator.Send", data = new { resultIsFailed = result.IsFailed, resultValue = result.IsFailed ? (int?)null : result.Value, errors = result.IsFailed ? result.Errors.Select(e => new { message = e.Message, reason = e.Reasons?.Select(r => r.Message).ToList() }).ToList() : null }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
-        // #endregion
 
         if (result.IsFailed)
         {

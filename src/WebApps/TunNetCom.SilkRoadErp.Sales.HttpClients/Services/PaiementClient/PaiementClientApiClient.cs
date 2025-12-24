@@ -48,21 +48,29 @@ public class PaiementClientApiClient : IPaiementClientApiClient
         CancellationToken cancellationToken)
     {
         _logger.LogInformation("Fetching paiement client from API /paiement-client/{id}", id);
-        var response = await _httpClient.GetAsync($"/paiement-client/{id}", cancellationToken: cancellationToken);
-
-        if (response.StatusCode == HttpStatusCode.OK)
+        try
         {
-            var responseContent = await response.Content.ReadAsStringAsync();
-            var paiement = JsonConvert.DeserializeObject<PaiementClientResponse>(responseContent);
-            return Result.Ok(paiement!);
-        }
+            var response = await _httpClient.GetAsync($"/paiement-client/{id}", cancellationToken: cancellationToken);
 
-        if (response.StatusCode == HttpStatusCode.NotFound)
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var paiement = JsonConvert.DeserializeObject<PaiementClientResponse>(responseContent);
+                return Result.Ok(paiement!);
+            }
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return Result.Fail("paiement_client_not_found");
+            }
+
+            var errorContent = await response.Content.ReadAsStringAsync();
+            throw new Exception($"PaiementClient: Unexpected response. Status Code: {response.StatusCode}. Content: {errorContent}");
+        }
+        catch (Exception ex)
         {
-            return Result.Fail("paiement_client_not_found");
+            throw;
         }
-
-        throw new Exception($"PaiementClient: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
     }
 
     public async Task<PagedList<PaiementClientResponse>> GetPaiementsClientAsync(

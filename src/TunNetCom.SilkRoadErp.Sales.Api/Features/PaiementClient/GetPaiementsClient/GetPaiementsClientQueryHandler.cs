@@ -69,14 +69,21 @@ public class GetPaiementsClientQueryHandler(
             })
             .OrderByDescending(p => p.DatePaiement);
 
-        var pagedResult = await PagedList<PaiementClientResponse>.ToPagedListAsync(
-            paiements,
-            query.PageNumber,
-            query.PageSize,
-            cancellationToken);
+        try
+        {
+            var pagedResult = await PagedList<PaiementClientResponse>.ToPagedListAsync(
+                paiements,
+                query.PageNumber,
+                query.PageSize,
+                cancellationToken);
 
-        _logger.LogInformation("Fetched {Count} PaiementsClient", pagedResult.TotalCount);
-        return Result.Ok(pagedResult);
+            _logger.LogInformation("Fetched {Count} PaiementsClient", pagedResult.TotalCount);
+            return Result.Ok(pagedResult);
+        }
+        catch (Exception ex)
+        {
+            throw;
+        }
     }
 }
 

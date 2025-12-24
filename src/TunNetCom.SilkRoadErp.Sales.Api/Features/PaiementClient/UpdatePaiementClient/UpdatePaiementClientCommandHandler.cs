@@ -64,6 +64,7 @@ public class UpdatePaiementClientCommandHandler(
         {
             var factureIds = command.FactureIds!.Distinct().ToList();
             var facturesExist = await _context.Facture
+                .FilterByActiveAccountingYear()
                 .Where(f => factureIds.Contains(f.Id))
                 .Select(f => f.Id)
                 .ToListAsync(cancellationToken);
@@ -79,6 +80,7 @@ public class UpdatePaiementClientCommandHandler(
         {
             var bonDeLivraisonIds = command.BonDeLivraisonIds!.Distinct().ToList();
             var bonDeLivraisonsExist = await _context.BonDeLivraison
+                .FilterByActiveAccountingYear()
                 .Where(b => bonDeLivraisonIds.Contains(b.Id))
                 .Select(b => b.Id)
                 .ToListAsync(cancellationToken);

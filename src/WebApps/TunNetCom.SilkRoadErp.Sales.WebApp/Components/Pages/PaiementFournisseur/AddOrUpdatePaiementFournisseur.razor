@@ -407,10 +407,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // #region agent log
-        System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "A", location = "AddOrUpdatePaiementFournisseur.razor:362", message = "OnInitializedAsync entry", data = new { isEditMode = IsEditMode, id = Id }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
-        // #endregion
-
         try
         {
             methodePaiementOptions = new()
@@ -432,16 +428,9 @@
             {
                 paiement.DatePaiement = DateTime.Now;
             }
-
-            // #region agent log
-            System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "A", location = "AddOrUpdatePaiementFournisseur.razor:383", message = "OnInitializedAsync completed successfully", data = new { }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
-            // #endregion
         }
         catch (Exception ex)
         {
-            // #region agent log
-            System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "E", location = "AddOrUpdatePaiementFournisseur.razor:387", message = "Exception in OnInitializedAsync", data = new { exceptionType = ex.GetType().Name, exceptionMessage = ex.Message, exceptionStackTrace = ex.StackTrace }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
-            // #endregion
             throw;
         }
     }
@@ -817,10 +806,6 @@
 
     async Task SavePaiement()
     {
-        // #region agent log
-        System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "A", location = "AddOrUpdatePaiementFournisseur.razor:695", message = "SavePaiement entry", data = new { paiementFournisseurId = paiement.FournisseurId, selectedFactureFournisseurIdsCount = selectedFactureFournisseurIds?.Count ?? 0, selectedBonDeReceptionIdsCount = selectedBonDeReceptionIds?.Count ?? 0, selectedFactureFournisseurIds = selectedFactureFournisseurIds, selectedBonDeReceptionIds = selectedBonDeReceptionIds }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
-        // #endregion
-
         if (paiement.FournisseurId <= 0)
         {
             NotificationService.Notify(new NotificationMessage
@@ -905,10 +890,6 @@
             }
             else
             {
-                // #region agent log
-                System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "A", location = "AddOrUpdatePaiementFournisseur.razor:783", message = "Before exclusivity validation", data = new { selectedFactureFournisseurIdsCount = selectedFactureFournisseurIds?.Count ?? 0, selectedBonDeReceptionIdsCount = selectedBonDeReceptionIds?.Count ?? 0, selectedFactureFournisseurIds = selectedFactureFournisseurIds, selectedBonDeReceptionIds = selectedBonDeReceptionIds }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
-                // #endregion
-
                 // Validate exclusivity
                 if (selectedFactureFournisseurIds.Count > 0 && selectedBonDeReceptionIds.Count > 0)
                 {
@@ -926,15 +907,8 @@
                 paiement.BonDeReceptionIds = selectedBonDeReceptionIds.Count > 0 ? selectedBonDeReceptionIds : null;
                 paiement.DocumentBase64 = documentBase64;
 
-                // #region agent log
-                System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "C", location = "AddOrUpdatePaiementFournisseur.razor:798", message = "Before API call", data = new { paiementFactureFournisseurIds = paiement.FactureFournisseurIds, paiementBonDeReceptionIds = paiement.BonDeReceptionIds, paiementNumero = paiement.Numero, paiementFournisseurId = paiement.FournisseurId }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
-                // #endregion
-
                 var result = await PaiementFournisseurService.CreatePaiementFournisseurAsync(paiement, cancellationTokenSource.Token);
 
-                // #region agent log
-                System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "D", location = "AddOrUpdatePaiementFournisseur.razor:800", message = "After API call", data = new { resultIsT0 = result.IsT0, resultIsT1 = result.IsT1, resultValue = result.IsT0 ? result.AsT0.ToString() : null, badRequestDetail = result.IsT1 ? result.AsT1.Detail : null }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
-                // #endregion
                 if (result.IsT0)
                 {
                     ToastService.Notify(new(ToastType.Success, Localizer["Paiement_Cree"]));
@@ -949,10 +923,6 @@
         }
         catch (Exception ex)
         {
-            // #region agent log
-            System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "E", location = "AddOrUpdatePaiementFournisseur.razor:812", message = "Exception caught in SavePaiement", data = new { exceptionType = ex.GetType().Name, exceptionMessage = ex.Message, exceptionStackTrace = ex.StackTrace, innerException = ex.InnerException != null ? new { type = ex.InnerException.GetType().Name, message = ex.InnerException.Message } : null }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
-            // #endregion
-
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Error,

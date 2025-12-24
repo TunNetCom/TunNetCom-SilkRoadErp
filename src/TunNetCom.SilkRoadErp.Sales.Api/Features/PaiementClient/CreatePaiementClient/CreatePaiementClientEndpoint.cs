@@ -29,14 +29,21 @@ public class CreatePaiementClientEndpoint : ICarterModule
             request.Commentaire,
             request.DocumentBase64);
 
-        var result = await mediator.Send(command, cancellationToken);
-
-        if (result.IsFailed)
+        try
         {
-            return result.ToValidationProblem();
-        }
+            var result = await mediator.Send(command, cancellationToken);
 
-        return TypedResults.Created($"/paiement-client/{result.Value}", request);
+            if (result.IsFailed)
+            {
+                return result.ToValidationProblem();
+            }
+
+            return TypedResults.Created($"/paiement-client/{result.Value}", request);
+        }
+        catch (Exception ex)
+        {
+            throw;
+        }
     }
 }
 

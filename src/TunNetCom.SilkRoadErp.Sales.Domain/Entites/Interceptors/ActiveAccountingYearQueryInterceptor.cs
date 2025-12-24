@@ -51,13 +51,18 @@ public class ActiveAccountingYearQueryInterceptor : DbCommandInterceptor
         if (!activeYearId.HasValue)
             return;
 
-        // Liste des tables qui implémentent IAccountingYearEntity
-        var accountingYearTables = new[] { "Facture", "FactureFournisseur", "FactureAvoirFournisseur", "FactureAvoirClient", 
-            "BonDeLivraison", "BonDeReception", "Avoirs", "AvoirFournisseur", "Inventaire" };
-
         var commandText = command.CommandText;
         if (string.IsNullOrEmpty(commandText))
             return;
+
+        // Ne modifier que les requêtes SELECT, pas les INSERT, UPDATE, DELETE
+        var trimmedCommand = commandText.TrimStart();
+        if (!trimmedCommand.StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        // Liste des tables qui implémentent IAccountingYearEntity
+        var accountingYearTables = new[] { "Facture", "FactureFournisseur", "FactureAvoirFournisseur", "FactureAvoirClient", 
+            "BonDeLivraison", "BonDeReception", "Avoirs", "AvoirFournisseur", "Inventaire" };
 
         // Vérifier si la requête concerne une table avec AccountingYearId
         // EF Core génère des requêtes avec des alias comme "FROM [Facture] AS [f]"
@@ -77,34 +82,121 @@ public class ActiveAccountingYearQueryInterceptor : DbCommandInterceptor
             return; // Le filtre est déjà présent dans WHERE
         }
 
-        // Trouver l'alias de la table (ex: "FROM [Facture] AS [f]" -> alias = "f")
-        var aliasMatch = System.Text.RegularExpressions.Regex.Match(commandText, 
-            $@"FROM\s+\[{tableName}\]\s+AS\s+\[(\w+)\]", 
-            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-        var tableAlias = aliasMatch.Success ? aliasMatch.Groups[1].Value : tableName;
-
-        // Ajouter la condition WHERE
-        var hasWhere = commandText.Contains("WHERE", StringComparison.OrdinalIgnoreCase);
-        
-        if (hasWhere)
+        // Ignorer les requêtes complexes avec sous-requêtes EXISTS, IN, ou autres sous-SELECT
+        // Ces requêtes peuvent avoir des alias de table différents dans les sous-requêtes
+        // et l'intercepteur ne peut pas les modifier correctement
+        if (commandText.Contains("EXISTS", StringComparison.OrdinalIgnoreCase) ||
+            commandText.Contains("IN (SELECT", StringComparison.OrdinalIgnoreCase) ||
+            commandText.Contains("NOT EXISTS", StringComparison.OrdinalIgnoreCase) ||
+            commandText.Contains("NOT IN (SELECT", StringComparison.OrdinalIgnoreCase))
         {
-            // Ajouter AND à la fin de la clause WHERE existante
-            var whereIndex = commandText.LastIndexOf("WHERE", StringComparison.OrdinalIgnoreCase);
-            if (whereIndex >= 0)
-            {
-                // Trouver la fin de la clause WHERE (avant ORDER BY, GROUP BY, etc.)
-                var orderByIndex = commandText.IndexOf("ORDER BY", whereIndex, StringComparison.OrdinalIgnoreCase);
-                var groupByIndex = commandText.IndexOf("GROUP BY", whereIndex, StringComparison.OrdinalIgnoreCase);
-                var havingIndex = commandText.IndexOf("HAVING", whereIndex, StringComparison.OrdinalIgnoreCase);
-                
-                var insertIndex = commandText.Length;
-                if (orderByIndex >= 0) insertIndex = Math.Min(insertIndex, orderByIndex);
-                if (groupByIndex >= 0) insertIndex = Math.Min(insertIndex, groupByIndex);
-                if (havingIndex >= 0) insertIndex = Math.Min(insertIndex, havingIndex);
+            // Pour les requêtes complexes, on ne modifie pas le SQL
+            // Les requêtes doivent utiliser .FilterByActiveAccountingYear() explicitement
+            return;
+        }
 
-                var filterClause = $" AND [{tableAlias}].[AccountingYearId] = {activeYearId.Value}";
-                command.CommandText = commandText.Insert(insertIndex, filterClause);
+        // Ignorer les requêtes qui utilisent des collections avec .Select() dans le SELECT principal
+        // Ces requêtes génèrent des sous-requêtes corrélées qui ne peuvent pas être modifiées correctement
+        // Exemple: SELECT ... FactureIds = p.Factures.Select(f => f.FactureId).ToList() ...
+        // Ces sous-requêtes sont générées par EF Core et ne doivent pas être modifiées par l'intercepteur
+        // On détecte cela en cherchant des patterns de sous-SELECT corrélés dans le SELECT principal
+        // Pattern: (SELECT ... FROM [Table] AS [alias] WHERE [alias].[ForeignKey] = [outer].[PrimaryKey])
+        var correlatedSubqueryPattern = @"\(SELECT\s+.*?FROM\s+\[(\w+)\]\s+AS\s+\[(\w+)\]\s+WHERE\s+\[(\w+)\]\.\[(\w+)\]\s*=\s*\[(\w+)\]\.\[(\w+)\]";
+        var correlatedMatches = System.Text.RegularExpressions.Regex.Matches(commandText, correlatedSubqueryPattern, 
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Singleline);
+        
+        // Si on trouve des sous-requêtes corrélées avec des tables qui ont AccountingYearId,
+        // on ignore la modification pour éviter les erreurs SQL
+        if (correlatedMatches.Count > 0)
+        {
+            var correlatedTables = correlatedMatches.Cast<System.Text.RegularExpressions.Match>()
+                .Select(m => m.Groups[1].Value)
+                .Where(t => accountingYearTables.Contains(t, StringComparer.OrdinalIgnoreCase))
+                .ToList();
+            
+            if (correlatedTables.Any())
+            {
+                // Il y a des sous-requêtes corrélées avec des tables qui ont AccountingYearId
+                // On ne modifie pas ces requêtes pour éviter les erreurs SQL
+                return;
             }
+        }
+        
+        // Détection alternative: si la requête contient plusieurs FROM avec des tables qui ont AccountingYearId
+        // et qu'il y a des références croisées (ce qui indique des sous-requêtes corrélées)
+        var fromPatternAlt = @"FROM\s+\[(\w+)\]\s+AS\s+\[(\w+)\]";
+        var fromMatches = System.Text.RegularExpressions.Regex.Matches(commandText, fromPatternAlt, 
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        
+        var allTables = fromMatches.Cast<System.Text.RegularExpressions.Match>()
+            .Select(m => m.Groups[1].Value)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        
+        var tablesWithAccountingYear = allTables
+            .Where(t => accountingYearTables.Contains(t, StringComparer.OrdinalIgnoreCase))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        
+        // Si on trouve plusieurs tables avec AccountingYearId dans la requête,
+        // c'est probablement une sous-requête corrélée (même si la table principale n'est pas dans la liste)
+        if (tablesWithAccountingYear.Count > 1)
+        {
+            // Il y a des sous-requêtes avec des tables qui ont AccountingYearId
+            // On ne modifie pas ces requêtes pour éviter les erreurs SQL
+            return;
+        }
+        
+        // Si la table principale n'est pas dans la liste des tables avec AccountingYearId,
+        // mais qu'il y a des sous-requêtes avec des tables qui ont AccountingYearId,
+        // on ignore la modification (c'est probablement une sous-requête corrélée)
+        if (tableName != null && !accountingYearTables.Contains(tableName, StringComparer.OrdinalIgnoreCase) && tablesWithAccountingYear.Any())
+        {
+            // La table principale n'a pas AccountingYearId, mais il y a des sous-requêtes qui en ont
+            // On ne modifie pas ces requêtes pour éviter les erreurs SQL
+            return;
+        }
+
+        // Trouver l'alias de la table principale (ex: "FROM [Facture] AS [f]" -> alias = "f")
+        // On cherche seulement dans la requête principale, pas dans les sous-requêtes
+        var fromPattern = $@"FROM\s+\[{tableName}\]\s+AS\s+\[(\w+)\]";
+        var aliasMatches = System.Text.RegularExpressions.Regex.Matches(commandText, fromPattern, 
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        
+        // Utiliser le premier alias trouvé (celui de la requête principale)
+        var tableAlias = tableName; // Par défaut, utiliser le nom de la table
+        if (aliasMatches.Count > 0)
+        {
+            // Prendre le premier match qui devrait être la requête principale
+            tableAlias = aliasMatches[0].Groups[1].Value;
+        }
+
+        // Ajouter la condition WHERE seulement dans la requête principale
+        // Trouver le WHERE principal (pas dans les sous-requêtes)
+        var mainWhereIndex = -1;
+        var whereMatches = System.Text.RegularExpressions.Regex.Matches(commandText, @"\bWHERE\b", 
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        
+        // Le premier WHERE devrait être celui de la requête principale
+        if (whereMatches.Count > 0)
+        {
+            mainWhereIndex = whereMatches[0].Index;
+        }
+        
+        if (mainWhereIndex >= 0)
+        {
+            // Trouver la fin de la clause WHERE principale (avant ORDER BY, GROUP BY, etc.)
+            var orderByIndex = commandText.IndexOf("ORDER BY", mainWhereIndex, StringComparison.OrdinalIgnoreCase);
+            var groupByIndex = commandText.IndexOf("GROUP BY", mainWhereIndex, StringComparison.OrdinalIgnoreCase);
+            var havingIndex = commandText.IndexOf("HAVING", mainWhereIndex, StringComparison.OrdinalIgnoreCase);
+            
+            var insertIndex = commandText.Length;
+            if (orderByIndex >= 0) insertIndex = Math.Min(insertIndex, orderByIndex);
+            if (groupByIndex >= 0) insertIndex = Math.Min(insertIndex, groupByIndex);
+            if (havingIndex >= 0) insertIndex = Math.Min(insertIndex, havingIndex);
+
+            var filterClause = $" AND [{tableAlias}].[AccountingYearId] = {activeYearId.Value}";
+            command.CommandText = commandText.Insert(insertIndex, filterClause);
         }
         else
         {

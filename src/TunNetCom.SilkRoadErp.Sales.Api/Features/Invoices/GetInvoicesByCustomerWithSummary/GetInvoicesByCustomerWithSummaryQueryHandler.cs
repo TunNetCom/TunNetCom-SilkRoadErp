@@ -1,4 +1,5 @@
 using TunNetCom.SilkRoadErp.Sales.Api.Features.AppParameters.GetAppParameters;
+using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetInvoicesByCustomerWithSummary;
 
@@ -21,6 +22,7 @@ public class GetInvoicesByCustomerWithSummaryQueryHandler(
 
         _logger.LogPaginationRequest(nameof(Facture), query.PageNumber, query.PageSize);
         var invoicesQueryBase = _context.Facture
+            .FilterByActiveAccountingYear()
             .Where(f => f.IdClient == query.ClientId);
 
         var invoicesQuery = invoicesQueryBase

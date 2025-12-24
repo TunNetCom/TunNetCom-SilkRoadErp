@@ -127,35 +127,79 @@
                 }
             }
 
-            <RadzenFormField Text="@Localizer["Facture_Optionnel"]" class="rz-col-12 rz-md-6">
-                <RadzenListBox AllowMultipleSelection="true"
-                               IsLoading="@isLoadingInvoices"
-                               @bind-Value="@selectedFactureIds"
-                               LoadData="@LoadInvoices"
-                               AllowFiltering="true"
-                               Style="width: 100%;"
-                               Data="@_filteredInvoices"
-                               TextProperty="@nameof(InvoiceResponse.Number)"
-                               ValueProperty="@nameof(InvoiceResponse.Id)"
-                               Placeholder="@Localizer["Select_Facture"]"
-                               Disabled="@(paiement.ClientId <= 0)">
-                </RadzenListBox>
-            </RadzenFormField>
+            @if (paiement.ClientId > 0 && !selectedBonDeLivraisonIds.Any())
+            {
+                <RadzenFormField Text="@Localizer["Facture_Optionnel"]" class="rz-col-12 rz-md-6">
+                    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+                        <RadzenDropDown @bind-Value="@selectedInvoiceToAdd"
+                                       Data="@AvailableInvoices"
+                                       TextProperty="@nameof(InvoiceResponse.Number)"
+                                       ValueProperty="@nameof(InvoiceResponse.Id)"
+                                       Placeholder="@Localizer["Select_Facture"]"
+                                       AllowFiltering="true"
+                                       FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                       Change="@OnInvoiceSelected"
+                                       Style="width: 100%;"
+                                       Disabled="@isLoadingInvoices" />
+                        
+                        @if (SelectedInvoices.Any())
+                        {
+                            <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem" Style="margin-top: 0.5rem;">
+                                <RadzenText TextStyle="TextStyle.Body2" Style="font-weight: 600;">@Localizer["Selected_Factures"] (@selectedFactureIds.Count)</RadzenText>
+                                @foreach (var invoice in SelectedInvoices)
+                                {
+                                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" Style="align-items: center; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; background-color: #f5f5f5;">
+                                        <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0" Style="flex: 1;">
+                                            <RadzenText TextStyle="TextStyle.Body2" Style="font-weight: 500;">@invoice.Number</RadzenText>
+                                            <RadzenText TextStyle="TextStyle.Caption" Style="color: #666;">@invoice.Date.ToString("dd/MM/yyyy") - @invoice.TotalIncludingTaxAmount.ToString("N2")</RadzenText>
+                                        </RadzenStack>
+                                        <RadzenButton Icon="delete" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Danger" 
+                                                    Click="@(() => RemoveInvoice(invoice))" 
+                                                    Title="@Localizer["Remove"]" />
+                                    </RadzenStack>
+                                }
+                            </RadzenStack>
+                        }
+                    </RadzenStack>
+                </RadzenFormField>
+            }
 
-            <RadzenFormField Text="@Localizer["Bon_Livraison_Optionnel"]" class="rz-col-12 rz-md-6">
-                <RadzenListBox AllowMultipleSelection="true"
-                               IsLoading="@isLoadingDeliveryNotes"
-                               @bind-Value="@selectedBonDeLivraisonIds"
-                               LoadData="@LoadDeliveryNotes"
-                               AllowFiltering="true"
-                               Style="width: 100%;"
-                               Data="@_filteredDeliveryNotes"
-                               TextProperty="@nameof(GetDeliveryNoteBaseInfos.Number)"
-                               ValueProperty="@nameof(GetDeliveryNoteBaseInfos.Id)"
-                               Placeholder="@Localizer["Select_Bon_Livraison"]"
-                               Disabled="@(paiement.ClientId <= 0)">
-                </RadzenListBox>
-            </RadzenFormField>
+            @if (paiement.ClientId > 0 && !selectedFactureIds.Any())
+            {
+                <RadzenFormField Text="@Localizer["Bon_Livraison_Optionnel"]" class="rz-col-12 rz-md-6">
+                    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+                        <RadzenDropDown @bind-Value="@selectedDeliveryNoteToAdd"
+                                       Data="@AvailableDeliveryNotes"
+                                       TextProperty="@nameof(GetDeliveryNoteBaseInfos.Number)"
+                                       ValueProperty="@nameof(GetDeliveryNoteBaseInfos.Id)"
+                                       Placeholder="@Localizer["Select_Bon_Livraison"]"
+                                       AllowFiltering="true"
+                                       FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                       Change="@OnDeliveryNoteSelected"
+                                       Style="width: 100%;"
+                                       Disabled="@isLoadingDeliveryNotes" />
+                        
+                        @if (SelectedDeliveryNotes.Any())
+                        {
+                            <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem" Style="margin-top: 0.5rem;">
+                                <RadzenText TextStyle="TextStyle.Body2" Style="font-weight: 600;">@Localizer["Selected_Bon_Livraison"] (@selectedBonDeLivraisonIds.Count)</RadzenText>
+                                @foreach (var deliveryNote in SelectedDeliveryNotes)
+                                {
+                                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" Style="align-items: center; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; background-color: #f5f5f5;">
+                                        <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0" Style="flex: 1;">
+                                            <RadzenText TextStyle="TextStyle.Body2" Style="font-weight: 500;">@deliveryNote.Number</RadzenText>
+                                            <RadzenText TextStyle="TextStyle.Caption" Style="color: #666;">@deliveryNote.Date.ToString("dd/MM/yyyy") - @deliveryNote.GrossAmount.ToString("N2")</RadzenText>
+                                        </RadzenStack>
+                                        <RadzenButton Icon="delete" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Danger" 
+                                                    Click="@(() => RemoveDeliveryNote(deliveryNote))" 
+                                                    Title="@Localizer["Remove"]" />
+                                    </RadzenStack>
+                                }
+                            </RadzenStack>
+                        }
+                    </RadzenStack>
+                </RadzenFormField>
+            }
 
             <RadzenFormField Text="@Localizer["Commentaire"]" class="rz-col-12">
                 <RadzenTextArea @bind-Value="paiement.Commentaire" Placeholder="@Localizer["Commentaire_Optionnel"]" Rows="3" Style="width: 100%;" />
@@ -323,8 +367,23 @@
     private List<GetDeliveryNoteBaseInfos> _filteredDeliveryNotes = new();
     private List<int> selectedFactureIds = new();
     private List<int> selectedBonDeLivraisonIds = new();
+    private int? selectedInvoiceToAdd;
+    private int? selectedDeliveryNoteToAdd;
     private List<BanqueResponse> banques = new();
     private CancellationTokenSource cancellationTokenSource = new();
+
+    // Computed properties for available and selected items
+    private List<InvoiceResponse> AvailableInvoices =>
+        _filteredInvoices.Where(i => !selectedFactureIds.Contains(i.Id)).ToList();
+
+    private List<InvoiceResponse> SelectedInvoices =>
+        _filteredInvoices.Where(i => selectedFactureIds.Contains(i.Id)).ToList();
+
+    private List<GetDeliveryNoteBaseInfos> AvailableDeliveryNotes =>
+        _filteredDeliveryNotes.Where(d => !selectedBonDeLivraisonIds.Contains(d.Id)).ToList();
+
+    private List<GetDeliveryNoteBaseInfos> SelectedDeliveryNotes =>
+        _filteredDeliveryNotes.Where(d => selectedBonDeLivraisonIds.Contains(d.Id)).ToList();
 
     private List<MethodePaiementOption> methodePaiementOptions = new();
 
@@ -559,6 +618,46 @@
         {
             await LoadInvoicesForClient(paiement.ClientId);
         }
+    }
+
+    void OnInvoiceSelected(object? value)
+    {
+        if (value is int invoiceId && invoiceId > 0)
+        {
+            var invoice = _filteredInvoices.FirstOrDefault(i => i.Id == invoiceId);
+            if (invoice != null && !selectedFactureIds.Contains(invoice.Id))
+            {
+                selectedFactureIds.Add(invoice.Id);
+                selectedInvoiceToAdd = null; // Reset dropdown
+                StateHasChanged();
+            }
+        }
+    }
+
+    void RemoveInvoice(InvoiceResponse invoice)
+    {
+        selectedFactureIds.Remove(invoice.Id);
+        StateHasChanged();
+    }
+
+    void OnDeliveryNoteSelected(object? value)
+    {
+        if (value is int deliveryNoteId && deliveryNoteId > 0)
+        {
+            var deliveryNote = _filteredDeliveryNotes.FirstOrDefault(d => d.Id == deliveryNoteId);
+            if (deliveryNote != null && !selectedBonDeLivraisonIds.Contains(deliveryNote.Id))
+            {
+                selectedBonDeLivraisonIds.Add(deliveryNote.Id);
+                selectedDeliveryNoteToAdd = null; // Reset dropdown
+                StateHasChanged();
+            }
+        }
+    }
+
+    void RemoveDeliveryNote(GetDeliveryNoteBaseInfos deliveryNote)
+    {
+        selectedBonDeLivraisonIds.Remove(deliveryNote.Id);
+        StateHasChanged();
     }
 
     async Task LoadDeliveryNotesForClient(int clientId)
