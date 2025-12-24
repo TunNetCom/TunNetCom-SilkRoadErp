@@ -12,8 +12,8 @@ using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 {
     [DbContext(typeof(SalesContext))]
-    [Migration("20251224015521_AddPaymentJunctionTables")]
-    partial class AddPaymentJunctionTables
+    [Migration("20251224190210_InitMigration")]
+    partial class InitMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
