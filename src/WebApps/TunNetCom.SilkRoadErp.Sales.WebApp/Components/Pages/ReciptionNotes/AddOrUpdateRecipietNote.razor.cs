@@ -226,7 +226,8 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
         
         if (string.IsNullOrEmpty(receiptNoteNumToLoad))
         {
-            orders = new List<ReceiptNoteDetailResponse>();
+            // Pour un nouveau bon de réception, initialiser avec une ligne vide pour permettre la saisie
+            orders = new List<ReceiptNoteDetailResponse> { new ReceiptNoteDetailResponse { Quantity = 1 } };
             totalHt = 0;
             totalVat = 0;
             totalTtc = 0;

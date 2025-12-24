@@ -145,35 +145,79 @@
                 </RadzenFormField>
             }
 
-            <RadzenFormField Text="@Localizer["Facture_Fournisseur_Optionnel"]" class="rz-col-12 rz-md-6">
-                <RadzenListBox AllowMultipleSelection="true"
-                               IsLoading="@isLoadingInvoices"
-                               @bind-Value="@selectedFactureFournisseurIds"
-                               LoadData="@LoadInvoices"
-                               AllowFiltering="true"
-                               Style="width: 100%;"
-                               Data="@_filteredInvoices"
-                               TextProperty="@nameof(ProviderInvoiceResponse.ProviderInvoiceNumber)"
-                               ValueProperty="@nameof(ProviderInvoiceResponse.Id)"
-                               Placeholder="@Localizer["Select_Facture_Fournisseur"]"
-                               Disabled="@(paiement.FournisseurId <= 0)">
-                </RadzenListBox>
-            </RadzenFormField>
+            @if (paiement.FournisseurId > 0 && !selectedBonDeReceptionIds.Any())
+            {
+                <RadzenFormField Text="@Localizer["Facture_Fournisseur_Optionnel"]" class="rz-col-12 rz-md-6">
+                    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+                        <RadzenDropDown @bind-Value="@selectedInvoiceToAdd"
+                                       Data="@AvailableInvoices"
+                                       TextProperty="@nameof(ProviderInvoiceResponse.ProviderInvoiceNumber)"
+                                       ValueProperty="@nameof(ProviderInvoiceResponse.Id)"
+                                       Placeholder="@Localizer["Select_Facture_Fournisseur"]"
+                                       AllowFiltering="true"
+                                       FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                       Change="@OnInvoiceSelected"
+                                       Style="width: 100%;"
+                                       Disabled="@isLoadingInvoices" />
+                        
+                        @if (SelectedInvoices.Any())
+                        {
+                            <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem" Style="margin-top: 0.5rem;">
+                                <RadzenText TextStyle="TextStyle.Body2" Style="font-weight: 600;">@Localizer["Selected_Factures"] (@selectedFactureFournisseurIds.Count)</RadzenText>
+                                @foreach (var invoice in SelectedInvoices)
+                                {
+                                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" Style="align-items: center; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; background-color: #f5f5f5;">
+                                        <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0" Style="flex: 1;">
+                                            <RadzenText TextStyle="TextStyle.Body2" Style="font-weight: 500;">@invoice.ProviderInvoiceNumber</RadzenText>
+                                            <RadzenText TextStyle="TextStyle.Caption" Style="color: #666;">@invoice.DateFacturation.ToString("dd/MM/yyyy") - @invoice.TotTTC.ToString("N2")</RadzenText>
+                                        </RadzenStack>
+                                        <RadzenButton Icon="delete" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Danger" 
+                                                    Click="@(() => RemoveInvoice(invoice))" 
+                                                    Title="@Localizer["Remove"]" />
+                                    </RadzenStack>
+                                }
+                            </RadzenStack>
+                        }
+                    </RadzenStack>
+                </RadzenFormField>
+            }
 
-            <RadzenFormField Text="@Localizer["Bon_Reception_Optionnel"]" class="rz-col-12 rz-md-6">
-                <RadzenListBox AllowMultipleSelection="true"
-                               IsLoading="@isLoadingReceiptNotes"
-                               @bind-Value="@selectedBonDeReceptionIds"
-                               LoadData="@LoadReceiptNotes"
-                               AllowFiltering="true"
-                               Style="width: 100%;"
-                               Data="@_filteredReceiptNotes"
-                               TextProperty="@nameof(ReceiptNoteDetailsResponse.Num)"
-                               ValueProperty="@nameof(ReceiptNoteDetailsResponse.Id)"
-                               Placeholder="@Localizer["Select_Bon_Reception"]"
-                               Disabled="@(paiement.FournisseurId <= 0)">
-                </RadzenListBox>
-            </RadzenFormField>
+            @if (paiement.FournisseurId > 0 && !selectedFactureFournisseurIds.Any())
+            {
+                <RadzenFormField Text="@Localizer["Bon_Reception_Optionnel"]" class="rz-col-12 rz-md-6">
+                    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+                        <RadzenDropDown @bind-Value="@selectedReceiptNoteToAdd"
+                                       Data="@AvailableReceiptNotes"
+                                       TextProperty="@nameof(ReceiptNoteDetailsResponse.Num)"
+                                       ValueProperty="@nameof(ReceiptNoteDetailsResponse.Id)"
+                                       Placeholder="@Localizer["Select_Bon_Reception"]"
+                                       AllowFiltering="true"
+                                       FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                       Change="@OnReceiptNoteSelected"
+                                       Style="width: 100%;"
+                                       Disabled="@isLoadingReceiptNotes" />
+                        
+                        @if (SelectedReceiptNotes.Any())
+                        {
+                            <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem" Style="margin-top: 0.5rem;">
+                                <RadzenText TextStyle="TextStyle.Body2" Style="font-weight: 600;">@Localizer["Selected_Bon_Reception"] (@selectedBonDeReceptionIds.Count)</RadzenText>
+                                @foreach (var receiptNote in SelectedReceiptNotes)
+                                {
+                                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" Style="align-items: center; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; background-color: #f5f5f5;">
+                                        <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0" Style="flex: 1;">
+                                            <RadzenText TextStyle="TextStyle.Body2" Style="font-weight: 500;">@receiptNote.Num</RadzenText>
+                                            <RadzenText TextStyle="TextStyle.Caption" Style="color: #666;">@receiptNote.Date.ToString("dd/MM/yyyy") - @receiptNote.TotTTC.ToString("N2")</RadzenText>
+                                        </RadzenStack>
+                                        <RadzenButton Icon="delete" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Danger" 
+                                                    Click="@(() => RemoveReceiptNote(receiptNote))" 
+                                                    Title="@Localizer["Remove"]" />
+                                    </RadzenStack>
+                                }
+                            </RadzenStack>
+                        }
+                    </RadzenStack>
+                </RadzenFormField>
+            }
 
             <RadzenFormField Text="@Localizer["Commentaire"]" class="rz-col-12">
                 <RadzenTextArea @bind-Value="paiement.Commentaire" Placeholder="@Localizer["Commentaire_Optionnel"]" Rows="3" Style="width: 100%;" />
@@ -341,6 +385,8 @@
     private List<ReceiptNoteDetailsResponse> _filteredReceiptNotes = new();
     private List<int> selectedFactureFournisseurIds = new();
     private List<int> selectedBonDeReceptionIds = new();
+    private int? selectedInvoiceToAdd;
+    private int? selectedReceiptNoteToAdd;
     private List<BanqueResponse> banques = new();
     private CancellationTokenSource cancellationTokenSource = new();
 
@@ -361,24 +407,42 @@
 
     protected override async Task OnInitializedAsync()
     {
-        methodePaiementOptions = new()
+        // #region agent log
+        System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "A", location = "AddOrUpdatePaiementFournisseur.razor:362", message = "OnInitializedAsync entry", data = new { isEditMode = IsEditMode, id = Id }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
+        // #endregion
+
+        try
         {
-            new MethodePaiementOption { Text = Localizer["Espece"], Value = "Espece" },
-            new MethodePaiementOption { Text = Localizer["Cheque"], Value = "Cheque" },
-            new MethodePaiementOption { Text = Localizer["Traite"], Value = "Traite" },
-            new MethodePaiementOption { Text = Localizer["Virement"], Value = "Virement" }
-        };
-        
-        await LoadActiveAccountingYearAsync();
-        await LoadBanquesAsync();
-        
-        if (IsEditMode && Id.HasValue)
-        {
-            await LoadPaiementAsync(Id.Value);
+            methodePaiementOptions = new()
+            {
+                new MethodePaiementOption { Text = Localizer["Espece"], Value = "Espece" },
+                new MethodePaiementOption { Text = Localizer["Cheque"], Value = "Cheque" },
+                new MethodePaiementOption { Text = Localizer["Traite"], Value = "Traite" },
+                new MethodePaiementOption { Text = Localizer["Virement"], Value = "Virement" }
+            };
+            
+            await LoadActiveAccountingYearAsync();
+            await LoadBanquesAsync();
+            
+            if (IsEditMode && Id.HasValue)
+            {
+                await LoadPaiementAsync(Id.Value);
+            }
+            else
+            {
+                paiement.DatePaiement = DateTime.Now;
+            }
+
+            // #region agent log
+            System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "A", location = "AddOrUpdatePaiementFournisseur.razor:383", message = "OnInitializedAsync completed successfully", data = new { }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
+            // #endregion
         }
-        else
+        catch (Exception ex)
         {
-            paiement.DatePaiement = DateTime.Now;
+            // #region agent log
+            System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "E", location = "AddOrUpdatePaiementFournisseur.razor:387", message = "Exception in OnInitializedAsync", data = new { exceptionType = ex.GetType().Name, exceptionMessage = ex.Message, exceptionStackTrace = ex.StackTrace }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
+            // #endregion
+            throw;
         }
     }
 
@@ -565,6 +629,8 @@
             if (result.IsT0)
             {
                 _filteredInvoices = result.AsT0.Invoices.Items;
+                // Ensure selected invoices are still in the list (for update mode)
+                await InvokeAsync(StateHasChanged);
             }
         }
         catch (Exception ex)
@@ -611,6 +677,8 @@
             if (result.IsSuccess)
             {
                 _filteredReceiptNotes = result.Value.ReceiptNotes.Items;
+                // Ensure selected receipt notes are still in the list (for update mode)
+                await InvokeAsync(StateHasChanged);
             }
         }
         catch (Exception ex)
@@ -633,6 +701,59 @@
         {
             await LoadReceiptNotesForProvider(paiement.FournisseurId);
         }
+    }
+
+    // Computed properties for available and selected items
+    private List<ProviderInvoiceResponse> AvailableInvoices => 
+        _filteredInvoices.Where(i => !selectedFactureFournisseurIds.Contains(i.Id)).ToList();
+    
+    private List<ProviderInvoiceResponse> SelectedInvoices => 
+        _filteredInvoices.Where(i => selectedFactureFournisseurIds.Contains(i.Id)).ToList();
+    
+    private List<ReceiptNoteDetailsResponse> AvailableReceiptNotes => 
+        _filteredReceiptNotes.Where(r => !selectedBonDeReceptionIds.Contains(r.Id)).ToList();
+    
+    private List<ReceiptNoteDetailsResponse> SelectedReceiptNotes => 
+        _filteredReceiptNotes.Where(r => selectedBonDeReceptionIds.Contains(r.Id)).ToList();
+
+    void OnInvoiceSelected(object? value)
+    {
+        if (value is int invoiceId && invoiceId > 0)
+        {
+            var invoice = _filteredInvoices.FirstOrDefault(i => i.Id == invoiceId);
+            if (invoice != null && !selectedFactureFournisseurIds.Contains(invoice.Id))
+            {
+                selectedFactureFournisseurIds.Add(invoice.Id);
+                selectedInvoiceToAdd = null; // Reset dropdown
+                StateHasChanged();
+            }
+        }
+    }
+
+    void RemoveInvoice(ProviderInvoiceResponse invoice)
+    {
+        selectedFactureFournisseurIds.Remove(invoice.Id);
+        StateHasChanged();
+    }
+
+    void OnReceiptNoteSelected(object? value)
+    {
+        if (value is int receiptNoteId && receiptNoteId > 0)
+        {
+            var receiptNote = _filteredReceiptNotes.FirstOrDefault(r => r.Id == receiptNoteId);
+            if (receiptNote != null && !selectedBonDeReceptionIds.Contains(receiptNote.Id))
+            {
+                selectedBonDeReceptionIds.Add(receiptNote.Id);
+                selectedReceiptNoteToAdd = null; // Reset dropdown
+                StateHasChanged();
+            }
+        }
+    }
+
+    void RemoveReceiptNote(ReceiptNoteDetailsResponse receiptNote)
+    {
+        selectedBonDeReceptionIds.Remove(receiptNote.Id);
+        StateHasChanged();
     }
 
     async Task OnMethodePaiementChangedAsync(object? value)
@@ -696,6 +817,10 @@
 
     async Task SavePaiement()
     {
+        // #region agent log
+        System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "A", location = "AddOrUpdatePaiementFournisseur.razor:695", message = "SavePaiement entry", data = new { paiementFournisseurId = paiement.FournisseurId, selectedFactureFournisseurIdsCount = selectedFactureFournisseurIds?.Count ?? 0, selectedBonDeReceptionIdsCount = selectedBonDeReceptionIds?.Count ?? 0, selectedFactureFournisseurIds = selectedFactureFournisseurIds, selectedBonDeReceptionIds = selectedBonDeReceptionIds }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
+        // #endregion
+
         if (paiement.FournisseurId <= 0)
         {
             NotificationService.Notify(new NotificationMessage
@@ -780,6 +905,10 @@
             }
             else
             {
+                // #region agent log
+                System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "A", location = "AddOrUpdatePaiementFournisseur.razor:783", message = "Before exclusivity validation", data = new { selectedFactureFournisseurIdsCount = selectedFactureFournisseurIds?.Count ?? 0, selectedBonDeReceptionIdsCount = selectedBonDeReceptionIds?.Count ?? 0, selectedFactureFournisseurIds = selectedFactureFournisseurIds, selectedBonDeReceptionIds = selectedBonDeReceptionIds }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
+                // #endregion
+
                 // Validate exclusivity
                 if (selectedFactureFournisseurIds.Count > 0 && selectedBonDeReceptionIds.Count > 0)
                 {
@@ -796,7 +925,16 @@
                 paiement.FactureFournisseurIds = selectedFactureFournisseurIds.Count > 0 ? selectedFactureFournisseurIds : null;
                 paiement.BonDeReceptionIds = selectedBonDeReceptionIds.Count > 0 ? selectedBonDeReceptionIds : null;
                 paiement.DocumentBase64 = documentBase64;
+
+                // #region agent log
+                System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "C", location = "AddOrUpdatePaiementFournisseur.razor:798", message = "Before API call", data = new { paiementFactureFournisseurIds = paiement.FactureFournisseurIds, paiementBonDeReceptionIds = paiement.BonDeReceptionIds, paiementNumero = paiement.Numero, paiementFournisseurId = paiement.FournisseurId }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
+                // #endregion
+
                 var result = await PaiementFournisseurService.CreatePaiementFournisseurAsync(paiement, cancellationTokenSource.Token);
+
+                // #region agent log
+                System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "D", location = "AddOrUpdatePaiementFournisseur.razor:800", message = "After API call", data = new { resultIsT0 = result.IsT0, resultIsT1 = result.IsT1, resultValue = result.IsT0 ? result.AsT0.ToString() : null, badRequestDetail = result.IsT1 ? result.AsT1.Detail : null }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
+                // #endregion
                 if (result.IsT0)
                 {
                     ToastService.Notify(new(ToastType.Success, Localizer["Paiement_Cree"]));
@@ -811,6 +949,10 @@
         }
         catch (Exception ex)
         {
+            // #region agent log
+            System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", System.Text.Json.JsonSerializer.Serialize(new { sessionId = "debug-session", runId = "run1", hypothesisId = "E", location = "AddOrUpdatePaiementFournisseur.razor:812", message = "Exception caught in SavePaiement", data = new { exceptionType = ex.GetType().Name, exceptionMessage = ex.Message, exceptionStackTrace = ex.StackTrace, innerException = ex.InnerException != null ? new { type = ex.InnerException.GetType().Name, message = ex.InnerException.Message } : null }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n");
+            // #endregion
+
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Error,
