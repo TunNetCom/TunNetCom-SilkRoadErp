@@ -5,11 +5,18 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  solution: '**/*.sln'
-  buildConfiguration: 'Release'
-  dockerRepository: 'tunnetcom/silkroad'
-  apiTag: 'api-$(Build.BuildId)'
-  webappTag: 'webapp-$(Build.BuildId)'
+- group: silkroad-prod
+- name: solution
+  value: '**/*.sln'
+- name: buildConfiguration
+  value: 'Release'
+- name: dockerRepository
+  value: 'tunnetcom/silkroad'
+- name: apiTag
+  value: 'api-$(Build.BuildId)'
+- name: webappTag
+  value: 'webapp-$(Build.BuildId)'
+
 
 stages:
 # ============================================================
@@ -127,7 +134,12 @@ stages:
       name: OnPremAgents
 
     steps:
+    # ---------------------------------
+    # 1️⃣ Prepare manifests & update image tags
+    # ---------------------------------
     - script: |
+        set -e
+
         echo "📁 Navigating to deployment manifests..."
         cd $(Build.SourcesDirectory)/src/deployments || { echo '❌ Deployment folder not found'; exit 1; }
 
@@ -135,33 +147,47 @@ stages:
         ls -l *.yaml
 
         echo "🔄 Updating deployment image tags..."
-        export API_TAG=$(apiTag)
-        export WEB_TAG=$(webappTag)
-
-        # Replace API image
-        sed -i "s|image: .*silkroad:.*api.*|image: tunnetcom/silkroad:${API_TAG}|" prod-deployment.yaml
-
-        # Replace WEB image
-        sed -i "s|image: .*silkroad:.*webapp.*|image: tunnetcom/silkroad:${WEB_TAG}|" prod-deployment.yaml
+        sed -i "s|image: .*silkroad:.*api.*|image: $(dockerRepository):$(apiTag)|" prod-deployment.yaml
+        sed -i "s|image: .*silkroad:.*webapp.*|image: $(dockerRepository):$(webappTag)|" prod-deployment.yaml
 
         echo "🧾 New image lines:"
         grep 'image:' prod-deployment.yaml
+      displayName: Update image tags
+
+    # ---------------------------------
+    # 2️⃣ Create / Update DB Connection Secret
+    # ---------------------------------
+    - script: |
+        set -e
+        echo "🔐 Creating / Updating DB connection secret"
+
+        kubectl create secret generic silkroad-connection-secret \
+          -n silkroad-prod \
+          --from-literal=ConnectionStrings__DefaultConnection="$(CONNECTION_STRING)" \
+          --dry-run=client -o yaml | kubectl apply -f -
+      displayName: Create DB Connection Secret
+
+    # ---------------------------------
+    # 3️⃣ Deploy to Kubernetes
+    # ---------------------------------
+    - script: |
+        set -e
 
         echo "🔐 Checking cluster access..."
-        kubectl version --client || { echo '❌ kubectl missing'; exit 1; }
-        kubectl cluster-info || { echo '❌ cluster unreachable'; exit 1; }
+        kubectl version --client
+        kubectl cluster-info
 
         echo "🚀 Applying manifests..."
-        kubectl apply -f prod-deployment.yaml -n silkroad-prod 
-        kubectl apply -f prod-service.yaml -n silkroad-prod  || true
+        kubectl apply -f prod-deployment.yaml -n silkroad-prod
+        kubectl apply -f prod-service.yaml -n silkroad-prod || true
 
         echo "🔁 Forcing rollout..."
-        kubectl rollout restart deployment/silkroad-api -n silkroad-prod  || true
-        kubectl rollout restart deployment/silkroad-webapp -n silkroad-prod  || true
+        kubectl rollout restart deployment/silkroad-api -n silkroad-prod || true
+        kubectl rollout restart deployment/silkroad-webapp -n silkroad-prod || true
 
         echo "⏳ Waiting for rollout..."
-        kubectl rollout status deployment/silkroad-api -n silkroad-prod  || { echo '❌ API rollout failed'; exit 1; }
-        kubectl rollout status deployment/silkroad-webapp -n silkroad-prod  || { echo '❌ WebApp rollout failed'; exit 1; }
+        kubectl rollout status deployment/silkroad-api -n silkroad-prod
+        kubectl rollout status deployment/silkroad-webapp -n silkroad-prod
 
-        echo "✅ Successfully deployed SilkRoad to namespace: prod-silkroad"
+        echo "✅ Successfully deployed SilkRoad to namespace: silkroad-prod"
       displayName: Deploy to K8s
