@@ -18,20 +18,28 @@ stages:
   jobs:
   - job: DeployJob
     displayName: Deploy SilkRoad to silkroad-prod-nizar
-
     steps:
-    - script: |
-        echo "📁 Navigating to deployment manifests..."
-        cd $(Build.SourcesDirectory)/src/deployments || { echo '❌ Deployment folder not found'; exit 1; }
 
+    # 1️⃣ Debug manifests
+    - script: |
+        cd $(Build.SourcesDirectory)/src/deployments || { echo '❌ Deployment folder not found'; exit 1; }
         echo "📂 Listing Nizar YAML files:"
         ls -l *nizar*.yaml
+      displayName: 'Debug: list Nizar manifests'
 
-        echo "🔐 Checking cluster access..."
-        kubectl version --client || { echo '❌ kubectl missing'; exit 1; }
-        kubectl cluster-info || { echo '❌ cluster unreachable'; exit 1; }
+    # 2️⃣ Create / Update DB Connection Secret
+    - script: |
+        echo "🔐 Creating / Updating DB connection secret in Nizar namespace"
+        kubectl create secret generic silkroad-connection-secret \
+          -n $(kubeNamespace) \
+          --from-literal=ConnectionStrings__DefaultConnection="$(CONNECTION_STRING)" \
+          --dry-run=client -o yaml | kubectl apply -f -
+      displayName: 'Create DB Connection Secret'
 
-        echo "✅ Cluster accessible. Proceeding with Nizar deployment..."
+    # 3️⃣ Apply manifests & rollout
+    - script: |
+        kubectl version --client
+        kubectl cluster-info
 
         echo "🚀 Applying Nizar manifests..."
         kubectl apply -f prod-configmap-nizar.yaml -n $(kubeNamespace)
@@ -48,7 +56,6 @@ stages:
         kubectl rollout status deployment/$(deploymentWebappName) -n $(kubeNamespace) --timeout=5m || { echo '❌ WebApp rollout failed'; exit 1; }
 
         echo "✅ Successfully deployed SilkRoad to Nizar namespace: $(kubeNamespace)"
-        
         echo "📊 Showing deployment status:"
         kubectl get pods -n $(kubeNamespace)
         kubectl get svc -n $(kubeNamespace)
