@@ -132,60 +132,44 @@ stages:
     displayName: Deploy SilkRoad to prod-silkroad
     pool:
       name: OnPremAgents
-
     steps:
-    # ---------------------------------
-    # 1️⃣ Prepare manifests & update image tags
-    # ---------------------------------
+
+    # 1️⃣ Debug folder & files
     - script: |
-        set -e
-
-        echo "📁 Navigating to deployment manifests..."
         cd $(Build.SourcesDirectory)/src/deployments || { echo '❌ Deployment folder not found'; exit 1; }
+        echo "📂 Current folder: $(pwd)"
+        echo "📄 Listing YAML files:"
+        ls -la
+      displayName: 'Debug: list deployment files'
 
-        echo "📂 Listing YAML files:"
-        ls -l *.yaml
-
-        echo "🔄 Updating deployment image tags..."
+    # 2️⃣ Update image tags
+    - script: |
+        cd $(Build.SourcesDirectory)/src/deployments
         sed -i "s|image: .*silkroad:.*api.*|image: $(dockerRepository):$(apiTag)|" prod-deployment.yaml
         sed -i "s|image: .*silkroad:.*webapp.*|image: $(dockerRepository):$(webappTag)|" prod-deployment.yaml
-
         echo "🧾 New image lines:"
         grep 'image:' prod-deployment.yaml
       displayName: Update image tags
 
-    # ---------------------------------
-    # 2️⃣ Create / Update DB Connection Secret
-    # ---------------------------------
+    # 3️⃣ Create / Update DB secret
     - script: |
-        set -e
-        echo "🔐 Creating / Updating DB connection secret"
-
         kubectl create secret generic silkroad-connection-secret \
           -n silkroad-prod \
           --from-literal=ConnectionStrings__DefaultConnection="$(CONNECTION_STRING)" \
           --dry-run=client -o yaml | kubectl apply -f -
       displayName: Create DB Connection Secret
 
-    # ---------------------------------
-    # 3️⃣ Deploy to Kubernetes
-    # ---------------------------------
+    # 4️⃣ Deploy to Kubernetes
     - script: |
-        set -e
-
-        echo "🔐 Checking cluster access..."
         kubectl version --client
         kubectl cluster-info
 
-        echo "🚀 Applying manifests..."
         kubectl apply -f prod-deployment.yaml -n silkroad-prod
         kubectl apply -f prod-service.yaml -n silkroad-prod || true
 
-        echo "🔁 Forcing rollout..."
         kubectl rollout restart deployment/silkroad-api -n silkroad-prod || true
         kubectl rollout restart deployment/silkroad-webapp -n silkroad-prod || true
 
-        echo "⏳ Waiting for rollout..."
         kubectl rollout status deployment/silkroad-api -n silkroad-prod
         kubectl rollout status deployment/silkroad-webapp -n silkroad-prod
 
