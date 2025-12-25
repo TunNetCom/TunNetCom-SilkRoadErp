@@ -15,22 +15,22 @@ public class AttachFactureAvoirFournisseurToInvoiceCommandHandler(
 
         // Verify invoice exists
         var invoice = await _context.FactureFournisseur
-            .FirstOrDefaultAsync(f => f.Num == command.FactureFournisseurId, cancellationToken);
+            .FirstOrDefaultAsync(f => f.Id == command.FactureFournisseurId, cancellationToken);
 
         if (invoice == null)
         {
-            _logger.LogWarning("FactureFournisseur with Num {Num} not found", command.FactureFournisseurId);
+            _logger.LogWarning("FactureFournisseur with Id {Id} not found", command.FactureFournisseurId);
             return Result.Fail(EntityNotFound.Error());
         }
 
         // Get facture avoir fournisseurs
         var factureAvoirs = await _context.FactureAvoirFournisseur
-            .Where(f => command.FactureAvoirFournisseurIds.Contains(f.Num))
+            .Where(f => command.FactureAvoirFournisseurIds.Contains(f.Id))
             .ToListAsync(cancellationToken);
 
         if (factureAvoirs.Count != command.FactureAvoirFournisseurIds.Count)
         {
-            var foundIds = factureAvoirs.Select(f => f.Num).ToList();
+            var foundIds = factureAvoirs.Select(f => f.Id).ToList();
             var missingIds = command.FactureAvoirFournisseurIds.Except(foundIds).ToList();
             _logger.LogWarning("FactureAvoirFournisseur not found: {Ids}", string.Join(", ", missingIds));
             return Result.Fail($"facture_avoir_fournisseur_not_found: {string.Join(", ", missingIds)}");
@@ -44,19 +44,19 @@ public class AttachFactureAvoirFournisseurToInvoiceCommandHandler(
 
         if (mismatchedProviders.Any())
         {
-            var mismatchedIds = mismatchedProviders.Select(f => f.Num).ToList();
+            var mismatchedIds = mismatchedProviders.Select(f => f.Id).ToList();
             _logger.LogWarning("FactureAvoirFournisseur with different provider: {Ids}", string.Join(", ", mismatchedIds));
             return Result.Fail($"facture_avoir_fournisseur_provider_mismatch: {string.Join(", ", mismatchedIds)}");
         }
 
         // Check if any facture avoir is already linked to another invoice
         var alreadyLinked = factureAvoirs
-            .Where(f => f.NumFactureFournisseur.HasValue && f.NumFactureFournisseur.Value != command.FactureFournisseurId)
+            .Where(f => f.FactureFournisseurId.HasValue && f.FactureFournisseurId.Value != invoice.Id)
             .ToList();
 
         if (alreadyLinked.Any())
         {
-            var linkedIds = alreadyLinked.Select(f => f.Num).ToList();
+            var linkedIds = alreadyLinked.Select(f => f.Id).ToList();
             _logger.LogWarning("FactureAvoirFournisseur already linked to another invoice: {Ids}", string.Join(", ", linkedIds));
             return Result.Fail($"facture_avoir_fournisseur_already_linked: {string.Join(", ", linkedIds)}");
         }
@@ -68,7 +68,7 @@ public class AttachFactureAvoirFournisseurToInvoiceCommandHandler(
 
         if (validated.Any())
         {
-            var validatedIds = validated.Select(f => f.Num).ToList();
+            var validatedIds = validated.Select(f => f.Id).ToList();
             _logger.LogWarning("FactureAvoirFournisseur is validated and cannot be modified: {Ids}", string.Join(", ", validatedIds));
             return Result.Fail($"facture_avoir_fournisseur_validated: {string.Join(", ", validatedIds)}");
         }
@@ -76,7 +76,7 @@ public class AttachFactureAvoirFournisseurToInvoiceCommandHandler(
         // Attach facture avoir to invoice
         foreach (var factureAvoir in factureAvoirs)
         {
-            factureAvoir.NumFactureFournisseur = command.FactureFournisseurId;
+            factureAvoir.FactureFournisseurId = invoice.Id;
         }
 
         await _context.SaveChangesAsync(cancellationToken);

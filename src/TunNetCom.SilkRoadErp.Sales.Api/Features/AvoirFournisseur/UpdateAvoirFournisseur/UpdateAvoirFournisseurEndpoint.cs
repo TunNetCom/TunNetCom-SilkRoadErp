@@ -6,21 +6,22 @@ public class UpdateAvoirFournisseurEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        _ = app.MapPut("/avoir-fournisseur/{num:int}", HandleUpdateAvoirFournisseurAsync)
+        _ = app.MapPut("/avoir-fournisseur/{id:int}", HandleUpdateAvoirFournisseurAsync)
             .WithTags(EndpointTags.AvoirFournisseur);
     }
 
     public async Task<Results<NoContent, NotFound, ValidationProblem>> HandleUpdateAvoirFournisseurAsync(
         IMediator mediator,
-        int num,
+        int id,
         UpdateAvoirFournisseurRequest updateAvoirFournisseurRequest,
         CancellationToken cancellationToken)
     {
         var command = new UpdateAvoirFournisseurCommand(
-            num,
+            id,
             updateAvoirFournisseurRequest.Date,
             updateAvoirFournisseurRequest.FournisseurId,
             updateAvoirFournisseurRequest.NumFactureAvoirFournisseur,
+            updateAvoirFournisseurRequest.NumAvoirChezFournisseur,
             updateAvoirFournisseurRequest.Lines);
 
         var result = await mediator.Send(command, cancellationToken);

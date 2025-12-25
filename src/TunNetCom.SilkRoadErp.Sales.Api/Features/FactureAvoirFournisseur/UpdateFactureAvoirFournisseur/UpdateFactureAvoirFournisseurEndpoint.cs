@@ -6,21 +6,22 @@ public class UpdateFactureAvoirFournisseurEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        _ = app.MapPut("/facture-avoir-fournisseur/{num:int}", HandleUpdateFactureAvoirFournisseurAsync)
+        _ = app.MapPut("/facture-avoir-fournisseur/{id:int}", HandleUpdateFactureAvoirFournisseurAsync)
             .WithTags(EndpointTags.FactureAvoirFournisseur);
     }
 
     public async Task<Results<NoContent, NotFound, ValidationProblem>> HandleUpdateFactureAvoirFournisseurAsync(
         IMediator mediator,
-        int num,
+        int id,
         UpdateFactureAvoirFournisseurRequest updateFactureAvoirFournisseurRequest,
         CancellationToken cancellationToken)
     {
         var command = new UpdateFactureAvoirFournisseurCommand(
-            num,
+            id,
             updateFactureAvoirFournisseurRequest.Date,
             updateFactureAvoirFournisseurRequest.IdFournisseur,
-            updateFactureAvoirFournisseurRequest.NumFactureFournisseur,
+            updateFactureAvoirFournisseurRequest.NumFactureAvoirFourSurPage,
+            updateFactureAvoirFournisseurRequest.NumFactureFournisseur, // Map NumFactureFournisseur to FactureFournisseurId
             updateFactureAvoirFournisseurRequest.AvoirFournisseurIds);
 
         var result = await mediator.Send(command, cancellationToken);

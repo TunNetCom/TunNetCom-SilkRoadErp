@@ -7,7 +7,7 @@ public class GetAvoirFournisseurWithSummariesQueryHandler(
     ILogger<GetAvoirFournisseurWithSummariesQueryHandler> _logger)
     : IRequestHandler<GetAvoirFournisseurWithSummariesQuery, GetAvoirFournisseurWithSummariesResponse>
 {
-    private const string _numColumnName = nameof(AvoirFournisseurBaseInfo.Num);
+    private const string _numColumnName = nameof(AvoirFournisseurBaseInfo.NumAvoirChezFournisseur);
     private const string _dateColumnName = nameof(AvoirFournisseurBaseInfo.Date);
     private const string _totalExcludingTaxAmountColumnName = nameof(AvoirFournisseurBaseInfo.TotalExcludingTaxAmount);
 
@@ -21,7 +21,8 @@ public class GetAvoirFournisseurWithSummariesQueryHandler(
         var baseQuery = from a in _context.AvoirFournisseur.FilterByActiveAccountingYear()
                         join f in _context.Fournisseur on a.FournisseurId equals f.Id into fournisseurGroup
                         from f in fournisseurGroup.DefaultIfEmpty()
-                        select new { a, f };
+                        join ay in _context.AccountingYear on a.AccountingYearId equals ay.Id
+                        select new { a, f, ay };
 
         // Apply filters before loading
         if (request.FournisseurId.HasValue)
@@ -31,18 +32,8 @@ public class GetAvoirFournisseurWithSummariesQueryHandler(
 
         if (request.NumFactureAvoirFournisseur.HasValue)
         {
-            // Convert Num to Id - request.NumFactureAvoirFournisseur contains the Num of FactureAvoirFournisseur
-            var factureAvoir = await _context.FactureAvoirFournisseur
-                .FirstOrDefaultAsync(f => f.Num == request.NumFactureAvoirFournisseur.Value, cancellationToken);
-            if (factureAvoir != null)
-            {
-                baseQuery = baseQuery.Where(x => x.a.FactureAvoirFournisseurId == factureAvoir.Id);
-            }
-            else
-            {
-                // If facture avoir not found, return empty result
-                baseQuery = baseQuery.Where(x => false);
-            }
+            // request.NumFactureAvoirFournisseur contains the Id of FactureAvoirFournisseur
+            baseQuery = baseQuery.Where(x => x.a.FactureAvoirFournisseurId == request.NumFactureAvoirFournisseur.Value);
         }
 
         // Apply Status filter
@@ -69,7 +60,7 @@ public class GetAvoirFournisseurWithSummariesQueryHandler(
         {
             baseQuery = baseQuery.Where(x =>
                 (x.f != null && x.f.Nom != null && x.f.Nom.Contains(request.SearchKeyword)) ||
-                x.a.Num.ToString().Contains(request.SearchKeyword));
+                x.a.NumAvoirChezFournisseur.ToString().Contains(request.SearchKeyword));
         }
 
         // Query 1: Get totals directly from database (OData-style aggregation)
@@ -96,6 +87,7 @@ public class GetAvoirFournisseurWithSummariesQueryHandler(
             {
                 a = x.a,
                 f = x.f,
+                ay = x.ay,
                 TotalExcludingTaxAmount = x.a.LigneAvoirFournisseur.Sum(l => l.TotHt),
                 TotalVATAmount = x.a.LigneAvoirFournisseur.Sum(l => l.TotTtc - l.TotHt),
                 TotalIncludingTaxAmount = x.a.LigneAvoirFournisseur.Sum(l => l.TotTtc)
@@ -118,8 +110,8 @@ public class GetAvoirFournisseurWithSummariesQueryHandler(
             avoirFournisseursQueryWithTotals = sortProperty switch
             {
                 _numColumnName => isAscending 
-                    ? avoirFournisseursQueryWithTotals.OrderBy(x => x.a.Num)
-                    : avoirFournisseursQueryWithTotals.OrderByDescending(x => x.a.Num),
+                    ? avoirFournisseursQueryWithTotals.OrderBy(x => x.a.NumAvoirChezFournisseur)
+                    : avoirFournisseursQueryWithTotals.OrderByDescending(x => x.a.NumAvoirChezFournisseur),
                 _dateColumnName => isAscending
                     ? avoirFournisseursQueryWithTotals.OrderBy(x => x.a.Date)
                     : avoirFournisseursQueryWithTotals.OrderByDescending(x => x.a.Date),
@@ -146,11 +138,14 @@ public class GetAvoirFournisseurWithSummariesQueryHandler(
         var items = avoirFournisseursData
             .Select(x => new AvoirFournisseurBaseInfo
             {
-                Num = x.a.Num,
+                Id = x.a.Id,
+                NumAvoirChezFournisseur = x.a.NumAvoirChezFournisseur,
                 Date = x.a.Date,
                 FournisseurId = x.a.FournisseurId,
                 FournisseurName = x.f != null ? x.f.Nom : null,
                 NumFactureAvoirFournisseur = x.a.FactureAvoirFournisseurId,
+                AccountingYearId = x.a.AccountingYearId,
+                AccountingYearName = x.ay != null ? x.ay.Year.ToString() : string.Empty,
                 TotalExcludingTaxAmount = x.TotalExcludingTaxAmount,
                 TotalVATAmount = x.TotalVATAmount,
                 TotalIncludingTaxAmount = x.TotalIncludingTaxAmount,

@@ -43,11 +43,11 @@ public class AvoirFournisseurApiClient : IAvoirFournisseurApiClient
     }
 
     public async Task<Result<AvoirFournisseurResponse>> GetAvoirFournisseurAsync(
-        int num,
+        int id,
         CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Fetching avoir fournisseur from API /avoir-fournisseur/{num}", num);
-        var response = await _httpClient.GetAsync($"/avoir-fournisseur/{num}", cancellationToken: cancellationToken);
+        _logger.LogInformation("Fetching avoir fournisseur from API /avoir-fournisseur/{id}", id);
+        var response = await _httpClient.GetAsync($"/avoir-fournisseur/{id}", cancellationToken: cancellationToken);
 
         if (response.StatusCode == HttpStatusCode.OK)
         {
@@ -65,11 +65,11 @@ public class AvoirFournisseurApiClient : IAvoirFournisseurApiClient
     }
 
     public async Task<Result<FullAvoirFournisseurResponse>> GetFullAvoirFournisseurAsync(
-        int num,
+        int id,
         CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Fetching full avoir fournisseur from API /avoir-fournisseur/{num}/full", num);
-        var response = await _httpClient.GetAsync($"/avoir-fournisseur/{num}/full", cancellationToken: cancellationToken);
+        _logger.LogInformation("Fetching full avoir fournisseur from API /avoir-fournisseur/{id}/full", id);
+        var response = await _httpClient.GetAsync($"/avoir-fournisseur/{id}/full", cancellationToken: cancellationToken);
 
         if (response.StatusCode == HttpStatusCode.OK)
         {
@@ -151,12 +151,12 @@ public class AvoirFournisseurApiClient : IAvoirFournisseurApiClient
     }
 
     public async Task<Result> UpdateAvoirFournisseurAsync(
-        int num,
+        int id,
         UpdateAvoirFournisseurRequest request,
         CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Updating avoir fournisseur via API /avoir-fournisseur/{num}", num);
-        var response = await _httpClient.PutAsJsonAsync($"/avoir-fournisseur/{num}", request, cancellationToken: cancellationToken);
+        _logger.LogInformation("Updating avoir fournisseur via API /avoir-fournisseur/{id}", id);
+        var response = await _httpClient.PutAsJsonAsync($"/avoir-fournisseur/{id}", request, cancellationToken: cancellationToken);
 
         if (response.StatusCode == HttpStatusCode.NoContent)
         {

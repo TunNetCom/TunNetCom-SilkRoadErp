@@ -2,8 +2,8 @@ namespace TunNetCom.SilkRoadErp.Sales.Contracts.AvoirFournisseur;
 
 public class FullAvoirFournisseurResponse
 {
-    [JsonPropertyName("num")]
-    public int Num { get; set; }
+    [JsonPropertyName("id")]
+    public int Id { get; set; }
 
     [JsonPropertyName("date")]
     public DateTime Date { get; set; }
@@ -14,8 +14,8 @@ public class FullAvoirFournisseurResponse
     [JsonPropertyName("numFactureAvoirFournisseur")]
     public int? NumFactureAvoirFournisseur { get; set; }
 
-    [JsonPropertyName("numAvoirFournisseur")]
-    public int NumAvoirFournisseur { get; set; }
+    [JsonPropertyName("numAvoirChezFournisseur")]
+    public int NumAvoirChezFournisseur { get; set; }
 
     [JsonPropertyName("fournisseur")]
     public AvoirFournisseurProviderResponse? Fournisseur { get; set; }

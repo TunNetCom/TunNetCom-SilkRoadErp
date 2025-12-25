@@ -15,23 +15,23 @@ public class DetachFactureAvoirFournisseurFromInvoiceCommandHandler(
 
         // Verify invoice exists and get its Id
         var invoice = await _context.FactureFournisseur
-            .FirstOrDefaultAsync(f => f.Num == command.FactureFournisseurId, cancellationToken);
+            .FirstOrDefaultAsync(f => f.Id == command.FactureFournisseurId, cancellationToken);
 
         if (invoice == null)
         {
-            _logger.LogWarning("FactureFournisseur with Num {Num} not found", command.FactureFournisseurId);
+            _logger.LogWarning("FactureFournisseur with Id {Id} not found", command.FactureFournisseurId);
             return Result.Fail(EntityNotFound.Error());
         }
 
         // Get facture avoir fournisseurs that are linked to this invoice - use Id, not Num
         var factureAvoirs = await _context.FactureAvoirFournisseur
-            .Where(f => command.FactureAvoirFournisseurIds.Contains(f.Num) &&
-                       f.NumFactureFournisseur == invoice.Id)
+            .Where(f => command.FactureAvoirFournisseurIds.Contains(f.Id) &&
+                       f.FactureFournisseurId == invoice.Id)
             .ToListAsync(cancellationToken);
 
         if (factureAvoirs.Count != command.FactureAvoirFournisseurIds.Count)
         {
-            var foundIds = factureAvoirs.Select(f => f.Num).ToList();
+            var foundIds = factureAvoirs.Select(f => f.Id).ToList();
             var missingIds = command.FactureAvoirFournisseurIds.Except(foundIds).ToList();
             _logger.LogWarning("Some facture avoir fournisseur not found or not linked to this invoice: {Ids}", string.Join(", ", missingIds));
             return Result.Fail($"facture_avoir_fournisseur_not_found_or_not_linked: {string.Join(", ", missingIds)}");
@@ -44,7 +44,7 @@ public class DetachFactureAvoirFournisseurFromInvoiceCommandHandler(
 
         if (validated.Any())
         {
-            var validatedIds = validated.Select(f => f.Num).ToList();
+            var validatedIds = validated.Select(f => f.Id).ToList();
             _logger.LogWarning("FactureAvoirFournisseur is validated and cannot be modified: {Ids}", string.Join(", ", validatedIds));
             return Result.Fail($"facture_avoir_fournisseur_validated: {string.Join(", ", validatedIds)}");
         }
@@ -52,7 +52,7 @@ public class DetachFactureAvoirFournisseurFromInvoiceCommandHandler(
         // Detach facture avoir from invoice
         foreach (var factureAvoir in factureAvoirs)
         {
-            factureAvoir.NumFactureFournisseur = null;
+            factureAvoir.FactureFournisseurId = null;
         }
 
         await _context.SaveChangesAsync(cancellationToken);

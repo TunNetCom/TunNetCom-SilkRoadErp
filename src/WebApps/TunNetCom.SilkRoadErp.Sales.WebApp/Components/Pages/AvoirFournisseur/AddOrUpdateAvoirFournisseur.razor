@@ -1,5 +1,5 @@
 @page "/AddOrUpdateAvoirFournisseur"
-@page "/AddOrUpdateAvoirFournisseur/{num?}"
+@page "/AddOrUpdateAvoirFournisseur/{id?}"
 
 @using Radzen.Blazor
 @using Microsoft.Extensions.Localization
@@ -120,7 +120,7 @@ else
     <div class="avoir-container">
         <div class="avoir-form">
             <RadzenLabel Text="Numéro avoir fournisseur" Component="AvoirFournisseurNumber" AriaLabel="Numéro avoir fournisseur" />
-            <RadzenTextBox @bind-Value="avoirFournisseurNumber" Name="AvoirFournisseurNumber" Style="width: 120px;" ReadOnly="true" AriaReadOnly="true" />
+            <RadzenTextBox @bind-Value="avoirFournisseurNumber" Name="AvoirFournisseurNumber" Style="width: 120px;" />
 
             <RadzenLabel Text="@Localizer["date"]" />
             <RadzenDatePicker @bind-Value="avoirFournisseurDate" Name="AvoirFournisseurDate" Style="width: 200px;" DateFormat="d MMMM yyyy" ShowTime="false" />
@@ -174,7 +174,7 @@ else
 }
 
 @code {
-    [Parameter] public string? num { get; set; }
+    [Parameter] public string? id { get; set; }
     List<AvoirFournisseurLineWrapper> orders;
     List<AvoirFournisseurLineWrapper> searchList;
     int count;
@@ -211,29 +211,59 @@ else
             isLoading = true;
             StateHasChanged();
 
+            // Parse NumAvoirChezFournisseur from the text field
+            if (!int.TryParse(avoirFournisseurNumber, out var numAvoirChezFournisseur))
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = "Le numéro d'avoir chez fournisseur doit être un nombre valide"
+                });
+                isLoading = false;
+                StateHasChanged();
+                return;
+            }
+
             var request = new CreateAvoirFournisseurRequest
             {
                 Date = avoirFournisseurDate,
                 FournisseurId = selectedFournisseurId,
                 NumFactureAvoirFournisseur = null, // Not set from UI
+                NumAvoirChezFournisseur = numAvoirChezFournisseur,
                 Lines = orders.Select(o => o.ToRequest()).ToList()
             };
 
-            // Check if we're in edit mode (avoir fournisseur number exists)
-            int avoirFournisseurNum = 0;
-            bool isEditMode = !string.IsNullOrEmpty(avoirFournisseurNumber) && int.TryParse(avoirFournisseurNumber, out avoirFournisseurNum);
+            // Check if we're in edit mode (avoir fournisseur id exists)
+            int avoirFournisseurId = 0;
+            bool isEditMode = !string.IsNullOrEmpty(id) && int.TryParse(id, out avoirFournisseurId);
             
             if (isEditMode)
             {
+                // Parse NumAvoirChezFournisseur from the text field
+                if (!int.TryParse(avoirFournisseurNumber, out var numAvoirChezFournisseurUpdate))
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = Localizer["error"],
+                        Detail = "Le numéro d'avoir chez fournisseur doit être un nombre valide"
+                    });
+                    isLoading = false;
+                    StateHasChanged();
+                    return;
+                }
+
                 var updateRequest = new UpdateAvoirFournisseurRequest
                 {
                     Date = avoirFournisseurDate,
                     FournisseurId = selectedFournisseurId,
                     NumFactureAvoirFournisseur = null, // Not set from UI
+                    NumAvoirChezFournisseur = numAvoirChezFournisseurUpdate,
                     Lines = orders.Select(o => o.ToRequest()).ToList()
                 };
 
-                var updateResponse = await avoirFournisseurApiClient.UpdateAvoirFournisseurAsync(avoirFournisseurNum, updateRequest, _cancellationTokenSource.Token);
+                var updateResponse = await avoirFournisseurApiClient.UpdateAvoirFournisseurAsync(avoirFournisseurId, updateRequest, _cancellationTokenSource.Token);
                 
                 if (updateResponse.IsSuccess)
                 {
@@ -260,8 +290,8 @@ else
                 
                 if (createResponse.IsT0)
                 {
-                    var newAvoirFournisseurNum = createResponse.AsT0;
-                    avoirFournisseurNumber = newAvoirFournisseurNum.ToString();
+                    var newAvoirFournisseurId = createResponse.AsT0;
+                    // NumAvoirChezFournisseur is already set from user input, no need to fetch
                     
                     await FetchAvoirFournisseur();
                     
@@ -306,13 +336,9 @@ else
 
     private async Task FetchAvoirFournisseur()
     {
-        var avoirFournisseurNumToLoad = num;
-        if (string.IsNullOrEmpty(avoirFournisseurNumToLoad) && !string.IsNullOrEmpty(avoirFournisseurNumber))
-        {
-            avoirFournisseurNumToLoad = avoirFournisseurNumber;
-        }
+        var avoirFournisseurIdToLoad = id;
         
-        if (string.IsNullOrEmpty(avoirFournisseurNumToLoad))
+        if (string.IsNullOrEmpty(avoirFournisseurIdToLoad))
         {
             orders = new List<AvoirFournisseurLineWrapper>();
             totalHt = 0;
@@ -323,14 +349,14 @@ else
 
         try
         {
-            if (int.TryParse(avoirFournisseurNumToLoad, out var numAsInt))
+            if (int.TryParse(avoirFournisseurIdToLoad, out var idAsInt))
             {
-                var avoirFournisseur = await avoirFournisseurApiClient.GetFullAvoirFournisseurAsync(numAsInt, _cancellationTokenSource.Token);
+                var avoirFournisseur = await avoirFournisseurApiClient.GetFullAvoirFournisseurAsync(idAsInt, _cancellationTokenSource.Token);
 
                 if (avoirFournisseur.IsSuccess && avoirFournisseur.Value != null)
                 {
                     var avoirFournisseurData = avoirFournisseur.Value;
-                    avoirFournisseurNumber = avoirFournisseurData.Num.ToString();
+                    avoirFournisseurNumber = avoirFournisseurData.NumAvoirChezFournisseur.ToString();
                     avoirFournisseurDate = avoirFournisseurData.Date;
                     selectedFournisseurId = avoirFournisseurData.FournisseurId;
                     // NumFactureAvoirFournisseur is not displayed/edited in UI

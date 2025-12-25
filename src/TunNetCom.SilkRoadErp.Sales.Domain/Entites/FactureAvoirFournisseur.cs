@@ -11,7 +11,7 @@ public partial class FactureAvoirFournisseur : IAccountingYearEntity
         int numFactureAvoirFourSurPage,
         int idFournisseur,
         DateTime date,
-        int? numFactureFournisseur,
+        int? factureFournisseurId,
         int accountingYearId)
     {
         return new FactureAvoirFournisseur
@@ -19,7 +19,7 @@ public partial class FactureAvoirFournisseur : IAccountingYearEntity
             NumFactureAvoirFourSurPage = numFactureAvoirFourSurPage,
             IdFournisseur = idFournisseur,
             Date = date,
-            NumFactureFournisseur = numFactureFournisseur,
+            FactureFournisseurId = factureFournisseurId,
             AccountingYearId = accountingYearId,
             Statut = DocumentStatus.Draft
         };
@@ -38,19 +38,17 @@ public partial class FactureAvoirFournisseur : IAccountingYearEntity
         int numFactureAvoirFourSurPage,
         int idFournisseur,
         DateTime date,
-        int? numFactureFournisseur,
+        int? factureFournisseurId,
         int accountingYearId)
     {
         this.NumFactureAvoirFourSurPage = numFactureAvoirFourSurPage;
         this.IdFournisseur = idFournisseur;
         this.Date = date;
-        this.NumFactureFournisseur = numFactureFournisseur;
+        this.FactureFournisseurId = factureFournisseurId;
         this.AccountingYearId = accountingYearId;
     }
 
     public int Id { get; set; }
-
-    public int Num { get; set; }
 
     public int NumFactureAvoirFourSurPage { get; set; }
 
@@ -58,7 +56,7 @@ public partial class FactureAvoirFournisseur : IAccountingYearEntity
 
     public DateTime Date { get; set; }
 
-    public int? NumFactureFournisseur { get; set; }
+    public int? FactureFournisseurId { get; set; }
 
     public int AccountingYearId { get; set; }
 
@@ -70,5 +68,5 @@ public partial class FactureAvoirFournisseur : IAccountingYearEntity
 
     public virtual ICollection<AvoirFournisseur> AvoirFournisseur { get; set; } = new List<AvoirFournisseur>();
 
-    public virtual FactureFournisseur? NumFactureFournisseurNavigation { get; set; }
+    public virtual FactureFournisseur? FactureFournisseurNavigation { get; set; }
 }

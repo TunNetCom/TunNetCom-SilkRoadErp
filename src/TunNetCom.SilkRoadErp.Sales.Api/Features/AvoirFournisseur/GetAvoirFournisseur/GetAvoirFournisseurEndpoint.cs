@@ -6,16 +6,16 @@ public class GetAvoirFournisseurEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        _ = app.MapGet("/avoir-fournisseur/{num:int}", HandleGetAvoirFournisseurAsync)
+        _ = app.MapGet("/avoir-fournisseur/{id:int}", HandleGetAvoirFournisseurAsync)
             .WithTags(EndpointTags.AvoirFournisseur);
     }
 
     public async Task<Results<Ok<AvoirFournisseurResponse>, NotFound>> HandleGetAvoirFournisseurAsync(
         IMediator mediator,
-        int num,
+        int id,
         CancellationToken cancellationToken)
     {
-        var query = new GetAvoirFournisseurQuery(num);
+        var query = new GetAvoirFournisseurQuery(id);
         var result = await mediator.Send(query, cancellationToken);
 
         if (result.IsFailed)

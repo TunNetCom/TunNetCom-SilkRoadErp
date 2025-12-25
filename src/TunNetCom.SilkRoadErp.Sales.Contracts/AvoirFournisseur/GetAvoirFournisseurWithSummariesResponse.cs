@@ -17,8 +17,11 @@ public class GetAvoirFournisseurWithSummariesResponse
 
 public class AvoirFournisseurBaseInfo
 {
-    [JsonPropertyName("num")]
-    public int Num { get; set; }
+    [JsonPropertyName("id")]
+    public int Id { get; set; }
+
+    [JsonPropertyName("numAvoirChezFournisseur")]
+    public int NumAvoirChezFournisseur { get; set; }
 
     [JsonPropertyName("date")]
     public DateTimeOffset Date { get; set; }
@@ -31,6 +34,12 @@ public class AvoirFournisseurBaseInfo
 
     [JsonPropertyName("numFactureAvoirFournisseur")]
     public int? NumFactureAvoirFournisseur { get; set; }
+
+    [JsonPropertyName("accountingYearId")]
+    public int AccountingYearId { get; set; }
+
+    [JsonPropertyName("accountingYearName")]
+    public string AccountingYearName { get; set; } = string.Empty;
 
     [JsonPropertyName("totalExcludingTaxAmount")]
     public decimal TotalExcludingTaxAmount { get; set; }

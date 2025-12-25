@@ -1,10 +1,8 @@
 @using Radzen.Blazor
 @using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.Contracts.FactureAvoirFournisseur
-@using TunNetCom.SilkRoadErp.Sales.Contracts.Providers
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Common
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.FactureAvoirFournisseur
-@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using Radzen
@@ -12,47 +10,31 @@
 @inject IStringLocalizer<SharedResource> Localizer
 @inject Radzen.NotificationService NotificationService
 @inject IFactureAvoirFournisseurApiClient factureAvoirFournisseurApiClient
-@inject IProvidersApiClient providersApiClient
 @inject ILogger<AddOrUpdateFactureAvoirFournisseurDialog> logger
 @inject DialogService DialogService
 
-<RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1.5rem" Style="min-width: 800px; max-width: 1200px;">
+<RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1.5rem" Style="min-width: 600px; max-width: 800px; padding: 1rem;">
     @if (isLoading)
     {
         <RadzenProgressBarCircular ProgressBarStyle="ProgressBarStyle.Primary" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
     }
     else
     {
-        <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
-            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" Style="flex-wrap: wrap; align-items: center;">
-                <RadzenLabel Text="Numéro facture avoir fournisseur" Style="min-width: 200px;" />
-                <RadzenTextBox @bind-Value="factureAvoirNumber" Style="width: 150px;" ReadOnly="true" />
-            </RadzenStack>
+        <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1.5rem">
+            <RadzenFormField Text="Numéro facture avoir fournisseur *" class="rz-col-12">
+                <RadzenTextBox @bind-Value="factureAvoirNumber" 
+                              Name="FactureAvoirNumber" 
+                              Style="width: 100%;" 
+                              Placeholder="Saisir le numéro" />
+            </RadzenFormField>
 
-            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" Style="flex-wrap: wrap; align-items: center;">
-                <RadzenLabel Text="@Localizer["date"]" Style="min-width: 200px;" />
-                <RadzenDatePicker @bind-Value="factureAvoirDate" Style="width: 200px;" DateFormat="d MMMM yyyy" ShowTime="false" />
-            </RadzenStack>
-
-            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" Style="flex-wrap: wrap; align-items: center;">
-                <RadzenLabel Text="Fournisseur" Style="min-width: 200px;" />
-                <RadzenDropDownDataGrid AllowClear="true"
-                                        IsLoading="@isLoadingProviders"
-                                        @bind-Value="@selectedFournisseurId"
-                                        LoadData="@LoadProviders"
-                                        AllowFiltering="true"
-                                        Style="width: 350px;"
-                                        Data="@_filteredProviders"
-                                        TextProperty="@nameof(ProviderResponse.Nom)"
-                                        ValueProperty="@nameof(ProviderResponse.Id)"
-                                        Placeholder="Sélectionner un fournisseur"
-                                        Change="@OnFournisseurChanged">
-                    <Columns>
-                        <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Id)" Title="ID" Width="80px" />
-                        <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Nom)" Title="@Localizer["name"]" Width="220px" />
-                    </Columns>
-                </RadzenDropDownDataGrid>
-            </RadzenStack>
+            <RadzenFormField Text="@($"{Localizer["date"]} *")" class="rz-col-12">
+                <RadzenDatePicker @bind-Value="factureAvoirDate" 
+                                  Name="FactureAvoirDate"
+                                  Style="width: 100%;" 
+                                  DateFormat="d MMMM yyyy" 
+                                  ShowTime="false" />
+            </RadzenFormField>
         </RadzenStack>
 
         <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End">
@@ -70,26 +52,15 @@
 </RadzenStack>
 
 @code {
-    [Parameter] public int? FactureAvoirNum { get; set; }
+    [Parameter] public int? FactureAvoirId { get; set; }
     [Parameter] public int? InitialFournisseurId { get; set; }
     
     private bool isLoading = true;
     private bool isSaving = false;
-    private bool isLoadingProviders = false;
     
     private string factureAvoirNumber = string.Empty;
     private DateTime factureAvoirDate = DateTime.Now;
     private int? _selectedFournisseurId;
-    private int? selectedFournisseurId
-    {
-        get => _selectedFournisseurId;
-        set
-        {
-            _selectedFournisseurId = value;
-        }
-    }
-    
-    private List<ProviderResponse> _filteredProviders = new();
     
     private CancellationTokenSource _cancellationTokenSource = new();
 
@@ -97,70 +68,40 @@
     {
         await base.OnInitializedAsync();
         
+        // Initialize factureAvoirNumber to empty string
+        factureAvoirNumber = string.Empty;
+        
         // Set initial fournisseur if provided
         if (InitialFournisseurId.HasValue)
         {
             _selectedFournisseurId = InitialFournisseurId.Value;
         }
         
-        await LoadProviders(null);
         await FetchFactureAvoirFournisseur();
         isLoading = false;
-    }
-
-    private async Task LoadProviders(LoadDataArgs args)
-    {
-        isLoadingProviders = true;
-        var parameters = new QueryStringParameters
-        {
-            PageNumber = 1,
-            PageSize = 100,
-            SearchKeyword = args?.Filter ?? string.Empty
-        };
-
-        try
-        {
-            var pagedProviders = await providersApiClient.GetPagedAsync(parameters, _cancellationTokenSource.Token);
-            _filteredProviders = pagedProviders.Items;
-        }
-        catch (Exception ex)
-        {
-            NotificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Error,
-                Summary = Localizer["error"],
-                Detail = $"Échec du chargement des fournisseurs: {ex.Message}"
-            });
-            _filteredProviders = new List<ProviderResponse>();
-        }
-
-        isLoadingProviders = false;
-        await InvokeAsync(StateHasChanged);
-    }
-
-    private async Task OnFournisseurChanged(object? value)
-    {
         await InvokeAsync(StateHasChanged);
     }
 
 
     private async Task FetchFactureAvoirFournisseur()
     {
-        if (!FactureAvoirNum.HasValue)
+        if (!FactureAvoirId.HasValue)
         {
+            // In create mode, initialize with empty string
+            factureAvoirNumber = string.Empty;
             return;
         }
 
         try
         {
-            var factureAvoir = await factureAvoirFournisseurApiClient.GetFullFactureAvoirFournisseurAsync(FactureAvoirNum.Value, _cancellationTokenSource.Token);
+            var factureAvoir = await factureAvoirFournisseurApiClient.GetFullFactureAvoirFournisseurAsync(FactureAvoirId.Value, _cancellationTokenSource.Token);
 
             if (factureAvoir.IsSuccess && factureAvoir.Value != null)
             {
                 var factureAvoirData = factureAvoir.Value;
-                factureAvoirNumber = factureAvoirData.Num.ToString();
+                factureAvoirNumber = factureAvoirData.NumFactureAvoirFourSurPage.ToString();
                 factureAvoirDate = factureAvoirData.Date;
-                selectedFournisseurId = factureAvoirData.IdFournisseur;
+                _selectedFournisseurId = factureAvoirData.IdFournisseur;
             }
         }
         catch (Exception e)
@@ -180,13 +121,13 @@
 
     private async Task SaveFactureAvoirFournisseur()
     {
-        if (!selectedFournisseurId.HasValue)
+        if (!_selectedFournisseurId.HasValue)
         {
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Warning,
                 Summary = Localizer["warning"],
-                Detail = "Veuillez sélectionner un fournisseur"
+                Detail = "Le fournisseur est requis"
             });
             return;
         }
@@ -199,19 +140,47 @@
             var avoirFournisseurIds = new List<int>();
 
             // Check if we're in edit mode
-            bool isEditMode = FactureAvoirNum.HasValue;
+            bool isEditMode = FactureAvoirId.HasValue;
+
+            // Validate and parse NumFactureAvoirFourSurPage from the text field
+            if (string.IsNullOrWhiteSpace(factureAvoirNumber))
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = "Le numéro de facture avoir fournisseur est requis"
+                });
+                isSaving = false;
+                StateHasChanged();
+                return;
+            }
+
+            if (!int.TryParse(factureAvoirNumber, out var numFactureAvoirFourSurPage) || numFactureAvoirFourSurPage <= 0)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = "Le numéro de facture avoir fournisseur doit être un nombre valide supérieur à 0"
+                });
+                isSaving = false;
+                StateHasChanged();
+                return;
+            }
 
             if (isEditMode)
             {
                 var updateRequest = new UpdateFactureAvoirFournisseurRequest
                 {
                     Date = factureAvoirDate,
-                    IdFournisseur = selectedFournisseurId.Value,
+                    IdFournisseur = _selectedFournisseurId.Value,
+                    NumFactureAvoirFourSurPage = numFactureAvoirFourSurPage,
                     NumFactureFournisseur = null,
                     AvoirFournisseurIds = avoirFournisseurIds
                 };
 
-                var updateResponse = await factureAvoirFournisseurApiClient.UpdateFactureAvoirFournisseurAsync(FactureAvoirNum.Value, updateRequest, _cancellationTokenSource.Token);
+                var updateResponse = await factureAvoirFournisseurApiClient.UpdateFactureAvoirFournisseurAsync(FactureAvoirId.Value, updateRequest, _cancellationTokenSource.Token);
 
                 if (updateResponse.IsSuccess)
                 {
@@ -238,7 +207,8 @@
                 var createRequest = new CreateFactureAvoirFournisseurRequest
                 {
                     Date = factureAvoirDate,
-                    IdFournisseur = selectedFournisseurId.Value,
+                    IdFournisseur = _selectedFournisseurId.Value,
+                    NumFactureAvoirFourSurPage = numFactureAvoirFourSurPage,
                     NumFactureFournisseur = null,
                     AvoirFournisseurIds = avoirFournisseurIds
                 };
@@ -287,4 +257,3 @@
         }
     }
 }
-

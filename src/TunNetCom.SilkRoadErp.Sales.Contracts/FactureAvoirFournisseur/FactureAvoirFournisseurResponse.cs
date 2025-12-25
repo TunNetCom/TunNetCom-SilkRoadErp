@@ -2,8 +2,8 @@ namespace TunNetCom.SilkRoadErp.Sales.Contracts.FactureAvoirFournisseur;
 
 public class FactureAvoirFournisseurResponse
 {
-    [JsonPropertyName("num")]
-    public int Num { get; set; }
+    [JsonPropertyName("id")]
+    public int Id { get; set; }
 
     [JsonPropertyName("numFactureAvoirFourSurPage")]
     public int NumFactureAvoirFourSurPage { get; set; }
@@ -22,5 +22,8 @@ public class FactureAvoirFournisseurResponse
 
     [JsonPropertyName("statutLibelle")]
     public string StatutLibelle { get; set; } = string.Empty;
+
+    [JsonPropertyName("accountingYearName")]
+    public string AccountingYearName { get; set; } = string.Empty;
 }
 

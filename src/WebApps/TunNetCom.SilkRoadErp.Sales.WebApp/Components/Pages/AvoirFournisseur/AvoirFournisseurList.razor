@@ -108,7 +108,7 @@
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="AvoirFournisseurBaseInfo"
-                                      Property="@nameof(AvoirFournisseurBaseInfo.Num)"
+                                      Property="@nameof(AvoirFournisseurBaseInfo.NumAvoirChezFournisseur)"
                                       Title="Numéro"
                                       Width="150px" />
                 <RadzenDataGridColumn TItem="AvoirFournisseurBaseInfo"
@@ -120,6 +120,10 @@
                                       Property="@nameof(AvoirFournisseurBaseInfo.FournisseurName)"
                                       Title="Fournisseur"
                                       Width="200px" />
+                <RadzenDataGridColumn TItem="AvoirFournisseurBaseInfo"
+                                      Property="@nameof(AvoirFournisseurBaseInfo.AccountingYearName)"
+                                      Title="Année comptable"
+                                      Width="150px" />
                 <RadzenDataGridColumn TItem="AvoirFournisseurBaseInfo"
                                       Property="@nameof(AvoirFournisseurBaseInfo.TotalExcludingTaxAmount)"
                                       Title="@Localizer["total_net"]"
@@ -151,7 +155,7 @@
                                       Filterable="false">
                     <Template Context="item">
                         <TagSelector DocumentType="AvoirFournisseur" 
-                                    DocumentId="@item.Num"
+                                    DocumentId="@item.Id"
                                     SaveOnChange="true" />
                     </Template>
                 </RadzenDataGridColumn>
@@ -165,7 +169,7 @@
                                       ButtonStyle="ButtonStyle.Primary"
                                       Variant="Variant.Flat"
                                       Size="ButtonSize.Small"
-                                      Click="@(() => EditAvoirFournisseur(item.Num))"
+                                      Click="@(() => EditAvoirFournisseur(item.Id))"
                                       Disabled="@(item.Statut == 1)"
                                       Title="@Localizer["Edit"]"
                                       AriaLabel="@Localizer["Edit"]"
@@ -473,7 +477,7 @@
             return;
         }
 
-        var ids = selectedAvoirsFournisseur.Select(d => d.Num).ToList();
+        var ids = selectedAvoirsFournisseur.Select(d => d.Id).ToList();
         var result = await AvoirFournisseurService.ValidateAvoirFournisseursAsync(ids, default);
         
         if (result.IsSuccess)
@@ -498,7 +502,7 @@
     private async Task ValidateAvoirFournisseur(AvoirFournisseurBaseInfo item)
     {
         var confirmed = await DialogService.Confirm(
-            string.Format(Localizer["Confirmation_Validation_AvoirFournisseur"], item.Num),
+            string.Format(Localizer["Confirmation_Validation_AvoirFournisseur"], item.NumAvoirChezFournisseur),
             Localizer["Confirmation_Validation_Titre"],
             new ConfirmOptions() { OkButtonText = Localizer["Oui"], CancelButtonText = Localizer["Non"] });
 
@@ -507,7 +511,7 @@
             return;
         }
 
-        var result = await AvoirFournisseurService.ValidateAvoirFournisseursAsync(new List<int> { item.Num }, default);
+        var result = await AvoirFournisseurService.ValidateAvoirFournisseursAsync(new List<int> { item.Id }, default);
         
         if (result.IsSuccess)
         {
@@ -600,9 +604,9 @@
         public int? Status { get; set; }
     }
 
-    private void EditAvoirFournisseur(int num)
+    private void EditAvoirFournisseur(int id)
     {
-        NavigationManager.NavigateTo($"/AddOrUpdateAvoirFournisseur/{num}");
+        NavigationManager.NavigateTo($"/AddOrUpdateAvoirFournisseur/{id}");
     }
 
     private string GetStatusStyle(int statut)

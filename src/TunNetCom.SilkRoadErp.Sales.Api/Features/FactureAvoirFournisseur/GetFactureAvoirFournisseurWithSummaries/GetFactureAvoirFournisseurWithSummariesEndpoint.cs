@@ -17,7 +17,7 @@ public class GetFactureAvoirFournisseurWithSummariesEndpoint : ICarterModule
                     PageNumber: queryParams.PageNumber ?? 1,
                     PageSize: queryParams.PageSize ?? 10,
                     IdFournisseur: queryParams.IdFournisseur,
-                    NumFactureFournisseur: queryParams.NumFactureFournisseur,
+                    FactureFournisseurId: queryParams.NumFactureFournisseur,
                     SortOrder: queryParams.SortOrder,
                     SortProperty: queryParams.SortProperty,
                     SearchKeyword: queryParams.SearchKeyword,

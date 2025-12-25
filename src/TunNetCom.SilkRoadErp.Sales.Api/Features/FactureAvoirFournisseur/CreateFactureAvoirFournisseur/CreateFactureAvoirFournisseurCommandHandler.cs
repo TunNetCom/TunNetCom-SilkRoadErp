@@ -19,9 +19,9 @@ public class CreateFactureAvoirFournisseurCommandHandler(
             return Result.Fail("fournisseur_not_found");
         }
 
-        if (command.NumFactureFournisseur.HasValue)
+        if (command.FactureFournisseurId.HasValue)
         {
-            var factureFournisseurExists = await _context.FactureFournisseur.AnyAsync(f => f.Num == command.NumFactureFournisseur.Value, cancellationToken);
+            var factureFournisseurExists = await _context.FactureFournisseur.AnyAsync(f => f.Id == command.FactureFournisseurId.Value, cancellationToken);
             if (!factureFournisseurExists)
             {
                 return Result.Fail("facture_fournisseur_not_found");
@@ -33,12 +33,12 @@ public class CreateFactureAvoirFournisseurCommandHandler(
         if (command.AvoirFournisseurIds != null && command.AvoirFournisseurIds.Any())
         {
             avoirFournisseurs = await _context.AvoirFournisseur
-                .Where(a => command.AvoirFournisseurIds.Contains(a.Num))
+                .Where(a => command.AvoirFournisseurIds.Contains(a.Id))
                 .ToListAsync(cancellationToken);
 
             if (avoirFournisseurs.Count != command.AvoirFournisseurIds.Count)
             {
-                var foundIds = avoirFournisseurs.Select(a => a.Num).ToList();
+                var foundIds = avoirFournisseurs.Select(a => a.Id).ToList();
                 var missingIds = command.AvoirFournisseurIds.Except(foundIds).ToList();
                 _logger.LogWarning("AvoirFournisseurs not found: {Ids}", string.Join(", ", missingIds));
                 return Result.Fail($"avoir_fournisseurs_not_found: {string.Join(", ", missingIds)}");
@@ -48,7 +48,7 @@ public class CreateFactureAvoirFournisseurCommandHandler(
             var alreadyLinked = avoirFournisseurs.Where(a => a.FactureAvoirFournisseurId.HasValue).ToList();
             if (alreadyLinked.Any())
             {
-                var linkedIds = alreadyLinked.Select(a => a.Num).ToList();
+                var linkedIds = alreadyLinked.Select(a => a.Id).ToList();
                 _logger.LogWarning("AvoirFournisseurs already linked: {Ids}", string.Join(", ", linkedIds));
                 return Result.Fail($"avoir_fournisseurs_already_linked: {string.Join(", ", linkedIds)}");
             }
@@ -64,15 +64,12 @@ public class CreateFactureAvoirFournisseurCommandHandler(
             return Result.Fail("no_active_accounting_year");
         }
 
-        var num = await _numberGeneratorService.GenerateFactureAvoirFournisseurNumberAsync(activeAccountingYear.Id, cancellationToken);
-
         var factureAvoirFournisseur = Domain.Entites.FactureAvoirFournisseur.CreateFactureAvoirFournisseur(
-            num, // NumFactureAvoirFourSurPage
+            command.NumFactureAvoirFourSurPage, // NumFactureAvoirFourSurPage
             command.IdFournisseur,
             command.Date,
-            command.NumFactureFournisseur,
+            command.FactureFournisseurId,
             activeAccountingYear.Id);
-        factureAvoirFournisseur.Num = num;
 
         _context.FactureAvoirFournisseur.Add(factureAvoirFournisseur);
         
@@ -89,8 +86,8 @@ public class CreateFactureAvoirFournisseurCommandHandler(
         }
 
         await _context.SaveChangesAsync(cancellationToken);
-        _logger.LogInformation("FactureAvoirFournisseur created successfully with Num {Num}", factureAvoirFournisseur.Num);
-        return Result.Ok(factureAvoirFournisseur.Num);
+        _logger.LogInformation("FactureAvoirFournisseur created successfully with Id {Id}", factureAvoirFournisseur.Id);
+        return Result.Ok(factureAvoirFournisseur.Id);
     }
 }
 

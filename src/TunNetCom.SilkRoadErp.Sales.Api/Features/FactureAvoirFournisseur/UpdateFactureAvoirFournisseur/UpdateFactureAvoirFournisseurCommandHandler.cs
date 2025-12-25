@@ -9,15 +9,15 @@ public class UpdateFactureAvoirFournisseurCommandHandler(
 {
     public async Task<Result> Handle(UpdateFactureAvoirFournisseurCommand command, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("UpdateFactureAvoirFournisseurCommand called with Num {Num}", command.Num);
+        _logger.LogInformation("UpdateFactureAvoirFournisseurCommand called with Id {Id}", command.Id);
 
         var factureAvoirFournisseur = await _context.FactureAvoirFournisseur
             .Include(f => f.AvoirFournisseur)
-            .FirstOrDefaultAsync(f => f.Num == command.Num, cancellationToken);
+            .FirstOrDefaultAsync(f => f.Id == command.Id, cancellationToken);
 
         if (factureAvoirFournisseur == null)
         {
-            _logger.LogEntityNotFound(nameof(FactureAvoirFournisseur), command.Num);
+            _logger.LogEntityNotFound(nameof(FactureAvoirFournisseur), command.Id);
             return Result.Fail(EntityNotFound.Error());
         }
 
@@ -32,9 +32,9 @@ public class UpdateFactureAvoirFournisseurCommandHandler(
             return Result.Fail("fournisseur_not_found");
         }
 
-        if (command.NumFactureFournisseur.HasValue)
+        if (command.FactureFournisseurId.HasValue)
         {
-            var factureFournisseurExists = await _context.FactureFournisseur.AnyAsync(f => f.Num == command.NumFactureFournisseur.Value, cancellationToken);
+            var factureFournisseurExists = await _context.FactureFournisseur.AnyAsync(f => f.Id == command.FactureFournisseurId.Value, cancellationToken);
             if (!factureFournisseurExists)
             {
                 return Result.Fail("facture_fournisseur_not_found");
@@ -52,12 +52,12 @@ public class UpdateFactureAvoirFournisseurCommandHandler(
         if (command.AvoirFournisseurIds != null && command.AvoirFournisseurIds.Any())
         {
             avoirFournisseurs = await _context.AvoirFournisseur
-                .Where(a => command.AvoirFournisseurIds.Contains(a.Num))
+                .Where(a => command.AvoirFournisseurIds.Contains(a.Id))
                 .ToListAsync(cancellationToken);
 
             if (avoirFournisseurs.Count != command.AvoirFournisseurIds.Count)
             {
-                var foundIds = avoirFournisseurs.Select(a => a.Num).ToList();
+                var foundIds = avoirFournisseurs.Select(a => a.Id).ToList();
                 var missingIds = command.AvoirFournisseurIds.Except(foundIds).ToList();
                 _logger.LogWarning("AvoirFournisseurs not found: {Ids}", string.Join(", ", missingIds));
                 return Result.Fail($"avoir_fournisseurs_not_found: {string.Join(", ", missingIds)}");
@@ -69,7 +69,7 @@ public class UpdateFactureAvoirFournisseurCommandHandler(
                 .ToList();
             if (alreadyLinked.Any())
             {
-                var linkedIds = alreadyLinked.Select(a => a.Num).ToList();
+                var linkedIds = alreadyLinked.Select(a => a.Id).ToList();
                 _logger.LogWarning("AvoirFournisseurs already linked to another facture: {Ids}", string.Join(", ", linkedIds));
                 return Result.Fail($"avoir_fournisseurs_already_linked: {string.Join(", ", linkedIds)}");
             }
@@ -87,10 +87,10 @@ public class UpdateFactureAvoirFournisseurCommandHandler(
 
         // Update facture avoir fournisseur
         factureAvoirFournisseur.UpdateFactureAvoirFournisseur(
-            factureAvoirFournisseur.NumFactureAvoirFourSurPage,
+            command.NumFactureAvoirFourSurPage,
             command.IdFournisseur,
             command.Date,
-            command.NumFactureFournisseur,
+            command.FactureFournisseurId,
             activeAccountingYear.Id);
 
         // Link new avoir fournisseurs (if any) - use Id, not Num
@@ -103,7 +103,7 @@ public class UpdateFactureAvoirFournisseurCommandHandler(
         }
 
         await _context.SaveChangesAsync(cancellationToken);
-        _logger.LogInformation("FactureAvoirFournisseur with Num {Num} updated successfully", factureAvoirFournisseur.Num);
+        _logger.LogInformation("FactureAvoirFournisseur with Id {Id} updated successfully", factureAvoirFournisseur.Id);
         return Result.Ok();
     }
 }

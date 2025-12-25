@@ -8,6 +8,9 @@ public class CreateFactureAvoirFournisseurRequest
     [JsonPropertyName("idFournisseur")]
     public int IdFournisseur { get; set; }
 
+    [JsonPropertyName("numFactureAvoirFourSurPage")]
+    public int NumFactureAvoirFourSurPage { get; set; }
+
     [JsonPropertyName("numFactureFournisseur")]
     public int? NumFactureFournisseur { get; set; }
 

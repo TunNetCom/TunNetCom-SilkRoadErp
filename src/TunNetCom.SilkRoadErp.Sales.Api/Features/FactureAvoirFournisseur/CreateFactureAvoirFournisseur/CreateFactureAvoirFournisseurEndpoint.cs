@@ -18,7 +18,8 @@ public class CreateFactureAvoirFournisseurEndpoint : ICarterModule
         var command = new CreateFactureAvoirFournisseurCommand(
             createFactureAvoirFournisseurRequest.Date,
             createFactureAvoirFournisseurRequest.IdFournisseur,
-            createFactureAvoirFournisseurRequest.NumFactureFournisseur,
+            createFactureAvoirFournisseurRequest.NumFactureAvoirFourSurPage,
+            createFactureAvoirFournisseurRequest.NumFactureFournisseur, // Map NumFactureFournisseur to FactureFournisseurId
             createFactureAvoirFournisseurRequest.AvoirFournisseurIds);
 
         var result = await mediator.Send(command, cancellationToken);

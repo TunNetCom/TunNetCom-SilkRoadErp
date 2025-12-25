@@ -6,7 +6,7 @@ public record GetFactureAvoirFournisseurWithSummariesQuery(
     int PageNumber,
     int PageSize,
     int? IdFournisseur,
-    int? NumFactureFournisseur,
+    int? FactureFournisseurId,
     string? SortOrder,
     string? SortProperty,
     string? SearchKeyword,

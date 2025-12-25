@@ -69,8 +69,12 @@
             </EmptyTemplate>
             <Columns>
                 <RadzenDataGridColumn TItem="FactureAvoirFournisseurBaseInfo"
-                                      Property="@nameof(FactureAvoirFournisseurBaseInfo.Num)"
+                                      Property="@nameof(FactureAvoirFournisseurBaseInfo.NumFactureAvoirFourSurPage)"
                                       Title="Numéro"
+                                      Width="150px" />
+                <RadzenDataGridColumn TItem="FactureAvoirFournisseurBaseInfo"
+                                      Property="@nameof(FactureAvoirFournisseurBaseInfo.AccountingYearName)"
+                                      Title="Année comptable"
                                       Width="150px" />
                 <RadzenDataGridColumn TItem="FactureAvoirFournisseurBaseInfo"
                                       Property="@nameof(FactureAvoirFournisseurBaseInfo.Date)"
@@ -112,7 +116,7 @@
                                       Filterable="false">
                     <Template Context="item">
                         <TagSelector DocumentType="FactureAvoirFournisseur" 
-                                    DocumentId="@item.Num"
+                                    DocumentId="@item.Id"
                                     SaveOnChange="true" />
                     </Template>
                 </RadzenDataGridColumn>
@@ -126,7 +130,7 @@
                                       ButtonStyle="ButtonStyle.Primary"
                                       Variant="Variant.Flat"
                                       Size="ButtonSize.Small"
-                                      Click="@(() => EditFactureAvoirFournisseur(item.Num))"
+                                      Click="@(() => EditFactureAvoirFournisseur(item.Id))"
                                       Title="@Localizer["Edit"]"
                                       AriaLabel="@Localizer["Edit"]" />
                     </Template>
@@ -452,13 +456,13 @@
         public int? SelectedFournisseurId { get; set; }
     }
 
-    private async Task EditFactureAvoirFournisseur(int num)
+    private async Task EditFactureAvoirFournisseur(int id)
     {
         var result = await DialogService.OpenAsync<AddOrUpdateFactureAvoirFournisseurDialog>(
             "Modifier la facture avoir fournisseur",
             new Dictionary<string, object>
             {
-                { "FactureAvoirNum", num }
+                { "FactureAvoirId", id }
             },
             new DialogOptions
             {

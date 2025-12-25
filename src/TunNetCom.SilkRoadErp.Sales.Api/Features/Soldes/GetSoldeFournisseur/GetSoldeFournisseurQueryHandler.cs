@@ -135,7 +135,7 @@ public class GetSoldeFournisseurQueryHandler(
             {
                 Type = "FactureAvoir",
                 Id = fa.Id,
-                Numero = fa.Num,
+                Numero = fa.NumFactureAvoirFourSurPage,
                 Date = fa.Date,
                 Montant = fa.AvoirFournisseur.SelectMany(a => a.LigneAvoirFournisseur).Sum(l => l.TotTtc)
             })

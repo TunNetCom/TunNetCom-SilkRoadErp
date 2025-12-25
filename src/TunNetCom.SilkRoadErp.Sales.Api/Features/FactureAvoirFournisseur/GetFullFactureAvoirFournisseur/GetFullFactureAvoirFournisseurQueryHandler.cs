@@ -9,21 +9,21 @@ public class GetFullFactureAvoirFournisseurQueryHandler(
 {
     public async Task<Result<FullFactureAvoirFournisseurResponse>> Handle(GetFullFactureAvoirFournisseurQuery query, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Fetching full FactureAvoirFournisseur with Num {Num}", query.Num);
+        _logger.LogInformation("Fetching full FactureAvoirFournisseur with Id {Id}", query.Id);
 
         var factureAvoirFournisseur = await _context.FactureAvoirFournisseur
             .AsNoTracking()
-            .Where(f => f.Num == query.Num)
+            .Where(f => f.Id == query.Id)
             .Include(f => f.IdFournisseurNavigation)
             .Include(f => f.AvoirFournisseur)
                 .ThenInclude(a => a.LigneAvoirFournisseur)
             .Select(f => new FullFactureAvoirFournisseurResponse
             {
-                Num = f.Num,
+                Id = f.Id,
                 NumFactureAvoirFourSurPage = f.NumFactureAvoirFourSurPage,
                 Date = f.Date,
                 IdFournisseur = f.IdFournisseur,
-                NumFactureFournisseur = f.NumFactureFournisseur,
+                NumFactureFournisseur = f.FactureFournisseurId,
                 Fournisseur = new FactureAvoirFournisseurProviderResponse
                 {
                     Id = f.IdFournisseurNavigation.Id,
@@ -39,9 +39,9 @@ public class GetFullFactureAvoirFournisseurQueryHandler(
                 },
                 AvoirFournisseurs = f.AvoirFournisseur.Select(a => new FactureAvoirFournisseurAvoirResponse
                 {
-                    Num = a.Num,
+                    Id = a.Id,
                     Date = a.Date,
-                    NumAvoirFournisseur = a.NumAvoirFournisseur,
+                    NumAvoirChezFournisseur = a.NumAvoirChezFournisseur,
                     Lines = a.LigneAvoirFournisseur.Select(l => new FactureAvoirFournisseurAvoirLineResponse
                     {
                         IdLi = l.IdLi,
@@ -66,11 +66,11 @@ public class GetFullFactureAvoirFournisseurQueryHandler(
 
         if (factureAvoirFournisseur == null)
         {
-            _logger.LogWarning("FactureAvoirFournisseur with Num {Num} not found", query.Num);
+            _logger.LogWarning("FactureAvoirFournisseur with Id {Id} not found", query.Id);
             return Result.Fail("facture_avoir_fournisseur_not_found");
         }
 
-        _logger.LogInformation("Full FactureAvoirFournisseur with Num {Num} fetched successfully", query.Num);
+        _logger.LogInformation("Full FactureAvoirFournisseur with Id {Id} fetched successfully", query.Id);
         return Result.Ok(factureAvoirFournisseur);
     }
 }

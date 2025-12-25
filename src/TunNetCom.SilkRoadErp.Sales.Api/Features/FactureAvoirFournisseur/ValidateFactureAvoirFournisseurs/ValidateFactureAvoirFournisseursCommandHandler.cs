@@ -18,12 +18,12 @@ public class ValidateFactureAvoirFournisseursCommandHandler(
         }
 
         var factureAvoirFournisseurs = await _context.FactureAvoirFournisseur
-            .Where(f => command.Ids.Contains(f.Num))
+            .Where(f => command.Ids.Contains(f.Id))
             .ToListAsync(cancellationToken);
 
         if (factureAvoirFournisseurs.Count != command.Ids.Count)
         {
-            var foundIds = factureAvoirFournisseurs.Select(f => f.Num).ToList();
+            var foundIds = factureAvoirFournisseurs.Select(f => f.Id).ToList();
             var missingIds = command.Ids.Except(foundIds).ToList();
             _logger.LogWarning("FactureAvoirFournisseurs not found: {Ids}", string.Join(", ", missingIds));
             return Result.Fail($"facture_avoir_fournisseurs_not_found: {string.Join(", ", missingIds)}");
@@ -44,8 +44,8 @@ public class ValidateFactureAvoirFournisseursCommandHandler(
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Cannot validate facture avoir fournisseur {Id}", facture.Num);
-                errors.Add($"Id {facture.Num}: {ex.Message}");
+                _logger.LogWarning(ex, "Cannot validate facture avoir fournisseur {Id}", facture.Id);
+                errors.Add($"Id {facture.Id}: {ex.Message}");
             }
         }
 

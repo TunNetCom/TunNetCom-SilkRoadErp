@@ -17,16 +17,12 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             entity.Property(e => e.Id)
                 .ValueGeneratedOnAdd();
 
-            entity.HasIndex(e => e.Num)
-                .IsUnique()
-                .HasDatabaseName("IX_AvoirFournisseur_Num");
-
             entity.Property(e => e.Date)
             .HasColumnType("datetime")
             .HasColumnName("date");
             entity.Property(e => e.FournisseurId).HasColumnName("fournisseurId");
-            entity.Property(e => e.NumAvoirFournisseur).HasColumnName("Num_AvoirFournisseur");
-            entity.Property(e => e.FactureAvoirFournisseurId).HasColumnName("Num_FactureAvoirFournisseur");
+            entity.Property(e => e.NumAvoirChezFournisseur).HasColumnName("NumAvoirChezFournisseur");
+            entity.Property(e => e.FactureAvoirFournisseurId).HasColumnName("FactureAvoirFournisseurId");
             entity.Property(e => e.Statut)
             .HasConversion<string>()
             .HasMaxLength(50)
@@ -39,7 +35,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             entity.HasOne(d => d.FactureAvoirFournisseur).WithMany(p => p.AvoirFournisseur)
             .HasForeignKey(d => d.FactureAvoirFournisseurId)
             .OnDelete(DeleteBehavior.Cascade)
-            .HasConstraintName("FK_dbo.AvoirFournisseur_dbo.FactureAvoirFournisseur_Num_FactureAvoirFournisseur");
+            .HasConstraintName("FK_dbo.AvoirFournisseur_dbo.FactureAvoirFournisseur_FactureAvoirFournisseurId");
 
             entity.HasOne(d => d.AccountingYear).WithMany(p => p.AvoirFournisseur)
             .HasForeignKey(d => d.AccountingYearId)

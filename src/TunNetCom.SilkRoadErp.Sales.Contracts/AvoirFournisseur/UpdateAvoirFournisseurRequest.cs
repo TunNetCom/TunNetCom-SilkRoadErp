@@ -11,6 +11,9 @@ public class UpdateAvoirFournisseurRequest
     [JsonPropertyName("numFactureAvoirFournisseur")]
     public int? NumFactureAvoirFournisseur { get; set; }
 
+    [JsonPropertyName("numAvoirChezFournisseur")]
+    public int NumAvoirChezFournisseur { get; set; }
+
     [JsonPropertyName("lines")]
     public List<AvoirFournisseurLineRequest> Lines { get; set; } = new();
 }

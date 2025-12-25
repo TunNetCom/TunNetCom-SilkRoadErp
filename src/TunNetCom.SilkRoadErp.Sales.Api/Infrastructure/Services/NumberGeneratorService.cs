@@ -150,8 +150,8 @@ public class NumberGeneratorService : INumberGeneratorService
         var lastNum = await _context.AvoirFournisseur
             .IgnoreQueryFilters() // Désactiver le filtre global pour contrôler explicitement le filtre
             .Where(a => a.AccountingYearId == accountingYearId)
-            .OrderByDescending(a => a.Num)
-            .Select(a => a.Num)
+            .OrderByDescending(a => a.NumAvoirChezFournisseur)
+            .Select(a => a.NumAvoirChezFournisseur)
             .FirstOrDefaultAsync(cancellationToken);
 
         var nextSequence = GetNextSequence(lastNum, year);
@@ -173,8 +173,8 @@ public class NumberGeneratorService : INumberGeneratorService
         var lastNum = await _context.FactureAvoirFournisseur
             .IgnoreQueryFilters() // Désactiver le filtre global pour contrôler explicitement le filtre
             .Where(f => f.AccountingYearId == accountingYearId)
-            .OrderByDescending(f => f.Num)
-            .Select(f => f.Num)
+            .OrderByDescending(f => f.NumFactureAvoirFourSurPage)
+            .Select(f => f.NumFactureAvoirFourSurPage)
             .FirstOrDefaultAsync(cancellationToken);
 
         var nextSequence = GetNextSequence(lastNum, year);

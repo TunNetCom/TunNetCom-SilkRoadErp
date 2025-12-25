@@ -9,28 +9,30 @@ public class GetFactureAvoirFournisseurQueryHandler(
 {
     public async Task<Result<FactureAvoirFournisseurResponse>> Handle(GetFactureAvoirFournisseurQuery query, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Fetching FactureAvoirFournisseur with Num {Num}", query.Num);
+        _logger.LogInformation("Fetching FactureAvoirFournisseur with Id {Id}", query.Id);
 
-        var factureAvoirFournisseur = await _context.FactureAvoirFournisseur
+        var factureAvoirFournisseur = await (from f in _context.FactureAvoirFournisseur
+                                             join ay in _context.AccountingYear on f.AccountingYearId equals ay.Id
+                                             where f.Id == query.Id
+                                             select new FactureAvoirFournisseurResponse
+                                             {
+                                                 Id = f.Id,
+                                                 NumFactureAvoirFourSurPage = f.NumFactureAvoirFourSurPage,
+                                                 Date = f.Date,
+                                                 IdFournisseur = f.IdFournisseur,
+                                                 NumFactureFournisseur = f.FactureFournisseurId,
+                                                 AccountingYearName = ay.Year.ToString()
+                                             })
             .AsNoTracking()
-            .Where(f => f.Num == query.Num)
-            .Select(f => new FactureAvoirFournisseurResponse
-            {
-                Num = f.Num,
-                NumFactureAvoirFourSurPage = f.NumFactureAvoirFourSurPage,
-                Date = f.Date,
-                IdFournisseur = f.IdFournisseur,
-                NumFactureFournisseur = f.NumFactureFournisseur
-            })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (factureAvoirFournisseur == null)
         {
-            _logger.LogWarning("FactureAvoirFournisseur with Num {Num} not found", query.Num);
+            _logger.LogWarning("FactureAvoirFournisseur with Id {Id} not found", query.Id);
             return Result.Fail("facture_avoir_fournisseur_not_found");
         }
 
-        _logger.LogInformation("FactureAvoirFournisseur with Num {Num} fetched successfully", query.Num);
+        _logger.LogInformation("FactureAvoirFournisseur with Id {Id} fetched successfully", query.Id);
         return Result.Ok(factureAvoirFournisseur);
     }
 }

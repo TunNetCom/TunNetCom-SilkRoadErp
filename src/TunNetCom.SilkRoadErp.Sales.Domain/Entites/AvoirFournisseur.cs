@@ -11,7 +11,8 @@ public partial class AvoirFournisseur : IAccountingYearEntity
         DateTime date,
         int? fournisseurId,
         int? factureAvoirFournisseurId,
-        int accountingYearId)
+        int accountingYearId,
+        int numAvoirChezFournisseur)
     {
         return new AvoirFournisseur
         {
@@ -19,6 +20,7 @@ public partial class AvoirFournisseur : IAccountingYearEntity
             FournisseurId = fournisseurId,
             FactureAvoirFournisseurId = factureAvoirFournisseurId,
             AccountingYearId = accountingYearId,
+            NumAvoirChezFournisseur = numAvoirChezFournisseur,
             Statut = DocumentStatus.Draft
         };
     }
@@ -36,17 +38,17 @@ public partial class AvoirFournisseur : IAccountingYearEntity
         DateTime date,
         int? fournisseurId,
         int? factureAvoirFournisseurId,
-        int accountingYearId)
+        int accountingYearId,
+        int numAvoirChezFournisseur)
     {
         this.Date = date;
         this.FournisseurId = fournisseurId;
         this.FactureAvoirFournisseurId = factureAvoirFournisseurId;
         this.AccountingYearId = accountingYearId;
+        this.NumAvoirChezFournisseur = numAvoirChezFournisseur;
     }
 
     public int Id { get; set; }
-
-    public int Num { get; set; }
 
     public DateTime Date { get; set; }
 
@@ -54,7 +56,7 @@ public partial class AvoirFournisseur : IAccountingYearEntity
 
     public int? FactureAvoirFournisseurId { get; set; }
 
-    public int NumAvoirFournisseur { get; set; }
+    public int NumAvoirChezFournisseur { get; set; }
 
     public int AccountingYearId { get; set; }
 

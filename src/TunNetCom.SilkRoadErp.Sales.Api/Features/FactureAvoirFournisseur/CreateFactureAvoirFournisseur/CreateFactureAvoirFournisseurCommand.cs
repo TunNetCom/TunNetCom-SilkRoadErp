@@ -5,7 +5,8 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.FactureAvoirFournisseur.Creat
 public record CreateFactureAvoirFournisseurCommand(
     DateTime Date,
     int IdFournisseur,
-    int? NumFactureFournisseur,
+    int NumFactureAvoirFourSurPage,
+    int? FactureFournisseurId,
     List<int> AvoirFournisseurIds
 ) : IRequest<Result<int>>;
 

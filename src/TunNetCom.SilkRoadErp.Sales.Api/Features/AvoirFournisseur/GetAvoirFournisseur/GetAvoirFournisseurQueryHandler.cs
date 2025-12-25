@@ -9,18 +9,18 @@ public class GetAvoirFournisseurQueryHandler(
 {
     public async Task<Result<AvoirFournisseurResponse>> Handle(GetAvoirFournisseurQuery query, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Fetching AvoirFournisseur with Num {Num}", query.Num);
+        _logger.LogInformation("Fetching AvoirFournisseur with Id {Id}", query.Id);
 
         var avoirFournisseur = await _context.AvoirFournisseur
             .AsNoTracking()
-            .Where(a => a.Num == query.Num)
+            .Where(a => a.Id == query.Id)
             .Select(a => new AvoirFournisseurResponse
             {
-                Num = a.Num,
+                Id = a.Id,
                 Date = a.Date,
                 FournisseurId = a.FournisseurId,
                 NumFactureAvoirFournisseur = a.FactureAvoirFournisseurId,
-                NumAvoirFournisseur = a.NumAvoirFournisseur,
+                NumAvoirChezFournisseur = a.NumAvoirChezFournisseur,
                 TotalExcludingTaxAmount = a.LigneAvoirFournisseur.Sum(l => l.TotHt),
                 TotalVATAmount = a.LigneAvoirFournisseur.Sum(l => l.TotTtc - l.TotHt),
                 TotalIncludingTaxAmount = a.LigneAvoirFournisseur.Sum(l => l.TotTtc)
@@ -29,11 +29,11 @@ public class GetAvoirFournisseurQueryHandler(
 
         if (avoirFournisseur == null)
         {
-            _logger.LogWarning("AvoirFournisseur with Num {Num} not found", query.Num);
+            _logger.LogWarning("AvoirFournisseur with Id {Id} not found", query.Id);
             return Result.Fail("avoir_fournisseur_not_found");
         }
 
-        _logger.LogInformation("AvoirFournisseur with Num {Num} fetched successfully", query.Num);
+        _logger.LogInformation("AvoirFournisseur with Id {Id} fetched successfully", query.Id);
         return Result.Ok(avoirFournisseur);
     }
 }

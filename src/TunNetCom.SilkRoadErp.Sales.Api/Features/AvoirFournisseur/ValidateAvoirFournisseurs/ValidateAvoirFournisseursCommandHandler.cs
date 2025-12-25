@@ -18,12 +18,12 @@ public class ValidateAvoirFournisseursCommandHandler(
         }
 
         var avoirFournisseurs = await _context.AvoirFournisseur
-            .Where(a => command.Ids.Contains(a.Num))
+            .Where(a => command.Ids.Contains(a.Id))
             .ToListAsync(cancellationToken);
 
         if (avoirFournisseurs.Count != command.Ids.Count)
         {
-            var foundIds = avoirFournisseurs.Select(a => a.Num).ToList();
+            var foundIds = avoirFournisseurs.Select(a => a.Id).ToList();
             var missingIds = command.Ids.Except(foundIds).ToList();
             _logger.LogWarning("AvoirFournisseurs not found: {Ids}", string.Join(", ", missingIds));
             return Result.Fail($"avoir_fournisseurs_not_found: {string.Join(", ", missingIds)}");
@@ -44,8 +44,8 @@ public class ValidateAvoirFournisseursCommandHandler(
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Cannot validate avoir fournisseur {Id}", avoir.Num);
-                errors.Add($"Id {avoir.Num}: {ex.Message}");
+                _logger.LogWarning(ex, "Cannot validate avoir fournisseur {Id}", avoir.Id);
+                errors.Add($"Id {avoir.Id}: {ex.Message}");
             }
         }
 

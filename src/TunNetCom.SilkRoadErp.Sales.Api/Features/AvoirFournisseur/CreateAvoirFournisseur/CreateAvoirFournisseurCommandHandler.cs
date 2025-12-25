@@ -26,7 +26,7 @@ public class CreateAvoirFournisseurCommandHandler(
         int? factureAvoirFournisseurId = null;
         if (command.NumFactureAvoirFournisseur.HasValue)
         {
-            var factureAvoir = await _context.FactureAvoirFournisseur.FirstOrDefaultAsync(f => f.Num == command.NumFactureAvoirFournisseur.Value, cancellationToken);
+            var factureAvoir = await _context.FactureAvoirFournisseur.FirstOrDefaultAsync(f => f.Id == command.NumFactureAvoirFournisseur.Value, cancellationToken);
             if (factureAvoir == null)
             {
                 return Result.Fail("facture_avoir_fournisseur_not_found");
@@ -58,15 +58,12 @@ public class CreateAvoirFournisseurCommandHandler(
             return Result.Fail("no_active_accounting_year");
         }
 
-        var num = await _numberGeneratorService.GenerateAvoirFournisseurNumberAsync(activeAccountingYear.Id, cancellationToken);
-
         var avoirFournisseur = Domain.Entites.AvoirFournisseur.CreateAvoirFournisseur(
             command.Date,
             command.FournisseurId,
             factureAvoirFournisseurId, // Use Id instead of Num
-            activeAccountingYear.Id);
-        avoirFournisseur.Num = num;
-        avoirFournisseur.NumAvoirFournisseur = num; // Using the same number for simplicity
+            activeAccountingYear.Id,
+            command.NumAvoirChezFournisseur);
 
         _context.AvoirFournisseur.Add(avoirFournisseur);
         await _context.SaveChangesAsync(cancellationToken); // Save to get the Id
@@ -96,8 +93,8 @@ public class CreateAvoirFournisseurCommandHandler(
         }
 
         await _context.SaveChangesAsync(cancellationToken);
-        _logger.LogInformation("AvoirFournisseur created successfully with Num {Num}", avoirFournisseur.Num);
-        return Result.Ok(avoirFournisseur.Num);
+        _logger.LogInformation("AvoirFournisseur created successfully with Id {Id}", avoirFournisseur.Id);
+        return Result.Ok(avoirFournisseur.Id);
     }
 }
 

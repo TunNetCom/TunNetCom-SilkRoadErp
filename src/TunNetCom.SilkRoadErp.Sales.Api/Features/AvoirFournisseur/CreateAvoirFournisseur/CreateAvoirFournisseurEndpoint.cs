@@ -19,6 +19,7 @@ public class CreateAvoirFournisseurEndpoint : ICarterModule
             createAvoirFournisseurRequest.Date,
             createAvoirFournisseurRequest.FournisseurId,
             createAvoirFournisseurRequest.NumFactureAvoirFournisseur,
+            createAvoirFournisseurRequest.NumAvoirChezFournisseur,
             createAvoirFournisseurRequest.Lines);
 
         var result = await mediator.Send(command, cancellationToken);

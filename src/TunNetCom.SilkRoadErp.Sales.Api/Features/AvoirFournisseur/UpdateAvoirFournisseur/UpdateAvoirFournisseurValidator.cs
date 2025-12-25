@@ -6,8 +6,8 @@ public class UpdateAvoirFournisseurValidator : AbstractValidator<UpdateAvoirFour
 {
     public UpdateAvoirFournisseurValidator()
     {
-        _ = RuleFor(x => x.Num)
-            .GreaterThan(0).WithMessage("num_must_be_greater_than_zero");
+        _ = RuleFor(x => x.Id)
+            .GreaterThan(0).WithMessage("id_must_be_greater_than_zero");
 
         _ = RuleFor(x => x.Date)
             .NotEmpty().WithMessage("date_is_required");

@@ -36,9 +36,12 @@
                         <p style="font-size: 14px; text-align: center; margin: 1rem; color: #666;">Aucune facture avoir fournisseur disponible</p>
                     </EmptyTemplate>
                     <Columns>
-                        <RadzenDataGridColumn Property="@nameof(FactureAvoirFournisseurBaseInfo.Num)"
+                        <RadzenDataGridColumn Property="@nameof(FactureAvoirFournisseurBaseInfo.NumFactureAvoirFourSurPage)"
                                               Title="Numéro"
                                               Width="120px" />
+                        <RadzenDataGridColumn Property="@nameof(FactureAvoirFournisseurBaseInfo.AccountingYearName)"
+                                              Title="Année comptable"
+                                              Width="150px" />
                         <RadzenDataGridColumn Property="@nameof(FactureAvoirFournisseurBaseInfo.Date)"
                                               Title="@Localizer["date"]"
                                               Width="140px"
@@ -77,9 +80,12 @@
                             <p style="font-size: 14px; text-align: center; margin: 1rem; color: #666;">Aucune facture avoir liée</p>
                         </EmptyTemplate>
                         <Columns>
-                            <RadzenDataGridColumn Property="@nameof(FactureAvoirFournisseurBaseInfo.Num)"
+                            <RadzenDataGridColumn Property="@nameof(FactureAvoirFournisseurBaseInfo.NumFactureAvoirFourSurPage)"
                                                   Title="Numéro"
                                                   Width="120px" />
+                            <RadzenDataGridColumn Property="@nameof(FactureAvoirFournisseurBaseInfo.AccountingYearName)"
+                                                  Title="Année comptable"
+                                                  Width="150px" />
                             <RadzenDataGridColumn Property="@nameof(FactureAvoirFournisseurBaseInfo.Date)"
                                                   Title="@Localizer["date"]"
                                                   Width="140px"
@@ -355,7 +361,7 @@
 
         try
         {
-            var factureAvoirIds = _selectedFactureAvoirsToAttach.Select(f => f.Num).ToList();
+            var factureAvoirIds = _selectedFactureAvoirsToAttach.Select(f => f.Id).ToList();
             var result = await factureAvoirFournisseurService.AttachFactureAvoirFournisseurToInvoiceAsync(
                 factureAvoirIds,
                 InvoiceNum,
@@ -409,7 +415,7 @@
 
         try
         {
-            var factureAvoirIds = _selectedFactureAvoirsToDetach.Select(f => f.Num).ToList();
+            var factureAvoirIds = _selectedFactureAvoirsToDetach.Select(f => f.Id).ToList();
             var result = await factureAvoirFournisseurService.DetachFactureAvoirFournisseurFromInvoiceAsync(
                 factureAvoirIds,
                 InvoiceNum,

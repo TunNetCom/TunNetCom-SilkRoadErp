@@ -10,15 +10,15 @@ public class UpdateAvoirFournisseurCommandHandler(
 {
     public async Task<Result> Handle(UpdateAvoirFournisseurCommand command, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("UpdateAvoirFournisseurCommand called with Num {Num}", command.Num);
+        _logger.LogInformation("UpdateAvoirFournisseurCommand called with Id {Id}", command.Id);
 
         var avoirFournisseur = await _context.AvoirFournisseur
             .Include(a => a.LigneAvoirFournisseur)
-            .FirstOrDefaultAsync(a => a.Num == command.Num, cancellationToken);
+            .FirstOrDefaultAsync(a => a.Id == command.Id, cancellationToken);
 
         if (avoirFournisseur == null)
         {
-            _logger.LogEntityNotFound(nameof(AvoirFournisseur), command.Num);
+            _logger.LogEntityNotFound(nameof(AvoirFournisseur), command.Id);
             return Result.Fail(EntityNotFound.Error());
         }
 
@@ -39,7 +39,7 @@ public class UpdateAvoirFournisseurCommandHandler(
         int? factureAvoirFournisseurId = null;
         if (command.NumFactureAvoirFournisseur.HasValue)
         {
-            var factureAvoir = await _context.FactureAvoirFournisseur.FirstOrDefaultAsync(f => f.Num == command.NumFactureAvoirFournisseur.Value, cancellationToken);
+            var factureAvoir = await _context.FactureAvoirFournisseur.FirstOrDefaultAsync(f => f.Id == command.NumFactureAvoirFournisseur.Value, cancellationToken);
             if (factureAvoir == null)
             {
                 return Result.Fail("facture_avoir_fournisseur_not_found");
@@ -76,7 +76,8 @@ public class UpdateAvoirFournisseurCommandHandler(
             command.Date,
             command.FournisseurId,
             factureAvoirFournisseurId, // Use Id instead of Num
-            activeAccountingYear.Id);
+            activeAccountingYear.Id,
+            command.NumAvoirChezFournisseur);
 
         // Remove existing lines
         _context.LigneAvoirFournisseur.RemoveRange(avoirFournisseur.LigneAvoirFournisseur);
@@ -106,7 +107,7 @@ public class UpdateAvoirFournisseurCommandHandler(
         }
 
         await _context.SaveChangesAsync(cancellationToken);
-        _logger.LogInformation("AvoirFournisseur with Num {Num} updated successfully", avoirFournisseur.Num);
+        _logger.LogInformation("AvoirFournisseur with Id {Id} updated successfully", avoirFournisseur.Id);
         return Result.Ok();
     }
 }

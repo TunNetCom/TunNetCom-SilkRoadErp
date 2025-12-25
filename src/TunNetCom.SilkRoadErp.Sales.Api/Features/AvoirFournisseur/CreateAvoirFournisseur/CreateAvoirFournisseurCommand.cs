@@ -6,6 +6,7 @@ public record CreateAvoirFournisseurCommand(
     DateTime Date,
     int? FournisseurId,
     int? NumFactureAvoirFournisseur,
+    int NumAvoirChezFournisseur,
     List<AvoirFournisseurLineRequest> Lines
 ) : IRequest<Result<int>>;
 

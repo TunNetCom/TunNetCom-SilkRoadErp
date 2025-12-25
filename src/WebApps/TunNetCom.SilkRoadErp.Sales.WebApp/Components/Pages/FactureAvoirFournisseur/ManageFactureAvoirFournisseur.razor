@@ -99,7 +99,7 @@
                             // Load avoirs when template is rendered for the first time
                             if (!factureAvoirWithAvoirs.AvoirsLoaded && !factureAvoirWithAvoirs.AvoirsLoading)
                             {
-                                _ = LoadAvoirsForFactureAvoirAsync(factureAvoirWithAvoirs.FactureAvoir.Num);
+                                _ = LoadAvoirsForFactureAvoirAsync(factureAvoirWithAvoirs.FactureAvoir.Id);
                             }
                         }
                         @if (factureAvoirWithAvoirs.AvoirsLoading)
@@ -120,7 +120,7 @@
                                               ButtonStyle="ButtonStyle.Danger"
                                               Size="ButtonSize.Small"
                                               Disabled="@(!_selectedAvoirsToDetach.Any())"
-                                              Click="@(() => DetachAvoirsFromFactureAvoir(factureAvoirWithAvoirs.FactureAvoir.Num))"
+                                              Click="@(() => DetachAvoirsFromFactureAvoir(factureAvoirWithAvoirs.FactureAvoir.Id))"
                                               Style="border-radius: 6px; padding: 0.3rem 0.6rem; font-size: 0.8rem;" />
                             </div>
                             <RadzenDataGrid AllowFiltering="true" 
@@ -136,7 +136,7 @@
                                     <p style="font-size: 14px; text-align: center; margin: 1rem; color: #666;">Aucun avoir fournisseur lié</p>
                                 </EmptyTemplate>
                                 <Columns>
-                                    <RadzenDataGridColumn Property="@nameof(AvoirFournisseurBaseInfo.Num)"
+                                    <RadzenDataGridColumn Property="@nameof(AvoirFournisseurBaseInfo.NumAvoirChezFournisseur)"
                                                           Title="Numéro"
                                                           Width="120px" />
                                     <RadzenDataGridColumn Property="@nameof(AvoirFournisseurBaseInfo.Date)"
@@ -163,11 +163,18 @@
                         }
                     </Template>
                     <Columns>
-                        <RadzenDataGridColumn Property="@nameof(FactureAvoirFournisseurBaseInfo.Num)"
+                        <RadzenDataGridColumn Property="@nameof(FactureAvoirFournisseurBaseInfo.NumFactureAvoirFourSurPage)"
                                               Title="Numéro"
                                               Width="120px">
                             <Template Context="factureAvoirWithAvoirs">
-                                @factureAvoirWithAvoirs.FactureAvoir.Num
+                                @factureAvoirWithAvoirs.FactureAvoir.NumFactureAvoirFourSurPage
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn Property="@nameof(FactureAvoirFournisseurBaseInfo.AccountingYearName)"
+                                              Title="Année comptable"
+                                              Width="150px">
+                            <Template Context="factureAvoirWithAvoirs">
+                                @factureAvoirWithAvoirs.FactureAvoir.AccountingYearName
                             </Template>
                         </RadzenDataGridColumn>
                         <RadzenDataGridColumn Property="@nameof(FactureAvoirFournisseurBaseInfo.Date)"
@@ -247,7 +254,7 @@
                         </div>
                     </HeaderTemplate>
                     <Columns>
-                        <RadzenDataGridColumn Property="@nameof(AvoirFournisseurBaseInfo.Num)"
+                        <RadzenDataGridColumn Property="@nameof(AvoirFournisseurBaseInfo.NumAvoirChezFournisseur)"
                                               Title="Numéro"
                                               Width="120px" />
                         <RadzenDataGridColumn Property="@nameof(AvoirFournisseurBaseInfo.Date)"
@@ -348,11 +355,11 @@
         set
         {
             _selectedFactureAvoir = value;
-            SelectedFactureAvoirId = _selectedFactureAvoir?.FirstOrDefault()?.FactureAvoir?.Num ?? _minValueId;
+            SelectedFactureAvoirId = _selectedFactureAvoir?.FirstOrDefault()?.FactureAvoir?.Id ?? _minValueId;
             var selectedFactureAvoir = _selectedFactureAvoir?.FirstOrDefault();
             if (selectedFactureAvoir != null && !selectedFactureAvoir.AvoirsLoaded)
             {
-                _ = LoadAvoirsForFactureAvoirAsync(selectedFactureAvoir.FactureAvoir.Num);
+                _ = LoadAvoirsForFactureAvoirAsync(selectedFactureAvoir.FactureAvoir.Id);
             }
         }
     }
@@ -491,9 +498,9 @@
         }
     }
 
-    private async Task LoadAvoirsForFactureAvoirAsync(int factureAvoirNum)
+    private async Task LoadAvoirsForFactureAvoirAsync(int factureAvoirId)
     {
-        var factureAvoirWithAvoirs = _factureAvoirWithAvoirs.FirstOrDefault(f => f.FactureAvoir.Num == factureAvoirNum);
+        var factureAvoirWithAvoirs = _factureAvoirWithAvoirs.FirstOrDefault(f => f.FactureAvoir.Id == factureAvoirId);
         if (factureAvoirWithAvoirs == null || factureAvoirWithAvoirs.AvoirsLoading) return;
 
         factureAvoirWithAvoirs.AvoirsLoading = true;
@@ -503,7 +510,7 @@
         {
             var avoirsResult = await avoirFournisseurService.GetAvoirFournisseurWithSummariesAsync(
                 fournisseurId: null,
-                numFactureAvoirFournisseur: factureAvoirNum,
+                numFactureAvoirFournisseur: factureAvoirId,
                 sortOrder: null,
                 sortProperty: null,
                 pageNumber: 1,
@@ -635,10 +642,10 @@
 
         try
         {
-            var avoirIds = _selectedAvoirsToAttach.Select(a => a.Num).ToList();
+            var avoirIds = _selectedAvoirsToAttach.Select(a => a.Id).ToList();
             
             // Get the current facture avoir to update
-            var factureAvoir = _factureAvoirWithAvoirs.FirstOrDefault(f => f.FactureAvoir.Num == SelectedFactureAvoirId);
+            var factureAvoir = _factureAvoirWithAvoirs.FirstOrDefault(f => f.FactureAvoir.Id == SelectedFactureAvoirId);
             if (factureAvoir == null)
             {
                 NotificationService.Notify(new NotificationMessage
@@ -664,7 +671,7 @@
             }
 
             // Combine existing avoirs with new ones
-            var existingAvoirIds = fullFactureAvoir.Value.AvoirFournisseurs.Select(a => a.Num).ToList();
+            var existingAvoirIds = fullFactureAvoir.Value.AvoirFournisseurs.Select(a => a.Id).ToList();
             var allAvoirIds = existingAvoirIds.Union(avoirIds).ToList();
 
             var updateRequest = new UpdateFactureAvoirFournisseurRequest
@@ -760,7 +767,7 @@
         }
     }
 
-    private async Task DetachAvoirsFromFactureAvoir(int factureAvoirNum)
+    private async Task DetachAvoirsFromFactureAvoir(int factureAvoirId)
     {
         if (!_selectedAvoirsToDetach.Any())
         {
@@ -776,7 +783,7 @@
         try
         {
             // Get the current facture avoir to update
-            var fullFactureAvoir = await factureAvoirFournisseurService.GetFullFactureAvoirFournisseurAsync(factureAvoirNum, _cancellationTokenSource.Token);
+            var fullFactureAvoir = await factureAvoirFournisseurService.GetFullFactureAvoirFournisseurAsync(factureAvoirId, _cancellationTokenSource.Token);
             if (!fullFactureAvoir.IsSuccess || fullFactureAvoir.Value == null)
             {
                 NotificationService.Notify(new NotificationMessage
@@ -789,10 +796,10 @@
             }
 
             // Remove selected avoirs from the list
-            var avoirIdsToDetach = _selectedAvoirsToDetach.Select(a => a.Num).ToList();
+            var avoirIdsToDetach = _selectedAvoirsToDetach.Select(a => a.Id).ToList();
             var remainingAvoirIds = fullFactureAvoir.Value.AvoirFournisseurs
-                .Where(a => !avoirIdsToDetach.Contains(a.Num))
-                .Select(a => a.Num)
+                .Where(a => !avoirIdsToDetach.Contains(a.Id))
+                .Select(a => a.Id)
                 .ToList();
 
             var updateRequest = new UpdateFactureAvoirFournisseurRequest
@@ -803,7 +810,7 @@
                 AvoirFournisseurIds = remainingAvoirIds
             };
 
-            var result = await factureAvoirFournisseurService.UpdateFactureAvoirFournisseurAsync(factureAvoirNum, updateRequest, _cancellationTokenSource.Token);
+            var result = await factureAvoirFournisseurService.UpdateFactureAvoirFournisseurAsync(factureAvoirId, updateRequest, _cancellationTokenSource.Token);
 
             if (result.IsSuccess)
             {
@@ -816,7 +823,7 @@
 
                 // Reload data
                 _selectedAvoirsToDetach = new List<AvoirFournisseurBaseInfo>();
-                await LoadAvoirsForFactureAvoirAsync(factureAvoirNum);
+                await LoadAvoirsForFactureAvoirAsync(factureAvoirId);
                 await LoadUninvoicedAvoirs(new LoadDataArgs { Skip = 0, Top = _defaultPageSize });
             }
             else

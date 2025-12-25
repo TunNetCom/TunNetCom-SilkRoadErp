@@ -7,7 +7,7 @@ public class GetFactureAvoirFournisseurWithSummariesQueryHandler(
     ILogger<GetFactureAvoirFournisseurWithSummariesQueryHandler> _logger)
     : IRequestHandler<GetFactureAvoirFournisseurWithSummariesQuery, GetFactureAvoirFournisseurWithSummariesResponse>
 {
-    private const string _numColumnName = nameof(FactureAvoirFournisseurBaseInfo.Num);
+    private const string _idColumnName = nameof(FactureAvoirFournisseurBaseInfo.Id);
     private const string _dateColumnName = nameof(FactureAvoirFournisseurBaseInfo.Date);
     private const string _totalExcludingTaxAmountColumnName = nameof(FactureAvoirFournisseurBaseInfo.TotalExcludingTaxAmount);
     private const string _statutColumnName = nameof(FactureAvoirFournisseurBaseInfo.Statut);
@@ -20,9 +20,10 @@ public class GetFactureAvoirFournisseurWithSummariesQueryHandler(
         _logger.LogPaginationRequest(nameof(FactureAvoirFournisseur), request.PageNumber, request.PageSize);
 
         // Build base query with filters to avoid loading all data
-        var baseQuery = from f in _context.FactureAvoirFournisseur
+        var baseQuery = from f in _context.FactureAvoirFournisseur.FilterByActiveAccountingYear()
                         join fournisseur in _context.Fournisseur on f.IdFournisseur equals fournisseur.Id
-                        select new { f, fournisseur };
+                        join accountingYear in _context.AccountingYear on f.AccountingYearId equals accountingYear.Id
+                        select new { f, fournisseur, accountingYear };
 
         // Apply filters before loading
         if (request.IdFournisseur.HasValue)
@@ -30,9 +31,9 @@ public class GetFactureAvoirFournisseurWithSummariesQueryHandler(
             baseQuery = baseQuery.Where(x => x.f.IdFournisseur == request.IdFournisseur.Value);
         }
 
-        if (request.NumFactureFournisseur.HasValue)
+        if (request.FactureFournisseurId.HasValue)
         {
-            baseQuery = baseQuery.Where(x => x.f.NumFactureFournisseur == request.NumFactureFournisseur.Value);
+            baseQuery = baseQuery.Where(x => x.f.FactureFournisseurId == request.FactureFournisseurId.Value);
         }
 
         // Apply Date Range filters
@@ -52,7 +53,7 @@ public class GetFactureAvoirFournisseurWithSummariesQueryHandler(
         {
             baseQuery = baseQuery.Where(x =>
                 (x.fournisseur.Nom != null && x.fournisseur.Nom.Contains(request.SearchKeyword)) ||
-                x.f.Num.ToString().Contains(request.SearchKeyword));
+                x.f.Id.ToString().Contains(request.SearchKeyword));
         }
 
         // Query 1: Get totals directly from database (OData-style aggregation)
@@ -82,6 +83,7 @@ public class GetFactureAvoirFournisseurWithSummariesQueryHandler(
             {
                 f = x.f,
                 fournisseur = x.fournisseur,
+                accountingYear = x.accountingYear,
                 TotalExcludingTaxAmount = x.f.AvoirFournisseur.Sum(a => a.LigneAvoirFournisseur.Sum(l => l.TotHt)),
                 TotalVATAmount = x.f.AvoirFournisseur.Sum(a => a.LigneAvoirFournisseur.Sum(l => l.TotTtc - l.TotHt)),
                 TotalIncludingTaxAmount = x.f.AvoirFournisseur.Sum(a => a.LigneAvoirFournisseur.Sum(l => l.TotTtc))
@@ -101,9 +103,9 @@ public class GetFactureAvoirFournisseurWithSummariesQueryHandler(
 
             factureAvoirQueryWithTotals = sortProperty switch
             {
-                _numColumnName => isAscending 
-                    ? factureAvoirQueryWithTotals.OrderBy(x => x.f.Num)
-                    : factureAvoirQueryWithTotals.OrderByDescending(x => x.f.Num),
+                _idColumnName => isAscending 
+                    ? factureAvoirQueryWithTotals.OrderBy(x => x.f.Id)
+                    : factureAvoirQueryWithTotals.OrderByDescending(x => x.f.Id),
                 _dateColumnName => isAscending
                     ? factureAvoirQueryWithTotals.OrderBy(x => x.f.Date)
                     : factureAvoirQueryWithTotals.OrderByDescending(x => x.f.Date),
@@ -130,12 +132,14 @@ public class GetFactureAvoirFournisseurWithSummariesQueryHandler(
         var items = factureAvoirData
             .Select(x => new FactureAvoirFournisseurBaseInfo
             {
-                Num = x.f.Num,
+                Id = x.f.Id,
                 NumFactureAvoirFourSurPage = x.f.NumFactureAvoirFourSurPage,
                 Date = new DateTimeOffset(x.f.Date, TimeSpan.Zero),
                 IdFournisseur = x.f.IdFournisseur,
-                FournisseurName = x.fournisseur.Nom,
-                NumFactureFournisseur = x.f.NumFactureFournisseur,
+                FournisseurName = x.fournisseur?.Nom,
+                NumFactureFournisseur = x.f.FactureFournisseurId,
+                AccountingYearId = x.f.AccountingYearId,
+                AccountingYearName = x.accountingYear != null ? x.accountingYear.Year.ToString() : string.Empty,
                 TotalExcludingTaxAmount = x.TotalExcludingTaxAmount,
                 TotalVATAmount = x.TotalVATAmount,
                 TotalIncludingTaxAmount = x.TotalIncludingTaxAmount,
@@ -165,8 +169,8 @@ public class GetFactureAvoirFournisseurWithSummariesQueryHandler(
     {
         return (sortProperty, sortOrder) switch
         {
-            (_numColumnName, SortConstants.Ascending) => factureQuery.OrderBy(f => f.Num),
-            (_numColumnName, SortConstants.Descending) => factureQuery.OrderByDescending(f => f.Num),
+            (_idColumnName, SortConstants.Ascending) => factureQuery.OrderBy(f => f.Id),
+            (_idColumnName, SortConstants.Descending) => factureQuery.OrderByDescending(f => f.Id),
             (_dateColumnName, SortConstants.Ascending) => factureQuery.OrderBy(f => f.Date),
             (_dateColumnName, SortConstants.Descending) => factureQuery.OrderByDescending(f => f.Date),
             (_totalExcludingTaxAmountColumnName, SortConstants.Ascending) => factureQuery.OrderBy(f => f.TotalExcludingTaxAmount),

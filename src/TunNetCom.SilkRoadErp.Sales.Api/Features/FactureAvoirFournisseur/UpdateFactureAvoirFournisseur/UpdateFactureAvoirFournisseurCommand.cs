@@ -3,10 +3,11 @@ using TunNetCom.SilkRoadErp.Sales.Contracts.FactureAvoirFournisseur;
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.FactureAvoirFournisseur.UpdateFactureAvoirFournisseur;
 
 public record UpdateFactureAvoirFournisseurCommand(
-    int Num,
+    int Id,
     DateTime Date,
     int IdFournisseur,
-    int? NumFactureFournisseur,
+    int NumFactureAvoirFourSurPage,
+    int? FactureFournisseurId,
     List<int> AvoirFournisseurIds
 ) : IRequest<Result>;
 
