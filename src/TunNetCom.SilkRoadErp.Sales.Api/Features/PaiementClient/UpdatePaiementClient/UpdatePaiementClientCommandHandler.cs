@@ -1,3 +1,4 @@
+using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.DocumentStorage;
 using TunNetCom.SilkRoadErp.Sales.Contracts.PaiementClient;
 using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
@@ -5,7 +6,8 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.PaiementClient.UpdatePaiement
 
 public class UpdatePaiementClientCommandHandler(
     SalesContext _context,
-    ILogger<UpdatePaiementClientCommandHandler> _logger)
+    ILogger<UpdatePaiementClientCommandHandler> _logger,
+    IDocumentStorageService _documentStorageService)
     : IRequestHandler<UpdatePaiementClientCommand, Result>
 {
     public async Task<Result> Handle(UpdatePaiementClientCommand command, CancellationToken cancellationToken)
@@ -13,6 +15,8 @@ public class UpdatePaiementClientCommandHandler(
         _logger.LogInformation("UpdatePaiementClientCommand called with Id {Id}", command.Id);
 
         var paiement = await _context.PaiementClient
+            .Include(p => p.Factures)
+            .Include(p => p.BonDeLivraisons)
             .FirstOrDefaultAsync(p => p.Id == command.Id, cancellationToken);
 
         if (paiement == null)
@@ -46,22 +50,45 @@ public class UpdatePaiementClientCommandHandler(
             return Result.Fail("no_active_accounting_year");
         }
 
-        // Validate document links if provided
-        if (command.FactureId.HasValue)
+        // Validate exclusivity: either FactureIds or BonDeLivraisonIds, but not both
+        var hasFactures = command.FactureIds != null && command.FactureIds.Count > 0;
+        var hasBonDeLivraisons = command.BonDeLivraisonIds != null && command.BonDeLivraisonIds.Count > 0;
+        
+        if (hasFactures && hasBonDeLivraisons)
         {
-            var factureExists = await _context.Facture.AnyAsync(f => f.Id == command.FactureId.Value, cancellationToken);
-            if (!factureExists)
+            return Result.Fail("cannot_have_both_factures_and_bon_de_livraisons");
+        }
+
+        // Validate document links if provided
+        if (hasFactures)
+        {
+            var factureIds = command.FactureIds!.Distinct().ToList();
+            var facturesExist = await _context.Facture
+                .FilterByActiveAccountingYear()
+                .Where(f => factureIds.Contains(f.Id))
+                .Select(f => f.Id)
+                .ToListAsync(cancellationToken);
+            
+            var missingFactures = factureIds.Except(facturesExist).ToList();
+            if (missingFactures.Any())
             {
-                return Result.Fail("facture_not_found");
+                return Result.Fail($"factures_not_found: {string.Join(", ", missingFactures)}");
             }
         }
 
-        if (command.BonDeLivraisonId.HasValue)
+        if (hasBonDeLivraisons)
         {
-            var bonDeLivraisonExists = await _context.BonDeLivraison.AnyAsync(b => b.Id == command.BonDeLivraisonId.Value, cancellationToken);
-            if (!bonDeLivraisonExists)
+            var bonDeLivraisonIds = command.BonDeLivraisonIds!.Distinct().ToList();
+            var bonDeLivraisonsExist = await _context.BonDeLivraison
+                .FilterByActiveAccountingYear()
+                .Where(b => bonDeLivraisonIds.Contains(b.Id))
+                .Select(b => b.Id)
+                .ToListAsync(cancellationToken);
+            
+            var missingBonDeLivraisons = bonDeLivraisonIds.Except(bonDeLivraisonsExist).ToList();
+            if (missingBonDeLivraisons.Any())
             {
-                return Result.Fail("bon_de_livraison_not_found");
+                return Result.Fail($"bon_de_livraisons_not_found: {string.Join(", ", missingBonDeLivraisons)}");
             }
         }
 
@@ -75,6 +102,41 @@ public class UpdatePaiementClientCommandHandler(
             }
         }
 
+        // Process document if provided
+        string? documentStoragePath = paiement.DocumentStoragePath; // Keep existing if no new document
+        if (!string.IsNullOrWhiteSpace(command.DocumentBase64))
+        {
+            try
+            {
+                // Delete old document if exists
+                if (!string.IsNullOrWhiteSpace(paiement.DocumentStoragePath))
+                {
+                    try
+                    {
+                        await _documentStorageService.DeleteAsync(paiement.DocumentStoragePath, cancellationToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Error deleting old document, continuing with new document");
+                    }
+                }
+
+                var documentBytes = Convert.FromBase64String(command.DocumentBase64);
+                var fileName = $"paiement_client_{command.Numero}_{DateTime.UtcNow:yyyyMMddHHmmss}";
+                documentStoragePath = await _documentStorageService.SaveAsync(documentBytes, fileName, cancellationToken);
+            }
+            catch (FormatException ex)
+            {
+                _logger.LogError(ex, "Invalid Base64 format for document");
+                return Result.Fail("invalid_document_format");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error storing document");
+                return Result.Fail("error_storing_document");
+            }
+        }
+
         paiement.UpdatePaiementClient(
             command.Numero,
             command.ClientId,
@@ -82,12 +144,13 @@ public class UpdatePaiementClientCommandHandler(
             command.Montant,
             command.DatePaiement,
             methodePaiement,
-            command.FactureId,
-            command.BonDeLivraisonId,
+            command.FactureIds,
+            command.BonDeLivraisonIds,
             command.NumeroChequeTraite,
             command.BanqueId,
             command.DateEcheance,
-            command.Commentaire);
+            command.Commentaire,
+            documentStoragePath);
 
         await _context.SaveChangesAsync(cancellationToken);
 

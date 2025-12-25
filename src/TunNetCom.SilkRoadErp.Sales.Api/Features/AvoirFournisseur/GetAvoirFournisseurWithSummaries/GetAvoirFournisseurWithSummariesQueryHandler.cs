@@ -18,7 +18,7 @@ public class GetAvoirFournisseurWithSummariesQueryHandler(
         _logger.LogPaginationRequest(nameof(AvoirFournisseur), request.PageNumber, request.PageSize);
 
         // Build base query with filters to avoid loading all data
-        var baseQuery = from a in _context.AvoirFournisseur
+        var baseQuery = from a in _context.AvoirFournisseur.FilterByActiveAccountingYear()
                         join f in _context.Fournisseur on a.FournisseurId equals f.Id into fournisseurGroup
                         from f in fournisseurGroup.DefaultIfEmpty()
                         select new { a, f };

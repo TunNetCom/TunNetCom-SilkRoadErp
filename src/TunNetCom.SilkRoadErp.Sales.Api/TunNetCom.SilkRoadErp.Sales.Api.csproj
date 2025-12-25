@@ -41,6 +41,8 @@
     <PackageReference Include="BCrypt.Net-Next" />
     <PackageReference Include="Quartz" />
     <PackageReference Include="Quartz.AspNetCore" />
+    <PackageReference Include="EPPlus" />
+    <PackageReference Include="Microsoft.Playwright" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.console">
       <PrivateAssets>all</PrivateAssets>

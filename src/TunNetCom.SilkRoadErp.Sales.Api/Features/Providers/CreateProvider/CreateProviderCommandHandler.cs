@@ -1,4 +1,4 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.CreateProvider;
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.CreateProvider;
 public class CreateProviderCommandHandler(SalesContext _context, ILogger<CreateProviderCommandHandler> _logger)
 : IRequestHandler<CreateProviderCommand, Result<int>>
 {
@@ -24,8 +24,12 @@ public class CreateProviderCommandHandler(SalesContext _context, ILogger<CreateP
            createProviderCommand.Mail,
            createProviderCommand.MailDeux,
            createProviderCommand.Constructeur,
-           createProviderCommand.Adresse
-
+           createProviderCommand.Adresse,
+           createProviderCommand.TauxRetenu,
+           createProviderCommand.RibCodeEtab,
+           createProviderCommand.RibCodeAgence,
+           createProviderCommand.RibNumeroCompte,
+           createProviderCommand.RibCle
          );
 
         _ = _context.Fournisseur.Add(provider);

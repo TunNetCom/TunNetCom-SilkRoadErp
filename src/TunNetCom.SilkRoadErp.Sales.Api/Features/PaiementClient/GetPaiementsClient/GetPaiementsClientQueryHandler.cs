@@ -9,8 +9,8 @@ public class GetPaiementsClientQueryHandler(
 {
     public async Task<Result<PagedList<PaiementClientResponse>>> Handle(GetPaiementsClientQuery query, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Fetching PaiementsClient with filters ClientId={ClientId}, AccountingYearId={AccountingYearId}", 
-            query.ClientId, query.AccountingYearId);
+        _logger.LogInformation("Fetching PaiementsClient with filters ClientId={ClientId}, AccountingYearId={AccountingYearId}, DateEcheanceFrom={DateEcheanceFrom}, DateEcheanceTo={DateEcheanceTo}, MontantMin={MontantMin}, MontantMax={MontantMax}", 
+            query.ClientId, query.AccountingYearId, query.DateEcheanceFrom, query.DateEcheanceTo, query.MontantMin, query.MontantMax);
 
         var paiementsQuery = _context.PaiementClient
             .AsNoTracking()
@@ -26,6 +26,26 @@ public class GetPaiementsClientQueryHandler(
             paiementsQuery = paiementsQuery.Where(p => p.AccountingYearId == query.AccountingYearId.Value);
         }
 
+        if (query.DateEcheanceFrom.HasValue)
+        {
+            paiementsQuery = paiementsQuery.Where(p => p.DateEcheance.HasValue && p.DateEcheance >= query.DateEcheanceFrom.Value);
+        }
+
+        if (query.DateEcheanceTo.HasValue)
+        {
+            paiementsQuery = paiementsQuery.Where(p => p.DateEcheance.HasValue && p.DateEcheance <= query.DateEcheanceTo.Value);
+        }
+
+        if (query.MontantMin.HasValue)
+        {
+            paiementsQuery = paiementsQuery.Where(p => p.Montant >= query.MontantMin.Value);
+        }
+
+        if (query.MontantMax.HasValue)
+        {
+            paiementsQuery = paiementsQuery.Where(p => p.Montant <= query.MontantMax.Value);
+        }
+
         var paiements = paiementsQuery
             .Select(p => new PaiementClientResponse
             {
@@ -37,25 +57,33 @@ public class GetPaiementsClientQueryHandler(
                 Montant = p.Montant,
                 DatePaiement = p.DatePaiement,
                 MethodePaiement = p.MethodePaiement.ToString(),
-                FactureId = p.FactureId,
-                BonDeLivraisonId = p.BonDeLivraisonId,
+                FactureIds = p.Factures.Select(f => f.FactureId).ToList(),
+                BonDeLivraisonIds = p.BonDeLivraisons.Select(b => b.BonDeLivraisonId).ToList(),
                 NumeroChequeTraite = p.NumeroChequeTraite,
                 BanqueId = p.BanqueId,
                 BanqueNom = p.Banque != null ? p.Banque.Nom : null,
                 DateEcheance = p.DateEcheance,
                 Commentaire = p.Commentaire,
+                DocumentStoragePath = p.DocumentStoragePath,
                 DateModification = p.DateModification
             })
             .OrderByDescending(p => p.DatePaiement);
 
-        var pagedResult = await PagedList<PaiementClientResponse>.ToPagedListAsync(
-            paiements,
-            query.PageNumber,
-            query.PageSize,
-            cancellationToken);
+        try
+        {
+            var pagedResult = await PagedList<PaiementClientResponse>.ToPagedListAsync(
+                paiements,
+                query.PageNumber,
+                query.PageSize,
+                cancellationToken);
 
-        _logger.LogInformation("Fetched {Count} PaiementsClient", pagedResult.TotalCount);
-        return Result.Ok(pagedResult);
+            _logger.LogInformation("Fetched {Count} PaiementsClient", pagedResult.TotalCount);
+            return Result.Ok(pagedResult);
+        }
+        catch (Exception ex)
+        {
+            throw;
+        }
     }
 }
 

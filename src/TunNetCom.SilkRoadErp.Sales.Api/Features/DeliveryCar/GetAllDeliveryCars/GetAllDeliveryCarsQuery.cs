@@ -7,3 +7,5 @@ public record GetAllDeliveryCarsQuery() : IRequest<List<DeliveryCarResponse>>;
 
 
 
+
+

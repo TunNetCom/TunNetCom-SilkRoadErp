@@ -158,8 +158,11 @@
                             <td colspan="5">
                                 @foreach (var bl in document.DeliveryNotes)
                                 {
+                                    var linesWithMissingQty = bl.Lines.Where(line => line.QuantiteNonLivree > 0).ToList();
+                                    
                                     <div style="font-weight:bold;margin-top:8px;">Bon de livraison @bl.Numero - Date: @bl.Date.ToString("dd/MM/yyyy") - Montant @bl.Montant.FormatAmount(Model.DecimalPlaces) TND</div>
-                                    @if (bl.Lines.Any())
+                                    
+                                    @if (linesWithMissingQty.Any())
                                     {
                                         <table class="sub-table">
                                             <thead>
@@ -172,7 +175,7 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                @foreach (var line in bl.Lines)
+                                                @foreach (var line in linesWithMissingQty)
                                                 {
                                                     <tr>
                                                         <td>@line.RefProduit</td>
@@ -184,10 +187,6 @@
                                                 }
                                             </tbody>
                                         </table>
-                                    }
-                                    else if (Model.ShowOnlyMissingProducts)
-                                    {
-                                        <div style="font-style: italic; color: #666; margin-top: 4px;">Aucun produit manquant</div>
                                     }
                                 }
                             </td>

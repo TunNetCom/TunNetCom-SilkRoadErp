@@ -32,7 +32,7 @@ public class CreatePaiementClientValidator : AbstractValidator<CreatePaiementCli
             .When(x => !string.IsNullOrEmpty(x.Commentaire));
 
         _ = RuleFor(x => x)
-            .Must(x => !(x.FactureId.HasValue && x.BonDeLivraisonId.HasValue))
+            .Must(x => !(x.FactureIds != null && x.FactureIds.Count > 0 && x.BonDeLivraisonIds != null && x.BonDeLivraisonIds.Count > 0))
             .WithMessage("cannot_link_to_both_facture_and_bon_de_livraison");
     }
 }

@@ -15,6 +15,10 @@ public interface IPaiementFournisseurApiClient
     Task<PagedList<PaiementFournisseurResponse>> GetPaiementsFournisseurAsync(
         int? fournisseurId,
         int? accountingYearId,
+        DateTime? dateEcheanceFrom,
+        DateTime? dateEcheanceTo,
+        decimal? montantMin,
+        decimal? montantMax,
         int pageNumber,
         int pageSize,
         CancellationToken cancellationToken);
@@ -28,6 +32,7 @@ public interface IPaiementFournisseurApiClient
         int id,
         CancellationToken cancellationToken);
 }
+
 
 
 

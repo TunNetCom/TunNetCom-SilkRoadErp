@@ -35,7 +35,9 @@ public class DeliveryNoteBaseInfosController : ODataController
                 startDate, endDate, customerId, technicianId, tagIds != null ? string.Join(",", tagIds) : "null");
 
             // Build base query with filters before projection
-            var baseQuery = _context.BonDeLivraison.AsNoTracking();
+            var baseQuery = _context.BonDeLivraison
+                .AsNoTracking()
+                .FilterByActiveAccountingYear();
 
             // Apply custom filters before projection (on entity properties)
             if (startDate.HasValue)
@@ -79,6 +81,7 @@ public class DeliveryNoteBaseInfosController : ODataController
             var deliveryNoteQuery = deliveryNotes
                 .Select(x => new GetDeliveryNoteBaseInfos
                 {
+                    Id = x.bdl.Id,
                     Number = x.bdl.Num,
                     Date = new DateTimeOffset(x.bdl.Date, TimeSpan.Zero),
                     NetAmount = x.bdl.NetPayer,

@@ -136,14 +136,14 @@
                                     <RadzenDataGrid AllowFiltering="true" 
                                                     AllowPaging="true" 
                                                     AllowSorting="true" 
-                                                    Data="@(bl.LignesBl ?? new List<LigneBlSoldeClient>())">
+                                                    Data="@GetFilteredLignesBl(bl.LignesBl)">
                                         <Columns>
                                             <RadzenDataGridColumn Property="@nameof(LigneBlSoldeClient.RefProduit)" Title="@Localizer["Ref_Produit"]" Width="150px" />
                                             <RadzenDataGridColumn Property="@nameof(LigneBlSoldeClient.DesignationLi)" Title="@Localizer["Description"]" Width="250px" />
                                             <RadzenDataGridColumn Property="@nameof(LigneBlSoldeClient.QteLi)" Title="@Localizer["Quantite"]" Width="100px" />
                                             <RadzenDataGridColumn Property="@nameof(LigneBlSoldeClient.QteLivree)" Title="@Localizer["Quantite_Livree"]" Width="120px">
                                                 <Template Context="ligne">
-                                                    @(ligne.QteLivree?.ToString() ?? ligne.QteLi.ToString())
+                                                    @(ligne.QteLivree?.ToString() ?? "0")
                                                 </Template>
                                             </RadzenDataGridColumn>
                                             <RadzenDataGridColumn Property="@nameof(LigneBlSoldeClient.QuantiteNonLivree)" Title="@Localizer["Quantite_Non_Livree"]" Width="150px">
@@ -165,11 +165,17 @@
                                             @bl.Montant.FormatAmount(decimalPlaces) TND
                                         </Template>
                                     </RadzenDataGridColumn>
-                                    <RadzenDataGridColumn Title="" Width="50px">
+                                    <RadzenDataGridColumn Title="" Width="60px" TextAlign="TextAlign.Center">
                                         <Template Context="bl">
                                             @if (bl.HasQuantitesNonLivrees)
                                             {
-                                                <RadzenIcon Icon="warning" Style="color: #f44336; font-size: 20px;" Title="@Localizer["Quantites_Non_Livrees_Indicator"]" />
+                                                <div class="alert-icon-column" style="display: flex; justify-content: center; align-items: center;">
+                                                    <RadzenIcon Icon="warning" Style="color: #f44336; font-size: 20px; cursor: pointer;" Title="@Localizer["Quantites_Non_Livrees_Indicator"]" />
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div style="width: 20px; height: 20px;"></div>
                                             }
                                         </Template>
                                     </RadzenDataGridColumn>
@@ -185,11 +191,17 @@
                                     @facture.Montant.FormatAmount(decimalPlaces) TND
                                 </Template>
                             </RadzenDataGridColumn>
-                            <RadzenDataGridColumn Title="" Width="50px">
+                            <RadzenDataGridColumn Title="" Width="60px" TextAlign="TextAlign.Center">
                                 <Template Context="facture">
                                     @if (facture.HasQuantitesNonLivrees)
                                     {
-                                        <RadzenIcon Icon="warning" Style="color: #f44336; font-size: 20px;" Title="@Localizer["Quantites_Non_Livrees_Indicator"]" />
+                                        <div class="alert-icon-column" style="display: flex; justify-content: center; align-items: center;">
+                                            <RadzenIcon Icon="warning" Style="color: #f44336; font-size: 20px; cursor: pointer;" Title="@Localizer["Quantites_Non_Livrees_Indicator"]" />
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div style="width: 20px; height: 20px;"></div>
                                     }
                                 </Template>
                             </RadzenDataGridColumn>
@@ -352,6 +364,16 @@
         color: #f44336;
         font-weight: 600;
     }
+
+    .alert-icon-column {
+        text-align: center;
+        padding: 0.5rem;
+    }
+
+    .alert-icon-column .rz-icon {
+        display: inline-block !important;
+        vertical-align: middle;
+    }
 </style>
 
 @code {
@@ -478,6 +500,19 @@
     void OnBlsDataGridRender(DataGridRenderEventArgs<DocumentSoldeClient> args)
     {
         // Pas d'expansion automatique - toutes les lignes sont repliées par défaut
+    }
+
+    private IEnumerable<LigneBlSoldeClient> GetFilteredLignesBl(List<LigneBlSoldeClient>? lignes)
+    {
+        if (lignes == null)
+            return Enumerable.Empty<LigneBlSoldeClient>();
+
+        if (showOnlyMissingProducts)
+        {
+            return lignes.Where(l => l.QuantiteNonLivree > 0);
+        }
+
+        return lignes;
     }
 
     private async Task PrintSoldeClientAsync()

@@ -52,7 +52,8 @@ public class JwtTokenService : IJwtTokenService
         }
 
         var credentials = new SigningCredentials(_key, SecurityAlgorithms.HmacSha256);
-        var expires = DateTime.UtcNow.AddMinutes(AccessTokenExpirationMinutes);
+        // Token expiration disabled for simple auth - tokens never expire
+        DateTime? expires = null;
 
         var token = new JwtSecurityToken(
             issuer: _issuer,

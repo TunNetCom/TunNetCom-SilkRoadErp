@@ -1,4 +1,4 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.GetProvider;
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.GetProvider;
 public class GetProviderQueryHandler(SalesContext _context, ILogger<GetProviderQueryHandler> _logger) : IRequestHandler<GetProviderQuery, PagedList<ProviderResponse>>
 {
     public async Task<PagedList<ProviderResponse>> Handle(GetProviderQuery getProviderQuery, CancellationToken cancellationToken)
@@ -19,7 +19,12 @@ public class GetProviderQueryHandler(SalesContext _context, ILogger<GetProviderQ
                 Mail = t.Mail,
                 MailDeux = t.MailDeux,
                 Constructeur = t.Constructeur,
-                Adresse = t.Adresse
+                Adresse = t.Adresse,
+                TauxRetenu = t.TauxRetenu,
+                RibCodeEtab = t.RibCodeEtab,
+                RibCodeAgence = t.RibCodeAgence,
+                RibNumeroCompte = t.RibNumeroCompte,
+                RibCle = t.RibCle
             })
             .AsQueryable();
 

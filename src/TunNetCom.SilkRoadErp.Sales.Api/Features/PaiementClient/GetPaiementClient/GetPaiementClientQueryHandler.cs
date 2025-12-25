@@ -11,38 +11,48 @@ public class GetPaiementClientQueryHandler(
     {
         _logger.LogInformation("Fetching PaiementClient with Id {Id}", query.Id);
 
-        var paiement = await _context.PaiementClient
-            .AsNoTracking()
-            .Where(p => p.Id == query.Id)
-            .Select(p => new PaiementClientResponse
-            {
-                Id = p.Id,
-                Numero = p.Numero,
-                ClientId = p.ClientId,
-                ClientNom = p.Client.Nom,
-                AccountingYearId = p.AccountingYearId,
-                Montant = p.Montant,
-                DatePaiement = p.DatePaiement,
-                MethodePaiement = p.MethodePaiement.ToString(),
-                FactureId = p.FactureId,
-                BonDeLivraisonId = p.BonDeLivraisonId,
-                NumeroChequeTraite = p.NumeroChequeTraite,
-                BanqueId = p.BanqueId,
-                BanqueNom = p.Banque != null ? p.Banque.Nom : null,
-                DateEcheance = p.DateEcheance,
-                Commentaire = p.Commentaire,
-                DateModification = p.DateModification
-            })
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (paiement == null)
+        try
         {
-            _logger.LogWarning("PaiementClient with Id {Id} not found", query.Id);
-            return Result.Fail("paiement_client_not_found");
-        }
+            var paiement = await _context.PaiementClient
+                .AsNoTracking()
+                .Include(p => p.Factures)
+                .Include(p => p.BonDeLivraisons)
+                .Where(p => p.Id == query.Id)
+                .Select(p => new PaiementClientResponse
+                {
+                    Id = p.Id,
+                    Numero = p.Numero,
+                    ClientId = p.ClientId,
+                    ClientNom = p.Client.Nom,
+                    AccountingYearId = p.AccountingYearId,
+                    Montant = p.Montant,
+                    DatePaiement = p.DatePaiement,
+                    MethodePaiement = p.MethodePaiement.ToString(),
+                    FactureIds = p.Factures.Select(f => f.FactureId).ToList(),
+                    BonDeLivraisonIds = p.BonDeLivraisons.Select(b => b.BonDeLivraisonId).ToList(),
+                    NumeroChequeTraite = p.NumeroChequeTraite,
+                    BanqueId = p.BanqueId,
+                    BanqueNom = p.Banque != null ? p.Banque.Nom : null,
+                    DateEcheance = p.DateEcheance,
+                    Commentaire = p.Commentaire,
+                    DocumentStoragePath = p.DocumentStoragePath,
+                    DateModification = p.DateModification
+                })
+                .FirstOrDefaultAsync(cancellationToken);
 
-        _logger.LogInformation("PaiementClient with Id {Id} fetched successfully", query.Id);
-        return Result.Ok(paiement);
+            if (paiement == null)
+            {
+                _logger.LogWarning("PaiementClient with Id {Id} not found", query.Id);
+                return Result.Fail("paiement_client_not_found");
+            }
+
+            _logger.LogInformation("PaiementClient with Id {Id} fetched successfully", query.Id);
+            return Result.Ok(paiement);
+        }
+        catch (Exception ex)
+        {
+            throw;
+        }
     }
 }
 

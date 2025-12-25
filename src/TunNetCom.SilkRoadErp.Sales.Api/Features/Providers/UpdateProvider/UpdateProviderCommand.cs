@@ -1,4 +1,4 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.UpdateProvider;
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.UpdateProvider;
     public record UpdateProviderCommand(
     int Id,
     string Nom,
@@ -11,7 +11,12 @@
     string? Mail,
     string? MailDeux,
     bool Constructeur,
-    string? Adresse
+    string? Adresse,
+    double? TauxRetenu,
+    string? RibCodeEtab,
+    string? RibCodeAgence,
+    string? RibNumeroCompte,
+    string? RibCle
     ) : IRequest<Result>;
 
 

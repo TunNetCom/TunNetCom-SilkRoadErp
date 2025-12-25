@@ -9,11 +9,12 @@ public record UpdatePaiementClientCommand(
     decimal Montant,
     DateTime DatePaiement,
     string MethodePaiement,
-    int? FactureId,
-    int? BonDeLivraisonId,
+    List<int>? FactureIds,
+    List<int>? BonDeLivraisonIds,
     string? NumeroChequeTraite,
     int? BanqueId,
     DateTime? DateEcheance,
-    string? Commentaire
+    string? Commentaire,
+    string? DocumentBase64
 ) : IRequest<Result>;
 

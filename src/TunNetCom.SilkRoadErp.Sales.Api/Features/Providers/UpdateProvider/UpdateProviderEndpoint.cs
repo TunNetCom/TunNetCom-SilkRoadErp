@@ -1,4 +1,4 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.UpdateProvider;
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.UpdateProvider;
 
 public class UpdateProviderEndpoint : ICarterModule
 {
@@ -22,7 +22,12 @@ public class UpdateProviderEndpoint : ICarterModule
                    Mail: request.Mail,
                    MailDeux: request.MailDeux,
                    Constructeur: request.Constructeur,
-                   Adresse: request.Adresse);
+                   Adresse: request.Adresse,
+                   TauxRetenu: request.TauxRetenu,
+                   RibCodeEtab: request.RibCodeEtab,
+                   RibCodeAgence: request.RibCodeAgence,
+                   RibNumeroCompte: request.RibNumeroCompte,
+                   RibCle: request.RibCle);
 
                 var updateProviderResult = await mediator.Send(updateProviderCommand, cancellationToken);
 

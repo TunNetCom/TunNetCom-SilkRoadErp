@@ -16,14 +16,21 @@ public class GetPaiementClientEndpoint : ICarterModule
         CancellationToken cancellationToken)
     {
         var query = new GetPaiementClientQuery(id);
-        var result = await mediator.Send(query, cancellationToken);
-
-        if (result.IsFailed)
+        try
         {
-            return TypedResults.NotFound();
-        }
+            var result = await mediator.Send(query, cancellationToken);
 
-        return TypedResults.Ok(result.Value);
+            if (result.IsFailed)
+            {
+                return TypedResults.NotFound();
+            }
+
+            return TypedResults.Ok(result.Value);
+        }
+        catch (Exception ex)
+        {
+            throw;
+        }
     }
 }
 

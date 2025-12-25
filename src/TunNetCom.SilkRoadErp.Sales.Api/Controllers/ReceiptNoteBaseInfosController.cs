@@ -34,7 +34,9 @@ public class ReceiptNoteBaseInfosController : ODataController
                 startDate, endDate, providerId, tagIds != null ? string.Join(",", tagIds) : "null");
 
             // Build base query with filters before projection
-            var baseQuery = _context.BonDeReception.AsNoTracking();
+            var baseQuery = _context.BonDeReception
+                .AsNoTracking()
+                .FilterByActiveAccountingYear();
 
             // Apply custom filters before projection (on entity properties)
             if (startDate.HasValue)

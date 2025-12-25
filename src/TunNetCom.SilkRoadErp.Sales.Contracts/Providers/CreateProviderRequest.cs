@@ -1,4 +1,4 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Contracts.Providers;
+namespace TunNetCom.SilkRoadErp.Sales.Contracts.Providers;
 public class CreateProviderRequest
 {
     public string Nom { get; set; } = null!;
@@ -22,4 +22,14 @@ public class CreateProviderRequest
     public bool Constructeur { get; set; }
 
     public string? Adresse { get; set; }
+
+    public double? TauxRetenu { get; set; }
+
+    public string? RibCodeEtab { get; set; }
+
+    public string? RibCodeAgence { get; set; }
+
+    public string? RibNumeroCompte { get; set; }
+
+    public string? RibCle { get; set; }
 }

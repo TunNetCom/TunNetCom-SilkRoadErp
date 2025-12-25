@@ -1,4 +1,4 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetInvoicesWithIds
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetInvoicesWithIds
 {
     public class GetInvoicesWithIdsQueryHandler(
         SalesContext _context,
@@ -13,6 +13,7 @@
               .Where(f => query.InvoicesIds.Contains(f.Num))
               .Select(f => new InvoiceResponse
               {
+                  Id = f.Id,
                   Number = f.Num,
                   TotalIncludingTaxAmount = f.BonDeLivraison.Sum(d => d.NetPayer),
                   TotalExcludingTaxAmount = f.BonDeLivraison.Sum(d => d.TotHTva),

@@ -1,3 +1,4 @@
+using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.DocumentStorage;
 using TunNetCom.SilkRoadErp.Sales.Contracts.PaiementFournisseur;
 using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
@@ -5,7 +6,8 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.PaiementFournisseur.UpdatePai
 
 public class UpdatePaiementFournisseurCommandHandler(
     SalesContext _context,
-    ILogger<UpdatePaiementFournisseurCommandHandler> _logger)
+    ILogger<UpdatePaiementFournisseurCommandHandler> _logger,
+    IDocumentStorageService _documentStorageService)
     : IRequestHandler<UpdatePaiementFournisseurCommand, Result>
 {
     public async Task<Result> Handle(UpdatePaiementFournisseurCommand command, CancellationToken cancellationToken)
@@ -13,6 +15,8 @@ public class UpdatePaiementFournisseurCommandHandler(
         _logger.LogInformation("UpdatePaiementFournisseurCommand called with Id {Id}", command.Id);
 
         var paiement = await _context.PaiementFournisseur
+            .Include(p => p.FactureFournisseurs)
+            .Include(p => p.BonDeReceptions)
             .FirstOrDefaultAsync(p => p.Id == command.Id, cancellationToken);
 
         if (paiement == null)
@@ -46,22 +50,43 @@ public class UpdatePaiementFournisseurCommandHandler(
             return Result.Fail("no_active_accounting_year");
         }
 
-        // Validate document links if provided
-        if (command.FactureFournisseurId.HasValue)
+        // Validate exclusivity: either FactureFournisseurIds or BonDeReceptionIds, but not both
+        var hasFactures = command.FactureFournisseurIds != null && command.FactureFournisseurIds.Count > 0;
+        var hasBonDeReceptions = command.BonDeReceptionIds != null && command.BonDeReceptionIds.Count > 0;
+        
+        if (hasFactures && hasBonDeReceptions)
         {
-            var factureExists = await _context.FactureFournisseur.AnyAsync(f => f.Id == command.FactureFournisseurId.Value, cancellationToken);
-            if (!factureExists)
+            return Result.Fail("cannot_have_both_factures_and_bon_de_receptions");
+        }
+
+        // Validate document links if provided
+        if (hasFactures)
+        {
+            var factureIds = command.FactureFournisseurIds!.Distinct().ToList();
+            var facturesExist = await _context.FactureFournisseur
+                .Where(f => factureIds.Contains(f.Id))
+                .Select(f => f.Id)
+                .ToListAsync(cancellationToken);
+            
+            var missingFactures = factureIds.Except(facturesExist).ToList();
+            if (missingFactures.Any())
             {
-                return Result.Fail("facture_fournisseur_not_found");
+                return Result.Fail($"factures_fournisseur_not_found: {string.Join(", ", missingFactures)}");
             }
         }
 
-        if (command.BonDeReceptionId.HasValue)
+        if (hasBonDeReceptions)
         {
-            var bonDeReceptionExists = await _context.BonDeReception.AnyAsync(b => b.Id == command.BonDeReceptionId.Value, cancellationToken);
-            if (!bonDeReceptionExists)
+            var bonDeReceptionIds = command.BonDeReceptionIds!.Distinct().ToList();
+            var bonDeReceptionsExist = await _context.BonDeReception
+                .Where(b => bonDeReceptionIds.Contains(b.Id))
+                .Select(b => b.Id)
+                .ToListAsync(cancellationToken);
+            
+            var missingBonDeReceptions = bonDeReceptionIds.Except(bonDeReceptionsExist).ToList();
+            if (missingBonDeReceptions.Any())
             {
-                return Result.Fail("bon_de_reception_not_found");
+                return Result.Fail($"bon_de_receptions_not_found: {string.Join(", ", missingBonDeReceptions)}");
             }
         }
 
@@ -75,6 +100,41 @@ public class UpdatePaiementFournisseurCommandHandler(
             }
         }
 
+        // Process document if provided
+        string? documentStoragePath = paiement.DocumentStoragePath; // Keep existing if no new document
+        if (!string.IsNullOrWhiteSpace(command.DocumentBase64))
+        {
+            try
+            {
+                // Delete old document if exists
+                if (!string.IsNullOrWhiteSpace(paiement.DocumentStoragePath))
+                {
+                    try
+                    {
+                        await _documentStorageService.DeleteAsync(paiement.DocumentStoragePath, cancellationToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Error deleting old document, continuing with new document");
+                    }
+                }
+
+                var documentBytes = Convert.FromBase64String(command.DocumentBase64);
+                var fileName = $"paiement_fournisseur_{command.Numero}_{DateTime.UtcNow:yyyyMMddHHmmss}";
+                documentStoragePath = await _documentStorageService.SaveAsync(documentBytes, fileName, cancellationToken);
+            }
+            catch (FormatException ex)
+            {
+                _logger.LogError(ex, "Invalid Base64 format for document");
+                return Result.Fail("invalid_document_format");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error storing document");
+                return Result.Fail("error_storing_document");
+            }
+        }
+
         paiement.UpdatePaiementFournisseur(
             command.Numero,
             command.FournisseurId,
@@ -82,8 +142,8 @@ public class UpdatePaiementFournisseurCommandHandler(
             command.Montant,
             command.DatePaiement,
             methodePaiement,
-            command.FactureFournisseurId,
-            command.BonDeReceptionId,
+            command.FactureFournisseurIds,
+            command.BonDeReceptionIds,
             command.NumeroChequeTraite,
             command.BanqueId,
             command.DateEcheance,
@@ -91,7 +151,8 @@ public class UpdatePaiementFournisseurCommandHandler(
             command.RibCodeEtab,
             command.RibCodeAgence,
             command.RibNumeroCompte,
-            command.RibCle);
+            command.RibCle,
+            documentStoragePath);
 
         await _context.SaveChangesAsync(cancellationToken);
 

@@ -1,4 +1,4 @@
-﻿@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Common
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Invoices.PrintInvoiceWithDetails
 
@@ -75,6 +75,13 @@
         text-align: center;
         font-style: italic;
         font-size: 11px;
+        }
+
+        .rib-footer {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 11px;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -172,6 +179,12 @@
     <div class="footer">
         @AmountHelper.ConvertFloatToFrenchToWords(Model.TotalTTC, AmountHelper.TYPE_FACTURE)
     </div>
+    @if (!string.IsNullOrEmpty(Model.Rib))
+    {
+        <div class="rib-footer">
+            RIB: @Model.Rib
+        </div>
+    }
 </body>
 </html>
 

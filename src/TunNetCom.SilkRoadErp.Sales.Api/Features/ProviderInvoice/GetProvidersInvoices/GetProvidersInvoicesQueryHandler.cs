@@ -1,4 +1,5 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.AppParameters.GetAppParameters;
+using TunNetCom.SilkRoadErp.Sales.Api.Features.AppParameters.GetAppParameters;
+using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderInvoice.GetProvidersInvoices;
 
@@ -19,7 +20,7 @@ public class GetProvidersInvoicesQueryHandler(
         var appParamsResult = await _mediator.Send(new GetAppParametersQuery(), cancellationToken);
         var timbre = appParamsResult.IsSuccess ? appParamsResult.Value.Timbre : 0;
 
-        var invoiceQuery = (from ff in _context.FactureFournisseur
+        var invoiceQuery = (from ff in _context.FactureFournisseur.FilterByActiveAccountingYear()
                               join br in _context.BonDeReception on ff.Num equals br.NumFactureFournisseur into brGroup
                               from br in brGroup.DefaultIfEmpty()
                               join lbr in _context.LigneBonReception on br.Id equals lbr.BonDeReceptionId into lbrGroup
@@ -27,8 +28,9 @@ public class GetProvidersInvoicesQueryHandler(
                               join retenue in _context.RetenueSourceFournisseur on ff.Num equals retenue.NumFactureFournisseur into retenueGroup
                               from retenue in retenueGroup.DefaultIfEmpty()
                               where ff.IdFournisseur == query.IdFournisseur
-                              group new { lbr, retenue } by new
+                              group new { lbr, retenue, ff } by new
                               {
+                                  ff.Id,
                                   ff.Num,
                                   ff.IdFournisseur,
                                   ff.Date,
@@ -36,6 +38,7 @@ public class GetProvidersInvoicesQueryHandler(
                               } into g
                               select new ProviderInvoiceResponse
                               {
+                                  Id = g.Key.Id,
                                   Num = g.Key.Num,
                                   ProviderId = g.Key.IdFournisseur,
                                   Date = g.Key.Date,

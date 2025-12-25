@@ -17,11 +17,11 @@ public class UpdatePaiementFournisseurRequest
     [JsonPropertyName("methodePaiement")]
     public string MethodePaiement { get; set; } = string.Empty;
 
-    [JsonPropertyName("factureFournisseurId")]
-    public int? FactureFournisseurId { get; set; }
+    [JsonPropertyName("factureFournisseurIds")]
+    public List<int>? FactureFournisseurIds { get; set; }
 
-    [JsonPropertyName("bonDeReceptionId")]
-    public int? BonDeReceptionId { get; set; }
+    [JsonPropertyName("bonDeReceptionIds")]
+    public List<int>? BonDeReceptionIds { get; set; }
 
     [JsonPropertyName("numeroChequeTraite")]
     public string? NumeroChequeTraite { get; set; }
@@ -46,5 +46,8 @@ public class UpdatePaiementFournisseurRequest
 
     [JsonPropertyName("ribCle")]
     public string? RibCle { get; set; }
+
+    [JsonPropertyName("documentBase64")]
+    public string? DocumentBase64 { get; set; }
 }
 

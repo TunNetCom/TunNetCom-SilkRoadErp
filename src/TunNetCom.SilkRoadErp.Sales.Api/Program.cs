@@ -52,7 +52,12 @@ builder.Services.AddDbContext<SalesContext>((serviceProvider, options) =>
     // Add audit interceptor
     var auditInterceptor = serviceProvider.GetRequiredService<AuditSaveChangesInterceptor>();
     options.AddInterceptors(auditInterceptor);
+    
+    // Add active accounting year query interceptor to ensure AsyncLocal is set before queries
+    var activeYearInterceptor = serviceProvider.GetRequiredService<TunNetCom.SilkRoadErp.Sales.Domain.Entites.Interceptors.ActiveAccountingYearQueryInterceptor>();
+    options.AddInterceptors(activeYearInterceptor);
 });
+
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -156,8 +161,8 @@ builder.Services.AddScoped<DatabaseSeeder>();
 // Register NumberGeneratorService
 builder.Services.AddScoped<INumberGeneratorService, NumberGeneratorService>();
 
-// Register ActiveAccountingYearService
-builder.Services.AddScoped<IActiveAccountingYearService, ActiveAccountingYearService>();
+// Register ActiveAccountingYearService as Singleton to share cache across all requests
+builder.Services.AddSingleton<IActiveAccountingYearService, ActiveAccountingYearService>();
 
 // Register StockCalculationService
 builder.Services.AddScoped<IStockCalculationService,StockCalculationService>();
@@ -167,6 +172,12 @@ builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Servic
 
 // Register TejXmlExportService
 builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.TejXmlExportService>();
+
+// Register ExcelExportService
+builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.ExcelExportService>();
+
+// Register PdfListExportService
+builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.PdfListExportService>();
 
 // Register Document Storage Service (configurable via appsettings.json, default: Base64)
 var documentStorageType = builder.Configuration["DocumentStorage:Type"] ?? "Base64";
@@ -194,6 +205,9 @@ builder.Services.AddScoped<ICurrentUserProvider, CurrentUserService>();
 
 // Register AuditSaveChangesInterceptor
 builder.Services.AddScoped<AuditSaveChangesInterceptor>();
+
+// Register ActiveAccountingYearQueryInterceptor
+builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Domain.Entites.Interceptors.ActiveAccountingYearQueryInterceptor>();
 
 // Register NotificationService
 builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Notifications.NotificationService>();
@@ -240,7 +254,7 @@ builder.Services.AddAuthentication(options =>
     {
         ValidateIssuer = true,
         ValidateAudience = true,
-        ValidateLifetime = true,
+        ValidateLifetime = false, // Token expiration disabled for simple auth
         ValidateIssuerSigningKey = true,
         ValidIssuer = jwtSettings["Issuer"] ?? "SilkRoadErp",
         ValidAudience = jwtSettings["Audience"] ?? "SilkRoadErp",
@@ -285,23 +299,132 @@ using (IServiceScope scope = app.Services.CreateScope())
     {
         // Check if database exists and has tables
         var canConnect = await dbContext.Database.CanConnectAsync();
-        var migrationsApplied = await dbContext.Database.GetPendingMigrationsAsync();
         
-        if (canConnect && migrationsApplied.Any())
+        var migrationsApplied = await dbContext.Database.GetPendingMigrationsAsync();
+        var migrationsList = migrationsApplied.ToList();
+        
+        if (canConnect && migrationsList.Any())
         {
+            // Log pending migrations
+            logger.LogInformation("Migrations en attente détectées: {Count} migration(s)", migrationsList.Count);
+            foreach (var migration in migrationsList)
+            {
+                logger.LogInformation("  - {MigrationId}", migration);
+            }
+            
+            // FIRST: Add columns for AddTauxRetenuAndRibToFournisseur migration BEFORE MigrateAsync
+            // This prevents EF Core from trying to use columns that don't exist yet
+            if (migrationsList.Contains("20251218001616_AddTauxRetenuAndRibToFournisseur"))
+            {
+                logger.LogInformation("Ajout préalable des colonnes pour la migration AddTauxRetenuAndRibToFournisseur...");
+                
+                try
+                {
+                    // Add each column if it doesn't exist (IF NOT EXISTS ensures idempotency)
+                    await dbContext.Database.ExecuteSqlRawAsync(@"
+                        IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Fournisseur' AND COLUMN_NAME = 'taux_retenu')
+                        BEGIN
+                            ALTER TABLE [Fournisseur] ADD [taux_retenu] float NULL;
+                        END
+                    ");
+                    
+                    await dbContext.Database.ExecuteSqlRawAsync(@"
+                        IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Fournisseur' AND COLUMN_NAME = 'rib_code_etab')
+                        BEGIN
+                            ALTER TABLE [Fournisseur] ADD [rib_code_etab] nvarchar(10) NULL;
+                        END
+                    ");
+                    
+                    await dbContext.Database.ExecuteSqlRawAsync(@"
+                        IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Fournisseur' AND COLUMN_NAME = 'rib_code_agence')
+                        BEGIN
+                            ALTER TABLE [Fournisseur] ADD [rib_code_agence] nvarchar(10) NULL;
+                        END
+                    ");
+                    
+                    await dbContext.Database.ExecuteSqlRawAsync(@"
+                        IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Fournisseur' AND COLUMN_NAME = 'rib_numero_compte')
+                        BEGIN
+                            ALTER TABLE [Fournisseur] ADD [rib_numero_compte] nvarchar(20) NULL;
+                        END
+                    ");
+                    
+                    await dbContext.Database.ExecuteSqlRawAsync(@"
+                        IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Fournisseur' AND COLUMN_NAME = 'rib_cle')
+                        BEGIN
+                            ALTER TABLE [Fournisseur] ADD [rib_cle] nvarchar(5) NULL;
+                        END
+                    ");
+                    
+                    logger.LogInformation("Colonnes ajoutées avec succès avant MigrateAsync.");
+                }
+                catch (Exception colEx)
+                {
+                    logger.LogWarning(colEx, "Erreur lors de l'ajout préalable des colonnes, continuons avec MigrateAsync...");
+                }
+            }
+            
             // Try to apply migrations - if it fails because tables exist, mark them as applied
             try
             {
                 logger.LogInformation("Application des migrations en attente...");
+                
                 await dbContext.Database.MigrateAsync();
+                
                 logger.LogInformation("Migrations appliquées avec succès.");
             }
             catch (Microsoft.Data.SqlClient.SqlException sqlEx) when (sqlEx.Number == 2714 || sqlEx.Number == 1913 || sqlEx.Message.Contains("already exists"))
             {
-                // Table already exists error - mark migrations as applied
-                logger.LogWarning("Les tables existent déjà. Marquage des migrations comme appliquées...");
+                // Table already exists error - FIRST add missing columns, THEN mark migrations as applied
+                logger.LogWarning("Les tables existent déjà. Vérification et ajout des colonnes manquantes...");
+                
                 try
                 {
+                    // FIRST: Add columns for AddTauxRetenuAndRibToFournisseur migration if needed
+                    // This must happen BEFORE any EF Core operations that might use these columns
+                    if (migrationsList.Contains("20251218001616_AddTauxRetenuAndRibToFournisseur"))
+                    {
+                        logger.LogInformation("Ajout des colonnes pour la migration AddTauxRetenuAndRibToFournisseur...");
+                        
+                        // Add each column if it doesn't exist (IF NOT EXISTS ensures idempotency)
+                        await dbContext.Database.ExecuteSqlRawAsync(@"
+                            IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Fournisseur' AND COLUMN_NAME = 'taux_retenu')
+                            BEGIN
+                                ALTER TABLE [Fournisseur] ADD [taux_retenu] float NULL;
+                            END
+                        ");
+                        
+                        await dbContext.Database.ExecuteSqlRawAsync(@"
+                            IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Fournisseur' AND COLUMN_NAME = 'rib_code_etab')
+                            BEGIN
+                                ALTER TABLE [Fournisseur] ADD [rib_code_etab] nvarchar(10) NULL;
+                            END
+                        ");
+                        
+                        await dbContext.Database.ExecuteSqlRawAsync(@"
+                            IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Fournisseur' AND COLUMN_NAME = 'rib_code_agence')
+                            BEGIN
+                                ALTER TABLE [Fournisseur] ADD [rib_code_agence] nvarchar(10) NULL;
+                            END
+                        ");
+                        
+                        await dbContext.Database.ExecuteSqlRawAsync(@"
+                            IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Fournisseur' AND COLUMN_NAME = 'rib_numero_compte')
+                            BEGIN
+                                ALTER TABLE [Fournisseur] ADD [rib_numero_compte] nvarchar(20) NULL;
+                            END
+                        ");
+                        
+                        await dbContext.Database.ExecuteSqlRawAsync(@"
+                            IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Fournisseur' AND COLUMN_NAME = 'rib_cle')
+                            BEGIN
+                                ALTER TABLE [Fournisseur] ADD [rib_cle] nvarchar(5) NULL;
+                            END
+                        ");
+                        
+                        logger.LogInformation("Colonnes ajoutées avec succès.");
+                    }
+                    
                     // Create __EFMigrationsHistory table if it doesn't exist
                     await dbContext.Database.ExecuteSqlRawAsync(@"
                         IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '__EFMigrationsHistory')
@@ -314,32 +437,41 @@ using (IServiceScope scope = app.Services.CreateScope())
                         END
                     ");
                     
-                    // Mark migrations as applied
-                    await dbContext.Database.ExecuteSqlRawAsync(@"
-                        IF NOT EXISTS (SELECT * FROM __EFMigrationsHistory WHERE MigrationId = '20251122202247_Init')
-                        BEGIN
-                            INSERT INTO __EFMigrationsHistory (MigrationId, ProductVersion) VALUES ('20251122202247_Init', '10.0.0');
-                        END
-                    ");
-                    await dbContext.Database.ExecuteSqlRawAsync(@"
-                        IF NOT EXISTS (SELECT * FROM __EFMigrationsHistory WHERE MigrationId = '20251122202255_AddSqlViews')
-                        BEGIN
-                            INSERT INTO __EFMigrationsHistory (MigrationId, ProductVersion) VALUES ('20251122202255_AddSqlViews', '10.0.0');
-                        END
-                    ");
-                    logger.LogInformation("Migrations marquées comme appliquées.");
+                    // NOW mark ALL pending migrations as applied
+                    foreach (var migration in migrationsList)
+                    {
+                        // Mark migration as applied
+                        var migrationId = migration.Replace("'", "''"); // Escape single quotes for SQL
+                        await dbContext.Database.ExecuteSqlRawAsync($@"
+                            IF NOT EXISTS (SELECT * FROM __EFMigrationsHistory WHERE MigrationId = '{migrationId}')
+                            BEGIN
+                                INSERT INTO __EFMigrationsHistory (MigrationId, ProductVersion) VALUES ('{migrationId}', '10.0.0');
+                            END
+                        ");
+                        
+                        logger.LogInformation("Migration {MigrationId} marquée comme appliquée.", migration);
+                    }
+                    
+                    logger.LogInformation("Toutes les migrations en attente ont été marquées comme appliquées.");
                 }
                 catch (Exception ex2)
                 {
                     logger.LogError(ex2, "Erreur lors du marquage des migrations. Continuons quand même...");
                 }
             }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Erreur inattendue lors de l'application des migrations.");
+                throw;
+            }
         }
         else if (!canConnect)
         {
             // Database doesn't exist, create it with migrations
             logger.LogInformation("Création de la base de données avec migrations...");
+            
             await dbContext.Database.MigrateAsync();
+            
             logger.LogInformation("Base de données créée et migrations appliquées avec succès.");
         }
         else
@@ -395,12 +527,6 @@ app.UseRouting();
 
 // Authentication & Authorization must be before MapControllers and MapCarter
 app.UseAuthentication();
-
-// Add debug middleware only in Development
-if (app.Environment.IsDevelopment())
-{
-    app.UseMiddleware<AuthenticationDebugMiddleware>();
-}
 
 app.UseAuthorization();
 

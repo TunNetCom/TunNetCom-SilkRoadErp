@@ -14,6 +14,7 @@ public class GetDeliveryNoteByNumQueryHandler(
         _logger.LogFetchingEntityById(nameof(BonDeLivraison), getDeliveryNoteByNumQuery.Num);
 
         var deliveryNote = await _context.BonDeLivraison
+            .FilterByActiveAccountingYear()
             .Include(b => b.InstallationTechnician)
             .Include(b => b.LigneBl)
             .FirstOrDefaultAsync(d => d.Num == getDeliveryNoteByNumQuery.Num, cancellationToken);

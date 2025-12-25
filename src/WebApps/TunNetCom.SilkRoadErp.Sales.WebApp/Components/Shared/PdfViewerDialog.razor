@@ -1,0 +1,201 @@
+@using Radzen
+@using Radzen.Blazor
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using Microsoft.JSInterop
+@using FluentResults
+@using Microsoft.AspNetCore.Components
+@inject DialogService DialogService
+@inject IStringLocalizer<SharedResource> Localizer
+@inject IJSRuntime JSRuntime
+@inject Radzen.NotificationService NotificationService
+
+<RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" Style="align-items: center; margin-bottom: 0.5rem;">
+        <RadzenCheckBox Value="@includeHeader" ValueChanged="@(EventCallback.Factory.Create<bool>(this, OnHeaderChanged))" Name="IncludeHeader" Disabled="@isRegenerating" />
+        <RadzenText TextStyle="TextStyle.Body2" Style="flex: 1;">
+            @Localizer["include_enterprise_header"]
+        </RadzenText>
+    </RadzenStack>
+
+    @if (isRegenerating)
+    {
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.Center" Style="padding: 1rem;">
+            <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Medium" />
+            <RadzenText>@Localizer["Regenerating_PDF"]...</RadzenText>
+        </RadzenStack>
+    }
+    else if (!string.IsNullOrWhiteSpace(pdfPreview))
+    {
+        <RadzenStack Gap="0.5rem">
+            <iframe src="@pdfPreview" style="width: 100%; height: 500px; border: 1px solid #ddd; border-radius: 4px;" frameborder="0"></iframe>
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.Center" Style="margin-top: 0.5rem;">
+                <RadzenButton Text="@Localizer["Imprimer"]" Icon="print" 
+                              ButtonStyle="ButtonStyle.Primary" 
+                              Size="ButtonSize.Small"
+                              Click="OnPrint" 
+                              Disabled="@isRegenerating" />
+                <RadzenButton Text="@Localizer["Télécharger"]" Icon="download" 
+                              ButtonStyle="ButtonStyle.Success" 
+                              Size="ButtonSize.Small"
+                              Click="OnDownload" 
+                              Disabled="@isRegenerating" />
+                <RadzenButton Text="@Localizer["Ouvrir_Dans_Nouvel_Onglet"]" Icon="open_in_new" 
+                              ButtonStyle="ButtonStyle.Info" 
+                              Size="ButtonSize.Small"
+                              Click="OnOpenInNewTab" 
+                              Disabled="@isRegenerating" />
+            </RadzenStack>
+        </RadzenStack>
+    }
+    else
+    {
+        <RadzenText TextStyle="TextStyle.Body2" Style="text-align: center; padding: 2rem;">
+            @Localizer["No_PDF_Available"]
+        </RadzenText>
+    }
+
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End" Style="margin-top: 1rem;">
+        <RadzenButton Text="@Localizer["Fermer"]" 
+                      ButtonStyle="ButtonStyle.Light" 
+                      Click="@(() => DialogService.Close(false))" 
+                      Disabled="@isRegenerating" />
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    [Parameter] public byte[] PdfBytes { get; set; } = Array.Empty<byte>();
+    [Parameter] public string FileName { get; set; } = "document.pdf";
+    [Parameter] public Func<bool, Task<Result<byte[]>>>? RegeneratePdfAsync { get; set; }
+
+    private bool includeHeader = true;
+    private string pdfPreview = string.Empty;
+    private bool isRegenerating = false;
+    private byte[] currentPdfBytes = Array.Empty<byte>();
+
+    protected override void OnInitialized()
+    {
+        currentPdfBytes = PdfBytes;
+        UpdatePdfPreview();
+    }
+
+    private void UpdatePdfPreview()
+    {
+        if (currentPdfBytes != null && currentPdfBytes.Length > 0)
+        {
+            var base64 = Convert.ToBase64String(currentPdfBytes);
+            pdfPreview = $"data:application/pdf;base64,{base64}";
+        }
+    }
+
+    private async Task OnHeaderChanged(bool value)
+    {
+        includeHeader = value; // Update the value first
+        
+        if (RegeneratePdfAsync != null)
+        {
+            isRegenerating = true;
+            StateHasChanged();
+
+            try
+            {
+                var result = await RegeneratePdfAsync(value);
+                
+                if (result.IsSuccess && result.Value != null)
+                {
+                    currentPdfBytes = result.Value;
+                    UpdatePdfPreview();
+                }
+                else
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = Localizer["error"],
+                        Detail = result.Errors.FirstOrDefault()?.Message ?? Localizer["Failed_To_Regenerate_PDF"]
+                    });
+                    // Revert checkbox
+                    includeHeader = !value;
+                }
+            }
+            catch (Exception ex)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = $"{Localizer["Failed_To_Regenerate_PDF"]}: {ex.Message}"
+                });
+                // Revert checkbox
+                includeHeader = !value;
+            }
+            finally
+            {
+                isRegenerating = false;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task OnPrint()
+    {
+        if (currentPdfBytes == null || currentPdfBytes.Length == 0)
+            return;
+
+        try
+        {
+            var base64 = Convert.ToBase64String(currentPdfBytes);
+            await JSRuntime.InvokeVoidAsync("printPdfFromBase64", base64);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"{Localizer["Failed_To_Print"]}: {ex.Message}"
+            });
+        }
+    }
+
+    private async Task OnDownload()
+    {
+        if (currentPdfBytes == null || currentPdfBytes.Length == 0)
+            return;
+
+        try
+        {
+            var base64 = Convert.ToBase64String(currentPdfBytes);
+            await JSRuntime.InvokeVoidAsync("downloadFile", FileName, base64, "application/pdf");
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"{Localizer["Failed_To_Download"]}: {ex.Message}"
+            });
+        }
+    }
+
+    private async Task OnOpenInNewTab()
+    {
+        if (string.IsNullOrWhiteSpace(pdfPreview))
+            return;
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("openDocumentInNewTab", pdfPreview);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"{Localizer["Failed_To_Open_Document"]}: {ex.Message}"
+            });
+        }
+    }
+}

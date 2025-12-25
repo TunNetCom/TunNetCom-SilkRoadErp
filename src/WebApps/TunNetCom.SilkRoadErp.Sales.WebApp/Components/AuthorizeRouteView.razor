@@ -1,9 +1,11 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Services
 @using Microsoft.Extensions.Logging
+@using Microsoft.JSInterop
 @inject IAuthService AuthService
 @inject NavigationManager Navigation
 @inject ILogger<AuthorizeRouteView> Logger
 @inject ITokenExpirationNotifier TokenExpirationNotifier
+@inject IJSRuntime JSRuntime
 
 @if (IsLoginPage)
 {
@@ -52,8 +54,8 @@ else
 
     private async Task HandleTokenExpiredAsync()
     {
-        // AUTO-LOGOUT DISABLED: Do nothing - no redirect to login
-        Logger.LogWarning("AuthorizeRouteView: Token expiration event received but auto-logout is disabled");
+        Logger.LogWarning("AuthorizeRouteView: Token expired, redirecting to login");
+        RedirectToLogin();
         await Task.CompletedTask;
     }
 
@@ -97,54 +99,57 @@ else
 
         try
         {
-            Logger.LogInformation("AuthorizeRouteView: Starting authentication check");
+            Logger.LogInformation("AuthorizeRouteView: Starting authentication check for new circuit");
             
-            // ALWAYS load token from storage first (in case circuit ID changed after navigation)
-            // This ensures the token is available in TokenStore with the current circuit ID
-            _statusMessage = "Chargement depuis localStorage...";
+            // CRITICAL: Always load token from localStorage first
+            // This ensures each browser/device uses its OWN localStorage, not a shared server-side cache
+            // Each new circuit (browser/phone) will load its own token from its own localStorage
+            _statusMessage = "Vérification de l'authentification depuis localStorage...";
             StateHasChanged();
             
             try
             {
-                // LoadTokenFromStorageAsync has its own timeout, so we just await it
+                // Force load from localStorage - this is the source of truth for each device
                 await AuthService.LoadTokenFromStorageAsync();
-                Logger.LogInformation("AuthorizeRouteView: Token loaded. IsAuthenticated: {IsAuthenticated}", AuthService.IsAuthenticated);
+                
+                Logger.LogInformation("AuthorizeRouteView: Token load completed. IsAuthenticated: {IsAuthenticated}", AuthService.IsAuthenticated);
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "AuthorizeRouteView: Error loading token from storage");
-                // Continue to check IsAuthenticated anyway
+                Logger.LogError(ex, "AuthorizeRouteView: Error loading token from localStorage");
+                // Continue to check IsAuthenticated anyway - may be during prerendering
             }
             
-            // Now check if authenticated (token should be in TokenStore with current circuit ID)
+            // Now check if authenticated based on what was loaded from THIS device's localStorage
             if (AuthService.IsAuthenticated)
             {
-                Logger.LogInformation("AuthorizeRouteView: User authenticated, setting IsAuthorized to true");
+                Logger.LogInformation("AuthorizeRouteView: User authenticated from localStorage, granting access");
                 IsAuthorized = true;
                 _statusMessage = "Authentifié";
                 Logger.LogInformation("AuthorizeRouteView: IsAuthorized set to {IsAuthorized}, calling StateHasChanged", IsAuthorized);
                 StateHasChanged();
-                // Force a re-render by updating a dummy variable
+                // Force a re-render
                 await Task.Delay(100);
                 StateHasChanged();
-                Logger.LogInformation("AuthorizeRouteView: StateHasChanged called twice, IsAuthorized: {IsAuthorized}", IsAuthorized);
+                Logger.LogInformation("AuthorizeRouteView: StateHasChanged completed, IsAuthorized: {IsAuthorized}", IsAuthorized);
             }
             else
             {
-                // AUTO-LOGOUT DISABLED: Allow access even if not authenticated
-                Logger.LogWarning("AuthorizeRouteView: User not authenticated but auto-logout disabled - allowing access");
-                _statusMessage = "Non authentifié (accès autorisé)";
-                IsAuthorized = true; // Allow access anyway
+                // User not authenticated - redirect to login
+                // This happens when a new device opens the app without its own login
+                Logger.LogWarning("AuthorizeRouteView: No authentication token found in localStorage for this device, redirecting to login");
+                _statusMessage = "Non authentifié - redirection...";
                 StateHasChanged();
+                RedirectToLogin();
             }
         }
         catch (Exception ex)
         {
-            // AUTO-LOGOUT DISABLED: Allow access even on error
-            Logger.LogError(ex, "AuthorizeRouteView: Error during authentication check but auto-logout disabled - allowing access");
-            _statusMessage = "Erreur (accès autorisé)";
-            IsAuthorized = true; // Allow access anyway
+            // Error during authentication check - redirect to login for safety
+            Logger.LogError(ex, "AuthorizeRouteView: Error during authentication check, redirecting to login");
+            _statusMessage = "Erreur - redirection...";
             StateHasChanged();
+            RedirectToLogin();
         }
     }
 
@@ -167,6 +172,28 @@ else
         if (!IsLoginPage && !IsAuthorized && !_hasCheckedAuth)
         {
             IsAuthorized = false;
+        }
+    }
+
+    private void RedirectToLogin()
+    {
+        // Get current URI to use as return URL
+        var currentUri = Navigation.Uri;
+        var returnUrl = Uri.EscapeDataString(currentUri);
+        
+        // Don't include returnUrl if we're already on login or if it's the base URL
+        var uri = new Uri(currentUri);
+        var path = uri.AbsolutePath.ToLowerInvariant();
+        
+        if (path == "/" || path == "/login" || path == "/login/")
+        {
+            Logger.LogInformation("AuthorizeRouteView: Redirecting to /login (no return URL)");
+            Navigation.NavigateTo("/login", forceLoad: true);
+        }
+        else
+        {
+            Logger.LogInformation("AuthorizeRouteView: Redirecting to /login with return URL: {ReturnUrl}", currentUri);
+            Navigation.NavigateTo($"/login?returnUrl={returnUrl}", forceLoad: true);
         }
     }
 

@@ -4,6 +4,7 @@
 @using Radzen
 @using Radzen.Blazor
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Services
+@using Microsoft.AspNetCore.Components
 @inject NavigationManager Navigation
 @inject DialogService DialogService
 @inject IAuthService AuthService
@@ -470,6 +471,9 @@
     private LoginModel loginModel = new LoginModel();
     private bool isLoading = false;
     private string errorMessage = string.Empty;
+    
+    [SupplyParameterFromQuery(Name = "returnUrl")]
+    public string? ReturnUrl { get; set; }
 
     private async Task OnSubmit(LoginModel model)
     {
@@ -486,9 +490,40 @@
 
             if (success)
             {
+                // Redirect to return URL if provided, otherwise go to home
+                var targetUrl = "/";
+                
+                if (!string.IsNullOrEmpty(ReturnUrl))
+                {
+                    try
+                    {
+                        // Decode the return URL
+                        targetUrl = Uri.UnescapeDataString(ReturnUrl);
+                        
+                        // Ensure it's a relative URL (security check)
+                        var uri = new Uri(targetUrl, UriKind.RelativeOrAbsolute);
+                        if (uri.IsAbsoluteUri)
+                        {
+                            // If it's absolute, extract just the path
+                            targetUrl = uri.PathAndQuery;
+                        }
+                        
+                        // Don't redirect back to login
+                        if (targetUrl.ToLowerInvariant().Contains("/login"))
+                        {
+                            targetUrl = "/";
+                        }
+                    }
+                    catch
+                    {
+                        // If URL parsing fails, default to home
+                        targetUrl = "/";
+                    }
+                }
+                
                 // Don't use forceLoad: true - it recreates the circuit and breaks JS interop
                 // Instead, navigate normally and let AuthorizeRouteView handle the auth check
-                Navigation.NavigateTo("/");
+                Navigation.NavigateTo(targetUrl);
             }
             else
             {

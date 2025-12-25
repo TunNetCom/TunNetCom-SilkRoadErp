@@ -1,4 +1,4 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.AppParameters.UpdateAppParameters;
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.AppParameters.UpdateAppParameters;
 public record UpdateAppParametersCommand(
     string NomSociete,
     decimal? Timbre,
@@ -21,4 +21,5 @@ public record UpdateAppParametersCommand(
     decimal? VatRate19,
     bool? BloquerVenteStockInsuffisant,
     int? DecimalPlaces,
-    decimal? SeuilRetenueSource) : IRequest<Result>;
+    decimal? SeuilRetenueSource,
+    string? Rib) : IRequest<Result>;

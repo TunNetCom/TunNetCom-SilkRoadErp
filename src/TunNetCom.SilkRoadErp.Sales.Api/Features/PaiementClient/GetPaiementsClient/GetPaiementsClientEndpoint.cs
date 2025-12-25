@@ -19,12 +19,22 @@ public class GetPaiementsClientEndpoint : ICarterModule
         var query = new GetPaiementsClientQuery(
             queryParams.ClientId,
             queryParams.AccountingYearId,
+            queryParams.DateEcheanceFrom,
+            queryParams.DateEcheanceTo,
+            queryParams.MontantMin,
+            queryParams.MontantMax,
             queryParams.PageNumber,
             queryParams.PageSize);
 
-        var result = await mediator.Send(query, cancellationToken);
-
-        return TypedResults.Ok(result.Value);
+        try
+        {
+            var result = await mediator.Send(query, cancellationToken);
+            return TypedResults.Ok(result.Value);
+        }
+        catch (Exception ex)
+        {
+            throw;
+        }
     }
 }
 
@@ -32,5 +42,9 @@ public class GetPaiementsClientQueryParams : QueryStringParameters
 {
     public int? ClientId { get; set; }
     public int? AccountingYearId { get; set; }
+    public DateTime? DateEcheanceFrom { get; set; }
+    public DateTime? DateEcheanceTo { get; set; }
+    public decimal? MontantMin { get; set; }
+    public decimal? MontantMax { get; set; }
 }
 

@@ -24,37 +24,67 @@ public class InvoiceBaseInfosController : ODataController
         _mediator = mediator;
     }
 
-    [EnableQuery(MaxExpansionDepth = 3, MaxAnyAllExpressionDepth = 3)]
-    public async Task<IActionResult> Get([FromQuery] List<int>? tagIds = null, CancellationToken cancellationToken = default)
+    [EnableQuery(MaxExpansionDepth = 3, MaxAnyAllExpressionDepth = 3, PageSize = 50)]
+    public async Task<IActionResult> Get(
+        [FromQuery] DateTime? startDate = null,
+        [FromQuery] DateTime? endDate = null,
+        [FromQuery] int? customerId = null,
+        [FromQuery] List<int>? tagIds = null,
+        CancellationToken cancellationToken = default)
     {
         try
         {
+            _logger.LogInformation("InvoiceBaseInfosController.Get called with startDate: {StartDate}, endDate: {EndDate}, customerId: {CustomerId}, tagIds: {TagIds}", 
+                startDate, endDate, customerId, tagIds != null ? string.Join(",", tagIds) : "null");
+
             var appParams = await _mediator.Send(new GetAppParametersQuery());
             var timbre = appParams.Value.Timbre;
+            
+            // Build base query with filters BEFORE loading to memory
+            var baseQuery = _context.Facture
+                .AsNoTracking()
+                .FilterByActiveAccountingYear();
 
-            // Build base query
-            var baseQuery = from f in _context.Facture
-                           join c in _context.Client on f.IdClient equals c.Id
-                           join bdl in _context.BonDeLivraison on f.Num equals bdl.NumFacture into deliveryNotes
-                           from bdl in deliveryNotes.DefaultIfEmpty()
-                           select new { f, c, bdl };
-
-            // Apply tag filter if provided (before loading to memory)
-            if (tagIds != null && tagIds.Any())
+            // Apply custom filters before projection (on entity properties)
+            if (startDate.HasValue)
             {
-                var factureNumsWithTags = await _context.DocumentTag
-                    .Where(dt => dt.DocumentType == DocumentTypes.Facture && tagIds.Contains(dt.TagId))
-                    .Select(dt => dt.DocumentId)
-                    .Distinct()
-                    .ToListAsync(cancellationToken);
-                
-                baseQuery = baseQuery.Where(x => factureNumsWithTags.Contains(x.f.Num));
+                _logger.LogInformation("Applying startDate filter: {StartDate}", startDate.Value);
+                baseQuery = baseQuery.Where(f => f.Date >= startDate.Value);
             }
 
-            // Load data to avoid SQL conversion issues with Statut (string -> enum -> int)
-            var invoicesData = await baseQuery.ToListAsync(cancellationToken);
+            if (endDate.HasValue)
+            {
+                var endDateInclusive = endDate.Value.Date.AddDays(1).AddTicks(-1);
+                _logger.LogInformation("Applying endDate filter: {EndDate} (inclusive: {EndDateInclusive})", endDate.Value, endDateInclusive);
+                baseQuery = baseQuery.Where(f => f.Date <= endDateInclusive);
+            }
 
-            // Group and calculate in memory to avoid SQL conversion issues
+            if (customerId.HasValue)
+            {
+                _logger.LogInformation("Applying customerId filter: {CustomerId}", customerId.Value);
+                baseQuery = baseQuery.Where(f => f.IdClient == customerId.Value);
+            }
+
+            // Apply tag filter if provided
+            if (tagIds != null && tagIds.Any())
+            {
+                baseQuery = baseQuery.Where(f => _context.DocumentTag
+                    .Any(dt => dt.DocumentType == DocumentTypes.Facture 
+                        && dt.DocumentId == f.Num 
+                        && tagIds.Contains(dt.TagId)));
+            }
+
+            // Build query with joins
+            var queryWithJoins = from f in baseQuery
+                                join c in _context.Client on f.IdClient equals c.Id
+                                join bdl in _context.BonDeLivraison on f.Num equals bdl.NumFacture into deliveryNotes
+                                from bdl in deliveryNotes.DefaultIfEmpty()
+                                select new { f, c, bdl };
+
+            // Load data to avoid SQL conversion issues with Statut (string -> enum -> int)
+            var invoicesData = await queryWithJoins.ToListAsync(cancellationToken);
+
+            // Group and calculate in memory, then return as IQueryable for OData filtering
             var invoicesQuery = invoicesData
                 .GroupBy(x => new { x.f.Num, x.f.Date, x.f.IdClient, x.c.Nom, x.f.Statut })
                 .Select(g => new InvoiceBaseInfo
@@ -70,6 +100,7 @@ public class InvoiceBaseInfosController : ODataController
                 })
                 .AsQueryable();
 
+            _logger.LogInformation("Returning query for {Count} invoices", invoicesQuery.Count());
             return Ok(invoicesQuery);
         }
         catch (Exception ex)

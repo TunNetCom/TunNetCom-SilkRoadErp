@@ -65,6 +65,7 @@ public class PrintQuotationService(
         printModel.VatRate13 = getAppParametersResponse.Value.VatRate13;
         printModel.VatRate19 = getAppParametersResponse.Value.VatRate19;
         printModel.DecimalPlaces = getAppParametersResponse.Value.DecimalPlaces;
+        printModel.Rib = getAppParametersResponse.Value.Rib;
         CalculateTotalAmounts(printModel, getAppParametersResponse.Value);
 
         var printOptions = PreparePrintOptions(printModel, getAppParametersResponse.Value, includeHeader);
@@ -112,6 +113,7 @@ public class PrintQuotationService(
         printModel.VatRate13 = getAppParametersResponse.Value.VatRate13;
         printModel.VatRate19 = getAppParametersResponse.Value.VatRate19;
         printModel.DecimalPlaces = getAppParametersResponse.Value.DecimalPlaces;
+        printModel.Rib = getAppParametersResponse.Value.Rib;
         CalculateTotalAmounts(printModel, getAppParametersResponse.Value);
 
         var printOptions = PreparePrintOptions(printModel, getAppParametersResponse.Value, includeHeader);
@@ -215,7 +217,7 @@ public class PrintQuotationService(
                 <div>{appParameters.Adresse}</div>
                 <div>Tel: {appParameters.Tel}</div>
                 <div>TVA: {$"{appParameters.MatriculeFiscale}/{appParameters.CodeTva}/{appParameters.CodeCategorie}/{appParameters.EtbSecondaire}"}</div>
-                <div>E-mail: ste.nissaf@gmail.com</div>
+                <div>E-mail: {appParameters.Email ?? ""}</div>
             </td>
             
             <!-- Middle Column - Quotation Info -->

@@ -22,7 +22,7 @@
     <div class="products-card">
         <div class="products-header">
             <h3 class="products-title">@Localizer["products"]</h3>
-            <div style="display: flex; gap: 0.5rem;">
+            <div class="products-header-buttons">
                 @if (selectedProducts.Any())
                 {
                     <RadzenButton Icon="category" Text="Affecter sous-famille"
@@ -42,8 +42,8 @@
                        Change="@(async (string value) => await productGrid.Reload())"
                        Class="products-search" />
 
-        <RadzenCard Style="margin-bottom: 1.25rem; padding: 1.25rem;">
-            <RadzenStack Gap="1.25rem">
+        <RadzenCard Class="products-filters-card">
+            <RadzenStack Gap="1rem">
                 <h4 style="margin: 0; font-size: 1.1rem; font-weight: 600;">Filtres</h4>
                 <RadzenRow Gap="1rem">
                     <RadzenColumn Size="12" SizeMD="3">
@@ -77,11 +77,6 @@
                                           ValueProperty="Value" 
                                           Placeholder="Tous" 
                                           AllowClear="true" />
-                        </RadzenFormField>
-                    </RadzenColumn>
-                    <RadzenColumn Size="12" SizeMD="2">
-                        <RadzenFormField Text="Stock faible uniquement" Style="margin-bottom: 0;">
-                            <RadzenCheckBox Value="@stockLowOnly" ValueChanged="@OnStockLowOnlyChangedCallback" />
                         </RadzenFormField>
                     </RadzenColumn>
                     <RadzenColumn Size="12" SizeMD="2" Style="display: flex; align-items: flex-end; padding-bottom: 0;">
@@ -246,16 +241,30 @@
 
     }
     .products-container {
-        padding: 1.25rem;
+        padding: 0 1.25rem 1.25rem 1.25rem;
+        padding-top: 0 !important;
         max-width: 1280px;
-        margin: 1rem auto;
+        margin: 0 auto 1rem auto;
+        margin-top: 0 !important;
+    }
+
+    .products-container > * {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+
+    .products-container > *:first-child {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
     }
 
     .products-card {
         border-radius: var(--border-radius);
         box-shadow: var(--card-shadow);
         padding: 1.5rem;
+        padding-top: 1.5rem;
         border: none;
+        margin-top: 0 !important;
     }
 
     .products-header {
@@ -263,6 +272,11 @@
         justify-content: space-between;
         align-items: center;
         margin-bottom: 1.25rem;
+    }
+
+    .products-header-buttons {
+        display: flex;
+        gap: 0.5rem;
     }
 
     .products-title {
@@ -366,6 +380,165 @@
     .products-grid .rz-grid-table {
         border-collapse: collapse;
     }
+
+    .products-filters-card {
+        margin-bottom: 1.25rem;
+        margin-top: 0 !important;
+        padding: 1.25rem;
+        padding-top: 1.25rem;
+    }
+
+    .products-filters-card ::deep .rz-card {
+        margin-top: 0 !important;
+        padding-top: 1.25rem !important;
+    }
+
+    .products-filters-card ::deep .rz-card-body {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+
+    .products-grid {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+
+    .products-grid ::deep .rz-datagrid {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+
+    .products-grid ::deep .rz-datagrid-header {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+
+    .products-grid ::deep .rz-datagrid-content {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+
+    .products-grid ::deep .rz-datagrid-table-wrapper {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+
+    .products-grid ::deep .rz-datatable {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+
+    .products-grid ::deep .rz-datatable thead {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+
+    /* Media queries for mobile devices (iPhone, etc.) */
+    @@media (max-width: 768px) {
+        .products-container {
+            padding: 0.25rem 1.25rem 1.25rem 1.25rem;
+            margin: 0.25rem auto 1rem auto;
+        }
+
+        .products-card {
+            padding: 0.75rem 1.5rem 1.5rem 1.5rem;
+        }
+
+        .products-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .products-title {
+            font-size: 1.5rem;
+        }
+
+        .products-header-buttons {
+            width: 100%;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .products-header-buttons ::deep .rz-button {
+            width: 100%;
+        }
+
+        .products-search {
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        /* Adjust filters section for mobile */
+        .products-card ::deep .rz-card {
+            padding: 0.75rem !important;
+            margin-bottom: 1rem;
+        }
+
+        .products-card ::deep .rz-stack {
+            gap: 0.75rem !important;
+        }
+
+        .products-card ::deep .rz-row {
+            gap: 0.75rem !important;
+        }
+
+        .products-card ::deep h4 {
+            font-size: 1rem !important;
+        }
+
+        /* Remove fixed widths from DataGrid columns on mobile */
+        .products-grid ::deep .rz-datatable thead th,
+        .products-grid ::deep .rz-datatable tbody td {
+            padding: 0.5rem 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .products-grid ::deep .rz-datatable thead th {
+            font-size: 0.8rem;
+        }
+
+        /* Make grid cells more compact on mobile */
+        .grid-cell {
+            padding: 0.5rem 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        /* Adjust button sizes in grid */
+        .products-grid ::deep .rz-button {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        /* Ensure badges are readable */
+        .products-grid ::deep .rz-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+    }
+
+    /* Additional adjustments for very small screens (iPhone SE, etc.) */
+    @@media (max-width: 375px) {
+        .products-container {
+            padding: 0.25rem 0.75rem 0.75rem 0.75rem;
+        }
+
+        .products-card {
+            padding: 0.5rem 1rem 1rem 1rem;
+        }
+
+        .products-title {
+            font-size: 1.25rem;
+        }
+
+        .products-grid ::deep .rz-datatable thead th,
+        .products-grid ::deep .rz-datatable tbody td {
+            padding: 0.4rem 0.4rem;
+            font-size: 0.8rem;
+        }
+    }
 </style>
 @code {
     private RadzenDataGrid<ProductResponse> productGrid;
@@ -382,7 +555,6 @@
     private int? selectedFamilleId;
     private int? selectedSousFamilleId;
     private bool? selectedVisibility;
-    private bool stockLowOnly = false;
     private int? stockCalculeMin;
     private int? stockCalculeMax;
 
@@ -448,12 +620,6 @@
         await productGrid.Reload();
     });
 
-    private EventCallback<bool> OnStockLowOnlyChangedCallback => EventCallback.Factory.Create<bool>(this, async (bool value) =>
-    {
-        stockLowOnly = value;
-        await productGrid.Reload();
-    });
-
     private EventCallback<int?> OnStockCalculeMinChangedCallback => EventCallback.Factory.Create<int?>(this, async (int? value) =>
     {
         stockCalculeMin = value;
@@ -471,7 +637,6 @@
         selectedFamilleId = null;
         selectedSousFamilleId = null;
         selectedVisibility = null;
-        stockLowOnly = false;
         stockCalculeMin = null;
         stockCalculeMax = null;
         await LoadSubFamilies();
@@ -620,7 +785,6 @@
                 FamilleProduitId = selectedFamilleId,
                 SousFamilleProduitId = selectedSousFamilleId,
                 Visibility = selectedVisibility,
-                StockLowOnly = stockLowOnly ? true : null,
                 StockCalculeMin = stockCalculeMin,
                 StockCalculeMax = stockCalculeMax
             };

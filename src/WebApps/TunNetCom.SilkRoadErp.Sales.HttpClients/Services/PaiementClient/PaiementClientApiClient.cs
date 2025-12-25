@@ -48,26 +48,38 @@ public class PaiementClientApiClient : IPaiementClientApiClient
         CancellationToken cancellationToken)
     {
         _logger.LogInformation("Fetching paiement client from API /paiement-client/{id}", id);
-        var response = await _httpClient.GetAsync($"/paiement-client/{id}", cancellationToken: cancellationToken);
-
-        if (response.StatusCode == HttpStatusCode.OK)
+        try
         {
-            var responseContent = await response.Content.ReadAsStringAsync();
-            var paiement = JsonConvert.DeserializeObject<PaiementClientResponse>(responseContent);
-            return Result.Ok(paiement!);
-        }
+            var response = await _httpClient.GetAsync($"/paiement-client/{id}", cancellationToken: cancellationToken);
 
-        if (response.StatusCode == HttpStatusCode.NotFound)
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var paiement = JsonConvert.DeserializeObject<PaiementClientResponse>(responseContent);
+                return Result.Ok(paiement!);
+            }
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return Result.Fail("paiement_client_not_found");
+            }
+
+            var errorContent = await response.Content.ReadAsStringAsync();
+            throw new Exception($"PaiementClient: Unexpected response. Status Code: {response.StatusCode}. Content: {errorContent}");
+        }
+        catch (Exception ex)
         {
-            return Result.Fail("paiement_client_not_found");
+            throw;
         }
-
-        throw new Exception($"PaiementClient: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
     }
 
     public async Task<PagedList<PaiementClientResponse>> GetPaiementsClientAsync(
         int? clientId,
         int? accountingYearId,
+        DateTime? dateEcheanceFrom,
+        DateTime? dateEcheanceTo,
+        decimal? montantMin,
+        decimal? montantMax,
         int pageNumber,
         int pageSize,
         CancellationToken cancellationToken)
@@ -83,6 +95,26 @@ public class PaiementClientApiClient : IPaiementClientApiClient
         if (accountingYearId.HasValue)
         {
             queryString += $"&accountingYearId={accountingYearId.Value}";
+        }
+
+        if (dateEcheanceFrom.HasValue)
+        {
+            queryString += $"&dateEcheanceFrom={Uri.EscapeDataString(dateEcheanceFrom.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}";
+        }
+
+        if (dateEcheanceTo.HasValue)
+        {
+            queryString += $"&dateEcheanceTo={Uri.EscapeDataString(dateEcheanceTo.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}";
+        }
+
+        if (montantMin.HasValue)
+        {
+            queryString += $"&montantMin={montantMin.Value}";
+        }
+
+        if (montantMax.HasValue)
+        {
+            queryString += $"&montantMax={montantMax.Value}";
         }
 
         var response = await _httpClient.GetAsync(queryString, cancellationToken: cancellationToken);

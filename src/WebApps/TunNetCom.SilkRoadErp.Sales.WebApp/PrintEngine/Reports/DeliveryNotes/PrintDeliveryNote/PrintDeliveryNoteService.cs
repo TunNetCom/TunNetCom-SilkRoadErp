@@ -4,6 +4,7 @@ using TunNetCom.SilkRoadErp.Sales.Domain.Services;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryCar;
 
 namespace TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.DeliveryNotes.PrintDeliveryNote;
 
@@ -12,6 +13,7 @@ public class PrintDeliveryNoteService(
     IDeliveryNoteApiClient _deliveryNoteApiClient,
     ICustomersApiClient _customersApiClient,
     IAppParametersClient _appParametersClient,
+    IDeliveryCarApiClient _deliveryCarApiClient,
     IPrintPdfService<PrintDeliveryNoteModel, PrintDeliveryNoteView> _printService)
 {
     public async Task<Result<byte[]>> GenerateDeliveryNotePdfAsync(
@@ -50,6 +52,31 @@ public class PrintDeliveryNoteService(
             }
         }
 
+        // Load delivery car if available
+        if (deliveryNoteResponse.DeliveryCarId.HasValue)
+        {
+            try
+            {
+                var deliveryCar = await _deliveryCarApiClient.GetDeliveryCarByIdAsync(
+                    deliveryNoteResponse.DeliveryCarId.Value,
+                    cancellationToken);
+                if (deliveryCar != null)
+                {
+                    printModel.DeliveryCar = new DeliveryNoteCarModel
+                    {
+                        Matricule = deliveryCar.Matricule,
+                        Owner = deliveryCar.Owner
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to load delivery car {DeliveryCarId} for delivery note {DeliveryNoteNumber}", 
+                    deliveryNoteResponse.DeliveryCarId.Value, deliveryNoteNumber);
+                // Continue without car info - don't fail the print
+            }
+        }
+
         var getAppParametersResponse = await FetchAppParametersAsync(cancellationToken);
         if (getAppParametersResponse.IsFailed)
         {
@@ -62,6 +89,7 @@ public class PrintDeliveryNoteService(
         printModel.VatRate7 = getAppParametersResponse.Value.VatRate7;
         printModel.VatRate13 = getAppParametersResponse.Value.VatRate13;
         printModel.VatRate19 = getAppParametersResponse.Value.VatRate19;
+        printModel.Rib = getAppParametersResponse.Value.Rib;
         CalculateTotalAmounts(printModel, getAppParametersResponse.Value);
 
         var printOptions = PreparePrintOptions(printModel, getAppParametersResponse.Value, includeHeader);
@@ -96,6 +124,9 @@ public class PrintDeliveryNoteService(
             }
         }
 
+        // Note: Delivery car should be loaded before calling this method if needed
+        // This method is typically used with pre-populated data
+
         var getAppParametersResponse = await FetchAppParametersAsync(cancellationToken);
         if (getAppParametersResponse.IsFailed)
         {
@@ -108,6 +139,7 @@ public class PrintDeliveryNoteService(
         printModel.VatRate7 = getAppParametersResponse.Value.VatRate7;
         printModel.VatRate13 = getAppParametersResponse.Value.VatRate13;
         printModel.VatRate19 = getAppParametersResponse.Value.VatRate19;
+        printModel.Rib = getAppParametersResponse.Value.Rib;
         CalculateTotalAmounts(printModel, getAppParametersResponse.Value);
 
         var printOptions = PreparePrintOptions(printModel, getAppParametersResponse.Value, includeHeader);
@@ -203,6 +235,18 @@ public class PrintDeliveryNoteService(
             }
         }
 
+        // Add delivery car info if available
+        if (printModel.DeliveryCar != null)
+        {
+            if (!string.IsNullOrEmpty(customerInfo))
+            {
+                customerInfo += "<div style='margin-top: 10px;'></div>";
+            }
+            customerInfo += $@"
+                <div style='font-weight: bold;'>Voiture :</div>
+                <div>{printModel.DeliveryCar.Matricule} - {printModel.DeliveryCar.Owner}</div>";
+        }
+
         var headerContent = $@"
 <div style='font-family: Arial; font-size: 12px; width: 90%; margin: 0 auto;'>
     <table style='width: 100%; border-collapse: collapse;'>
@@ -213,7 +257,7 @@ public class PrintDeliveryNoteService(
                 <div>{appParameters.Adresse}</div>
                 <div>Tel: {appParameters.Tel}</div>
                 <div>TVA: {$"{appParameters.MatriculeFiscale}/{appParameters.CodeTva}/{appParameters.CodeCategorie}/{appParameters.EtbSecondaire}"}</div>
-                <div>E-mail: ste.nissaf@gmail.com</div>
+                <div>E-mail: {appParameters.Email ?? ""}</div>
             </td>
             
             <!-- Middle Column - Delivery Note Info -->

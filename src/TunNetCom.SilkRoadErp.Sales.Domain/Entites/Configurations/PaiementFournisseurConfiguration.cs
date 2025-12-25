@@ -13,10 +13,6 @@ public partial class PaiementFournisseurConfiguration : IEntityTypeConfiguration
         entity.ToTable("PaiementFournisseur", t =>
         {
             t.HasCheckConstraint("CHK_PaiementFournisseur_Montant", "Montant > 0");
-            t.HasCheckConstraint("CHK_PaiementFournisseur_Document", 
-                "(FactureFournisseurId IS NULL AND BonDeReceptionId IS NULL) OR " +
-                "(FactureFournisseurId IS NOT NULL AND BonDeReceptionId IS NULL) OR " +
-                "(FactureFournisseurId IS NULL AND BonDeReceptionId IS NOT NULL)");
         });
 
         entity.HasKey(e => e.Id);
@@ -54,12 +50,6 @@ public partial class PaiementFournisseurConfiguration : IEntityTypeConfiguration
             .HasConversion<string>()
             .IsRequired();
 
-        entity.Property(e => e.FactureFournisseurId)
-            .HasColumnName("FactureFournisseurId");
-
-        entity.Property(e => e.BonDeReceptionId)
-            .HasColumnName("BonDeReceptionId");
-
         entity.Property(e => e.NumeroChequeTraite)
             .HasColumnName("NumeroChequeTraite")
             .HasMaxLength(100);
@@ -90,6 +80,10 @@ public partial class PaiementFournisseurConfiguration : IEntityTypeConfiguration
         entity.Property(e => e.RibCle)
             .HasColumnName("RibCle")
             .HasMaxLength(5);
+
+        entity.Property(e => e.DocumentStoragePath)
+            .HasColumnName("DocumentStoragePath")
+            .HasColumnType("nvarchar(max)");
 
         entity.Property(e => e.DateModification)
             .HasColumnName("DateModification")
@@ -126,17 +120,15 @@ public partial class PaiementFournisseurConfiguration : IEntityTypeConfiguration
             .OnDelete(DeleteBehavior.SetNull)
             .HasConstraintName("FK_PaiementFournisseur_Banque");
 
-        entity.HasOne(d => d.FactureFournisseur)
-            .WithMany()
-            .HasForeignKey(d => d.FactureFournisseurId)
-            .OnDelete(DeleteBehavior.NoAction)
-            .HasConstraintName("FK_PaiementFournisseur_FactureFournisseur");
+        entity.HasMany(d => d.FactureFournisseurs)
+            .WithOne(p => p.PaiementFournisseur)
+            .HasForeignKey(p => p.PaiementFournisseurId)
+            .OnDelete(DeleteBehavior.Cascade);
 
-        entity.HasOne(d => d.BonDeReception)
-            .WithMany()
-            .HasForeignKey(d => d.BonDeReceptionId)
-            .OnDelete(DeleteBehavior.NoAction)
-            .HasConstraintName("FK_PaiementFournisseur_BonDeReception");
+        entity.HasMany(d => d.BonDeReceptions)
+            .WithOne(p => p.PaiementFournisseur)
+            .HasForeignKey(p => p.PaiementFournisseurId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         OnConfigurePartial(entity);
     }

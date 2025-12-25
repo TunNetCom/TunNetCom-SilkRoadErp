@@ -15,6 +15,10 @@ public interface IPaiementClientApiClient
     Task<PagedList<PaiementClientResponse>> GetPaiementsClientAsync(
         int? clientId,
         int? accountingYearId,
+        DateTime? dateEcheanceFrom,
+        DateTime? dateEcheanceTo,
+        decimal? montantMin,
+        decimal? montantMax,
         int pageNumber,
         int pageSize,
         CancellationToken cancellationToken);
@@ -28,6 +32,7 @@ public interface IPaiementClientApiClient
         int id,
         CancellationToken cancellationToken);
 }
+
 
 
 

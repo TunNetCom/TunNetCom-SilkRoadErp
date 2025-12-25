@@ -77,8 +77,42 @@
                     <Start><RadzenIcon Icon="home" /></Start>
                     <ChildContent><RadzenTextBox @bind-Value="provider.Adresse" Name="Adresse" Style="width: 100%;" /></ChildContent>
                 </RadzenFormField>
+
+                <RadzenFormField Text="@localizer["Taux_Retenue_Source"]">
+                    <Start><RadzenIcon Icon="percent" /></Start>
+                    <ChildContent><RadzenNumeric @bind-Value="provider.TauxRetenu" Min="0" Max="100" Style="width: 100%;" /></ChildContent>
+                </RadzenFormField>
             </RadzenColumn>
         </RadzenRow>
+
+        <!-- RIB Section -->
+        <RadzenCard Style="margin-top: 20px; padding: 15px;">
+            <RadzenStack Gap="1rem">
+                <RadzenLabel Text="@localizer["RIB_Information"]" Style="font-weight: bold; font-size: 1.1em;" />
+                <RadzenRow>
+                    <RadzenColumn Size="12" SizeMD="3">
+                        <RadzenFormField Text="@localizer["RIB_Code_Etablissement"]">
+                            <ChildContent><RadzenTextBox @bind-Value="provider.RibCodeEtab" Placeholder="@localizer["Code_Etab"]" MaxLength="10" Style="width: 100%;" /></ChildContent>
+                        </RadzenFormField>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="3">
+                        <RadzenFormField Text="@localizer["RIB_Code_Agence"]">
+                            <ChildContent><RadzenTextBox @bind-Value="provider.RibCodeAgence" Placeholder="@localizer["Code_Agence"]" MaxLength="10" Style="width: 100%;" /></ChildContent>
+                        </RadzenFormField>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="3">
+                        <RadzenFormField Text="@localizer["RIB_Numero_Compte"]">
+                            <ChildContent><RadzenTextBox @bind-Value="provider.RibNumeroCompte" Placeholder="@localizer["Numero_Compte"]" MaxLength="20" Style="width: 100%;" /></ChildContent>
+                        </RadzenFormField>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="3">
+                        <RadzenFormField Text="@localizer["RIB_Cle"]">
+                            <ChildContent><RadzenTextBox @bind-Value="provider.RibCle" Placeholder="@localizer["Cle"]" MaxLength="5" Style="width: 100%;" /></ChildContent>
+                        </RadzenFormField>
+                    </RadzenColumn>
+                </RadzenRow>
+            </RadzenStack>
+        </RadzenCard>
 
         <!-- Toggle Button -->
         <RadzenStack Orientation="Radzen.Orientation.Horizontal"
@@ -147,7 +181,12 @@
                         Mail = provider.Mail,
                         MailDeux = provider.MailDeux,
                         Constructeur = provider.Constructeur,
-                        Adresse = provider.Adresse
+                        Adresse = provider.Adresse,
+                        TauxRetenu = provider.TauxRetenu,
+                        RibCodeEtab = provider.RibCodeEtab,
+                        RibCodeAgence = provider.RibCodeAgence,
+                        RibNumeroCompte = provider.RibNumeroCompte,
+                        RibCle = provider.RibCle
                     },
                     cancellationTokenSource.Token);
 
@@ -174,7 +213,12 @@
                    Mail = provider.Mail,
                    MailDeux = provider.MailDeux,
                    Constructeur = provider.Constructeur,
-                   Adresse = provider.Adresse
+                   Adresse = provider.Adresse,
+                   TauxRetenu = provider.TauxRetenu,
+                   RibCodeEtab = provider.RibCodeEtab,
+                   RibCodeAgence = provider.RibCodeAgence,
+                   RibNumeroCompte = provider.RibNumeroCompte,
+                   RibCle = provider.RibCle
                }, provider.Id,
            cancellationTokenSource.Token);
 

@@ -1,7 +1,10 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;
+namespace TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;
 
 public class ProviderInvoiceResponse
 {
+    [JsonPropertyName("id")]
+    public int Id { get; set; }
+
     [JsonPropertyName("num")]
     public int Num { get; set; }
 

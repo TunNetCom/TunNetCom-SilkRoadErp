@@ -563,123 +563,65 @@ else
                     ? $"Commande - {orderDate:yyyy-MM-dd}.pdf"
                     : $"Commande {orderNumber}.pdf";
 
-                // Show print mode selection dialog
-                var printModeResult = await DialogService.OpenAsync<PrintModeDialog>(
+                // Show PDF viewer dialog
+                Func<bool, Task<Result<byte[]>>> regenerateFunc;
+                
+                if (!string.IsNullOrEmpty(orderNumber) && int.TryParse(orderNumber, out var orderNumForRegen))
+                {
+                    // Saved order
+                    regenerateFunc = async (includeHeader) =>
+                        await PrintOrderService.GenerateOrderPdfAsync(
+                            orderNumForRegen,
+                            _cancellationTokenSource.Token,
+                            includeHeader: includeHeader);
+                }
+                else
+                {
+                    // Unsaved order - use current data
+                    var printModel = new PrintOrderModel
+                    {
+                        Num = 0,
+                        Date = orderDate,
+                        SupplierId = selectedProviderId,
+                        TotalExcludingTax = totalHt,
+                        TotalVat = totalVat,
+                        TotalAmount = totalTtc,
+                        Lines = orders.Select(o => new OrderLineModel
+                        {
+                            Id = o.Id,
+                            RefProduit = o.ProductReference,
+                            DesignationLi = o.Description,
+                            QteLi = o.Quantity,
+                            PrixHt = o.UnitPriceExcludingTax,
+                            Remise = o.DiscountPercentage,
+                            TotHt = o.TotalExcludingTax,
+                            Tva = o.VatPercentage,
+                            TotTtc = o.TotalIncludingTax
+                        }).ToList()
+                    };
+                    
+                    regenerateFunc = async (includeHeader) =>
+                        await PrintOrderService.GenerateOrderPdfFromDataAsync(
+                            printModel,
+                            _cancellationTokenSource.Token,
+                            includeHeader: includeHeader);
+                }
+
+                await DialogService.OpenAsync<PdfViewerDialog>(
                     Localizer["print_mode"],
-                    new Dictionary<string, object>(),
+                    new Dictionary<string, object>
+                    {
+                        { "PdfBytes", pdfResult.Value },
+                        { "FileName", fileName },
+                        { "RegeneratePdfAsync", regenerateFunc }
+                    },
                     new DialogOptions()
                     {
-                        Width = "400px",
-                        Resizable = false,
+                        Width = "800px",
+                        Height = "700px",
+                        Resizable = true,
                         Draggable = true
                     });
-
-                if (printModeResult is PrintModeResult result)
-                {
-                    // Regenerate PDF if header should be excluded
-                    if (!result.IncludeHeader)
-                    {
-                        if (!string.IsNullOrEmpty(orderNumber) && int.TryParse(orderNumber, out var orderNumForRegen))
-                        {
-                            pdfResult = await PrintOrderService.GenerateOrderPdfAsync(
-                                orderNumForRegen,
-                                _cancellationTokenSource.Token,
-                                includeHeader: false);
-                        }
-                        else
-                        {
-                            var printModel = new PrintOrderModel
-                            {
-                                Num = 0,
-                                Date = orderDate,
-                                SupplierId = selectedProviderId,
-                                TotalExcludingTax = totalHt,
-                                TotalVat = totalVat,
-                                TotalAmount = totalTtc,
-                                Lines = orders.Select(o => new OrderLineModel
-                                {
-                                    Id = o.Id,
-                                    RefProduit = o.ProductReference,
-                                    DesignationLi = o.Description,
-                                    QteLi = o.Quantity,
-                                    PrixHt = o.UnitPriceExcludingTax,
-                                    Remise = o.DiscountPercentage,
-                                    TotHt = o.TotalExcludingTax,
-                                    Tva = o.VatPercentage,
-                                    TotTtc = o.TotalIncludingTax
-                                }).ToList()
-                            };
-
-                            pdfResult = await PrintOrderService.GenerateOrderPdfFromDataAsync(
-                                printModel,
-                                _cancellationTokenSource.Token,
-                                includeHeader: false);
-                        }
-                        
-                        if (!pdfResult.IsSuccess)
-                        {
-                            NotificationService.Notify(new NotificationMessage
-                            {
-                                Severity = NotificationSeverity.Error,
-                                Summary = Localizer["error"],
-                                Detail = $"Échec de la régénération du PDF: {pdfResult.Errors.FirstOrDefault()?.Message ?? "Unknown error"}"
-                            });
-                            return;
-                        }
-                    }
-
-                    var printOptions = new PrintOptions
-                    {
-                        Mode = result.Mode,
-                        FileName = fileName
-                    };
-
-                    if (result.Mode == PrintMode.DirectPrint)
-                    {
-                        // Show printer selection dialog
-                        var printerResult = await DialogService.OpenAsync<PrinterSelectionDialog>(
-                            Localizer["select_printer"],
-                            new Dictionary<string, object> { { "PdfBytes", pdfResult.Value } },
-                            new DialogOptions()
-                            {
-                                Width = "500px",
-                                Resizable = false,
-                                Draggable = true
-                            });
-
-                        if (printerResult is PrinterSelectionResult printerSelection)
-                        {
-                            printOptions.PrinterName = printerSelection.PrinterName;
-                            printOptions.Copies = printerSelection.Copies;
-                            printOptions.Duplex = printerSelection.Duplex;
-                        }
-                        else
-                        {
-                            return; // User cancelled
-                        }
-                    }
-
-                    var printResult = await PrintService.PrintAsync(pdfResult.Value, printOptions, _cancellationTokenSource.Token);
-
-                    if (!printResult.IsSuccess)
-                    {
-                        NotificationService.Notify(new NotificationMessage
-                        {
-                            Severity = NotificationSeverity.Error,
-                            Summary = Localizer["error"],
-                            Detail = $"Échec de l'impression de la commande: {printResult.ErrorMessage}"
-                        });
-                    }
-                    else if (result.Mode == PrintMode.DirectPrint)
-                    {
-                        NotificationService.Notify(new NotificationMessage
-                        {
-                            Severity = NotificationSeverity.Success,
-                            Summary = Localizer["success"],
-                            Detail = Localizer["print_job_submitted"] ?? "Print job submitted successfully"
-                        });
-                    }
-                }
             }
             else
             {

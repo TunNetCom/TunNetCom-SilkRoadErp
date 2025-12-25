@@ -1,0 +1,198 @@
+@page "/accounting-year/add"
+@page "/accounting-year/edit/{Id:int}"
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.AccountingYear
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AccountingYear
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using Radzen.Blazor
+@using Radzen
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<SharedResource> Localizer
+@inject IAccountingYearApiClient AccountingYearService
+@inject ToastService ToastService
+@inject Radzen.NotificationService NotificationService
+
+<div class="accounting-year-form-container">
+    <div class="accounting-year-form-card">
+        <div class="accounting-year-form-header">
+            <h3>@(IsEditMode ? Localizer["Edit_Accounting_Year"] : Localizer["New_Accounting_Year"])</h3>
+            <RadzenButton Icon="arrow_back" Text="@Localizer["Back"]"
+                          ButtonStyle="ButtonStyle.Secondary"
+                          Click="GoBack"
+                          Variant="Variant.Outlined" />
+        </div>
+
+        <RadzenStack Gap="1.5rem">
+            <RadzenFormField Text="@($"{Localizer["Year"]} *")" class="rz-col-12">
+                <RadzenNumeric @bind-Value="accountingYear.Year" 
+                               Placeholder="@Localizer["Year_Placeholder"]" 
+                               Min="2000" 
+                               Max="2100" />
+            </RadzenFormField>
+
+            <RadzenFormField Text="@Localizer["Is_Active"]" class="rz-col-12">
+                <RadzenCheckBox @bind-Value="accountingYear.IsActive" />
+            </RadzenFormField>
+
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" JustifyContent="Radzen.JustifyContent.End" class="rz-col-12">
+                <RadzenButton Text="@Localizer["Cancel"]" ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Outlined" Click="GoBack" />
+                <RadzenButton Text="@(IsEditMode ? Localizer["Update"] : Localizer["Create"])" 
+                              ButtonStyle="ButtonStyle.Primary" 
+                              Click="@SaveAccountingYear"
+                              IsBusy="@isSaving" />
+            </RadzenStack>
+        </RadzenStack>
+    </div>
+</div>
+
+<style>
+    .accounting-year-form-container {
+        padding: 0;
+        margin: 0;
+    }
+
+    .accounting-year-form-card {
+        background: transparent;
+        border-radius: 0;
+        box-shadow: none;
+        padding: 1rem;
+    }
+
+    .accounting-year-form-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .accounting-year-form-header h3 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+</style>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+    
+    private bool IsEditMode => Id.HasValue;
+    private bool isSaving = false;
+    private CreateAccountingYearRequest accountingYear = new();
+    private CancellationTokenSource cancellationTokenSource = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (IsEditMode && Id.HasValue)
+        {
+            try
+            {
+                var existingYear = await AccountingYearService.GetAccountingYearByIdAsync(Id.Value, cancellationTokenSource.Token);
+                if (existingYear != null)
+                {
+                    accountingYear = new CreateAccountingYearRequest
+                    {
+                        Year = existingYear.Year,
+                        IsActive = existingYear.IsActive
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["Error"],
+                    Detail = $"{Localizer["Error_Loading_Accounting_Year"]}: {ex.Message}"
+                });
+            }
+        }
+    }
+
+    async Task SaveAccountingYear()
+    {
+        if (accountingYear.Year < 2000 || accountingYear.Year > 2100)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["Validation"],
+                Detail = Localizer["Year_Invalid_Range"]
+            });
+            return;
+        }
+
+        isSaving = true;
+        try
+        {
+            if (IsEditMode && Id.HasValue)
+            {
+                var updateRequest = new UpdateAccountingYearRequest
+                {
+                    Year = accountingYear.Year,
+                    IsActive = accountingYear.IsActive
+                };
+                await AccountingYearService.UpdateAccountingYearAsync(Id.Value, updateRequest, cancellationTokenSource.Token);
+                ToastService.Notify(new(ToastType.Success, Localizer["Accounting_Year_Updated"]));
+                NavigationManager.NavigateTo("/accounting-years");
+            }
+            else
+            {
+                var result = await AccountingYearService.CreateAccountingYearAsync(accountingYear, cancellationTokenSource.Token);
+                if (result > 0)
+                {
+                    ToastService.Notify(new(ToastType.Success, Localizer["Accounting_Year_Created"]));
+                    NavigationManager.NavigateTo("/accounting-years");
+                }
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            string errorMessage;
+            if (ex.Message.Contains("accounting_year_used_cannot_modify"))
+            {
+                errorMessage = Localizer["Accounting_Year_Used_Cannot_Modify"];
+            }
+            else if (ex.Message.Contains("accounting_year_already_exists"))
+            {
+                errorMessage = Localizer["Accounting_Year_Already_Exists"];
+            }
+            else
+            {
+                errorMessage = $"{Localizer["Error_Saving"]}: {ex.Message}";
+            }
+
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Error"],
+                Detail = errorMessage
+            });
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Error"],
+                Detail = $"{Localizer["Error_Saving"]}: {ex.Message}"
+            });
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    void GoBack()
+    {
+        NavigationManager.NavigateTo("/accounting-years");
+    }
+
+    public void Dispose()
+    {
+        cancellationTokenSource.Cancel();
+        cancellationTokenSource.Dispose();
+    }
+}

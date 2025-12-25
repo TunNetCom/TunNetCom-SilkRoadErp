@@ -17,8 +17,8 @@ public partial class PaiementFournisseur : IAccountingYearEntity
         decimal montant,
         DateTime datePaiement,
         MethodePaiement methodePaiement,
-        int? factureFournisseurId,
-        int? bonDeReceptionId,
+        IReadOnlyList<int>? factureFournisseurIds,
+        IReadOnlyList<int>? bonDeReceptionIds,
         string? numeroChequeTraite,
         int? banqueId,
         DateTime? dateEcheance,
@@ -26,7 +26,8 @@ public partial class PaiementFournisseur : IAccountingYearEntity
         string? ribCodeEtab,
         string? ribCodeAgence,
         string? ribNumeroCompte,
-        string? ribCle)
+        string? ribCle,
+        string? documentStoragePath)
     {
         return new PaiementFournisseur
         {
@@ -36,8 +37,6 @@ public partial class PaiementFournisseur : IAccountingYearEntity
             Montant = montant,
             DatePaiement = datePaiement,
             MethodePaiement = methodePaiement,
-            FactureFournisseurId = factureFournisseurId,
-            BonDeReceptionId = bonDeReceptionId,
             NumeroChequeTraite = numeroChequeTraite,
             BanqueId = banqueId,
             DateEcheance = dateEcheance,
@@ -45,7 +44,10 @@ public partial class PaiementFournisseur : IAccountingYearEntity
             RibCodeEtab = ribCodeEtab,
             RibCodeAgence = ribCodeAgence,
             RibNumeroCompte = ribNumeroCompte,
-            RibCle = ribCle
+            RibCle = ribCle,
+            DocumentStoragePath = documentStoragePath,
+            FactureFournisseurs = new List<PaiementFournisseurFactureFournisseur>(),
+            BonDeReceptions = new List<PaiementFournisseurBonDeReception>()
         };
     }
 
@@ -56,8 +58,8 @@ public partial class PaiementFournisseur : IAccountingYearEntity
         decimal montant,
         DateTime datePaiement,
         MethodePaiement methodePaiement,
-        int? factureFournisseurId,
-        int? bonDeReceptionId,
+        IReadOnlyList<int>? factureFournisseurIds,
+        IReadOnlyList<int>? bonDeReceptionIds,
         string? numeroChequeTraite,
         int? banqueId,
         DateTime? dateEcheance,
@@ -65,7 +67,8 @@ public partial class PaiementFournisseur : IAccountingYearEntity
         string? ribCodeEtab,
         string? ribCodeAgence,
         string? ribNumeroCompte,
-        string? ribCle)
+        string? ribCle,
+        string? documentStoragePath)
     {
         this.Numero = numero;
         this.FournisseurId = fournisseurId;
@@ -73,8 +76,6 @@ public partial class PaiementFournisseur : IAccountingYearEntity
         this.Montant = montant;
         this.DatePaiement = datePaiement;
         this.MethodePaiement = methodePaiement;
-        this.FactureFournisseurId = factureFournisseurId;
-        this.BonDeReceptionId = bonDeReceptionId;
         this.NumeroChequeTraite = numeroChequeTraite;
         this.BanqueId = banqueId;
         this.DateEcheance = dateEcheance;
@@ -83,7 +84,28 @@ public partial class PaiementFournisseur : IAccountingYearEntity
         this.RibCodeAgence = ribCodeAgence;
         this.RibNumeroCompte = ribNumeroCompte;
         this.RibCle = ribCle;
+        this.DocumentStoragePath = documentStoragePath;
         this.DateModification = DateTime.UtcNow;
+
+        // Update FactureFournisseurs collection
+        if (factureFournisseurIds != null)
+        {
+            this.FactureFournisseurs.Clear();
+            foreach (var factureFournisseurId in factureFournisseurIds)
+            {
+                this.FactureFournisseurs.Add(PaiementFournisseurFactureFournisseur.Create(this.Id, factureFournisseurId));
+            }
+        }
+
+        // Update BonDeReceptions collection
+        if (bonDeReceptionIds != null)
+        {
+            this.BonDeReceptions.Clear();
+            foreach (var bonDeReceptionId in bonDeReceptionIds)
+            {
+                this.BonDeReceptions.Add(PaiementFournisseurBonDeReception.Create(this.Id, bonDeReceptionId));
+            }
+        }
     }
 
     public int Id { get; private set; }
@@ -99,10 +121,6 @@ public partial class PaiementFournisseur : IAccountingYearEntity
     public DateTime DatePaiement { get; private set; }
 
     public MethodePaiement MethodePaiement { get; private set; }
-
-    public int? FactureFournisseurId { get; private set; }
-
-    public int? BonDeReceptionId { get; private set; }
 
     public string? NumeroChequeTraite { get; private set; }
 
@@ -120,6 +138,8 @@ public partial class PaiementFournisseur : IAccountingYearEntity
 
     public string? RibCle { get; private set; }
 
+    public string? DocumentStoragePath { get; private set; }
+
     public DateTime? DateModification { get; private set; }
 
     public virtual Fournisseur Fournisseur { get; set; } = null!;
@@ -128,8 +148,8 @@ public partial class PaiementFournisseur : IAccountingYearEntity
 
     public virtual Banque? Banque { get; set; }
 
-    public virtual FactureFournisseur? FactureFournisseur { get; set; }
+    public virtual ICollection<PaiementFournisseurFactureFournisseur> FactureFournisseurs { get; set; } = new List<PaiementFournisseurFactureFournisseur>();
 
-    public virtual BonDeReception? BonDeReception { get; set; }
+    public virtual ICollection<PaiementFournisseurBonDeReception> BonDeReceptions { get; set; } = new List<PaiementFournisseurBonDeReception>();
 }
 

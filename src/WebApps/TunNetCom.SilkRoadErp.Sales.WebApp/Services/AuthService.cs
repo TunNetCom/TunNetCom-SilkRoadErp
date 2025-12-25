@@ -48,29 +48,39 @@ public class AuthService : IAuthService
     private readonly ILogger<AuthService> _logger;
     private readonly IJSRuntime _jsRuntime;
     private readonly ITokenStore _tokenStore;
+    private readonly ICircuitIdService _circuitIdService;
     private const string AccessTokenKey = "auth_access_token";
     private const string RefreshTokenKey = "auth_refresh_token";
     
-    // Global key for TokenStore - shared across all circuits/sessions
-    // This is safe because each browser has its own localStorage
-    private const string GlobalTokenStoreKey = "global_access_token";
-    
     // Local cache for this scoped service instance
+    // Each circuit will have its own isolated cache
     private string? _localAccessToken;
 
     public AuthService(
         HttpClient httpClient, 
         ILogger<AuthService> logger, 
         IJSRuntime jsRuntime,
-        ITokenStore tokenStore)
+        ITokenStore tokenStore,
+        ICircuitIdService circuitIdService)
     {
         _httpClient = httpClient;
         _logger = logger;
         _jsRuntime = jsRuntime;
         _tokenStore = tokenStore;
+        _circuitIdService = circuitIdService;
         
-        // Try to get token from global store on construction
-        _localAccessToken = _tokenStore.GetToken(GlobalTokenStoreKey);
+        // DO load token from circuit-specific TokenStore on construction
+        // This allows token to persist within the same circuit across service recreations
+        try
+        {
+            var circuitId = _circuitIdService.GetCircuitId();
+            _localAccessToken = _tokenStore.GetToken(circuitId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not load token from TokenStore in constructor");
+            _localAccessToken = null;
+        }
     }
 
     public bool IsAuthenticated => !string.IsNullOrEmpty(AccessToken);
@@ -79,28 +89,27 @@ public class AuthService : IAuthService
     {
         get
         {
-            // First check local cache
-            if (!string.IsNullOrEmpty(_localAccessToken))
-            {
-                return _localAccessToken;
-            }
+            // Only return the local cache value
+            // Do NOT try to load from TokenStore here to avoid shared sessions
             
-            // Then check global store
-            var globalToken = _tokenStore.GetToken(GlobalTokenStoreKey);
-            if (!string.IsNullOrEmpty(globalToken))
-            {
-                _localAccessToken = globalToken;
-                return _localAccessToken;
-            }
-            
-            return null;
+            return _localAccessToken;
         }
         private set
         {
             _localAccessToken = value;
+            // Cache in TokenStore using circuit-specific key for performance only
+            // This is optional - if it fails, token is still available in memory
             if (!string.IsNullOrEmpty(value))
             {
-                _tokenStore.SetToken(GlobalTokenStoreKey, value);
+                try
+                {
+                    var circuitId = _circuitIdService.GetCircuitId();
+                    _tokenStore.SetToken(circuitId, value);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to cache token in TokenStore, but token is available in memory");
+                }
             }
         }
     }
@@ -111,7 +120,15 @@ public class AuthService : IAuthService
         _localAccessToken = token;
         if (!string.IsNullOrEmpty(token))
         {
-            _tokenStore.SetToken(GlobalTokenStoreKey, token);
+            try
+            {
+                var circuitId = _circuitIdService.GetCircuitId();
+                _tokenStore.SetToken(circuitId, token);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to cache token in TokenStore, but token is available in memory");
+            }
         }
     }
 
@@ -202,10 +219,21 @@ public class AuthService : IAuthService
             
             if (!string.IsNullOrEmpty(tokenFromStorage))
             {
-                // Set the token in both local cache and global store
+                // Set the token in local cache first (this is critical)
                 _localAccessToken = tokenFromStorage;
-                _tokenStore.SetToken(GlobalTokenStoreKey, tokenFromStorage);
-                _logger.LogInformation("LoadTokenFromStorageAsync: Token loaded successfully. Length: {Length}", tokenFromStorage.Length);
+                
+                // Try to cache in circuit-specific TokenStore (optional, for performance)
+                try
+                {
+                    var circuitId = _circuitIdService.GetCircuitId();
+                    _tokenStore.SetToken(circuitId, tokenFromStorage);
+                    _logger.LogInformation("LoadTokenFromStorageAsync: Token loaded successfully for circuit {CircuitId}. Length: {Length}", 
+                        circuitId.Substring(0, Math.Min(8, circuitId.Length)), tokenFromStorage.Length);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "LoadTokenFromStorageAsync: Could not cache in TokenStore, but token is loaded in memory. Length: {Length}", tokenFromStorage.Length);
+                }
             }
             else
             {
@@ -389,9 +417,18 @@ public class AuthService : IAuthService
             _localAccessToken = null;
             _logger.LogInformation("Logout: Token cleared from local cache");
             
-            // Clear token from global store
-            _tokenStore.ClearToken(GlobalTokenStoreKey);
-            _logger.LogInformation("Logout: Token cleared from global TokenStore");
+            // Try to clear token from circuit-specific TokenStore cache (optional)
+            try
+            {
+                var circuitId = _circuitIdService.GetCircuitId();
+                _tokenStore.ClearToken(circuitId);
+                _logger.LogInformation("Logout: Token cleared from TokenStore for circuit {CircuitId}", 
+                    circuitId.Substring(0, Math.Min(8, circuitId.Length)));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Logout: Could not clear TokenStore, but local cache is cleared");
+            }
             
             // Clear tokens from localStorage
             try
@@ -477,44 +514,18 @@ public class AuthService : IAuthService
     /// <inheritdoc />
     public bool IsTokenValid()
     {
-        var expiration = GetTokenExpiration();
-        if (expiration == null)
-            return false;
-
-        // Consider token invalid if it expires within 5 minutes
-        var bufferTime = TimeSpan.FromMinutes(5);
-        var isValid = expiration.Value > DateTime.UtcNow.Add(bufferTime);
-        
-        if (!isValid)
-        {
-            _logger.LogDebug("Token is expiring soon or already expired. Expiration: {Expiration}, Now: {Now}", 
-                expiration.Value, DateTime.UtcNow);
-        }
-
-        return isValid;
+        // Token expiration disabled for simple auth - token is valid if it exists
+        return !string.IsNullOrEmpty(AccessToken);
     }
 
     /// <inheritdoc />
     public async Task<bool> EnsureValidTokenAsync()
     {
-        // First, check if we have a valid token
+        // Token expiration disabled for simple auth - just check if token exists
         if (IsTokenValid())
         {
-            _logger.LogDebug("EnsureValidTokenAsync: Token is valid, no refresh needed");
+            _logger.LogDebug("EnsureValidTokenAsync: Token exists and is valid");
             return true;
-        }
-
-        // If we have a token but it's expiring soon, try to refresh
-        if (!string.IsNullOrEmpty(AccessToken))
-        {
-            _logger.LogInformation("EnsureValidTokenAsync: Token is expiring soon, attempting proactive refresh");
-            var refreshed = await RefreshTokenAsync();
-            if (refreshed)
-            {
-                _logger.LogInformation("EnsureValidTokenAsync: Proactive token refresh successful");
-                return true;
-            }
-            _logger.LogWarning("EnsureValidTokenAsync: Proactive token refresh failed");
         }
 
         // Try to load from storage if no token in memory
@@ -523,18 +534,11 @@ public class AuthService : IAuthService
         // Check again after loading
         if (IsTokenValid())
         {
-            _logger.LogDebug("EnsureValidTokenAsync: Token loaded from storage is valid");
+            _logger.LogDebug("EnsureValidTokenAsync: Token loaded from storage");
             return true;
         }
 
-        // If token exists but is expiring, try refresh one more time
-        if (!string.IsNullOrEmpty(AccessToken))
-        {
-            _logger.LogInformation("EnsureValidTokenAsync: Loaded token is expiring, attempting refresh");
-            return await RefreshTokenAsync();
-        }
-
-        _logger.LogWarning("EnsureValidTokenAsync: No valid token available");
+        _logger.LogWarning("EnsureValidTokenAsync: No token available");
         return false;
     }
 }

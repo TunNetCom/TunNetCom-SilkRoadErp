@@ -1,4 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters;
+using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.AppParameters.UpdateAppParameters;
 
@@ -37,7 +37,8 @@ public class UpdateAppParametersEndpoint : ICarterModule
                         VatRate19: request.VatRate19,
                         BloquerVenteStockInsuffisant: request.BloquerVenteStockInsuffisant,
                         DecimalPlaces: request.DecimalPlaces,
-                        SeuilRetenueSource: request.SeuilRetenueSource);
+                        SeuilRetenueSource: request.SeuilRetenueSource,
+                        Rib: request.Rib);
 
                     var updateAppParametersResult = await mediator.Send(updateAppParametersCommand, cancellationToken);
 

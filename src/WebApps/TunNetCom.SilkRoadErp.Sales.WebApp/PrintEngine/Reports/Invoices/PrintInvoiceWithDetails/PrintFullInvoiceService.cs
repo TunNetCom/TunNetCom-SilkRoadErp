@@ -37,6 +37,7 @@ public class PrintFullInvoiceService(
         printInvoiceWithDetailsModel.VatRate7 = getAppParametersResponse.Value.VatRate7;
         printInvoiceWithDetailsModel.VatRate13 = getAppParametersResponse.Value.VatRate13;
         printInvoiceWithDetailsModel.VatRate19 = getAppParametersResponse.Value.VatRate19;
+        printInvoiceWithDetailsModel.Rib = getAppParametersResponse.Value.Rib;
         CalculateTotalAmounts(printInvoiceWithDetailsModel, getAppParametersResponse.Value.Timbre, getAppParametersResponse.Value);
 
         SilkPdfOptions printOptions = PreparePrintOptions(printInvoiceWithDetailsModel, getAppParametersResponse.Value, isDuplicata, includeHeader);
@@ -72,7 +73,7 @@ public class PrintFullInvoiceService(
                 <div>{getAppParametersResponse.Adresse}</div>
                 <div>Tel: {getAppParametersResponse.Tel}</div>
                 <div>TVA: {$"{getAppParametersResponse.MatriculeFiscale}/{getAppParametersResponse.CodeTva}/{getAppParametersResponse.CodeCategorie}/{getAppParametersResponse.EtbSecondaire}"}</div>
-                <div>E-mail: ste.nissaf@gmail.com</div>
+                <div>E-mail: {getAppParametersResponse.Email ?? ""}</div>
             </td>
             
             <!-- Middle Column - Invoice Info -->

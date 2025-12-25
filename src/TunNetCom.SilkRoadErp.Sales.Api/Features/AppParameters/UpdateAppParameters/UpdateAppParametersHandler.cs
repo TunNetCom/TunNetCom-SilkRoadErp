@@ -1,4 +1,4 @@
-﻿
+
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.AppParameters.UpdateAppParameters;
 
 public class UpdateAppParametersCommandHandler(
@@ -45,7 +45,8 @@ public class UpdateAppParametersCommandHandler(
             vatRate19: updateAppParametersCommand.VatRate19 ?? appParametersToUpdate.VatRate19,
             bloquerVenteStockInsuffisant: updateAppParametersCommand.BloquerVenteStockInsuffisant ?? appParametersToUpdate.BloquerVenteStockInsuffisant,
             decimalPlaces: updateAppParametersCommand.DecimalPlaces ?? appParametersToUpdate.DecimalPlaces,
-            seuilRetenueSource: updateAppParametersCommand.SeuilRetenueSource ?? appParametersToUpdate.SeuilRetenueSource);
+            seuilRetenueSource: updateAppParametersCommand.SeuilRetenueSource ?? appParametersToUpdate.SeuilRetenueSource,
+            rib: updateAppParametersCommand.Rib);
 
         _ = await _context.SaveChangesAsync(cancellationToken);
 

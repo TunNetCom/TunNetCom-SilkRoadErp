@@ -22,7 +22,9 @@
 @inject IInstallationTechnicianApiClient TechnicianService
 @inject Radzen.NotificationService NotificationService
 @inject DialogService DialogService
+@inject IInvoicesApiClient InvoicesService
 @using TunNetCom.SilkRoadErp.Sales.Domain.Entites
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices
 
 
 <div class="delivery-notes-list-container">
@@ -194,7 +196,7 @@
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos"
                                       Title="@Localizer["actions_label"]"
-                                      Width="120px"
+                                      Width="200px"
                                       Sortable="false"
                                       Filterable="false">
                     <Template Context="item">
@@ -225,8 +227,17 @@
                                           Size="ButtonSize.Small"
                                           Click="@(() => ValidateDeliveryNote(item))"
                                           Title="@Localizer["Validate"]"
-                                          AriaLabel="@Localizer["Validate"]" />
+                                          AriaLabel="@Localizer["Validate"]"
+                                          Style="margin-right: 4px;" />
                         }
+                        <RadzenButton Icon="payment"
+                                      ButtonStyle="ButtonStyle.Info"
+                                      Variant="Variant.Flat"
+                                      Size="ButtonSize.Small"
+                                      Click="@(() => OpenCreatePaiementDialog(item))"
+                                      Disabled="@(!item.CustomerId.HasValue)"
+                                      Title="@(item.CustomerId.HasValue ? "Ajouter Paiement" : "Ajouter Paiement (Client requis)")"
+                                      AriaLabel="Ajouter Paiement" />
                     </Template>
                 </RadzenDataGridColumn>
             </Columns>
@@ -713,5 +724,42 @@
     {
         searchCriteria.SelectedTagIds = tagIds;
         await SearchDeliveryNotes();
+    }
+
+    private async Task OpenCreatePaiementDialog(GetDeliveryNoteBaseInfos item)
+    {
+        int? invoiceId = null;
+        
+        // Si le BL a une facture associée, récupérer son ID
+        if (item.NumFacture.HasValue)
+        {
+            var invoiceIdResult = await InvoicesService.GetInvoiceIdByNumberAsync(item.NumFacture.Value, default);
+            if (invoiceIdResult.IsSuccess)
+            {
+                invoiceId = invoiceIdResult.Value;
+            }
+        }
+        
+        var result = await DialogService.OpenAsync<CreatePaiementFromBlDialog>(
+            "Nouveau Paiement",
+            new Dictionary<string, object>
+            {
+                { "DeliveryNoteId", item.Id },
+                { "CustomerId", item.CustomerId.Value },
+                { "InvoiceId", invoiceId }
+            },
+            new DialogOptions
+            {
+                Width = "800px",
+                Height = "90%",
+                Resizable = true,
+                Draggable = true
+            });
+        
+        if (result == true)
+        {
+            // Optionnel : recharger la liste des BL
+            await SearchDeliveryNotes();
+        }
     }
 }

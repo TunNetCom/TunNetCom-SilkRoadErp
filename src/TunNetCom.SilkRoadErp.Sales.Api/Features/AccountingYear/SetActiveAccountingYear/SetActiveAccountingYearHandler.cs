@@ -2,6 +2,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.AccountingYear.SetActiveAccou
 
 public class SetActiveAccountingYearHandler(
     SalesContext _context,
+    IActiveAccountingYearService _activeAccountingYearService,
     ILogger<SetActiveAccountingYearHandler> _logger)
     : IRequestHandler<SetActiveAccountingYearCommand, Result>
 {
@@ -34,7 +35,18 @@ public class SetActiveAccountingYearHandler(
 
         _ = await _context.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("Accounting year {Year} (Id: {Id}) set as active", accountingYear.Year, accountingYear.Id);
+        _logger.LogInformation("SetActiveAccountingYearHandler: Saved changes, old active year was deactivated, new active year is {Year} (Id: {Id})", 
+            accountingYear.Year, accountingYear.Id);
+
+        // Mettre à jour directement le cache avec le nouvel ID pour que les requêtes suivantes utilisent la bonne valeur
+        _activeAccountingYearService.SetActiveAccountingYearId(accountingYear.Id);
+
+        // Mettre à jour l'AsyncLocal dans SalesContext pour que le global filter fonctionne immédiatement pour cette requête
+        var previousAsyncLocalValue = Domain.Entites.SalesContext.GetActiveAccountingYearId();
+        Domain.Entites.SalesContext.SetActiveAccountingYearId(accountingYear.Id);
+        
+        _logger.LogInformation("SetActiveAccountingYearHandler: Updated cache and AsyncLocal from {OldAsyncLocal} to {NewAsyncLocal} for accounting year {Year} (Id: {Id})", 
+            previousAsyncLocalValue, accountingYear.Id, accountingYear.Year, accountingYear.Id);
 
         return Result.Ok();
     }

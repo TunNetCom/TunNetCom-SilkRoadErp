@@ -315,7 +315,12 @@ public class DatabaseSeeder
             f.Mail,
             f.MailDeux,
             f.Constructeur ?? false, // Valeur par défaut si null
-            f.Adresse
+            f.Adresse,
+            null, // TauxRetenu
+            null, // RibCodeEtab
+            null, // RibCodeAgence
+            null, // RibNumeroCompte
+            null  // RibCle
         )).ToList();
 
         _logger.LogInformation("Ajout de {Count} fournisseurs à la base de données...", fournisseurs.Count);

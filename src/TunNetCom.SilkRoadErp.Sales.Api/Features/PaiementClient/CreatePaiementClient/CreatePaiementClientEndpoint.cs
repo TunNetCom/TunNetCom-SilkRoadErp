@@ -21,21 +21,29 @@ public class CreatePaiementClientEndpoint : ICarterModule
             request.Montant,
             request.DatePaiement,
             request.MethodePaiement,
-            request.FactureId,
-            request.BonDeLivraisonId,
+            request.FactureIds,
+            request.BonDeLivraisonIds,
             request.NumeroChequeTraite,
             request.BanqueId,
             request.DateEcheance,
-            request.Commentaire);
+            request.Commentaire,
+            request.DocumentBase64);
 
-        var result = await mediator.Send(command, cancellationToken);
-
-        if (result.IsFailed)
+        try
         {
-            return result.ToValidationProblem();
-        }
+            var result = await mediator.Send(command, cancellationToken);
 
-        return TypedResults.Created($"/paiement-client/{result.Value}", request);
+            if (result.IsFailed)
+            {
+                return result.ToValidationProblem();
+            }
+
+            return TypedResults.Created($"/paiement-client/{result.Value}", request);
+        }
+        catch (Exception ex)
+        {
+            throw;
+        }
     }
 }
 

@@ -8,8 +8,8 @@ public record CreatePaiementFournisseurCommand(
     decimal Montant,
     DateTime DatePaiement,
     string MethodePaiement,
-    int? FactureFournisseurId,
-    int? BonDeReceptionId,
+    List<int>? FactureFournisseurIds,
+    List<int>? BonDeReceptionIds,
     string? NumeroChequeTraite,
     int? BanqueId,
     DateTime? DateEcheance,
@@ -17,6 +17,7 @@ public record CreatePaiementFournisseurCommand(
     string? RibCodeEtab,
     string? RibCodeAgence,
     string? RibNumeroCompte,
-    string? RibCle
+    string? RibCle,
+    string? DocumentBase64
 ) : IRequest<Result<int>>;
 

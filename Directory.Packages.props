@@ -67,5 +67,7 @@
     <!-- Quartz.NET for background jobs -->
     <PackageVersion Include="Quartz" Version="3.13.1" />
     <PackageVersion Include="Quartz.AspNetCore" Version="3.13.1" />
+    <!-- Excel Export -->
+    <PackageVersion Include="EPPlus" Version="7.5.2" />
   </ItemGroup>
 </Project>

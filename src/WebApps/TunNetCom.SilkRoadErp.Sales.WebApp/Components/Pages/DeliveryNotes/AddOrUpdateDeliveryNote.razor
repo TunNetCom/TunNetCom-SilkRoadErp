@@ -28,8 +28,10 @@
 @using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryCar
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryCar
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.PrintHistory
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.DeliveryNotes
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.Security.Claims
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PaiementClient
 @inject ITagsApiClient TagsService
 @inject IInstallationTechnicianApiClient TechnicianService
 @inject IDeliveryCarApiClient DeliveryCarService
@@ -45,6 +47,7 @@
 @inject IAppParametersClient appParametersClient
 @inject ILogger<AddOrUpdateDeliveryNote> logger
 @inject DialogService DialogService
+@inject IPaiementClientApiClient PaiementClientService
 @inject PrintDeliveryNoteService PrintDeliveryNoteService
 @inject IPrintService PrintService
 @inject ITagsApiClient TagsService
@@ -218,6 +221,17 @@ else
                                   Size="ButtonSize.Small"
                                   Title="@Localizer["Validate"]"
                                   AriaLabel="@Localizer["Validate"]" />
+                }
+                
+                @if (deliveryNoteId.HasValue && selectedCustomerId.HasValue)
+                {
+                    <RadzenButton Icon="payment" 
+                                  Text="Ajouter Paiement" 
+                                  Click="@OpenCreatePaiementFromBlDialog" 
+                                  ButtonStyle="ButtonStyle.Info" 
+                                  Size="ButtonSize.Small"
+                                  Title="Ajouter Paiement"
+                                  AriaLabel="Ajouter Paiement" />
                 }
             }
 
@@ -998,9 +1012,78 @@ else
         await InvokeAsync(StateHasChanged);
     }
 
-    private void CreateNewDeliveryCar()
+    async Task CreateNewDeliveryCar()
     {
-        NavigationManager.NavigateTo("/delivery-car/add");
+        var result = await DialogService.OpenAsync<CreateDeliveryCarDialog>(
+            Localizer["Add_Delivery_Car"],
+            new Dictionary<string, object>(),
+            new DialogOptions()
+            {
+                Width = "400px",
+                Resizable = false,
+                Draggable = true
+            });
+
+        if (result is CreateDeliveryCarDialogResult dialogResult)
+        {
+            await CreateDeliveryCarWithData(dialogResult.Matricule, dialogResult.Owner);
+        }
+    }
+
+    async Task CreateDeliveryCarWithData(string matricule, string owner)
+    {
+        isLoadingDeliveryCars = true;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            var request = new CreateDeliveryCarRequest
+            {
+                Matricule = matricule,
+                Owner = owner
+            };
+
+            var result = await DeliveryCarService.CreateDeliveryCarAsync(request, _cancellationTokenSource.Token);
+
+            if (result > 0)
+            {
+                // Recharger la liste des voitures
+                await LoadDeliveryCars(new LoadDataArgs());
+                
+                // Sélectionner automatiquement la nouvelle voiture
+                selectedDeliveryCarId = result;
+                
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = Localizer["success"],
+                    Detail = $"{Localizer["Delivery_Car_Created"]}: {matricule}"
+                });
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = Localizer["failed_to_create_delivery_car"] ?? "Failed to create delivery car"
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"{Localizer["failed_to_create_delivery_car"] ?? "Failed to create delivery car"}: {ex.Message}"
+            });
+        }
+        finally
+        {
+            isLoadingDeliveryCars = false;
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     async Task LoadCustomerInvoices(LoadDataArgs args)
@@ -1272,95 +1355,27 @@ else
             {
                 var fileName = $"Bon de Livraison {deliveryNoteNumber}.pdf";
 
-                // Show print mode selection dialog
-                var printModeResult = await DialogService.OpenAsync<PrintModeDialog>(
+                // Show PDF viewer dialog
+                await DialogService.OpenAsync<PdfViewerDialog>(
                     Localizer["print_mode"],
-                    new Dictionary<string, object>(),
+                    new Dictionary<string, object>
+                    {
+                        { "PdfBytes", pdfResult.Value },
+                        { "FileName", fileName },
+                        { "RegeneratePdfAsync", new Func<bool, Task<Result<byte[]>>>(async (includeHeader) =>
+                            await PrintDeliveryNoteService.GenerateDeliveryNotePdfAsync(
+                                deliveryNoteNum,
+                                _cancellationTokenSource.Token,
+                                includeHeader: includeHeader))
+                        }
+                    },
                     new DialogOptions()
                     {
-                        Width = "400px",
-                        Resizable = false,
+                        Width = "800px",
+                        Height = "700px",
+                        Resizable = true,
                         Draggable = true
                     });
-
-                if (printModeResult is PrintModeResult result)
-                {
-                    // Regenerate PDF if header should be excluded
-                    if (!result.IncludeHeader)
-                    {
-                        pdfResult = await PrintDeliveryNoteService.GenerateDeliveryNotePdfAsync(
-                            deliveryNoteNum,
-                            _cancellationTokenSource.Token,
-                            includeHeader: false);
-                        
-                        if (!pdfResult.IsSuccess)
-                        {
-                            NotificationService.Notify(new NotificationMessage
-                            {
-                                Severity = NotificationSeverity.Error,
-                                Summary = Localizer["error"],
-                                Detail = $"Échec de la régénération du PDF: {pdfResult.Errors.FirstOrDefault()?.Message ?? "Unknown error"}"
-                            });
-                            return;
-                        }
-                    }
-
-                    var printOptions = new PrintOptions
-                    {
-                        Mode = result.Mode,
-                        FileName = fileName,
-                        DocumentType = "BonDeLivraison",
-                        DocumentId = deliveryNoteNum,
-                        UserId = userId,
-                        Username = username
-                    };
-
-                    if (result.Mode == PrintMode.DirectPrint)
-                    {
-                        // Show printer selection dialog
-                        var printerResult = await DialogService.OpenAsync<PrinterSelectionDialog>(
-                            Localizer["select_printer"],
-                            new Dictionary<string, object> { { "PdfBytes", pdfResult.Value } },
-                            new DialogOptions()
-                            {
-                                Width = "500px",
-                                Resizable = false,
-                                Draggable = true
-                            });
-
-                        if (printerResult is PrinterSelectionResult printerSelection)
-                        {
-                            printOptions.PrinterName = printerSelection.PrinterName;
-                            printOptions.Copies = printerSelection.Copies;
-                            printOptions.Duplex = printerSelection.Duplex;
-                        }
-                        else
-                        {
-                            return; // User cancelled
-                        }
-                    }
-
-                    var printResult = await PrintService.PrintAsync(pdfResult.Value, printOptions, _cancellationTokenSource.Token);
-
-                    if (!printResult.IsSuccess)
-                    {
-                        NotificationService.Notify(new NotificationMessage
-                        {
-                            Severity = NotificationSeverity.Error,
-                            Summary = Localizer["error"],
-                            Detail = $"{Localizer["failed_to_print_delivery_note"] ?? "Failed to print delivery note"}: {printResult.ErrorMessage}"
-                        });
-                    }
-                    else if (result.Mode == PrintMode.DirectPrint)
-                    {
-                        NotificationService.Notify(new NotificationMessage
-                        {
-                            Severity = NotificationSeverity.Success,
-                            Summary = Localizer["success"],
-                            Detail = Localizer["print_job_submitted"] ?? "Print job submitted successfully"
-                        });
-                    }
-                }
             }
             else
             {
@@ -1664,6 +1679,58 @@ else
         await Task.CompletedTask;
 
         await JSRuntime.InvokeVoidAsync("window.localStorage.setItem", "DialogSettings", JsonSerializer.Serialize<DialogSettings>(Settings));
+    }
+
+    private async Task OpenCreatePaiementFromBlDialog()
+    {
+        if (!deliveryNoteId.HasValue || !selectedCustomerId.HasValue)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["Attention"],
+                Detail = "Le BL doit être sauvegardé et avoir un client associé pour créer un paiement."
+            });
+            return;
+        }
+
+        int? invoiceId = null;
+        
+        // Si le BL a une facture associée, récupérer son ID
+        if (selectedInvoiceId.HasValue)
+        {
+            var invoiceIdResult = await invoicesApiClient.GetInvoiceIdByNumberAsync(selectedInvoiceId.Value, _cancellationTokenSource.Token);
+            if (invoiceIdResult.IsSuccess)
+            {
+                invoiceId = invoiceIdResult.Value;
+            }
+        }
+        
+        var result = await DialogService.OpenAsync<CreatePaiementFromBlDialog>(
+            "Nouveau Paiement",
+            new Dictionary<string, object>
+            {
+                { "DeliveryNoteId", deliveryNoteId.Value },
+                { "CustomerId", selectedCustomerId.Value },
+                { "InvoiceId", invoiceId }
+            },
+            new DialogOptions
+            {
+                Width = "800px",
+                Height = "90%",
+                Resizable = true,
+                Draggable = true
+            });
+        
+        if (result == true)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = Localizer["Success"],
+                Detail = "Paiement créé avec succès"
+            });
+        }
     }
 
     public class DialogSettings

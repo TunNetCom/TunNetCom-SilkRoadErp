@@ -23,8 +23,8 @@ public class UpdatePaiementFournisseurEndpoint : ICarterModule
             request.Montant,
             request.DatePaiement,
             request.MethodePaiement,
-            request.FactureFournisseurId,
-            request.BonDeReceptionId,
+            request.FactureFournisseurIds,
+            request.BonDeReceptionIds,
             request.NumeroChequeTraite,
             request.BanqueId,
             request.DateEcheance,
@@ -32,7 +32,8 @@ public class UpdatePaiementFournisseurEndpoint : ICarterModule
             request.RibCodeEtab,
             request.RibCodeAgence,
             request.RibNumeroCompte,
-            request.RibCle);
+            request.RibCle,
+            request.DocumentBase64);
 
         var result = await mediator.Send(command, cancellationToken);
 
