@@ -1,8 +1,8 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.CreateDeliveryNote;
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.UpdateDeliveryNote;
 
-public class CreateDeliveryNoteValidator : AbstractValidator<CreateDeliveryNoteCommand>
+public class UpdateDeliveryNoteValidator : AbstractValidator<UpdateDeliveryNoteCommand>
 {
-    public CreateDeliveryNoteValidator() 
+    public UpdateDeliveryNoteValidator() 
     {
         _ = RuleFor(x => x.Date)
                .NotEmpty().WithMessage("date_is_required");
@@ -28,3 +28,4 @@ public class CreateDeliveryNoteValidator : AbstractValidator<CreateDeliveryNoteC
                 .When(x => x.ClientId.HasValue);
     }
 }
+

@@ -511,6 +511,20 @@ else
         await InvokeAsync(StateHasChanged);
     }
 
+    private string GetLocalizedErrorMessage(string errorCode)
+    {
+        // Traduire les codes d'erreur en messages localisés
+        var localizedMessage = Localizer[errorCode];
+        
+        // Si la traduction n'existe pas, retourner le code d'erreur tel quel
+        if (localizedMessage.ResourceNotFound)
+        {
+            return errorCode;
+        }
+        
+        return localizedMessage.Value ?? errorCode;
+    }
+
     private async Task SaveDeliveryNote()
     {
         try
@@ -525,6 +539,18 @@ else
                 });
                 return;
             }
+            
+            if (!_selectedInvoiceId.HasValue)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = GetLocalizedErrorMessage("invoice_number_is_required")
+                });
+                return;
+            }
+            
             // Valider le stock pour toutes les lignes avant la soumission
             var stockErrors = new List<string>();
             var bloquerVenteStockInsuffisant = getAppParametersResponse?.BloquerVenteStockInsuffisant ?? true;
@@ -618,11 +644,12 @@ else
                 }
                 else
                 {
+                    var errorMessage = GetLocalizedErrorMessage(updateResponse.Errors.First().Message);
                     NotificationService.Notify(new NotificationMessage
                     {
                         Severity = NotificationSeverity.Error,
                         Summary = Localizer["error"],
-                        Detail = $"{Localizer["failed_to_save_delivery_note"]}: {updateResponse.Errors.First().Message}"
+                        Detail = $"{Localizer["failed_to_save_delivery_note"]}: {errorMessage}"
                     });
                 }
             }
@@ -652,11 +679,12 @@ else
                 }
                 else
                 {
+                    var errorMessage = GetLocalizedErrorMessage(createResponse.Errors.First().Message);
                     NotificationService.Notify(new NotificationMessage
                     {
                         Severity = NotificationSeverity.Error,
                         Summary = Localizer["error"],
-                        Detail = $"{Localizer["failed_to_save_delivery_note"]}: {createResponse.Errors.First().Message}"
+                        Detail = $"{Localizer["failed_to_save_delivery_note"]}: {errorMessage}"
                     });
                 }
             }
