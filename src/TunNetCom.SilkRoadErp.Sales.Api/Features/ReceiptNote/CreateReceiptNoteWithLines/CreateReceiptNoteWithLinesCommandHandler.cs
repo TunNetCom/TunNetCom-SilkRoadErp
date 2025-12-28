@@ -1,12 +1,15 @@
 ﻿using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
 using TunNetCom.SilkRoadErp.Sales.Domain.Services;
+using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderReceiptNoteLine.CreateReceiptNoteWithLines;
 
 internal class CreateReceiptNoteWithLinesCommandHandler(
     SalesContext salesContext,
     ILogger<CreateReceiptNoteWithLinesCommandHandler> _logger,
-    INumberGeneratorService _numberGeneratorService) 
+    INumberGeneratorService _numberGeneratorService,
+    IActiveAccountingYearService _activeAccountingYearService,
+    IAccountingYearFinancialParametersService _financialParametersService) 
     : IRequestHandler<CreateReceiptNoteWithLigneCommand, Result<int>>
 {
     public async Task<Result<int>> Handle(
@@ -16,18 +19,16 @@ internal class CreateReceiptNoteWithLinesCommandHandler(
         await using var transaction = await salesContext.Database.BeginTransactionAsync(cancellationToken);
         try
         {
+            // Get the active accounting year ID
+            var activeAccountingYearId = await _activeAccountingYearService.GetActiveAccountingYearIdAsync(cancellationToken);
 
-            // Get the active accounting year
-            var activeAccountingYear = await salesContext.AccountingYear
-                .FirstOrDefaultAsync(ay => ay.IsActive, cancellationToken);
-
-            if (activeAccountingYear == null)
+            if (!activeAccountingYearId.HasValue)
             {
                 _logger.LogError("No active accounting year found");
                 return Result.Fail("no_active_accounting_year");
             }
 
-            var num = await _numberGeneratorService.GenerateBonDeReceptionNumberAsync(activeAccountingYear.Id, cancellationToken);
+            var num = await _numberGeneratorService.GenerateBonDeReceptionNumberAsync(activeAccountingYearId.Value, cancellationToken);
 
             var recipetNote = new BonDeReception
             {
@@ -37,7 +38,7 @@ internal class CreateReceiptNoteWithLinesCommandHandler(
                 IdFournisseur = request.IdFournisseur,
                 Date = request.Date,
                 NumFactureFournisseur = request.NumFactureFournisseur,
-                AccountingYearId = activeAccountingYear.Id
+                AccountingYearId = activeAccountingYearId.Value
             };
 
             await salesContext.BonDeReception.AddAsync(recipetNote, cancellationToken);
@@ -45,9 +46,8 @@ internal class CreateReceiptNoteWithLinesCommandHandler(
             // Save the receipt note first to get its Id
             await salesContext.SaveChangesAsync(cancellationToken);
 
-            // Get system parameters for FODEC rate
-            var systeme = await salesContext.Systeme.FirstOrDefaultAsync(cancellationToken);
-            var fodecRate = systeme?.PourcentageFodec ?? 0;
+            // Get FODEC rate from active accounting year using the financial parameters service
+            var fodecRate = await _financialParametersService.GetPourcentageFodecAsync(0, cancellationToken);
 
             // Get provider to check if it's a constructor
             var provider = await salesContext.Fournisseur

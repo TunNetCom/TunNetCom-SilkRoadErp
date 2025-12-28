@@ -4,16 +4,16 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNoteByI
 
 public class GetReceiptNoteByIdQueryHandler(
     SalesContext _context,
-    ILogger<GetReceiptNoteByIdQueryHandler> _logger)
+    ILogger<GetReceiptNoteByIdQueryHandler> _logger,
+    IAccountingYearFinancialParametersService _financialParametersService)
     : IRequestHandler<GetReceiptNoteByIdQuery, Result<ReceiptNoteResponse>>
 {
     public async Task<Result<ReceiptNoteResponse>> Handle(GetReceiptNoteByIdQuery getReceiptNoteByIdQuery, CancellationToken cancellationToken)
     {
         _logger.LogFetchingEntityById(nameof(BonDeReception), getReceiptNoteByIdQuery.Num);
         
-        // Get system parameters for FODEC rate
-        var systeme = await _context.Systeme.FirstOrDefaultAsync(cancellationToken);
-        var fodecRate = systeme?.PourcentageFodec ?? 0;
+        // Get FODEC rate from financial parameters service
+        var fodecRate = await _financialParametersService.GetPourcentageFodecAsync(0, cancellationToken);
         
         // Search by Num (receipt note number), not by Id, and load lines directly like GetDeliveryNoteByNum
         // Include navigation properties for provider to check Constructeur

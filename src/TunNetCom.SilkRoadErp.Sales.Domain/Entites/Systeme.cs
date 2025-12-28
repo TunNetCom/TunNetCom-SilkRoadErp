@@ -10,7 +10,6 @@ public partial class Systeme
 
     public void UpdateSysteme(
         string nomSociete,
-        decimal timbre,
         string adresse,
         string tel,
         string? fax,
@@ -19,22 +18,13 @@ public partial class Systeme
         string codeTva,
         string? codeCategorie,
         string? etbSecondaire,
-        decimal pourcentageFodec,
         string? adresseRetenu,
-        double pourcentageRetenu,
-        decimal vatAmount,
         decimal discountPercentage,
-        decimal vatRate0,
-        decimal vatRate7,
-        decimal vatRate13,
-        decimal vatRate19,
         bool bloquerVenteStockInsuffisant,
         int decimalPlaces,
-        decimal seuilRetenueSource,
         string? rib)
     {
         this.NomSociete = nomSociete;
-        this.Timbre = timbre;
         this.Adresse = adresse;
         this.Tel = tel;
         this.Fax = fax;
@@ -43,25 +33,15 @@ public partial class Systeme
         this.CodeTva = codeTva;
         this.CodeCategorie = codeCategorie;
         this.EtbSecondaire = etbSecondaire;
-        this.PourcentageFodec = pourcentageFodec;
         this.AdresseRetenu = adresseRetenu;
-        this.PourcentageRetenu = pourcentageRetenu;
-        this.VatAmount = vatAmount;
         this.DiscountPercentage = discountPercentage;
-        this.VatRate0 = vatRate0;
-        this.VatRate7 = vatRate7;
-        this.VatRate13 = vatRate13;
-        this.VatRate19 = vatRate19;
         this.BloquerVenteStockInsuffisant = bloquerVenteStockInsuffisant;
         this.DecimalPlaces = decimalPlaces;
-        this.SeuilRetenueSource = seuilRetenueSource;
         this.Rib = rib;
     }
     public int Id { get; set; }
 
     public string NomSociete { get; set; } = null!;
-
-    public decimal Timbre { get; set; }
 
     public string Adresse { get; set; } = null!;
 
@@ -79,30 +59,14 @@ public partial class Systeme
 
     public string? EtbSecondaire { get; set; }
 
-    public decimal PourcentageFodec { get; set; }
-
     public string? AdresseRetenu { get; set; }
 
-    public double PourcentageRetenu { get; set; }
-
     public decimal DiscountPercentage { get; set; }
-
-    public decimal VatAmount { get; set; }
-
-    public decimal VatRate0 { get; set; }
-
-    public decimal VatRate7 { get; set; }
-
-    public decimal VatRate13 { get; set; }
-
-    public decimal VatRate19 { get; set; }
 
     public bool BloquerVenteStockInsuffisant { get; set; }
 
     // Default value for database - matches DecimalFormatConstants.DEFAULT_DECIMAL_PLACES in Contracts
     public int DecimalPlaces { get; set; } = 3;
-
-    public decimal SeuilRetenueSource { get; set; } = 1000;
 
     public string? Rib { get; set; }
 

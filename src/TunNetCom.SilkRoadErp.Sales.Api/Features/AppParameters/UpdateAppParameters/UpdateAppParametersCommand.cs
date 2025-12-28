@@ -1,7 +1,6 @@
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.AppParameters.UpdateAppParameters;
 public record UpdateAppParametersCommand(
     string NomSociete,
-    decimal? Timbre,
     string? Adresse,
     string? Tel,
     string? Fax,
@@ -10,16 +9,8 @@ public record UpdateAppParametersCommand(
     string? CodeTva,
     string? CodeCategorie,
     string? EtbSecondaire,
-    decimal? PourcentageFodec,
     string? AdresseRetenu,
-    double? PourcentageRetenu,
-    decimal? VatAmount,
     decimal? DiscountPercentage,
-    decimal? VatRate0,
-    decimal? VatRate7,
-    decimal? VatRate13,
-    decimal? VatRate19,
     bool? BloquerVenteStockInsuffisant,
     int? DecimalPlaces,
-    decimal? SeuilRetenueSource,
     string? Rib) : IRequest<Result>;

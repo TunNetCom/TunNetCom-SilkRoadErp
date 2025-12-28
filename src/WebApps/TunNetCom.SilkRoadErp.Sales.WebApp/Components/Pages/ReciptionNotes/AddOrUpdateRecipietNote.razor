@@ -8,6 +8,7 @@
 @using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNote.Responses
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Sorting
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AccountingYear
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote
@@ -26,6 +27,7 @@
 @inject IProductsApiClient productsApiClient
 @inject IProvidersApiClient providerApiClient
 @inject IAppParametersClient appParametersClient
+@inject IAccountingYearApiClient accountingYearApiClient
 @inject ILogger<AddOrUpdateRecipietNote> logger
 @inject DialogService DialogService
 

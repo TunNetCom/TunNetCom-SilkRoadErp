@@ -114,7 +114,13 @@ public class AccountingYearApiClient : IAccountingYearApiClient
         _logger.LogInformation("Updating accounting year {Id}", id);
 
         var response = await _httpClient.PutAsJsonAsync($"accounting-years/{id}", request, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+            _logger.LogError("Failed to update accounting year {Id}: {StatusCode} - {ErrorContent}", id, response.StatusCode, errorContent);
+            throw new HttpRequestException($"Failed to update accounting year: {response.StatusCode} - {errorContent}");
+        }
 
         _logger.LogInformation("Successfully updated accounting year {Id}", id);
     }

@@ -8,7 +8,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Soldes.GetClientsAvecProbleme
 public class GetClientsAvecProblemesSoldeQueryHandler(
     SalesContext _context,
     ILogger<GetClientsAvecProblemesSoldeQueryHandler> _logger,
-    IMediator mediator)
+    IMediator mediator,
+    IActiveAccountingYearService _activeAccountingYearService,
+    IAccountingYearFinancialParametersService _financialParametersService)
     : IRequestHandler<GetClientsAvecProblemesSoldeQuery, PagedList<ClientSoldeProblemeResponse>>
 {
     public async Task<PagedList<ClientSoldeProblemeResponse>> Handle(
@@ -21,18 +23,18 @@ public class GetClientsAvecProblemesSoldeQueryHandler(
         var accountingYearId = query.AccountingYearId;
         if (!accountingYearId.HasValue)
         {
-            var activeYear = await _context.AccountingYear
-                .FirstOrDefaultAsync(ay => ay.IsActive, cancellationToken);
-            if (activeYear == null)
+            var activeYearId = await _activeAccountingYearService.GetActiveAccountingYearIdAsync(cancellationToken);
+            if (!activeYearId.HasValue)
             {
                 _logger.LogWarning("No active accounting year found");
                 return new PagedList<ClientSoldeProblemeResponse>(new List<ClientSoldeProblemeResponse>(), 0, query.PageNumber, query.PageSize);
             }
-            accountingYearId = activeYear.Id;
+            accountingYearId = activeYearId.Value;
         }
 
+        // Get timbre from financial parameters service
         var appParams = await mediator.Send(new GetAppParametersQuery(), cancellationToken);
-        var timbre = appParams.Value.Timbre;
+        var timbre = await _financialParametersService.GetTimbreAsync(appParams.Value.Timbre, cancellationToken);
 
         // Get all clients with their related data in one query
         var clientsData = await _context.Client

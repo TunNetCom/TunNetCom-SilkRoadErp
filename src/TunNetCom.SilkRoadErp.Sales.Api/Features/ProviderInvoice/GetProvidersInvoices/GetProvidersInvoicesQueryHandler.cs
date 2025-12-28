@@ -6,7 +6,8 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderInvoice.GetProvidersI
 public class GetProvidersInvoicesQueryHandler(
     SalesContext _context,
     ILogger<GetProvidersInvoicesQueryHandler> _logger,
-    IMediator _mediator) :
+    IMediator _mediator,
+    IAccountingYearFinancialParametersService _financialParametersService) :
     IRequestHandler<GetProvidersInvoicesQuery, GetProviderInvoicesWithSummary>
 {
     private const string _numColumName = "Num";
@@ -16,9 +17,10 @@ public class GetProvidersInvoicesQueryHandler(
     GetProvidersInvoicesQuery query,
     CancellationToken cancellationToken)
     {
-        // Get app parameters to get timbre
+        // Get timbre from financial parameters service
         var appParamsResult = await _mediator.Send(new GetAppParametersQuery(), cancellationToken);
-        var timbre = appParamsResult.IsSuccess ? appParamsResult.Value.Timbre : 0;
+        var fallbackTimbre = appParamsResult.IsSuccess ? appParamsResult.Value.Timbre : 0;
+        var timbre = await _financialParametersService.GetTimbreAsync(fallbackTimbre, cancellationToken);
 
         var invoiceQuery = (from ff in _context.FactureFournisseur.FilterByActiveAccountingYear()
                               join br in _context.BonDeReception on ff.Num equals br.NumFactureFournisseur into brGroup

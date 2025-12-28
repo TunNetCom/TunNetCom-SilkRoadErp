@@ -11,7 +11,9 @@ public class CreateRetenueSourceClientCommandHandler(
     SalesContext _context,
     ILogger<CreateRetenueSourceClientCommandHandler> _logger,
     IMediator _mediator,
-    IDocumentStorageService _documentStorageService)
+    IDocumentStorageService _documentStorageService,
+    IActiveAccountingYearService _activeAccountingYearService,
+    IAccountingYearFinancialParametersService _financialParametersService)
     : IRequestHandler<CreateRetenueSourceClientCommand, Result<int>>
 {
     public async Task<Result<int>> Handle(CreateRetenueSourceClientCommand command, CancellationToken cancellationToken)
@@ -47,36 +49,40 @@ public class CreateRetenueSourceClientCommandHandler(
             return Result.Fail("retenue_already_exists");
         }
 
-        // Calculate montant TTC with timbre for threshold validation
-        var montantTTCAvecTimbre = facture.BonDeLivraison.Sum(b => b.NetPayer) + appParams.Timbre;
-
-        // Validate threshold (on the full TTC amount including timbre)
-        if (montantTTCAvecTimbre < appParams.SeuilRetenueSource)
-        {
-            _logger.LogWarning("Montant TTC {MontantTTC} is below threshold {Seuil} for Facture {NumFacture}",
-                montantTTCAvecTimbre, appParams.SeuilRetenueSource, command.NumFacture);
-            return Result.Fail($"seuil_non_atteint: Le montant TTC ({montantTTCAvecTimbre}) doit être supérieur ou égal au seuil ({appParams.SeuilRetenueSource})");
-        }
-
-        // Get active accounting year
-        var activeAccountingYear = await _context.AccountingYear
-            .FirstOrDefaultAsync(ay => ay.IsActive, cancellationToken);
-
-        if (activeAccountingYear == null)
+        // Get active accounting year ID
+        var activeAccountingYearId = await _activeAccountingYearService.GetActiveAccountingYearIdAsync(cancellationToken);
+        if (!activeAccountingYearId.HasValue)
         {
             _logger.LogError("No active accounting year found");
             return Result.Fail("no_active_accounting_year");
+        }
+
+        // Get timbre from financial parameters service
+        var timbre = await _financialParametersService.GetTimbreAsync(appParams.Timbre, cancellationToken);
+
+        // Calculate montant TTC with timbre for threshold validation
+        var montantTTCAvecTimbre = facture.BonDeLivraison.Sum(b => b.NetPayer) + timbre;
+
+        // Get seuil from financial parameters service (migrated to AccountingYear)
+        var seuilRetenueSource = await _financialParametersService.GetSeuilRetenueSourceAsync(1000, cancellationToken);
+
+        // Validate threshold (on the full TTC amount including timbre)
+        if (montantTTCAvecTimbre < seuilRetenueSource)
+        {
+            _logger.LogWarning("Montant TTC {MontantTTC} is below threshold {Seuil} for Facture {NumFacture}",
+                montantTTCAvecTimbre, seuilRetenueSource, command.NumFacture);
+            return Result.Fail($"seuil_non_atteint: Le montant TTC ({montantTTCAvecTimbre}) doit être supérieur ou égal au seuil ({seuilRetenueSource})");
         }
 
         // Calculate montant TTC without timbre (retenue is calculated on amount without timbre)
         var montantTTCHorsTimbre = facture.BonDeLivraison.Sum(b => b.NetPayer);
 
         // Calculate montant après retenue (on amount without timbre)
-        var tauxRetenu = appParams.PourcentageRetenu;
+        var tauxRetenu = await _financialParametersService.GetPourcentageRetenuAsync(appParams.PourcentageRetenu, cancellationToken);
         var montantApresRetenuSansTimbre = montantTTCHorsTimbre * (1 - (decimal)tauxRetenu / 100);
 
         // Add timbre after retenue calculation
-        var montantApresRetenuAvecTimbre = montantApresRetenuSansTimbre + appParams.Timbre;
+        var montantApresRetenuAvecTimbre = montantApresRetenuSansTimbre + timbre;
 
         // Store PDF if provided
         string? pdfStoragePath = null;
@@ -110,7 +116,7 @@ public class CreateRetenueSourceClientCommandHandler(
             MontantApresRetenu = montantApresRetenuAvecTimbre,
             PdfStoragePath = pdfStoragePath,
             DateCreation = DateTime.UtcNow,
-            AccountingYearId = activeAccountingYear.Id
+            AccountingYearId = activeAccountingYearId.Value
         };
 
         _context.RetenueSourceClient.Add(retenue);

@@ -12,7 +12,7 @@ using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 {
     [DbContext(typeof(SalesContext))]
-    [Migration("20251224190210_InitMigration")]
+    [Migration("20251227222409_InitMigration")]
     partial class InitMigration
     {
         /// <inheritdoc />
@@ -39,6 +39,42 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("bit")
                         .HasDefaultValue(false)
                         .HasColumnName("IsActive");
+
+                    b.Property<decimal?>("PourcentageFodec")
+                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnName("PourcentageFodec");
+
+                    b.Property<double?>("PourcentageRetenu")
+                        .HasColumnType("float")
+                        .HasColumnName("PourcentageRetenu");
+
+                    b.Property<decimal?>("SeuilRetenueSource")
+                        .HasColumnType("decimal(18, 3)")
+                        .HasColumnName("SeuilRetenueSource");
+
+                    b.Property<decimal?>("Timbre")
+                        .HasColumnType("decimal(18, 3)")
+                        .HasColumnName("Timbre");
+
+                    b.Property<decimal?>("VatAmount")
+                        .HasColumnType("decimal(18, 3)")
+                        .HasColumnName("VatAmount");
+
+                    b.Property<decimal?>("VatRate0")
+                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnName("VatRate0");
+
+                    b.Property<decimal?>("VatRate13")
+                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnName("VatRate13");
+
+                    b.Property<decimal?>("VatRate19")
+                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnName("VatRate19");
+
+                    b.Property<decimal?>("VatRate7")
+                        .HasColumnType("decimal(18, 2)")
+                        .HasColumnName("VatRate7");
 
                     b.Property<int>("Year")
                         .HasColumnType("int")
@@ -170,18 +206,15 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 
                     b.Property<int?>("FactureAvoirFournisseurId")
                         .HasColumnType("int")
-                        .HasColumnName("Num_FactureAvoirFournisseur");
+                        .HasColumnName("FactureAvoirFournisseurId");
 
                     b.Property<int?>("FournisseurId")
                         .HasColumnType("int")
                         .HasColumnName("fournisseurId");
 
-                    b.Property<int>("Num")
-                        .HasColumnType("int");
-
-                    b.Property<int>("NumAvoirFournisseur")
+                    b.Property<int>("NumAvoirChezFournisseur")
                         .HasColumnType("int")
-                        .HasColumnName("Num_AvoirFournisseur");
+                        .HasColumnName("NumAvoirChezFournisseur");
 
                     b.Property<string>("Statut")
                         .IsRequired()
@@ -196,10 +229,6 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.HasIndex("FactureAvoirFournisseurId");
 
                     b.HasIndex("FournisseurId");
-
-                    b.HasIndex("Num")
-                        .IsUnique()
-                        .HasDatabaseName("IX_AvoirFournisseur_Num");
 
                     b.ToTable("AvoirFournisseur");
                 });
@@ -746,20 +775,17 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("datetime")
                         .HasColumnName("date");
 
+                    b.Property<int?>("FactureFournisseurId")
+                        .HasColumnType("int")
+                        .HasColumnName("FactureFournisseurId");
+
                     b.Property<int>("IdFournisseur")
                         .HasColumnType("int")
                         .HasColumnName("id_fournisseur");
 
-                    b.Property<int>("Num")
-                        .HasColumnType("int");
-
                     b.Property<int>("NumFactureAvoirFourSurPage")
                         .HasColumnType("int")
                         .HasColumnName("Num_FactureAvoirFourSurPAge");
-
-                    b.Property<int?>("NumFactureFournisseur")
-                        .HasColumnType("int")
-                        .HasColumnName("Num_FactureFournisseur");
 
                     b.Property<string>("Statut")
                         .IsRequired()
@@ -771,13 +797,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 
                     b.HasIndex("AccountingYearId");
 
+                    b.HasIndex("FactureFournisseurId");
+
                     b.HasIndex("IdFournisseur");
-
-                    b.HasIndex("Num")
-                        .IsUnique()
-                        .HasDatabaseName("IX_FactureAvoirFournisseur_Num");
-
-                    b.HasIndex("NumFactureFournisseur");
 
                     b.ToTable("FactureAvoirFournisseur");
                 });
@@ -2416,51 +2438,14 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<decimal>("PourcentageFodec")
-                        .HasColumnType("decimal(18, 2)")
-                        .HasColumnName("pourcentageFodec");
-
-                    b.Property<double>("PourcentageRetenu")
-                        .HasColumnType("float")
-                        .HasColumnName("pourcentageRetenu");
-
                     b.Property<string>("Rib")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("rib");
-
-                    b.Property<decimal>("SeuilRetenueSource")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("decimal(18, 3)")
-                        .HasDefaultValue(1000m)
-                        .HasColumnName("SeuilRetenueSource");
 
                     b.Property<string>("Tel")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("tel");
-
-                    b.Property<decimal>("Timbre")
-                        .HasColumnType("decimal(18, 3)");
-
-                    b.Property<decimal>("VatAmount")
-                        .HasColumnType("decimal(18, 3)")
-                        .HasColumnName("VatAmount");
-
-                    b.Property<decimal>("VatRate0")
-                        .HasColumnType("decimal(18, 2)")
-                        .HasColumnName("VatRate0");
-
-                    b.Property<decimal>("VatRate13")
-                        .HasColumnType("decimal(18, 2)")
-                        .HasColumnName("VatRate13");
-
-                    b.Property<decimal>("VatRate19")
-                        .HasColumnType("decimal(18, 2)")
-                        .HasColumnName("VatRate19");
-
-                    b.Property<decimal>("VatRate7")
-                        .HasColumnType("decimal(18, 2)")
-                        .HasColumnName("VatRate7");
 
                     b.HasKey("Id")
                         .HasName("PK_dbo.Systeme");
@@ -2638,7 +2623,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .WithMany("AvoirFournisseur")
                         .HasForeignKey("FactureAvoirFournisseurId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .HasConstraintName("FK_dbo.AvoirFournisseur_dbo.FactureAvoirFournisseur_Num_FactureAvoirFournisseur");
+                        .HasConstraintName("FK_dbo.AvoirFournisseur_dbo.FactureAvoirFournisseur_FactureAvoirFournisseurId");
 
                     b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Fournisseur", "Fournisseur")
                         .WithMany("AvoirFournisseur")
@@ -2856,24 +2841,23 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_dbo.FactureAvoirFournisseur_dbo.AccountingYear_AccountingYearId");
 
+                    b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.FactureFournisseur", "FactureFournisseurNavigation")
+                        .WithMany("FactureAvoirFournisseur")
+                        .HasForeignKey("FactureFournisseurId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("FK_dbo.FactureAvoirFournisseur_dbo.FactureFournisseur_FactureFournisseurId");
+
                     b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Fournisseur", "IdFournisseurNavigation")
                         .WithMany("FactureAvoirFournisseur")
                         .HasForeignKey("IdFournisseur")
                         .IsRequired()
                         .HasConstraintName("FK_dbo.FactureAvoirFournisseur_dbo.Fournisseur_id_fournisseur");
 
-                    b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.FactureFournisseur", "NumFactureFournisseurNavigation")
-                        .WithMany("FactureAvoirFournisseur")
-                        .HasForeignKey("NumFactureFournisseur")
-                        .HasPrincipalKey("Num")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .HasConstraintName("FK_dbo.FactureAvoirFournisseur_dbo.FactureFournisseur_Num_FactureFournisseur");
-
                     b.Navigation("AccountingYear");
 
-                    b.Navigation("IdFournisseurNavigation");
+                    b.Navigation("FactureFournisseurNavigation");
 
-                    b.Navigation("NumFactureFournisseurNavigation");
+                    b.Navigation("IdFournisseurNavigation");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.FactureFournisseur", b =>

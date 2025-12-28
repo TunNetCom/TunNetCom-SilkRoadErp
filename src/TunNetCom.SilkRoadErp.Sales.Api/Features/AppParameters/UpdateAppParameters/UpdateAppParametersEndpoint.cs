@@ -17,7 +17,6 @@ public class UpdateAppParametersEndpoint : ICarterModule
                 {
                     var updateAppParametersCommand = new UpdateAppParametersCommand(
                         NomSociete: request.NomSociete,
-                        Timbre: request.Timbre,
                         Adresse: request.Adresse,
                         Tel: request.Tel,
                         Fax: request.Fax,
@@ -26,18 +25,10 @@ public class UpdateAppParametersEndpoint : ICarterModule
                         CodeTva: request.CodeTva,
                         CodeCategorie: request.CodeCategorie,
                         EtbSecondaire: request.EtbSecondaire,
-                        PourcentageFodec: request.PourcentageFodec,
                         AdresseRetenu: request.AdresseRetenu,
-                        PourcentageRetenu: request.PourcentageRetenu,
-                        VatAmount: request.VatAmount,
                         DiscountPercentage: request.DiscountPercentage,
-                        VatRate0: request.VatRate0,
-                        VatRate7: request.VatRate7,
-                        VatRate13: request.VatRate13,
-                        VatRate19: request.VatRate19,
                         BloquerVenteStockInsuffisant: request.BloquerVenteStockInsuffisant,
                         DecimalPlaces: request.DecimalPlaces,
-                        SeuilRetenueSource: request.SeuilRetenueSource,
                         Rib: request.Rib);
 
                     var updateAppParametersResult = await mediator.Send(updateAppParametersCommand, cancellationToken);

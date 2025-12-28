@@ -20,7 +20,16 @@ public class CreateAccountingYearEndpoint : ICarterModule
     {
         var command = new CreateAccountingYearCommand(
             Year: request.Year,
-            IsActive: request.IsActive
+            IsActive: request.IsActive,
+            Timbre: request.Timbre,
+            PourcentageFodec: request.PourcentageFodec,
+            VatRate0: request.VatRate0,
+            VatRate7: request.VatRate7,
+            VatRate13: request.VatRate13,
+            VatRate19: request.VatRate19,
+            PourcentageRetenu: request.PourcentageRetenu,
+            VatAmount: request.VatAmount,
+            SeuilRetenueSource: request.SeuilRetenueSource
         );
 
         var result = await mediator.Send(command, cancellationToken);

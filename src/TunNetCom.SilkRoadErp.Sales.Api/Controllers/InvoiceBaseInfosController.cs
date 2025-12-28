@@ -13,15 +13,18 @@ public class InvoiceBaseInfosController : ODataController
     private readonly SalesContext _context;
     private readonly ILogger<InvoiceBaseInfosController> _logger;
     private readonly IMediator _mediator;
+    private readonly IAccountingYearFinancialParametersService _financialParametersService;
 
     public InvoiceBaseInfosController(
         SalesContext context,
         ILogger<InvoiceBaseInfosController> logger,
-        IMediator mediator)
+        IMediator mediator,
+        IAccountingYearFinancialParametersService financialParametersService)
     {
         _context = context;
         _logger = logger;
         _mediator = mediator;
+        _financialParametersService = financialParametersService;
     }
 
     [EnableQuery(MaxExpansionDepth = 3, MaxAnyAllExpressionDepth = 3, PageSize = 50)]
@@ -37,8 +40,9 @@ public class InvoiceBaseInfosController : ODataController
             _logger.LogInformation("InvoiceBaseInfosController.Get called with startDate: {StartDate}, endDate: {EndDate}, customerId: {CustomerId}, tagIds: {TagIds}", 
                 startDate, endDate, customerId, tagIds != null ? string.Join(",", tagIds) : "null");
 
+            // Get timbre from financial parameters service
             var appParams = await _mediator.Send(new GetAppParametersQuery());
-            var timbre = appParams.Value.Timbre;
+            var timbre = await _financialParametersService.GetTimbreAsync(appParams.Value.Timbre, cancellationToken);
             
             // Build base query with filters BEFORE loading to memory
             var baseQuery = _context.Facture

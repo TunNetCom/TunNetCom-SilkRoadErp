@@ -27,6 +27,41 @@ public partial class AccountingYearConfiguration : IEntityTypeConfiguration<Acco
             .IsRequired()
             .HasDefaultValue(false);
 
+        entity.Property(e => e.Timbre)
+            .HasColumnName("Timbre")
+            .HasColumnType("decimal(18, 3)");
+
+        entity.Property(e => e.PourcentageFodec)
+            .HasColumnName("PourcentageFodec")
+            .HasColumnType("decimal(18, 2)");
+
+        entity.Property(e => e.VatRate0)
+            .HasColumnName("VatRate0")
+            .HasColumnType("decimal(18, 2)");
+
+        entity.Property(e => e.VatRate7)
+            .HasColumnName("VatRate7")
+            .HasColumnType("decimal(18, 2)");
+
+        entity.Property(e => e.VatRate13)
+            .HasColumnName("VatRate13")
+            .HasColumnType("decimal(18, 2)");
+
+        entity.Property(e => e.VatRate19)
+            .HasColumnName("VatRate19")
+            .HasColumnType("decimal(18, 2)");
+
+        entity.Property(e => e.PourcentageRetenu)
+            .HasColumnName("PourcentageRetenu");
+
+        entity.Property(e => e.VatAmount)
+            .HasColumnName("VatAmount")
+            .HasColumnType("decimal(18, 3)");
+
+        entity.Property(e => e.SeuilRetenueSource)
+            .HasColumnName("SeuilRetenueSource")
+            .HasColumnType("decimal(18, 3)");
+
         // Contrainte unique sur Year (un seul exercice par année)
         entity.HasIndex(e => e.Year)
             .IsUnique()

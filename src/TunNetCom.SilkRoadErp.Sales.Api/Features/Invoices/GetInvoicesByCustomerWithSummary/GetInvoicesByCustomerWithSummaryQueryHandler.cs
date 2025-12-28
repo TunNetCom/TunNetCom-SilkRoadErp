@@ -6,7 +6,8 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetInvoicesByCustome
 public class GetInvoicesByCustomerWithSummaryQueryHandler(
     SalesContext _context,
     ILogger<GetInvoicesByCustomerWithSummaryQueryHandler> _logger,
-    IMediator mediator)
+    IMediator mediator,
+    IAccountingYearFinancialParametersService _financialParametersService)
     : IRequestHandler<GetInvoicesByCustomerWithSummaryQuery, Result<GetInvoiceListWithSummary>>
 {
     private const string _numberColumnName = nameof(InvoiceResponse.Number);
@@ -18,7 +19,9 @@ public class GetInvoicesByCustomerWithSummaryQueryHandler(
         GetInvoicesByCustomerWithSummaryQuery query,
         CancellationToken cancellationToken)
     {
+        // Get timbre from financial parameters service
         var appParams = await mediator.Send(new GetAppParametersQuery());
+        var timbre = await _financialParametersService.GetTimbreAsync(appParams.Value.Timbre, cancellationToken);
 
         _logger.LogPaginationRequest(nameof(Facture), query.PageNumber, query.PageSize);
         var invoicesQueryBase = _context.Facture
@@ -33,7 +36,7 @@ public class GetInvoicesByCustomerWithSummaryQueryHandler(
                 Date = f.Date,
                 TotalExcludingTaxAmount = f.BonDeLivraison.Sum(d => d.TotHTva),
                 TotalVATAmount = f.BonDeLivraison.Sum(d => d.TotTva),
-                TotalIncludingTaxAmount = f.BonDeLivraison.Sum(d => d.NetPayer) + appParams.Value.Timbre,
+                TotalIncludingTaxAmount = f.BonDeLivraison.Sum(d => d.NetPayer) + timbre,
                 HasRetenueSource = _context.RetenueSourceClient.Any(r => r.NumFacture == f.Num)
             })
             .AsQueryable();

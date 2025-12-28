@@ -390,11 +390,12 @@ public class DatabaseSeeder
         _logger.LogInformation("Données système à insérer trouvées.");
 
         // Systeme n'a pas de méthode factory, on doit créer l'entité directement
+        // Note: Timbre, PourcentageFodec, PourcentageRetenu, VatRate0, VatRate7, VatRate13, VatRate19
+        // ont été migrés vers AccountingYear et ne sont plus dans Systeme
         var systeme = new Systeme
         {
             Id = systemeData.Id,
             NomSociete = systemeData.NomSociete,
-            Timbre = systemeData.Timbre,
             Adresse = systemeData.Adresse,
             Tel = systemeData.Tel,
             Fax = systemeData.Fax,
@@ -403,15 +404,11 @@ public class DatabaseSeeder
             CodeTva = systemeData.CodeTva,
             CodeCategorie = systemeData.CodeCategorie,
             EtbSecondaire = systemeData.EtbSecondaire,
-            PourcentageFodec = systemeData.PourcentageFodec,
             AdresseRetenu = systemeData.AdresseRetenu,
-            PourcentageRetenu = systemeData.PourcentageRetenu,
-            VatAmount = systemeData.VatAmount,
             DiscountPercentage = systemeData.DiscountPercentage,
-            VatRate0 = systemeData.VatRate0,
-            VatRate7 = systemeData.VatRate7,
-            VatRate13 = systemeData.VatRate13,
-            VatRate19 = systemeData.VatRate19
+            BloquerVenteStockInsuffisant = systemeData.BloquerVenteStockInsuffisant,
+            DecimalPlaces = systemeData.DecimalPlaces,
+            Rib = systemeData.Rib
         };
 
         _logger.LogInformation("Ajout des données système à la base de données...");

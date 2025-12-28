@@ -21,7 +21,8 @@ public class TejXmlExportService
         FactureFournisseur factureFournisseur,
         Fournisseur fournisseur,
         Systeme systeme,
-        GetAppParametersResponse appParams)
+        GetAppParametersResponse appParams,
+        AccountingYearFinancialParameters financialParams)
     {
         try
         {
@@ -38,13 +39,13 @@ public class TejXmlExportService
                 .SelectMany(br => br.LigneBonReception)
                 .Sum(l => l.TotTtc);
 
-            // Calculate retenue source
-            var tauxRS = (decimal)appParams.PourcentageRetenu;
-            var montantRS = montantTTC * (tauxRS / 100);
+            // Get retenue source rate from financial parameters
+            var tauxRS = financialParams.PourcentageRetenu;
+            var montantRS = montantTTC * ((decimal)tauxRS / 100);
             var montantNetServi = montantTTC - montantRS;
 
             // Determine VAT rate (use the highest rate found, or default to 19)
-            var tauxTVA = DetermineVatRate(factureFournisseur, appParams);
+            var tauxTVA = DetermineVatRate(factureFournisseur, financialParams);
 
             // Extract TypeIdentifiant and CategorieContribuable from MatriculeFiscale
             var (declarantTypeIdentifiant, declarantIdentifiant, declarantCategorie) = 
@@ -161,7 +162,7 @@ public class TejXmlExportService
     /// Determines the VAT rate from the invoice lines
     /// Uses the highest VAT rate found, or defaults to 19%
     /// </summary>
-    private decimal DetermineVatRate(FactureFournisseur factureFournisseur, GetAppParametersResponse appParams)
+    private decimal DetermineVatRate(FactureFournisseur factureFournisseur, AccountingYearFinancialParameters financialParams)
     {
         var vatRates = factureFournisseur.BonDeReception
             .SelectMany(br => br.LigneBonReception)
@@ -175,8 +176,8 @@ public class TejXmlExportService
             return vatRates.Max();
         }
 
-        // Default to highest configured rate
-        return Math.Max(Math.Max(appParams.VatRate19, appParams.VatRate13), appParams.VatRate7);
+        // Default to highest configured rate from financial parameters
+        return Math.Max(Math.Max(financialParams.VatRate19, financialParams.VatRate13), financialParams.VatRate7);
     }
 
     /// <summary>

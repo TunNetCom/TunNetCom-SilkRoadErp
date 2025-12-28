@@ -12,6 +12,7 @@ using TunNetCom.SilkRoadErp.Sales.Contracts.RecieptNotes;
 using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.CreateReceiptNote;
 using TunNetCom.SilkRoadErp.Sales.Contracts.Sorting;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AccountingYear;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote;
@@ -46,6 +47,7 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
     long numBonFournisseur = 0;
     DateTime dateLivraison = DateTime.Now;
     private GetAppParametersResponse getAppParametersResponse;
+    private GetActiveAccountingYearResponse? activeAccountingYear;
     private int? _selectedProviderId;
     int? selectedProviderId
     {
@@ -69,6 +71,7 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
         orders = new List<ReceiptNoteDetailResponse>();
         var param = await appParametersClient.GetAppParametersAsync(_cancellationTokenSource.Token);
         getAppParametersResponse = param.AsT0;
+        activeAccountingYear = await accountingYearApiClient.GetActiveAccountingYearAsync(_cancellationTokenSource.Token);
         await LoadProviders(null);
         isLoading = false;
     }
@@ -454,7 +457,7 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
 
     private void CalculateFodecForItems()
     {
-        if (!_selectedProviderId.HasValue || getAppParametersResponse == null)
+        if (!_selectedProviderId.HasValue || activeAccountingYear == null)
         {
             // Clear FODEC if no provider selected
             foreach (var item in orders)
@@ -483,7 +486,8 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
         }
 
         // Calculate FODEC for each line item if provider is constructor
-        var fodecRate = getAppParametersResponse.PourcentageFodec;
+        // Use accounting year FODEC rate, fallback to app params if not set
+        var fodecRate = activeAccountingYear.PourcentageFodec ?? getAppParametersResponse?.PourcentageFodec ?? 0;
         foreach (var item in orders)
         {
             // Calculate base TotalIncludingTax (HT + VAT) without FODEC

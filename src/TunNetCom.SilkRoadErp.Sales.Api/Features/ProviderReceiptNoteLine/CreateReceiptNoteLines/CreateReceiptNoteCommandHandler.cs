@@ -5,7 +5,8 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderReceiptNoteLine.Creat
 
 internal class CreateReceiptNoteCommandHandler(
     SalesContext salesContext,
-    ILogger<CreateReceiptNoteCommandHandler> _logger) 
+    ILogger<CreateReceiptNoteCommandHandler> _logger,
+    IAccountingYearFinancialParametersService _financialParametersService) 
     : IRequestHandler<CreateReceiptNoteLigneCommand, Result<List<int>>>
 {
     public async Task<Result<List<int>>> Handle(
@@ -14,9 +15,8 @@ internal class CreateReceiptNoteCommandHandler(
     {
         try
         {
-            // Get system parameters for FODEC rate
-            var systeme = await salesContext.Systeme.FirstOrDefaultAsync(cancellationToken);
-            var fodecRate = systeme?.PourcentageFodec ?? 0;
+            // Get FODEC rate from financial parameters service
+            var fodecRate = await _financialParametersService.GetPourcentageFodecAsync(0, cancellationToken);
 
             // Group lines by receipt note number to fetch all BonDeReception at once
             var receiptNoteNumbers = request.ReceiptNoteLines.Select(x => x.RecipetNoteNumber).Distinct().ToList();

@@ -25,6 +25,8 @@ public class ExportProviderInvoiceToTejXmlEndpoint : ICarterModule
         [FromServices] TejXmlExportService exportService,
         [FromServices] IMediator mediator,
         [FromServices] ILogger<ExportProviderInvoiceToTejXmlEndpoint> logger,
+        [FromServices] IActiveAccountingYearService activeAccountingYearService,
+        [FromServices] IAccountingYearFinancialParametersService financialParametersService,
         int invoiceNumber,
         CancellationToken cancellationToken = default)
     {
@@ -65,14 +67,25 @@ public class ExportProviderInvoiceToTejXmlEndpoint : ICarterModule
                 .SelectMany(br => br.LigneBonReception)
                 .Sum(l => l.TotTtc);
 
+            // Get seuil from financial parameters service
+            var seuilRetenueSource = await financialParametersService.GetSeuilRetenueSourceAsync(1000, cancellationToken);
+
             // Validate threshold
-            if (montantTTC < appParams.SeuilRetenueSource)
+            if (montantTTC < seuilRetenueSource)
             {
                 logger.LogWarning(
                     "Montant TTC {MontantTTC} is below threshold {Seuil} for Invoice {InvoiceNumber}",
-                    montantTTC, appParams.SeuilRetenueSource, invoiceNumber);
+                    montantTTC, seuilRetenueSource, invoiceNumber);
                 return TypedResults.BadRequest(
-                    $"Le montant TTC ({montantTTC:F2}) doit être supérieur ou égal au seuil ({appParams.SeuilRetenueSource:F2}) pour pouvoir exporter en XML TEJ.");
+                    $"Le montant TTC ({montantTTC:F2}) doit être supérieur ou égal au seuil ({seuilRetenueSource:F2}) pour pouvoir exporter en XML TEJ.");
+            }
+
+            // Get active accounting year ID
+            var activeAccountingYearId = await activeAccountingYearService.GetActiveAccountingYearIdAsync(cancellationToken);
+            if (!activeAccountingYearId.HasValue)
+            {
+                logger.LogError("No active accounting year found");
+                return TypedResults.BadRequest("Aucun exercice comptable actif trouvé.");
             }
 
             // Get systeme data
@@ -84,6 +97,14 @@ public class ExportProviderInvoiceToTejXmlEndpoint : ICarterModule
             {
                 logger.LogError("Systeme parameters not found");
                 return TypedResults.BadRequest("Paramètres système introuvables.");
+            }
+
+            // Get financial parameters for validation
+            var financialParams = await financialParametersService.GetAllFinancialParametersAsync(cancellationToken);
+            if (financialParams == null)
+            {
+                logger.LogError("No active accounting year found");
+                return TypedResults.BadRequest("Aucun exercice comptable actif trouvé.");
             }
 
             // Validate required fields
@@ -104,7 +125,8 @@ public class ExportProviderInvoiceToTejXmlEndpoint : ICarterModule
                 factureFournisseur,
                 factureFournisseur.IdFournisseurNavigation,
                 systeme,
-                appParams);
+                appParams,
+                financialParams);
 
             // Generate filename
             var filename = $"Facture_Fournisseur_{invoiceNumber}_TEJ_{DateTime.Now:yyyyMMdd_HHmmss}.xml";

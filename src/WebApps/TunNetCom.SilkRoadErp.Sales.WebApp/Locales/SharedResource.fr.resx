@@ -1372,13 +1372,16 @@
     <value>Êtes-vous sûr de vouloir supprimer cet exercice comptable ?</value>
   </data>
   <data name="Accounting_Year_Used_Cannot_Modify" xml:space="preserve">
-    <value>Cet exercice comptable est utilisé et ne peut pas être modifié</value>
+    <value>Cet exercice comptable est utilisé dans des documents (factures, bons de livraison, etc.) et ne peut pas être modifié. Veuillez supprimer ou modifier les documents associés avant de modifier cet exercice comptable.</value>
   </data>
   <data name="Accounting_Year_Used_Cannot_Delete" xml:space="preserve">
     <value>Cet exercice comptable est utilisé et ne peut pas être supprimé</value>
   </data>
   <data name="Accounting_Year_Already_Exists" xml:space="preserve">
     <value>Un exercice comptable pour cette année existe déjà</value>
+  </data>
+  <data name="Error_Updating_Accounting_Year_Validation" xml:space="preserve">
+    <value>Erreur de validation lors de la mise à jour de l'exercice comptable</value>
   </data>
   <data name="Year" xml:space="preserve">
     <value>Année</value>

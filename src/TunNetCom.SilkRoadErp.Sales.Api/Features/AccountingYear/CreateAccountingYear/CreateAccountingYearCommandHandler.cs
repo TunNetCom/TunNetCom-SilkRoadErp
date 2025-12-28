@@ -38,7 +38,18 @@ public class CreateAccountingYearCommandHandler(
             }
         }
 
-        var accountingYear = Domain.Entites.AccountingYear.CreateAccountingYear(command.Year, command.IsActive);
+        var accountingYear = Domain.Entites.AccountingYear.CreateAccountingYear(
+            command.Year, 
+            command.IsActive,
+            command.Timbre,
+            command.PourcentageFodec,
+            command.VatRate0,
+            command.VatRate7,
+            command.VatRate13,
+            command.VatRate19,
+            command.PourcentageRetenu,
+            command.VatAmount,
+            command.SeuilRetenueSource);
 
         _context.AccountingYear.Add(accountingYear);
         await _context.SaveChangesAsync(cancellationToken);
@@ -49,7 +60,16 @@ public class CreateAccountingYearCommandHandler(
         {
             Id = accountingYear.Id,
             Year = accountingYear.Year,
-            IsActive = accountingYear.IsActive
+            IsActive = accountingYear.IsActive,
+            Timbre = accountingYear.Timbre,
+            PourcentageFodec = accountingYear.PourcentageFodec,
+            VatRate0 = accountingYear.VatRate0,
+            VatRate7 = accountingYear.VatRate7,
+            VatRate13 = accountingYear.VatRate13,
+            VatRate19 = accountingYear.VatRate19,
+            PourcentageRetenu = accountingYear.PourcentageRetenu,
+            VatAmount = accountingYear.VatAmount,
+            SeuilRetenueSource = accountingYear.SeuilRetenueSource
         };
     }
 }

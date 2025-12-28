@@ -101,40 +101,18 @@
                                     <RadzenTextBox @bind-Value="system.Rib" Name="Rib" Style="width: 100%;" />
                                 </ChildContent>
                             </RadzenFormField>
-
-                            <RadzenFormField Text="@localizer["Timbre"]">
-                                <Start><RadzenIcon Icon="loyalty" /></Start>
-                                <ChildContent>
-                                    <RadzenNumeric @bind-Value="system.Timbre" Name="Timbre" Style="width: 100%;" />
-                                </ChildContent>
-                            </RadzenFormField>
                         </RadzenColumn>
                     </RadzenRow>
                 </RadzenTabsItem>
 
                 <RadzenTabsItem Text="Fiscal & Taxes" Icon="account_balance">
+                    <RadzenAlert AlertStyle="AlertStyle.Info" Style="margin-bottom: 20px;">
+                        <RadzenIcon Icon="info" Style="margin-right: 8px;" />
+                        <strong>Note importante :</strong> Les paramètres suivants ont été déplacés vers les exercices comptables (Accounting Year) : Timbre Fiscal, Taux FODEC, Taux de Retenue à la Source, Montant TVA par défaut, Seuil Retenue à la Source, et les 4 taux de TVA (0%, 7%, 13%, 19%). 
+                        Veuillez les configurer dans la section <a href="/accounting-years" style="color: #1976d2; text-decoration: underline;">Exercices Comptables</a>.
+                    </RadzenAlert>
                     <RadzenRow Class="g-2 mb-4">
                         <RadzenColumn Size="12" SizeSM="6" Class="d-flex flex-column gap-3">
-                            <RadzenFormField Text="@localizer["pourcentage_fodec"]">
-                                <Start><RadzenIcon Icon="percent" /></Start>
-                                <ChildContent>
-                                    <RadzenNumeric @bind-Value="system.PourcentageFodec" Name="PourcentageFodec" Style="width: 100%;" />
-                                </ChildContent>
-                            </RadzenFormField>
-
-                            <RadzenFormField Text="@localizer["pourcentage_retenu"]">
-                                <Start><RadzenIcon Icon="assessment" /></Start>
-                                <ChildContent>
-                                    <RadzenNumeric @bind-Value="system.PourcentageRetenu" Name="PourcentageRetenu" Style="width: 100%;" />
-                                </ChildContent>
-                            </RadzenFormField>
-
-                            <RadzenFormField Text="@localizer["vat_percentage"]">
-                                <Start><RadzenIcon Icon="percent" /></Start>
-                                <ChildContent>
-                                    <RadzenNumeric @bind-Value="system.VatAmount" Name="VatAmount" Style="width: 100%;" Format="@AmountHelper.FORMAT_N2" Step="0.01" />
-                                </ChildContent>
-                            </RadzenFormField>
 
                             <RadzenFormField Text="@localizer["discount_percentage"]">
                                 <Start><RadzenIcon Icon="percent" /></Start>
@@ -145,36 +123,6 @@
                         </RadzenColumn>
 
                         <RadzenColumn Size="12" SizeSM="6" Class="d-flex flex-column gap-3">
-                            <h4 style="margin-bottom: 15px;">Taux de TVA</h4>
-                            
-                            <RadzenFormField Text="Taux TVA 0%">
-                                <Start><RadzenIcon Icon="percent" /></Start>
-                                <ChildContent>
-                                    <RadzenNumeric @bind-Value="system.VatRate0" Name="VatRate0" Style="width: 100%;" Format="@AmountHelper.FORMAT_N2" Step="0.01" />
-                                </ChildContent>
-                            </RadzenFormField>
-
-                            <RadzenFormField Text="Taux TVA 7%">
-                                <Start><RadzenIcon Icon="percent" /></Start>
-                                <ChildContent>
-                                    <RadzenNumeric @bind-Value="system.VatRate7" Name="VatRate7" Style="width: 100%;" Format="@AmountHelper.FORMAT_N2" Step="0.01" />
-                                </ChildContent>
-                            </RadzenFormField>
-
-                            <RadzenFormField Text="Taux TVA 13%">
-                                <Start><RadzenIcon Icon="percent" /></Start>
-                                <ChildContent>
-                                    <RadzenNumeric @bind-Value="system.VatRate13" Name="VatRate13" Style="width: 100%;" Format="@AmountHelper.FORMAT_N2" Step="0.01" />
-                                </ChildContent>
-                            </RadzenFormField>
-
-                            <RadzenFormField Text="Taux TVA 19%">
-                                <Start><RadzenIcon Icon="percent" /></Start>
-                                <ChildContent>
-                                    <RadzenNumeric @bind-Value="system.VatRate19" Name="VatRate19" Style="width: 100%;" Format="@AmountHelper.FORMAT_N2" Step="0.01" />
-                                </ChildContent>
-                            </RadzenFormField>
-
                             <RadzenFormField Text="Nombre de décimales">
                                 <Start><RadzenIcon Icon="numbers" /></Start>
                                 <ChildContent>
@@ -242,18 +190,10 @@
 					MatriculeFiscale = system.MatriculeFiscale,
 					CodeTva = system.CodeTva,
 					CodeCategorie = system.CodeCategorie,
-					Timbre = system.Timbre,
 					AdresseRetenu = system.AdresseRetenu,
-					PourcentageFodec = system.PourcentageFodec,
-					PourcentageRetenu = system.PourcentageRetenu,
 					EtbSecondaire = system.EtbSecondaire,
 					Rib = system.Rib,
-					VatAmount = system.VatAmount,
 					DiscountPercentage = system.DiscountPercentage,
-					VatRate0 = system.VatRate0,
-					VatRate7 = system.VatRate7,
-					VatRate13 = system.VatRate13,
-					VatRate19 = system.VatRate19,
 					BloquerVenteStockInsuffisant = system.BloquerVenteStockInsuffisant,
 					DecimalPlaces = system.DecimalPlaces
 				}, cancellationToken);

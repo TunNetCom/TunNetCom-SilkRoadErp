@@ -29,6 +29,7 @@
 @using TunNetCom.SilkRoadErp.Sales.Contracts.RetenueSourceFournisseur
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AccountingYear
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.FactureAvoirFournisseur
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AvoirFinancierFournisseurs
 @using TunNetCom.SilkRoadErp.Sales.HttpClients
@@ -37,6 +38,7 @@
 @inject IReceiptNoteApiClient receiptNoteService
 @inject IRetenueSourceFournisseurApiClient retenueSourceFournisseurApiClient
 @inject IAppParametersClient appParametersClient
+@inject IAccountingYearApiClient accountingYearApiClient
 @inject IProvidersApiClient providersService
 @inject ICustomersApiClient customerService
 @inject IInvoicesApiClient invoicesService
@@ -559,13 +561,18 @@
     {
         try
         {
+            // Get active accounting year for Timbre and PourcentageRetenu
+            var activeAccountingYear = await accountingYearApiClient.GetActiveAccountingYearAsync(_cancellationTokenSource.Token);
+            
+            // Get app params for SeuilRetenueSource (still in Systeme)
             var appParamsResult = await appParametersClient.GetAppParametersAsync(_cancellationTokenSource.Token);
             if (appParamsResult.IsT0)
             {
                 var appParams = appParamsResult.AsT0;
                 _seuilRetenueSource = appParams.SeuilRetenueSource;
-                _tauxRetenu = appParams.PourcentageRetenu;
-                _timbre = appParams.Timbre;
+                // Use accounting year values with fallback to app params
+                _tauxRetenu = activeAccountingYear?.PourcentageRetenu ?? appParams.PourcentageRetenu;
+                _timbre = activeAccountingYear?.Timbre ?? appParams.Timbre;
             }
         }
         catch (Exception ex)

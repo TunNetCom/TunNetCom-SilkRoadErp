@@ -5,7 +5,8 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetInvoicesWithSumma
 public class GetInvoicesWithSummariesQueryHandler(
     SalesContext _context,
     ILogger<GetInvoicesWithSummariesQueryHandler> _logger,
-    IMediator mediator)
+    IMediator mediator,
+    IAccountingYearFinancialParametersService _financialParametersService)
     : IRequestHandler<GetInvoicesWithSummariesQuery, GetInvoicesWithSummariesResponse>
 {
     private const string _numberColumnName = nameof(InvoiceBaseInfo.Number);
@@ -16,7 +17,9 @@ public class GetInvoicesWithSummariesQueryHandler(
         GetInvoicesWithSummariesQuery request,
         CancellationToken cancellationToken)
     {
+        // Get timbre from financial parameters service before building the query
         var appParams = await mediator.Send(new GetAppParametersQuery());
+        var timbre = await _financialParametersService.GetTimbreAsync(appParams.Value.Timbre, cancellationToken);
 
         _logger.LogPaginationRequest(nameof(Facture), request.PageNumber, request.PageSize);
         
@@ -28,7 +31,7 @@ public class GetInvoicesWithSummariesQueryHandler(
                                 Date = f.Date,
                                 CustomerId = f.IdClient,
                                 CustomerName = c.Nom,
-                                NetAmount = f.BonDeLivraison.Sum(d => d.NetPayer) + appParams.Value.Timbre,
+                                NetAmount = f.BonDeLivraison.Sum(d => d.NetPayer) + timbre,
                                 VatAmount = f.BonDeLivraison.Sum(d => d.TotTva)
                             })
                             .AsNoTracking()

@@ -4,7 +4,8 @@ public class SystemeSeedData
 {
     public int Id { get; set; }
     public string NomSociete { get; set; } = null!;
-    public decimal Timbre { get; set; }
+    // Timbre, PourcentageFodec, PourcentageRetenu, VatRate0, VatRate7, VatRate13, VatRate19
+    // ont été migrés vers AccountingYear et ne sont plus dans Systeme
     public string Adresse { get; set; } = null!;
     public string Tel { get; set; } = null!;
     public string? Fax { get; set; }
@@ -13,15 +14,11 @@ public class SystemeSeedData
     public string CodeTva { get; set; } = null!;
     public string? CodeCategorie { get; set; }
     public string? EtbSecondaire { get; set; }
-    public decimal PourcentageFodec { get; set; }
     public string? AdresseRetenu { get; set; }
-    public double PourcentageRetenu { get; set; }
-    public decimal VatAmount { get; set; }
+    // VatAmount and SeuilRetenueSource have been migrated to AccountingYear
     public decimal DiscountPercentage { get; set; }
-    public decimal VatRate0 { get; set; }
-    public decimal VatRate7 { get; set; }
-    public decimal VatRate13 { get; set; }
-    public decimal VatRate19 { get; set; }
+    public bool BloquerVenteStockInsuffisant { get; set; }
+    public int DecimalPlaces { get; set; }
     public string? Rib { get; set; }
 }
 

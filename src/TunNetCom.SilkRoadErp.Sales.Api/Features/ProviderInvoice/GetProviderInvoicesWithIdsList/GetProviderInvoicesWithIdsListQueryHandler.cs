@@ -9,23 +9,28 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderInvoice.GetProviderIn
         private readonly ILogger<GetProviderInvoicesWithIdsListQueryHandler> _logger;
         private readonly IMediator _mediator;
 
+        private readonly IAccountingYearFinancialParametersService _financialParametersService;
+
         public GetProviderInvoicesWithIdsListQueryHandler(
             SalesContext context,
             ILogger<GetProviderInvoicesWithIdsListQueryHandler> logger,
-            IMediator mediator)
+            IMediator mediator,
+            IAccountingYearFinancialParametersService financialParametersService)
         {
             _context = context;
             _logger = logger;
             _mediator = mediator;
+            _financialParametersService = financialParametersService;
         }
 
         public async Task<List<ProviderInvoiceResponse>> Handle(
             GetProviderInvoicesWithIdsListQuery request,
             CancellationToken cancellationToken)
         {
-            // Get app parameters to get timbre
+            // Get timbre from financial parameters service
             var appParamsResult = await _mediator.Send(new GetAppParametersQuery(), cancellationToken);
-            var timbre = appParamsResult.IsSuccess ? appParamsResult.Value.Timbre : 0;
+            var fallbackTimbre = appParamsResult.IsSuccess ? appParamsResult.Value.Timbre : 0;
+            var timbre = await _financialParametersService.GetTimbreAsync(fallbackTimbre, cancellationToken);
 
             // Calculate totals from receipt notes instead of using ProviderInvoiceView
             var invoices = await (from ff in _context.FactureFournisseur

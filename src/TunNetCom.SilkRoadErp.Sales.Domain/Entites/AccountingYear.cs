@@ -11,19 +11,59 @@ public partial class AccountingYear
     {
     }
 
-    public static AccountingYear CreateAccountingYear(int year, bool isActive)
+    public static AccountingYear CreateAccountingYear(
+        int year, 
+        bool isActive,
+        decimal? timbre = null,
+        decimal? pourcentageFodec = null,
+        decimal? vatRate0 = null,
+        decimal? vatRate7 = null,
+        decimal? vatRate13 = null,
+        decimal? vatRate19 = null,
+        double? pourcentageRetenu = null,
+        decimal? vatAmount = null,
+        decimal? seuilRetenueSource = null)
     {
         return new AccountingYear
         {
             Year = year,
-            IsActive = isActive
+            IsActive = isActive,
+            Timbre = timbre,
+            PourcentageFodec = pourcentageFodec,
+            VatRate0 = vatRate0,
+            VatRate7 = vatRate7,
+            VatRate13 = vatRate13,
+            VatRate19 = vatRate19,
+            PourcentageRetenu = pourcentageRetenu,
+            VatAmount = vatAmount,
+            SeuilRetenueSource = seuilRetenueSource
         };
     }
 
-    public void UpdateAccountingYear(int year, bool isActive)
+    public void UpdateAccountingYear(
+        int year, 
+        bool isActive,
+        decimal? timbre = null,
+        decimal? pourcentageFodec = null,
+        decimal? vatRate0 = null,
+        decimal? vatRate7 = null,
+        decimal? vatRate13 = null,
+        decimal? vatRate19 = null,
+        double? pourcentageRetenu = null,
+        decimal? vatAmount = null,
+        decimal? seuilRetenueSource = null)
     {
         this.Year = year;
         this.IsActive = isActive;
+        this.Timbre = timbre;
+        this.PourcentageFodec = pourcentageFodec;
+        this.VatRate0 = vatRate0;
+        this.VatRate7 = vatRate7;
+        this.VatRate13 = vatRate13;
+        this.VatRate19 = vatRate19;
+        this.PourcentageRetenu = pourcentageRetenu;
+        this.VatAmount = vatAmount;
+        this.SeuilRetenueSource = seuilRetenueSource;
     }
 
     public void SetActive()
@@ -41,6 +81,24 @@ public partial class AccountingYear
     public int Year { get; private set; }
 
     public bool IsActive { get; private set; }
+
+    public decimal? Timbre { get; private set; }
+
+    public decimal? PourcentageFodec { get; private set; }
+
+    public decimal? VatRate0 { get; private set; }
+
+    public decimal? VatRate7 { get; private set; }
+
+    public decimal? VatRate13 { get; private set; }
+
+    public decimal? VatRate19 { get; private set; }
+
+    public double? PourcentageRetenu { get; private set; }
+
+    public decimal? VatAmount { get; private set; }
+
+    public decimal? SeuilRetenueSource { get; private set; }
 
     public virtual ICollection<Facture> Facture { get; set; } = new List<Facture>();
 

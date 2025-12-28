@@ -24,6 +24,7 @@ public class ExportToSageErpEndpoint : ICarterModule
         [FromServices] IMediator mediator,
         [FromServices] SageErpExportService exportService,
         [FromServices] ILogger<ExportToSageErpEndpoint> logger,
+        [FromServices] IAccountingYearFinancialParametersService financialParametersService,
         [FromQuery] DateTime? startDate = null,
         [FromQuery] DateTime? endDate = null,
         [FromQuery] int? customerId = null,
@@ -36,8 +37,9 @@ public class ExportToSageErpEndpoint : ICarterModule
                 "ExportToSageErpEndpoint called with startDate: {StartDate}, endDate: {EndDate}, customerId: {CustomerId}, tagIds: {TagIds}",
                 startDate, endDate, customerId, tagIds != null ? string.Join(",", tagIds) : "null");
 
+            // Get timbre from financial parameters service
             var appParams = await mediator.Send(new GetAppParametersQuery(), cancellationToken);
-            var timbre = appParams.Value.Timbre;
+            var timbre = await financialParametersService.GetTimbreAsync(appParams.Value.Timbre, cancellationToken);
 
             // Step 1: Get filtered facture numbers first
             var factureQuery = context.Facture.AsQueryable();

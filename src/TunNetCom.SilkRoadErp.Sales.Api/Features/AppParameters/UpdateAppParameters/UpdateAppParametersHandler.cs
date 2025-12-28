@@ -23,9 +23,9 @@ public class UpdateAppParametersCommandHandler(
         }
 
         // Update the app parameters with the provided values
+        // Note: VatAmount and SeuilRetenueSource have been migrated to AccountingYear
         appParametersToUpdate.UpdateSysteme(
             nomSociete: updateAppParametersCommand.NomSociete,
-            timbre: updateAppParametersCommand.Timbre ?? appParametersToUpdate.Timbre,
             adresse: updateAppParametersCommand.Adresse ?? appParametersToUpdate.Adresse,
             tel: updateAppParametersCommand.Tel ?? appParametersToUpdate.Tel,
             fax: updateAppParametersCommand.Fax,
@@ -34,18 +34,10 @@ public class UpdateAppParametersCommandHandler(
             codeTva: updateAppParametersCommand.CodeTva ?? appParametersToUpdate.CodeTva,
             codeCategorie: updateAppParametersCommand.CodeCategorie,
             etbSecondaire: updateAppParametersCommand.EtbSecondaire,
-            pourcentageFodec: updateAppParametersCommand.PourcentageFodec ?? appParametersToUpdate.PourcentageFodec,
             adresseRetenu: updateAppParametersCommand.AdresseRetenu,
-            pourcentageRetenu: updateAppParametersCommand.PourcentageRetenu ?? appParametersToUpdate.PourcentageRetenu,
-            vatAmount: updateAppParametersCommand.VatAmount ?? appParametersToUpdate.VatAmount,
             discountPercentage: updateAppParametersCommand.DiscountPercentage ?? appParametersToUpdate.DiscountPercentage,
-            vatRate0: updateAppParametersCommand.VatRate0 ?? appParametersToUpdate.VatRate0,
-            vatRate7: updateAppParametersCommand.VatRate7 ?? appParametersToUpdate.VatRate7,
-            vatRate13: updateAppParametersCommand.VatRate13 ?? appParametersToUpdate.VatRate13,
-            vatRate19: updateAppParametersCommand.VatRate19 ?? appParametersToUpdate.VatRate19,
             bloquerVenteStockInsuffisant: updateAppParametersCommand.BloquerVenteStockInsuffisant ?? appParametersToUpdate.BloquerVenteStockInsuffisant,
             decimalPlaces: updateAppParametersCommand.DecimalPlaces ?? appParametersToUpdate.DecimalPlaces,
-            seuilRetenueSource: updateAppParametersCommand.SeuilRetenueSource ?? appParametersToUpdate.SeuilRetenueSource,
             rib: updateAppParametersCommand.Rib);
 
         _ = await _context.SaveChangesAsync(cancellationToken);

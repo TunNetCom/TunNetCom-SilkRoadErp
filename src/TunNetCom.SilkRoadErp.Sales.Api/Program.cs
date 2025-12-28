@@ -164,6 +164,9 @@ builder.Services.AddScoped<INumberGeneratorService, NumberGeneratorService>();
 // Register ActiveAccountingYearService as Singleton to share cache across all requests
 builder.Services.AddSingleton<IActiveAccountingYearService, ActiveAccountingYearService>();
 
+// Register AccountingYearFinancialParametersService as Singleton to share cache across all requests
+builder.Services.AddSingleton<IAccountingYearFinancialParametersService, AccountingYearFinancialParametersService>();
+
 // Register StockCalculationService
 builder.Services.AddScoped<IStockCalculationService,StockCalculationService>();
 
@@ -299,6 +302,37 @@ using (IServiceScope scope = app.Services.CreateScope())
     {
         // Check if database exists and has tables
         var canConnect = await dbContext.Database.CanConnectAsync();
+        
+        // Always check and add VatAmount and SeuilRetenueSource columns if they don't exist
+        if (canConnect)
+        {
+            try
+            {
+                logger.LogInformation("Vérification des colonnes VatAmount et SeuilRetenueSource dans AccountingYear...");
+                
+                // Check and add VatAmount column if it doesn't exist
+                var vatAmountExists = await dbContext.Database.ExecuteSqlRawAsync(@"
+                    IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'AccountingYear' AND COLUMN_NAME = 'VatAmount')
+                    BEGIN
+                        ALTER TABLE [AccountingYear] ADD [VatAmount] decimal(18,3) NULL;
+                    END
+                ");
+                logger.LogInformation("Colonne VatAmount vérifiée/ajoutée.");
+                
+                // Check and add SeuilRetenueSource column if it doesn't exist
+                var seuilExists = await dbContext.Database.ExecuteSqlRawAsync(@"
+                    IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'AccountingYear' AND COLUMN_NAME = 'SeuilRetenueSource')
+                    BEGIN
+                        ALTER TABLE [AccountingYear] ADD [SeuilRetenueSource] decimal(18,3) NULL;
+                    END
+                ");
+                logger.LogInformation("Colonne SeuilRetenueSource vérifiée/ajoutée.");
+            }
+            catch (Exception colEx)
+            {
+                logger.LogWarning(colEx, "Erreur lors de la vérification/ajout des colonnes VatAmount et SeuilRetenueSource, continuons...");
+            }
+        }
         
         var migrationsApplied = await dbContext.Database.GetPendingMigrationsAsync();
         var migrationsList = migrationsApplied.ToList();

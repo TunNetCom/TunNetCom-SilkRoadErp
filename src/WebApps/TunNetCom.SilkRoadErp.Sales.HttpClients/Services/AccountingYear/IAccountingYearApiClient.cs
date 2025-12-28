@@ -13,6 +13,16 @@ public interface IAccountingYearApiClient
     Task DeleteAccountingYearAsync(int id, CancellationToken cancellationToken = default);
 }
 
-public record GetActiveAccountingYearResponse(int Id, int Year, bool IsActive);
+public record GetActiveAccountingYearResponse(
+    int Id, 
+    int Year, 
+    bool IsActive,
+    decimal? Timbre = null,
+    decimal? PourcentageFodec = null,
+    decimal? VatRate0 = null,
+    decimal? VatRate7 = null,
+    decimal? VatRate13 = null,
+    decimal? VatRate19 = null,
+    double? PourcentageRetenu = null);
 public record GetAllAccountingYearsResponse(int Id, int Year, bool IsActive);
 

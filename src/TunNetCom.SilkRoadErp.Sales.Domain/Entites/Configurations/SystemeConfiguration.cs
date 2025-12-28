@@ -25,40 +25,16 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             entity.Property(e => e.Fax).HasColumnName("fax");
             entity.Property(e => e.MatriculeFiscale).HasColumnName("matriculeFiscale");
             entity.Property(e => e.NomSociete).HasMaxLength(50);
-            entity.Property(e => e.PourcentageFodec)
-            .HasColumnType("decimal(18, 2)")
-            .HasColumnName("pourcentageFodec");
-            entity.Property(e => e.PourcentageRetenu).HasColumnName("pourcentageRetenu");
             entity.Property(e => e.Tel).HasColumnName("tel");
-            entity.Property(e => e.Timbre).HasColumnType("decimal(18, 3)");
-            entity.Property(e => e.VatAmount)
-            .HasColumnType("decimal(18, 3)")
-            .HasColumnName("VatAmount");
             entity.Property(e => e.DiscountPercentage)
             .HasColumnType("decimal(18, 2)")
             .HasColumnName("DiscountPercentage");
-            entity.Property(e => e.VatRate0)
-            .HasColumnType("decimal(18, 2)")
-            .HasColumnName("VatRate0");
-            entity.Property(e => e.VatRate7)
-            .HasColumnType("decimal(18, 2)")
-            .HasColumnName("VatRate7");
-            entity.Property(e => e.VatRate13)
-            .HasColumnType("decimal(18, 2)")
-            .HasColumnName("VatRate13");
-            entity.Property(e => e.VatRate19)
-            .HasColumnType("decimal(18, 2)")
-            .HasColumnName("VatRate19");
             entity.Property(e => e.BloquerVenteStockInsuffisant)
             .HasColumnName("BloquerVenteStockInsuffisant")
             .HasDefaultValue(true);
             entity.Property(e => e.DecimalPlaces)
             .HasColumnName("DecimalPlaces")
             .HasDefaultValue(3);
-            entity.Property(e => e.SeuilRetenueSource)
-            .HasColumnType("decimal(18, 3)")
-            .HasColumnName("SeuilRetenueSource")
-            .HasDefaultValue(1000);
             entity.Property(e => e.Rib).HasColumnName("rib");
 
             OnConfigurePartial(entity);

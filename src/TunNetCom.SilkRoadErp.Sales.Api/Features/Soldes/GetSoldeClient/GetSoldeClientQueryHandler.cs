@@ -7,7 +7,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Soldes.GetSoldeClient;
 public class GetSoldeClientQueryHandler(
     SalesContext _context,
     ILogger<GetSoldeClientQueryHandler> _logger,
-    IMediator mediator)
+    IMediator mediator,
+    IActiveAccountingYearService _activeAccountingYearService,
+    IAccountingYearFinancialParametersService _financialParametersService)
     : IRequestHandler<GetSoldeClientQuery, Result<SoldeClientResponse>>
 {
     public async Task<Result<SoldeClientResponse>> Handle(GetSoldeClientQuery query, CancellationToken cancellationToken)
@@ -26,16 +28,17 @@ public class GetSoldeClientQueryHandler(
         var accountingYearId = query.AccountingYearId;
         if (!accountingYearId.HasValue)
         {
-            var activeYear = await _context.AccountingYear
-                .FirstOrDefaultAsync(ay => ay.IsActive, cancellationToken);
-            if (activeYear == null)
+            var activeYearId = await _activeAccountingYearService.GetActiveAccountingYearIdAsync(cancellationToken);
+            if (!activeYearId.HasValue)
             {
                 return Result.Fail("no_active_accounting_year");
             }
-            accountingYearId = activeYear.Id;
+            accountingYearId = activeYearId.Value;
         }
 
+        // Get timbre from financial parameters service
         var appParams = await mediator.Send(new GetAppParametersQuery());
+        var timbre = await _financialParametersService.GetTimbreAsync(appParams.Value.Timbre, cancellationToken);
 
         // Get all retenues for factures of this client
         var retenues = await _context.RetenueSourceClient
@@ -67,7 +70,7 @@ public class GetSoldeClientQueryHandler(
             else
             {
                 // Use NetPayer + Timbre for factures without retenue
-                return f.BonDeLivraison.Sum(b => b.NetPayer) + appParams.Value.Timbre;
+                return f.BonDeLivraison.Sum(b => b.NetPayer) + timbre;
             }
         });
 
@@ -149,7 +152,7 @@ public class GetSoldeClientQueryHandler(
             }
             else
             {
-                montant = f.BonDeLivraison.Sum(b => b.NetPayer) + appParams.Value.Timbre;
+                montant = f.BonDeLivraison.Sum(b => b.NetPayer) + timbre;
             }
 
             return new DocumentSoldeClient

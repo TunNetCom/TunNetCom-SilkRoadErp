@@ -13,17 +13,20 @@ public class UnpaidClientNotificationVerifier : INotificationVerifier
     private readonly ILogger<UnpaidClientNotificationVerifier> _logger;
     private readonly IMediator _mediator;
     private readonly IActiveAccountingYearService _activeAccountingYearService;
+    private readonly IAccountingYearFinancialParametersService _financialParametersService;
 
     public UnpaidClientNotificationVerifier(
         SalesContext context,
         ILogger<UnpaidClientNotificationVerifier> logger,
         IMediator mediator,
-        IActiveAccountingYearService activeAccountingYearService)
+        IActiveAccountingYearService activeAccountingYearService,
+        IAccountingYearFinancialParametersService financialParametersService)
     {
         _context = context;
         _logger = logger;
         _mediator = mediator;
         _activeAccountingYearService = activeAccountingYearService;
+        _financialParametersService = financialParametersService;
     }
 
     public async Task<List<NotificationData>> VerifyAsync(CancellationToken cancellationToken)
@@ -39,8 +42,9 @@ public class UnpaidClientNotificationVerifier : INotificationVerifier
                 return notifications;
             }
 
+            // Get timbre from financial parameters service
             var appParams = await _mediator.Send(new GetAppParametersQuery(), cancellationToken);
-            var timbre = appParams.Value.Timbre;
+            var timbre = await _financialParametersService.GetTimbreAsync(appParams.Value.Timbre, cancellationToken);
 
             // Get all clients with their related data
             var clientsData = await _context.Client

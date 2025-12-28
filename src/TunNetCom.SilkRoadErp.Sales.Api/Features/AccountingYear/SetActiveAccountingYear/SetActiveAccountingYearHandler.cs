@@ -3,6 +3,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.AccountingYear.SetActiveAccou
 public class SetActiveAccountingYearHandler(
     SalesContext _context,
     IActiveAccountingYearService _activeAccountingYearService,
+    IAccountingYearFinancialParametersService _financialParametersService,
     ILogger<SetActiveAccountingYearHandler> _logger)
     : IRequestHandler<SetActiveAccountingYearCommand, Result>
 {
@@ -40,6 +41,9 @@ public class SetActiveAccountingYearHandler(
 
         // Mettre à jour directement le cache avec le nouvel ID pour que les requêtes suivantes utilisent la bonne valeur
         _activeAccountingYearService.SetActiveAccountingYearId(accountingYear.Id);
+        
+        // Invalider le cache des paramètres financiers pour forcer le rechargement avec la nouvelle année
+        _financialParametersService.InvalidateCache();
 
         // Mettre à jour l'AsyncLocal dans SalesContext pour que le global filter fonctionne immédiatement pour cette requête
         var previousAsyncLocalValue = Domain.Entites.SalesContext.GetActiveAccountingYearId();

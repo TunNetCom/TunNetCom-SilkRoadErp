@@ -1,4 +1,5 @@
 ﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.AppParameters.GetAppParameters;
+using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.AppParameters
 {
     public class GetAppParametersQueryHandlerTest
@@ -14,7 +15,6 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.AppParameters
            var systeme = new Systeme
             {
                 NomSociete = "MySociety",
-                Timbre = 0.6m,
                 Adresse = "123 Street",
                 Tel = "12345678",
                 Fax = "98765432",
@@ -23,16 +23,29 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.AppParameters
                 CodeTva = "TVA20",
                 CodeCategorie = "Cat1",
                 EtbSecondaire = "EtbX",
-                PourcentageFodec = 1.5m,
                 AdresseRetenu = "Adresse Retenu",
-                PourcentageRetenu = 5.0,
-                DiscountPercentage = 10,
-                VatAmount = 19
+                DiscountPercentage = 10
             };
             _ = await context.Systeme.AddAsync(systeme);
             _ = await context.SaveChangesAsync();
             var loggerMock = new Mock<ILogger<CreateCustomerCommandHandler>>();
-            var handler = new GetAppParametersQueryHandler(context, loggerMock.Object);
+            var financialParametersServiceMock = new Mock<IAccountingYearFinancialParametersService>();
+            financialParametersServiceMock
+                .Setup(x => x.GetAllFinancialParametersAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AccountingYearFinancialParameters
+                {
+                    Timbre = 0.6m,
+                    PourcentageFodec = 1.5m,
+                    PourcentageRetenu = 5.0,
+                    VatRate0 = 0,
+                    VatRate7 = 7,
+                    VatRate13 = 13,
+                    VatRate19 = 19,
+                    VatAmount = 19,
+                    SeuilRetenueSource = 1000,
+                    DecimalPlaces = 3
+                });
+            var handler = new GetAppParametersQueryHandler(context, loggerMock.Object, financialParametersServiceMock.Object);
             var request = new GetAppParametersQuery();
             // Act
             var result = await handler.Handle(request, CancellationToken.None);

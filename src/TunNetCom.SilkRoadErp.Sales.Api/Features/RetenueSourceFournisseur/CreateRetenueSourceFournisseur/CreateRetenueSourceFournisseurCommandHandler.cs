@@ -11,7 +11,9 @@ public class CreateRetenueSourceFournisseurCommandHandler(
     SalesContext _context,
     ILogger<CreateRetenueSourceFournisseurCommandHandler> _logger,
     IMediator _mediator,
-    IDocumentStorageService _documentStorageService)
+    IDocumentStorageService _documentStorageService,
+    IActiveAccountingYearService _activeAccountingYearService,
+    IAccountingYearFinancialParametersService _financialParametersService)
     : IRequestHandler<CreateRetenueSourceFournisseurCommand, Result<int>>
 {
     public async Task<Result<int>> Handle(CreateRetenueSourceFournisseurCommand command, CancellationToken cancellationToken)
@@ -54,32 +56,37 @@ public class CreateRetenueSourceFournisseurCommandHandler(
             .SelectMany(br => br.LigneBonReception)
             .Sum(l => l.TotTtc);
 
-        // Calculate montant TTC with timbre for threshold validation
-        var montantTTCAvecTimbre = montantTTC + appParams.Timbre;
-
-        // Validate threshold (on the full TTC amount including timbre)
-        if (montantTTCAvecTimbre < appParams.SeuilRetenueSource)
-        {
-            _logger.LogWarning("Montant TTC {MontantTTC} is below threshold {Seuil} for FactureFournisseur {NumFactureFournisseur}",
-                montantTTCAvecTimbre, appParams.SeuilRetenueSource, command.NumFactureFournisseur);
-            return Result.Fail($"seuil_non_atteint: Le montant TTC ({montantTTCAvecTimbre}) doit être supérieur ou égal au seuil ({appParams.SeuilRetenueSource})");
-        }
-
-        // Get active accounting year
-        var activeAccountingYear = await _context.AccountingYear
-            .FirstOrDefaultAsync(ay => ay.IsActive, cancellationToken);
-
-        if (activeAccountingYear == null)
+        // Get active accounting year ID
+        var activeAccountingYearId = await _activeAccountingYearService.GetActiveAccountingYearIdAsync(cancellationToken);
+        if (!activeAccountingYearId.HasValue)
         {
             _logger.LogError("No active accounting year found");
             return Result.Fail("no_active_accounting_year");
         }
 
+        // Get timbre from financial parameters service
+        var timbre = await _financialParametersService.GetTimbreAsync(appParams.Timbre, cancellationToken);
+
+        // Calculate montant TTC with timbre for threshold validation
+        var montantTTCAvecTimbre = montantTTC + timbre;
+
+        // Get seuil from financial parameters service (migrated to AccountingYear)
+        var seuilRetenueSource = await _financialParametersService.GetSeuilRetenueSourceAsync(1000, cancellationToken);
+
+        // Validate threshold (on the full TTC amount including timbre)
+        if (montantTTCAvecTimbre < seuilRetenueSource)
+        {
+            _logger.LogWarning("Montant TTC {MontantTTC} is below threshold {Seuil} for FactureFournisseur {NumFactureFournisseur}",
+                montantTTCAvecTimbre, seuilRetenueSource, command.NumFactureFournisseur);
+            return Result.Fail($"seuil_non_atteint: Le montant TTC ({montantTTCAvecTimbre}) doit être supérieur ou égal au seuil ({seuilRetenueSource})");
+        }
+
         // Calculate montant TTC without timbre (retenue is calculated on amount without timbre)
         var montantTTCHorsTimbre = montantTTC;
 
-        // Get taux retenu: use supplier's rate if defined, otherwise use app params rate
-        var tauxRetenu = factureFournisseur.IdFournisseurNavigation.TauxRetenu ?? appParams.PourcentageRetenu;
+        // Get taux retenu: use supplier's rate if defined, otherwise use accounting year rate
+        var pourcentageRetenu = await _financialParametersService.GetPourcentageRetenuAsync(appParams.PourcentageRetenu, cancellationToken);
+        var tauxRetenu = factureFournisseur.IdFournisseurNavigation.TauxRetenu ?? pourcentageRetenu;
         _logger.LogInformation("Using taux retenu {TauxRetenu} for FactureFournisseur {NumFactureFournisseur} (from supplier: {FromSupplier})",
             tauxRetenu, command.NumFactureFournisseur, factureFournisseur.IdFournisseurNavigation.TauxRetenu.HasValue ? "Yes" : "No (app params)");
 
@@ -87,7 +94,7 @@ public class CreateRetenueSourceFournisseurCommandHandler(
         var montantApresRetenuSansTimbre = montantTTCHorsTimbre * (1 - (decimal)tauxRetenu / 100);
 
         // Add timbre after retenue calculation
-        var montantApresRetenuAvecTimbre = montantApresRetenuSansTimbre + appParams.Timbre;
+        var montantApresRetenuAvecTimbre = montantApresRetenuSansTimbre + timbre;
 
         // Store PDF if provided
         string? pdfStoragePath = null;
@@ -121,7 +128,7 @@ public class CreateRetenueSourceFournisseurCommandHandler(
             MontantApresRetenu = montantApresRetenuAvecTimbre,
             PdfStoragePath = pdfStoragePath,
             DateCreation = DateTime.UtcNow,
-            AccountingYearId = activeAccountingYear.Id
+            AccountingYearId = activeAccountingYearId.Value
         };
 
         _context.RetenueSourceFournisseur.Add(retenue);

@@ -4,7 +4,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.UpdateReceiptNote
 
 public class UpdateReceiptNoteWithLinesCommandHandler(
     SalesContext _context,
-    ILogger<UpdateReceiptNoteWithLinesCommandHandler> _logger)
+    ILogger<UpdateReceiptNoteWithLinesCommandHandler> _logger,
+    IActiveAccountingYearService _activeAccountingYearService,
+    IAccountingYearFinancialParametersService _financialParametersService)
     : IRequestHandler<UpdateReceiptNoteWithLinesCommand, Result>
 {
     public async Task<Result> Handle(
@@ -28,11 +30,9 @@ public class UpdateReceiptNoteWithLinesCommandHandler(
             return Result.Fail("Le document est validé et ne peut plus être modifié.");
         }
 
-        // Get the active accounting year
-        var activeAccountingYear = await _context.AccountingYear
-            .FirstOrDefaultAsync(ay => ay.IsActive, cancellationToken);
-
-        if (activeAccountingYear == null)
+        // Get active accounting year ID
+        var activeAccountingYearId = await _activeAccountingYearService.GetActiveAccountingYearIdAsync(cancellationToken);
+        if (!activeAccountingYearId.HasValue)
         {
             _logger.LogError("No active accounting year found");
             return Result.Fail("no_active_accounting_year");
@@ -43,9 +43,8 @@ public class UpdateReceiptNoteWithLinesCommandHandler(
         var totTva = 0m;
         var netPayer = 0m;
 
-        // Get system parameters for FODEC rate
-        var systeme = await _context.Systeme.FirstOrDefaultAsync(cancellationToken);
-        var fodecRate = systeme?.PourcentageFodec ?? 0;
+        // Get FODEC rate from financial parameters service
+        var fodecRate = await _financialParametersService.GetPourcentageFodecAsync(0, cancellationToken);
 
         // Get provider to check if it's a constructor
         var provider = await _context.Fournisseur
@@ -91,7 +90,7 @@ public class UpdateReceiptNoteWithLinesCommandHandler(
             idFournisseur: command.IdFournisseur,
             date: command.Date,
             numFactureFournisseur: command.NumFactureFournisseur,
-            accountingYearId: activeAccountingYear.Id,
+            accountingYearId: activeAccountingYearId.Value,
             totHTva: totHTva,
             totTva: totTva,
             netPayer: netPayer

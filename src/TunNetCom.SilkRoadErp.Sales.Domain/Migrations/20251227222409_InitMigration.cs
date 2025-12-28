@@ -18,7 +18,16 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Year = table.Column<int>(type: "int", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: false)
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    Timbre = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    PourcentageFodec = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    VatRate0 = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    VatRate7 = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    VatRate13 = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    VatRate19 = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    PourcentageRetenu = table.Column<double>(type: "float", nullable: true),
+                    VatAmount = table.Column<decimal>(type: "decimal(18,3)", nullable: true),
+                    SeuilRetenueSource = table.Column<decimal>(type: "decimal(18,3)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -213,7 +222,6 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false),
                     NomSociete = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    Timbre = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
                     adresse = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     tel = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     fax = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -222,18 +230,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     codeTVA = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     codeCategorie = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     etbSecondaire = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    pourcentageFodec = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     adresseRetenu = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    pourcentageRetenu = table.Column<double>(type: "float", nullable: false),
                     DiscountPercentage = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    VatAmount = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
-                    VatRate0 = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    VatRate7 = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    VatRate13 = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    VatRate19 = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     BloquerVenteStockInsuffisant = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     DecimalPlaces = table.Column<int>(type: "int", nullable: false, defaultValue: 3),
-                    SeuilRetenueSource = table.Column<decimal>(type: "decimal(18,3)", nullable: false, defaultValue: 1000m),
                     rib = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
@@ -929,11 +929,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Num = table.Column<int>(type: "int", nullable: false),
                     Num_FactureAvoirFourSurPAge = table.Column<int>(type: "int", nullable: false),
                     id_fournisseur = table.Column<int>(type: "int", nullable: false),
                     date = table.Column<DateTime>(type: "datetime", nullable: false),
-                    Num_FactureFournisseur = table.Column<int>(type: "int", nullable: true),
+                    FactureFournisseurId = table.Column<int>(type: "int", nullable: true),
                     AccountingYearId = table.Column<int>(type: "int", nullable: false),
                     Statut = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false)
                 },
@@ -947,10 +946,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_dbo.FactureAvoirFournisseur_dbo.FactureFournisseur_Num_FactureFournisseur",
-                        column: x => x.Num_FactureFournisseur,
+                        name: "FK_dbo.FactureAvoirFournisseur_dbo.FactureFournisseur_FactureFournisseurId",
+                        column: x => x.FactureFournisseurId,
                         principalTable: "FactureFournisseur",
-                        principalColumn: "Num",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_dbo.FactureAvoirFournisseur_dbo.Fournisseur_id_fournisseur",
@@ -1343,11 +1342,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Num = table.Column<int>(type: "int", nullable: false),
                     date = table.Column<DateTime>(type: "datetime", nullable: false),
                     fournisseurId = table.Column<int>(type: "int", nullable: true),
-                    Num_FactureAvoirFournisseur = table.Column<int>(type: "int", nullable: true),
-                    Num_AvoirFournisseur = table.Column<int>(type: "int", nullable: false),
+                    FactureAvoirFournisseurId = table.Column<int>(type: "int", nullable: true),
+                    NumAvoirChezFournisseur = table.Column<int>(type: "int", nullable: false),
                     AccountingYearId = table.Column<int>(type: "int", nullable: false),
                     Statut = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false)
                 },
@@ -1361,8 +1359,8 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_dbo.AvoirFournisseur_dbo.FactureAvoirFournisseur_Num_FactureAvoirFournisseur",
-                        column: x => x.Num_FactureAvoirFournisseur,
+                        name: "FK_dbo.AvoirFournisseur_dbo.FactureAvoirFournisseur_FactureAvoirFournisseurId",
+                        column: x => x.FactureAvoirFournisseurId,
                         principalTable: "FactureAvoirFournisseur",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -1478,20 +1476,14 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 column: "AccountingYearId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_AvoirFournisseur_FactureAvoirFournisseurId",
+                table: "AvoirFournisseur",
+                column: "FactureAvoirFournisseurId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_AvoirFournisseur_fournisseurId",
                 table: "AvoirFournisseur",
                 column: "fournisseurId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_AvoirFournisseur_Num",
-                table: "AvoirFournisseur",
-                column: "Num",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_AvoirFournisseur_Num_FactureAvoirFournisseur",
-                table: "AvoirFournisseur",
-                column: "Num_FactureAvoirFournisseur");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Avoirs_AccountingYearId",
@@ -1652,20 +1644,14 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 column: "AccountingYearId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_FactureAvoirFournisseur_FactureFournisseurId",
+                table: "FactureAvoirFournisseur",
+                column: "FactureFournisseurId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_FactureAvoirFournisseur_id_fournisseur",
                 table: "FactureAvoirFournisseur",
                 column: "id_fournisseur");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_FactureAvoirFournisseur_Num",
-                table: "FactureAvoirFournisseur",
-                column: "Num",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_FactureAvoirFournisseur_Num_FactureFournisseur",
-                table: "FactureAvoirFournisseur",
-                column: "Num_FactureFournisseur");
 
             migrationBuilder.CreateIndex(
                 name: "IX_FactureFournisseur_AccountingYearId",

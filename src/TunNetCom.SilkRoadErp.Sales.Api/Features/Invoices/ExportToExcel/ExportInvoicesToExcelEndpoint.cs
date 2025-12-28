@@ -24,6 +24,7 @@ public class ExportInvoicesToExcelEndpoint : ICarterModule
         [FromServices] SalesContext context,
         [FromServices] IMediator mediator,
         [FromServices] ExcelExportService exportService,
+        [FromServices] IAccountingYearFinancialParametersService financialParametersService,
         [FromServices] ILogger<ExportInvoicesToExcelEndpoint> logger,
         [FromQuery] DateTime? startDate = null,
         [FromQuery] DateTime? endDate = null,
@@ -40,9 +41,10 @@ public class ExportInvoicesToExcelEndpoint : ICarterModule
                 "ExportInvoicesToExcelEndpoint called with startDate: {StartDate}, endDate: {EndDate}, customerId: {CustomerId}, tagIds: {TagIds}, status: {Status}",
                 startDate, endDate, customerId, tagIds != null ? string.Join(",", tagIds) : "null", status);
 
+            // Get financial parameters from service
             var appParams = await mediator.Send(new GetAppParametersQuery(), cancellationToken);
-            var timbre = appParams.Value.Timbre;
-            var decimalPlaces = appParams.Value.DecimalPlaces;
+            var timbre = await financialParametersService.GetTimbreAsync(appParams.Value.Timbre, cancellationToken);
+            var decimalPlaces = await financialParametersService.GetDecimalPlacesAsync(appParams.Value.DecimalPlaces, cancellationToken);
 
             // Build query similar to InvoiceBaseInfosController
             var baseQuery = from f in context.Facture
@@ -144,9 +146,9 @@ public class ExportInvoicesToExcelEndpoint : ICarterModule
             logger.LogInformation("Exporting {Count} invoices to Excel with {ColumnCount} columns", invoiceList.Count, columnsToExport.Count);
 
             // Calculate totals with VAT details
-            var vatRate7 = (int)appParams.Value.VatRate7;
-            var vatRate13 = (int)appParams.Value.VatRate13;
-            var vatRate19 = (int)appParams.Value.VatRate19;
+            var vatRate7 = (int)await financialParametersService.GetVatRate7Async(appParams.Value.VatRate7, cancellationToken);
+            var vatRate13 = (int)await financialParametersService.GetVatRate13Async(appParams.Value.VatRate13, cancellationToken);
+            var vatRate19 = (int)await financialParametersService.GetVatRate19Async(appParams.Value.VatRate19, cancellationToken);
 
             var invoiceNumbers = invoiceList.Select(i => i.Number).ToList();
             var linesQuery = from bdl in context.BonDeLivraison

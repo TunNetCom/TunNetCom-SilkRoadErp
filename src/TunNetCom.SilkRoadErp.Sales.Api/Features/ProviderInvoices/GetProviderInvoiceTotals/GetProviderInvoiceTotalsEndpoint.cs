@@ -21,6 +21,7 @@ public class GetProviderInvoiceTotalsEndpoint : ICarterModule
         [FromServices] SalesContext context,
         [FromServices] IMediator mediator,
         [FromServices] ILogger<GetProviderInvoiceTotalsEndpoint> logger,
+        [FromServices] IAccountingYearFinancialParametersService financialParametersService,
         [FromQuery] DateTime? startDate = null,
         [FromQuery] DateTime? endDate = null,
         [FromQuery] int? providerId = null,
@@ -34,10 +35,11 @@ public class GetProviderInvoiceTotalsEndpoint : ICarterModule
                 "GetProviderInvoiceTotalsEndpoint called with startDate: {StartDate}, endDate: {EndDate}, providerId: {ProviderId}, tagIds: {TagIds}, status: {Status}",
                 startDate, endDate, providerId, tagIds != null ? string.Join(",", tagIds) : "null", status);
 
+            // Get financial parameters from service
             var appParams = await mediator.Send(new GetAppParametersQuery(), cancellationToken);
-            var vatRate7 = (int)appParams.Value.VatRate7;
-            var vatRate13 = (int)appParams.Value.VatRate13;
-            var vatRate19 = (int)appParams.Value.VatRate19;
+            var vatRate7 = (int)await financialParametersService.GetVatRate7Async(appParams.Value.VatRate7, cancellationToken);
+            var vatRate13 = (int)await financialParametersService.GetVatRate13Async(appParams.Value.VatRate13, cancellationToken);
+            var vatRate19 = (int)await financialParametersService.GetVatRate19Async(appParams.Value.VatRate19, cancellationToken);
 
             // Build base query for provider invoices
             var invoiceQuery = context.FactureFournisseur.AsQueryable();
