@@ -27,7 +27,7 @@ spec:
     spec:
       containers:
       - name: api
-        image: tunnetcom/silkroad:latest-api
+        image: tunnetcom/silkroad:API_TAG_PLACEHOLDER
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
@@ -83,7 +83,7 @@ spec:
     spec:
       containers:
       - name: webapp
-        image: tunnetcom/silkroad:latest-webapp
+        image: tunnetcom/silkroad:WEBAPP_TAG_PLACEHOLDER
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
