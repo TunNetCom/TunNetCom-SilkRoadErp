@@ -145,13 +145,16 @@ stages:
       displayName: 'Debug: list deployment files'
 
     # 2️⃣ Update image tags
+# 2️⃣ Update image tags
     - script: |
         cd $(Build.SourcesDirectory)/src/deployments
+        # Use build-specific tags instead of latest
         sed -i "s|image: .*silkroad:.*api.*|image: $(dockerRepository):$(apiTag)|" prod-deployment.yaml
         sed -i "s|image: .*silkroad:.*webapp.*|image: $(dockerRepository):$(webappTag)|" prod-deployment.yaml
         echo "🧾 New image lines:"
         grep 'image:' prod-deployment.yaml
       displayName: Update image tags
+
 
     # 3️⃣ Create / Update DB secret
     - script: |
