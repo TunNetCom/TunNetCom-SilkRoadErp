@@ -26,40 +26,57 @@
             background: transparent;
         }
         
+        /* Conteneur pour le contenu redimensionné de 17.5 x 11.5 pouces (444.5mm x 292.1mm) */
+        .content-container {
+            position: absolute;
+            width: 444.5mm;
+            height: 292.1mm;
+            /* Redimensionner uniformément pour tenir sur A4 paysage (297mm x 210mm) */
+            /* Utiliser le facteur le plus petit pour préserver les proportions */
+            transform: scale(0.668);
+            transform-origin: top left;
+            /* Centrer horizontalement et verticalement sur la page A4 */
+            /* Calcul: (297 - 444.5 * 0.668) / 2 = (297 - 296.926) / 2 = 0.037mm ≈ 0 */
+            left: 0mm;
+            /* Position initiale: 7.5mm, déplacé de 20% vers le haut (20% de 195.1228mm = 39mm) */
+            /* Nouveau top: 7.5mm - 39mm = -31.5mm, mais on limite à 0mm pour rester visible */
+            top: 0mm;
+        }
+        
         /* Positionnement absolu pour chaque valeur */
         .value-field {
             position: absolute;
-            font-size: 11px;
+            font-size: 15px;
             line-height: 1.2;
         }
         
         /* Couleurs selon le type */
         .tireur-value {
-            color: #c00; /* Rouge */
+            color: #000; /* Noir */
             font-weight: 500;
         }
         
         .tire-value {
-            color: #0066cc; /* Bleu */
+            color: #000; /* Noir */
             font-weight: 500;
         }
         
         .beneficiaire-value {
-            color: #008000; /* Vert */
+            color: #000; /* Noir */
             font-weight: 500;
         }
         
         .montant-lettres {
-            color: #008000; /* Vert */
+            color: #000; /* Noir */
             font-weight: 500;
-            font-size: 10px;
+            font-size: 15px;
             line-height: 1.3;
-            max-width: 80mm;
+            white-space: nowrap; /* Empêcher le retour à la ligne */
         }
         
         .rib-value {
             font-family: monospace;
-            font-size: 10px;
+            font-size: 15px;
             letter-spacing: 1px;
         }
         
@@ -70,71 +87,60 @@
     </style>
 </head>
 <body>
-    <!-- Date d'échéance (haut centre, zone "Echéance") -->
-    <div class="value-field tire-value" style="top: 28mm; left: 135mm; font-size: 11px;">
+    <div class="content-container">
+    <!-- Tireur (haut gauche, zone "Tireur") -->
+    <div class="value-field tireur-value" style="top: 50mm; left: 15mm; max-width: 90mm;">
+        @Model.Tireur.Nom
+    </div>
+    
+    <!-- Bénéficiaire "payer à l'ordre de" (milieu gauche, zone "payer à l'ordre de") -->
+    <div class="value-field beneficiaire-value" style="top: 90mm; left: 15mm; max-width: 90mm;">
+        @Model.Tireur.Nom
+    </div>
+    
+    <!-- Montant en lettres (entre le premier RIB et le 2ème RIB) -->
+    <div class="value-field montant-lettres" style="top: 75mm; left: 15mm;">
+        @Model.MontantEnLettres
+    </div>
+    
+    <!-- Date d'échéance (2ème date - entre la somme en lettres et le 2ème RIB) -->
+    <div class="value-field" style="top: 105mm; left: 15mm;">
         @(Model.DateEcheance?.ToString("dd/MM/yyyy") ?? "")
     </div>
     
-    <!-- Date de création "A Tunis Le" (haut centre, après échéance) -->
-    <div class="value-field" style="top: 35mm; left: 120mm; font-size: 10px;">
-        @Model.DateCreation.ToString("dd/MM/yyyy")
-    </div>
-    
-    <!-- Numéro d'ordre de paiement L-CN (haut droite) -->
-    <div class="value-field beneficiaire-value" style="top: 28mm; left: 215mm; font-size: 11px; font-weight: 500;">
-        @Model.NumeroChequeTraite
-    </div>
-    
-    <!-- Montant en chiffres (haut droite, première ligne) -->
-    <div class="value-field beneficiaire-value" style="top: 35mm; left: 235mm; font-size: 13px; font-weight: bold;">
-        @Model.Montant.ToString("N3", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))
-    </div>
-    
-    <!-- Montant en chiffres (haut droite, deuxième ligne) -->
-    <div class="value-field beneficiaire-value" style="top: 40mm; left: 235mm; font-size: 11px;">
-        @Model.Montant.ToString("N3", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))
-    </div>
-    
-    <!-- RIB/RIP du tiré (haut centre, zone RIB) -->
-    <div class="value-field tire-value rib-value" style="top: 43mm; left: 125mm;">
+    <!-- RIB/RIP du tiré (bas gauche, zone "RIB ou RIP du Tiré" - 2ème RIB) -->
+    <div class="value-field tire-value rib-value" style="top: 145mm; left: 15mm;">
         @if (!string.IsNullOrWhiteSpace(Model.Tire.RibFormatted))
         {
             <span>@Model.Tire.RibFormatted</span>
         }
     </div>
     
-    <!-- Tireur (milieu gauche, zone "Tireur") -->
-    <div class="value-field tireur-value" style="top: 68mm; left: 12mm; font-size: 11px; max-width: 90mm;">
-        @Model.Tireur.Nom
+    <!-- Code-barres / Numéro (bas gauche, zone code-barres) -->
+    <div class="value-field" style="top: 190mm; left: 15mm; font-family: monospace; text-align: left;">
+        @if (!string.IsNullOrWhiteSpace(Model.NumeroChequeTraite))
+        {
+            <span>@Model.NumeroChequeTraite</span>
+        }
     </div>
     
-    <!-- Bénéficiaire "payer à l'ordre de" (milieu gauche, sous tireur) -->
-    <div class="value-field beneficiaire-value" style="top: 88mm; left: 12mm; font-size: 11px; max-width: 90mm;">
-        @Model.Tireur.Nom
+    <!-- Numéro d'ordre de paiement L-CN (haut droite, zone "Ordre de paiement L - CN") -->
+    <div class="value-field beneficiaire-value" style="top: 30mm; left: 220mm; font-weight: 500;">
+        @Model.NumeroChequeTraite
     </div>
     
-    <!-- Montant en lettres (milieu gauche, zone "Montant en lettres") -->
-    <div class="value-field montant-lettres" style="top: 98mm; left: 12mm; max-width: 90mm;">
-        @Model.MontantEnLettres
+    <!-- Montant en chiffres (haut droite, zone "Montant" - deuxième ligne) -->
+    <div class="value-field beneficiaire-value" style="top: 42mm; left: 240mm;">
+        @Model.Montant.ToString("N3", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))
     </div>
     
-    <!-- Lieu de création (milieu droite, zone "Lieu de création") -->
-    <div class="value-field" style="top: 68mm; left: 195mm; font-size: 11px;">
-        Tunis
-    </div>
-    
-    <!-- Date de création (milieu droite, zone "Date de création") -->
-    <div class="value-field" style="top: 75mm; left: 195mm; font-size: 11px;">
+    <!-- Date de création "Le" (haut droite, zone "Le") -->
+    <div class="value-field" style="top: 37mm; left: 125mm;">
         @Model.DateCreation.ToString("dd/MM/yyyy")
     </div>
     
-    <!-- Date d'échéance (milieu droite, zone "Echéance") -->
-    <div class="value-field" style="top: 82mm; left: 195mm; font-size: 11px;">
-        @(Model.DateEcheance?.ToString("dd/MM/yyyy") ?? "")
-    </div>
-    
-    <!-- RIB/RIP du tiré (bas gauche, zone RIB/RIP) -->
-    <div class="value-field tire-value rib-value" style="top: 143mm; left: 12mm;">
+    <!-- RIB/RIP du tiré (haut droite, zone "RIB ou RIP du Tiré") -->
+    <div class="value-field tire-value rib-value" style="top: 45mm; left: 130mm;">
         @if (!string.IsNullOrWhiteSpace(Model.Tire.RibFormatted))
         {
             <span>@Model.Tire.RibFormatted</span>
@@ -142,7 +148,7 @@
     </div>
     
     <!-- Nom et adresse du tiré (bas droite, zone "Nom et adresse du Tiré") -->
-    <div class="value-field tire-value" style="top: 143mm; left: 195mm; font-size: 11px; max-width: 85mm; line-height: 1.3;">
+    <div class="value-field tire-value" style="top: 145mm; left: 200mm; max-width: 85mm; line-height: 1.3;">
         @Model.Tire.Nom
         @if (!string.IsNullOrWhiteSpace(Model.Tire.Adresse))
         {
@@ -151,7 +157,7 @@
     </div>
     
     <!-- Domiciliation/Banque (bas droite, zone "Domiciliation") -->
-    <div class="value-field" style="top: 158mm; left: 195mm; font-size: 11px; max-width: 85mm; line-height: 1.3;">
+    <div class="value-field" style="top: 160mm; left: 200mm; max-width: 85mm; line-height: 1.3;">
         @if (Model.Banque != null)
         {
             <span>@Model.Banque.Nom</span>
@@ -161,13 +167,6 @@
             }
         }
     </div>
-    
-    <!-- Code-barres / Numéro (bas centre, zone code-barres) -->
-    <div class="value-field" style="top: 188mm; left: 135mm; font-family: monospace; font-size: 11px; text-align: center; width: 30mm;">
-        @if (!string.IsNullOrWhiteSpace(Model.NumeroChequeTraite))
-        {
-            <span>@Model.NumeroChequeTraite</span>
-        }
     </div>
 </body>
 </html>
