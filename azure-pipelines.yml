@@ -17,7 +17,6 @@ variables:
 - name: webappTag
   value: 'webapp-$(Build.BuildId)'
 
-
 stages:
 # ============================================================
 # 1️⃣ BUILD & PUSH STAGE
@@ -74,11 +73,8 @@ stages:
           --progress=plain \
           --target api \
           -t $(dockerRepository):$(apiTag) \
-          -t $(dockerRepository):latest-api \
           -f Dockerfile \
           .
-
-
         docker images | grep $(dockerRepository)
       displayName: 'Build API Docker Image'
 
@@ -89,7 +85,6 @@ stages:
         set -e
         echo "Pushing API Docker image..."
         docker push $(dockerRepository):$(apiTag)
-        docker push $(dockerRepository):latest-api
       displayName: 'Push API Docker Image'
 
     # -----------------------------
@@ -97,17 +92,14 @@ stages:
     # -----------------------------
     - script: |
         set -e
-        WEBAPP_TAG=$(webappTag)
-        echo "Building WebApp Docker image with tag $WEBAPP_TAG..."
-
+        echo "Building WebApp Docker image..."
         docker build \
+          --no-cache \
           --progress=plain \
           --target webapp \
-          -t $(dockerRepository):$WEBAPP_TAG \
-          -t $(dockerRepository):latest-webapp \
+          -t $(dockerRepository):$(webappTag) \
           -f Dockerfile \
           .
-
         docker images | grep $(dockerRepository)
       displayName: 'Build WebApp Docker Image'
 
@@ -116,12 +108,9 @@ stages:
     # -----------------------------
     - script: |
         set -e
-        WEBAPP_TAG=$(webappTag)
-        echo "Pushing WebApp Docker image with tag $WEBAPP_TAG..."
-        docker push $(dockerRepository):$WEBAPP_TAG
-        docker push $(dockerRepository):latest-webapp
+        echo "Pushing WebApp Docker image..."
+        docker push $(dockerRepository):$(webappTag)
       displayName: 'Push WebApp Docker Image'
-
 
 # ============================================================
 # 2️⃣ DEPLOY STAGE TO ON-PREM KUBERNETES
@@ -144,17 +133,14 @@ stages:
         ls -la
       displayName: 'Debug: list deployment files'
 
-    # 2️⃣ Update image tags
-# 2️⃣ Update image tags
+    # 2️⃣ Update image tags in YAML
     - script: |
         cd $(Build.SourcesDirectory)/src/deployments
-        # Use build-specific tags instead of latest
         sed -i "s|API_TAG_PLACEHOLDER|$(apiTag)|g" prod-deployment.yaml
         sed -i "s|WEBAPP_TAG_PLACEHOLDER|$(webappTag)|g" prod-deployment.yaml
-        echo "🧾 New image lines:"
+        echo "🧾 Deployment YAML after tag update:"
         grep 'image:' prod-deployment.yaml
-      displayName: Update image tags
-
+      displayName: 'Update image tags'
 
     # 3️⃣ Create / Update DB secret
     - script: |
@@ -162,21 +148,24 @@ stages:
           -n silkroad-prod \
           --from-literal=ConnectionStrings__DefaultConnection="$(CONNECTION_STRING)" \
           --dry-run=client -o yaml | kubectl apply -f -
-      displayName: Create DB Connection Secret
+      displayName: 'Create DB Connection Secret'
 
-    # 4️⃣ Deploy to Kubernetes
+    # 4️⃣ Apply deployment & service
     - script: |
         kubectl version --client
         kubectl cluster-info
 
+        # Apply updated YAMLs
         kubectl apply -f prod-deployment.yaml -n silkroad-prod
         kubectl apply -f prod-service.yaml -n silkroad-prod || true
 
-        kubectl rollout restart deployment/silkroad-api -n silkroad-prod || true
-        kubectl rollout restart deployment/silkroad-webapp -n silkroad-prod || true
+        # Force rollout to pull new images
+        kubectl rollout restart deployment/silkroad-api -n silkroad-prod
+        kubectl rollout restart deployment/silkroad-webapp -n silkroad-prod
 
+        # Wait for rollout completion
         kubectl rollout status deployment/silkroad-api -n silkroad-prod
         kubectl rollout status deployment/silkroad-webapp -n silkroad-prod
 
         echo "✅ Successfully deployed SilkRoad to namespace: silkroad-prod"
-      displayName: Deploy to K8s
+      displayName: 'Deploy to Kubernetes'
