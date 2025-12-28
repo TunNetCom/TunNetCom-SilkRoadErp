@@ -70,12 +70,14 @@ stages:
         set -e
         echo "Building API Docker image..."
         docker build \
+          --no-cache \
           --progress=plain \
           --target api \
           -t $(dockerRepository):$(apiTag) \
           -t $(dockerRepository):latest-api \
           -f Dockerfile \
           .
+
 
         docker images | grep $(dockerRepository)
       displayName: 'Build API Docker Image'
