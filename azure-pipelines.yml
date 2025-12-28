@@ -73,6 +73,7 @@ stages:
           --progress=plain \
           --target api \
           -t $(dockerRepository):$(apiTag) \
+          -t $(dockerRepository):latest-api \
           -f Dockerfile \
           .
         docker images | grep $(dockerRepository)
@@ -85,6 +86,7 @@ stages:
         set -e
         echo "Pushing API Docker image..."
         docker push $(dockerRepository):$(apiTag)
+        docker push $(dockerRepository):latest-api
       displayName: 'Push API Docker Image'
 
     # -----------------------------
@@ -98,6 +100,7 @@ stages:
           --progress=plain \
           --target webapp \
           -t $(dockerRepository):$(webappTag) \
+          -t $(dockerRepository):latest-webapp \
           -f Dockerfile \
           .
         docker images | grep $(dockerRepository)
@@ -110,6 +113,7 @@ stages:
         set -e
         echo "Pushing WebApp Docker image..."
         docker push $(dockerRepository):$(webappTag)
+        docker push $(dockerRepository):latest-webapp
       displayName: 'Push WebApp Docker Image'
 
 # ============================================================
@@ -150,7 +154,7 @@ stages:
           --dry-run=client -o yaml | kubectl apply -f -
       displayName: 'Create DB Connection Secret'
 
-    # 4️⃣ Apply deployment & service
+    # 4️⃣ Apply deployment & force new images
     - script: |
         kubectl version --client
         kubectl cluster-info
@@ -159,9 +163,11 @@ stages:
         kubectl apply -f prod-deployment.yaml -n silkroad-prod
         kubectl apply -f prod-service.yaml -n silkroad-prod || true
 
-        # Force rollout to pull new images
-        kubectl rollout restart deployment/silkroad-api -n silkroad-prod
-        kubectl rollout restart deployment/silkroad-webapp -n silkroad-prod
+        # Force rollout with new images
+        kubectl set image deployment/silkroad-api \
+          api=$(dockerRepository):$(apiTag) -n silkroad-prod --record
+        kubectl set image deployment/silkroad-webapp \
+          webapp=$(dockerRepository):$(webappTag) -n silkroad-prod --record
 
         # Wait for rollout completion
         kubectl rollout status deployment/silkroad-api -n silkroad-prod
