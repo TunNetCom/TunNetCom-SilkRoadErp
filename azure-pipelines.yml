@@ -149,8 +149,8 @@ stages:
     - script: |
         cd $(Build.SourcesDirectory)/src/deployments
         # Use build-specific tags instead of latest
-        sed -i "s|image: .*silkroad:.*api.*|image: $(dockerRepository):$(apiTag)|" prod-deployment.yaml
-        sed -i "s|image: .*silkroad:.*webapp.*|image: $(dockerRepository):$(webappTag)|" prod-deployment.yaml
+        sed -i "s|API_TAG_PLACEHOLDER|$(apiTag)|g" prod-deployment.yaml
+        sed -i "s|WEBAPP_TAG_PLACEHOLDER|$(webappTag)|g" prod-deployment.yaml
         echo "🧾 New image lines:"
         grep 'image:' prod-deployment.yaml
       displayName: Update image tags
