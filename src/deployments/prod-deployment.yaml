@@ -11,9 +11,9 @@ metadata:
     environment: production
     tier: backend
 spec:
-  replicas: 1  # Single pod - no shared storage needed
+  replicas: 1
   strategy:
-    type: Recreate  # Simpler strategy for single pod
+    type: Recreate
   selector:
     matchLabels:
       app: silkroad-api
@@ -24,6 +24,8 @@ spec:
         app: silkroad-api
         environment: production
         tier: backend
+      annotations:
+        deployment.kubernetes.io/revision: "1"
     spec:
       containers:
       - name: api
@@ -55,7 +57,24 @@ spec:
           limits:
             memory: "1Gi"
             cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
       restartPolicy: Always
+      terminationGracePeriodSeconds: 30
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -67,9 +86,9 @@ metadata:
     environment: production
     tier: frontend
 spec:
-  replicas: 1  # Single pod - no encryption key sharing issues
+  replicas: 1
   strategy:
-    type: Recreate  # Simpler strategy for single pod
+    type: Recreate
   selector:
     matchLabels:
       app: silkroad-webapp
@@ -80,6 +99,8 @@ spec:
         app: silkroad-webapp
         environment: production
         tier: frontend
+      annotations:
+        deployment.kubernetes.io/revision: "1"
     spec:
       containers:
       - name: webapp
@@ -103,4 +124,57 @@ spec:
           limits:
             memory: "1Gi"
             cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
       restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: silkroad-api-service
+  namespace: silkroad-prod
+  labels:
+    app: silkroad-api
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: silkroad-api
+    environment: production
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: silkroad-webapp-service
+  namespace: silkroad-prod
+  labels:
+    app: silkroad-webapp
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: silkroad-webapp
+    environment: production
