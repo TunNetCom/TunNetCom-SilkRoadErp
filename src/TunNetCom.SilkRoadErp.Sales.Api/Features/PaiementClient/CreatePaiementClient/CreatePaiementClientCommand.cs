@@ -3,7 +3,7 @@ using TunNetCom.SilkRoadErp.Sales.Contracts.PaiementClient;
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.PaiementClient.CreatePaiementClient;
 
 public record CreatePaiementClientCommand(
-    string Numero,
+    string? NumeroTransactionBancaire,
     int ClientId,
     decimal Montant,
     DateTime DatePaiement,

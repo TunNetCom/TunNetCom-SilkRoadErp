@@ -216,7 +216,7 @@ public class GetSoldeClientQueryHandler(
             .Select(p => new PaiementSoldeClient
             {
                 Id = p.Id,
-                Numero = p.Numero,
+                NumeroTransactionBancaire = p.NumeroTransactionBancaire,
                 DatePaiement = p.DatePaiement,
                 Montant = p.Montant,
                 MethodePaiement = p.MethodePaiement.ToString()

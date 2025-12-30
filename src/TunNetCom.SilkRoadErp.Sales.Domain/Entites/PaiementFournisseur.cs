@@ -11,7 +11,7 @@ public partial class PaiementFournisseur : IAccountingYearEntity
     }
 
     public static PaiementFournisseur CreatePaiementFournisseur(
-        string numero,
+        string? numeroTransactionBancaire,
         int fournisseurId,
         int accountingYearId,
         decimal montant,
@@ -31,7 +31,7 @@ public partial class PaiementFournisseur : IAccountingYearEntity
     {
         return new PaiementFournisseur
         {
-            Numero = numero,
+            NumeroTransactionBancaire = numeroTransactionBancaire,
             FournisseurId = fournisseurId,
             AccountingYearId = accountingYearId,
             Montant = montant,
@@ -52,7 +52,7 @@ public partial class PaiementFournisseur : IAccountingYearEntity
     }
 
     public void UpdatePaiementFournisseur(
-        string numero,
+        string? numeroTransactionBancaire,
         int fournisseurId,
         int accountingYearId,
         decimal montant,
@@ -70,7 +70,7 @@ public partial class PaiementFournisseur : IAccountingYearEntity
         string? ribCle,
         string? documentStoragePath)
     {
-        this.Numero = numero;
+        this.NumeroTransactionBancaire = numeroTransactionBancaire;
         this.FournisseurId = fournisseurId;
         this.AccountingYearId = accountingYearId;
         this.Montant = montant;
@@ -110,7 +110,7 @@ public partial class PaiementFournisseur : IAccountingYearEntity
 
     public int Id { get; private set; }
 
-    public string Numero { get; private set; } = null!;
+    public string? NumeroTransactionBancaire { get; private set; }
 
     public int FournisseurId { get; private set; }
 

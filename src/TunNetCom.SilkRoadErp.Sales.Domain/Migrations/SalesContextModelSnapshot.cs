@@ -183,7 +183,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.HasKey("Num")
                         .HasName("PK_dbo.AvoirFinancierFournisseurs");
 
-                    b.ToTable("AvoirFinancierFournisseurs", (string)null);
+                    b.ToTable("AvoirFinancierFournisseurs");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.AvoirFournisseur", b =>
@@ -227,7 +227,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 
                     b.HasIndex("FournisseurId");
 
-                    b.ToTable("AvoirFournisseur", (string)null);
+                    b.ToTable("AvoirFournisseur");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Avoirs", b =>
@@ -274,7 +274,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 
                     b.HasIndex("NumFactureAvoirClient");
 
-                    b.ToTable("Avoirs", (string)null);
+                    b.ToTable("Avoirs");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Banque", b =>
@@ -372,7 +372,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 
                     b.HasIndex("NumFacture");
 
-                    b.ToTable("BonDeLivraison", (string)null);
+                    b.ToTable("BonDeLivraison");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.BonDeReception", b =>
@@ -439,7 +439,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 
                     b.HasIndex("NumFactureFournisseur");
 
-                    b.ToTable("BonDeReception", (string)null);
+                    b.ToTable("BonDeReception");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Client", b =>
@@ -489,7 +489,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.HasKey("Id")
                         .HasName("PK_dbo.Client");
 
-                    b.ToTable("Client", (string)null);
+                    b.ToTable("Client");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Commandes", b =>
@@ -518,7 +518,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 
                     b.HasIndex("FournisseurId");
 
-                    b.ToTable("Commandes", (string)null);
+                    b.ToTable("Commandes");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.DeliveryCar", b =>
@@ -590,7 +590,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 
                     b.HasIndex("IdClient");
 
-                    b.ToTable("Devis", (string)null);
+                    b.ToTable("Devis");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.DocumentTag", b =>
@@ -662,7 +662,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 
                     b.HasIndex("FournisseurId");
 
-                    b.ToTable("EcheanceDesFournisseurs", (string)null);
+                    b.ToTable("EcheanceDesFournisseurs");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Facture", b =>
@@ -703,7 +703,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_Facture_Num");
 
-                    b.ToTable("Facture", (string)null);
+                    b.ToTable("Facture");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.FactureAvoirClient", b =>
@@ -798,7 +798,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 
                     b.HasIndex("IdFournisseur");
 
-                    b.ToTable("FactureAvoirFournisseur", (string)null);
+                    b.ToTable("FactureAvoirFournisseur");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.FactureFournisseur", b =>
@@ -850,7 +850,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_FactureFournisseur_Num");
 
-                    b.ToTable("FactureFournisseur", (string)null);
+                    b.ToTable("FactureFournisseur");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.FamilleProduit", b =>
@@ -963,7 +963,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.HasKey("Id")
                         .HasName("PK_dbo.Fournisseur");
 
-                    b.ToTable("Fournisseur", (string)null);
+                    b.ToTable("Fournisseur");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.InstallationTechnician", b =>
@@ -1117,7 +1117,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 
                     b.HasIndex("RefProduit");
 
-                    b.ToTable("LigneAvoirFournisseur", (string)null);
+                    b.ToTable("LigneAvoirFournisseur");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.LigneAvoirs", b =>
@@ -1174,7 +1174,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 
                     b.HasIndex("RefProduit");
 
-                    b.ToTable("LigneAvoirs", (string)null);
+                    b.ToTable("LigneAvoirs");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.LigneBl", b =>
@@ -1294,7 +1294,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 
                     b.HasIndex("RefProduit");
 
-                    b.ToTable("LigneBonReception", (string)null);
+                    b.ToTable("LigneBonReception");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.LigneCommandes", b =>
@@ -1351,7 +1351,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 
                     b.HasIndex("RefProduit");
 
-                    b.ToTable("LigneCommandes", (string)null);
+                    b.ToTable("LigneCommandes");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.LigneDevis", b =>
@@ -1409,7 +1409,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 
                     b.HasIndex("RefProduit");
 
-                    b.ToTable("LigneDevis", (string)null);
+                    b.ToTable("LigneDevis");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.LigneInventaire", b =>
@@ -1658,16 +1658,15 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("decimal(18, 3)")
                         .HasColumnName("Montant");
 
-                    b.Property<string>("Numero")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("Numero");
-
                     b.Property<string>("NumeroChequeTraite")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("NumeroChequeTraite");
+
+                    b.Property<string>("NumeroTransactionBancaire")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("NumeroTransactionBancaire");
 
                     b.HasKey("Id");
 
@@ -1682,9 +1681,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.HasIndex("DatePaiement")
                         .HasDatabaseName("IX_PaiementClient_DatePaiement");
 
-                    b.HasIndex("Numero")
+                    b.HasIndex("NumeroTransactionBancaire")
                         .IsUnique()
-                        .HasDatabaseName("IX_PaiementClient_Numero");
+                        .HasDatabaseName("IX_PaiementClient_NumeroTransactionBancaire")
+                        .HasFilter("[NumeroTransactionBancaire] IS NOT NULL");
 
                     b.ToTable("PaiementClient", null, t =>
                         {
@@ -1778,16 +1778,15 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("decimal(18, 3)")
                         .HasColumnName("Montant");
 
-                    b.Property<string>("Numero")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("Numero");
-
                     b.Property<string>("NumeroChequeTraite")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("NumeroChequeTraite");
+
+                    b.Property<string>("NumeroTransactionBancaire")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("NumeroTransactionBancaire");
 
                     b.Property<string>("RibCle")
                         .HasMaxLength(5)
@@ -1822,9 +1821,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.HasIndex("FournisseurId")
                         .HasDatabaseName("IX_PaiementFournisseur_FournisseurId");
 
-                    b.HasIndex("Numero")
+                    b.HasIndex("NumeroTransactionBancaire")
                         .IsUnique()
-                        .HasDatabaseName("IX_PaiementFournisseur_Numero");
+                        .HasDatabaseName("IX_PaiementFournisseur_NumeroTransactionBancaire")
+                        .HasFilter("[NumeroTransactionBancaire] IS NOT NULL");
 
                     b.ToTable("PaiementFournisseur", null, t =>
                         {
@@ -2044,7 +2044,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 
                     b.HasIndex("SousFamilleProduitId");
 
-                    b.ToTable("Produit", (string)null);
+                    b.ToTable("Produit");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.ReceptionRetourFournisseur", b =>
@@ -2180,7 +2180,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_RetenueSourceClient_NumFacture");
 
-                    b.ToTable("RetenueSourceClient", (string)null);
+                    b.ToTable("RetenueSourceClient");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.RetenueSourceFournisseur", b =>
@@ -2232,7 +2232,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_RetenueSourceFournisseur_NumFactureFournisseur");
 
-                    b.ToTable("RetenueSourceFournisseur", (string)null);
+                    b.ToTable("RetenueSourceFournisseur");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.RetourMarchandiseFournisseur", b =>
@@ -2447,7 +2447,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.HasKey("Id")
                         .HasName("PK_dbo.Systeme");
 
-                    b.ToTable("Systeme", (string)null);
+                    b.ToTable("Systeme");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Tag", b =>
@@ -2506,7 +2506,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.HasKey("BonDeLivraisonId")
                         .HasName("PK_dbo.Transaction");
 
-                    b.ToTable("Transaction", (string)null);
+                    b.ToTable("Transaction");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.User", b =>

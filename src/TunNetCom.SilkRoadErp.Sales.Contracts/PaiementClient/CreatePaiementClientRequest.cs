@@ -2,8 +2,8 @@ namespace TunNetCom.SilkRoadErp.Sales.Contracts.PaiementClient;
 
 public class CreatePaiementClientRequest
 {
-    [JsonPropertyName("numero")]
-    public string Numero { get; set; } = string.Empty;
+    [JsonPropertyName("numeroTransactionBancaire")]
+    public string? NumeroTransactionBancaire { get; set; }
 
     [JsonPropertyName("clientId")]
     public int ClientId { get; set; }

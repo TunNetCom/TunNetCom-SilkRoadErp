@@ -16,7 +16,7 @@ public class CreatePaiementClientEndpoint : ICarterModule
         CancellationToken cancellationToken)
     {
         var command = new CreatePaiementClientCommand(
-            request.Numero,
+            request.NumeroTransactionBancaire,
             request.ClientId,
             request.Montant,
             request.DatePaiement,

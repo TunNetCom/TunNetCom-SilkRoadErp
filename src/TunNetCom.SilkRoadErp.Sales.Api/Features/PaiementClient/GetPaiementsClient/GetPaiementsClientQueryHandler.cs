@@ -9,8 +9,8 @@ public class GetPaiementsClientQueryHandler(
 {
     public async Task<Result<PagedList<PaiementClientResponse>>> Handle(GetPaiementsClientQuery query, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Fetching PaiementsClient with filters ClientId={ClientId}, AccountingYearId={AccountingYearId}, DateEcheanceFrom={DateEcheanceFrom}, DateEcheanceTo={DateEcheanceTo}, MontantMin={MontantMin}, MontantMax={MontantMax}", 
-            query.ClientId, query.AccountingYearId, query.DateEcheanceFrom, query.DateEcheanceTo, query.MontantMin, query.MontantMax);
+        _logger.LogInformation("Fetching PaiementsClient with filters ClientId={ClientId}, AccountingYearId={AccountingYearId}, DateEcheanceFrom={DateEcheanceFrom}, DateEcheanceTo={DateEcheanceTo}, MontantMin={MontantMin}, MontantMax={MontantMax}, HasNumeroTransactionBancaire={HasNumeroTransactionBancaire}", 
+            query.ClientId, query.AccountingYearId, query.DateEcheanceFrom, query.DateEcheanceTo, query.MontantMin, query.MontantMax, query.HasNumeroTransactionBancaire);
 
         var paiementsQuery = _context.PaiementClient
             .AsNoTracking()
@@ -46,11 +46,23 @@ public class GetPaiementsClientQueryHandler(
             paiementsQuery = paiementsQuery.Where(p => p.Montant <= query.MontantMax.Value);
         }
 
+        if (query.HasNumeroTransactionBancaire.HasValue)
+        {
+            if (query.HasNumeroTransactionBancaire.Value)
+            {
+                paiementsQuery = paiementsQuery.Where(p => !string.IsNullOrEmpty(p.NumeroTransactionBancaire));
+            }
+            else
+            {
+                paiementsQuery = paiementsQuery.Where(p => string.IsNullOrEmpty(p.NumeroTransactionBancaire));
+            }
+        }
+
         var paiements = paiementsQuery
             .Select(p => new PaiementClientResponse
             {
                 Id = p.Id,
-                Numero = p.Numero,
+                NumeroTransactionBancaire = p.NumeroTransactionBancaire,
                 ClientId = p.ClientId,
                 ClientNom = p.Client.Nom,
                 AccountingYearId = p.AccountingYearId,

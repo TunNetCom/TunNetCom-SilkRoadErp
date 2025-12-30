@@ -7,9 +7,9 @@ public class CreatePaiementFournisseurValidator : AbstractValidator<CreatePaieme
 {
     public CreatePaiementFournisseurValidator()
     {
-        _ = RuleFor(x => x.Numero)
-            .NotEmpty().WithMessage("numero_is_required")
-            .MaximumLength(50).WithMessage("numero_max_length_50");
+        _ = RuleFor(x => x.NumeroTransactionBancaire)
+            .MaximumLength(50).WithMessage("numero_transaction_bancaire_max_length_50")
+            .When(x => !string.IsNullOrEmpty(x.NumeroTransactionBancaire));
 
         _ = RuleFor(x => x.FournisseurId)
             .GreaterThan(0).WithMessage("fournisseur_id_must_be_greater_than_zero");

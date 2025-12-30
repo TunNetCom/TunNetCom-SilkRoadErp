@@ -21,10 +21,9 @@ public partial class PaiementClientConfiguration : IEntityTypeConfiguration<Paie
             .HasColumnName("Id")
             .ValueGeneratedOnAdd();
 
-        entity.Property(e => e.Numero)
-            .HasColumnName("Numero")
-            .HasMaxLength(50)
-            .IsRequired();
+        entity.Property(e => e.NumeroTransactionBancaire)
+            .HasColumnName("NumeroTransactionBancaire")
+            .HasMaxLength(50);
 
         entity.Property(e => e.ClientId)
             .HasColumnName("ClientId")
@@ -73,9 +72,9 @@ public partial class PaiementClientConfiguration : IEntityTypeConfiguration<Paie
             .HasColumnName("DateModification")
             .HasColumnType("datetime");
 
-        entity.HasIndex(e => e.Numero)
+        entity.HasIndex(e => e.NumeroTransactionBancaire)
             .IsUnique()
-            .HasDatabaseName("IX_PaiementClient_Numero");
+            .HasDatabaseName("IX_PaiementClient_NumeroTransactionBancaire");
 
         entity.HasIndex(e => e.ClientId)
             .HasDatabaseName("IX_PaiementClient_ClientId");

@@ -48,7 +48,7 @@
 
         <RadzenStack Gap="1.5rem">
             <RadzenFormField Text="@Localizer["Numero"]" class="rz-col-12 rz-md-6">
-                <RadzenTextBox @bind-Value="paiement.Numero" Placeholder="@Localizer["Numero_Transaction_Bancaire"]" />
+                <RadzenTextBox @bind-Value="paiement.NumeroTransactionBancaire" Placeholder="@Localizer["Numero_Transaction_Bancaire"]" />
                 <RadzenFormFieldDescription>@Localizer["Numero_Transaction_Bancaire_Description"]</RadzenFormFieldDescription>
             </RadzenFormField>
 
@@ -476,7 +476,7 @@
                 var paiementResponse = result.Value;
                 paiement = new CreatePaiementClientRequest
                 {
-                    Numero = paiementResponse.Numero,
+                    NumeroTransactionBancaire = paiementResponse.NumeroTransactionBancaire,
                     ClientId = paiementResponse.ClientId,
                     Montant = paiementResponse.Montant,
                     DatePaiement = paiementResponse.DatePaiement,
@@ -778,7 +778,7 @@
 
                 var updateRequest = new UpdatePaiementClientRequest
                 {
-                    Numero = paiement.Numero,
+                    NumeroTransactionBancaire = paiement.NumeroTransactionBancaire,
                     ClientId = paiement.ClientId,
                     Montant = paiement.Montant,
                     DatePaiement = paiement.DatePaiement,

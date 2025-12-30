@@ -89,7 +89,7 @@ public class PrintTraiteService(
         var printModel = new PrintTraiteModel
         {
             PaiementId = paiement.Id,
-            NumeroPaiement = paiement.Numero,
+            NumeroPaiement = paiement.NumeroTransactionBancaire,
             Montant = paiement.Montant,
             DateCreation = paiement.DatePaiement,
             DateEcheance = paiement.DateEcheance,

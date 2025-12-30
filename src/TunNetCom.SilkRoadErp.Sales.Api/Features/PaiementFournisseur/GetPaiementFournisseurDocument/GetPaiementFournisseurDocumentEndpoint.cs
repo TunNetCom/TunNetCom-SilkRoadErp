@@ -48,7 +48,7 @@ public class GetPaiementFournisseurDocumentEndpoint : ICarterModule
                 contentType = "image/jpeg";
             }
 
-            var fileName = $"paiement_fournisseur_{paiement.Numero}.{(contentType == "application/pdf" ? "pdf" : "jpg")}";
+            var fileName = $"paiement_fournisseur_{paiement.NumeroTransactionBancaire}.{(contentType == "application/pdf" ? "pdf" : "jpg")}";
             
             return TypedResults.File(documentBytes, contentType, fileName);
         }
