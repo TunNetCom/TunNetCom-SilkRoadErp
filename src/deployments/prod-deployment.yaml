@@ -57,22 +57,28 @@ spec:
           limits:
             memory: "1Gi"
             cpu: "1000m"
+        # TCP probe - checks if port is open (app is running)
         livenessProbe:
-          httpGet:
-            path: /health
+          tcpSocket:
             port: 8080
-          initialDelaySeconds: 30
+          initialDelaySeconds: 60
           periodSeconds: 10
           timeoutSeconds: 5
           failureThreshold: 3
+        # TCP probe - app must be listening to be considered ready
         readinessProbe:
-          httpGet:
-            path: /health
+          tcpSocket:
             port: 8080
-          initialDelaySeconds: 10
+          initialDelaySeconds: 15
           periodSeconds: 5
           timeoutSeconds: 3
           failureThreshold: 2
+        # Startup probe - gives the app time to start (up to 5 minutes)
+        startupProbe:
+          tcpSocket:
+            port: 8080
+          failureThreshold: 30
+          periodSeconds: 10
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
 ---
@@ -124,22 +130,28 @@ spec:
           limits:
             memory: "1Gi"
             cpu: "1000m"
+        # TCP probe - checks if port is open (app is running)
         livenessProbe:
-          httpGet:
-            path: /
+          tcpSocket:
             port: 8080
-          initialDelaySeconds: 30
+          initialDelaySeconds: 60
           periodSeconds: 10
           timeoutSeconds: 5
           failureThreshold: 3
+        # TCP probe - app must be listening to be considered ready
         readinessProbe:
-          httpGet:
-            path: /
+          tcpSocket:
             port: 8080
-          initialDelaySeconds: 10
+          initialDelaySeconds: 15
           periodSeconds: 5
           timeoutSeconds: 3
           failureThreshold: 2
+        # Startup probe - gives the app time to start (up to 5 minutes)
+        startupProbe:
+          tcpSocket:
+            port: 8080
+          failureThreshold: 30
+          periodSeconds: 10
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
 ---
