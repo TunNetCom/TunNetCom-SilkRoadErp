@@ -27,7 +27,7 @@ spec:
     spec:
       containers:
       - name: api
-        image: tunnetcom/silkroad:latest-api
+        image: tunnetcom/silkroad:API_TAG_PLACEHOLDER
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
@@ -47,7 +47,7 @@ spec:
               name: silkroad-connection-secret
               key: ConnectionStrings__DefaultConnection
         - name: EF_MIGRATE_ON_STARTUP
-          value: "false"
+          value: "true"
         resources:
           requests:
             memory: "512Mi"
@@ -83,7 +83,7 @@ spec:
     spec:
       containers:
       - name: webapp
-        image: tunnetcom/silkroad:latest-webapp
+        image: tunnetcom/silkroad:WEBAPP_TAG_PLACEHOLDER
         imagePullPolicy: Always
         ports:
         - containerPort: 8080

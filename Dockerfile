@@ -10,33 +10,31 @@ COPY *.sln ./
 COPY Directory.Build.props ./
 COPY Directory.Packages.props ./
 
-# Copy only source projects (skip tests)
+# Copy source projects (skip tests)
 COPY src/ ./src/
 
-# Restore only API and WebApp projects (skip missing UnitTests)
+# Restore only API and WebApp projects
 RUN dotnet restore src/TunNetCom.SilkRoadErp.Sales.Api/TunNetCom.SilkRoadErp.Sales.Api.csproj \
     && dotnet restore src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp/TunNetCom.SilkRoadErp.Sales.WebApp.csproj
 
 # Build & publish API
 RUN dotnet publish src/TunNetCom.SilkRoadErp.Sales.Api/TunNetCom.SilkRoadErp.Sales.Api.csproj \
-    -c Release -o /app/api/publish
+    -c Release -o /app/api/publish /p:UseAppHost=false
 
 # Build & publish WebApp
 RUN dotnet publish src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp/TunNetCom.SilkRoadErp.Sales.WebApp.csproj \
-    -c Release -o /app/webapp/publish
+    -c Release -o /app/webapp/publish /p:UseAppHost=false
 
 # Install Playwright CLI globally
 RUN dotnet tool install --global Microsoft.Playwright.CLI
-ENV PATH="$PATH:/root/.dotnet/tools"
 
-# Set Playwright browsers path explicitly BEFORE installation
+# Add tools to PATH for remaining layers
+ENV PATH="$PATH:/root/.dotnet/tools"
 ENV PLAYWRIGHT_BROWSERS_PATH=/root/.playwright
 
-# Install Playwright for WebApp and download Chromium
+# Install Chromium for WebApp
 WORKDIR /src/src/WebApps/TunNetCom.SilkRoadErp.Sales.WebApp
-RUN dotnet add package Microsoft.Playwright \
-    && dotnet build -c Release \
-    && playwright install chromium
+RUN playwright install chromium
 
 # ==================================================================
 # Stage 2: Runtime Stage for API
@@ -48,7 +46,7 @@ WORKDIR /app
 # Copy published API
 COPY --from=build /app/api/publish ./
 
-# Copy Playwright tools if API needs it
+# Copy Playwright tools if needed
 COPY --from=build /root/.dotnet /root/.dotnet
 ENV PATH="$PATH:/root/.dotnet/tools"
 
@@ -68,7 +66,7 @@ WORKDIR /app
 # Copy published WebApp
 COPY --from=build /app/webapp/publish ./
 
-# Copy Playwright tools & browsers (now guaranteed to exist)
+# Copy Playwright tools & browsers
 COPY --from=build /root/.dotnet /root/.dotnet
 COPY --from=build /root/.playwright /root/.playwright
 ENV PATH="$PATH:/root/.dotnet/tools"
@@ -81,7 +79,7 @@ RUN apt-get update && apt-get install -y \
     libatk-bridge2.0-0 libgtk-3-0 libpangocairo-1.0-0 libxshmfence1 \
  && rm -rf /var/lib/apt/lists/*
 
-# Set .NET environment variables
+# .NET runtime settings
 ENV DOTNET_RUNNING_IN_CONTAINER=true
 ENV DOTNET_USE_POLLING_FILE_WATCHER=true
 ENV ASPNETCORE_URLS=http://+:8080
@@ -89,3 +87,4 @@ ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 
 ENTRYPOINT ["dotnet", "TunNetCom.SilkRoadErp.Sales.WebApp.dll"]
+
