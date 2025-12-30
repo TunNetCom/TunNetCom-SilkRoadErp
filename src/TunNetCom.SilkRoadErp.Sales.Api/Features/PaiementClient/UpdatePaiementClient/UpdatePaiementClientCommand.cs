@@ -4,7 +4,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.PaiementClient.UpdatePaiement
 
 public record UpdatePaiementClientCommand(
     int Id,
-    string Numero,
+    string? NumeroTransactionBancaire,
     int ClientId,
     decimal Montant,
     DateTime DatePaiement,

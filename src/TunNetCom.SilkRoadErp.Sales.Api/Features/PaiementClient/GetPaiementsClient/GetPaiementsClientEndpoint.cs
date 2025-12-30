@@ -23,6 +23,7 @@ public class GetPaiementsClientEndpoint : ICarterModule
             queryParams.DateEcheanceTo,
             queryParams.MontantMin,
             queryParams.MontantMax,
+            queryParams.HasNumeroTransactionBancaire,
             queryParams.PageNumber,
             queryParams.PageSize);
 
@@ -46,5 +47,6 @@ public class GetPaiementsClientQueryParams : QueryStringParameters
     public DateTime? DateEcheanceTo { get; set; }
     public decimal? MontantMin { get; set; }
     public decimal? MontantMax { get; set; }
+    public bool? HasNumeroTransactionBancaire { get; set; }
 }
 

@@ -62,7 +62,7 @@ public class PrintSoldeClientDeliveryLine
 
 public class PrintSoldeClientPayment
 {
-    public string Numero { get; set; } = string.Empty;
+    public string? NumeroTransactionBancaire { get; set; }
     public DateTime DatePaiement { get; set; }
     public decimal Montant { get; set; }
     public string Methode { get; set; } = string.Empty;

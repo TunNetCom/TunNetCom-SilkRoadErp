@@ -9,6 +9,7 @@ public record GetPaiementsClientQuery(
     DateTime? DateEcheanceTo = null,
     decimal? MontantMin = null,
     decimal? MontantMax = null,
+    bool? HasNumeroTransactionBancaire = null,
     int PageNumber = 1,
     int PageSize = 10
 ) : IRequest<Result<PagedList<PaiementClientResponse>>>;

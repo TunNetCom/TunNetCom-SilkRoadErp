@@ -21,10 +21,9 @@ public partial class PaiementFournisseurConfiguration : IEntityTypeConfiguration
             .HasColumnName("Id")
             .ValueGeneratedOnAdd();
 
-        entity.Property(e => e.Numero)
-            .HasColumnName("Numero")
-            .HasMaxLength(50)
-            .IsRequired();
+        entity.Property(e => e.NumeroTransactionBancaire)
+            .HasColumnName("NumeroTransactionBancaire")
+            .HasMaxLength(50);
 
         entity.Property(e => e.FournisseurId)
             .HasColumnName("FournisseurId")
@@ -89,9 +88,9 @@ public partial class PaiementFournisseurConfiguration : IEntityTypeConfiguration
             .HasColumnName("DateModification")
             .HasColumnType("datetime");
 
-        entity.HasIndex(e => e.Numero)
+        entity.HasIndex(e => e.NumeroTransactionBancaire)
             .IsUnique()
-            .HasDatabaseName("IX_PaiementFournisseur_Numero");
+            .HasDatabaseName("IX_PaiementFournisseur_NumeroTransactionBancaire");
 
         entity.HasIndex(e => e.FournisseurId)
             .HasDatabaseName("IX_PaiementFournisseur_FournisseurId");

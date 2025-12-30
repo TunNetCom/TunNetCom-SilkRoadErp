@@ -358,7 +358,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Numero = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    NumeroTransactionBancaire = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     ClientId = table.Column<int>(type: "int", nullable: false),
                     AccountingYearId = table.Column<int>(type: "int", nullable: false),
                     Montant = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
@@ -494,7 +494,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Numero = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    NumeroTransactionBancaire = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     FournisseurId = table.Column<int>(type: "int", nullable: false),
                     AccountingYearId = table.Column<int>(type: "int", nullable: false),
                     Montant = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
@@ -1811,10 +1811,11 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 column: "DatePaiement");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PaiementClient_Numero",
+                name: "IX_PaiementClient_NumeroTransactionBancaire",
                 table: "PaiementClient",
-                column: "Numero",
-                unique: true);
+                column: "NumeroTransactionBancaire",
+                unique: true,
+                filter: "[NumeroTransactionBancaire] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PaiementClientBonDeLivraison_BonDeLivraisonId",
@@ -1847,10 +1848,11 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                 column: "FournisseurId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PaiementFournisseur_Numero",
+                name: "IX_PaiementFournisseur_NumeroTransactionBancaire",
                 table: "PaiementFournisseur",
-                column: "Numero",
-                unique: true);
+                column: "NumeroTransactionBancaire",
+                unique: true,
+                filter: "[NumeroTransactionBancaire] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PaiementFournisseurBonDeReception_BonDeReceptionId",

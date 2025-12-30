@@ -21,7 +21,7 @@ public class GetPaiementClientQueryHandler(
                 .Select(p => new PaiementClientResponse
                 {
                     Id = p.Id,
-                    Numero = p.Numero,
+                    NumeroTransactionBancaire = p.NumeroTransactionBancaire,
                     ClientId = p.ClientId,
                     ClientNom = p.Client.Nom,
                     AccountingYearId = p.AccountingYearId,

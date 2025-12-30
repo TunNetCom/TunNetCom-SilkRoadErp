@@ -78,7 +78,7 @@ public class PrintSoldeClientService(
             Documents = solde.Documents.Select(d => MapDocument(d, showOnlyMissingProducts)).ToList(),
             Payments = solde.Paiements.Select(p => new PrintSoldeClientPayment
             {
-                Numero = p.Numero,
+                NumeroTransactionBancaire = p.NumeroTransactionBancaire,
                 DatePaiement = p.DatePaiement,
                 Montant = p.Montant,
                 Methode = p.MethodePaiement

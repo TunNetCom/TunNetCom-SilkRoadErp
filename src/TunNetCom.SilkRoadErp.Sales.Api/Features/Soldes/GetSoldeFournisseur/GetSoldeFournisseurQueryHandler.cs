@@ -162,7 +162,7 @@ public class GetSoldeFournisseurQueryHandler(
             .Select(p => new PaiementSoldeFournisseur
             {
                 Id = p.Id,
-                Numero = p.Numero,
+                NumeroTransactionBancaire = p.NumeroTransactionBancaire,
                 DatePaiement = p.DatePaiement,
                 Montant = p.Montant,
                 MethodePaiement = p.MethodePaiement.ToString()

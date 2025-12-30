@@ -18,7 +18,7 @@ public class UpdatePaiementClientEndpoint : ICarterModule
     {
         var command = new UpdatePaiementClientCommand(
             id,
-            request.Numero,
+            request.NumeroTransactionBancaire,
             request.ClientId,
             request.Montant,
             request.DatePaiement,

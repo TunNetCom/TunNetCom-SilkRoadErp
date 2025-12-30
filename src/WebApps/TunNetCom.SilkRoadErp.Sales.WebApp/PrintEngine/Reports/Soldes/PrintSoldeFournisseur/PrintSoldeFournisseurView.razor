@@ -148,7 +148,7 @@
                 foreach (var payment in Model.Payments)
                 {
                     <tr>
-                        <td>@payment.Numero</td>
+                        <td>@payment.NumeroTransactionBancaire</td>
                         <td>@payment.DatePaiement.ToString("dd/MM/yyyy")</td>
                         <td>@payment.Methode</td>
                         <td class="text-right">@payment.Montant.FormatAmount(Model.DecimalPlaces) TND</td>

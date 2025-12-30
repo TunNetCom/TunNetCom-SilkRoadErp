@@ -48,7 +48,7 @@ public class GetPaiementClientDocumentEndpoint : ICarterModule
                 contentType = "image/jpeg";
             }
 
-            var fileName = $"paiement_client_{paiement.Numero}.{(contentType == "application/pdf" ? "pdf" : "jpg")}";
+            var fileName = $"paiement_client_{paiement.NumeroTransactionBancaire}.{(contentType == "application/pdf" ? "pdf" : "jpg")}";
             
             return TypedResults.File(documentBytes, contentType, fileName);
         }

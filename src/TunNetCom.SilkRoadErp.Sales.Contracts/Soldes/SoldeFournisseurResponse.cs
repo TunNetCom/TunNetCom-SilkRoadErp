@@ -56,8 +56,8 @@ public class PaiementSoldeFournisseur
     [JsonPropertyName("id")]
     public int Id { get; set; }
 
-    [JsonPropertyName("numero")]
-    public string Numero { get; set; } = string.Empty;
+    [JsonPropertyName("numeroTransactionBancaire")]
+    public string? NumeroTransactionBancaire { get; set; }
 
     [JsonPropertyName("datePaiement")]
     public DateTime DatePaiement { get; set; }

@@ -80,6 +80,7 @@ public class PaiementClientApiClient : IPaiementClientApiClient
         DateTime? dateEcheanceTo,
         decimal? montantMin,
         decimal? montantMax,
+        bool? hasNumeroTransactionBancaire,
         int pageNumber,
         int pageSize,
         CancellationToken cancellationToken)
@@ -115,6 +116,11 @@ public class PaiementClientApiClient : IPaiementClientApiClient
         if (montantMax.HasValue)
         {
             queryString += $"&montantMax={montantMax.Value}";
+        }
+
+        if (hasNumeroTransactionBancaire.HasValue)
+        {
+            queryString += $"&hasNumeroTransactionBancaire={hasNumeroTransactionBancaire.Value.ToString().ToLower()}";
         }
 
         var response = await _httpClient.GetAsync(queryString, cancellationToken: cancellationToken);

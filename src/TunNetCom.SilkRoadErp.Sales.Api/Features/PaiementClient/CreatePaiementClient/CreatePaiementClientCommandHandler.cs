@@ -12,7 +12,7 @@ public class CreatePaiementClientCommandHandler(
 {
     public async Task<Result<int>> Handle(CreatePaiementClientCommand command, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("CreatePaiementClientCommand called with ClientId {ClientId} and Numero {Numero}", command.ClientId, command.Numero);
+        _logger.LogInformation("CreatePaiementClientCommand called with ClientId {ClientId} and NumeroTransactionBancaire {NumeroTransactionBancaire}", command.ClientId, command.NumeroTransactionBancaire);
 
         // Validate client exists
         var clientExists = await _context.Client.AnyAsync(c => c.Id == command.ClientId, cancellationToken);
@@ -31,12 +31,15 @@ public class CreatePaiementClientCommandHandler(
             return Result.Fail("no_active_accounting_year");
         }
 
-        // Validate numero is unique
-        var numeroExists = await _context.PaiementClient
-            .AnyAsync(p => p.Numero == command.Numero, cancellationToken);
-        if (numeroExists)
+        // Validate numeroTransactionBancaire is unique (only if provided)
+        if (!string.IsNullOrWhiteSpace(command.NumeroTransactionBancaire))
         {
-            return Result.Fail("numero_already_exists");
+            var numeroExists = await _context.PaiementClient
+                .AnyAsync(p => p.NumeroTransactionBancaire == command.NumeroTransactionBancaire, cancellationToken);
+            if (numeroExists)
+            {
+                return Result.Fail("numero_already_exists");
+            }
         }
 
         // Validate MethodePaiement enum
@@ -104,7 +107,7 @@ public class CreatePaiementClientCommandHandler(
             try
             {
                 var documentBytes = Convert.FromBase64String(command.DocumentBase64);
-                var fileName = $"paiement_client_{command.Numero}_{DateTime.UtcNow:yyyyMMddHHmmss}";
+                var fileName = $"paiement_client_{command.NumeroTransactionBancaire}_{DateTime.UtcNow:yyyyMMddHHmmss}";
                 documentStoragePath = await _documentStorageService.SaveAsync(documentBytes, fileName, cancellationToken);
             }
             catch (FormatException ex)
@@ -120,7 +123,7 @@ public class CreatePaiementClientCommandHandler(
         }
 
         var paiement = Domain.Entites.PaiementClient.CreatePaiementClient(
-            command.Numero,
+            command.NumeroTransactionBancaire,
             command.ClientId,
             activeAccountingYear.Id,
             command.Montant,

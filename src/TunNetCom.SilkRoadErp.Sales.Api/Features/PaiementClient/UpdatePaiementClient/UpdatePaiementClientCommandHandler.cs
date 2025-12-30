@@ -24,11 +24,11 @@ public class UpdatePaiementClientCommandHandler(
             return Result.Fail("paiement_client_not_found");
         }
 
-        // Validate numero is unique (if changed)
-        if (paiement.Numero != command.Numero)
+        // Validate numero is unique (if changed and provided)
+        if (paiement.NumeroTransactionBancaire != command.NumeroTransactionBancaire && !string.IsNullOrWhiteSpace(command.NumeroTransactionBancaire))
         {
             var numeroExists = await _context.PaiementClient
-                .AnyAsync(p => p.Numero == command.Numero && p.Id != command.Id, cancellationToken);
+                .AnyAsync(p => p.NumeroTransactionBancaire == command.NumeroTransactionBancaire && p.Id != command.Id, cancellationToken);
             if (numeroExists)
             {
                 return Result.Fail("numero_already_exists");
@@ -122,7 +122,7 @@ public class UpdatePaiementClientCommandHandler(
                 }
 
                 var documentBytes = Convert.FromBase64String(command.DocumentBase64);
-                var fileName = $"paiement_client_{command.Numero}_{DateTime.UtcNow:yyyyMMddHHmmss}";
+                var fileName = $"paiement_client_{command.NumeroTransactionBancaire}_{DateTime.UtcNow:yyyyMMddHHmmss}";
                 documentStoragePath = await _documentStorageService.SaveAsync(documentBytes, fileName, cancellationToken);
             }
             catch (FormatException ex)
@@ -138,7 +138,7 @@ public class UpdatePaiementClientCommandHandler(
         }
 
         paiement.UpdatePaiementClient(
-            command.Numero,
+            command.NumeroTransactionBancaire,
             command.ClientId,
             activeAccountingYear.Id,
             command.Montant,

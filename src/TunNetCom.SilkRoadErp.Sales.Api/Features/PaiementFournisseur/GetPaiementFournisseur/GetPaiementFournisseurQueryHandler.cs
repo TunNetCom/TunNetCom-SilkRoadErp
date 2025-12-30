@@ -19,7 +19,7 @@ public class GetPaiementFournisseurQueryHandler(
             .Select(p => new PaiementFournisseurResponse
             {
                 Id = p.Id,
-                Numero = p.Numero,
+                NumeroTransactionBancaire = p.NumeroTransactionBancaire,
                 FournisseurId = p.FournisseurId,
                 FournisseurNom = p.Fournisseur.Nom,
                 AccountingYearId = p.AccountingYearId,

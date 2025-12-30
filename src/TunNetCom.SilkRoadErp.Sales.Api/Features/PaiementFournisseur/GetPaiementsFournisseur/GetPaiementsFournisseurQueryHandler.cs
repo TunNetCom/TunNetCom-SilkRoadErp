@@ -9,8 +9,8 @@ public class GetPaiementsFournisseurQueryHandler(
 {
     public async Task<Result<PagedList<PaiementFournisseurResponse>>> Handle(GetPaiementsFournisseurQuery query, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Fetching PaiementsFournisseur with filters FournisseurId={FournisseurId}, AccountingYearId={AccountingYearId}, DateEcheanceFrom={DateEcheanceFrom}, DateEcheanceTo={DateEcheanceTo}, MontantMin={MontantMin}, MontantMax={MontantMax}", 
-            query.FournisseurId, query.AccountingYearId, query.DateEcheanceFrom, query.DateEcheanceTo, query.MontantMin, query.MontantMax);
+        _logger.LogInformation("Fetching PaiementsFournisseur with filters FournisseurId={FournisseurId}, AccountingYearId={AccountingYearId}, DateEcheanceFrom={DateEcheanceFrom}, DateEcheanceTo={DateEcheanceTo}, MontantMin={MontantMin}, MontantMax={MontantMax}, HasNumeroTransactionBancaire={HasNumeroTransactionBancaire}", 
+            query.FournisseurId, query.AccountingYearId, query.DateEcheanceFrom, query.DateEcheanceTo, query.MontantMin, query.MontantMax, query.HasNumeroTransactionBancaire);
 
         var paiementsQuery = _context.PaiementFournisseur
             .AsNoTracking()
@@ -46,11 +46,23 @@ public class GetPaiementsFournisseurQueryHandler(
             paiementsQuery = paiementsQuery.Where(p => p.Montant <= query.MontantMax.Value);
         }
 
+        if (query.HasNumeroTransactionBancaire.HasValue)
+        {
+            if (query.HasNumeroTransactionBancaire.Value)
+            {
+                paiementsQuery = paiementsQuery.Where(p => !string.IsNullOrEmpty(p.NumeroTransactionBancaire));
+            }
+            else
+            {
+                paiementsQuery = paiementsQuery.Where(p => string.IsNullOrEmpty(p.NumeroTransactionBancaire));
+            }
+        }
+
         var paiements = paiementsQuery
             .Select(p => new PaiementFournisseurResponse
             {
                 Id = p.Id,
-                Numero = p.Numero,
+                NumeroTransactionBancaire = p.NumeroTransactionBancaire,
                 FournisseurId = p.FournisseurId,
                 FournisseurNom = p.Fournisseur.Nom,
                 AccountingYearId = p.AccountingYearId,

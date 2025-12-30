@@ -11,7 +11,7 @@ public partial class PaiementClient : IAccountingYearEntity
     }
 
     public static PaiementClient CreatePaiementClient(
-        string numero,
+        string? numeroTransactionBancaire,
         int clientId,
         int accountingYearId,
         decimal montant,
@@ -27,7 +27,7 @@ public partial class PaiementClient : IAccountingYearEntity
     {
         return new PaiementClient
         {
-            Numero = numero,
+            NumeroTransactionBancaire = numeroTransactionBancaire,
             ClientId = clientId,
             AccountingYearId = accountingYearId,
             Montant = montant,
@@ -44,7 +44,7 @@ public partial class PaiementClient : IAccountingYearEntity
     }
 
     public void UpdatePaiementClient(
-        string numero,
+        string? numeroTransactionBancaire,
         int clientId,
         int accountingYearId,
         decimal montant,
@@ -58,7 +58,7 @@ public partial class PaiementClient : IAccountingYearEntity
         string? commentaire,
         string? documentStoragePath)
     {
-        this.Numero = numero;
+        this.NumeroTransactionBancaire = numeroTransactionBancaire;
         this.ClientId = clientId;
         this.AccountingYearId = accountingYearId;
         this.Montant = montant;
@@ -94,7 +94,7 @@ public partial class PaiementClient : IAccountingYearEntity
 
     public int Id { get; private set; }
 
-    public string Numero { get; private set; } = null!;
+    public string? NumeroTransactionBancaire { get; private set; }
 
     public int ClientId { get; private set; }
 

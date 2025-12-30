@@ -12,7 +12,7 @@ public class CreatePaiementFournisseurCommandHandler(
 {
     public async Task<Result<int>> Handle(CreatePaiementFournisseurCommand command, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("CreatePaiementFournisseurCommand called with FournisseurId {FournisseurId} and Numero {Numero}", command.FournisseurId, command.Numero);
+        _logger.LogInformation("CreatePaiementFournisseurCommand called with FournisseurId {FournisseurId} and NumeroTransactionBancaire {NumeroTransactionBancaire}", command.FournisseurId, command.NumeroTransactionBancaire);
 
         // Validate fournisseur exists
         var fournisseurExists = await _context.Fournisseur.AnyAsync(f => f.Id == command.FournisseurId, cancellationToken);
@@ -31,12 +31,15 @@ public class CreatePaiementFournisseurCommandHandler(
             return Result.Fail("no_active_accounting_year");
         }
 
-        // Validate numero is unique
-        var numeroExists = await _context.PaiementFournisseur
-            .AnyAsync(p => p.Numero == command.Numero, cancellationToken);
-        if (numeroExists)
+        // Validate numeroTransactionBancaire is unique (only if provided)
+        if (!string.IsNullOrWhiteSpace(command.NumeroTransactionBancaire))
         {
-            return Result.Fail("numero_already_exists");
+            var numeroExists = await _context.PaiementFournisseur
+                .AnyAsync(p => p.NumeroTransactionBancaire == command.NumeroTransactionBancaire, cancellationToken);
+            if (numeroExists)
+            {
+                return Result.Fail("numero_already_exists");
+            }
         }
 
         // Validate MethodePaiement enum
@@ -102,7 +105,7 @@ public class CreatePaiementFournisseurCommandHandler(
             try
             {
                 var documentBytes = Convert.FromBase64String(command.DocumentBase64);
-                var fileName = $"paiement_fournisseur_{command.Numero}_{DateTime.UtcNow:yyyyMMddHHmmss}";
+                var fileName = $"paiement_fournisseur_{command.NumeroTransactionBancaire}_{DateTime.UtcNow:yyyyMMddHHmmss}";
                 documentStoragePath = await _documentStorageService.SaveAsync(documentBytes, fileName, cancellationToken);
             }
             catch (FormatException ex)
@@ -118,7 +121,7 @@ public class CreatePaiementFournisseurCommandHandler(
         }
 
         var paiement = Domain.Entites.PaiementFournisseur.CreatePaiementFournisseur(
-            command.Numero,
+            command.NumeroTransactionBancaire,
             command.FournisseurId,
             activeAccountingYear.Id,
             command.Montant,

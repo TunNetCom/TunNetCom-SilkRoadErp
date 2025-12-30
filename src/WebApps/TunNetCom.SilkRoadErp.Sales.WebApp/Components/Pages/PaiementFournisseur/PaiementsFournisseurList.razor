@@ -103,6 +103,16 @@
                               Placeholder="Montant max"
                               Style="width: 200px;" />
             </div>
+            <div class="search-field">
+                <label>Statut Règlement</label>
+                <RadzenDropDown @bind-Value="@selectedReglementStatus"
+                                Data="@reglementStatusOptions"
+                                TextProperty="Text"
+                                ValueProperty="Value"
+                                Placeholder="Tous"
+                                AllowClear="true"
+                                Style="width: 200px;" />
+            </div>
             <div class="search-button">
                 <RadzenButton Text="@Localizer["Rechercher"]"
                               Icon="search"
@@ -132,7 +142,7 @@
                 <p style="font-size: 24px; text-align: center; margin: 2rem;">@Localizer["Aucun_Paiement"]</p>
             </EmptyTemplate>
             <Columns>
-                <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Property="Numero" Title="@Localizer["Numero_Col"]" Width="150px" />
+                <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Property="NumeroTransactionBancaire" Title="@Localizer["Numero_Col"]" Width="150px" />
                 <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Property="FournisseurNom" Title="@Localizer["providers"]" Width="200px" />
                 <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Property="Montant" Title="@Localizer["Montant_Col"]" Width="150px">
                     <Template Context="paiement">
@@ -146,6 +156,7 @@
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Property="MethodePaiement" Title="@Localizer["Methode_Col"]" Width="120px" />
                 <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Property="BanqueNom" Title="@Localizer["Banque_Col"]" Width="150px" />
+                <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Property="NumeroTransactionBancaire" Title="N° Transaction Bancaire" Width="180px" />
                 <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Title="Tags" Width="250px" Sortable="false" Filterable="false">
                     <Template Context="paiement">
                         <TagSelector DocumentType="PaiementFournisseur" 
@@ -254,7 +265,13 @@
     private DateTime? selectedDateEcheanceTo;
     private decimal? selectedMontantMin;
     private decimal? selectedMontantMax;
+    private int? selectedReglementStatus; // 0 = false (non réglé), 1 = true (réglé), null = tous
     private List<ProviderResponse> _filteredProviders = new();
+    private List<ReglementStatusOption> reglementStatusOptions = new()
+    {
+        new ReglementStatusOption { Text = "Régle (avec numéro)", Value = 1 },
+        new ReglementStatusOption { Text = "Non réglé (sans numéro)", Value = 0 }
+    };
     private List<GetAllAccountingYearsResponse> accountingYears = new();
     private CancellationTokenSource cancellationTokenSource = new();
     private const int _defaultPageSize = 10;
@@ -316,6 +333,10 @@
 
         try
         {
+            bool? hasNumeroTransactionBancaire = selectedReglementStatus.HasValue 
+                ? (selectedReglementStatus.Value == 1) 
+                : null;
+
             var result = await PaiementFournisseurService.GetPaiementsFournisseurAsync(
                 selectedFournisseurId,
                 selectedAccountingYearId,
@@ -323,6 +344,7 @@
                 selectedDateEcheanceTo,
                 selectedMontantMin,
                 selectedMontantMax,
+                hasNumeroTransactionBancaire,
                 (args.Skip.Value / _defaultPageSize) + 1,
                 args.Top ?? _defaultPageSize,
                 cancellationTokenSource.Token);
@@ -460,6 +482,12 @@
     {
         cancellationTokenSource.Cancel();
         cancellationTokenSource.Dispose();
+    }
+
+    private class ReglementStatusOption
+    {
+        public string Text { get; set; } = string.Empty;
+        public int? Value { get; set; }
     }
 }
 

@@ -12,7 +12,7 @@ using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 {
     [DbContext(typeof(SalesContext))]
-    [Migration("20251227222409_InitMigration")]
+    [Migration("20251230004545_InitMigration")]
     partial class InitMigration
     {
         /// <inheritdoc />
@@ -1661,16 +1661,15 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("decimal(18, 3)")
                         .HasColumnName("Montant");
 
-                    b.Property<string>("Numero")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("Numero");
-
                     b.Property<string>("NumeroChequeTraite")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("NumeroChequeTraite");
+
+                    b.Property<string>("NumeroTransactionBancaire")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("NumeroTransactionBancaire");
 
                     b.HasKey("Id");
 
@@ -1685,9 +1684,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.HasIndex("DatePaiement")
                         .HasDatabaseName("IX_PaiementClient_DatePaiement");
 
-                    b.HasIndex("Numero")
+                    b.HasIndex("NumeroTransactionBancaire")
                         .IsUnique()
-                        .HasDatabaseName("IX_PaiementClient_Numero");
+                        .HasDatabaseName("IX_PaiementClient_NumeroTransactionBancaire")
+                        .HasFilter("[NumeroTransactionBancaire] IS NOT NULL");
 
                     b.ToTable("PaiementClient", null, t =>
                         {
@@ -1781,16 +1781,15 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("decimal(18, 3)")
                         .HasColumnName("Montant");
 
-                    b.Property<string>("Numero")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("Numero");
-
                     b.Property<string>("NumeroChequeTraite")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("NumeroChequeTraite");
+
+                    b.Property<string>("NumeroTransactionBancaire")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("NumeroTransactionBancaire");
 
                     b.Property<string>("RibCle")
                         .HasMaxLength(5)
@@ -1825,9 +1824,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.HasIndex("FournisseurId")
                         .HasDatabaseName("IX_PaiementFournisseur_FournisseurId");
 
-                    b.HasIndex("Numero")
+                    b.HasIndex("NumeroTransactionBancaire")
                         .IsUnique()
-                        .HasDatabaseName("IX_PaiementFournisseur_Numero");
+                        .HasDatabaseName("IX_PaiementFournisseur_NumeroTransactionBancaire")
+                        .HasFilter("[NumeroTransactionBancaire] IS NOT NULL");
 
                     b.ToTable("PaiementFournisseur", null, t =>
                         {

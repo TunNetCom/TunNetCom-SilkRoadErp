@@ -89,7 +89,7 @@ public class PrintTraiteService(
         var printModel = new PrintTraiteModel
         {
             PaiementId = paiement.Id,
-            NumeroPaiement = paiement.Numero,
+            NumeroPaiement = paiement.NumeroTransactionBancaire,
             Montant = paiement.Montant,
             DateCreation = paiement.DatePaiement,
             DateEcheance = paiement.DateEcheance,
@@ -179,7 +179,7 @@ public class PrintTraiteService(
 
     private static SilkPdfOptions PreparePrintOptions()
     {
-        // Format exact: 297mm x 210mm (A4 en paysage)
+        // Format A4 paysage (297mm x 210mm) avec contenu redimensionné pour zone de 17.5 x 11.5 pouces
         var printOptions = new SilkPdfOptions
         {
             Width = "297mm",
