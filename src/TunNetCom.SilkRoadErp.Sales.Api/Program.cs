@@ -220,26 +220,28 @@ builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Notifi
 builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Notifications.INotificationVerifier, TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Notifications.LowStockNotificationVerifier>();
 
 // Configure Quartz.NET for background jobs
-builder.Services.AddQuartz(q =>
-{
-    // Register the job
-    var jobKey = new JobKey("NotificationCheckJob");
-    q.AddJob<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Jobs.NotificationCheckJob>(opts => opts.WithIdentity(jobKey));
+// DISABLED: Notification job is disabled
+//builder.Services.AddQuartz(q =>
+//{
+//    // Register the job
+//    var jobKey = new JobKey("NotificationCheckJob");
+//    q.AddJob<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Jobs.NotificationCheckJob>(opts => opts.WithIdentity(jobKey));
 
-    // Get interval from configuration (default: 60 minutes)
-    var intervalMinutes = builder.Configuration.GetValue<int>("NotificationSettings:CheckIntervalMinutes", 60);
-    
-    q.AddTrigger(opts => opts
-        .ForJob(jobKey)
-        .WithIdentity("NotificationCheckJob-trigger")
-        .StartNow()
-        .WithSimpleSchedule(x => x
-            .WithIntervalInMinutes(intervalMinutes)
-            .RepeatForever()));
-});
+//    // Get interval from configuration (default: 60 minutes)
+//    var intervalMinutes = builder.Configuration.GetValue<int>("NotificationSettings:CheckIntervalMinutes", 60);
+//    
+//    q.AddTrigger(opts => opts
+//        .ForJob(jobKey)
+//        .WithIdentity("NotificationCheckJob-trigger")
+//        .StartNow()
+//        .WithSimpleSchedule(x => x
+//            .WithIntervalInMinutes(intervalMinutes)
+//            .RepeatForever()));
+//});
 
 // Add Quartz hosted service
-builder.Services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
+// DISABLED: Notification job is disabled
+//builder.Services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
 
 // Configure JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
