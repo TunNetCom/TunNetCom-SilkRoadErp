@@ -1,6 +1,6 @@
 
 pool:
-  name: Default   # your self-hosted agent
+  name: OnPremAgents
 
 variables:
   kubeNamespace: nizar-prod
