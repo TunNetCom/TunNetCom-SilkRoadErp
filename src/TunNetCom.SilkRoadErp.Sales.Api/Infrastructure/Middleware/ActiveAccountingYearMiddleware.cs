@@ -29,13 +29,10 @@ public class ActiveAccountingYearMiddleware
             activeYearId = await activeAccountingYearService.GetActiveAccountingYearIdAsync(context.RequestAborted);
         }
         
-        // Mettre à jour la variable statique thread-safe dans SalesContext seulement si nécessaire
-        // Vérifier d'abord la valeur actuelle pour éviter les mises à jour inutiles
-        var currentAsyncLocalValue = Domain.Entites.SalesContext.GetActiveAccountingYearId();
-        if (currentAsyncLocalValue != activeYearId)
-        {
-            Domain.Entites.SalesContext.SetActiveAccountingYearId(activeYearId);
-        }
+        // Mettre à jour la variable statique thread-safe dans SalesContext
+        // Toujours mettre à jour pour garantir que la valeur est correcte au début de chaque requête
+        // (même si elle est null, pour s'assurer qu'elle est bien initialisée)
+        Domain.Entites.SalesContext.SetActiveAccountingYearId(activeYearId);
 
         await _next(context);
         
