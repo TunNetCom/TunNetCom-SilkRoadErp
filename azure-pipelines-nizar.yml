@@ -18,17 +18,21 @@ stages:
   jobs:
   - job: DeployJob
     displayName: Deploy SilkRoad to silkroad-prod-nizar
+    pool:
+      name: OnPremAgents
     steps:
 
     # 1️⃣ Debug manifests
     - script: |
-        cd $(Build.SourcesDirectory)/src/deployments || { echo '❌ Deployment folder not found'; exit 1; }
+        set -e
+        cd $(Build.SourcesDirectory)/src/deployments
         echo "📂 Listing Nizar YAML files:"
         ls -l *nizar*.yaml
       displayName: 'Debug: list Nizar manifests'
 
     # 2️⃣ Create / Update DB Connection Secret
     - script: |
+        set -e
         echo "🔐 Creating / Updating DB connection secret in Nizar namespace"
         kubectl create secret generic silkroad-connection-secret \
           -n $(kubeNamespace) \
@@ -36,28 +40,58 @@ stages:
           --dry-run=client -o yaml | kubectl apply -f -
       displayName: 'Create DB Connection Secret'
 
-    # 3️⃣ Apply manifests & rollout
+    # 3️⃣ Apply manifests + FORCE fresh images
     - script: |
+        set -e
+
+        echo "🔍 Cluster info"
         kubectl version --client
         kubectl cluster-info
 
+        echo ""
+        echo "🧹 Deleting old pods to force fresh image pull..."
+        kubectl delete pods -n $(kubeNamespace) -l app=silkroad-api --ignore-not-found=true
+        kubectl delete pods -n $(kubeNamespace) -l app=silkroad-webapp --ignore-not-found=true
+
+        echo "⏳ Waiting for pod termination..."
+        sleep 5
+
+        echo ""
         echo "🚀 Applying Nizar manifests..."
         kubectl apply -f prod-configmap-nizar.yaml -n $(kubeNamespace)
         kubectl apply -f prod-deployment-nizar.yaml -n $(kubeNamespace)
-        kubectl apply -f prod-service-nizar.yaml -n $(kubeNamespace)  || true
-        kubectl apply -f prod-ingress-nizar.yaml -n $(kubeNamespace)  || true
+        kubectl apply -f prod-service-nizar.yaml -n $(kubeNamespace) || true
+        kubectl apply -f prod-ingress-nizar.yaml -n $(kubeNamespace) || true
 
-        echo "🔁 Forcing rollout for Nizar..."
-        kubectl rollout restart deployment/$(deploymentApiName) -n $(kubeNamespace)  || true
-        kubectl rollout restart deployment/$(deploymentWebappName) -n $(kubeNamespace)  || true
+        echo ""
+        echo "🔍 Verifying deployment images:"
+        kubectl get deployment $(deploymentApiName) -n $(kubeNamespace) \
+          -o jsonpath='{.spec.template.spec.containers[0].image}'
+        echo ""
+        kubectl get deployment $(deploymentWebappName) -n $(kubeNamespace) \
+          -o jsonpath='{.spec.template.spec.containers[0].image}'
+        echo ""
 
-        echo "⏳ Waiting for Nizar rollout..."
-        kubectl rollout status deployment/$(deploymentApiName) -n $(kubeNamespace) --timeout=5m || { echo '❌ API rollout failed'; exit 1; }
-        kubectl rollout status deployment/$(deploymentWebappName) -n $(kubeNamespace) --timeout=5m || { echo '❌ WebApp rollout failed'; exit 1; }
+        echo ""
+        echo "⏳ Waiting for rollout..."
+        kubectl rollout status deployment/$(deploymentApiName) -n $(kubeNamespace) --timeout=5m
+        kubectl rollout status deployment/$(deploymentWebappName) -n $(kubeNamespace) --timeout=5m
 
-        echo "✅ Successfully deployed SilkRoad to Nizar namespace: $(kubeNamespace)"
-        echo "📊 Showing deployment status:"
-        kubectl get pods -n $(kubeNamespace)
-        kubectl get svc -n $(kubeNamespace)
-        kubectl get ingress -n $(kubeNamespace)
-      displayName: Deploy to Nizar K8s Namespace
+        echo ""
+        echo "📊 Final pod status:"
+        kubectl get pods -n $(kubeNamespace) -o wide
+      displayName: 'Deploy to Nizar K8s Namespace'
+
+    # 4️⃣ Post-deploy verification (digest proof)
+    - script: |
+        set -e
+        echo "🔍 Verifying image digests..."
+
+        for app in silkroad-api silkroad-webapp; do
+          POD=$(kubectl get pods -n $(kubeNamespace) -l app=$app -o jsonpath='{.items[0].metadata.name}')
+          echo ""
+          echo "📦 Pod: $POD"
+          kubectl describe pod $POD -n $(kubeNamespace) | grep -A 5 "Image:"
+        done
+      displayName: 'Verify Image Pull'
+      continueOnError: true
