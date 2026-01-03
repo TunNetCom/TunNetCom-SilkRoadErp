@@ -11,45 +11,63 @@ variables:
 
 stages:
 # ============================================================
-# DEPLOY STAGE TO ON-PREM KUBERNETES (NIZAR NAMESPACE)
+# DEPLOY STAGE TO ON-PREM KUBERNETES (NIZAR)
 # ============================================================
 - stage: Deploy
   displayName: Deploy to Nizar Namespace
   jobs:
   - job: DeployJob
     displayName: Deploy SilkRoad to silkroad-prod-nizar
-    pool:
-      name: OnPremAgents
     steps:
 
-    # 1️⃣ Debug manifests
+    # ============================================================
+    # 1️⃣ DEBUG & VERIFY FILES
+    # ============================================================
     - script: |
         set -e
-        cd $(Build.SourcesDirectory)/src/deployments
-        echo "📂 Listing Nizar YAML files:"
-        ls -l *nizar*.yaml
-      displayName: 'Debug: list Nizar manifests'
+        echo "📂 Build sources directory:"
+        echo "$(Build.SourcesDirectory)"
 
-    # 2️⃣ Create / Update DB Connection Secret
+        echo ""
+        echo "📂 Moving to deployment directory..."
+        cd $(Build.SourcesDirectory)/src/deployments || {
+          echo "❌ src/deployments directory not found"
+          exit 1
+        }
+
+        echo ""
+        echo "📄 Listing Nizar deployment files:"
+        ls -la prod-*-nizar.yaml
+      displayName: 'Debug: verify Nizar manifests'
+
+    # ============================================================
+    # 2️⃣ CREATE / UPDATE DB SECRET
+    # ============================================================
     - script: |
         set -e
-        echo "🔐 Creating / Updating DB connection secret in Nizar namespace"
+        echo "🔐 Creating / updating DB connection secret..."
         kubectl create secret generic silkroad-connection-secret \
           -n $(kubeNamespace) \
           --from-literal=ConnectionStrings__DefaultConnection="$(CONNECTION_STRING)" \
           --dry-run=client -o yaml | kubectl apply -f -
       displayName: 'Create DB Connection Secret'
 
-    # 3️⃣ Apply manifests + FORCE fresh images
+    # ============================================================
+    # 3️⃣ APPLY MANIFESTS & FORCE IMAGE RE-PULL
+    # ============================================================
     - script: |
         set -e
 
-        echo "🔍 Cluster info"
+        echo "📂 Switching to deployment directory..."
+        cd $(Build.SourcesDirectory)/src/deployments
+
+        echo ""
+        echo "🔍 Kubernetes cluster info"
         kubectl version --client
         kubectl cluster-info
 
         echo ""
-        echo "🧹 Deleting old pods to force fresh image pull..."
+        echo "🧹 Deleting existing pods to force fresh image pull..."
         kubectl delete pods -n $(kubeNamespace) -l app=silkroad-api --ignore-not-found=true
         kubectl delete pods -n $(kubeNamespace) -l app=silkroad-webapp --ignore-not-found=true
 
@@ -57,39 +75,43 @@ stages:
         sleep 5
 
         echo ""
-        echo "🚀 Applying Nizar manifests..."
+        echo "🚀 Applying Nizar Kubernetes manifests..."
         kubectl apply -f prod-deployment-nizar.yaml -n $(kubeNamespace)
         kubectl apply -f prod-service-nizar.yaml -n $(kubeNamespace) || true
 
         echo ""
-        echo "🔍 Verifying deployment images:"
+        echo "🔍 Verifying deployment image references:"
+        echo "API image:"
         kubectl get deployment $(deploymentApiName) -n $(kubeNamespace) \
           -o jsonpath='{.spec.template.spec.containers[0].image}'
         echo ""
+        echo "WebApp image:"
         kubectl get deployment $(deploymentWebappName) -n $(kubeNamespace) \
           -o jsonpath='{.spec.template.spec.containers[0].image}'
         echo ""
 
         echo ""
-        echo "⏳ Waiting for rollout..."
+        echo "⏳ Waiting for rollout to complete..."
         kubectl rollout status deployment/$(deploymentApiName) -n $(kubeNamespace) --timeout=5m
         kubectl rollout status deployment/$(deploymentWebappName) -n $(kubeNamespace) --timeout=5m
 
         echo ""
-        echo "📊 Final pod status:"
+        echo "📊 Current pod status:"
         kubectl get pods -n $(kubeNamespace) -o wide
-      displayName: 'Deploy to Nizar K8s Namespace'
+      displayName: 'Deploy to Nizar Kubernetes Namespace'
 
-    # 4️⃣ Post-deploy verification (digest proof)
+    # ============================================================
+    # 4️⃣ POST-DEPLOY IMAGE DIGEST VERIFICATION
+    # ============================================================
     - script: |
         set -e
-        echo "🔍 Verifying image digests..."
+        echo "🔍 Verifying pulled image digests..."
 
         for app in silkroad-api silkroad-webapp; do
           POD=$(kubectl get pods -n $(kubeNamespace) -l app=$app -o jsonpath='{.items[0].metadata.name}')
           echo ""
           echo "📦 Pod: $POD"
-          kubectl describe pod $POD -n $(kubeNamespace) | grep -A 5 "Image:"
+          kubectl describe pod $POD -n $(kubeNamespace) | grep -A 6 "Image:"
         done
       displayName: 'Verify Image Pull'
       continueOnError: true
