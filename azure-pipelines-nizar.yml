@@ -1,19 +1,16 @@
 
+
 pool:
   name: OnPremAgents
 
 variables:
-  kubeNamespace: nizar-prod
-  kubeContext: onprem-k8s
+  kubeNamespace: silkroad-prod-nizar
 
   deploymentApiName: silkroad-api-nizar
   deploymentWebappName: silkroad-webapp-nizar
 
   manifestPath: src/deployments/prod-deployment-nizar.yaml
 
-# ============================================================
-# 🧩 STAGE: DEPLOY TO KUBERNETES
-# ============================================================
 stages:
 - stage: Deploy
   displayName: Deploy to Nizar Kubernetes
@@ -22,20 +19,14 @@ stages:
     displayName: K8s Deployment
     steps:
 
-    # ------------------------------------------------------------
-    # 1️⃣ KUBECTL VERSION & CLUSTER INFO
-    # ------------------------------------------------------------
     - script: |
         echo "🔍 Cluster info"
         kubectl version --client
         kubectl cluster-info
       displayName: 'Check Kubernetes Cluster'
 
-    # ------------------------------------------------------------
-    # 2️⃣ FORCE ROLLOUT (DELETE OLD PODS)
-    # ------------------------------------------------------------
     - script: |
-        echo "🧹 Deleting old pods to force fresh image pull..."
+        echo "🧹 Forcing rollout by deleting pods"
 
         kubectl delete pods -n $(kubeNamespace) \
           -l app=silkroad-api-nizar --ignore-not-found
@@ -43,24 +34,17 @@ stages:
         kubectl delete pods -n $(kubeNamespace) \
           -l app=silkroad-webapp-nizar --ignore-not-found
 
-        echo "⏳ Waiting for pod termination..."
         sleep 10
       displayName: 'Force Rollout'
 
-    # ------------------------------------------------------------
-    # 3️⃣ APPLY MANIFESTS
-    # ------------------------------------------------------------
     - script: |
-        echo "🚀 Applying Nizar manifests..."
+        echo "🚀 Applying manifests"
         ls -lah src/deployments
         kubectl apply -f $(manifestPath)
-      displayName: 'Apply Kubernetes Manifests'
+      displayName: 'Apply Manifests'
 
-    # ------------------------------------------------------------
-    # 4️⃣ WAIT FOR DEPLOYMENT ROLLOUT
-    # ------------------------------------------------------------
     - script: |
-        echo "⏳ Waiting for deployments to be ready..."
+        echo "⏳ Waiting for rollout"
 
         kubectl rollout status deployment/$(deploymentApiName) \
           -n $(kubeNamespace) --timeout=180s
@@ -69,39 +53,14 @@ stages:
           -n $(kubeNamespace) --timeout=180s
       displayName: 'Wait for Rollout'
 
-    # ------------------------------------------------------------
-    # 5️⃣ VERIFY IMAGE PULL (SAFE & NON-BLOCKING)
-    # ------------------------------------------------------------
     - script: |
-        set +e
-        echo "🔍 Verifying pulled image digests..."
-
-        for deploy in $(deploymentApiName) $(deploymentWebappName); do
-          echo ""
-          echo "📦 Deployment: $deploy"
-
-          POD=$(kubectl get pods -n $(kubeNamespace) \
-            --field-selector=status.phase=Running \
-            -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
-
-          if [ -z "$POD" ]; then
-            echo "⚠️  No running pod found yet"
-            kubectl get pods -n $(kubeNamespace)
-            continue
-          fi
-
-          echo "Pod: $POD"
-          kubectl describe pod $POD -n $(kubeNamespace) \
-            | grep -A 6 "Image:"
-        done
+        echo "🔍 Verifying images"
+        kubectl get pods -n $(kubeNamespace) -o wide
+        kubectl describe pod -n $(kubeNamespace) | grep -A 5 Image
       displayName: 'Verify Image Pull'
       continueOnError: true
 
-    # ------------------------------------------------------------
-    # 6️⃣ FINAL STATUS
-    # ------------------------------------------------------------
     - script: |
-        echo "✅ Deployment finished"
-        kubectl get pods -n $(kubeNamespace)
-        kubectl get svc -n $(kubeNamespace)
+        echo "✅ Deployment complete"
+        kubectl get all -n $(kubeNamespace)
       displayName: 'Final Status'
