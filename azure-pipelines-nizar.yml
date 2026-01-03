@@ -58,10 +58,8 @@ stages:
 
         echo ""
         echo "🚀 Applying Nizar manifests..."
-        kubectl apply -f prod-configmap-nizar.yaml -n $(kubeNamespace)
         kubectl apply -f prod-deployment-nizar.yaml -n $(kubeNamespace)
         kubectl apply -f prod-service-nizar.yaml -n $(kubeNamespace) || true
-        kubectl apply -f prod-ingress-nizar.yaml -n $(kubeNamespace) || true
 
         echo ""
         echo "🔍 Verifying deployment images:"
