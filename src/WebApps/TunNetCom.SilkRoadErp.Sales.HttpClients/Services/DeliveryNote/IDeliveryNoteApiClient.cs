@@ -44,6 +44,9 @@ public interface IDeliveryNoteApiClient
         string? searchKeyword,
         DateTime? startDate,
         DateTime? EndDate,
+        int? status,
+        int? technicianId,
+        List<int>? tagIds,
         CancellationToken cancellationToken
         );
 

@@ -110,6 +110,12 @@
                             class="w-100 search-input" />
         </div>
         <div class="search-button" style="display: flex; gap: 8px;">
+            <RadzenButton Icon="today"
+                          ButtonStyle="ButtonStyle.Info"
+                          Click="@FilterToday"
+                          Title="Aujourd'hui"
+                          AriaLabel="Aujourd'hui"
+                          class="action-button" />
             <RadzenButton Icon="search"
                           ButtonStyle="ButtonStyle.Primary"
                           Click="@SearchDeliveryNotes"
@@ -248,10 +254,13 @@
                          JustifyContent="JustifyContent.End"
                          class="summary-stack">
                 <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                    @Localizer["total_net"]: <strong>@totalNetAmount.FormatAmount()</strong>
+                    HT: <strong>@totalGrossAmount.FormatAmount()</strong>
                 </RadzenText>
                 <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
                     @Localizer["total_vat"]: <strong>@totalVatAmount.FormatAmount()</strong>
+                </RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                    @Localizer["total_net"]: <strong>@totalNetAmount.FormatAmount()</strong>
                 </RadzenText>
             </RadzenStack>
         </RadzenCard>
@@ -459,6 +468,7 @@
     private int totalCount = 0;
     private decimal totalNetAmount = 0;
     private decimal totalVatAmount = 0;
+    private decimal totalGrossAmount = 0;
     private int pageSize = GridPageSizeConstants.PageSize10;
     private SearchCriteria searchCriteria = new SearchCriteria();
     private List<CustomerResponse> _filteredCustomers = new();
@@ -540,6 +550,15 @@
     {
         // Trigger a refresh by calling Callback with current args
         await Callback(new LoadDataArgs { Skip = 0, Top = pageSize });
+    }
+
+    private async Task FilterToday()
+    {
+        var today = DateTime.Today;
+        searchCriteria.StartDate = today;
+        searchCriteria.EndDate = today.AddDays(1).AddTicks(-1);
+        searchCriteria.PeriodFilter = "CustomPeriod";
+        await SearchDeliveryNotes();
     }
 
     private async Task ValidateSelectedDeliveryNotes()
@@ -634,49 +653,55 @@
 
         try
         {
-            _logger.LogInformation("Calling ODataService.QueryAsync for DeliveryNoteBaseInfos");
+            _logger.LogInformation("Calling DeliveryNoteService.GetDeliveryNotesWithSummariesAsync");
             
-            // Add Status filter to args if selected
-            if (searchCriteria.Status.HasValue)
+            // Calculate page number from Skip and pageSize
+            var pageNumber = (args.Skip ?? 0) / pageSize + 1;
+            
+            // Determine sort order and property from args
+            string? sortOrder = null;
+            string? sortProperty = null;
+            if (args.Sorts != null && args.Sorts.Any())
             {
-                var statusFilter = $"Statut eq {searchCriteria.Status.Value}";
-                if (!string.IsNullOrEmpty(args.Filter))
-                {
-                    args.Filter = $"({args.Filter}) and ({statusFilter})";
-                }
-                else
-                {
-                    args.Filter = statusFilter;
-                }
+                var firstSort = args.Sorts.First();
+                sortOrder = firstSort.SortOrder == SortOrder.Ascending ? "asc" : "desc";
+                sortProperty = firstSort.Property;
             }
 
-            var response = await ODataService.QueryAsync<GetDeliveryNoteBaseInfos>(
-                entitySet: "DeliveryNoteBaseInfos",
-                args: args,
-                startDate: startDate,
-                endDate: endDate,
+            // Determine isInvoiced from InvoiceStatus filter
+            bool? isInvoiced = null;
+            if (searchCriteria.InvoiceStatus == "Facturé")
+            {
+                isInvoiced = true;
+            }
+            else if (searchCriteria.InvoiceStatus == "Non facturé")
+            {
+                isInvoiced = false;
+            }
+
+            var response = await DeliveryNoteService.GetDeliveryNotesWithSummariesAsync(
                 customerId: searchCriteria.SelectedCustomerId,
+                invoiceId: null,
+                isInvoiced: isInvoiced,
+                sortOrder: sortOrder,
+                sortProperty: sortProperty,
+                pageNumber: pageNumber,
+                pageSize: pageSize,
+                searchKeyword: args.Filter,
+                startDate: startDate,
+                EndDate: endDate,
+                status: searchCriteria.Status,
                 technicianId: searchCriteria.SelectedTechnicianId,
-                tagIds: searchCriteria.SelectedTagIds,
+                tagIds: searchCriteria.SelectedTagIds?.Any() == true ? searchCriteria.SelectedTagIds : null,
                 cancellationToken: default);
 
-            deliveryNotesList = response.Value ?? new List<GetDeliveryNoteBaseInfos>();
-            totalCount = response.ODataCount ?? deliveryNotesList.Count;
+            deliveryNotesList = response.GetDeliveryNoteBaseInfos.Items?.ToList() ?? new List<GetDeliveryNoteBaseInfos>();
+            totalCount = response.GetDeliveryNoteBaseInfos.TotalCount;
 
-            // Apply invoice status filter if needed (client-side for now)
-            if (searchCriteria.InvoiceStatus != "Tous")
-            {
-                var isInvoiced = searchCriteria.InvoiceStatus == "Facturé";
-                deliveryNotesList = deliveryNotesList
-                    .Where(d => isInvoiced ? d.NumFacture.HasValue : !d.NumFacture.HasValue)
-                    .ToList();
-                totalCount = deliveryNotesList.Count;
-            }
-
-            // Calculate totals from current page (for display)
-            // Note: For accurate totals across all pages, we'd need a separate aggregation endpoint
-            totalNetAmount = deliveryNotesList.Sum(d => d.NetAmount);
-            totalVatAmount = deliveryNotesList.Sum(d => d.VatAmount);
+            // Use totals from response (calculated across all pages)
+            totalNetAmount = response.TotalNetAmount;
+            totalVatAmount = response.TotalVatAmount;
+            totalGrossAmount = response.TotalGrossAmount;
         }
         catch (Exception ex)
         {
@@ -685,6 +710,7 @@
             totalCount = 0;
             totalNetAmount = 0;
             totalVatAmount = 0;
+            totalGrossAmount = 0;
             NotificationService.Notify(new NotificationMessage 
             { 
                 Severity = NotificationSeverity.Error, 

@@ -12,5 +12,8 @@ public record GetDeliveryNotesBaseInfosWithSummariesQuery(
     string? SortProperty,
     string? SearchKeyword,
     DateTime? StartDate,
-    DateTime? EndDate
+    DateTime? EndDate,
+    int? Status,
+    int? TechnicianId,
+    List<int>? TagIds
     ) : IRequest<GetDeliveryNotesWithSummariesResponse>;
