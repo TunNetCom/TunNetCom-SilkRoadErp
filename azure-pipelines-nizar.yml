@@ -1,14 +1,10 @@
-
-
 pool:
   name: OnPremAgents
 
 variables:
   kubeNamespace: silkroad-prod-nizar
-
   deploymentApiName: silkroad-api-nizar
   deploymentWebappName: silkroad-webapp-nizar
-
   manifestPath: src/deployments/prod-deployment-nizar.yaml
 
 stages:
@@ -19,32 +15,63 @@ stages:
     displayName: K8s Deployment
     steps:
 
+    # -----------------------------
+    # 1️⃣ Check Cluster
+    # -----------------------------
     - script: |
-        echo "🔍 Cluster info"
+        echo "🔍 Kubernetes Cluster Info"
         kubectl version --client
         kubectl cluster-info
       displayName: 'Check Kubernetes Cluster'
 
+    # -----------------------------
+    # 2️⃣ Ensure DB Secret Exists
+    # -----------------------------
     - script: |
-        echo "🧹 Forcing rollout by deleting pods"
+        echo "🔐 Ensuring DB connection secret exists"
+
+        if [ -z "$(Connection_String_Nizar)" ]; then
+          echo "❌ Connection_String_Nizar is EMPTY"
+          exit 1
+        fi
+
+        kubectl create secret generic silkroad-connection-secret \
+          -n $(kubeNamespace) \
+          --from-literal=ConnectionStrings__DefaultConnection="$(Connection_String_Nizar)" \
+          --dry-run=client -o yaml | kubectl apply -f -
+
+        echo "✅ Secret ensured"
+      displayName: 'Ensure DB Secret'
+
+    # -----------------------------
+    # 3️⃣ Force Rollout by Deleting Old Pods
+    # -----------------------------
+    - script: |
+        echo "🧹 Deleting old pods to force fresh start"
 
         kubectl delete pods -n $(kubeNamespace) \
-          -l app=silkroad-api-nizar --ignore-not-found
+          -l app=$(deploymentApiName) --ignore-not-found
 
         kubectl delete pods -n $(kubeNamespace) \
-          -l app=silkroad-webapp-nizar --ignore-not-found
+          -l app=$(deploymentWebappName) --ignore-not-found
 
         sleep 10
       displayName: 'Force Rollout'
 
+    # -----------------------------
+    # 4️⃣ Apply Kubernetes Manifests
+    # -----------------------------
     - script: |
-        echo "🚀 Applying manifests"
+        echo "🚀 Applying deployment manifests"
         ls -lah src/deployments
         kubectl apply -f $(manifestPath)
       displayName: 'Apply Manifests'
 
+    # -----------------------------
+    # 5️⃣ Wait for Rollout
+    # -----------------------------
     - script: |
-        echo "⏳ Waiting for rollout"
+        echo "⏳ Waiting for deployment rollout to complete"
 
         kubectl rollout status deployment/$(deploymentApiName) \
           -n $(kubeNamespace) --timeout=180s
@@ -53,14 +80,21 @@ stages:
           -n $(kubeNamespace) --timeout=180s
       displayName: 'Wait for Rollout'
 
+    # -----------------------------
+    # 6️⃣ Verify Images & Pods
+    # -----------------------------
     - script: |
-        echo "🔍 Verifying images"
+        echo "🔍 Verifying pods and images"
+
         kubectl get pods -n $(kubeNamespace) -o wide
         kubectl describe pod -n $(kubeNamespace) | grep -A 5 Image
       displayName: 'Verify Image Pull'
       continueOnError: true
 
+    # -----------------------------
+    # 7️⃣ Final Status
+    # -----------------------------
     - script: |
-        echo "✅ Deployment complete"
+        echo "✅ Deployment complete - final status"
         kubectl get all -n $(kubeNamespace)
       displayName: 'Final Status'
