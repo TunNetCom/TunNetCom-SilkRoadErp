@@ -1,63 +1,110 @@
+# ============================================================
+# Deploy SilkRoad API & WebApp to On-Prem Kubernetes (Nizar)
+# ============================================================
+
 pool:
   name: OnPremAgents
 
 variables:
-  dockerRepository: 'tunnetcom/silkroad'
-  apiTag: 'latest-api'
-  webappTag: 'latest-webapp'
-  kubeNamespace: 'silkroad-prod-nizar'
-  deploymentApiName: 'silkroad-api-nizar'
-  deploymentWebappName: 'silkroad-webapp-nizar'
+- group: silkroad-prod   # <-- the variable group where Connection_String_Nizar is defined
+- name: kubeNamespace
+  value: silkroad-prod-nizar
+- name: deploymentApiName
+  value: silkroad-api-nizar
+- name: deploymentWebappName
+  value: silkroad-webapp-nizar
+- name: manifestPath
+  value: src/deployments/prod-deployment-nizar.yaml
+
 
 stages:
-# ============================================================
-# DEPLOY STAGE TO ON-PREM KUBERNETES (NIZAR NAMESPACE)
-# ============================================================
 - stage: Deploy
-  displayName: Deploy to Nizar Namespace
+  displayName: Deploy to Nizar Kubernetes
   jobs:
   - job: DeployJob
-    displayName: Deploy SilkRoad to silkroad-prod-nizar
+    displayName: K8s Deployment
     steps:
 
-    # 1️⃣ Debug manifests
+    # -----------------------------
+    # 0️⃣ Check Cluster Info
+    # -----------------------------
     - script: |
-        cd $(Build.SourcesDirectory)/src/deployments || { echo '❌ Deployment folder not found'; exit 1; }
-        echo "📂 Listing Nizar YAML files:"
-        ls -l *nizar*.yaml
-      displayName: 'Debug: list Nizar manifests'
-
-    # 2️⃣ Create / Update DB Connection Secret
-    - script: |
-        echo "🔐 Creating / Updating DB connection secret in Nizar namespace"
-        kubectl create secret generic silkroad-connection-secret \
-          -n $(kubeNamespace) \
-          --from-literal=ConnectionStrings__DefaultConnection="$(CONNECTION_STRING)" \
-          --dry-run=client -o yaml | kubectl apply -f -
-      displayName: 'Create DB Connection Secret'
-
-    # 3️⃣ Apply manifests & rollout
-    - script: |
+        echo "🔍 Cluster info"
         kubectl version --client
         kubectl cluster-info
+      displayName: 'Check Kubernetes Cluster'
 
-        echo "🚀 Applying Nizar manifests..."
-        kubectl apply -f prod-configmap-nizar.yaml -n $(kubeNamespace)
-        kubectl apply -f prod-deployment-nizar.yaml -n $(kubeNamespace)
-        kubectl apply -f prod-service-nizar.yaml -n $(kubeNamespace)  || true
-        kubectl apply -f prod-ingress-nizar.yaml -n $(kubeNamespace)  || true
+    # -----------------------------
+    # 1️⃣ Ensure DB Secret
+    # -----------------------------
+    - script: |
+        echo "🔐 Ensuring DB connection secret exists"
 
-        echo "🔁 Forcing rollout for Nizar..."
-        kubectl rollout restart deployment/$(deploymentApiName) -n $(kubeNamespace)  || true
-        kubectl rollout restart deployment/$(deploymentWebappName) -n $(kubeNamespace)  || true
+        if [ -z "$Connection_String_Nizar" ]; then
+          echo "❌ Connection_String_Nizar is EMPTY"
+          exit 1
+        fi
 
-        echo "⏳ Waiting for Nizar rollout..."
-        kubectl rollout status deployment/$(deploymentApiName) -n $(kubeNamespace) --timeout=5m || { echo '❌ API rollout failed'; exit 1; }
-        kubectl rollout status deployment/$(deploymentWebappName) -n $(kubeNamespace) --timeout=5m || { echo '❌ WebApp rollout failed'; exit 1; }
+        kubectl create secret generic silkroad-connection-secret \
+          -n $(kubeNamespace) \
+          --from-literal=ConnectionStrings__DefaultConnection="$Connection_String_Nizar" \
+          --dry-run=client -o yaml | kubectl apply -f -
 
-        echo "✅ Successfully deployed SilkRoad to Nizar namespace: $(kubeNamespace)"
-        echo "📊 Showing deployment status:"
-        kubectl get pods -n $(kubeNamespace)
-        kubectl get svc -n $(kubeNamespace)
-        kubectl get ingress -n $(kubeNamespace)
-      displayName: Deploy to Nizar K8s Namespace
+        echo "✅ DB secret ensured"
+      displayName: 'Ensure DB Secret'
+      env:
+        Connection_String_Nizar: $(Connection_String_Nizar)
+
+    # -----------------------------
+    # 2️⃣ Force Rollout by Deleting Old Pods
+    # -----------------------------
+    - script: |
+        echo "🧹 Forcing rollout by deleting pods"
+
+        kubectl delete pods -n $(kubeNamespace) \
+          -l app=$(deploymentApiName) --ignore-not-found
+
+        kubectl delete pods -n $(kubeNamespace) \
+          -l app=$(deploymentWebappName) --ignore-not-found
+
+        sleep 10
+      displayName: 'Force Rollout'
+
+    # -----------------------------
+    # 3️⃣ Apply Kubernetes Manifests
+    # -----------------------------
+    - script: |
+        echo "🚀 Applying manifests"
+        ls -lah $(manifestPath)
+        kubectl apply -f $(manifestPath)
+      displayName: 'Apply Manifests'
+
+    # -----------------------------
+    # 4️⃣ Wait for Deployment Rollout
+    # -----------------------------
+    - script: |
+        echo "⏳ Waiting for rollout"
+        kubectl rollout status deployment/$(deploymentApiName) \
+          -n $(kubeNamespace) --timeout=180s
+
+        kubectl rollout status deployment/$(deploymentWebappName) \
+          -n $(kubeNamespace) --timeout=180s
+      displayName: 'Wait for Rollout'
+
+    # -----------------------------
+    # 5️⃣ Verify Images
+    # -----------------------------
+    - script: |
+        echo "🔍 Verifying images"
+        kubectl get pods -n $(kubeNamespace) -o wide
+        kubectl describe pod -n $(kubeNamespace) | grep -A 5 Image
+      displayName: 'Verify Image Pull'
+      continueOnError: true
+
+    # -----------------------------
+    # 6️⃣ Final Status
+    # -----------------------------
+    - script: |
+        echo "✅ Deployment complete"
+        kubectl get all -n $(kubeNamespace)
+      displayName: 'Final Status'
