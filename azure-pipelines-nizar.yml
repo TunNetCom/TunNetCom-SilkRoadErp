@@ -6,10 +6,16 @@ pool:
   name: OnPremAgents
 
 variables:
-  kubeNamespace: silkroad-prod-nizar
-  deploymentApiName: silkroad-api-nizar
-  deploymentWebappName: silkroad-webapp-nizar
-  manifestPath: src/deployments/prod-deployment-nizar.yaml
+- group: silkroad-prod   # <-- the variable group where Connection_String_Nizar is defined
+- name: kubeNamespace
+  value: silkroad-prod-nizar
+- name: deploymentApiName
+  value: silkroad-api-nizar
+- name: deploymentWebappName
+  value: silkroad-webapp-nizar
+- name: manifestPath
+  value: src/deployments/prod-deployment-nizar.yaml
+
 
 stages:
 - stage: Deploy
