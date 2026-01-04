@@ -52,6 +52,14 @@ public class CreateDeliveryNoteCommandHandler(
         // Récupérer les paramètres d'application pour vérifier si on doit bloquer la vente
         var systeme = await _context.Systeme.FirstOrDefaultAsync(cancellationToken);
         var bloquerVenteStockInsuffisant = systeme?.BloquerVenteStockInsuffisant ?? true;
+        var bloquerBlSansFacture = systeme?.BloquerBlSansFacture ?? false;
+
+        // Valider que la facture est requise si le paramètre est activé
+        if (bloquerBlSansFacture && (!createDeliveryNoteCommand.NumFacture.HasValue || createDeliveryNoteCommand.NumFacture.Value <= 0))
+        {
+            _logger.LogWarning("Delivery note creation blocked: invoice number is required when BloquerBlSansFacture is enabled");
+            return Result.Fail("invoice_number_is_required");
+        }
 
         // Valider le stock pour chaque ligne
         var activeYearId = await _activeAccountingYearService.GetActiveAccountingYearIdAsync(cancellationToken);

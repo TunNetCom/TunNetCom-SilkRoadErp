@@ -540,7 +540,8 @@ else
                 return;
             }
             
-            if (!_selectedInvoiceId.HasValue)
+            // Vérifier si le paramètre système bloque les BL sans facture
+            if (getAppParametersResponse?.BloquerBlSansFacture == true && !_selectedInvoiceId.HasValue)
             {
                 NotificationService.Notify(new NotificationMessage
                 {

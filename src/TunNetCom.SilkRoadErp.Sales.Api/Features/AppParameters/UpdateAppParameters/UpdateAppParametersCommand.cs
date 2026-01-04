@@ -12,5 +12,6 @@ public record UpdateAppParametersCommand(
     string? AdresseRetenu,
     decimal? DiscountPercentage,
     bool? BloquerVenteStockInsuffisant,
+    bool? BloquerBlSansFacture,
     int? DecimalPlaces,
     string? Rib) : IRequest<Result>;
