@@ -53,9 +53,12 @@
                                ShowPriceHistoryDialog="true"
                                ShowPrintButton="false"
                                ShowSaveButton="false"
-                               ShowSummary="false"
+                               ShowSummary="true"
                                ShowVatColumn="false"
                                ShowTtcColumn="false"
+                               TotalHt="@totalHt"
+                               TotalVat="@totalVat"
+                               TotalTtc="@totalTtc"
                                Localizer="@Localizer"
                                GetProductReference="@(item => item.ProductReference)"
                                SetProductReference="@((item, value) => item.ProductReference = value)"
@@ -86,6 +89,9 @@
     private CancellationTokenSource _cancellationTokenSource = new();
     private bool isSaving;
     private int? activeAccountingYearId;
+    private decimal totalHt = 0;
+    private decimal totalVat = 0;
+    private decimal totalTtc = 0;
 
     protected override async Task OnInitializedAsync()
     {
@@ -301,8 +307,10 @@
 
     private void UpdateTotals()
     {
-        LineItemCalculator.UpdateTotals(orders, out decimal totalHt, out decimal totalVat, out decimal totalTtc);
-        // Pour l'inventaire, on n'affiche pas les totaux mais on les calcule quand même pour la cohérence
+        LineItemCalculator.UpdateTotals(orders, out decimal ht, out decimal vat, out decimal ttc);
+        totalHt = ht;
+        totalVat = vat;
+        totalTtc = ttc;
     }
 
     private async Task ShowHistorique(string refProduit)
