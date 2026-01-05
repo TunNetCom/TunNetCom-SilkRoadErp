@@ -89,8 +89,8 @@
                 <label>Montant Min</label>
                 <RadzenNumeric @bind-Value="@selectedMontantMin"
                               Min="0"
-                              Format="@AmountHelper.FORMAT_N2"
-                              Step="0.01"
+                              Format="@AmountHelper.FORMAT_N3"
+                              Step="0.001"
                               Placeholder="Montant min"
                               Style="width: 200px;" />
             </div>
@@ -98,8 +98,8 @@
                 <label>Montant Max</label>
                 <RadzenNumeric @bind-Value="@selectedMontantMax"
                               Min="0"
-                              Format="@AmountHelper.FORMAT_N2"
-                              Step="0.01"
+                              Format="@AmountHelper.FORMAT_N3"
+                              Step="0.001"
                               Placeholder="Montant max"
                               Style="width: 200px;" />
             </div>
