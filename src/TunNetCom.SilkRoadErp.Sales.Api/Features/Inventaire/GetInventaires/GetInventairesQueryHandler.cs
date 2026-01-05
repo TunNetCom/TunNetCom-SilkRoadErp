@@ -21,6 +21,7 @@ public class GetInventairesQueryHandler(
         var inventairesQuery = _context.Inventaire
             .FilterByActiveAccountingYear()
             .Include(i => i.AccountingYear)
+            .Include(i => i.LigneInventaire)
             .Select(i => new InventaireResponse
             {
                 Id = i.Id,
@@ -31,7 +32,8 @@ public class GetInventairesQueryHandler(
                 Description = i.Description,
                 Statut = (int)i.Statut,
                 StatutLibelle = i.Statut == Domain.Entites.InventaireStatut.Brouillon ? "Brouillon" :
-                               i.Statut == Domain.Entites.InventaireStatut.Valide ? "Validé" : "Clôturé"
+                               i.Statut == Domain.Entites.InventaireStatut.Valide ? "Validé" : "Clôturé",
+                TotalHt = i.LigneInventaire.Sum(l => l.QuantiteReelle * l.PrixHt)
             })
             .AsQueryable();
 

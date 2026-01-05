@@ -21,6 +21,7 @@ public partial class Systeme
         string? adresseRetenu,
         decimal discountPercentage,
         bool bloquerVenteStockInsuffisant,
+        bool bloquerBlSansFacture,
         int decimalPlaces,
         string? rib)
     {
@@ -36,6 +37,7 @@ public partial class Systeme
         this.AdresseRetenu = adresseRetenu;
         this.DiscountPercentage = discountPercentage;
         this.BloquerVenteStockInsuffisant = bloquerVenteStockInsuffisant;
+        this.BloquerBlSansFacture = bloquerBlSansFacture;
         this.DecimalPlaces = decimalPlaces;
         this.Rib = rib;
     }
@@ -64,6 +66,8 @@ public partial class Systeme
     public decimal DiscountPercentage { get; set; }
 
     public bool BloquerVenteStockInsuffisant { get; set; }
+
+    public bool BloquerBlSansFacture { get; set; }
 
     // Default value for database - matches DecimalFormatConstants.DEFAULT_DECIMAL_PLACES in Contracts
     public int DecimalPlaces { get; set; } = 3;

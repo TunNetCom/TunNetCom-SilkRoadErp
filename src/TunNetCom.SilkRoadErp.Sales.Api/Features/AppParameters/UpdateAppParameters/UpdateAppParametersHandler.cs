@@ -37,6 +37,7 @@ public class UpdateAppParametersCommandHandler(
             adresseRetenu: updateAppParametersCommand.AdresseRetenu,
             discountPercentage: updateAppParametersCommand.DiscountPercentage ?? appParametersToUpdate.DiscountPercentage,
             bloquerVenteStockInsuffisant: updateAppParametersCommand.BloquerVenteStockInsuffisant ?? appParametersToUpdate.BloquerVenteStockInsuffisant,
+            bloquerBlSansFacture: updateAppParametersCommand.BloquerBlSansFacture ?? appParametersToUpdate.BloquerBlSansFacture,
             decimalPlaces: updateAppParametersCommand.DecimalPlaces ?? appParametersToUpdate.DecimalPlaces,
             rib: updateAppParametersCommand.Rib);
 

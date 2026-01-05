@@ -22,6 +22,7 @@ public class UpdateAppParametersRequest
         string? adresseRetenu,
         decimal? discountPercentage,
         bool? bloquerVenteStockInsuffisant,
+        bool? bloquerBlSansFacture,
         int? decimalPlaces,
         string? rib)
     {
@@ -37,6 +38,7 @@ public class UpdateAppParametersRequest
         AdresseRetenu = adresseRetenu;
         DiscountPercentage = discountPercentage ?? 0;
         BloquerVenteStockInsuffisant = bloquerVenteStockInsuffisant ?? true;
+        BloquerBlSansFacture = bloquerBlSansFacture ?? false;
         DecimalPlaces = decimalPlaces ?? DecimalFormatConstants.DEFAULT_DECIMAL_PLACES;
         Rib = rib;
     }
@@ -64,6 +66,8 @@ public class UpdateAppParametersRequest
     public decimal DiscountPercentage { get; set; }
 
     public bool BloquerVenteStockInsuffisant { get; set; }
+
+    public bool BloquerBlSansFacture { get; set; }
 
     public int DecimalPlaces { get; set; } = DecimalFormatConstants.DEFAULT_DECIMAL_PLACES;
 

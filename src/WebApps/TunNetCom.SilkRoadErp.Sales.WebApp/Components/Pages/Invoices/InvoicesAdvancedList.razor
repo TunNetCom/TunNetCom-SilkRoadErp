@@ -341,8 +341,8 @@
             new() { PropertyName = "StatutLibelle", DisplayName = "Statut", IsVisible = true }
         };
 
-        // Set default period to CurrentMonth and calculate dates
-        searchCriteria.PeriodFilter = "CurrentMonth";
+        // Set default period to CurrentYear and calculate dates
+        searchCriteria.PeriodFilter = "CurrentYear";
         var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
             searchCriteria.PeriodFilter, 
             searchCriteria.StartDate, 
@@ -562,7 +562,7 @@
 
     public class SearchCriteria
     {
-        public string PeriodFilter { get; set; } = "CurrentMonth";
+        public string PeriodFilter { get; set; } = "CurrentYear";
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public int? SelectedCustomerId { get; set; }

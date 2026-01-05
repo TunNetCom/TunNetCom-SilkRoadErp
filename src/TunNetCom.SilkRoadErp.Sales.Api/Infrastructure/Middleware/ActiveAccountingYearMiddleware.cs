@@ -19,22 +19,25 @@ public class ActiveAccountingYearMiddleware
 
     public async Task InvokeAsync(HttpContext context, IActiveAccountingYearService activeAccountingYearService)
     {
-        // Précharger l'exercice actif au début de la requête
-        var activeYearId = await activeAccountingYearService.GetActiveAccountingYearIdAsync(context.RequestAborted);
+        // Optimisation: Vérifier d'abord le cache de manière synchrone (zero overhead)
+        // Cela évite les appels async inutiles, les verrous de semaphore, et la création de scopes
+        var activeYearId = activeAccountingYearService.GetActiveAccountingYearId();
         
-        _logger.LogDebug("ActiveAccountingYearMiddleware: Loaded active year ID {ActiveYearId} for request {Path}", 
-            activeYearId, context.Request.Path);
+        // Seulement appeler la méthode async si le cache est vide
+        if (!activeYearId.HasValue)
+        {
+            activeYearId = await activeAccountingYearService.GetActiveAccountingYearIdAsync(context.RequestAborted);
+        }
         
         // Mettre à jour la variable statique thread-safe dans SalesContext
-        // Cela permet à l'extension method FilterByActiveAccountingYear() d'utiliser cette valeur
+        // Toujours mettre à jour pour garantir que la valeur est correcte au début de chaque requête
+        // (même si elle est null, pour s'assurer qu'elle est bien initialisée)
         Domain.Entites.SalesContext.SetActiveAccountingYearId(activeYearId);
 
         await _next(context);
         
         // Nettoyer la valeur après la requête pour éviter les fuites entre requêtes
         Domain.Entites.SalesContext.SetActiveAccountingYearId(null);
-        
-        _logger.LogDebug("ActiveAccountingYearMiddleware: Cleared active year ID after request {Path}", context.Request.Path);
     }
 }
 

@@ -141,6 +141,12 @@
                                 <RadzenLabel Text="Bloquer la vente en cas de stock insuffisant" Style="margin: 0;" />
                             </RadzenStack>
                             <RadzenLabel Text="Si activé, les ventes seront bloquées lorsque le stock disponible est insuffisant. Si désactivé, un avertissement sera affiché mais la vente sera autorisée." Style="color: #666; font-size: 0.9em; margin-top: 5px;" />
+                            
+                            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" AlignItems="Radzen.AlignItems.Center" Style="width: fit-content; margin-top: 1rem;">
+                                <RadzenCheckBox @bind-Value="system.BloquerBlSansFacture" Name="BloquerBlSansFacture" />
+                                <RadzenLabel Text="Bloquer la création et modification de BL sans facture" Style="margin: 0;" />
+                            </RadzenStack>
+                            <RadzenLabel Text="Si activé, la création et la modification de bons de livraison seront bloquées si aucune facture n'est associée. Si désactivé, les BL peuvent être créés sans facture." Style="color: #666; font-size: 0.9em; margin-top: 5px;" />
                         </RadzenColumn>
                     </RadzenRow>
                 </RadzenTabsItem>
@@ -195,6 +201,7 @@
 					Rib = system.Rib,
 					DiscountPercentage = system.DiscountPercentage,
 					BloquerVenteStockInsuffisant = system.BloquerVenteStockInsuffisant,
+					BloquerBlSansFacture = system.BloquerBlSansFacture,
 					DecimalPlaces = system.DecimalPlaces
 				}, cancellationToken);
 

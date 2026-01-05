@@ -28,5 +28,8 @@ public class InventaireResponse
 
     [JsonPropertyName("statutLibelle")]
     public string StatutLibelle { get; set; } = string.Empty;
+
+    [JsonPropertyName("totalHt")]
+    public decimal TotalHt { get; set; }
 }
 

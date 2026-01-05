@@ -1,4 +1,5 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNotesBaseInfosWithSummaries;
+﻿using Microsoft.AspNetCore.Mvc;
+using TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNotesBaseInfosWithSummaries;
 using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
 using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 
@@ -12,26 +13,30 @@ public class GetDeliveryNotesWithSummariesEndpoint : ICarterModule
             "/deliverynotes/summaries",
             async Task<Results<Ok<GetDeliveryNotesWithSummariesResponse>, BadRequest<ProblemDetails>>> (
             IMediator mediator,
+            [FromQuery] int[]? tagIds,
             [AsParameters] GetDeliveryNotesQueryParams queryParams,
             CancellationToken cancellationToken) =>
-        {
-            var query = new GetDeliveryNotesBaseInfosWithSummariesQuery(
-                PageNumber: queryParams.PageNumber ?? 1,
-                PageSize: queryParams.PageSize ?? 10,
-                IsInvoiced: queryParams.IsInvoiced,
-                SortOrder: queryParams.SortOrder,
-                SortProperty: queryParams.SortProperty,
-                CustomerId: queryParams.CustomerId,
-                InvoiceId: queryParams.InvoiceId,
-                SearchKeyword: queryParams.SearchKeyword,
-                StartDate: queryParams.StartDate,
-                EndDate: queryParams.EndDate
-            );
+            {
+                var query = new GetDeliveryNotesBaseInfosWithSummariesQuery(
+                    PageNumber: queryParams.PageNumber ?? 1,
+                    PageSize: queryParams.PageSize ?? 10,
+                    IsInvoiced: queryParams.IsInvoiced,
+                    SortOrder: queryParams.SortOrder,
+                    SortProperty: queryParams.SortProperty,
+                    CustomerId: queryParams.CustomerId,
+                    InvoiceId: queryParams.InvoiceId,
+                    SearchKeyword: queryParams.SearchKeyword,
+                    StartDate: queryParams.StartDate,
+                    EndDate: queryParams.EndDate,
+                    Status: queryParams.Status,
+                    TechnicianId: queryParams.TechnicianId,
+                    TagIds: tagIds?.ToList()
+                );
 
-            var response = await mediator.Send(query, cancellationToken);
+                var response = await mediator.Send(query, cancellationToken);
 
-            return TypedResults.Ok(response);
-        })
+                return TypedResults.Ok(response);
+            })
         .WithName("GetDeliveryNotesWithSummaries")
         .WithTags(EndpointTags.DeliveryNotes)
         .Produces<GetDeliveryNotesWithSummariesResponse>(StatusCodes.Status200OK)

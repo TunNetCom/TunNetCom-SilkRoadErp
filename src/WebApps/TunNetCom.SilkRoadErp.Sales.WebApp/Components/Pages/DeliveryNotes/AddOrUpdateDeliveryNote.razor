@@ -540,7 +540,8 @@ else
                 return;
             }
             
-            if (!_selectedInvoiceId.HasValue)
+            // Vérifier si le paramètre système bloque les BL sans facture
+            if (getAppParametersResponse?.BloquerBlSansFacture == true && !_selectedInvoiceId.HasValue)
             {
                 NotificationService.Notify(new NotificationMessage
                 {
@@ -796,6 +797,29 @@ else
                     selectedInvoiceId = deliveryNote.InvoiceNumber;
                     documentStatut = deliveryNote.Statut; // Récupérer le statut
                     isReadOnly = documentStatut == 1; // Mettre à jour le mode lecture seule
+                    
+                    // S'assurer que le client sélectionné est présent dans _filteredCustomers
+                    // pour qu'il s'affiche correctement dans le combo box
+                    if (selectedCustomerId.HasValue && 
+                        !_filteredCustomers.Any(c => c.Id == selectedCustomerId.Value))
+                    {
+                        try
+                        {
+                            var customer = await customersApiClient.GetCustomerByIdAsync(
+                                selectedCustomerId.Value, 
+                                _cancellationTokenSource.Token);
+                            
+                            if (customer != null)
+                            {
+                                _filteredCustomers.Add(customer);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.LogWarning(ex, "Failed to load customer {CustomerId} for delivery note", selectedCustomerId.Value);
+                            // Ne pas bloquer le chargement du BL si le client ne peut pas être chargé
+                        }
+                    }
                     
                     logger.LogInformation("Delivery note {Number} loaded with status: {Statut}, isReadOnly: {IsReadOnly}", 
                         deliveryNoteNumber, documentStatut, isReadOnly);

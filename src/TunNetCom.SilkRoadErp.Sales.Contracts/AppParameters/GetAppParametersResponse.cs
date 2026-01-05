@@ -64,6 +64,9 @@ public class GetAppParametersResponse
     [JsonPropertyName("bloquerVenteStockInsuffisant")]
     public bool BloquerVenteStockInsuffisant { get; set; }
 
+    [JsonPropertyName("bloquerBlSansFacture")]
+    public bool BloquerBlSansFacture { get; set; }
+
     [JsonPropertyName("decimalPlaces")]
     public int DecimalPlaces { get; set; } = DecimalFormatConstants.DEFAULT_DECIMAL_PLACES;
 

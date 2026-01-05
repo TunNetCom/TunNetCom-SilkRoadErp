@@ -203,6 +203,9 @@ public class DeliveryNoteApiClient(HttpClient _httpClient) : IDeliveryNoteApiCli
                 string? searchKeyword,
                 DateTime? startDate,
                 DateTime? endDate,
+                int? status,
+                int? technicianId,
+                List<int>? tagIds,
                 CancellationToken cancellationToken)
     {
         // Validate pagination parameters
@@ -212,30 +215,41 @@ public class DeliveryNoteApiClient(HttpClient _httpClient) : IDeliveryNoteApiCli
         }
 
         // Build query string with only non-null parameters
-        var queryParams = new Dictionary<string, string>();
+        var queryParams = new List<string>();
 
         if (customerId.HasValue)
-            queryParams.Add("customerId", customerId.Value.ToString());
+            queryParams.Add($"customerId={Uri.EscapeDataString(customerId.Value.ToString())}");
         if (invoiceId.HasValue)
-            queryParams.Add("invoiceId", invoiceId.Value.ToString());
+            queryParams.Add($"invoiceId={Uri.EscapeDataString(invoiceId.Value.ToString())}");
         if (isInvoiced.HasValue)
-            queryParams.Add("isInvoiced", isInvoiced.Value.ToString());
+            queryParams.Add($"isInvoiced={Uri.EscapeDataString(isInvoiced.Value.ToString())}");
         if (!string.IsNullOrEmpty(sortOrder))
-            queryParams.Add("sortOrder", sortOrder);
+            queryParams.Add($"sortOrder={Uri.EscapeDataString(sortOrder)}");
         if (!string.IsNullOrEmpty(sortProperty))
-            queryParams.Add("sortProperty", sortProperty);
+            queryParams.Add($"sortProperty={Uri.EscapeDataString(sortProperty)}");
         if (!string.IsNullOrEmpty(searchKeyword))
-            queryParams.Add("searchKeyword", searchKeyword);
+            queryParams.Add($"searchKeyword={Uri.EscapeDataString(searchKeyword)}");
         if (startDate.HasValue)
-            queryParams.Add("startDate", startDate.Value.ToString("yyyy-MM-dd"));
+            queryParams.Add($"startDate={Uri.EscapeDataString(startDate.Value.ToString("yyyy-MM-dd"))}");
         if (endDate.HasValue)
-            queryParams.Add("endDate", endDate.Value.ToString("yyyy-MM-dd"));
+            queryParams.Add($"endDate={Uri.EscapeDataString(endDate.Value.ToString("yyyy-MM-dd"))}");
+        if (status.HasValue)
+            queryParams.Add($"status={Uri.EscapeDataString(status.Value.ToString())}");
+        if (technicianId.HasValue)
+            queryParams.Add($"technicianId={Uri.EscapeDataString(technicianId.Value.ToString())}");
+        if (tagIds != null && tagIds.Any())
+        {
+            foreach (var tagId in tagIds)
+            {
+                queryParams.Add($"tagIds={Uri.EscapeDataString(tagId.ToString())}");
+            }
+        }
 
-        queryParams.Add("pageNumber", pageNumber.ToString());
-        queryParams.Add("pageSize", pageSize.ToString());
+        queryParams.Add($"pageNumber={Uri.EscapeDataString(pageNumber.ToString())}");
+        queryParams.Add($"pageSize={Uri.EscapeDataString(pageSize.ToString())}");
 
-        // Construct query string with URL encoding
-        var queryString = string.Join("&", queryParams.Select(p => $"{p.Key}={Uri.EscapeDataString(p.Value)}"));
+        // Construct query string
+        var queryString = string.Join("&", queryParams);
         var requestUri = $"/deliverynotes/summaries?{queryString}";
 
         try

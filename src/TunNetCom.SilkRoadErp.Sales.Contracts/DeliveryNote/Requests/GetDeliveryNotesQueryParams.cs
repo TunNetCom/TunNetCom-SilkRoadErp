@@ -12,4 +12,7 @@ public class GetDeliveryNotesQueryParams
     public string? SearchKeyword { get; set; }
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
+    public int? Status { get; set; }
+    public int? TechnicianId { get; set; }
+    // TagIds is extracted as a separate parameter in the endpoint to avoid body inference
 }

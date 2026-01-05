@@ -7,6 +7,7 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Products
 @using TunNetCom.SilkRoadErp.Sales.Contracts.ProductFamilies
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using Radzen
 @using Radzen.Blazor
 @using BlazorBootstrap
@@ -44,9 +45,8 @@
 
         <RadzenCard Class="products-filters-card">
             <RadzenStack Gap="1rem">
-                <h4 style="margin: 0; font-size: 1.1rem; font-weight: 600;">Filtres</h4>
-                <RadzenRow Gap="1rem">
-                    <RadzenColumn Size="12" SizeMD="3">
+                <RadzenRow Gap="1rem" AlignItems="AlignItems.End">
+                    <RadzenColumn Size="12" SizeMD="2" SizeLG="2">
                         <RadzenFormField Text="Famille" Style="margin-bottom: 0;">
                             <RadzenDropDown Value="@selectedFamilleId" 
                                           ValueChanged="@OnFamilleFilterChangedCallback"
@@ -54,10 +54,11 @@
                                           TextProperty="Nom" 
                                           ValueProperty="Id" 
                                           Placeholder="Toutes les familles" 
-                                          AllowClear="true" />
+                                          AllowClear="true"
+                                          Style="width: 100%;" />
                         </RadzenFormField>
                     </RadzenColumn>
-                    <RadzenColumn Size="12" SizeMD="3">
+                    <RadzenColumn Size="12" SizeMD="2" SizeLG="2">
                         <RadzenFormField Text="Sous-famille" Style="margin-bottom: 0;">
                             <RadzenDropDown Value="@selectedSousFamilleId" 
                                           ValueChanged="@OnSousFamilleFilterChangedCallback"
@@ -65,10 +66,11 @@
                                           TextProperty="Nom" 
                                           ValueProperty="Id" 
                                           Placeholder="Toutes les sous-familles" 
-                                          AllowClear="true" />
+                                          AllowClear="true"
+                                          Style="width: 100%;" />
                         </RadzenFormField>
                     </RadzenColumn>
-                    <RadzenColumn Size="12" SizeMD="2">
+                    <RadzenColumn Size="12" SizeMD="2" SizeLG="2">
                         <RadzenFormField Text="Visibilité" Style="margin-bottom: 0;">
                             <RadzenDropDown Value="@selectedVisibility" 
                                           ValueChanged="@OnVisibilityFilterChangedCallback"
@@ -76,37 +78,43 @@
                                           TextProperty="Text" 
                                           ValueProperty="Value" 
                                           Placeholder="Tous" 
-                                          AllowClear="true" />
+                                          AllowClear="true"
+                                          Style="width: 100%;" />
                         </RadzenFormField>
                     </RadzenColumn>
-                    <RadzenColumn Size="12" SizeMD="2" Style="display: flex; align-items: flex-end; padding-bottom: 0;">
+                    <RadzenColumn Size="12" SizeMD="2" SizeLG="2">
+                        <RadzenFormField Text="Stock calculé (min)" Style="margin-bottom: 0;">
+                            <RadzenNumeric Value="@stockCalculeMin" 
+                                         ValueChanged="@OnStockCalculeMinChangedCallback"
+                                         Placeholder="Min" 
+                                         Min="0"
+                                         Style="width: 100%;" />
+                        </RadzenFormField>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="2" SizeLG="2">
+                        <RadzenFormField Text="Stock calculé (max)" Style="margin-bottom: 0;">
+                            <RadzenNumeric Value="@stockCalculeMax" 
+                                         ValueChanged="@OnStockCalculeMaxChangedCallback"
+                                         Placeholder="Max" 
+                                         Min="0"
+                                         Style="width: 100%;" />
+                        </RadzenFormField>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="2" SizeLG="2" Style="display: flex; align-items: flex-end; padding-bottom: 0;">
                         <RadzenButton Text="Réinitialiser" 
                                     ButtonStyle="ButtonStyle.Secondary" 
                                     Variant="Variant.Outlined"
                                     Click="@ResetFilters" 
                                     Icon="refresh"
-                                    Style="width: 100%; margin-top: 0;" />
+                                    Style="width: 100%;" />
                     </RadzenColumn>
                 </RadzenRow>
-                <RadzenRow Gap="1rem">
-                    <RadzenColumn Size="12" SizeMD="3">
-                        <RadzenFormField Text="Stock calculé (min)" Style="margin-bottom: 0;">
-                            <RadzenNumeric Value="@stockCalculeMin" 
-                                         ValueChanged="@OnStockCalculeMinChangedCallback"
-                                         Placeholder="Min" 
-                                         Min="0" />
-                        </RadzenFormField>
-                    </RadzenColumn>
-                    <RadzenColumn Size="12" SizeMD="3">
-                        <RadzenFormField Text="Stock calculé (max)" Style="margin-bottom: 0;">
-                            <RadzenNumeric Value="@stockCalculeMax" 
-                                         ValueChanged="@OnStockCalculeMaxChangedCallback"
-                                         Placeholder="Max" 
-                                         Min="0" />
-                        </RadzenFormField>
-                    </RadzenColumn>
-                    <RadzenColumn Size="12" SizeMD="6">
-                        <!-- Espace vide pour l'alignement -->
+                <RadzenRow Gap="1rem" AlignItems="AlignItems.Center">
+                    <RadzenColumn Size="12" SizeMD="3" SizeLG="3">
+                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="10px">
+                            <span style="font-weight: 500;">Afficher images:</span>
+                            <RadzenSwitch @bind-Value="showImages" />
+                        </RadzenStack>
                     </RadzenColumn>
                 </RadzenRow>
             </RadzenStack>
@@ -128,6 +136,7 @@
                         IsLoading="@isLoadingProducts"
                         ShowPagingSummary="true"
                         Responsive="true"
+                        AllowColumnResize="true"
                         RowRender="OnRowRender">
             <EmptyTemplate>
                 <p style="font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
@@ -138,12 +147,45 @@
                         <RadzenCheckBox Value="@GetSelectedState(product)" ValueChanged="@((bool value) => OnProductSelectionChanged(product, value))" />
                     </Template>
                 </RadzenDataGridColumn>
+                @if (showImages)
+                {
+                    <RadzenDataGridColumn TItem="ProductResponse" Filterable="false" Sortable="false" Width="200px" TextAlign="TextAlign.Center" Title="Images">
+                        <Template Context="product">
+                            <div style="display: flex; gap: 5px; justify-content: center; align-items: center;">
+                                @if (!string.IsNullOrEmpty(product.Image1StoragePath))
+                                {
+                                    <img src="@($"data:image/jpeg;base64,{product.Image1StoragePath}")" 
+                                         alt="@product.Name" 
+                                         style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;" />
+                                }
+                                @if (!string.IsNullOrEmpty(product.Image2StoragePath))
+                                {
+                                    <img src="@($"data:image/jpeg;base64,{product.Image2StoragePath}")" 
+                                         alt="@product.Name" 
+                                         style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;" />
+                                }
+                                @if (!string.IsNullOrEmpty(product.Image3StoragePath))
+                                {
+                                    <img src="@($"data:image/jpeg;base64,{product.Image3StoragePath}")" 
+                                         alt="@product.Name" 
+                                         style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;" />
+                                }
+                                @if (string.IsNullOrEmpty(product.Image1StoragePath) && 
+                                     string.IsNullOrEmpty(product.Image2StoragePath) && 
+                                     string.IsNullOrEmpty(product.Image3StoragePath))
+                                {
+                                    <span class="grid-cell" style="color: #999;">-</span>
+                                }
+                            </div>
+                        </Template>
+                    </RadzenDataGridColumn>
+                }
                 <RadzenDataGridColumn TItem="ProductResponse" Property="@nameof(ProductResponse.Reference)" Title="@Localizer["product_refe"]" Width="200px">
                     <Template Context="product">
                         <span class="grid-cell">@product.Reference</span>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="ProductResponse" Property="@nameof(ProductResponse.Name)" Title="@Localizer["product_name"]" Width="200px">
+                <RadzenDataGridColumn TItem="ProductResponse" Property="@nameof(ProductResponse.Name)" Title="@Localizer["product_name"]" Width="350px" Resizable="true">
                     <Template Context="product">
                         <span class="grid-cell">@product.Name</span>
                     </Template>
@@ -151,6 +193,21 @@
                 <RadzenDataGridColumn TItem="ProductResponse" Property="@nameof(ProductResponse.SousFamilleProduitNom)" Title="Sous-famille" Width="150px">
                     <Template Context="product">
                         <span class="grid-cell">@(product.SousFamilleProduitNom ?? "-")</span>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ProductResponse" Property="@nameof(ProductResponse.Price)" Title="@Localizer["product_prix"]" Width="120px" TextAlign="TextAlign.Right">
+                    <Template Context="product">
+                        <span class="grid-cell">@product.Price.FormatAmount()</span>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ProductResponse" Property="@nameof(ProductResponse.DiscountPourcentage)" Title="@Localizer["product_remise"]" Width="120px" TextAlign="TextAlign.Right">
+                    <Template Context="product">
+                        <span class="grid-cell">@($"{product.DiscountPourcentage:N2} %")</span>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ProductResponse" Property="@nameof(ProductResponse.PurchasingPrice)" Title="@Localizer["product_prixAchat"]" Width="120px" TextAlign="TextAlign.Right">
+                    <Template Context="product">
+                        <span class="grid-cell">@product.PurchasingPrice.FormatAmount()</span>
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="ProductResponse" Property="@nameof(ProductResponse.StockCalcule)" Title="@Localizer["stock_calcule"]" Width="120px">
@@ -162,37 +219,6 @@
                                            stockValue > 0 ? "stock-badge-orange" : "stock-badge-red";
                             <RadzenBadge BadgeStyle="BadgeStyle.Info" Variant="Variant.Flat" Size="BadgeSize.Medium" Class="@badgeClass">
                                 @stockValue
-                            </RadzenBadge>
-                        }
-                        else
-                        {
-                            <span class="grid-cell">-</span>
-                        }
-                    </Template>
-                </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="ProductResponse" Property="@nameof(ProductResponse.QteEnReparation)" Title="En réparation" Width="120px">
-                    <Template Context="product">
-                        @if (product.QteEnReparation.HasValue && product.QteEnReparation.Value > 0)
-                        {
-                            <RadzenBadge BadgeStyle="BadgeStyle.Warning" Variant="Variant.Flat" Size="BadgeSize.Medium">
-                                @product.QteEnReparation.Value
-                            </RadzenBadge>
-                        }
-                        else
-                        {
-                            <span class="grid-cell">-</span>
-                        }
-                    </Template>
-                </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="ProductResponse" Property="@nameof(ProductResponse.StockReel)" Title="Stock réel" Width="120px">
-                    <Template Context="product">
-                        @if (product.StockReel.HasValue)
-                        {
-                            var stockReel = product.StockReel.Value;
-                            var badgeClass = stockReel > product.QteLimit ? "stock-badge-green" : 
-                                           stockReel > 0 ? "stock-badge-orange" : "stock-badge-red";
-                            <RadzenBadge BadgeStyle="BadgeStyle.Info" Variant="Variant.Flat" Size="BadgeSize.Medium" Class="@badgeClass">
-                                @stockReel
                             </RadzenBadge>
                         }
                         else
@@ -243,7 +269,7 @@
     .products-container {
         padding: 0 1.25rem 1.25rem 1.25rem;
         padding-top: 0 !important;
-        max-width: 1280px;
+        max-width: 95%;
         margin: 0 auto 1rem auto;
         margin-top: 0 !important;
     }
@@ -557,6 +583,7 @@
     private bool? selectedVisibility;
     private int? stockCalculeMin;
     private int? stockCalculeMax;
+    private bool showImages = false;
 
     private List<SousFamilleProduitResponse> filteredSubFamilies => 
         selectedFamilleId.HasValue 

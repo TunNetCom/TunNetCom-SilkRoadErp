@@ -55,15 +55,27 @@ public partial class AccountingYear
     {
         this.Year = year;
         this.IsActive = isActive;
-        this.Timbre = timbre;
-        this.PourcentageFodec = pourcentageFodec;
-        this.VatRate0 = vatRate0;
-        this.VatRate7 = vatRate7;
-        this.VatRate13 = vatRate13;
-        this.VatRate19 = vatRate19;
-        this.PourcentageRetenu = pourcentageRetenu;
-        this.VatAmount = vatAmount;
-        this.SeuilRetenueSource = seuilRetenueSource;
+        
+        // Ne mettre à jour que les valeurs qui sont explicitement fournies (non-null)
+        // Cela permet de faire des mises à jour partielles sans vider les valeurs existantes
+        if (timbre.HasValue)
+            this.Timbre = timbre;
+        if (pourcentageFodec.HasValue)
+            this.PourcentageFodec = pourcentageFodec;
+        if (vatRate0.HasValue)
+            this.VatRate0 = vatRate0;
+        if (vatRate7.HasValue)
+            this.VatRate7 = vatRate7;
+        if (vatRate13.HasValue)
+            this.VatRate13 = vatRate13;
+        if (vatRate19.HasValue)
+            this.VatRate19 = vatRate19;
+        if (pourcentageRetenu.HasValue)
+            this.PourcentageRetenu = pourcentageRetenu;
+        if (vatAmount.HasValue)
+            this.VatAmount = vatAmount;
+        if (seuilRetenueSource.HasValue)
+            this.SeuilRetenueSource = seuilRetenueSource;
     }
 
     public void SetActive()

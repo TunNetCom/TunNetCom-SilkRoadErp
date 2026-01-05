@@ -28,6 +28,7 @@ public class UpdateAppParametersEndpoint : ICarterModule
                         AdresseRetenu: request.AdresseRetenu,
                         DiscountPercentage: request.DiscountPercentage,
                         BloquerVenteStockInsuffisant: request.BloquerVenteStockInsuffisant,
+                        BloquerBlSansFacture: request.BloquerBlSansFacture,
                         DecimalPlaces: request.DecimalPlaces,
                         Rib: request.Rib);
 

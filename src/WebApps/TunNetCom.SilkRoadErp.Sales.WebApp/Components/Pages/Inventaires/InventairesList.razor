@@ -9,6 +9,7 @@
 @using BlazorBootstrap
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Tags
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @inject IInventaireApiClient inventaireService
 @inject IAccountingYearApiClient accountingYearService
 @inject ITagsApiClient TagsService
@@ -61,6 +62,11 @@
                 <RadzenDataGridColumn TItem="InventaireResponse" Property="@nameof(InventaireResponse.Description)" Title="@Localizer["description"]" Width="200px" />
                 <RadzenDataGridColumn TItem="InventaireResponse" Property="@nameof(InventaireResponse.StatutLibelle)" Title="@Localizer["statut"]" Width="120px" />
                 <RadzenDataGridColumn TItem="InventaireResponse" Property="@nameof(InventaireResponse.AccountingYear)" Title="@Localizer["accounting_year"]" Width="120px" />
+                <RadzenDataGridColumn TItem="InventaireResponse" Property="@nameof(InventaireResponse.TotalHt)" Title="@Localizer["total_ht"]" Width="150px">
+                    <Template Context="inventaire">
+                        @inventaire.TotalHt.FormatAmount()
+                    </Template>
+                </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="InventaireResponse" Title="Tags" Width="250px" Sortable="false" Filterable="false">
                     <Template Context="inventaire">
                         <TagSelector DocumentType="Inventaire" 
@@ -95,6 +101,20 @@
                 </RadzenDataGridColumn>
             </Columns>
         </RadzenDataGrid>
+        
+        @if (inventaires.Any())
+        {
+            <RadzenCard class="summary-card" Variant="Variant.Outlined">
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" 
+                             Gap="1.5rem" 
+                             JustifyContent="JustifyContent.End"
+                             class="summary-stack">
+                    <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                        <strong>@Localizer["total_ht"]:</strong> @GetGrandTotal().FormatAmount()
+                    </RadzenText>
+                </RadzenStack>
+            </RadzenCard>
+        }
     </div>
 </div>
 
@@ -133,6 +153,22 @@
         padding: 0.75rem 1rem;
         margin-bottom: 1.25rem;
         font-size: 0.95rem;
+    }
+
+    .summary-card {
+        width: 100%;
+        padding: 8px 12px;
+        margin-top: 1rem;
+    }
+
+    .summary-stack {
+        flex-direction: row;
+        gap: 0.75rem;
+        align-items: center;
+    }
+
+    .summary-text {
+        font-size: 14px;
     }
 </style>
 
@@ -279,6 +315,11 @@
             _logger?.LogError(ex, "Error closing inventaire");
             ToastService.Notify(new(ToastType.Danger, "Erreur lors de la clôture"));
         }
+    }
+
+    private decimal GetGrandTotal()
+    {
+        return inventaires.Sum(i => i.TotalHt);
     }
 
     [Inject] private ILogger<InventairesList>? _logger { get; set; }
