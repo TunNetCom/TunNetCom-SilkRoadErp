@@ -80,13 +80,17 @@ stages:
       displayName: 'Build API Docker Image'
 
     # -----------------------------
-    # Push API
+    # Tag and Push API (both versioned and latest tags)
     # -----------------------------
     - script: |
         set -e
-        echo "📤 Pushing API Docker image: $(dockerRepository):$(apiTag)"
+        echo "🏷️  Tagging API image with latest tag..."
+        docker tag $(dockerRepository):$(apiTag) $(dockerRepository):latest-api
+        echo "📤 Pushing API Docker image with versioned tag: $(dockerRepository):$(apiTag)"
         docker push $(dockerRepository):$(apiTag)
-        echo "✅ API image pushed successfully"
+        echo "📤 Pushing API Docker image with latest tag: $(dockerRepository):latest-api"
+        docker push $(dockerRepository):latest-api
+        echo "✅ API image pushed successfully (both $(apiTag) and latest-api)"
       displayName: 'Push API Docker Image'
 
     # -----------------------------
@@ -107,13 +111,17 @@ stages:
       displayName: 'Build WebApp Docker Image'
 
     # -----------------------------
-    # Push WebApp
+    # Tag and Push WebApp (both versioned and latest tags)
     # -----------------------------
     - script: |
         set -e
-        echo "📤 Pushing WebApp Docker image: $(dockerRepository):$(webappTag)"
+        echo "🏷️  Tagging WebApp image with latest tag..."
+        docker tag $(dockerRepository):$(webappTag) $(dockerRepository):latest-webapp
+        echo "📤 Pushing WebApp Docker image with versioned tag: $(dockerRepository):$(webappTag)"
         docker push $(dockerRepository):$(webappTag)
-        echo "✅ WebApp image pushed successfully"
+        echo "📤 Pushing WebApp Docker image with latest tag: $(dockerRepository):latest-webapp"
+        docker push $(dockerRepository):latest-webapp
+        echo "✅ WebApp image pushed successfully (both $(webappTag) and latest-webapp)"
       displayName: 'Push WebApp Docker Image'
 
     # ============================================================

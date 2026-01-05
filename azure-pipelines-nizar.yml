@@ -55,7 +55,7 @@ stages:
         Connection_String_Nizar: $(Connection_String_Nizar)
 
     # --------------------------------------------------
-    # 2️⃣ Apply Kubernetes Manifests (FIRST - before forcing refresh)
+    # 2️⃣ Apply Kubernetes Manifests
     # --------------------------------------------------
     - script: |
         echo "🚀 Applying Kubernetes manifests"
@@ -64,7 +64,32 @@ stages:
       displayName: 'Apply Manifests'
 
     # --------------------------------------------------
-    # 3️⃣ Force Image Refresh (CRITICAL STEP)
+    # 3️⃣ Update Deployment Images to Latest Tags
+    # --------------------------------------------------
+    - script: |
+        echo "🔄 Updating deployment images to latest tags (this forces fresh image pull)..."
+        
+        echo "📝 Setting API image to: tunnetcom/silkroad:latest-api"
+        kubectl set image deployment/$(deploymentApiName) \
+          api=tunnetcom/silkroad:latest-api \
+          -n $(kubeNamespace)
+        
+        echo "📝 Setting WebApp image to: tunnetcom/silkroad:latest-webapp"
+        kubectl set image deployment/$(deploymentWebappName) \
+          webapp=tunnetcom/silkroad:latest-webapp \
+          -n $(kubeNamespace)
+        
+        echo "✅ Image tags updated in deployments"
+        
+        # Verify the changes
+        echo ""
+        echo "=== Verification: Current Deployment Images ==="
+        kubectl get deployment $(deploymentApiName) -n $(kubeNamespace) -o jsonpath='{.spec.template.spec.containers[0].image}' && echo ""
+        kubectl get deployment $(deploymentWebappName) -n $(kubeNamespace) -o jsonpath='{.spec.template.spec.containers[0].image}' && echo ""
+      displayName: 'Update Deployment Images'
+
+    # --------------------------------------------------
+    # 4️⃣ Force Image Refresh (CRITICAL STEP)
     # --------------------------------------------------
     - script: |
         echo "🔄 Forcing rollout to pull latest images"
@@ -98,7 +123,7 @@ stages:
       displayName: 'Force Image Refresh'
 
     # --------------------------------------------------
-    # 4️⃣ Wait for Rollout Completion
+    # 5️⃣ Wait for Rollout Completion
     # --------------------------------------------------
     - script: |
         echo "⏳ Waiting for API rollout to complete..."
@@ -134,7 +159,7 @@ stages:
       displayName: 'Wait for Rollout'
 
     # --------------------------------------------------
-    # 5️⃣ Check for Image Pull Errors
+    # 6️⃣ Check for Image Pull Errors
     # --------------------------------------------------
     - script: |
         echo "🔍 Checking for image pull errors..."
@@ -159,7 +184,7 @@ stages:
       continueOnError: true
 
     # --------------------------------------------------
-    # 6️⃣ Verify Image Pull and Deployment
+    # 7️⃣ Verify Image Pull and Deployment
     # --------------------------------------------------
     - script: |
         echo "🔍 Verifying deployed images and pod status"
@@ -208,7 +233,7 @@ stages:
       continueOnError: true
 
     # --------------------------------------------------
-    # 7️⃣ Final Status
+    # 8️⃣ Final Status
     # --------------------------------------------------
     - script: |
         echo "✅ Deployment completed successfully"
