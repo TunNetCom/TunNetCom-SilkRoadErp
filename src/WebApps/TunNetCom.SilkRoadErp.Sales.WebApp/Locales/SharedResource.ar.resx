@@ -348,6 +348,9 @@
   <data name="last_month" xml:space="preserve">
     <value>الشهر السابق</value>
   </data>
+  <data name="current_year" xml:space="preserve">
+    <value>السنة الحالية</value>
+  </data>
   <data name="custom_period" xml:space="preserve">
     <value>فترة مخصصة</value>
   </data>

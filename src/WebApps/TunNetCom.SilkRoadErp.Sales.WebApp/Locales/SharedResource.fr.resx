@@ -348,6 +348,9 @@
   <data name="last_month" xml:space="preserve">
     <value>Mois précédent</value>
   </data>
+  <data name="current_year" xml:space="preserve">
+    <value>Année actuelle</value>
+  </data>
   <data name="custom_period" xml:space="preserve">
     <value>Période personnalisée</value>
   </data>
