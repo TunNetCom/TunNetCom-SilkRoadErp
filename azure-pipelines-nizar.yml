@@ -6,7 +6,7 @@ pool:
   name: OnPremAgents
 
 variables:
-- group: silkroad-prod   # <-- the variable group where Connection_String_Nizar is defined
+- group: silkroad-prod   # Contains Connection_String_Nizar
 - name: kubeNamespace
   value: silkroad-prod-nizar
 - name: deploymentApiName
@@ -16,7 +16,6 @@ variables:
 - name: manifestPath
   value: src/deployments/prod-deployment-nizar.yaml
 
-
 stages:
 - stage: Deploy
   displayName: Deploy to Nizar Kubernetes
@@ -25,18 +24,18 @@ stages:
     displayName: K8s Deployment
     steps:
 
-    # -----------------------------
-    # 0️⃣ Check Cluster Info
-    # -----------------------------
+    # --------------------------------------------------
+    # 0️⃣ Check Cluster Access
+    # --------------------------------------------------
     - script: |
-        echo "🔍 Cluster info"
+        echo "🔍 Checking cluster access"
         kubectl version --client
         kubectl cluster-info
       displayName: 'Check Kubernetes Cluster'
 
-    # -----------------------------
-    # 1️⃣ Ensure DB Secret
-    # -----------------------------
+    # --------------------------------------------------
+    # 1️⃣ Ensure DB Connection Secret
+    # --------------------------------------------------
     - script: |
         echo "🔐 Ensuring DB connection secret exists"
 
@@ -55,56 +54,188 @@ stages:
       env:
         Connection_String_Nizar: $(Connection_String_Nizar)
 
-    # -----------------------------
-    # 2️⃣ Force Rollout by Deleting Old Pods
-    # -----------------------------
+    # --------------------------------------------------
+    # 2️⃣ Apply Kubernetes Manifests
+    # --------------------------------------------------
     - script: |
-        echo "🧹 Forcing rollout by deleting pods"
-
-        kubectl delete pods -n $(kubeNamespace) \
-          -l app=$(deploymentApiName) --ignore-not-found
-
-        kubectl delete pods -n $(kubeNamespace) \
-          -l app=$(deploymentWebappName) --ignore-not-found
-
-        sleep 10
-      displayName: 'Force Rollout'
-
-    # -----------------------------
-    # 3️⃣ Apply Kubernetes Manifests
-    # -----------------------------
-    - script: |
-        echo "🚀 Applying manifests"
-        ls -lah $(manifestPath)
+        echo "🚀 Applying Kubernetes manifests"
         kubectl apply -f $(manifestPath)
+        echo "✅ Manifests applied"
       displayName: 'Apply Manifests'
 
-    # -----------------------------
-    # 4️⃣ Wait for Deployment Rollout
-    # -----------------------------
+    # --------------------------------------------------
+    # 3️⃣ Update Deployment Images to Latest Tags
+    # --------------------------------------------------
     - script: |
-        echo "⏳ Waiting for rollout"
-        kubectl rollout status deployment/$(deploymentApiName) \
-          -n $(kubeNamespace) --timeout=180s
+        echo "🔄 Updating deployment images to latest tags (this forces fresh image pull)..."
+        
+        echo "📝 Setting API image to: tunnetcom/silkroad:latest-api"
+        kubectl set image deployment/$(deploymentApiName) \
+          api=tunnetcom/silkroad:latest-api \
+          -n $(kubeNamespace)
+        
+        echo "📝 Setting WebApp image to: tunnetcom/silkroad:latest-webapp"
+        kubectl set image deployment/$(deploymentWebappName) \
+          webapp=tunnetcom/silkroad:latest-webapp \
+          -n $(kubeNamespace)
+        
+        echo "✅ Image tags updated in deployments"
+        
+        # Verify the changes
+        echo ""
+        echo "=== Verification: Current Deployment Images ==="
+        kubectl get deployment $(deploymentApiName) -n $(kubeNamespace) -o jsonpath='{.spec.template.spec.containers[0].image}' && echo ""
+        kubectl get deployment $(deploymentWebappName) -n $(kubeNamespace) -o jsonpath='{.spec.template.spec.containers[0].image}' && echo ""
+      displayName: 'Update Deployment Images'
 
+    # --------------------------------------------------
+    # 4️⃣ Force Image Refresh (CRITICAL STEP)
+    # --------------------------------------------------
+    - script: |
+        echo "🔄 Forcing rollout to pull latest images"
+        
+        # Method 1: Use kubectl rollout restart (most reliable)
+        echo "🔄 Restarting API deployment..."
+        kubectl rollout restart deployment/$(deploymentApiName) -n $(kubeNamespace)
+        
+        echo "🔄 Restarting WebApp deployment..."
+        kubectl rollout restart deployment/$(deploymentWebappName) -n $(kubeNamespace)
+        
+        # Method 2: Also patch with unique annotation to force pod template change
+        TIMESTAMP=$(date +%s)
+        echo "📝 Patching deployments with build annotations (BuildId: $(Build.BuildId), Timestamp: $TIMESTAMP)"
+        
+        kubectl patch deployment $(deploymentApiName) \
+          -n $(kubeNamespace) \
+          -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"ci-build\":\"$(Build.BuildId)\",\"force-image-pull\":\"$(Build.BuildId)-$TIMESTAMP\",\"deployment.kubernetes.io/revision\":null}}}}}"
+        
+        kubectl patch deployment $(deploymentWebappName) \
+          -n $(kubeNamespace) \
+          -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"ci-build\":\"$(Build.BuildId)\",\"force-image-pull\":\"$(Build.BuildId)-$TIMESTAMP\",\"deployment.kubernetes.io/revision\":null}}}}}"
+        
+        # Method 3: Delete existing pods to ensure fresh start
+        echo "🗑️  Deleting existing pods to force fresh image pull..."
+        kubectl delete pods -n $(kubeNamespace) -l app=silkroad-api-nizar --ignore-not-found=true || true
+        kubectl delete pods -n $(kubeNamespace) -l app=silkroad-webapp-nizar --ignore-not-found=true || true
+
+        echo "⏳ Waiting for pods to start terminating..."
+        sleep 10
+      displayName: 'Force Image Refresh'
+
+    # --------------------------------------------------
+    # 5️⃣ Wait for Rollout Completion
+    # --------------------------------------------------
+    - script: |
+        echo "⏳ Waiting for API rollout to complete..."
+        kubectl rollout status deployment/$(deploymentApiName) \
+          -n $(kubeNamespace) --timeout=300s
+        
+        if [ $? -eq 0 ]; then
+          echo "✅ API rollout completed successfully"
+        else
+          echo "❌ API rollout failed or timed out"
+          echo "Checking rollout history..."
+          kubectl rollout history deployment/$(deploymentApiName) -n $(kubeNamespace)
+          exit 1
+        fi
+
+        echo ""
+        echo "⏳ Waiting for WebApp rollout to complete..."
         kubectl rollout status deployment/$(deploymentWebappName) \
-          -n $(kubeNamespace) --timeout=180s
+          -n $(kubeNamespace) --timeout=300s
+        
+        if [ $? -eq 0 ]; then
+          echo "✅ WebApp rollout completed successfully"
+        else
+          echo "❌ WebApp rollout failed or timed out"
+          echo "Checking rollout history..."
+          kubectl rollout history deployment/$(deploymentWebappName) -n $(kubeNamespace)
+          exit 1
+        fi
+        
+        echo ""
+        echo "⏳ Waiting additional 10 seconds for pods to fully initialize..."
+        sleep 10
       displayName: 'Wait for Rollout'
 
-    # -----------------------------
-    # 5️⃣ Verify Images
-    # -----------------------------
+    # --------------------------------------------------
+    # 6️⃣ Check for Image Pull Errors
+    # --------------------------------------------------
     - script: |
-        echo "🔍 Verifying images"
+        echo "🔍 Checking for image pull errors..."
+        echo ""
+        echo "=== Recent Events (last 20) ==="
+        kubectl get events -n $(kubeNamespace) --sort-by='.lastTimestamp' | tail -20
+        
+        echo ""
+        echo "=== API Pod Events ==="
+        API_POD=$(kubectl get pods -n $(kubeNamespace) -l app=silkroad-api-nizar -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+        if [ -n "$API_POD" ]; then
+          kubectl describe pod $API_POD -n $(kubeNamespace) | grep -A 10 "Events:" || echo "No events found"
+        fi
+        
+        echo ""
+        echo "=== WebApp Pod Events ==="
+        WEBAPP_POD=$(kubectl get pods -n $(kubeNamespace) -l app=silkroad-webapp-nizar -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+        if [ -n "$WEBAPP_POD" ]; then
+          kubectl describe pod $WEBAPP_POD -n $(kubeNamespace) | grep -A 10 "Events:" || echo "No events found"
+        fi
+      displayName: 'Check Image Pull Errors'
+      continueOnError: true
+
+    # --------------------------------------------------
+    # 7️⃣ Verify Image Pull and Deployment
+    # --------------------------------------------------
+    - script: |
+        echo "🔍 Verifying deployed images and pod status"
+        echo ""
+        echo "=== Current Pod Status ==="
         kubectl get pods -n $(kubeNamespace) -o wide
-        kubectl describe pod -n $(kubeNamespace) | grep -A 5 Image
+        
+        echo ""
+        echo "=== API Deployment Details ==="
+        API_POD=$(kubectl get pods -n $(kubeNamespace) -l app=silkroad-api-nizar -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+        if [ -n "$API_POD" ]; then
+          echo "Pod Name: $API_POD"
+          echo "Image: $(kubectl get pod $API_POD -n $(kubeNamespace) -o jsonpath='{.spec.containers[0].image}')"
+          echo "Image Pull Policy: $(kubectl get pod $API_POD -n $(kubeNamespace) -o jsonpath='{.spec.containers[0].imagePullPolicy}')"
+          echo "Image ID: $(kubectl get pod $API_POD -n $(kubeNamespace) -o jsonpath='{.status.containerStatuses[0].imageID}')"
+          echo "Pod Status: $(kubectl get pod $API_POD -n $(kubeNamespace) -o jsonpath='{.status.phase}')"
+          echo "Ready: $(kubectl get pod $API_POD -n $(kubeNamespace) -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}')"
+          echo "Created: $(kubectl get pod $API_POD -n $(kubeNamespace) -o jsonpath='{.metadata.creationTimestamp}')"
+          echo ""
+        else
+          echo "❌ No API pod found!"
+        fi
+
+        echo "=== WebApp Deployment Details ==="
+        WEBAPP_POD=$(kubectl get pods -n $(kubeNamespace) -l app=silkroad-webapp-nizar -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+        if [ -n "$WEBAPP_POD" ]; then
+          echo "Pod Name: $WEBAPP_POD"
+          echo "Image: $(kubectl get pod $WEBAPP_POD -n $(kubeNamespace) -o jsonpath='{.spec.containers[0].image}')"
+          echo "Image Pull Policy: $(kubectl get pod $WEBAPP_POD -n $(kubeNamespace) -o jsonpath='{.spec.containers[0].imagePullPolicy}')"
+          echo "Image ID: $(kubectl get pod $WEBAPP_POD -n $(kubeNamespace) -o jsonpath='{.status.containerStatuses[0].imageID}')"
+          echo "Pod Status: $(kubectl get pod $WEBAPP_POD -n $(kubeNamespace) -o jsonpath='{.status.phase}')"
+          echo "Ready: $(kubectl get pod $WEBAPP_POD -n $(kubeNamespace) -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}')"
+          echo "Created: $(kubectl get pod $WEBAPP_POD -n $(kubeNamespace) -o jsonpath='{.metadata.creationTimestamp}')"
+          echo ""
+        else
+          echo "❌ No WebApp pod found!"
+        fi
+        
+        echo "=== Deployment Annotations ==="
+        echo "API Deployment Annotations:"
+        kubectl get deployment $(deploymentApiName) -n $(kubeNamespace) -o jsonpath='{.spec.template.metadata.annotations}' || echo "Could not get annotations"
+        echo ""
+        echo "WebApp Deployment Annotations:"
+        kubectl get deployment $(deploymentWebappName) -n $(kubeNamespace) -o jsonpath='{.spec.template.metadata.annotations}' || echo "Could not get annotations"
       displayName: 'Verify Image Pull'
       continueOnError: true
 
-    # -----------------------------
-    # 6️⃣ Final Status
-    # -----------------------------
+    # --------------------------------------------------
+    # 8️⃣ Final Status
+    # --------------------------------------------------
     - script: |
-        echo "✅ Deployment complete"
+        echo "✅ Deployment completed successfully"
         kubectl get all -n $(kubeNamespace)
       displayName: 'Final Status'
