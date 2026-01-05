@@ -135,131 +135,58 @@ public static class AmountHelper
                     case 1:
                         resultat += "cent ";
                         break;
-                    case 2:
-                        if ((dizaine == 0) && (unite == 0)) resultat += "deux cents ";
-                        else resultat += "deux cent ";
-                        break;
-                    case 3:
-                        if ((dizaine == 0) && (unite == 0)) resultat += "trois cents ";
-                        else resultat += "trois cent ";
-                        break;
-                    case 4:
-                        if ((dizaine == 0) && (unite == 0)) resultat += "quatre cents ";
-                        else resultat += "quatre cent ";
-                        break;
-                    case 5:
-                        if ((dizaine == 0) && (unite == 0)) resultat += "cinq cents ";
-                        else resultat += "cinq cent ";
-                        break;
-                    case 6:
-                        if ((dizaine == 0) && (unite == 0)) resultat += "six cents ";
-                        else resultat += "six cent ";
-                        break;
-                    case 7:
-                        if ((dizaine == 0) && (unite == 0)) resultat += "sept cents ";
-                        else resultat += "sept cent ";
-                        break;
-                    case 8:
-                        if ((dizaine == 0) && (unite == 0)) resultat += "huit cents ";
-                        else resultat += "huit cent ";
-                        break;
-                    case 9:
-                        if ((dizaine == 0) && (unite == 0)) resultat += "neuf cents ";
-                        else resultat += "neuf cent ";
+                    default:
+                        resultat += ConvertUnitsToWords(centaine) + " cent ";
+                        if (dizaine == 0 && unite == 0) resultat = resultat.TrimEnd() + "s ";
                         break;
                 }
 
-                // Dizaines
-                dix = false;
-                switch (dizaine)
+                // Dizaines et Unités
+                if (dizaine == 0 && unite == 0)
                 {
-                    case 0:
-                        break;
-                    case 1:
-                        dix = true;
-                        break;
-                    case 2:
-                        resultat += "vingt ";
-                        break;
-                    case 3:
-                        resultat += "trente ";
-                        break;
-                    case 4:
-                        resultat += "quarante ";
-                        break;
-                    case 5:
-                        resultat += "cinquante ";
-                        break;
-                    case 6:
-                        resultat += "soixante ";
-                        break;
-                    case 7:
-                        dix = true;
-                        resultat += "soixante ";
-                        break;
-                    case 8:
-                        resultat += "quatre-vingt ";
-                        break;
-                    case 9:
-                        dix = true;
-                        resultat += "quatre-vingt ";
-                        break;
+                    // Rien à ajouter
                 }
-
-                // Unités
-                switch (unite)
+                else if (dizaine == 0)
                 {
-                    case 0:
-                        if (dix) resultat += "dix ";
-                        break;
-                    case 1:
-                        if (dix) resultat += "onze ";
-                        else resultat += "un ";
-                        break;
-                    case 2:
-                        if (dix) resultat += "douze ";
-                        else resultat += "deux ";
-                        break;
-                    case 3:
-                        if (dix) resultat += "treize ";
-                        else resultat += "trois ";
-                        break;
-                    case 4:
-                        if (dix) resultat += "quatorze ";
-                        else resultat += "quatre ";
-                        break;
-                    case 5:
-                        if (dix) resultat += "quinze ";
-                        else resultat += "cinq ";
-                        break;
-                    case 6:
-                        if (dix) resultat += "seize ";
-                        else resultat += "six ";
-                        break;
-                    case 7:
-                        if (dix) resultat += "dix-sept ";
-                        else resultat += "sept ";
-                        break;
-                    case 8:
-                        if (dix) resultat += "dix-huit ";
-                        else resultat += "huit ";
-                        break;
-                    case 9:
-                        if (dix) resultat += "dix-neuf ";
-                        else resultat += "neuf ";
-                        break;
+                    resultat += ConvertUnitsToWords(unite) + " ";
+                }
+                else if (dizaine == 1)
+                {
+                    resultat += ConvertTeensToWords(unite) + " ";
+                }
+                else if (dizaine == 7)
+                {
+                    resultat += "soixante-";
+                    resultat += ConvertTeensToWords(unite) + " ";
+                }
+                else if (dizaine == 9)
+                {
+                    resultat += "quatre-vingt-";
+                    resultat += ConvertTeensToWords(unite) + " ";
+                }
+                else
+                {
+                    string d = ConvertDizainesToWords(dizaine);
+                    if (unite == 1 && dizaine != 8)
+                        resultat += d + " et un ";
+                    else if (unite == 0)
+                        resultat += d + (dizaine == 8 ? "s " : " ");
+                    else
+                        resultat += d + "-" + ConvertUnitsToWords(unite) + " ";
                 }
 
-                // Ajouter les unités de grandeur (millions, milles)
+                // Ajouter les unités de grandeur (milliards, millions, milliers, puis les unités)
                 switch (i)
                 {
                     case 1000000000:
-                        if (y > 1) resultat += "millions ";
-                        else resultat += "million ";
+                        resultat = resultat.TrimEnd() + (y > 1 ? " milliards " : " milliard ");
                         break;
                     case 1000000:
-                        if (y > 1) resultat += "milles ";
-                        else resultat += "mille ";
+                        resultat = resultat.TrimEnd() + (y > 1 ? " millions " : " million ");
+                        break;
+                    case 1000:
+                        if (y == 1) resultat = "mille ";
+                        else resultat = resultat.TrimEnd() + " mille ";
                         break;
                 }
             }
@@ -267,6 +194,55 @@ public static class AmountHelper
             reste -= y * i;
         }
 
-        return resultat;
+        return resultat.Trim();
+    }
+
+    private static string ConvertUnitsToWords(int unit)
+    {
+        return unit switch
+        {
+            1 => "un",
+            2 => "deux",
+            3 => "trois",
+            4 => "quatre",
+            5 => "cinq",
+            6 => "six",
+            7 => "sept",
+            8 => "huit",
+            9 => "neuf",
+            _ => ""
+        };
+    }
+
+    private static string ConvertDizainesToWords(int dizaine)
+    {
+        return dizaine switch
+        {
+            2 => "vingt",
+            3 => "trente",
+            4 => "quarante",
+            5 => "cinquante",
+            6 => "soixante",
+            8 => "quatre-vingt",
+            _ => ""
+        };
+    }
+
+    private static string ConvertTeensToWords(int unit)
+    {
+        return unit switch
+        {
+            0 => "dix",
+            1 => "onze",
+            2 => "douze",
+            3 => "treize",
+            4 => "quatorze",
+            5 => "quinze",
+            6 => "seize",
+            7 => "dix-sept",
+            8 => "dix-huit",
+            9 => "dix-neuf",
+            _ => ""
+        };
     }
 }

@@ -75,4 +75,19 @@ public class GetAppParametersResponse
 
     [JsonPropertyName("rib")]
     public string? Rib { get; set; }
+
+    [JsonPropertyName("ribCodeEtab")]
+    public string? RibCodeEtab { get; set; }
+
+    [JsonPropertyName("ribCodeAgence")]
+    public string? RibCodeAgence { get; set; }
+
+    [JsonPropertyName("ribNumeroCompte")]
+    public string? RibNumeroCompte { get; set; }
+
+    [JsonPropertyName("ribCle")]
+    public string? RibCle { get; set; }
+
+    [JsonPropertyName("banqueEntreprise")]
+    public string? BanqueEntreprise { get; set; }
 }

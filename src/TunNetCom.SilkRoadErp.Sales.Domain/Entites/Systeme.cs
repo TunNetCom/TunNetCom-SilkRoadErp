@@ -23,7 +23,12 @@ public partial class Systeme
         bool bloquerVenteStockInsuffisant,
         bool bloquerBlSansFacture,
         int decimalPlaces,
-        string? rib)
+        string? rib,
+        string? ribCodeEtab,
+        string? ribCodeAgence,
+        string? ribNumeroCompte,
+        string? ribCle,
+        string? banqueEntreprise)
     {
         this.NomSociete = nomSociete;
         this.Adresse = adresse;
@@ -40,6 +45,11 @@ public partial class Systeme
         this.BloquerBlSansFacture = bloquerBlSansFacture;
         this.DecimalPlaces = decimalPlaces;
         this.Rib = rib;
+        this.RibCodeEtab = ribCodeEtab;
+        this.RibCodeAgence = ribCodeAgence;
+        this.RibNumeroCompte = ribNumeroCompte;
+        this.RibCle = ribCle;
+        this.BanqueEntreprise = banqueEntreprise;
     }
     public int Id { get; set; }
 
@@ -73,5 +83,15 @@ public partial class Systeme
     public int DecimalPlaces { get; set; } = 3;
 
     public string? Rib { get; set; }
+
+    public string? RibCodeEtab { get; set; }
+
+    public string? RibCodeAgence { get; set; }
+
+    public string? RibNumeroCompte { get; set; }
+
+    public string? RibCle { get; set; }
+
+    public string? BanqueEntreprise { get; set; }
 
 }

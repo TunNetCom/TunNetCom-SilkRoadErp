@@ -14,4 +14,9 @@ public record UpdateAppParametersCommand(
     bool? BloquerVenteStockInsuffisant,
     bool? BloquerBlSansFacture,
     int? DecimalPlaces,
-    string? Rib) : IRequest<Result>;
+    string? Rib,
+    string? RibCodeEtab,
+    string? RibCodeAgence,
+    string? RibNumeroCompte,
+    string? RibCle,
+    string? BanqueEntreprise) : IRequest<Result>;

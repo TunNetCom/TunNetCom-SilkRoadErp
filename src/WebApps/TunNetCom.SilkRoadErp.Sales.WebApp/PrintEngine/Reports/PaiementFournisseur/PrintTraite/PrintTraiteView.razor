@@ -47,69 +47,76 @@
         
         /* Ligne 1 - Tunis Haut */
         .lieu-haut {
-            left: 238.2pt;
-            top: 37.3pt;
+            left: 294.9pt;
+            top: 35.9pt;
         }
         
         /* Ligne 2 - Dates */
         .dates-ligne {
-            left: 152.2pt;
-            top: 53.7pt;
+            left: 208.9pt;
+            top: 52.3pt;
             display: flex;
             gap: 46pt; /* 231.0 - 152.2 = 78.8pt total, mais c'est le début des mots */
         }
         
         /* Ligne 3 - Montant Haut Droite */
         .montant-droite {
-            left: 372.8pt;
-            top: 74.5pt;
-            font-weight: bold;
+            left: 429.5pt;
+            top: 78.1pt;
         }
         
-        /* Ligne 4 - RIB */
+        /* Ligne 4 - RIB (Haut) */
         .rib-section {
-            left: 135.3pt;
-            top: 77.1pt;
+            left: 172.0pt;
+            top: 80.7pt;
             display: flex;
-            gap: 15pt;
         }
+        
+        .rib-section .rib-etab { width: 30pt; text-align: center; margin-left: 10pt; }
+        .rib-section .rib-agence { width: 35pt; text-align: center; margin-left: 5pt; }
+        .rib-section .rib-compte { width: 120pt; text-align: center; }
+        .rib-section .rib-cle { width: 25pt; text-align: center; }
         
         /* Ligne 5 - Bénéficiaire et Montant Milieu */
         .beneficiaire {
-            left: 130.6pt;
-            top: 118.5pt;
-            text-decoration: underline;
+            left: 182.3pt;
+            top: 127.1pt;
         }
         
         .montant-centre {
-            left: 372.8pt;
-            top: 118.5pt;
+            left: 429.5pt;
+            top: 122.1pt;
         }
         
         /* Ligne 6 - Montant en lettres */
         .montant-lettres {
-            left: 57.1pt;
-            top: 139.1pt;
+            left: 63.8pt;
+            top: 145.7pt;
         }
         
         /* Ligne 7 - Lieu et Dates Bas */
         .infos-bas {
-            left: 53.3pt;
-            top: 170.7pt;
+            left: 95.0pt;
+            top: 169.3pt;
             display: flex;
             gap: 20pt;
         }
         
-        /* Ligne 8 - RIB Bas et Adresse */
+        /* Ligne 8 - RIB Bas (Plus étroit) */
         .rib-bas {
-            left: 57.1pt;
-            top: 205.3pt;
+            left: 38.8pt;
+            top: 203.9pt;
+            display: flex;
         }
         
+        .rib-bas .rib-etab { width: 26pt; text-align: center; margin-left: 20pt; }
+        .rib-bas .rib-agence { width: 30pt; text-align: center; margin-left: -3pt; }
+        .rib-bas .rib-compte { width: 115pt; text-align: center; }
+        .rib-bas .rib-cle { width: 22pt; text-align: center; margin-left: 10pt; }
+        
         .adresse {
-            left: 359.4pt;
-            top: 205.3pt;
-            text-decoration: underline;
+            left: 416.1pt;
+            top: 208.9pt;
         }
         
         @@page {
@@ -150,10 +157,10 @@
         
         <!-- Ligne 3: RIB et Montant -->
         <div class="element rib-section">
-            <span>@Model.Tire.RibCodeEtab</span>
-            <span>@Model.Tire.RibCodeAgence</span>
-            <span>@Model.Tire.RibNumeroCompte</span>
-            <span>@Model.Tire.RibCle</span>
+            <span class="rib-etab">@Model.Tire.RibCodeEtab</span>
+            <span class="rib-agence">@Model.Tire.RibCodeAgence</span>
+            <span class="rib-compte">@Model.Tire.RibNumeroCompte</span>
+            <span class="rib-cle">@Model.Tire.RibCle</span>
         </div>
         <div class="element montant-droite">@Model.Montant.ToString("F3", System.Globalization.CultureInfo.InvariantCulture)</div>
         
@@ -173,7 +180,10 @@
         
         <!-- Ligne 7: RIB et Adresse -->
         <div class="element rib-bas">
-            @($"{Model.Tire.RibCodeEtab} {Model.Tire.RibCodeAgence} {Model.Tire.RibNumeroCompte} {Model.Tire.RibCle}")
+            <span class="rib-etab">@Model.Tire.RibCodeEtab</span>
+            <span class="rib-agence">@Model.Tire.RibCodeAgence</span>
+            <span class="rib-compte">@Model.Tire.RibNumeroCompte</span>
+            <span class="rib-cle">@Model.Tire.RibCle</span>
         </div>
         <div class="element adresse">
             @if (Model.Banque != null)
