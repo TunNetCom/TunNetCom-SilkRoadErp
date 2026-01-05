@@ -45,7 +45,6 @@
 
         <RadzenCard Class="products-filters-card">
             <RadzenStack Gap="1rem">
-                <h4 style="margin: 0; font-size: 1.1rem; font-weight: 600;">Filtres</h4>
                 <RadzenRow Gap="1rem" AlignItems="AlignItems.End">
                     <RadzenColumn Size="12" SizeMD="2" SizeLG="2">
                         <RadzenFormField Text="Famille" Style="margin-bottom: 0;">
@@ -110,6 +109,14 @@
                                     Style="width: 100%;" />
                     </RadzenColumn>
                 </RadzenRow>
+                <RadzenRow Gap="1rem" AlignItems="AlignItems.Center">
+                    <RadzenColumn Size="12" SizeMD="3" SizeLG="3">
+                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="10px">
+                            <span style="font-weight: 500;">Afficher images:</span>
+                            <RadzenSwitch @bind-Value="showImages" />
+                        </RadzenStack>
+                    </RadzenColumn>
+                </RadzenRow>
             </RadzenStack>
         </RadzenCard>
 
@@ -140,6 +147,39 @@
                         <RadzenCheckBox Value="@GetSelectedState(product)" ValueChanged="@((bool value) => OnProductSelectionChanged(product, value))" />
                     </Template>
                 </RadzenDataGridColumn>
+                @if (showImages)
+                {
+                    <RadzenDataGridColumn TItem="ProductResponse" Filterable="false" Sortable="false" Width="200px" TextAlign="TextAlign.Center" Title="Images">
+                        <Template Context="product">
+                            <div style="display: flex; gap: 5px; justify-content: center; align-items: center;">
+                                @if (!string.IsNullOrEmpty(product.Image1StoragePath))
+                                {
+                                    <img src="@($"data:image/jpeg;base64,{product.Image1StoragePath}")" 
+                                         alt="@product.Name" 
+                                         style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;" />
+                                }
+                                @if (!string.IsNullOrEmpty(product.Image2StoragePath))
+                                {
+                                    <img src="@($"data:image/jpeg;base64,{product.Image2StoragePath}")" 
+                                         alt="@product.Name" 
+                                         style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;" />
+                                }
+                                @if (!string.IsNullOrEmpty(product.Image3StoragePath))
+                                {
+                                    <img src="@($"data:image/jpeg;base64,{product.Image3StoragePath}")" 
+                                         alt="@product.Name" 
+                                         style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;" />
+                                }
+                                @if (string.IsNullOrEmpty(product.Image1StoragePath) && 
+                                     string.IsNullOrEmpty(product.Image2StoragePath) && 
+                                     string.IsNullOrEmpty(product.Image3StoragePath))
+                                {
+                                    <span class="grid-cell" style="color: #999;">-</span>
+                                }
+                            </div>
+                        </Template>
+                    </RadzenDataGridColumn>
+                }
                 <RadzenDataGridColumn TItem="ProductResponse" Property="@nameof(ProductResponse.Reference)" Title="@Localizer["product_refe"]" Width="200px">
                     <Template Context="product">
                         <span class="grid-cell">@product.Reference</span>
@@ -543,6 +583,7 @@
     private bool? selectedVisibility;
     private int? stockCalculeMin;
     private int? stockCalculeMax;
+    private bool showImages = false;
 
     private List<SousFamilleProduitResponse> filteredSubFamilies => 
         selectedFamilleId.HasValue 
