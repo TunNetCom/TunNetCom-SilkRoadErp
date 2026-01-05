@@ -6,7 +6,7 @@ pool:
   name: OnPremAgents
 
 variables:
-- group: silkroad-prod   # <-- the variable group where Connection_String_Nizar is defined
+- group: silkroad-prod   # Contains Connection_String_Nizar
 - name: kubeNamespace
   value: silkroad-prod-nizar
 - name: deploymentApiName
@@ -16,7 +16,6 @@ variables:
 - name: manifestPath
   value: src/deployments/prod-deployment-nizar.yaml
 
-
 stages:
 - stage: Deploy
   displayName: Deploy to Nizar Kubernetes
@@ -25,18 +24,18 @@ stages:
     displayName: K8s Deployment
     steps:
 
-    # -----------------------------
-    # 0️⃣ Check Cluster Info
-    # -----------------------------
+    # --------------------------------------------------
+    # 0️⃣ Check Cluster Access
+    # --------------------------------------------------
     - script: |
-        echo "🔍 Cluster info"
+        echo "🔍 Checking cluster access"
         kubectl version --client
         kubectl cluster-info
       displayName: 'Check Kubernetes Cluster'
 
-    # -----------------------------
-    # 1️⃣ Ensure DB Secret
-    # -----------------------------
+    # --------------------------------------------------
+    # 1️⃣ Ensure DB Connection Secret
+    # --------------------------------------------------
     - script: |
         echo "🔐 Ensuring DB connection secret exists"
 
@@ -55,56 +54,56 @@ stages:
       env:
         Connection_String_Nizar: $(Connection_String_Nizar)
 
-    # -----------------------------
-    # 2️⃣ Force Rollout by Deleting Old Pods
-    # -----------------------------
+    # --------------------------------------------------
+    # 2️⃣ Force Pod Template Change (CRITICAL STEP)
+    # --------------------------------------------------
     - script: |
-        echo "🧹 Forcing rollout by deleting pods"
+        echo "🔄 Forcing rollout to pull latest images"
 
-        kubectl delete pods -n $(kubeNamespace) \
-          -l app=$(deploymentApiName) --ignore-not-found
+        kubectl patch deployment $(deploymentApiName) \
+          -n $(kubeNamespace) \
+          -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"ci-build\":\"$(Build.BuildId)\"}}}}}"
 
-        kubectl delete pods -n $(kubeNamespace) \
-          -l app=$(deploymentWebappName) --ignore-not-found
+        kubectl patch deployment $(deploymentWebappName) \
+          -n $(kubeNamespace) \
+          -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"ci-build\":\"$(Build.BuildId)\"}}}}}"
+      displayName: 'Force Image Refresh'
 
-        sleep 10
-      displayName: 'Force Rollout'
-
-    # -----------------------------
+    # --------------------------------------------------
     # 3️⃣ Apply Kubernetes Manifests
-    # -----------------------------
+    # --------------------------------------------------
     - script: |
-        echo "🚀 Applying manifests"
-        ls -lah $(manifestPath)
+        echo "🚀 Applying Kubernetes manifests"
         kubectl apply -f $(manifestPath)
       displayName: 'Apply Manifests'
 
-    # -----------------------------
-    # 4️⃣ Wait for Deployment Rollout
-    # -----------------------------
+    # --------------------------------------------------
+    # 4️⃣ Wait for Rollout Completion
+    # --------------------------------------------------
     - script: |
-        echo "⏳ Waiting for rollout"
+        echo "⏳ Waiting for API rollout"
         kubectl rollout status deployment/$(deploymentApiName) \
-          -n $(kubeNamespace) --timeout=180s
+          -n $(kubeNamespace) --timeout=300s
 
+        echo "⏳ Waiting for WebApp rollout"
         kubectl rollout status deployment/$(deploymentWebappName) \
-          -n $(kubeNamespace) --timeout=180s
+          -n $(kubeNamespace) --timeout=300s
       displayName: 'Wait for Rollout'
 
-    # -----------------------------
-    # 5️⃣ Verify Images
-    # -----------------------------
+    # --------------------------------------------------
+    # 5️⃣ Verify Image Digest (Optional but useful)
+    # --------------------------------------------------
     - script: |
-        echo "🔍 Verifying images"
+        echo "🔍 Verifying pulled image digests"
         kubectl get pods -n $(kubeNamespace) -o wide
-        kubectl describe pod -n $(kubeNamespace) | grep -A 5 Image
+        kubectl describe pod -n $(kubeNamespace) | grep -E "Image:|Image ID"
       displayName: 'Verify Image Pull'
       continueOnError: true
 
-    # -----------------------------
+    # --------------------------------------------------
     # 6️⃣ Final Status
-    # -----------------------------
+    # --------------------------------------------------
     - script: |
-        echo "✅ Deployment complete"
+        echo "✅ Deployment completed successfully"
         kubectl get all -n $(kubeNamespace)
       displayName: 'Final Status'
