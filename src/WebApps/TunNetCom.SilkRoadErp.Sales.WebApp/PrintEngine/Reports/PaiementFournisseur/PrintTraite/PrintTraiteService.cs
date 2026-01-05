@@ -179,11 +179,11 @@ public class PrintTraiteService(
 
     private static SilkPdfOptions PreparePrintOptions()
     {
-        // Format A4 paysage (297mm x 210mm) avec contenu redimensionné pour zone de 17.5 x 11.5 pouces
+        // Format A4 portrait (210mm x 297mm)
         var printOptions = new SilkPdfOptions
         {
-            Width = "297mm",
-            Height = "210mm",
+            Width = "210mm",
+            Height = "297mm",
             PreferCSSPageSize = true,
             PrintBackground = true,
             MarginTop = "0mm",
