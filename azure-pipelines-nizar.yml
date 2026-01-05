@@ -47,13 +47,40 @@ stages:
         kubectl apply -f prod-service-nizar.yaml -n $(kubeNamespace)  || true
         kubectl apply -f prod-ingress-nizar.yaml -n $(kubeNamespace)  || true
 
-        echo "🔁 Forcing rollout for Nizar..."
-        kubectl rollout restart deployment/$(deploymentApiName) -n $(kubeNamespace)  || true
-        kubectl rollout restart deployment/$(deploymentWebappName) -n $(kubeNamespace)  || true
+        echo "🔄 Forcing image refresh by patching deployment annotations..."
+        kubectl patch deployment $(deploymentApiName) \
+          -n $(kubeNamespace) \
+          -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"ci-build\":\"$(Build.BuildId)\",\"force-image-pull\":\"$(Build.BuildId)-$(date +%s)\"}}}}}" || true
+
+        kubectl patch deployment $(deploymentWebappName) \
+          -n $(kubeNamespace) \
+          -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"ci-build\":\"$(Build.BuildId)\",\"force-image-pull\":\"$(Build.BuildId)-$(date +%s)\"}}}}}" || true
+
+        echo "🗑️  Deleting existing pods to force fresh image pull..."
+        kubectl delete pods -n $(kubeNamespace) -l app=silkroad-api-nizar --ignore-not-found=true || true
+        kubectl delete pods -n $(kubeNamespace) -l app=silkroad-webapp-nizar --ignore-not-found=true || true
+
+        echo "⏳ Waiting for pods to be recreated and ready..."
+        sleep 10
 
         echo "⏳ Waiting for Nizar rollout..."
         kubectl rollout status deployment/$(deploymentApiName) -n $(kubeNamespace) --timeout=5m || { echo '❌ API rollout failed'; exit 1; }
         kubectl rollout status deployment/$(deploymentWebappName) -n $(kubeNamespace) --timeout=5m || { echo '❌ WebApp rollout failed'; exit 1; }
+
+        echo "🔍 Verifying image digests..."
+        echo "=== API Pod Image ==="
+        API_POD=$(kubectl get pods -n $(kubeNamespace) -l app=silkroad-api-nizar -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+        if [ -n "$API_POD" ]; then
+          kubectl get pod $API_POD -n $(kubeNamespace) -o jsonpath='{.status.containerStatuses[0].imageID}' || echo "Could not get image ID"
+          echo ""
+        fi
+
+        echo "=== WebApp Pod Image ==="
+        WEBAPP_POD=$(kubectl get pods -n $(kubeNamespace) -l app=silkroad-webapp-nizar -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+        if [ -n "$WEBAPP_POD" ]; then
+          kubectl get pod $WEBAPP_POD -n $(kubeNamespace) -o jsonpath='{.status.containerStatuses[0].imageID}' || echo "Could not get image ID"
+          echo ""
+        fi
 
         echo "✅ Successfully deployed SilkRoad to Nizar namespace: $(kubeNamespace)"
         echo "📊 Showing deployment status:"
