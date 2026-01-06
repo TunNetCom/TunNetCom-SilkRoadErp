@@ -143,7 +143,7 @@ public class GetClientsAvecProblemesSoldeQueryHandler(
                     DateDernierDocument = x.DateDernierDocument
                 };
             })
-            .Where(x => x.Solde < 0 || x.NombreQuantitesNonLivrees > 0)
+            .Where(x => x.Solde != 0 || x.NombreQuantitesNonLivrees > 0)
             .ToList();
 
         // Apply pagination manually since we need to filter after calculation
