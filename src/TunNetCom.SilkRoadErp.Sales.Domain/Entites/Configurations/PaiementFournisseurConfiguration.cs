@@ -88,6 +88,8 @@ public partial class PaiementFournisseurConfiguration : IEntityTypeConfiguration
             .HasColumnName("DateModification")
             .HasColumnType("datetime");
 
+        // Performance indexes for list queries
+        // These indexes optimize filtering and sorting in GetPaiementsFournisseurQuery
         entity.HasIndex(e => e.NumeroTransactionBancaire)
             .IsUnique()
             .HasDatabaseName("IX_PaiementFournisseur_NumeroTransactionBancaire");

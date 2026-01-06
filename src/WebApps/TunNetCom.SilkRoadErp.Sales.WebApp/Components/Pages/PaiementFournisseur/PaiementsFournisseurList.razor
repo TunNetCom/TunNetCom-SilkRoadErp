@@ -157,6 +157,20 @@
                 <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Property="MethodePaiement" Title="@Localizer["Methode_Col"]" Width="120px" />
                 <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Property="BanqueNom" Title="@Localizer["Banque_Col"]" Width="150px" />
                 <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Property="NumeroTransactionBancaire" Title="N° Transaction Bancaire" Width="180px" />
+                <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Title="Document" Width="100px" Sortable="false" Filterable="false" TextAlign="TextAlign.Center">
+                    <Template Context="paiement">
+                        @if (paiement.HasDocument)
+                        {
+                            <RadzenButton Icon="attachment" ButtonStyle="ButtonStyle.Light" Variant="Variant.Outlined" Size="ButtonSize.Small"
+                                          Click="@(() => ViewDocument(paiement.Id))"
+                                          Title="Voir le document" />
+                        }
+                        else
+                        {
+                            <span style="color: #999;">-</span>
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Title="Tags" Width="250px" Sortable="false" Filterable="false">
                     <Template Context="paiement">
                         <TagSelector DocumentType="PaiementFournisseur" 
@@ -410,6 +424,13 @@
                 ToastService.Notify(new(ToastType.Danger, $"{Localizer["Erreur_Suppression"]}: {result.Errors.FirstOrDefault()?.Message}"));
             }
         }
+    }
+
+    private void ViewDocument(int paiementId)
+    {
+        // Open the document in a new tab using the existing document endpoint
+        var documentUrl = $"/api/paiement-fournisseur/{paiementId}/document";
+        NavigationManager.NavigateTo(documentUrl, forceLoad: true);
     }
 
     private async Task PrintTraite(int paiementId)
