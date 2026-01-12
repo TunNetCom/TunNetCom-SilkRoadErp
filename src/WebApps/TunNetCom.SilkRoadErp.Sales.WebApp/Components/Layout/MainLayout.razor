@@ -3,11 +3,13 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Services
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Constants
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters
 @inherits LayoutComponentBase
 @inject IStringLocalizer<SharedResource> Localizer
 @inject NavigationManager NavigationManager
 @inject IAuthService AuthService
 @inject ILogger<MainLayout> Logger
+@inject IAppParametersClient AppParametersClient
 
 <RadzenComponents @rendermode="InteractiveAuto" />
 
@@ -17,7 +19,7 @@
             <!-- Left side -->
             <div style="display: flex; align-items: center; gap: 0;">
                 <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
-                <RadzenLabel Text="@Localizer["Silk_Road_ERP"]" Style="margin-left: 10px" />
+                <RadzenLabel Text="@(companyName ?? Localizer["Silk_Road_ERP"])" Style="margin-left: 10px" />
             </div>
 
             <!-- Right side -->
@@ -186,6 +188,7 @@
     bool isLoggingOut = false;
     bool showMenu = false;
     UserInfo? userInfo;
+    string? companyName;
 
     protected override void OnInitialized()
     {
@@ -203,6 +206,7 @@
         {
             // Only load user info after first render when JS interop is available
             await LoadUserInfo();
+            await LoadCompanyName();
             StateHasChanged();
         }
     }
@@ -224,6 +228,34 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "MainLayout: Error loading user info");
+        }
+    }
+
+    private async Task LoadCompanyName()
+    {
+        try
+        {
+            Logger.LogInformation("MainLayout: Loading company name from app parameters");
+            var appParametersResult = await AppParametersClient.GetAppParametersAsync(CancellationToken.None);
+            if (appParametersResult.IsT0)
+            {
+                var appParameters = appParametersResult.AsT0;
+                companyName = appParameters.NomSociete;
+                Logger.LogInformation("MainLayout: Company name loaded: {CompanyName}", companyName);
+            }
+            else
+            {
+                Logger.LogWarning("MainLayout: Failed to load app parameters");
+            }
+        }
+        catch (InvalidOperationException ioEx) when (ioEx.Message.Contains("prerendering") || ioEx.Message.Contains("statically rendered") || ioEx.Message.Contains("JavaScript interop calls cannot be issued"))
+        {
+            // JS interop not available during prerendering - this is expected
+            Logger.LogInformation("MainLayout: Cannot load company name during prerendering. This is expected.");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "MainLayout: Error loading company name");
         }
     }
 
