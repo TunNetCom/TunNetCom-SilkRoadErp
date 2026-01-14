@@ -17,6 +17,8 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.JSInterop
+@using Microsoft.Extensions.Configuration
 @inject NavigationManager NavigationManager
 @inject ITagsApiClient TagsService
 @inject IStringLocalizer<SharedResource> Localizer
@@ -30,15 +32,31 @@
 @inject PrintTraiteService PrintTraiteService
 @inject IPrintService PrintService
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JS
+@inject HttpClient HttpClient
+@inject IConfiguration Configuration
+@inject ILogger<PaiementsFournisseurList> _logger
 
 <div class="paiements-container">
     <div class="paiements-card">
         <div class="paiements-header">
             <h3 class="paiements-title">@Localizer["Paiements_Fournisseurs"]</h3>
-            <RadzenButton Icon="add" Text="@Localizer["Ajouter_Paiement"]"
-                          ButtonStyle="ButtonStyle.Primary"
-                          Click="CreatePaiement"
-                          Class="btn-primary" />
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <RadzenButton Icon="table_chart" Text="Export Excel"
+                              ButtonStyle="ButtonStyle.Success"
+                              Click="@ExportToExcelAsync"
+                              Variant="Variant.Outlined"
+                              Class="btn-export" />
+                <RadzenButton Icon="picture_as_pdf" Text="Imprimer PDF"
+                              ButtonStyle="ButtonStyle.Danger"
+                              Click="@ExportToPdfAsync"
+                              Variant="Variant.Outlined"
+                              Class="btn-export" />
+                <RadzenButton Icon="add" Text="@Localizer["Ajouter_Paiement"]"
+                              ButtonStyle="ButtonStyle.Primary"
+                              Click="CreatePaiement"
+                              Class="btn-primary" />
+            </div>
         </div>
 
         <div class="search-filters">
@@ -142,7 +160,7 @@
                 <p style="font-size: 24px; text-align: center; margin: 2rem;">@Localizer["Aucun_Paiement"]</p>
             </EmptyTemplate>
             <Columns>
-                <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Property="NumeroTransactionBancaire" Title="@Localizer["Numero_Col"]" Width="150px" />
+                <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Property="NumeroTransactionBancaire" Title="@Localizer["Numero_Col"]" Width="150px" Visible="false" />
                 <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Property="FournisseurNom" Title="@Localizer["providers"]" Width="200px" />
                 <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Property="Montant" Title="@Localizer["Montant_Col"]" Width="150px">
                     <Template Context="paiement">
@@ -155,8 +173,8 @@
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Property="MethodePaiement" Title="@Localizer["Methode_Col"]" Width="120px" />
-                <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Property="BanqueNom" Title="@Localizer["Banque_Col"]" Width="150px" />
-                <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Property="NumeroTransactionBancaire" Title="N° Transaction Bancaire" Width="180px" />
+                <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Property="BanqueNom" Title="@Localizer["Banque_Col"]" Width="150px" Visible="false" />
+                <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Property="NumeroTransactionBancaire" Title="N° Transaction Bancaire" Width="180px" Visible="false" />
                 <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Title="Document" Width="100px" Sortable="false" Filterable="false" TextAlign="TextAlign.Center">
                     <Template Context="paiement">
                         @if (paiement.HasDocument)
@@ -495,6 +513,216 @@
                 Severity = NotificationSeverity.Error,
                 Summary = Localizer["Erreur"],
                 Detail = $"Erreur lors de l'impression de la Traite: {ex.Message}"
+            });
+        }
+    }
+
+    private async Task ExportToExcelAsync()
+    {
+        try
+        {
+            _logger.LogInformation("ExportToExcelAsync called");
+
+            var queryParams = new List<string>();
+
+            if (selectedFournisseurId.HasValue)
+            {
+                queryParams.Add($"fournisseurId={selectedFournisseurId.Value}");
+            }
+
+            if (selectedAccountingYearId.HasValue)
+            {
+                queryParams.Add($"accountingYearId={selectedAccountingYearId.Value}");
+            }
+
+            if (selectedDateEcheanceFrom.HasValue)
+            {
+                queryParams.Add($"dateEcheanceFrom={Uri.EscapeDataString(selectedDateEcheanceFrom.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+            }
+
+            if (selectedDateEcheanceTo.HasValue)
+            {
+                queryParams.Add($"dateEcheanceTo={Uri.EscapeDataString(selectedDateEcheanceTo.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+            }
+
+            if (selectedMontantMin.HasValue)
+            {
+                queryParams.Add($"montantMin={selectedMontantMin.Value}");
+            }
+
+            if (selectedMontantMax.HasValue)
+            {
+                queryParams.Add($"montantMax={selectedMontantMax.Value}");
+            }
+
+            if (selectedReglementStatus.HasValue)
+            {
+                bool hasNumeroTransactionBancaire = selectedReglementStatus.Value == 1;
+                queryParams.Add($"hasNumeroTransactionBancaire={hasNumeroTransactionBancaire.ToString().ToLower()}");
+            }
+
+            var baseUrl = Configuration.GetValue<string>("ApiSettings:BaseUrl")
+                ?? throw new InvalidOperationException("ApiSettings:BaseUrl configuration is missing");
+            
+            var url = $"{baseUrl.TrimEnd('/')}/api/paiement-fournisseur/export/excel";
+            if (queryParams.Any())
+            {
+                url += "?" + string.Join("&", queryParams);
+            }
+
+            _logger.LogInformation("Calling Excel export endpoint: {Url}", url);
+
+            var response = await HttpClient.GetAsync(url);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                _logger.LogError("Excel export failed with status {StatusCode}. Response: {ErrorContent}", 
+                    response.StatusCode, errorContent);
+                
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Erreur",
+                    Detail = "Erreur lors de l'export Excel. Veuillez réessayer.",
+                    Duration = 4000
+                });
+                return;
+            }
+
+            var fileBytes = await response.Content.ReadAsByteArrayAsync();
+            var fileName = response.Content.Headers.ContentDisposition?.FileName 
+                ?? $"Paiements_Fournisseurs_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+
+            fileName = fileName.Trim('"');
+
+            var base64String = Convert.ToBase64String(fileBytes);
+            await JS.InvokeVoidAsync("downloadFile", fileName, base64String, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Succès",
+                Detail = "Export Excel réussi.",
+                Duration = 3000
+            });
+
+            _logger.LogInformation("Excel export completed successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error exporting to Excel");
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Erreur",
+                Detail = $"Erreur lors de l'export: {ex.Message}",
+                Duration = 4000
+            });
+        }
+    }
+
+    private async Task ExportToPdfAsync()
+    {
+        try
+        {
+            _logger.LogInformation("ExportToPdfAsync called");
+
+            var queryParams = new List<string>();
+
+            if (selectedFournisseurId.HasValue)
+            {
+                queryParams.Add($"fournisseurId={selectedFournisseurId.Value}");
+            }
+
+            if (selectedAccountingYearId.HasValue)
+            {
+                queryParams.Add($"accountingYearId={selectedAccountingYearId.Value}");
+            }
+
+            if (selectedDateEcheanceFrom.HasValue)
+            {
+                queryParams.Add($"dateEcheanceFrom={Uri.EscapeDataString(selectedDateEcheanceFrom.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+            }
+
+            if (selectedDateEcheanceTo.HasValue)
+            {
+                queryParams.Add($"dateEcheanceTo={Uri.EscapeDataString(selectedDateEcheanceTo.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+            }
+
+            if (selectedMontantMin.HasValue)
+            {
+                queryParams.Add($"montantMin={selectedMontantMin.Value}");
+            }
+
+            if (selectedMontantMax.HasValue)
+            {
+                queryParams.Add($"montantMax={selectedMontantMax.Value}");
+            }
+
+            if (selectedReglementStatus.HasValue)
+            {
+                bool hasNumeroTransactionBancaire = selectedReglementStatus.Value == 1;
+                queryParams.Add($"hasNumeroTransactionBancaire={hasNumeroTransactionBancaire.ToString().ToLower()}");
+            }
+
+            var baseUrl = Configuration.GetValue<string>("ApiSettings:BaseUrl")
+                ?? throw new InvalidOperationException("ApiSettings:BaseUrl configuration is missing");
+            
+            var url = $"{baseUrl.TrimEnd('/')}/api/paiement-fournisseur/export/pdf";
+            if (queryParams.Any())
+            {
+                url += "?" + string.Join("&", queryParams);
+            }
+
+            _logger.LogInformation("Calling PDF export endpoint: {Url}", url);
+
+            var response = await HttpClient.GetAsync(url);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                _logger.LogError("PDF export failed with status {StatusCode}. Response: {ErrorContent}", 
+                    response.StatusCode, errorContent);
+                
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Erreur",
+                    Detail = "Erreur lors de l'export PDF. Veuillez réessayer.",
+                    Duration = 4000
+                });
+                return;
+            }
+
+            var fileBytes = await response.Content.ReadAsByteArrayAsync();
+            var fileName = response.Content.Headers.ContentDisposition?.FileName 
+                ?? $"Paiements_Fournisseurs_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+
+            fileName = fileName.Trim('"');
+
+            var base64String = Convert.ToBase64String(fileBytes);
+            await JS.InvokeVoidAsync("downloadFile", fileName, base64String, "application/pdf");
+
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Succès",
+                Detail = "Export PDF réussi.",
+                Duration = 3000
+            });
+
+            _logger.LogInformation("PDF export completed successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error exporting to PDF");
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Erreur",
+                Detail = $"Erreur lors de l'export: {ex.Message}",
+                Duration = 4000
             });
         }
     }
