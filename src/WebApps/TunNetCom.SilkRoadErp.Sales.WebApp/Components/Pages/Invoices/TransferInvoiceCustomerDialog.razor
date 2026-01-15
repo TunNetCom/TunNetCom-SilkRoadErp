@@ -1,0 +1,89 @@
+@using Radzen
+@using Radzen.Blazor
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Customers
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
+@using TunNetCom.SilkRoadErp.Sales.Contracts
+@inject DialogService DialogService
+@inject IStringLocalizer<SharedResource> Localizer
+@inject ICustomersApiClient CustomersService
+
+<RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
+    <RadzenText TextStyle="TextStyle.Body1">
+        @Localizer["select_target_customer"]
+    </RadzenText>
+    
+    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+        <RadzenLabel Text="@Localizer["customer"]" />
+        <RadzenDropDownDataGrid AllowClear="false"
+                                IsLoading="@isLoadingCustomers"
+                                @bind-Value="@selectedCustomerId"
+                                LoadData="@LoadCustomers"
+                                AllowFiltering="true"
+                                Style="width: 100%;"
+                                Data="@_filteredCustomers"
+                                TextProperty="@nameof(CustomerResponse.Name)"
+                                ValueProperty="@nameof(CustomerResponse.Id)"
+                                Placeholder="@Localizer["select_customer"]">
+            <Columns>
+                <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Id)" Title="ID" Width="80px" />
+                <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Name)" Title="@Localizer["name"]" Width="220px" />
+            </Columns>
+        </RadzenDropDownDataGrid>
+    </RadzenStack>
+
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End" Style="margin-top: 1rem;">
+        <RadzenButton Text="@Localizer["Cancel"]" 
+                      ButtonStyle="ButtonStyle.Light" 
+                      Click="@(() => DialogService.Close(false))" />
+        <RadzenButton Text="@Localizer["yes"]" 
+                      ButtonStyle="ButtonStyle.Success" 
+                      Disabled="@(selectedCustomerId <= 0)"
+                      Click="@OnConfirm" />
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    private int selectedCustomerId;
+    private bool isLoadingCustomers = false;
+    private List<CustomerResponse> _filteredCustomers = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCustomers(new LoadDataArgs { Filter = string.Empty });
+    }
+
+    private async Task LoadCustomers(LoadDataArgs args)
+    {
+        isLoadingCustomers = true;
+        var parameters = new QueryStringParameters
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            SearchKeyword = args?.Filter ?? string.Empty
+        };
+
+        try
+        {
+            var pagedCustomers = await CustomersService.GetAsync(parameters, CancellationToken.None);
+            _filteredCustomers = pagedCustomers.Items;
+        }
+        catch (Exception ex)
+        {
+            _filteredCustomers = new List<CustomerResponse>();
+        }
+
+        isLoadingCustomers = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void OnConfirm()
+    {
+        if (selectedCustomerId > 0)
+        {
+            DialogService.Close(selectedCustomerId);
+        }
+    }
+}
+
