@@ -39,23 +39,15 @@ stages:
     # 1️⃣ Ensure DB Connection Secret
     # --------------------------------------------------
     - script: |
-        echo "🔐 Ensuring DB connection secret exists"
-
-        if [ -z "$Connection_String_Mourouj" ]; then
-          echo "❌ Connection_String_Mourouj is EMPTY"
-          exit 1
-        fi
-
-        # ✅ Secret name matches manifest
+        echo "🔐 Ensuring DB secret exists for Mourouj"
         kubectl create secret generic silkroad-connection-secret \
           -n $(kubeNamespace) \
-          --from-literal=database-connection-string="$Connection_String_Mourouj" \
+          --from-literal=ConnectionStrings__DefaultConnection="$(Connection_String_Mourouj)" \
           --dry-run=client -o yaml | kubectl apply -f -
-
-        echo "✅ DB secret ensured"
       displayName: 'Ensure DB Secret'
       env:
         Connection_String_Mourouj: $(Connection_String_Mourouj)
+
 
     # --------------------------------------------------
     # 2️⃣ Apply Kubernetes Manifests
