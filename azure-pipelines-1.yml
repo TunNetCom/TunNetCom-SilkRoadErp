@@ -1,0 +1,138 @@
+# ============================================================
+# CD Pipeline: Deploy SilkRoad API & WebApp to On-Prem Kubernetes (Mourouj)
+# ============================================================
+
+pool:
+  name: OnPremAgents
+  demands:
+    - Agent.Name -equals ubuntu-self-hosted-mourouj
+
+variables:
+- group: silkroad-prod   # Must contain Connection_String_Mourouj
+- name: kubeNamespace
+  value: silkroad-prod
+- name: deploymentApiName
+  value: silkroad-api
+- name: deploymentWebappName
+  value: silkroad-webapp
+- name: manifestPath
+  value: src/deployments/prod-deployment.yaml
+
+stages:
+- stage: Deploy
+  displayName: Deploy to Mourouj Kubernetes
+  jobs:
+  - job: DeployJob
+    displayName: K8s Deployment
+    steps:
+
+    # --------------------------------------------------
+    # 0️⃣ Check Cluster Access
+    # --------------------------------------------------
+    - script: |
+        echo "🔍 Checking cluster access"
+        kubectl version --client
+        kubectl cluster-info
+      displayName: 'Check Kubernetes Cluster'
+
+    # --------------------------------------------------
+    # 1️⃣ Ensure DB Connection Secret
+    # --------------------------------------------------
+    - script: |
+        echo "🔐 Ensuring DB connection secret exists"
+
+        if [ -z "$Connection_String_Mourouj" ]; then
+          echo "❌ Connection_String_Mourouj is EMPTY"
+          exit 1
+        fi
+
+        kubectl create secret generic silkroad-secrets \
+          -n $(kubeNamespace) \
+          --from-literal=database-connection-string="$Connection_String_Mourouj" \
+          --dry-run=client -o yaml | kubectl apply -f -
+
+        echo "✅ DB secret ensured"
+      displayName: 'Ensure DB Secret'
+      env:
+        Connection_String_Mourouj: $(Connection_String_Mourouj)
+
+    # --------------------------------------------------
+    # 2️⃣ Apply Kubernetes Manifests
+    # --------------------------------------------------
+    - script: |
+        echo "🚀 Applying Kubernetes manifests"
+        kubectl apply -f $(manifestPath)
+        echo "✅ Manifests applied"
+      displayName: 'Apply Manifests'
+
+    # --------------------------------------------------
+    # 3️⃣ Update Deployment Images to Latest Tags
+    # --------------------------------------------------
+    - script: |
+        echo "🔄 Updating deployment images to latest tags..."
+        
+        kubectl set image deployment/$(deploymentApiName) \
+          api=tunnetcom/silkroad:latest-api \
+          -n $(kubeNamespace)
+        
+        kubectl set image deployment/$(deploymentWebappName) \
+          webapp=tunnetcom/silkroad:latest-webapp \
+          -n $(kubeNamespace)
+        
+        echo "✅ Image tags updated"
+      displayName: 'Update Deployment Images'
+
+    # --------------------------------------------------
+    # 4️⃣ Force Image Refresh
+    # --------------------------------------------------
+    - script: |
+        echo "🔄 Forcing rollout to pull latest images"
+
+        kubectl rollout restart deployment/$(deploymentApiName) -n $(kubeNamespace)
+        kubectl rollout restart deployment/$(deploymentWebappName) -n $(kubeNamespace)
+
+        TIMESTAMP=$(date +%s)
+        kubectl patch deployment $(deploymentApiName) \
+          -n $(kubeNamespace) \
+          -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"ci-build\":\"$(Build.BuildId)\",\"force-image-pull\":\"$(Build.BuildId)-$TIMESTAMP\"}}}}}"
+        
+        kubectl patch deployment $(deploymentWebappName) \
+          -n $(kubeNamespace) \
+          -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"ci-build\":\"$(Build.BuildId)\",\"force-image-pull\":\"$(Build.BuildId)-$TIMESTAMP\"}}}}}"
+
+        # Optional: delete pods to force immediate refresh
+        kubectl delete pods -n $(kubeNamespace) -l app=$(deploymentApiName) --ignore-not-found=true || true
+        kubectl delete pods -n $(kubeNamespace) -l app=$(deploymentWebappName) --ignore-not-found=true || true
+
+        sleep 10
+      displayName: 'Force Image Refresh'
+
+    # --------------------------------------------------
+    # 5️⃣ Wait for Rollout Completion
+    # --------------------------------------------------
+    - script: |
+        echo "⏳ Waiting for API rollout to complete..."
+        kubectl rollout status deployment/$(deploymentApiName) -n $(kubeNamespace) --timeout=300s
+
+        echo "⏳ Waiting for WebApp rollout to complete..."
+        kubectl rollout status deployment/$(deploymentWebappName) -n $(kubeNamespace) --timeout=300s
+
+        sleep 10
+      displayName: 'Wait for Rollout'
+
+    # --------------------------------------------------
+    # 6️⃣ Check for Events
+    # --------------------------------------------------
+    - script: |
+        echo "🔍 Checking recent events..."
+        kubectl get events -n $(kubeNamespace) --sort-by='.lastTimestamp' | tail -20
+      displayName: 'Check Events'
+      continueOnError: true
+
+    # --------------------------------------------------
+    # 7️⃣ Final Status
+    # --------------------------------------------------
+    - script: |
+        echo "✅ Deployment completed successfully"
+        kubectl get all -n $(kubeNamespace)
+      displayName: 'Final Status'
