@@ -1,5 +1,5 @@
 # ============================================================
-# CD Pipeline: Deploy SilkRoad API & WebApp to On-Prem Kubernetes (Mourouj)
+# Deploy SilkRoad API & WebApp to On-Prem Kubernetes (Mourouj)
 # ============================================================
 
 pool:
@@ -8,7 +8,7 @@ pool:
     - Agent.Name -equals ubuntu-self-hosted-mourouj
 
 variables:
-- group: silkroad-prod   # Must contain Connection_String_Mourouj
+- group: silkroad-prod   # Contains Connection_String_Mourouj
 - name: kubeNamespace
   value: silkroad-prod
 - name: deploymentApiName
@@ -46,7 +46,8 @@ stages:
           exit 1
         fi
 
-        kubectl create secret generic silkroad-secrets \
+        # ✅ Secret name matches manifest
+        kubectl create secret generic silkroad-connection-secret \
           -n $(kubeNamespace) \
           --from-literal=database-connection-string="$Connection_String_Mourouj" \
           --dry-run=client -o yaml | kubectl apply -f -
@@ -71,10 +72,12 @@ stages:
     - script: |
         echo "🔄 Updating deployment images to latest tags..."
         
+        echo "📝 Setting API image to: tunnetcom/silkroad:latest-api"
         kubectl set image deployment/$(deploymentApiName) \
           api=tunnetcom/silkroad:latest-api \
           -n $(kubeNamespace)
         
+        echo "📝 Setting WebApp image to: tunnetcom/silkroad:latest-webapp"
         kubectl set image deployment/$(deploymentWebappName) \
           webapp=tunnetcom/silkroad:latest-webapp \
           -n $(kubeNamespace)
@@ -83,14 +86,14 @@ stages:
       displayName: 'Update Deployment Images'
 
     # --------------------------------------------------
-    # 4️⃣ Force Image Refresh
+    # 4️⃣ Force Image Refresh (rollout)
     # --------------------------------------------------
     - script: |
         echo "🔄 Forcing rollout to pull latest images"
-
+        
         kubectl rollout restart deployment/$(deploymentApiName) -n $(kubeNamespace)
         kubectl rollout restart deployment/$(deploymentWebappName) -n $(kubeNamespace)
-
+        
         TIMESTAMP=$(date +%s)
         kubectl patch deployment $(deploymentApiName) \
           -n $(kubeNamespace) \
@@ -99,8 +102,8 @@ stages:
         kubectl patch deployment $(deploymentWebappName) \
           -n $(kubeNamespace) \
           -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"ci-build\":\"$(Build.BuildId)\",\"force-image-pull\":\"$(Build.BuildId)-$TIMESTAMP\"}}}}}"
-
-        # Optional: delete pods to force immediate refresh
+        
+        # Delete existing pods to ensure fresh image pull
         kubectl delete pods -n $(kubeNamespace) -l app=$(deploymentApiName) --ignore-not-found=true || true
         kubectl delete pods -n $(kubeNamespace) -l app=$(deploymentWebappName) --ignore-not-found=true || true
 
@@ -112,27 +115,37 @@ stages:
     # --------------------------------------------------
     - script: |
         echo "⏳ Waiting for API rollout to complete..."
-        kubectl rollout status deployment/$(deploymentApiName) -n $(kubeNamespace) --timeout=300s
+        kubectl rollout status deployment/$(deploymentApiName) -n $(kubeNamespace) --timeout=300s || exit 1
 
         echo "⏳ Waiting for WebApp rollout to complete..."
-        kubectl rollout status deployment/$(deploymentWebappName) -n $(kubeNamespace) --timeout=300s
+        kubectl rollout status deployment/$(deploymentWebappName) -n $(kubeNamespace) --timeout=300s || exit 1
 
         sleep 10
       displayName: 'Wait for Rollout'
 
     # --------------------------------------------------
-    # 6️⃣ Check for Events
+    # 6️⃣ Check for Image Pull Errors
     # --------------------------------------------------
     - script: |
-        echo "🔍 Checking recent events..."
+        echo "🔍 Checking for image pull errors..."
+        echo "=== Recent Events (last 20) ==="
         kubectl get events -n $(kubeNamespace) --sort-by='.lastTimestamp' | tail -20
-      displayName: 'Check Events'
+      displayName: 'Check Image Pull Errors'
       continueOnError: true
 
     # --------------------------------------------------
-    # 7️⃣ Final Status
+    # 7️⃣ Verify Deployment
     # --------------------------------------------------
     - script: |
-        echo "✅ Deployment completed successfully"
+        echo "🔍 Verifying deployed images and pod status"
+        kubectl get pods -n $(kubeNamespace) -o wide
+        echo "✅ Deployment verification complete"
+      displayName: 'Verify Deployment'
+
+    # --------------------------------------------------
+    # 8️⃣ Final Status
+    # --------------------------------------------------
+    - script: |
+        echo "✅ Deployment finished successfully"
         kubectl get all -n $(kubeNamespace)
       displayName: 'Final Status'
