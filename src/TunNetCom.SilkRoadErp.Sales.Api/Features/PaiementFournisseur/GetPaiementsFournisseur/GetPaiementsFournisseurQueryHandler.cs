@@ -80,7 +80,9 @@ public class GetPaiementsFournisseurQueryHandler(
                 RibCodeAgence = p.RibCodeAgence,
                 RibNumeroCompte = p.RibNumeroCompte,
                 RibCle = p.RibCle,
-                DocumentStoragePath = p.DocumentStoragePath,
+                // DocumentStoragePath excluded for performance - use GetPaiementFournisseurById for full details
+                DocumentStoragePath = null,
+                HasDocument = !string.IsNullOrEmpty(p.DocumentStoragePath),
                 DateModification = p.DateModification
             })
             .OrderByDescending(p => p.DatePaiement);

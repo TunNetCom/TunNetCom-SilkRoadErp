@@ -62,6 +62,9 @@ public class PaiementFournisseurResponse
     [JsonPropertyName("documentStoragePath")]
     public string? DocumentStoragePath { get; set; }
 
+    [JsonPropertyName("hasDocument")]
+    public bool HasDocument { get; set; }
+
     [JsonPropertyName("dateModification")]
     public DateTime? DateModification { get; set; }
 }

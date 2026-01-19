@@ -251,4 +251,46 @@ public class InvoicesApiClient : IInvoicesApiClient
 
         return Result.Ok(invoiceId);
     }
+
+    public async Task<Result> TransferInvoiceToCustomerAsync(
+        int invoiceNumber,
+        TransferInvoiceToCustomerRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            _logger.LogInformation("Transferring invoice {InvoiceNumber} to customer {TargetCustomerId}", invoiceNumber, request.TargetCustomerId);
+            
+            var response = await _httpClient.PostAsJsonAsync(
+                $"/invoices/{invoiceNumber}/transfer",
+                request,
+                cancellationToken);
+
+            if (response.IsSuccessStatusCode)
+            {
+                return Result.Ok();
+            }
+
+            if (response.StatusCode == HttpStatusCode.BadRequest)
+            {
+                var problemDetails = await response.Content.ReadFromJsonAsync<BadRequestResponse>(
+                    cancellationToken);
+
+                if (problemDetails?.errors != null)
+                {
+                    var errors = problemDetails.errors
+                        .SelectMany(kvp => kvp.Value.Select(v => $"{kvp.Key}: {v}"));
+                    return Result.Fail(errors);
+                }
+                return Result.Fail("Transfer failed but no error details provided");
+            }
+
+            return Result.Fail($"Failed to transfer invoice: {response.StatusCode}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error transferring invoice {InvoiceNumber}", invoiceNumber);
+            return Result.Fail($"Unexpected error: {ex.Message}");
+        }
+    }
 }

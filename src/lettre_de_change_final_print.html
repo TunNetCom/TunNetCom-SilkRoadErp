@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lettre de Change</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Calibri', 'Arial', sans-serif;
+            background: #e0e0e0;
+            padding: 20px;
+        }
+        
+        .page {
+            width: 210mm;
+            height: 297mm;
+            background: white;
+            margin: 0 auto;
+            position: relative;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            padding: 0;
+        }
+
+        .element {
+            position: absolute;
+            font-size: 16px;
+            font-family: 'Calibri', Arial, sans-serif;
+            white-space: nowrap;
+        }
+        
+        /* Positionnement ultra-précis basé sur ahla.pdf */
+        
+        /* Ligne 1 - Tunis Haut */
+        .lieu-haut {
+            left: 238.2pt;
+            top: 37.3pt;
+        }
+        
+        /* Ligne 2 - Dates */
+        .dates-ligne {
+            left: 152.2pt;
+            top: 53.7pt;
+            display: flex;
+            gap: 46pt; /* 231.0 - 152.2 = 78.8pt total, mais c'est le début des mots */
+        }
+        
+        /* Ligne 3 - Montant Haut Droite */
+        .montant-droite {
+            left: 372.8pt;
+            top: 74.5pt;
+            font-weight: bold;
+        }
+        
+        /* Ligne 4 - RIB */
+        .rib-section {
+            left: 135.3pt;
+            top: 77.1pt;
+            display: flex;
+            gap: 15pt;
+        }
+        
+        /* Ligne 5 - Bénéficiaire et Montant Milieu */
+        .beneficiaire {
+            left: 130.6pt;
+            top: 118.5pt;
+            text-decoration: underline;
+        }
+        
+        .montant-centre {
+            left: 372.8pt;
+            top: 118.5pt;
+        }
+        
+        /* Ligne 6 - Montant en lettres */
+        .montant-lettres {
+            left: 57.1pt;
+            top: 139.1pt;
+        }
+        
+        /* Ligne 7 - Lieu et Dates Bas */
+        .infos-bas {
+            left: 53.3pt;
+            top: 170.7pt;
+            display: flex;
+            gap: 20pt;
+        }
+        
+        /* Ligne 8 - RIB Bas et Adresse */
+        .rib-bas {
+            left: 57.1pt;
+            top: 205.3pt;
+        }
+        
+        .adresse {
+            left: 359.4pt;
+            top: 205.3pt;
+            text-decoration: underline;
+        }
+        
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .page {
+                box-shadow: none;
+                margin: 0;
+            }
+        }
+    </style>
+
+    <style>
+        /* Styles supplémentaires pour impression PDF */
+        @page {
+            size: A4;
+            margin: 0;
+        }
+        
+        @media print {
+            html, body {
+                width: 210mm;
+                height: 297mm;
+            }
+            
+            body {
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            
+            .page {
+                box-shadow: none !important;
+                margin: 0 !important;
+                page-break-after: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <!-- Ligne 1: Lieu -->
+        <div class="element lieu-haut">Tunis</div>
+        
+        <!-- Ligne 2: Dates -->
+        <div class="element dates-ligne">
+            <span>30/04/2026</span>
+            <span>03/01/2026</span>
+        </div>
+        
+        <!-- Ligne 3: RIB et Montant -->
+        <div class="element rib-section">
+            <span>14</span>
+            <span>039</span>
+            <span>039 1017 00110 3</span>
+            <span>58</span>
+        </div>
+        <div class="element montant-droite">14802.764</div>
+        
+        <!-- Ligne 4: Bénéficiaire et Montant -->
+        <div class="element beneficiaire">Ste somocel</div>
+        <div class="element montant-centre">14802.764</div>
+        
+        <!-- Ligne 5: Montant en lettres -->
+        <div class="element montant-lettres">Quatorze milles huit cents deux dinars 764 millimes</div>
+        
+        <!-- Ligne 6: Infos du bas -->
+        <div class="element infos-bas">
+            <span>Tunis</span>
+            <span>03/01/2026</span>
+            <span>30/04/2026</span>
+        </div>
+        
+        <!-- Ligne 7: RIB et Adresse -->
+        <div class="element rib-bas">14 039 039 1017 00110 3 58</div>
+        <div class="element adresse">Bh aouina tunis</div>
+    </div>
+</body>
+</html>

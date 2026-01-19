@@ -39,4 +39,9 @@ public interface IInvoicesApiClient
     Task<Result<int>> GetInvoiceIdByNumberAsync(
         int invoiceNumber,
         CancellationToken cancellationToken);
+
+    Task<Result> TransferInvoiceToCustomerAsync(
+        int invoiceNumber,
+        TransferInvoiceToCustomerRequest request,
+        CancellationToken cancellationToken);
 }

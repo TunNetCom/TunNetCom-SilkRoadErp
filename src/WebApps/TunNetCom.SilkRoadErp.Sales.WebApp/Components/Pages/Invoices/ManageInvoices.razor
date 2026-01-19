@@ -44,6 +44,7 @@
 @inject TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PrintHistory.IPrintHistoryClient PrintHistoryClient
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.DeliveryNotes
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.PrintHistory
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.Invoices
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.Security.Claims
 @using static TunNetCom.SilkRoadErp.Sales.Domain.Entites.DocumentTypes
@@ -254,6 +255,26 @@
                                                   Size="ButtonSize.Small"
                                                   Title="@Localizer["retenue_source"]"
                                                   Click="@(() => OpenRetenueDialog(invoiceWithBLs.Invoice.Number, invoiceWithBLs.Invoice.TotalIncludingTaxAmount - _timbre))" />
+                                }
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn Title="@Localizer["actions_label"]"
+                                              Width="120px">
+                            <Template Context="invoiceWithBLs">
+                                @{
+                                    // Afficher le bouton si les BLs sont chargés et qu'il n'y en a pas,
+                                    // ou si les BLs ne sont pas encore chargés (on suppose qu'il n'y en a pas)
+                                    var hasNoDeliveryNotes = !invoiceWithBLs.DeliveryNotesLoaded || 
+                                                             invoiceWithBLs.DeliveryNotes == null || 
+                                                             !invoiceWithBLs.DeliveryNotes.Any();
+                                }
+                                @if (hasNoDeliveryNotes)
+                                {
+                                    <RadzenButton Icon="swap_horiz" 
+                                                  ButtonStyle="ButtonStyle.Secondary" 
+                                                  Size="ButtonSize.Small"
+                                                  Title="@Localizer["transfer_invoice"]"
+                                                  Click="@(() => TransferInvoiceToCustomer(invoiceWithBLs.Invoice.Number))" />
                                 }
                             </Template>
                         </RadzenDataGridColumn>
@@ -1257,6 +1278,69 @@
                 Severity = NotificationSeverity.Error,
                 Summary = Localizer["error"],
                 Detail = $"Échec de la génération du PDF: {pdfResult.Errors.FirstOrDefault()?.Message ?? "Unknown error"}"
+            });
+        }
+    }
+    #endregion
+
+    #region Transfer Invoice Methods
+    private async Task TransferInvoiceToCustomer(int invoiceNumber)
+    {
+        try
+        {
+            var result = await DialogService.OpenAsync<TransferInvoiceCustomerDialog>(
+                Localizer["transfer_invoice"],
+                new Dictionary<string, object>(),
+                new DialogOptions()
+                {
+                    Width = "500px",
+                    Resizable = true,
+                    Draggable = true
+                });
+
+            if (result is int targetCustomerId && targetCustomerId > 0)
+            {
+                var request = new TransferInvoiceToCustomerRequest
+                {
+                    TargetCustomerId = targetCustomerId
+                };
+
+                var transferResult = await invoicesService.TransferInvoiceToCustomerAsync(
+                    invoiceNumber,
+                    request,
+                    _cancellationTokenSource.Token);
+
+                if (transferResult.IsSuccess)
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = Localizer["success"],
+                        Detail = Localizer["invoice_transferred_successfully"]
+                    });
+
+                    // Refresh invoice list
+                    await LoadInvoicesForCustomers();
+                }
+                else
+                {
+                    var errorMessage = transferResult.Errors.FirstOrDefault()?.Message ?? Localizer["Unexpected_Error"];
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = Localizer["error"],
+                        Detail = errorMessage
+                    });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Failed to transfer invoice: {ex.Message}"
             });
         }
     }

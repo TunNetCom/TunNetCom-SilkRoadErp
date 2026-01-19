@@ -1,15 +1,18 @@
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products
 @using TunNetCom.SilkRoadErp.Sales.Contracts
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Common
 @using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses
 @using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNote.Responses
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Products
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using System.Globalization
 @using Radzen
 @using Radzen.Blazor
 @inject IDeliveryNoteApiClient deliveryNoteService
 @inject IReceiptNoteApiClient receiptNoteService
+@inject IProductsApiClient productsApiClient
 @inject DialogService DialogService
 
 <RadzenTabs>
@@ -109,6 +112,59 @@
                     </Columns>
                 </RadzenDataGrid>
         </RadzenTabsItem>
+        
+        <RadzenTabsItem Text="Prix du système">
+            @if (isLoadingProductPrice)
+            {
+                <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+            }
+            else if (productPrice == null)
+            {
+                <p style="color: lightgrey; font-size: 24px; text-align: center; margin: 2rem;">Aucune information disponible.</p>
+            }
+            else
+            {
+                <RadzenStack Gap="1.5rem" Style="padding: 1rem;">
+                    <RadzenCard>
+                        <RadzenStack Gap="1rem">
+                            <RadzenText TextStyle="TextStyle.H6">Informations du produit</RadzenText>
+                            <RadzenStack Gap="0.5rem">
+                                <RadzenText><strong>Référence:</strong> @productPrice.Reference</RadzenText>
+                                <RadzenText><strong>Nom:</strong> @productPrice.Name</RadzenText>
+                            </RadzenStack>
+                        </RadzenStack>
+                    </RadzenCard>
+                    
+                    <RadzenCard>
+                        <RadzenStack Gap="1rem">
+                            <RadzenText TextStyle="TextStyle.H6">Prix du système</RadzenText>
+                            <RadzenStack Gap="0.75rem">
+                                <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Style="padding: 0.5rem 0; border-bottom: 1px solid #e0e0e0;">
+                                    <RadzenText><strong>Prix de vente (HT):</strong></RadzenText>
+                                    <RadzenText>@productPrice.Price.ToString(DecimalFormatConstants.FORMAT_N3, CultureInfo.GetCultureInfo("fr-FR"))</RadzenText>
+                                </RadzenStack>
+                                <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Style="padding: 0.5rem 0; border-bottom: 1px solid #e0e0e0;">
+                                    <RadzenText><strong>Prix d'achat:</strong></RadzenText>
+                                    <RadzenText>@productPrice.PurchasingPrice.ToString(DecimalFormatConstants.FORMAT_N3, CultureInfo.GetCultureInfo("fr-FR"))</RadzenText>
+                                </RadzenStack>
+                                <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Style="padding: 0.5rem 0; border-bottom: 1px solid #e0e0e0;">
+                                    <RadzenText><strong>Remise (%):</strong></RadzenText>
+                                    <RadzenText>@productPrice.DiscountPourcentage.ToString(DecimalFormatConstants.FORMAT_N2, CultureInfo.GetCultureInfo("fr-FR"))</RadzenText>
+                                </RadzenStack>
+                                <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Style="padding: 0.5rem 0; border-bottom: 1px solid #e0e0e0;">
+                                    <RadzenText><strong>Remise achat (%):</strong></RadzenText>
+                                    <RadzenText>@productPrice.DiscountPourcentageOfPurchasing.ToString(DecimalFormatConstants.FORMAT_N2, CultureInfo.GetCultureInfo("fr-FR"))</RadzenText>
+                                </RadzenStack>
+                                <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Style="padding: 0.5rem 0;">
+                                    <RadzenText><strong>TVA (%):</strong></RadzenText>
+                                    <RadzenText>@productPrice.VatRate.ToString(DecimalFormatConstants.FORMAT_N2, CultureInfo.GetCultureInfo("fr-FR"))</RadzenText>
+                                </RadzenStack>
+                            </RadzenStack>
+                        </RadzenStack>
+                    </RadzenCard>
+                </RadzenStack>
+            }
+        </RadzenTabsItem>
     </Tabs>
 </RadzenTabs>
 
@@ -132,10 +188,13 @@
     [Parameter] public bool ShowClose { get; set; } = true;
     private PagedList<DeliveryNoteDetailResponse>? deliveryNotePagedList;
     private PagedList<ReceiptNoteDetailResponse>? receiptNotePagedList;
+    private ProductResponse? productPrice;
+    private bool isLoadingProductPrice = false;
 
     protected override async Task OnInitializedAsync()
     {
         // Data will be loaded when the grids call LoadData
+        await LoadProductPrice();
     }
 
     protected override async Task OnParametersSetAsync()
@@ -143,6 +202,7 @@
         // Reset paged lists when ProductReference changes
         deliveryNotePagedList = null;
         receiptNotePagedList = null;
+        await LoadProductPrice();
         StateHasChanged();
     }
 
@@ -199,6 +259,38 @@
         {
             // Log other exceptions
             receiptNotePagedList = new PagedList<ReceiptNoteDetailResponse>(new List<ReceiptNoteDetailResponse>(), 0, 1, 10);
+        }
+    }
+
+    private async Task LoadProductPrice()
+    {
+        if (string.IsNullOrWhiteSpace(ProductReference))
+        {
+            productPrice = null;
+            return;
+        }
+
+        isLoadingProductPrice = true;
+        try
+        {
+            var result = await productsApiClient.GetAsync(ProductReference, CancellationToken.None);
+            if (result.IsT0)
+            {
+                productPrice = result.AsT0;
+            }
+            else
+            {
+                productPrice = null;
+            }
+        }
+        catch (Exception)
+        {
+            // Log other exceptions
+            productPrice = null;
+        }
+        finally
+        {
+            isLoadingProductPrice = false;
         }
     }
 }

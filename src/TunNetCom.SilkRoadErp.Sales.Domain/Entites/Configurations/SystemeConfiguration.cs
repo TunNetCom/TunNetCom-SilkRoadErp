@@ -40,6 +40,12 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             .HasDefaultValue(3);
             entity.Property(e => e.Rib).HasColumnName("rib");
 
+            entity.Property(e => e.RibCodeEtab).HasColumnName("ribCodeEtab");
+            entity.Property(e => e.RibCodeAgence).HasColumnName("ribCodeAgence");
+            entity.Property(e => e.RibNumeroCompte).HasColumnName("ribNumeroCompte");
+            entity.Property(e => e.RibCle).HasColumnName("ribCle");
+            entity.Property(e => e.BanqueEntreprise).HasColumnName("banqueEntreprise").HasMaxLength(300);
+
             OnConfigurePartial(entity);
         }
 

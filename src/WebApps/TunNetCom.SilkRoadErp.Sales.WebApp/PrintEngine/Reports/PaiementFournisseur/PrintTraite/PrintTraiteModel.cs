@@ -51,7 +51,7 @@ public class TireModel
     
     public string RibFormatted => string.IsNullOrWhiteSpace(RibCodeEtab) 
         ? string.Empty 
-        : $"{RibCodeEtab} | {RibCodeAgence} | {RibNumeroCompte} | {RibCle}";
+        : $"{RibCodeEtab} {RibCodeAgence} {RibNumeroCompte} {RibCle}";
 }
 
 public class BanqueModel

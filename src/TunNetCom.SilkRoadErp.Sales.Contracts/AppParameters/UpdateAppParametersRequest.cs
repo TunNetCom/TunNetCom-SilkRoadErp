@@ -24,7 +24,12 @@ public class UpdateAppParametersRequest
         bool? bloquerVenteStockInsuffisant,
         bool? bloquerBlSansFacture,
         int? decimalPlaces,
-        string? rib)
+        string? rib,
+        string? ribCodeEtab,
+        string? ribCodeAgence,
+        string? ribNumeroCompte,
+        string? ribCle,
+        string? banqueEntreprise)
     {
         NomSociete = nomSociete;
         Adresse = adresse;
@@ -41,6 +46,11 @@ public class UpdateAppParametersRequest
         BloquerBlSansFacture = bloquerBlSansFacture ?? false;
         DecimalPlaces = decimalPlaces ?? DecimalFormatConstants.DEFAULT_DECIMAL_PLACES;
         Rib = rib;
+        RibCodeEtab = ribCodeEtab;
+        RibCodeAgence = ribCodeAgence;
+        RibNumeroCompte = ribNumeroCompte;
+        RibCle = ribCle;
+        BanqueEntreprise = banqueEntreprise;
     }
 
     public string NomSociete { get; set; } = null!;
@@ -72,4 +82,14 @@ public class UpdateAppParametersRequest
     public int DecimalPlaces { get; set; } = DecimalFormatConstants.DEFAULT_DECIMAL_PLACES;
 
     public string? Rib { get; set; }
+
+    public string? RibCodeEtab { get; set; }
+
+    public string? RibCodeAgence { get; set; }
+
+    public string? RibNumeroCompte { get; set; }
+
+    public string? RibCle { get; set; }
+
+    public string? BanqueEntreprise { get; set; }
 }

@@ -103,6 +103,47 @@
                             </RadzenFormField>
                         </RadzenColumn>
                     </RadzenRow>
+
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.Start" Style="margin-top: 1rem; margin-bottom: 0.5rem;">
+                        <h5>Informations Bancaires Entreprise</h5>
+                    </RadzenStack>
+
+                    <RadzenRow Class="g-2 mb-4">
+                        <RadzenColumn Size="12" SizeSM="6" Class="d-flex flex-column gap-3">
+                            <RadzenFormField Text="Banque Entreprise">
+                                <Start><RadzenIcon Icon="account_balance" /></Start>
+                                <ChildContent>
+                                    <RadzenTextBox @bind-Value="system.BanqueEntreprise" Name="BanqueEntreprise" MaxLength="300" Style="width: 100%;" />
+                                </ChildContent>
+                            </RadzenFormField>
+
+                            <RadzenFormField Text="Code Établissement">
+                                <ChildContent>
+                                    <RadzenTextBox @bind-Value="system.RibCodeEtab" Name="RibCodeEtab" Style="width: 100%;" />
+                                </ChildContent>
+                            </RadzenFormField>
+
+                            <RadzenFormField Text="Code Agence">
+                                <ChildContent>
+                                    <RadzenTextBox @bind-Value="system.RibCodeAgence" Name="RibCodeAgence" Style="width: 100%;" />
+                                </ChildContent>
+                            </RadzenFormField>
+                        </RadzenColumn>
+
+                        <RadzenColumn Size="12" SizeSM="6" Class="d-flex flex-column gap-3">
+                            <RadzenFormField Text="Numéro de Compte">
+                                <ChildContent>
+                                    <RadzenTextBox @bind-Value="system.RibNumeroCompte" Name="RibNumeroCompte" Style="width: 100%;" />
+                                </ChildContent>
+                            </RadzenFormField>
+
+                            <RadzenFormField Text="Clé RIB">
+                                <ChildContent>
+                                    <RadzenTextBox @bind-Value="system.RibCle" Name="RibCle" Style="width: 100%;" />
+                                </ChildContent>
+                            </RadzenFormField>
+                        </RadzenColumn>
+                    </RadzenRow>
                 </RadzenTabsItem>
 
                 <RadzenTabsItem Text="Fiscal & Taxes" Icon="account_balance">
@@ -199,6 +240,11 @@
 					AdresseRetenu = system.AdresseRetenu,
 					EtbSecondaire = system.EtbSecondaire,
 					Rib = system.Rib,
+					RibCodeEtab = system.RibCodeEtab,
+					RibCodeAgence = system.RibCodeAgence,
+					RibNumeroCompte = system.RibNumeroCompte,
+					RibCle = system.RibCle,
+					BanqueEntreprise = system.BanqueEntreprise,
 					DiscountPercentage = system.DiscountPercentage,
 					BloquerVenteStockInsuffisant = system.BloquerVenteStockInsuffisant,
 					BloquerBlSansFacture = system.BloquerBlSansFacture,

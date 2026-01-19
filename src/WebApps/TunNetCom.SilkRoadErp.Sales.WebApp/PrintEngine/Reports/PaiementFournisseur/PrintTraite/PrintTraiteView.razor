@@ -10,163 +10,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lettre de Change</title>
     <style>
-        @@page {
-            size: 297mm 210mm;
+        * {
             margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
         
         body {
-            font-family: 'Arial', sans-serif;
-            margin: 0;
-            padding: 0;
-            width: 297mm;
-            height: 210mm;
-            position: relative;
+            font-family: 'Calibri', 'Arial', sans-serif;
             background: transparent;
+            padding: 0;
+            margin: 0;
+            width: 210mm;
+            height: 297mm;
         }
         
-        /* Conteneur pour le contenu redimensionné de 17.5 x 11.5 pouces (444.5mm x 292.1mm) */
-        .content-container {
+        .page {
+            width: 210mm;
+            height: 297mm;
+            background: white;
+            margin: 0;
+            position: relative;
+            padding: 0;
+        }
+
+        .element {
             position: absolute;
-            width: 444.5mm;
-            height: 292.1mm;
-            /* Redimensionner uniformément pour tenir sur A4 paysage (297mm x 210mm) */
-            /* Utiliser le facteur le plus petit pour préserver les proportions */
-            transform: scale(0.668);
-            transform-origin: top left;
-            /* Centrer horizontalement et verticalement sur la page A4 */
-            /* Calcul: (297 - 444.5 * 0.668) / 2 = (297 - 296.926) / 2 = 0.037mm ≈ 0 */
-            left: 0mm;
-            /* Position initiale: 7.5mm, déplacé de 20% vers le haut (20% de 195.1228mm = 39mm) */
-            /* Nouveau top: 7.5mm - 39mm = -31.5mm, mais on limite à 0mm pour rester visible */
-            top: 0mm;
+            font-size: 16px;
+            font-family: 'Calibri', Arial, sans-serif;
+            white-space: nowrap;
         }
         
-        /* Positionnement absolu pour chaque valeur */
-        .value-field {
-            position: absolute;
-            font-size: 15px;
-            line-height: 1.2;
+        /* Positionnement ultra-précis basé sur ahla.pdf */
+        
+        /* Ligne 1 - Tunis Haut */
+        .lieu-haut {
+            left: 294.9pt;
+            top: 35.9pt;
         }
         
-        /* Couleurs selon le type */
-        .tireur-value {
-            color: #000; /* Noir */
-            font-weight: 500;
+        /* Ligne 2 - Dates */
+        .dates-ligne {
+            left: 208.9pt;
+            top: 52.3pt;
+            display: flex;
+            gap: 46pt; /* 231.0 - 152.2 = 78.8pt total, mais c'est le début des mots */
         }
         
-        .tire-value {
-            color: #000; /* Noir */
-            font-weight: 500;
+        /* Ligne 3 - Montant Haut Droite */
+        .montant-droite {
+            left: 429.5pt;
+            top: 78.1pt;
         }
         
-        .beneficiaire-value {
-            color: #000; /* Noir */
-            font-weight: 500;
+        /* Ligne 4 - RIB (Haut) */
+        .rib-section {
+            left: 172.0pt;
+            top: 80.7pt;
+            display: flex;
         }
         
+        .rib-section .rib-etab { width: 30pt; text-align: center; margin-left: 10pt; }
+        .rib-section .rib-agence { width: 35pt; text-align: center; margin-left: 5pt; }
+        .rib-section .rib-compte { width: 120pt; text-align: center; }
+        .rib-section .rib-cle { width: 25pt; text-align: center; }
+        
+        /* Ligne 5 - Bénéficiaire et Montant Milieu */
+        .beneficiaire {
+            left: 182.3pt;
+            top: 127.1pt;
+        }
+        
+        .montant-centre {
+            left: 429.5pt;
+            top: 122.1pt;
+        }
+        
+        /* Ligne 6 - Montant en lettres */
         .montant-lettres {
-            color: #000; /* Noir */
-            font-weight: 500;
-            font-size: 15px;
-            line-height: 1.3;
-            white-space: nowrap; /* Empêcher le retour à la ligne */
+            left: 63.8pt;
+            top: 145.7pt;
         }
         
-        .rib-value {
-            font-family: monospace;
-            font-size: 15px;
-            letter-spacing: 1px;
+        /* Ligne 7 - Lieu et Dates Bas */
+        .infos-bas {
+            left: 95.0pt;
+            top: 169.3pt;
+            display: flex;
+            gap: 20pt;
         }
         
-        .checkbox-mark {
-            font-size: 14px;
-            font-weight: bold;
+        /* Ligne 8 - RIB Bas (Plus étroit) */
+        .rib-bas {
+            left: 38.8pt;
+            top: 203.9pt;
+            display: flex;
+        }
+        
+        .rib-bas .rib-etab { width: 26pt; text-align: center; margin-left: 20pt; }
+        .rib-bas .rib-agence { width: 30pt; text-align: center; margin-left: -3pt; }
+        .rib-bas .rib-compte { width: 115pt; text-align: center; }
+        .rib-bas .rib-cle { width: 22pt; text-align: center; margin-left: 10pt; }
+        
+        .adresse {
+            left: 416.1pt;
+            top: 208.9pt;
+        }
+        
+        @@page {
+            size: A4 portrait;
+            margin: 0;
+        }
+        
+        @@media print {
+            html, body {
+                width: 210mm;
+                height: 297mm;
+            }
+            
+            body {
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            
+            .page {
+                box-shadow: none !important;
+                margin: 0 !important;
+                page-break-after: avoid;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="content-container">
-    <!-- Tireur (haut gauche, zone "Tireur") -->
-    <div class="value-field tireur-value" style="top: 50mm; left: 15mm; max-width: 90mm;">
-        @Model.Tireur.Nom
-    </div>
-    
-    <!-- Bénéficiaire "payer à l'ordre de" (milieu gauche, zone "payer à l'ordre de") -->
-    <div class="value-field beneficiaire-value" style="top: 90mm; left: 15mm; max-width: 90mm;">
-        @Model.Tireur.Nom
-    </div>
-    
-    <!-- Montant en lettres (entre le premier RIB et le 2ème RIB) -->
-    <div class="value-field montant-lettres" style="top: 75mm; left: 15mm;">
-        @Model.MontantEnLettres
-    </div>
-    
-    <!-- Date d'échéance (2ème date - entre la somme en lettres et le 2ème RIB) -->
-    <div class="value-field" style="top: 105mm; left: 15mm;">
-        @(Model.DateEcheance?.ToString("dd/MM/yyyy") ?? "")
-    </div>
-    
-    <!-- RIB/RIP du tiré (bas gauche, zone "RIB ou RIP du Tiré" - 2ème RIB) -->
-    <div class="value-field tire-value rib-value" style="top: 145mm; left: 15mm;">
-        @if (!string.IsNullOrWhiteSpace(Model.Tire.RibFormatted))
-        {
-            <span>@Model.Tire.RibFormatted</span>
-        }
-    </div>
-    
-    <!-- Code-barres / Numéro (bas gauche, zone code-barres) -->
-    <div class="value-field" style="top: 190mm; left: 15mm; font-family: monospace; text-align: left;">
-        @if (!string.IsNullOrWhiteSpace(Model.NumeroChequeTraite))
-        {
-            <span>@Model.NumeroChequeTraite</span>
-        }
-    </div>
-    
-    <!-- Numéro d'ordre de paiement L-CN (haut droite, zone "Ordre de paiement L - CN") -->
-    <div class="value-field beneficiaire-value" style="top: 30mm; left: 220mm; font-weight: 500;">
-        @Model.NumeroChequeTraite
-    </div>
-    
-    <!-- Montant en chiffres (haut droite, zone "Montant" - deuxième ligne) -->
-    <div class="value-field beneficiaire-value" style="top: 42mm; left: 240mm;">
-        @Model.Montant.ToString("N3", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))
-    </div>
-    
-    <!-- Date de création "Le" (haut droite, zone "Le") -->
-    <div class="value-field" style="top: 37mm; left: 125mm;">
-        @Model.DateCreation.ToString("dd/MM/yyyy")
-    </div>
-    
-    <!-- RIB/RIP du tiré (haut droite, zone "RIB ou RIP du Tiré") -->
-    <div class="value-field tire-value rib-value" style="top: 45mm; left: 130mm;">
-        @if (!string.IsNullOrWhiteSpace(Model.Tire.RibFormatted))
-        {
-            <span>@Model.Tire.RibFormatted</span>
-        }
-    </div>
-    
-    <!-- Nom et adresse du tiré (bas droite, zone "Nom et adresse du Tiré") -->
-    <div class="value-field tire-value" style="top: 145mm; left: 200mm; max-width: 85mm; line-height: 1.3;">
-        @Model.Tire.Nom
-        @if (!string.IsNullOrWhiteSpace(Model.Tire.Adresse))
-        {
-            <br />@Model.Tire.Adresse
-        }
-    </div>
-    
-    <!-- Domiciliation/Banque (bas droite, zone "Domiciliation") -->
-    <div class="value-field" style="top: 160mm; left: 200mm; max-width: 85mm; line-height: 1.3;">
-        @if (Model.Banque != null)
-        {
-            <span>@Model.Banque.Nom</span>
-            @if (!string.IsNullOrWhiteSpace(Model.Banque.Adresse))
+    <div class="page">
+        <!-- Ligne 1: Lieu -->
+        <div class="element lieu-haut">Tunis</div>
+        
+        <!-- Ligne 2: Dates -->
+        <div class="element dates-ligne">
+            <span>@(Model.DateEcheance?.ToString("dd/MM/yyyy") ?? "")</span>
+            <span>@Model.DateCreation.ToString("dd/MM/yyyy")</span>
+        </div>
+        
+        <!-- Ligne 3: RIB et Montant -->
+        <div class="element rib-section">
+            <span class="rib-etab">@Model.Tire.RibCodeEtab</span>
+            <span class="rib-agence">@Model.Tire.RibCodeAgence</span>
+            <span class="rib-compte">@Model.Tire.RibNumeroCompte</span>
+            <span class="rib-cle">@Model.Tire.RibCle</span>
+        </div>
+        <div class="element montant-droite">@Model.Montant.ToString("F3", System.Globalization.CultureInfo.InvariantCulture)</div>
+        
+        <!-- Ligne 4: Bénéficiaire et Montant -->
+        <div class="element beneficiaire">@Model.Tire.Nom</div>
+        <div class="element montant-centre">@Model.Montant.ToString("F3", System.Globalization.CultureInfo.InvariantCulture)</div>
+        
+        <!-- Ligne 5: Montant en lettres -->
+        <div class="element montant-lettres">@Model.MontantEnLettres</div>
+        
+        <!-- Ligne 6: Infos du bas -->
+        <div class="element infos-bas">
+            <span>Tunis</span>
+            <span>@Model.DateCreation.ToString("dd/MM/yyyy")</span>
+            <span>@(Model.DateEcheance?.ToString("dd/MM/yyyy") ?? "")</span>
+        </div>
+        
+        <!-- Ligne 7: RIB et Adresse -->
+        <div class="element rib-bas">
+            <span class="rib-etab">@Model.Tire.RibCodeEtab</span>
+            <span class="rib-agence">@Model.Tire.RibCodeAgence</span>
+            <span class="rib-compte">@Model.Tire.RibNumeroCompte</span>
+            <span class="rib-cle">@Model.Tire.RibCle</span>
+        </div>
+        <div class="element adresse">
+            @if (Model.Banque != null)
             {
-                <br />@Model.Banque.Adresse
+                <span>@Model.Banque.Nom</span>
+                @if (!string.IsNullOrWhiteSpace(Model.Banque.Adresse))
+                {
+                    <span> - @Model.Banque.Adresse</span>
+                }
             }
-        }
-    </div>
+        </div>
     </div>
 </body>
 </html>

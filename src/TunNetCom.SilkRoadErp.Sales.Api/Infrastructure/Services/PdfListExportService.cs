@@ -186,6 +186,8 @@ public class PdfListExportService
             float f => f.ToString(formatString, System.Globalization.CultureInfo.GetCultureInfo("fr-FR")),
             DateTime dt => dt.ToString("dd/MM/yyyy"),
             DateTimeOffset dto => dto.ToString("dd/MM/yyyy"),
+            _ when value != null && Nullable.GetUnderlyingType(value.GetType()) == typeof(DateTime) => 
+                ((DateTime?)value).HasValue ? ((DateTime?)value).Value.ToString("dd/MM/yyyy") : string.Empty,
             _ => value.ToString() ?? string.Empty
         };
     }

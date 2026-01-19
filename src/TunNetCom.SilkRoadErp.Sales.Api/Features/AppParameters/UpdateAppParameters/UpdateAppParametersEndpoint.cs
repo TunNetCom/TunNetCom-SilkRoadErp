@@ -30,7 +30,12 @@ public class UpdateAppParametersEndpoint : ICarterModule
                         BloquerVenteStockInsuffisant: request.BloquerVenteStockInsuffisant,
                         BloquerBlSansFacture: request.BloquerBlSansFacture,
                         DecimalPlaces: request.DecimalPlaces,
-                        Rib: request.Rib);
+                        Rib: request.Rib,
+                        RibCodeEtab: request.RibCodeEtab,
+                        RibCodeAgence: request.RibCodeAgence,
+                        RibNumeroCompte: request.RibNumeroCompte,
+                        RibCle: request.RibCle,
+                        BanqueEntreprise: request.BanqueEntreprise);
 
                     var updateAppParametersResult = await mediator.Send(updateAppParametersCommand, cancellationToken);
 

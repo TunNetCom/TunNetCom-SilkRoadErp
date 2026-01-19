@@ -39,7 +39,12 @@ public class UpdateAppParametersCommandHandler(
             bloquerVenteStockInsuffisant: updateAppParametersCommand.BloquerVenteStockInsuffisant ?? appParametersToUpdate.BloquerVenteStockInsuffisant,
             bloquerBlSansFacture: updateAppParametersCommand.BloquerBlSansFacture ?? appParametersToUpdate.BloquerBlSansFacture,
             decimalPlaces: updateAppParametersCommand.DecimalPlaces ?? appParametersToUpdate.DecimalPlaces,
-            rib: updateAppParametersCommand.Rib);
+            rib: updateAppParametersCommand.Rib,
+            ribCodeEtab: updateAppParametersCommand.RibCodeEtab,
+            ribCodeAgence: updateAppParametersCommand.RibCodeAgence,
+            ribNumeroCompte: updateAppParametersCommand.RibNumeroCompte,
+            ribCle: updateAppParametersCommand.RibCle,
+            banqueEntreprise: updateAppParametersCommand.BanqueEntreprise);
 
         _ = await _context.SaveChangesAsync(cancellationToken);
 

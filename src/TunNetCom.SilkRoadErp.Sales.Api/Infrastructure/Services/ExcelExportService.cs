@@ -82,6 +82,19 @@ public class ExcelExportService
                     cell.Value = dateValue;
                     cell.Style.Numberformat.Format = "dd/MM/yyyy";
                 }
+                else if (value != null && Nullable.GetUnderlyingType(value.GetType()) == typeof(DateTime))
+                {
+                    var nullableDate = (DateTime?)value;
+                    if (nullableDate.HasValue)
+                    {
+                        cell.Value = nullableDate.Value;
+                        cell.Style.Numberformat.Format = "dd/MM/yyyy";
+                    }
+                    else
+                    {
+                        cell.Value = string.Empty;
+                    }
+                }
                 else if (value is int || value is long)
                 {
                     cell.Value = value;

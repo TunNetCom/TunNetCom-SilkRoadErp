@@ -114,27 +114,17 @@ public class PrintTraiteService(
                 Tel = fournisseur.Tel,
                 Matricule = fournisseur.Matricule,
                 Code = fournisseur.Code,
-                // Utiliser le RIB du fournisseur en priorité, sinon celui du paiement
-                RibCodeEtab = !string.IsNullOrWhiteSpace(fournisseur.RibCodeEtab) 
-                    ? fournisseur.RibCodeEtab 
-                    : paiement.RibCodeEtab,
-                RibCodeAgence = !string.IsNullOrWhiteSpace(fournisseur.RibCodeEtab) 
-                    ? fournisseur.RibCodeAgence 
-                    : paiement.RibCodeAgence,
-                RibNumeroCompte = !string.IsNullOrWhiteSpace(fournisseur.RibCodeEtab) 
-                    ? fournisseur.RibNumeroCompte 
-                    : paiement.RibNumeroCompte,
-                RibCle = !string.IsNullOrWhiteSpace(fournisseur.RibCodeEtab) 
-                    ? fournisseur.RibCle 
-                    : paiement.RibCle
+                // Utiliser le RIB de l'entreprise (Tireur) depuis les paramètres système
+                RibCodeEtab = appParameters.RibCodeEtab,
+                RibCodeAgence = appParameters.RibCodeAgence,
+                RibNumeroCompte = appParameters.RibNumeroCompte,
+                RibCle = appParameters.RibCle
             },
             
-            Banque = banque != null ? new BanqueModel
+            Banque = new BanqueModel
             {
-                Id = banque.Id,
-                Nom = banque.Nom,
-                Adresse = null // Banque entity doesn't have address yet
-            } : null
+                Nom = appParameters.BanqueEntreprise ?? ""
+            }
         };
 
         // Convertir le montant en lettres
@@ -152,38 +142,17 @@ public class PrintTraiteService(
 
     private static string ConvertMontantToLetters(decimal montant)
     {
-        // Utiliser directement AmountHelper qui gère déjà dinars et millimes
-        // On utilise un type vide pour éviter le préfixe "Arrêté..."
-        string resultat = AmountHelper.ConvertFloatToFrenchToWords(montant, "");
-        
-        // Nettoyer le préfixe "Arrêté..." qui est ajouté par la fonction si présent
-        resultat = resultat.Replace("Arrêté le présent  à la somme de ", "")
-                          .Replace("Arrêtée la présente  à la somme de ", "")
-                          .Trim();
-        
-        // Si le résultat est vide ou ne contient pas "dinar", on ajoute "tunisiens"
-        if (!string.IsNullOrWhiteSpace(resultat))
-        {
-            if (!resultat.Contains("tunisiens", StringComparison.OrdinalIgnoreCase))
-            {
-                resultat += " tunisiens";
-            }
-        }
-        else
-        {
-            resultat = "zéro dinars tunisiens";
-        }
-
-        return resultat;
+        // Utiliser la même logique que les autres documents via AmountHelper
+        return AmountHelper.ConvertFloatToFrenchToWords(montant, "");
     }
 
     private static SilkPdfOptions PreparePrintOptions()
     {
-        // Format A4 paysage (297mm x 210mm) avec contenu redimensionné pour zone de 17.5 x 11.5 pouces
+        // Format A4 portrait (210mm x 297mm)
         var printOptions = new SilkPdfOptions
         {
-            Width = "297mm",
-            Height = "210mm",
+            Width = "210mm",
+            Height = "297mm",
             PreferCSSPageSize = true,
             PrintBackground = true,
             MarginTop = "0mm",
