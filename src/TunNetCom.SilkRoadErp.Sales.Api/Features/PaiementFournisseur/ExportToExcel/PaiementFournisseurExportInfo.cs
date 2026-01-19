@@ -4,6 +4,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.PaiementFournisseur.ExportToE
 public class PaiementFournisseurExportInfo
 {
     public string NumeroTransactionBancaire { get; set; } = string.Empty;
+    public string NumeroChequeTraite { get; set; } = string.Empty;
     public string FournisseurNom { get; set; } = string.Empty;
     public decimal Montant { get; set; }
     public DateTime DatePaiement { get; set; }

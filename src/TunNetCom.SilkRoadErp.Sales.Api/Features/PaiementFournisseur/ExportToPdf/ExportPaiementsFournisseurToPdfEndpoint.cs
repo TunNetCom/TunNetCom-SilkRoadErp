@@ -98,6 +98,7 @@ public class ExportPaiementsFournisseurToPdfEndpoint : ICarterModule
                 .Select(p => new PaiementFournisseurExportInfo
                 {
                     NumeroTransactionBancaire = p.NumeroTransactionBancaire ?? string.Empty,
+                    NumeroChequeTraite = p.NumeroChequeTraite ?? string.Empty,
                     FournisseurNom = p.Fournisseur.Nom,
                     Montant = p.Montant,
                     DatePaiement = p.DatePaiement,
@@ -130,6 +131,7 @@ public class ExportPaiementsFournisseurToPdfEndpoint : ICarterModule
             var columns = new List<ColumnMapping>
             {
                 new() { PropertyName = "NumeroTransactionBancaire", DisplayName = "Numéro Transaction Bancaire" },
+                new() { PropertyName = "NumeroChequeTraite", DisplayName = "Numéro Traite" },
                 new() { PropertyName = "FournisseurNom", DisplayName = "Fournisseur" },
                 new() { PropertyName = "Montant", DisplayName = "Montant" },
                 new() { PropertyName = "DatePaiement", DisplayName = "Date Paiement" },
