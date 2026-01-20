@@ -39,6 +39,7 @@ public class GetPaiementFournisseurQueryHandler(
                 RibCle = p.RibCle,
                 DocumentStoragePath = p.DocumentStoragePath,
                 HasDocument = !string.IsNullOrEmpty(p.DocumentStoragePath),
+                Mois = p.Mois,
                 DateModification = p.DateModification
             })
             .FirstOrDefaultAsync(cancellationToken);

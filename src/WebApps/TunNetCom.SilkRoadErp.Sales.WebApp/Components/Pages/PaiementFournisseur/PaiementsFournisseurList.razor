@@ -131,6 +131,16 @@
                                 AllowClear="true"
                                 Style="width: 200px;" />
             </div>
+            <div class="search-field">
+                <label>Mois</label>
+                <RadzenDropDown @bind-Value="@selectedMois"
+                                Data="@moisOptions"
+                                TextProperty="Text"
+                                ValueProperty="Value"
+                                Placeholder="Tous"
+                                AllowClear="true"
+                                Style="width: 200px;" />
+            </div>
             <div class="search-button">
                 <RadzenButton Text="@Localizer["Rechercher"]"
                               Icon="search"
@@ -298,11 +308,27 @@
     private decimal? selectedMontantMin;
     private decimal? selectedMontantMax;
     private int? selectedReglementStatus; // 0 = false (non réglé), 1 = true (réglé), null = tous
+    private int? selectedMois;
     private List<ProviderResponse> _filteredProviders = new();
     private List<ReglementStatusOption> reglementStatusOptions = new()
     {
         new ReglementStatusOption { Text = "Régle (avec numéro)", Value = 1 },
         new ReglementStatusOption { Text = "Non réglé (sans numéro)", Value = 0 }
+    };
+    private List<MoisOption> moisOptions = new()
+    {
+        new MoisOption { Text = "Janvier", Value = 1 },
+        new MoisOption { Text = "Février", Value = 2 },
+        new MoisOption { Text = "Mars", Value = 3 },
+        new MoisOption { Text = "Avril", Value = 4 },
+        new MoisOption { Text = "Mai", Value = 5 },
+        new MoisOption { Text = "Juin", Value = 6 },
+        new MoisOption { Text = "Juillet", Value = 7 },
+        new MoisOption { Text = "Août", Value = 8 },
+        new MoisOption { Text = "Septembre", Value = 9 },
+        new MoisOption { Text = "Octobre", Value = 10 },
+        new MoisOption { Text = "Novembre", Value = 11 },
+        new MoisOption { Text = "Décembre", Value = 12 }
     };
     private List<GetAllAccountingYearsResponse> accountingYears = new();
     private CancellationTokenSource cancellationTokenSource = new();
@@ -377,6 +403,7 @@
                 selectedMontantMin,
                 selectedMontantMax,
                 hasNumeroTransactionBancaire,
+                selectedMois,
                 (args.Skip.Value / _defaultPageSize) + 1,
                 args.Top ?? _defaultPageSize,
                 cancellationTokenSource.Token);
@@ -561,6 +588,11 @@
                 queryParams.Add($"hasNumeroTransactionBancaire={hasNumeroTransactionBancaire.ToString().ToLower()}");
             }
 
+            if (selectedMois.HasValue)
+            {
+                queryParams.Add($"mois={selectedMois.Value}");
+            }
+
             var baseUrl = Configuration.GetValue<string>("ApiSettings:BaseUrl")
                 ?? throw new InvalidOperationException("ApiSettings:BaseUrl configuration is missing");
             
@@ -666,6 +698,11 @@
                 queryParams.Add($"hasNumeroTransactionBancaire={hasNumeroTransactionBancaire.ToString().ToLower()}");
             }
 
+            if (selectedMois.HasValue)
+            {
+                queryParams.Add($"mois={selectedMois.Value}");
+            }
+
             var baseUrl = Configuration.GetValue<string>("ApiSettings:BaseUrl")
                 ?? throw new InvalidOperationException("ApiSettings:BaseUrl configuration is missing");
             
@@ -734,6 +771,12 @@
     }
 
     private class ReglementStatusOption
+    {
+        public string Text { get; set; } = string.Empty;
+        public int? Value { get; set; }
+    }
+
+    private class MoisOption
     {
         public string Text { get; set; } = string.Empty;
         public int? Value { get; set; }

@@ -13,6 +13,7 @@ public partial class PaiementFournisseurConfiguration : IEntityTypeConfiguration
         entity.ToTable("PaiementFournisseur", t =>
         {
             t.HasCheckConstraint("CHK_PaiementFournisseur_Montant", "Montant > 0");
+            t.HasCheckConstraint("CHK_PaiementFournisseur_Mois", "Mois IS NULL OR (Mois >= 1 AND Mois <= 12)");
         });
 
         entity.HasKey(e => e.Id);
@@ -83,6 +84,9 @@ public partial class PaiementFournisseurConfiguration : IEntityTypeConfiguration
         entity.Property(e => e.DocumentStoragePath)
             .HasColumnName("DocumentStoragePath")
             .HasColumnType("nvarchar(max)");
+
+        entity.Property(e => e.Mois)
+            .HasColumnName("Mois");
 
         entity.Property(e => e.DateModification)
             .HasColumnName("DateModification")

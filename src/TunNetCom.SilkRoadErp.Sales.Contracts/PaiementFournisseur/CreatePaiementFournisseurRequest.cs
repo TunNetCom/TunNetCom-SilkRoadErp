@@ -47,6 +47,9 @@ public class CreatePaiementFournisseurRequest
     [JsonPropertyName("ribCle")]
     public string? RibCle { get; set; }
 
+    [JsonPropertyName("mois")]
+    public int? Mois { get; set; }
+
     [JsonPropertyName("documentBase64")]
     public string? DocumentBase64 { get; set; }
 }

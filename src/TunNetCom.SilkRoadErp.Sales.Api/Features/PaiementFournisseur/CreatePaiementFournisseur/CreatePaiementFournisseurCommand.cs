@@ -18,6 +18,7 @@ public record CreatePaiementFournisseurCommand(
     string? RibCodeAgence,
     string? RibNumeroCompte,
     string? RibCle,
+    int? Mois,
     string? DocumentBase64
 ) : IRequest<Result<int>>;
 

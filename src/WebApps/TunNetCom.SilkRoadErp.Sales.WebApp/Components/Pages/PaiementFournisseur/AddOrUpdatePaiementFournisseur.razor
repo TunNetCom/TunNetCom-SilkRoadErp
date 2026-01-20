@@ -223,6 +223,16 @@
                 <RadzenTextArea @bind-Value="paiement.Commentaire" Placeholder="@Localizer["Commentaire_Optionnel"]" Rows="3" Style="width: 100%;" />
             </RadzenFormField>
 
+            <RadzenFormField Text="Mois" class="rz-col-12 rz-md-6">
+                <RadzenDropDown @bind-Value="paiement.Mois"
+                                Data="@moisOptions"
+                                TextProperty="Text"
+                                ValueProperty="Value"
+                                Placeholder="Sélectionner un mois"
+                                AllowClear="true"
+                                Style="width: 100%;" />
+            </RadzenFormField>
+
             @if (selectedMethodePaiement == "Cheque" || selectedMethodePaiement == "Traite" || selectedMethodePaiement == "Virement")
             {
                 <RadzenFormField Text="@Localizer["Document_Paiement"]" class="rz-col-12">
@@ -391,6 +401,21 @@
     private CancellationTokenSource cancellationTokenSource = new();
 
     private List<MethodePaiementOption> methodePaiementOptions = new();
+    private List<MoisOption> moisOptions = new()
+    {
+        new MoisOption { Text = "Janvier", Value = 1 },
+        new MoisOption { Text = "Février", Value = 2 },
+        new MoisOption { Text = "Mars", Value = 3 },
+        new MoisOption { Text = "Avril", Value = 4 },
+        new MoisOption { Text = "Mai", Value = 5 },
+        new MoisOption { Text = "Juin", Value = 6 },
+        new MoisOption { Text = "Juillet", Value = 7 },
+        new MoisOption { Text = "Août", Value = 8 },
+        new MoisOption { Text = "Septembre", Value = 9 },
+        new MoisOption { Text = "Octobre", Value = 10 },
+        new MoisOption { Text = "Novembre", Value = 11 },
+        new MoisOption { Text = "Décembre", Value = 12 }
+    };
 
     // Document upload properties
     private string? documentBase64;
@@ -403,6 +428,12 @@
     {
         public string Text { get; set; } = string.Empty;
         public string Value { get; set; } = string.Empty;
+    }
+
+    private class MoisOption
+    {
+        public string Text { get; set; } = string.Empty;
+        public int? Value { get; set; }
     }
 
     protected override async Task OnInitializedAsync()
@@ -502,7 +533,8 @@
                     RibCodeEtab = paiementResponse.RibCodeEtab,
                     RibCodeAgence = paiementResponse.RibCodeAgence,
                     RibNumeroCompte = paiementResponse.RibNumeroCompte,
-                    RibCle = paiementResponse.RibCle
+                    RibCle = paiementResponse.RibCle,
+                    Mois = paiementResponse.Mois
                 };
                 selectedFactureFournisseurIds = paiementResponse.FactureFournisseurIds?.ToList() ?? new List<int>();
                 selectedBonDeReceptionIds = paiementResponse.BonDeReceptionIds?.ToList() ?? new List<int>();
@@ -874,6 +906,7 @@
                     RibCodeAgence = paiement.RibCodeAgence,
                     RibNumeroCompte = paiement.RibNumeroCompte,
                     RibCle = paiement.RibCle,
+                    Mois = paiement.Mois,
                     DocumentBase64 = documentBase64
                 };
 

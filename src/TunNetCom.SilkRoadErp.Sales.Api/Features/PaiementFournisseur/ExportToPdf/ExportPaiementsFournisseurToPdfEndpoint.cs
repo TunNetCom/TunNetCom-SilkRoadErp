@@ -33,13 +33,14 @@ public class ExportPaiementsFournisseurToPdfEndpoint : ICarterModule
         [FromQuery] decimal? montantMin = null,
         [FromQuery] decimal? montantMax = null,
         [FromQuery] bool? hasNumeroTransactionBancaire = null,
+        [FromQuery] int? mois = null,
         CancellationToken cancellationToken = default)
     {
         try
         {
             logger.LogInformation(
-                "ExportPaiementsFournisseurToPdfEndpoint called with fournisseurId: {FournisseurId}, accountingYearId: {AccountingYearId}, dateEcheanceFrom: {DateEcheanceFrom}, dateEcheanceTo: {DateEcheanceTo}, montantMin: {MontantMin}, montantMax: {MontantMax}, hasNumeroTransactionBancaire: {HasNumeroTransactionBancaire}",
-                fournisseurId, accountingYearId, dateEcheanceFrom, dateEcheanceTo, montantMin, montantMax, hasNumeroTransactionBancaire);
+                "ExportPaiementsFournisseurToPdfEndpoint called with fournisseurId: {FournisseurId}, accountingYearId: {AccountingYearId}, dateEcheanceFrom: {DateEcheanceFrom}, dateEcheanceTo: {DateEcheanceTo}, montantMin: {MontantMin}, montantMax: {MontantMax}, hasNumeroTransactionBancaire: {HasNumeroTransactionBancaire}, mois: {Mois}",
+                fournisseurId, accountingYearId, dateEcheanceFrom, dateEcheanceTo, montantMin, montantMax, hasNumeroTransactionBancaire, mois);
 
             // Get financial parameters from service
             var appParams = await mediator.Send(new GetAppParametersQuery(), cancellationToken);
@@ -91,6 +92,11 @@ public class ExportPaiementsFournisseurToPdfEndpoint : ICarterModule
                 {
                     paiementsQuery = paiementsQuery.Where(p => string.IsNullOrEmpty(p.NumeroTransactionBancaire));
                 }
+            }
+
+            if (mois.HasValue)
+            {
+                paiementsQuery = paiementsQuery.Where(p => p.Mois.HasValue && p.Mois.Value == mois.Value);
             }
 
             // Get all paiements (no pagination for export)

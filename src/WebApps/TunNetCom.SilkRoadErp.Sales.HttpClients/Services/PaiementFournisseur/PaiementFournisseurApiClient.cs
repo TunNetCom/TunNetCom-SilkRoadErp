@@ -73,6 +73,7 @@ public class PaiementFournisseurApiClient : IPaiementFournisseurApiClient
         decimal? montantMin,
         decimal? montantMax,
         bool? hasNumeroTransactionBancaire,
+        int? mois,
         int pageNumber,
         int pageSize,
         CancellationToken cancellationToken)
@@ -113,6 +114,11 @@ public class PaiementFournisseurApiClient : IPaiementFournisseurApiClient
         if (hasNumeroTransactionBancaire.HasValue)
         {
             queryString += $"&hasNumeroTransactionBancaire={hasNumeroTransactionBancaire.Value.ToString().ToLower()}";
+        }
+
+        if (mois.HasValue)
+        {
+            queryString += $"&mois={mois.Value}";
         }
 
         var response = await _httpClient.GetAsync(queryString, cancellationToken: cancellationToken);

@@ -24,6 +24,7 @@ public class GetPaiementsFournisseurEndpoint : ICarterModule
             queryParams.MontantMin,
             queryParams.MontantMax,
             queryParams.HasNumeroTransactionBancaire,
+            queryParams.Mois,
             queryParams.PageNumber,
             queryParams.PageSize);
 
@@ -42,5 +43,6 @@ public class GetPaiementsFournisseurQueryParams : QueryStringParameters
     public decimal? MontantMin { get; set; }
     public decimal? MontantMax { get; set; }
     public bool? HasNumeroTransactionBancaire { get; set; }
+    public int? Mois { get; set; }
 }
 

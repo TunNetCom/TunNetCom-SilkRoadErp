@@ -10,6 +10,7 @@ public record GetPaiementsFournisseurQuery(
     decimal? MontantMin = null,
     decimal? MontantMax = null,
     bool? HasNumeroTransactionBancaire = null,
+    int? Mois = null,
     int PageNumber = 1,
     int PageSize = 10
 ) : IRequest<Result<PagedList<PaiementFournisseurResponse>>>;

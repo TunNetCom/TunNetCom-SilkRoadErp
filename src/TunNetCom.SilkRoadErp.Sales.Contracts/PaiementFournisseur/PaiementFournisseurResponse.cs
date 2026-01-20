@@ -65,6 +65,9 @@ public class PaiementFournisseurResponse
     [JsonPropertyName("hasDocument")]
     public bool HasDocument { get; set; }
 
+    [JsonPropertyName("mois")]
+    public int? Mois { get; set; }
+
     [JsonPropertyName("dateModification")]
     public DateTime? DateModification { get; set; }
 }

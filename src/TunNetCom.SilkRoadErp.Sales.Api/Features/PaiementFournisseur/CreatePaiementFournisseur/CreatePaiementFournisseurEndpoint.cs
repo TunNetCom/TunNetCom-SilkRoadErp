@@ -31,6 +31,7 @@ public class CreatePaiementFournisseurEndpoint : ICarterModule
             request.RibCodeAgence,
             request.RibNumeroCompte,
             request.RibCle,
+            request.Mois,
             request.DocumentBase64);
 
         var result = await mediator.Send(command, cancellationToken);

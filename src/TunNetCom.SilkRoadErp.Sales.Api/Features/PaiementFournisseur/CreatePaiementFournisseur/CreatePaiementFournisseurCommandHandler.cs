@@ -137,7 +137,8 @@ public class CreatePaiementFournisseurCommandHandler(
             command.RibCodeAgence,
             command.RibNumeroCompte,
             command.RibCle,
-            documentStoragePath);
+            documentStoragePath,
+            command.Mois);
 
         _context.PaiementFournisseur.Add(paiement);
         await _context.SaveChangesAsync(cancellationToken);

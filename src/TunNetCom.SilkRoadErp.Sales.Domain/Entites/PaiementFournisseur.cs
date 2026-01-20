@@ -27,7 +27,8 @@ public partial class PaiementFournisseur : IAccountingYearEntity
         string? ribCodeAgence,
         string? ribNumeroCompte,
         string? ribCle,
-        string? documentStoragePath)
+        string? documentStoragePath,
+        int? mois)
     {
         return new PaiementFournisseur
         {
@@ -46,6 +47,7 @@ public partial class PaiementFournisseur : IAccountingYearEntity
             RibNumeroCompte = ribNumeroCompte,
             RibCle = ribCle,
             DocumentStoragePath = documentStoragePath,
+            Mois = mois,
             FactureFournisseurs = new List<PaiementFournisseurFactureFournisseur>(),
             BonDeReceptions = new List<PaiementFournisseurBonDeReception>()
         };
@@ -68,7 +70,8 @@ public partial class PaiementFournisseur : IAccountingYearEntity
         string? ribCodeAgence,
         string? ribNumeroCompte,
         string? ribCle,
-        string? documentStoragePath)
+        string? documentStoragePath,
+        int? mois)
     {
         this.NumeroTransactionBancaire = numeroTransactionBancaire;
         this.FournisseurId = fournisseurId;
@@ -85,6 +88,7 @@ public partial class PaiementFournisseur : IAccountingYearEntity
         this.RibNumeroCompte = ribNumeroCompte;
         this.RibCle = ribCle;
         this.DocumentStoragePath = documentStoragePath;
+        this.Mois = mois;
         this.DateModification = DateTime.UtcNow;
 
         // Update FactureFournisseurs collection
@@ -139,6 +143,8 @@ public partial class PaiementFournisseur : IAccountingYearEntity
     public string? RibCle { get; private set; }
 
     public string? DocumentStoragePath { get; private set; }
+
+    public int? Mois { get; private set; }
 
     public DateTime? DateModification { get; private set; }
 

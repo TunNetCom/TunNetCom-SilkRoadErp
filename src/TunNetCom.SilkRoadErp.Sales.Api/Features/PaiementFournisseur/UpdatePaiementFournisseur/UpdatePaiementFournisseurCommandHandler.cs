@@ -152,7 +152,8 @@ public class UpdatePaiementFournisseurCommandHandler(
             command.RibCodeAgence,
             command.RibNumeroCompte,
             command.RibCle,
-            documentStoragePath);
+            documentStoragePath,
+            command.Mois);
 
         await _context.SaveChangesAsync(cancellationToken);
 

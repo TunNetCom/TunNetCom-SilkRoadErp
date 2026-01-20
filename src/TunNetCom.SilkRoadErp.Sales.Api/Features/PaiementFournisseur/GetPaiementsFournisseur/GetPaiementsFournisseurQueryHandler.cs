@@ -9,8 +9,8 @@ public class GetPaiementsFournisseurQueryHandler(
 {
     public async Task<Result<PagedList<PaiementFournisseurResponse>>> Handle(GetPaiementsFournisseurQuery query, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Fetching PaiementsFournisseur with filters FournisseurId={FournisseurId}, AccountingYearId={AccountingYearId}, DateEcheanceFrom={DateEcheanceFrom}, DateEcheanceTo={DateEcheanceTo}, MontantMin={MontantMin}, MontantMax={MontantMax}, HasNumeroTransactionBancaire={HasNumeroTransactionBancaire}", 
-            query.FournisseurId, query.AccountingYearId, query.DateEcheanceFrom, query.DateEcheanceTo, query.MontantMin, query.MontantMax, query.HasNumeroTransactionBancaire);
+        _logger.LogInformation("Fetching PaiementsFournisseur with filters FournisseurId={FournisseurId}, AccountingYearId={AccountingYearId}, DateEcheanceFrom={DateEcheanceFrom}, DateEcheanceTo={DateEcheanceTo}, MontantMin={MontantMin}, MontantMax={MontantMax}, HasNumeroTransactionBancaire={HasNumeroTransactionBancaire}, Mois={Mois}", 
+            query.FournisseurId, query.AccountingYearId, query.DateEcheanceFrom, query.DateEcheanceTo, query.MontantMin, query.MontantMax, query.HasNumeroTransactionBancaire, query.Mois);
 
         var paiementsQuery = _context.PaiementFournisseur
             .AsNoTracking()
@@ -58,6 +58,11 @@ public class GetPaiementsFournisseurQueryHandler(
             }
         }
 
+        if (query.Mois.HasValue)
+        {
+            paiementsQuery = paiementsQuery.Where(p => p.Mois.HasValue && p.Mois.Value == query.Mois.Value);
+        }
+
         var paiements = paiementsQuery
             .Select(p => new PaiementFournisseurResponse
             {
@@ -83,6 +88,7 @@ public class GetPaiementsFournisseurQueryHandler(
                 // DocumentStoragePath excluded for performance - use GetPaiementFournisseurById for full details
                 DocumentStoragePath = null,
                 HasDocument = !string.IsNullOrEmpty(p.DocumentStoragePath),
+                Mois = p.Mois,
                 DateModification = p.DateModification
             })
             .OrderByDescending(p => p.DatePaiement);

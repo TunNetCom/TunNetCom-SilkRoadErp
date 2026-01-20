@@ -20,6 +20,7 @@ public interface IPaiementFournisseurApiClient
         decimal? montantMin,
         decimal? montantMax,
         bool? hasNumeroTransactionBancaire,
+        int? mois,
         int pageNumber,
         int pageSize,
         CancellationToken cancellationToken);
