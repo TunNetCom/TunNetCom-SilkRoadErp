@@ -4,12 +4,14 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Constants
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters
+@using Microsoft.Extensions.Configuration
 @inherits LayoutComponentBase
 @inject IStringLocalizer<SharedResource> Localizer
 @inject NavigationManager NavigationManager
 @inject IAuthService AuthService
 @inject ILogger<MainLayout> Logger
 @inject IAppParametersClient AppParametersClient
+@inject IConfiguration Configuration
 
 <RadzenComponents @rendermode="InteractiveAuto" />
 
@@ -19,7 +21,7 @@
             <!-- Left side -->
             <div style="display: flex; align-items: center; gap: 0;">
                 <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
-                <RadzenLabel Text="@(companyName ?? Localizer["Silk_Road_ERP"])" Style="margin-left: 10px" />
+                <RadzenLabel Text="@($"{companyName ?? Localizer["Silk_Road_ERP"]} v{appVersion ?? "1.0.0"}")" Style="margin-left: 10px" />
             </div>
 
             <!-- Right side -->
@@ -189,9 +191,13 @@
     bool showMenu = false;
     UserInfo? userInfo;
     string? companyName;
+    string? appVersion;
 
     protected override void OnInitialized()
     {
+        // Load app version from configuration
+        appVersion = Configuration.GetValue<string>("AppVersion", "1.0.0");
+        
         // Close menu when clicking outside
         NavigationManager.LocationChanged += (sender, args) => 
         {
