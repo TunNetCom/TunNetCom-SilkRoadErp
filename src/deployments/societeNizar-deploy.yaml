@@ -1,0 +1,108 @@
+# ==============================================================================
+# Production Deployment - Single Pod Per Service (Low Traffic) - Nizar
+# ==============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: silkroad-api-societe
+  namespace: silkroad-prod-societe
+  labels:
+    app: silkroad-api-societe
+    environment: production
+    tier: backend
+spec:
+  replicas: 1 # Single pod - no shared storage needed
+  strategy:
+    type: Recreate # Simpler strategy for single pod
+  selector:
+    matchLabels:
+      app: silkroad-api-societe
+      environment: production
+  template:
+    metadata:
+      labels:
+        app: silkroad-api-societe
+        environment: production
+        tier: backend
+    spec:
+      containers:
+      - name: api
+        image: tunnetcom/silkroad:latest-api
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        - containerPort: 8081
+          name: https
+          protocol: TCP
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+        - name: ASPNETCORE_URLS
+          value: "http://+:8080"
+        - name: FRONTEND_URL
+          value: "https://societenizar.aion-time.com"
+        - name: BACKEND_URL
+          value: "https://apisociete.aion-time.com"
+        - name: ConnectionStrings__DefaultConnection
+          valueFrom:
+            secretKeyRef:
+              name: silkroad-connection-secret
+              key: ConnectionStrings__DefaultConnection
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "1000m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+      restartPolicy: Always
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: silkroad-webapp-societe
+  namespace: silkroad-prod-societe
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: silkroad-webapp-societe
+      environment: production
+  template:
+    metadata:
+      labels:
+        app: silkroad-webapp-societe
+        environment: production
+        tier: frontend
+    spec:
+      volumes:
+        - name: dataprotection-keys
+          emptyDir: {}
+      containers:
+      - name: webapp
+        image: tunnetcom/silkroad:latest-webapp
+        imagePullPolicy: Always
+        volumeMounts:
+          - name: dataprotection-keys
+            mountPath: /root/.aspnet/DataProtection-Keys
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+       - name: ASPNETCORE_ENVIRONMENT
+         value: "Production"
+       - name: ASPNETCORE_URLS
+         value: "http://+:8080"
+       - name: ApiSettings__BaseUrl
+         value: "https://apisociete.aion-time.com"
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "1000m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
