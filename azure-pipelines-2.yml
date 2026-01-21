@@ -47,6 +47,21 @@ stages:
           --dry-run=client -o yaml | kubectl apply -f -
       displayName: 'Ensure DB Secret'
 
+    - script: |
+        echo "👤 Running as user:"
+        whoami
+
+        echo "📂 Kubeconfig location:"
+        ls -la ~/.kube || true
+
+        echo "📄 Kubeconfig content (safe):"
+        kubectl config view --minify || true
+
+        echo "🔍 Cluster access test:"
+        kubectl get nodes -o wide
+      displayName: 'Preflight: Kubernetes Access Check'
+
+
     # --------------------------------------------------
     # 2️⃣ Apply Kubernetes Manifests
     # --------------------------------------------------
