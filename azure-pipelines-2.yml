@@ -39,28 +39,18 @@ stages:
     # 1️⃣ Ensure DB Connection Secret
     # --------------------------------------------------
     - script: |
-        echo "🔐 Creating / Updating DB Secret (Societe Nizar)"
-
+        echo "🔐 Creating / Updating DB Secret"
         kubectl create secret generic silkroad-connection-secret \
           -n $(kubeNamespace) \
           --from-literal=ConnectionStrings__DefaultConnection="$(Connection_String_SteNizar)" \
           --dry-run=client -o yaml | kubectl apply -f -
-      displayName: 'Ensure DB Secret'
 
-    - script: |
-        echo "👤 Running as user:"
-        whoami
-
-        echo "📂 Kubeconfig location:"
-        ls -la ~/.kube || true
-
-        echo "📄 Kubeconfig content (safe):"
-        kubectl config view --minify || true
-
-        echo "🔍 Cluster access test:"
-        kubectl get nodes -o wide
-      displayName: 'Preflight: Kubernetes Access Check'
-
+        echo "🔑 Creating / Updating JWT Secret"
+        kubectl create secret generic silkroad-jwt-secret \
+          -n $(kubeNamespace) \
+          --from-literal=SecretKey="$(Jwt_Secret_Key)" \
+          --dry-run=client -o yaml | kubectl apply -f -
+      displayName: 'Ensure Secrets'
 
     # --------------------------------------------------
     # 2️⃣ Apply Kubernetes Manifests
@@ -75,7 +65,6 @@ stages:
     # --------------------------------------------------
     - script: |
         echo "🔄 Updating images"
-
         kubectl set image deployment/$(deploymentApiName) \
           api=tunnetcom/silkroad:latest-api \
           -n $(kubeNamespace)
@@ -90,7 +79,6 @@ stages:
     # --------------------------------------------------
     - script: |
         echo "🔄 Forcing rollout"
-
         kubectl rollout restart deployment/$(deploymentApiName) -n $(kubeNamespace)
         kubectl rollout restart deployment/$(deploymentWebappName) -n $(kubeNamespace)
       displayName: 'Force Rollout'
