@@ -8,7 +8,7 @@ pool:
     - Agent.Name -equals nizar-server
 
 variables:
-- group: Connection_string-NizarSoukra
+- group: Connection_String_SteNizar
 - name: kubeNamespace
   value: silkroad-prod-societe
 - name: deploymentApiName
