@@ -83,26 +83,26 @@ spec:
         - name: dataprotection-keys
           emptyDir: {}
       containers:
-      - name: webapp
-        image: tunnetcom/silkroad:latest-webapp
-        imagePullPolicy: Always
-        volumeMounts:
-          - name: dataprotection-keys
-            mountPath: /root/.aspnet/DataProtection-Keys
-        ports:
-        - containerPort: 8080
-          name: http
-        env:
-       - name: ASPNETCORE_ENVIRONMENT
-         value: "Production"
-       - name: ASPNETCORE_URLS
-         value: "http://+:8080"
-       - name: ApiSettings__BaseUrl
-         value: "https://apisociete.aion-time.com"
-        resources:
-          requests:
-            memory: "1Gi"
-            cpu: "1000m"
-          limits:
-            memory: "2Gi"
-            cpu: "2000m"
+        - name: webapp
+          image: tunnetcom/silkroad:latest-webapp
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: dataprotection-keys
+              mountPath: /root/.aspnet/DataProtection-Keys
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: "Production"
+            - name: ASPNETCORE_URLS
+              value: "http://+:8080"
+            - name: ApiSettings__BaseUrl
+              value: "https://apisociete.aion-time.com"
+          resources:
+            requests:
+              memory: "1Gi"
+              cpu: "1000m"
+            limits:
+              memory: "2Gi"
+              cpu: "2000m"
