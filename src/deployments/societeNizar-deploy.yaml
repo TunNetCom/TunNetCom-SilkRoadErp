@@ -97,7 +97,7 @@ spec:
             - name: ASPNETCORE_URLS
               value: "http://+:8080"
             - name: ApiSettings__BaseUrl
-              value: "https://apisociete.aion-time.com"
+              value: "http://silkroad-api-service-societe:8080"
           resources:
             requests:
               memory: "1Gi"
