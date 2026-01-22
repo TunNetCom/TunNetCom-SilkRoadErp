@@ -14,10 +14,10 @@ variables:
   value: silkroad-prod-societe
 
 - name: deploymentApiName
-  value: silkroad-api-nizar
+  value: silkroad-api-societe
 
 - name: deploymentWebappName
-  value: silkroad-webapp-nizar
+  value: silkroad-webapp-societe
 
 - name: manifestPath
   value: src/deployments/etablissementNizar-deploy.yaml

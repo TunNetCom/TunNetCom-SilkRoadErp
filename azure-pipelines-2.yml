@@ -1,5 +1,5 @@
 # ============================================================
-# Deploy SilkRoad API & WebApp to SocieteNizar Kubernetes
+# Deploy SilkRoad API & WebApp to Societe Nizar Kubernetes
 # ============================================================
 
 pool:
@@ -8,7 +8,7 @@ pool:
     - Agent.Name -equals nizar-server
 
 variables:
-- group: silkroad-prod
+- group: silkroad-prod   # contains Connection_String_SteNizar
 - name: kubeNamespace
   value: silkroad-prod-societe
 - name: deploymentApiName
@@ -20,7 +20,7 @@ variables:
 
 stages:
 - stage: Deploy
-  displayName: Deploy to Nizar Soukra Kubernetes
+  displayName: Deploy to Societe Nizar Kubernetes
   jobs:
   - job: DeployJob
     displayName: K8s Deployment
@@ -39,28 +39,14 @@ stages:
     # 1️⃣ Ensure DB Connection Secret
     # --------------------------------------------------
     - script: |
-        echo "🔐 Creating / Updating DB Secret (Societe Nizar)"
-
+        echo "🔐 Ensuring DB secret exists for Societe Nizar"
         kubectl create secret generic silkroad-connection-secret \
           -n $(kubeNamespace) \
           --from-literal=ConnectionStrings__DefaultConnection="$(Connection_String_SteNizar)" \
           --dry-run=client -o yaml | kubectl apply -f -
       displayName: 'Ensure DB Secret'
-
-    - script: |
-        echo "👤 Running as user:"
-        whoami
-
-        echo "📂 Kubeconfig location:"
-        ls -la ~/.kube || true
-
-        echo "📄 Kubeconfig content (safe):"
-        kubectl config view --minify || true
-
-        echo "🔍 Cluster access test:"
-        kubectl get nodes -o wide
-      displayName: 'Preflight: Kubernetes Access Check'
-
+      env:
+        Connection_String_SteNizar: $(Connection_String_SteNizar)
 
     # --------------------------------------------------
     # 2️⃣ Apply Kubernetes Manifests
@@ -74,7 +60,7 @@ stages:
     # 3️⃣ Update Images
     # --------------------------------------------------
     - script: |
-        echo "🔄 Updating images"
+        echo "🔄 Updating deployment images"
 
         kubectl set image deployment/$(deploymentApiName) \
           api=tunnetcom/silkroad:latest-api \
@@ -104,7 +90,7 @@ stages:
       displayName: 'Wait for Rollout'
 
     # --------------------------------------------------
-    # 6️⃣ Verify
+    # 6️⃣ Verify Deployment
     # --------------------------------------------------
     - script: |
         kubectl get pods -n $(kubeNamespace) -o wide
