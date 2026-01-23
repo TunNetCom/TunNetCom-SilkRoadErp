@@ -8,7 +8,7 @@ public class UpdateProductValidator : AbstractValidator<UpdateProductCommand>
             .MaximumLength(50).WithMessage("reference_must_be_less_than_50_characters");
         _ = RuleFor(x => x.Nom)
             .NotEmpty().WithMessage("nom_required")
-            .MaximumLength(50).WithMessage("nom_must_be_less_than_50_characters");
+            .MaximumLength(300).WithMessage("nom_must_be_less_than_300_characters");
 
         _ = RuleFor(x => x.QteLimite)
             .GreaterThanOrEqualTo(0).WithMessage("quantite_limit_must_be_non_negative");

@@ -231,7 +231,7 @@
                 <RadzenDataGridColumn TItem="ProductResponse" Filterable="false" Sortable="false" Width="200px" TextAlign="TextAlign.Center">
                     <Template Context="product">
                         <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Success" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter" Class="rz-my-1 rz-ms-1"
-                                      Click="@(() => EditProduct(product.Reference))"
+                                      Click="@(() => EditProduct(product))"
                                       Title="@Localizer["edit_button_label"]" />
                         <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter"
                                       Click="@(() => ConfirmDeleteProduct(product.Reference))"
@@ -828,9 +828,9 @@
         navigationManager.NavigateTo("/editproduct");
     }
 
-    private void EditProduct(string reference)
+    private void EditProduct(ProductResponse product)
     {
-        navigationManager.NavigateTo($"/editproduct/{reference}");
+        navigationManager.NavigateTo($"/editproduct/{product.Id}");
     }
 
     private async Task ConfirmDeleteProduct(string reference)

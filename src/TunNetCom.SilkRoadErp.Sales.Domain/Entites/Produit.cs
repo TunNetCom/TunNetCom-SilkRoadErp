@@ -89,6 +89,8 @@ public partial class Produit
 
     }
 
+    public int Id { get; private set; }
+
     public string Refe { get; private set; } = null!;
 
     public string Nom { get; private set; } = null!;

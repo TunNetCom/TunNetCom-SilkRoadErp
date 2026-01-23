@@ -1,23 +1,24 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Products.GetProductByRef;
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Products.GetProductById;
 
-public class GetProductByRefQueryHandler(
+public class GetProductByIdQueryHandler(
     SalesContext _context,
-    ILogger<GetProductByRefQueryHandler> _logger)
-    : IRequestHandler<GetProductByRefQuery, Result<ProductResponse>>
+    ILogger<GetProductByIdQueryHandler> _logger)
+    : IRequestHandler<GetProductByIdQuery, Result<ProductResponse>>
 {
     public async Task<Result<ProductResponse>> Handle(
-        GetProductByRefQuery getProductByRefQuery,
+        GetProductByIdQuery query,
         CancellationToken cancellationToken)
     {
-        _logger.LogFetchingEntityById(nameof(Produit), getProductByRefQuery.Refe);
-        var product = await _context.Produit.FindAsync(getProductByRefQuery.Refe,cancellationToken);
+        _logger.LogFetchingEntityById(nameof(Produit), query.Id);
+        var product = await _context.Produit
+            .FirstOrDefaultAsync(p => p.Id == query.Id, cancellationToken);
 
         if (product is null)
         {
-            _logger.LogEntityNotFound(nameof(Produit), getProductByRefQuery.Refe);
+            _logger.LogEntityNotFound(nameof(Produit), query.Id);
             return Result.Fail(EntityNotFound.Error());
         }
-        _logger.LogEntityFetchedById(nameof(Produit), getProductByRefQuery.Refe);
+        _logger.LogEntityFetchedById(nameof(Produit), query.Id);
         var productResponse = new ProductResponse
         {
             Id = product.Id,
@@ -38,3 +39,4 @@ public class GetProductByRefQueryHandler(
         return productResponse;
     }
 }
+

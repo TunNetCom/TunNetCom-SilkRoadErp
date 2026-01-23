@@ -15,10 +15,16 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
         {
             entity.HasKey(e => e.Refe).HasName("PK_dbo.Produit");
 
+            entity.Property(e => e.Id)
+                .ValueGeneratedOnAdd()
+                .HasColumnName("Id");
+
             entity.Property(e => e.Refe)
             .HasMaxLength(50)
             .HasColumnName("refe");
-            entity.Property(e => e.Nom).HasColumnName("nom");
+            entity.Property(e => e.Nom)
+            .HasMaxLength(300)
+            .HasColumnName("nom");
             entity.Property(e => e.Prix)
             .HasColumnType("decimal(18, 3)")
             .HasColumnName("prix");

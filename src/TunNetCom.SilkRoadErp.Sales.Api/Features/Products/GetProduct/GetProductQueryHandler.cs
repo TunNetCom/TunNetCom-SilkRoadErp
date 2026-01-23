@@ -38,6 +38,7 @@ public class GetProductQueryHandler(
         var productsQueryProjected = productsQuery.Select(t =>
             new ProductResponse
             {
+                Id = t.Id,
                 Reference = t.Refe,
                 Name = t.Nom,
                 QteLimit = t.QteLimite,

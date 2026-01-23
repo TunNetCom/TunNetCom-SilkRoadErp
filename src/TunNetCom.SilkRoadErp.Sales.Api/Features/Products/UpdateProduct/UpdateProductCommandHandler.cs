@@ -12,12 +12,27 @@ public class UpdateProductCommandHandler(
         UpdateProductCommand updateProductCommand,
         CancellationToken cancellationToken)
     {
-        _logger.LogEntityUpdateAttempt(nameof(Produit), updateProductCommand.Refe);
-        var productToUpdate = await _context.Produit.FindAsync(updateProductCommand.Refe);
+        Produit? productToUpdate = null;
+        
+        // Si Id est fourni, utiliser Id, sinon utiliser Refe
+        if (updateProductCommand.Id.HasValue)
+        {
+            _logger.LogEntityUpdateAttempt(nameof(Produit), updateProductCommand.Id.Value);
+            productToUpdate = await _context.Produit
+                .FirstOrDefaultAsync(p => p.Id == updateProductCommand.Id.Value, cancellationToken);
+        }
+        else if (!string.IsNullOrEmpty(updateProductCommand.Refe))
+        {
+            _logger.LogEntityUpdateAttempt(nameof(Produit), updateProductCommand.Refe);
+            productToUpdate = await _context.Produit.FindAsync(updateProductCommand.Refe, cancellationToken);
+        }
 
         if (productToUpdate is null)
         {
-            _logger.LogEntityNotFound(nameof(Produit), updateProductCommand.Refe);
+            var notFoundIdentifier = updateProductCommand.Id.HasValue 
+                ? updateProductCommand.Id.Value.ToString() 
+                : updateProductCommand.Refe ?? "unknown";
+            _logger.LogEntityNotFound(nameof(Produit), notFoundIdentifier);
             return Result.Fail(EntityNotFound.Error());
         }
 
@@ -54,7 +69,10 @@ public class UpdateProductCommandHandler(
                 }
 
                 var image1Bytes = Convert.FromBase64String(updateProductCommand.Image1Base64);
-                image1StoragePath = await _documentStorageService.SaveAsync(image1Bytes, $"product_{updateProductCommand.Refe}_image1.jpg", cancellationToken);
+                var imageFileName = updateProductCommand.Id.HasValue 
+                    ? $"product_{updateProductCommand.Id.Value}_image1.jpg" 
+                    : $"product_{updateProductCommand.Refe}_image1.jpg";
+                image1StoragePath = await _documentStorageService.SaveAsync(image1Bytes, imageFileName, cancellationToken);
             }
             catch (FormatException ex)
             {
@@ -87,7 +105,10 @@ public class UpdateProductCommandHandler(
                 }
 
                 var image2Bytes = Convert.FromBase64String(updateProductCommand.Image2Base64);
-                image2StoragePath = await _documentStorageService.SaveAsync(image2Bytes, $"product_{updateProductCommand.Refe}_image2.jpg", cancellationToken);
+                var image2FileName = updateProductCommand.Id.HasValue 
+                    ? $"product_{updateProductCommand.Id.Value}_image2.jpg" 
+                    : $"product_{updateProductCommand.Refe}_image2.jpg";
+                image2StoragePath = await _documentStorageService.SaveAsync(image2Bytes, image2FileName, cancellationToken);
             }
             catch (FormatException ex)
             {
@@ -120,7 +141,10 @@ public class UpdateProductCommandHandler(
                 }
 
                 var image3Bytes = Convert.FromBase64String(updateProductCommand.Image3Base64);
-                image3StoragePath = await _documentStorageService.SaveAsync(image3Bytes, $"product_{updateProductCommand.Refe}_image3.jpg", cancellationToken);
+                var image3FileName = updateProductCommand.Id.HasValue 
+                    ? $"product_{updateProductCommand.Id.Value}_image3.jpg" 
+                    : $"product_{updateProductCommand.Refe}_image3.jpg";
+                image3StoragePath = await _documentStorageService.SaveAsync(image3Bytes, image3FileName, cancellationToken);
             }
             catch (FormatException ex)
             {
@@ -151,7 +175,10 @@ public class UpdateProductCommandHandler(
             );
 
         _ = await _context.SaveChangesAsync(cancellationToken);
-        _logger.LogEntityUpdated(nameof(Produit), updateProductCommand.Refe);
+        var updatedIdentifier = updateProductCommand.Id.HasValue 
+            ? updateProductCommand.Id.Value.ToString() 
+            : updateProductCommand.Refe ?? "unknown";
+        _logger.LogEntityUpdated(nameof(Produit), updatedIdentifier);
 
         return Result.Ok();
     }

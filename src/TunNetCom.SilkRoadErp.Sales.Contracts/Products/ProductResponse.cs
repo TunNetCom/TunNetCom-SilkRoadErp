@@ -2,6 +2,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Contracts.Products;
 
 public class ProductResponse
 {
+    [JsonPropertyName("id")]
+    public int Id { get; set; }
+
     [JsonPropertyName("reference")]
     public string Reference { get; set; } = string.Empty;
 

@@ -8,6 +8,10 @@ public interface IProductsApiClient
         string refe,
         CancellationToken cancellationToken);
 
+    Task<OneOf<ProductResponse, bool>> GetByIdAsync(
+        int id,
+        CancellationToken cancellationToken);
+
     Task<PagedList<ProductResponse>> GetPagedAsync(
         QueryStringParameters queryParameters,
         CancellationToken cancellationToken);
@@ -19,6 +23,11 @@ public interface IProductsApiClient
     Task<OneOf<ResponseTypes, BadRequestResponse>> UpdateAsync
         (UpdateProductRequest request,
         string refe,
+        CancellationToken cancellationToken);
+
+    Task<OneOf<ResponseTypes, BadRequestResponse>> UpdateByIdAsync
+        (UpdateProductRequest request,
+        int id,
         CancellationToken cancellationToken);
 
     Task<OneOf<ResponseTypes, Stream>> DeleteAsync(
