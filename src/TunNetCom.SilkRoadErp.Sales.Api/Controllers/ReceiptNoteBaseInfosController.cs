@@ -83,7 +83,8 @@ public class ReceiptNoteBaseInfosController : ODataController
                     GrossAmount = x.br.TotHTva,
                     VatAmount = x.br.TotTva,
                     Statut = (int)x.br.Statut,
-                    StatutLibelle = x.br.Statut.ToString()
+                    StatutLibelle = x.br.Statut.ToString(),
+                    SupplierReceiptNumber = x.br.NumBonFournisseur
                 })
                 .AsQueryable();
 

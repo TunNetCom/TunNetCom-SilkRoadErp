@@ -27,5 +27,8 @@ public class ProviderInvoiceBaseInfo
 
     [JsonPropertyName("statutLibelle")]
     public string StatutLibelle { get; set; } = string.Empty;
+
+    [JsonPropertyName("providerInvoiceNumber")]
+    public long ProviderInvoiceNumber { get; set; }
 }
 

@@ -112,6 +112,10 @@
                                       Title="Numéro"
                                       Width="150px" />
                 <RadzenDataGridColumn TItem="ReceiptNoteBaseInfo"
+                                      Property="@nameof(ReceiptNoteBaseInfo.SupplierReceiptNumber)"
+                                      Title="Numéro bon fournisseur"
+                                      Width="180px" />
+                <RadzenDataGridColumn TItem="ReceiptNoteBaseInfo"
                                       Property="@nameof(ReceiptNoteBaseInfo.Date)"
                                       Title="@Localizer["date"]"
                                       Width="150px"
