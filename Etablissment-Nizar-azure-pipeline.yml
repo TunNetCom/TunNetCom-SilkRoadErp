@@ -1,0 +1,114 @@
+# ============================================================
+# Deploy SilkRoad API & WebApp to Etablissement Nizar Kubernetes
+# ============================================================
+
+pool:
+  name: OnPremAgents
+  demands:
+    - Agent.Name -equals nizar-server
+
+variables:
+- group: silkroad-prod
+
+- name: kubeNamespace
+  value: silkroad-prod-societe
+
+- name: deploymentApiName
+  value: silkroad-api-societe
+
+- name: deploymentWebappName
+  value: silkroad-webapp-societe
+
+- name: manifestPath
+  value: src/deployments/etablissementNizar-deploy.yaml
+
+stages:
+- stage: Deploy
+  displayName: Deploy Etablissement Nizar
+  jobs:
+  - job: DeployJob
+    displayName: K8s Deployment
+    steps:
+
+    # --------------------------------------------------
+    # 0️⃣ Check Cluster Access
+    # --------------------------------------------------
+    - script: |
+        echo "🔍 Checking cluster access"
+        kubectl version --client
+        kubectl cluster-info
+      displayName: 'Check Kubernetes Cluster'
+
+    # --------------------------------------------------
+    # 1️⃣ Ensure DB Connection Secret
+    # --------------------------------------------------
+    - script: |
+        echo "🔐 Creating / Updating DB Secret (Etablissement Nizar)"
+
+        kubectl create secret generic silkroad-connection-secret \
+          -n $(kubeNamespace) \
+          --from-literal=ConnectionStrings__DefaultConnection="$(Connection_String_EtablissementNizar)" \
+          --dry-run=client -o yaml | kubectl apply -f -
+      displayName: 'Ensure DB Secret'
+
+    # --------------------------------------------------
+    # 1️⃣ bis – Preflight Kubernetes Access
+    # --------------------------------------------------
+    - script: |
+        echo "👤 User:"
+        whoami
+
+        echo "📂 Kubeconfig:"
+        ls -la ~/.kube || true
+
+        echo "🔍 Nodes:"
+        kubectl get nodes -o wide
+      displayName: 'Preflight: Kubernetes Access Check'
+
+    # --------------------------------------------------
+    # 2️⃣ Apply Kubernetes Manifests
+    # --------------------------------------------------
+    - script: |
+        echo "🚀 Applying Kubernetes manifests"
+        kubectl apply -f $(manifestPath)
+      displayName: 'Apply Manifests'
+
+    # --------------------------------------------------
+    # 3️⃣ Update Images
+    # --------------------------------------------------
+    - script: |
+        echo "🔄 Updating images"
+
+        kubectl set image deployment/$(deploymentApiName) \
+          api=tunnetcom/silkroad:latest-api \
+          -n $(kubeNamespace)
+
+        kubectl set image deployment/$(deploymentWebappName) \
+          webapp=tunnetcom/silkroad:latest-webapp \
+          -n $(kubeNamespace)
+      displayName: 'Update Images'
+
+    # --------------------------------------------------
+    # 4️⃣ Force Rollout
+    # --------------------------------------------------
+    - script: |
+        echo "🔄 Forcing rollout"
+
+        kubectl rollout restart deployment/$(deploymentApiName) -n $(kubeNamespace)
+        kubectl rollout restart deployment/$(deploymentWebappName) -n $(kubeNamespace)
+      displayName: 'Force Rollout'
+
+    # --------------------------------------------------
+    # 5️⃣ Wait for Rollout
+    # --------------------------------------------------
+    - script: |
+        kubectl rollout status deployment/$(deploymentApiName) -n $(kubeNamespace) --timeout=300s
+        kubectl rollout status deployment/$(deploymentWebappName) -n $(kubeNamespace) --timeout=300s
+      displayName: 'Wait for Rollout'
+
+    # --------------------------------------------------
+    # 6️⃣ Verify
+    # --------------------------------------------------
+    - script: |
+        kubectl get pods -n $(kubeNamespace) -o wide
+      displayName: 'Verify Deployment'
