@@ -213,13 +213,17 @@ public class GetSoldeClientQueryHandler(
         // Get payments
         var paiements = await _context.PaiementClient
             .Where(p => p.ClientId == query.ClientId && p.AccountingYearId == accountingYearId.Value)
+            .Include(p => p.Banque)
             .Select(p => new PaiementSoldeClient
             {
                 Id = p.Id,
                 NumeroTransactionBancaire = p.NumeroTransactionBancaire,
                 DatePaiement = p.DatePaiement,
                 Montant = p.Montant,
-                MethodePaiement = p.MethodePaiement.ToString()
+                MethodePaiement = p.MethodePaiement.ToString(),
+                NumeroChequeTraite = p.NumeroChequeTraite,
+                BanqueNom = p.Banque != null ? p.Banque.Nom : null,
+                DateEcheance = p.DateEcheance
             })
             .OrderByDescending(p => p.DatePaiement)
             .ToListAsync(cancellationToken);

@@ -81,7 +81,10 @@ public class PrintSoldeClientService(
                 NumeroTransactionBancaire = p.NumeroTransactionBancaire,
                 DatePaiement = p.DatePaiement,
                 Montant = p.Montant,
-                Methode = p.MethodePaiement
+                Methode = p.MethodePaiement,
+                NumeroChequeTraite = p.NumeroChequeTraite,
+                BanqueNom = p.BanqueNom,
+                DateEcheance = p.DateEcheance
             }).ToList(),
             GeneratedAt = DateTime.Now,
             DecimalPlaces = AmountHelper.DEFAULT_DECIMAL_PLACES,

@@ -66,5 +66,8 @@ public class PrintSoldeClientPayment
     public DateTime DatePaiement { get; set; }
     public decimal Montant { get; set; }
     public string Methode { get; set; } = string.Empty;
+    public string? NumeroChequeTraite { get; set; }
+    public string? BanqueNom { get; set; }
+    public DateTime? DateEcheance { get; set; }
 }
 

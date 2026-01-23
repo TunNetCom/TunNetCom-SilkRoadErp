@@ -97,5 +97,14 @@ public class PaiementSoldeClient
 
     [JsonPropertyName("methodePaiement")]
     public string MethodePaiement { get; set; } = string.Empty;
+
+    [JsonPropertyName("numeroChequeTraite")]
+    public string? NumeroChequeTraite { get; set; }
+
+    [JsonPropertyName("banqueNom")]
+    public string? BanqueNom { get; set; }
+
+    [JsonPropertyName("dateEcheance")]
+    public DateTime? DateEcheance { get; set; }
 }
 
