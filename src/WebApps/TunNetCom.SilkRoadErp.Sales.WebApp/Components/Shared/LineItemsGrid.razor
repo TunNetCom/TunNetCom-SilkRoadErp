@@ -114,8 +114,28 @@
                                 @Localizer["total_vat"]: <strong>@TotalVat.FormatAmount()</strong>
                             </RadzenText>
                         }
+                        @if (TotalFodec > 0 && IsConstructorProvider)
+                        {
+                            <RadzenText TextStyle="TextStyle.Body1" class="summary-text" style="color: #f59e0b;">
+                                FODEC HT: <strong>@TotalFodec.FormatAmount()</strong>
+                            </RadzenText>
+                        }
                     </RadzenStack>
                 </RadzenCard>
+                @if (IsConstructorProvider && TotalFodec > 0)
+                {
+                    <RadzenAlert AlertStyle="AlertStyle.Info" class="constructor-alert" style="margin-top: 8px;">
+                        <RadzenIcon Icon="info" style="margin-right: 8px;" />
+                        <span>Fournisseur constructeur - FODEC appliqué</span>
+                    </RadzenAlert>
+                }
+                else if (IsConstructorProvider && TotalFodec == 0)
+                {
+                    <RadzenAlert AlertStyle="AlertStyle.Info" class="constructor-alert" style="margin-top: 8px;">
+                        <RadzenIcon Icon="info" style="margin-right: 8px;" />
+                        <span>Fournisseur constructeur - FODEC non appliqué (exercice en cours)</span>
+                    </RadzenAlert>
+                }
             }
         </div>
     </HeaderTemplate>
@@ -545,6 +565,8 @@
     [Parameter] public decimal TotalHt { get; set; }
     [Parameter] public decimal TotalVat { get; set; }
     [Parameter] public decimal TotalTtc { get; set; }
+    [Parameter] public decimal TotalFodec { get; set; } = 0;
+    [Parameter] public bool IsConstructorProvider { get; set; } = false;
     [Parameter] public IStringLocalizer<SharedResource> Localizer { get; set; }
     
     // Product-related properties accessors

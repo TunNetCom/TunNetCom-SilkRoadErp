@@ -5,12 +5,16 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNoteByI
 public class GetReceiptNoteByIdQueryHandler(
     SalesContext _context,
     ILogger<GetReceiptNoteByIdQueryHandler> _logger,
+    IActiveAccountingYearService _activeAccountingYearService,
     IAccountingYearFinancialParametersService _financialParametersService)
     : IRequestHandler<GetReceiptNoteByIdQuery, Result<ReceiptNoteResponse>>
 {
     public async Task<Result<ReceiptNoteResponse>> Handle(GetReceiptNoteByIdQuery getReceiptNoteByIdQuery, CancellationToken cancellationToken)
     {
         _logger.LogFetchingEntityById(nameof(BonDeReception), getReceiptNoteByIdQuery.Num);
+        
+        // Get active accounting year ID
+        var activeAccountingYearId = await _activeAccountingYearService.GetActiveAccountingYearIdAsync(cancellationToken);
         
         // Get FODEC rate from financial parameters service
         var fodecRate = await _financialParametersService.GetPourcentageFodecAsync(0, cancellationToken);
@@ -30,6 +34,7 @@ public class GetReceiptNoteByIdQueryHandler(
                 NomFournisseur = br.IdFournisseurNavigation.Nom,
                 Date = br.Date,
                 NumFactureFournisseur = br.NumFactureFournisseur,
+                AccountingYearId = br.AccountingYearId,
                 Items = br.LigneBonReception.Select(l => new ReceiptNoteDetailResponse
                 {
                     Id = l.IdLigne,
@@ -40,14 +45,16 @@ public class GetReceiptNoteByIdQueryHandler(
                     DiscountPercentage = l.Remise,
                     TotalExcludingTax = l.TotHt,
                     VatPercentage = l.Tva,
-                    // Calculate FODEC if provider is constructor
+                    // Always calculate FODEC if provider is constructor
+                    // Uses same logic as ReceiptNoteFodecCalculator.CalculateFodecAndTtc (cannot use service directly in LINQ)
                     PrixHtFodec = br.IdFournisseurNavigation.Constructeur && l.TotHt > 0
                         ? l.TotHt * (fodecRate / 100)
                         : (decimal?)null,
-                    // Add FODEC to TotalIncludingTax if applicable
-                    TotalIncludingTax = l.TotTtc + (br.IdFournisseurNavigation.Constructeur && l.TotHt > 0
-                        ? l.TotHt * (fodecRate / 100)
-                        : 0),
+                    // Recalculate TTC with correct formula: HT + FODEC + TVA (where TVA is calculated on HT + FODEC)
+                    // Formula matches ReceiptNoteFodecCalculator.CalculateFodecAndTtc
+                    TotalIncludingTax = br.IdFournisseurNavigation.Constructeur && l.TotHt > 0
+                        ? l.TotHt + (l.TotHt * (fodecRate / 100)) + ((l.TotHt + (l.TotHt * (fodecRate / 100))) * (decimal)(l.Tva / 100))
+                        : l.TotTtc,
                     Provider = br.IdFournisseurNavigation.Nom,
                     Date = br.Date
                 }).ToList()

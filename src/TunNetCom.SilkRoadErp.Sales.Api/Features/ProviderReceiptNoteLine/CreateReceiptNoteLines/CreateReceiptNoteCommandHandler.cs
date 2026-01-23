@@ -6,6 +6,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderReceiptNoteLine.Creat
 internal class CreateReceiptNoteCommandHandler(
     SalesContext salesContext,
     ILogger<CreateReceiptNoteCommandHandler> _logger,
+    IActiveAccountingYearService _activeAccountingYearService,
     IAccountingYearFinancialParametersService _financialParametersService) 
     : IRequestHandler<CreateReceiptNoteLigneCommand, Result<List<int>>>
 {
@@ -15,6 +16,9 @@ internal class CreateReceiptNoteCommandHandler(
     {
         try
         {
+            // Get active accounting year ID
+            var activeAccountingYearId = await _activeAccountingYearService.GetActiveAccountingYearIdAsync(cancellationToken);
+            
             // Get FODEC rate from financial parameters service
             var fodecRate = await _financialParametersService.GetPourcentageFodecAsync(0, cancellationToken);
 
@@ -23,7 +27,7 @@ internal class CreateReceiptNoteCommandHandler(
             var receiptNotes = await salesContext.BonDeReception
                 .Include(br => br.IdFournisseurNavigation)
                 .Where(br => receiptNoteNumbers.Contains(br.Num))
-                .ToDictionaryAsync(br => br.Num, br => new { br.Id, br.IdFournisseurNavigation }, cancellationToken);
+                .ToDictionaryAsync(br => br.Num, br => new { br.Id, br.IdFournisseurNavigation, br.AccountingYearId }, cancellationToken);
 
             var receiptNoteLines = new List<LigneBonReception>();
             foreach (var lineRequest in request.ReceiptNoteLines)
@@ -43,12 +47,17 @@ internal class CreateReceiptNoteCommandHandler(
                     discount: lineRequest.Discount,
                     tax: lineRequest.Tax);
 
-                // Add FODEC to TotTtc if provider is constructor
+                // Use centralized FODEC calculator for constructor suppliers
                 var isConstructor = receiptNoteInfo.IdFournisseurNavigation?.Constructeur ?? false;
+                var (fodecAmount, updatedTotTtc) = ReceiptNoteFodecCalculator.CalculateFodecAndTtc(
+                    line.TotHt,
+                    line.Tva,
+                    fodecRate,
+                    isConstructor);
+                
                 if (isConstructor && line.TotHt > 0)
                 {
-                    var fodecAmount = DecimalHelper.RoundAmount(line.TotHt * (fodecRate / 100));
-                    line.TotTtc = DecimalHelper.RoundAmount(line.TotTtc + fodecAmount);
+                    line.TotTtc = updatedTotTtc;
                 }
 
                 receiptNoteLines.Add(line);

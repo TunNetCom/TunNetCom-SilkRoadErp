@@ -30,6 +30,9 @@ public class ReceiptNoteResponse
     [JsonPropertyName("statutLibelle")]
     public string StatutLibelle { get; set; } = string.Empty;
 
+    [JsonPropertyName("accountingYearId")]
+    public int AccountingYearId { get; set; }
+
     [JsonPropertyName("items")]
     public List<ReceiptNoteDetailResponse> Items { get; set; } = new();
 }

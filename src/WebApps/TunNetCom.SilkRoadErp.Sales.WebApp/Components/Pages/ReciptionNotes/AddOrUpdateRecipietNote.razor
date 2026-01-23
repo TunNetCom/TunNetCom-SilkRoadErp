@@ -227,6 +227,8 @@ else
                    TotalHt="@totalHt"
                    TotalVat="@totalVat"
                    TotalTtc="@totalTtc"
+                   TotalFodec="@totalFodec"
+                   IsConstructorProvider="@(_filteredProviders.FirstOrDefault(p => p.Id == _selectedProviderId)?.Constructeur ?? false)"
                    Localizer="@Localizer"
                    GetProductReference="@(item => item.ProductReference)"
                    SetProductReference="@((item, value) => item.ProductReference = value)"

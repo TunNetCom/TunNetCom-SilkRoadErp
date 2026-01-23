@@ -66,11 +66,16 @@ internal class CreateReceiptNoteWithLinesCommandHandler(
                     discount: x.Discount,
                     tax: x.Tax);
 
-                // Add FODEC to TotTtc if provider is constructor
+                // Use centralized FODEC calculator for constructor suppliers
+                var (fodecAmount, updatedTotTtc) = ReceiptNoteFodecCalculator.CalculateFodecAndTtc(
+                    line.TotHt,
+                    line.Tva,
+                    fodecRate,
+                    isConstructor);
+                
                 if (isConstructor && line.TotHt > 0)
                 {
-                    var fodecAmount = DecimalHelper.RoundAmount(line.TotHt * (fodecRate / 100));
-                    line.TotTtc = DecimalHelper.RoundAmount(line.TotTtc + fodecAmount);
+                    line.TotTtc = updatedTotTtc;
                 }
 
                 return line;
@@ -79,6 +84,8 @@ internal class CreateReceiptNoteWithLinesCommandHandler(
             await salesContext.LigneBonReception.AddRangeAsync(receiptNoteLines, cancellationToken);
 
             // Calculate totals from lines
+            // Note: For constructor suppliers, TotTtc = HT + FODEC + TVA
+            // So TotTtc - TotHt = FODEC + TVA (which is stored in TotTva)
             var totHTva = DecimalHelper.RoundAmount(receiptNoteLines.Sum(l => l.TotHt));
             var totTva = DecimalHelper.RoundAmount(receiptNoteLines.Sum(l => l.TotTtc - l.TotHt));
             var netPayer = DecimalHelper.RoundAmount(receiptNoteLines.Sum(l => l.TotTtc));
