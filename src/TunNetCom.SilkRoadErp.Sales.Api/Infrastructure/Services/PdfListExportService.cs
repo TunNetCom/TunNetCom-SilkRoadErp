@@ -25,13 +25,16 @@ public class PdfListExportService
         decimal? totalVat7 = null,
         decimal? totalVat13 = null,
         decimal? totalVat19 = null,
+        decimal? totalBase7 = null,
+        decimal? totalBase13 = null,
+        decimal? totalBase19 = null,
         CancellationToken cancellationToken = default)
     {
         try
         {
             await EnsurePlaywrightInstalledAsync(cancellationToken);
 
-                var html = GenerateHtmlTable(data, columns, title, decimalPlaces, totalNetAmount, totalVatAmount, totalTtcAmount, totalVat7, totalVat13, totalVat19);
+                var html = GenerateHtmlTable(data, columns, title, decimalPlaces, totalNetAmount, totalVatAmount, totalTtcAmount, totalVat7, totalVat13, totalVat19, totalBase7, totalBase13, totalBase19);
             _logger.LogDebug("HTML generated successfully, length: {HtmlLength} characters", html?.Length ?? 0);
 
             return await GeneratePdfFromHtmlAsync(html, cancellationToken);
@@ -43,7 +46,7 @@ public class PdfListExportService
         }
     }
 
-    private string GenerateHtmlTable<T>(IEnumerable<T> data, List<ColumnMapping> columns, string title, int decimalPlaces = 3, decimal? totalNetAmount = null, decimal? totalVatAmount = null, decimal? totalTtcAmount = null, decimal? totalVat7 = null, decimal? totalVat13 = null, decimal? totalVat19 = null)
+    private string GenerateHtmlTable<T>(IEnumerable<T> data, List<ColumnMapping> columns, string title, int decimalPlaces = 3, decimal? totalNetAmount = null, decimal? totalVatAmount = null, decimal? totalTtcAmount = null, decimal? totalVat7 = null, decimal? totalVat13 = null, decimal? totalVat19 = null, decimal? totalBase7 = null, decimal? totalBase13 = null, decimal? totalBase19 = null)
     {
         var html = new StringBuilder();
         html.AppendLine("<!DOCTYPE html>");
@@ -125,25 +128,31 @@ public class PdfListExportService
                 html.AppendLine("</tr>");
             }
             
-            // TVA detail rows
-            if (totalVat7.HasValue && totalVat7.Value > 0)
+            // Récapitulatif TVA section - Always show when we have totals
+            if (totalNetAmount.HasValue || totalVatAmount.HasValue || totalTtcAmount.HasValue)
             {
-                html.AppendLine("<tr style='background-color: #f9f9f9;'>");
-                html.AppendLine($"<td colspan='{columns.Count + (hasNetAmount && hasVatAmount ? 1 : 0)}' style='text-align: right; padding-right: 10px;'>TVA 7%: {FormatValue(totalVat7.Value, decimalPlaces)}</td>");
+                html.AppendLine("<tr style='background-color: #e6e6e6;'>");
+                html.AppendLine($"<td colspan='{columns.Count + (hasNetAmount && hasVatAmount ? 1 : 0)}' style='text-align: left; padding: 8px; font-weight: bold;'>Récapitulatif TVA:</td>");
                 html.AppendLine("</tr>");
-            }
-            
-            if (totalVat13.HasValue && totalVat13.Value > 0)
-            {
+                
+                // Base HT 7% - Always show
                 html.AppendLine("<tr style='background-color: #f9f9f9;'>");
-                html.AppendLine($"<td colspan='{columns.Count + (hasNetAmount && hasVatAmount ? 1 : 0)}' style='text-align: right; padding-right: 10px;'>TVA 13%: {FormatValue(totalVat13.Value, decimalPlaces)}</td>");
+                html.AppendLine($"<td colspan='{columns.Count + (hasNetAmount && hasVatAmount ? 1 : 0)}' style='text-align: right; padding-right: 10px;'>Base HT 7%: {FormatValue(totalBase7 ?? 0, decimalPlaces)}</td>");
                 html.AppendLine("</tr>");
-            }
-            
-            if (totalVat19.HasValue && totalVat19.Value > 0)
-            {
+                
+                // Base HT 19% - Always show
                 html.AppendLine("<tr style='background-color: #f9f9f9;'>");
-                html.AppendLine($"<td colspan='{columns.Count + (hasNetAmount && hasVatAmount ? 1 : 0)}' style='text-align: right; padding-right: 10px;'>TVA 19%: {FormatValue(totalVat19.Value, decimalPlaces)}</td>");
+                html.AppendLine($"<td colspan='{columns.Count + (hasNetAmount && hasVatAmount ? 1 : 0)}' style='text-align: right; padding-right: 10px;'>Base HT 19%: {FormatValue(totalBase19 ?? 0, decimalPlaces)}</td>");
+                html.AppendLine("</tr>");
+                
+                // Montant TVA 7% - Always show
+                html.AppendLine("<tr style='background-color: #f9f9f9;'>");
+                html.AppendLine($"<td colspan='{columns.Count + (hasNetAmount && hasVatAmount ? 1 : 0)}' style='text-align: right; padding-right: 10px;'>Montant TVA 7%: {FormatValue(totalVat7 ?? 0, decimalPlaces)}</td>");
+                html.AppendLine("</tr>");
+                
+                // Montant TVA 19% - Always show
+                html.AppendLine("<tr style='background-color: #f9f9f9;'>");
+                html.AppendLine($"<td colspan='{columns.Count + (hasNetAmount && hasVatAmount ? 1 : 0)}' style='text-align: right; padding-right: 10px;'>Montant TVA 19%: {FormatValue(totalVat19 ?? 0, decimalPlaces)}</td>");
                 html.AppendLine("</tr>");
             }
             

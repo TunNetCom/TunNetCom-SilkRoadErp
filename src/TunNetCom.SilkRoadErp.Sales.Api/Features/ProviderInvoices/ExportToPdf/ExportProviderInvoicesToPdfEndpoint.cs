@@ -163,7 +163,7 @@ public class ExportProviderInvoicesToPdfEndpoint : ICarterModule
             var totalVatAmount = totalVat7 + totalVat13 + totalVat19;
             var totalTtcAmount = totalNetAmount + totalVatAmount;
 
-            var fileBytes = await exportService.ExportToPdfAsync(invoiceList, columnsToExport, "Liste des Factures Fournisseurs", decimalPlaces, totalNetAmount, totalVatAmount, totalTtcAmount, totalVat7, totalVat13, totalVat19, cancellationToken);
+            var fileBytes = await exportService.ExportToPdfAsync(invoiceList, columnsToExport, "Liste des Factures Fournisseurs", decimalPlaces, totalNetAmount, totalVatAmount, totalTtcAmount, totalVat7, totalVat13, totalVat19, null, null, null, cancellationToken);
 
             var filename = $"Factures_Fournisseurs_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
 

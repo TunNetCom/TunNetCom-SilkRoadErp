@@ -53,7 +53,11 @@ public class GetInvoiceTotalsEndpoint : ICarterModule
 
             if (endDate.HasValue)
             {
-                var endDateInclusive = endDate.Value.Date.AddDays(1).AddTicks(-1);
+                // If endDate already has time component (not midnight), use it as-is
+                // Otherwise, set to end of day
+                var endDateInclusive = endDate.Value.TimeOfDay == TimeSpan.Zero 
+                    ? endDate.Value.Date.AddDays(1).AddTicks(-1) 
+                    : endDate.Value;
                 invoiceQuery = invoiceQuery.Where(f => f.Date <= endDateInclusive);
             }
 
@@ -90,6 +94,13 @@ public class GetInvoiceTotalsEndpoint : ICarterModule
             var lines = await linesQuery.ToListAsync(cancellationToken);
 
             var totalHT = lines.Sum(l => l.TotHt);
+            
+            // Calculate VAT bases (using TotHt)
+            var totalBase7 = lines.Where(l => l.Tva == vatRate7).Sum(l => l.TotHt);
+            var totalBase13 = lines.Where(l => l.Tva == vatRate13).Sum(l => l.TotHt);
+            var totalBase19 = lines.Where(l => l.Tva == vatRate19).Sum(l => l.TotHt);
+            
+            // Calculate VAT amounts (using TotTtc - TotHt)
             var totalVat7 = lines.Where(l => l.Tva == vatRate7).Sum(l => l.TotTtc - l.TotHt);
             var totalVat13 = lines.Where(l => l.Tva == vatRate13).Sum(l => l.TotTtc - l.TotHt);
             var totalVat19 = lines.Where(l => l.Tva == vatRate19).Sum(l => l.TotTtc - l.TotHt);
@@ -104,6 +115,9 @@ public class GetInvoiceTotalsEndpoint : ICarterModule
             var response = new InvoiceTotalsResponse
             {
                 TotalHT = totalHT,
+                TotalBase7 = totalBase7,
+                TotalBase13 = totalBase13,
+                TotalBase19 = totalBase19,
                 TotalVat7 = totalVat7,
                 TotalVat13 = totalVat13,
                 TotalVat19 = totalVat19,
@@ -111,8 +125,8 @@ public class GetInvoiceTotalsEndpoint : ICarterModule
                 TotalTTC = totalTTC
             };
 
-            logger.LogInformation("Invoice totals calculated: HT={TotalHT}, TVA7={TotalVat7}, TVA13={TotalVat13}, TVA19={TotalVat19}, TTC={TotalTTC}",
-                response.TotalHT, response.TotalVat7, response.TotalVat13, response.TotalVat19, response.TotalTTC);
+            logger.LogInformation("Invoice totals calculated: HT={TotalHT}, Base7={TotalBase7}, Base13={TotalBase13}, Base19={TotalBase19}, TVA7={TotalVat7}, TVA13={TotalVat13}, TVA19={TotalVat19}, TTC={TotalTTC}",
+                response.TotalHT, response.TotalBase7, response.TotalBase13, response.TotalBase19, response.TotalVat7, response.TotalVat13, response.TotalVat19, response.TotalTTC);
 
             return TypedResults.Ok(response);
         }

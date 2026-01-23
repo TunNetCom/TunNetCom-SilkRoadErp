@@ -38,8 +38,10 @@ public class ExportInvoicesToExcelEndpoint : ICarterModule
         try
         {
             logger.LogInformation(
-                "ExportInvoicesToExcelEndpoint called with startDate: {StartDate}, endDate: {EndDate}, customerId: {CustomerId}, tagIds: {TagIds}, status: {Status}",
-                startDate, endDate, customerId, tagIds != null ? string.Join(",", tagIds) : "null", status);
+                "ExportInvoicesToExcelEndpoint called with startDate: {StartDate} (HasValue: {HasStartDate}, Kind: {StartDateKind}), endDate: {EndDate} (HasValue: {HasEndDate}, Kind: {EndDateKind}), customerId: {CustomerId}, tagIds: {TagIds}, status: {Status}",
+                startDate, startDate.HasValue, startDate.HasValue ? startDate.Value.Kind.ToString() : "N/A",
+                endDate, endDate.HasValue, endDate.HasValue ? endDate.Value.Kind.ToString() : "N/A",
+                customerId, tagIds != null ? string.Join(",", tagIds) : "null", status);
 
             // Get financial parameters from service
             var appParams = await mediator.Send(new GetAppParametersQuery(), cancellationToken);
@@ -48,20 +50,28 @@ public class ExportInvoicesToExcelEndpoint : ICarterModule
 
             // Build query similar to InvoiceBaseInfosController
             var baseQuery = from f in context.Facture
+                                .FilterByActiveAccountingYear()
+                                .AsNoTracking()
                            join c in context.Client on f.IdClient equals c.Id
                            join bdl in context.BonDeLivraison on f.Num equals bdl.NumFacture into deliveryNotes
                            from bdl in deliveryNotes.DefaultIfEmpty()
                            select new { f, c, bdl };
 
-            // Apply filters
+            // Apply filters - EXACTLY like GetInvoiceTotalsEndpoint
             if (startDate.HasValue)
             {
+                logger.LogInformation("Filtering by startDate: {StartDate}", startDate.Value);
                 baseQuery = baseQuery.Where(x => x.f.Date >= startDate.Value);
             }
 
             if (endDate.HasValue)
             {
-                var endDateInclusive = endDate.Value.Date.AddDays(1).AddTicks(-1);
+                // If endDate already has time component (not midnight), use it as-is
+                // Otherwise, set to end of day
+                var endDateInclusive = endDate.Value.TimeOfDay == TimeSpan.Zero 
+                    ? endDate.Value.Date.AddDays(1).AddTicks(-1) 
+                    : endDate.Value;
+                logger.LogInformation("Filtering by endDate: {EndDate} (inclusive: {EndDateInclusive})", endDate.Value, endDateInclusive);
                 baseQuery = baseQuery.Where(x => x.f.Date <= endDateInclusive);
             }
 
@@ -87,7 +97,12 @@ public class ExportInvoicesToExcelEndpoint : ICarterModule
                 baseQuery = baseQuery.Where(x => factureNumsWithTags.Contains(x.f.Num));
             }
 
+            // Log query before execution to debug
+            var sqlQuery = baseQuery.ToQueryString();
+            logger.LogInformation("SQL Query before execution: {SqlQuery}", sqlQuery);
+            
             var invoicesData = await baseQuery.ToListAsync(cancellationToken);
+            logger.LogInformation("Found {Count} invoices after applying filters", invoicesData.Count);
 
             var invoices = invoicesData
                 .GroupBy(x => new { x.f.Num, x.f.Date, x.f.IdClient, x.c.Nom, x.f.Statut })
@@ -159,13 +174,37 @@ public class ExportInvoicesToExcelEndpoint : ICarterModule
             var lines = await linesQuery.ToListAsync(cancellationToken);
 
             var totalNetAmount = lines.Sum(l => l.TotHt) + (timbre * invoiceList.Count);
+            
+            // Calculate VAT bases (using TotHt) - Always calculate, default to 0 if no matching lines
+            var totalBase7 = lines.Where(l => l.Tva == vatRate7).Sum(l => l.TotHt);
+            var totalBase13 = lines.Where(l => l.Tva == vatRate13).Sum(l => l.TotHt);
+            var totalBase19 = lines.Where(l => l.Tva == vatRate19).Sum(l => l.TotHt);
+            
+            // Calculate VAT amounts (using TotTtc - TotHt) - Always calculate, default to 0 if no matching lines
             var totalVat7 = lines.Where(l => l.Tva == vatRate7).Sum(l => l.TotTtc - l.TotHt);
             var totalVat13 = lines.Where(l => l.Tva == vatRate13).Sum(l => l.TotTtc - l.TotHt);
             var totalVat19 = lines.Where(l => l.Tva == vatRate19).Sum(l => l.TotTtc - l.TotHt);
             var totalVatAmount = totalVat7 + totalVat13 + totalVat19;
             var totalTtcAmount = totalNetAmount + totalVatAmount;
+            
+            logger.LogInformation("VAT totals calculated - Base7: {Base7}, Base19: {Base19}, Vat7: {Vat7}, Vat19: {Vat19}", 
+                totalBase7, totalBase19, totalVat7, totalVat19);
 
-            var fileBytes = exportService.ExportToExcel(invoiceList, columnsToExport, "Factures", decimalPlaces, totalNetAmount, totalVatAmount, totalTtcAmount, totalVat7, totalVat13, totalVat19);
+            // Ensure values are always passed (even if 0) for display
+            var fileBytes = exportService.ExportToExcel(
+                invoiceList, 
+                columnsToExport, 
+                "Factures", 
+                decimalPlaces, 
+                totalNetAmount, 
+                totalVatAmount, 
+                totalTtcAmount, 
+                totalVat7, 
+                totalVat13, 
+                totalVat19, 
+                totalBase7, 
+                totalBase13, 
+                totalBase19);
 
             var filename = $"Factures_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
 

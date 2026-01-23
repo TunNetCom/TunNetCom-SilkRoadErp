@@ -25,7 +25,10 @@ public class ExcelExportService
         decimal? totalTtcAmount = null,
         decimal? totalVat7 = null,
         decimal? totalVat13 = null,
-        decimal? totalVat19 = null)
+        decimal? totalVat19 = null,
+        decimal? totalBase7 = null,
+        decimal? totalBase13 = null,
+        decimal? totalBase19 = null)
     {
         using var package = new ExcelPackage();
         var worksheet = package.Workbook.Worksheets.Add(sheetName);
@@ -139,66 +142,133 @@ public class ExcelExportService
             // Total HT row
             if (totalNetAmount.HasValue)
             {
-                var cell = worksheet.Cells[rowIndex, 1];
-                cell.Value = "Total HT:";
-                cell.Style.Font.Bold = true;
-                cell.Style.Fill.PatternType = ExcelFillStyle.Solid;
-                cell.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(249, 249, 249));
+                // Label in first column
+                var labelCell = worksheet.Cells[rowIndex, 1];
+                labelCell.Value = "Total HT:";
+                labelCell.Style.Font.Bold = true;
+                labelCell.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                labelCell.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(249, 249, 249));
+                labelCell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
                 
+                // Value in last column (don't merge)
                 var valueCell = worksheet.Cells[rowIndex, totalColSpan];
                 valueCell.Value = totalNetAmount.Value;
                 valueCell.Style.Numberformat.Format = formatString;
                 valueCell.Style.Font.Bold = true;
                 valueCell.Style.Fill.PatternType = ExcelFillStyle.Solid;
                 valueCell.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(249, 249, 249));
+                valueCell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
                 
-                worksheet.Cells[rowIndex, 1, rowIndex, totalColSpan].Merge = true;
-                worksheet.Cells[rowIndex, 1].Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
+                // Merge only the label cells (leave value cell separate)
+                if (totalColSpan > 1)
+                {
+                    worksheet.Cells[rowIndex, 1, rowIndex, totalColSpan - 1].Merge = true;
+                }
                 rowIndex++;
             }
             
-            // TVA detail rows
-            if (totalVat7.HasValue && totalVat7.Value > 0)
+            // Récapitulatif TVA section - Always show when we have totals
+            if (totalNetAmount.HasValue || totalVatAmount.HasValue || totalTtcAmount.HasValue)
             {
-                var cell = worksheet.Cells[rowIndex, 1];
-                cell.Value = $"TVA 7%: {totalVat7.Value.ToString(formatString, CultureInfo.GetCultureInfo("fr-FR"))}";
-                cell.Style.Fill.PatternType = ExcelFillStyle.Solid;
-                cell.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(249, 249, 249));
+                var headerCell = worksheet.Cells[rowIndex, 1];
+                headerCell.Value = "Récapitulatif TVA:";
+                headerCell.Style.Font.Bold = true;
+                headerCell.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                headerCell.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(230, 230, 230));
                 worksheet.Cells[rowIndex, 1, rowIndex, totalColSpan].Merge = true;
-                worksheet.Cells[rowIndex, 1].Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
+                worksheet.Cells[rowIndex, 1].Style.HorizontalAlignment = ExcelHorizontalAlignment.Left;
                 rowIndex++;
-            }
-            
-            if (totalVat13.HasValue && totalVat13.Value > 0)
-            {
-                var cell = worksheet.Cells[rowIndex, 1];
-                cell.Value = $"TVA 13%: {totalVat13.Value.ToString(formatString, CultureInfo.GetCultureInfo("fr-FR"))}";
-                cell.Style.Fill.PatternType = ExcelFillStyle.Solid;
-                cell.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(249, 249, 249));
-                worksheet.Cells[rowIndex, 1, rowIndex, totalColSpan].Merge = true;
-                worksheet.Cells[rowIndex, 1].Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
+                
+                // Base HT 7% - Always show
+                var labelCell7 = worksheet.Cells[rowIndex, 1];
+                labelCell7.Value = "Base HT 7%:";
+                labelCell7.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                labelCell7.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(249, 249, 249));
+                labelCell7.Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
+                
+                var valueCell7 = worksheet.Cells[rowIndex, totalColSpan];
+                valueCell7.Value = totalBase7 ?? 0;
+                valueCell7.Style.Numberformat.Format = formatString;
+                valueCell7.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                valueCell7.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(249, 249, 249));
+                valueCell7.Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
+                
+                if (totalColSpan > 1)
+                {
+                    worksheet.Cells[rowIndex, 1, rowIndex, totalColSpan - 1].Merge = true;
+                }
                 rowIndex++;
-            }
-            
-            if (totalVat19.HasValue && totalVat19.Value > 0)
-            {
-                var cell = worksheet.Cells[rowIndex, 1];
-                cell.Value = $"TVA 19%: {totalVat19.Value.ToString(formatString, CultureInfo.GetCultureInfo("fr-FR"))}";
-                cell.Style.Fill.PatternType = ExcelFillStyle.Solid;
-                cell.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(249, 249, 249));
-                worksheet.Cells[rowIndex, 1, rowIndex, totalColSpan].Merge = true;
-                worksheet.Cells[rowIndex, 1].Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
+                
+                // Base HT 19% - Always show
+                var labelCell19 = worksheet.Cells[rowIndex, 1];
+                labelCell19.Value = "Base HT 19%:";
+                labelCell19.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                labelCell19.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(249, 249, 249));
+                labelCell19.Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
+                
+                var valueCell19 = worksheet.Cells[rowIndex, totalColSpan];
+                valueCell19.Value = totalBase19 ?? 0;
+                valueCell19.Style.Numberformat.Format = formatString;
+                valueCell19.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                valueCell19.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(249, 249, 249));
+                valueCell19.Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
+                
+                if (totalColSpan > 1)
+                {
+                    worksheet.Cells[rowIndex, 1, rowIndex, totalColSpan - 1].Merge = true;
+                }
+                rowIndex++;
+                
+                // Montant TVA 7% - Always show
+                var labelCellVat7 = worksheet.Cells[rowIndex, 1];
+                labelCellVat7.Value = "Montant TVA 7%:";
+                labelCellVat7.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                labelCellVat7.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(249, 249, 249));
+                labelCellVat7.Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
+                
+                var valueCellVat7 = worksheet.Cells[rowIndex, totalColSpan];
+                valueCellVat7.Value = totalVat7 ?? 0;
+                valueCellVat7.Style.Numberformat.Format = formatString;
+                valueCellVat7.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                valueCellVat7.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(249, 249, 249));
+                valueCellVat7.Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
+                
+                if (totalColSpan > 1)
+                {
+                    worksheet.Cells[rowIndex, 1, rowIndex, totalColSpan - 1].Merge = true;
+                }
+                rowIndex++;
+                
+                // Montant TVA 19% - Always show
+                var labelCellVat19 = worksheet.Cells[rowIndex, 1];
+                labelCellVat19.Value = "Montant TVA 19%:";
+                labelCellVat19.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                labelCellVat19.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(249, 249, 249));
+                labelCellVat19.Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
+                
+                var valueCellVat19 = worksheet.Cells[rowIndex, totalColSpan];
+                valueCellVat19.Value = totalVat19 ?? 0;
+                valueCellVat19.Style.Numberformat.Format = formatString;
+                valueCellVat19.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                valueCellVat19.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(249, 249, 249));
+                valueCellVat19.Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
+                
+                if (totalColSpan > 1)
+                {
+                    worksheet.Cells[rowIndex, 1, rowIndex, totalColSpan - 1].Merge = true;
+                }
                 rowIndex++;
             }
             
             // Total TVA row
             if (totalVatAmount.HasValue)
             {
-                var cell = worksheet.Cells[rowIndex, 1];
-                cell.Value = "Total TVA:";
-                cell.Style.Font.Bold = true;
-                cell.Style.Fill.PatternType = ExcelFillStyle.Solid;
-                cell.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(249, 249, 249));
+                var labelCell = worksheet.Cells[rowIndex, 1];
+                labelCell.Value = "Total TVA:";
+                labelCell.Style.Font.Bold = true;
+                labelCell.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                labelCell.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(249, 249, 249));
+                labelCell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
                 
                 var valueCell = worksheet.Cells[rowIndex, totalColSpan];
                 valueCell.Value = totalVatAmount.Value;
@@ -206,21 +276,25 @@ public class ExcelExportService
                 valueCell.Style.Font.Bold = true;
                 valueCell.Style.Fill.PatternType = ExcelFillStyle.Solid;
                 valueCell.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(249, 249, 249));
+                valueCell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
                 
-                worksheet.Cells[rowIndex, 1, rowIndex, totalColSpan].Merge = true;
-                worksheet.Cells[rowIndex, 1].Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
+                if (totalColSpan > 1)
+                {
+                    worksheet.Cells[rowIndex, 1, rowIndex, totalColSpan - 1].Merge = true;
+                }
                 rowIndex++;
             }
             
             // Total TTC row
             if (totalTtcAmount.HasValue)
             {
-                var cell = worksheet.Cells[rowIndex, 1];
-                cell.Value = "Total TTC:";
-                cell.Style.Font.Bold = true;
-                cell.Style.Font.Size = 12;
-                cell.Style.Fill.PatternType = ExcelFillStyle.Solid;
-                cell.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGray);
+                var labelCell = worksheet.Cells[rowIndex, 1];
+                labelCell.Value = "Total TTC:";
+                labelCell.Style.Font.Bold = true;
+                labelCell.Style.Font.Size = 12;
+                labelCell.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                labelCell.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGray);
+                labelCell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
                 
                 var valueCell = worksheet.Cells[rowIndex, totalColSpan];
                 valueCell.Value = totalTtcAmount.Value;
@@ -229,9 +303,12 @@ public class ExcelExportService
                 valueCell.Style.Font.Size = 12;
                 valueCell.Style.Fill.PatternType = ExcelFillStyle.Solid;
                 valueCell.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGray);
+                valueCell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
                 
-                worksheet.Cells[rowIndex, 1, rowIndex, totalColSpan].Merge = true;
-                worksheet.Cells[rowIndex, 1].Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
+                if (totalColSpan > 1)
+                {
+                    worksheet.Cells[rowIndex, 1, rowIndex, totalColSpan - 1].Merge = true;
+                }
             }
         }
 

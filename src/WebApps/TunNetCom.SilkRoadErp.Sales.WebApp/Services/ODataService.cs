@@ -44,12 +44,18 @@ public class ODataService
             {
                 var startDateStr = startDate.Value.ToString("yyyy-MM-ddTHH:mm:ss");
                 queryParams.Add($"startDate={Uri.EscapeDataString(startDateStr)}");
+                // #region agent log
+                try { System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", Newtonsoft.Json.JsonConvert.SerializeObject(new { sessionId = "debug-session", runId = "run1", hypothesisId = "H1,H2", location = "ODataService.cs:45", message = "StartDate added to query", data = new { startDateStr, escaped = Uri.EscapeDataString(startDateStr) }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n"); } catch { }
+                // #endregion
             }
 
             if (endDate.HasValue)
             {
                 var endDateStr = endDate.Value.ToString("yyyy-MM-ddTHH:mm:ss");
                 queryParams.Add($"endDate={Uri.EscapeDataString(endDateStr)}");
+                // #region agent log
+                try { System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", Newtonsoft.Json.JsonConvert.SerializeObject(new { sessionId = "debug-session", runId = "run1", hypothesisId = "H1,H2", location = "ODataService.cs:51", message = "EndDate added to query", data = new { endDateStr, escaped = Uri.EscapeDataString(endDateStr) }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n"); } catch { }
+                // #endregion
             }
 
             if (customerId.HasValue)
@@ -192,6 +198,9 @@ public class ODataService
             {
                 url += "?" + string.Join("&", queryParams);
             }
+            // #region agent log
+            try { System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", Newtonsoft.Json.JsonConvert.SerializeObject(new { sessionId = "debug-session", runId = "run1", hypothesisId = "H1,H2", location = "ODataService.cs:200", message = "Final OData URL", data = new { url }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n"); } catch { }
+            // #endregion
             _logger.LogInformation("OData query: {Url}", url);
 
             var response = await _httpClient.GetAsync(url, cancellationToken);

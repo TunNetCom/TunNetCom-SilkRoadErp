@@ -166,6 +166,17 @@
                 </RadzenStack>
                 <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" JustifyContent="JustifyContent.End">
                     <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                        Base 7%: @totalBase7.FormatAmount()
+                    </RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                        Base 13%: @totalBase13.FormatAmount()
+                    </RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                        Base 19%: @totalBase19.FormatAmount()
+                    </RadzenText>
+                </RadzenStack>
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" JustifyContent="JustifyContent.End">
+                    <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
                         TVA 7%: @totalVat7.FormatAmount()
                     </RadzenText>
                     <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
@@ -318,6 +329,9 @@
     private List<CustomerResponse> _filteredCustomers = new();
     private List<ColumnInfo> availableColumns = new();
     private decimal totalNetAmount = 0;
+    private decimal totalBase7 = 0;
+    private decimal totalBase13 = 0;
+    private decimal totalBase19 = 0;
     private decimal totalVatAmount = 0;
     private decimal totalVat7 = 0;
     private decimal totalVat13 = 0;
@@ -413,12 +427,18 @@
 
             if (startDate.HasValue)
             {
-                queryParams.Add($"startDate={Uri.EscapeDataString(startDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+                // Use ISO 8601 format EXACTLY like ODataService
+                var startDateStr = startDate.Value.ToString("yyyy-MM-ddTHH:mm:ss");
+                queryParams.Add($"startDate={Uri.EscapeDataString(startDateStr)}");
+                _logger.LogInformation("Excel export: Adding startDate parameter: {StartDateStr}", startDateStr);
             }
 
             if (endDate.HasValue)
             {
-                queryParams.Add($"endDate={Uri.EscapeDataString(endDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+                // Use ISO 8601 format EXACTLY like ODataService
+                var endDateStr = endDate.Value.ToString("yyyy-MM-ddTHH:mm:ss");
+                queryParams.Add($"endDate={Uri.EscapeDataString(endDateStr)}");
+                _logger.LogInformation("Excel export: Adding endDate parameter: {EndDateStr}", endDateStr);
             }
 
             if (searchCriteria.SelectedCustomerId.HasValue)
@@ -457,6 +477,9 @@
             if (totals != null)
             {
                 totalNetAmount = totals.TotalHT;
+                totalBase7 = totals.TotalBase7;
+                totalBase13 = totals.TotalBase13;
+                totalBase19 = totals.TotalBase19;
                 totalVat7 = totals.TotalVat7;
                 totalVat13 = totals.TotalVat13;
                 totalVat19 = totals.TotalVat19;
@@ -507,6 +530,10 @@
 
         _logger.LogInformation("Date range: StartDate: {StartDate}, EndDate: {EndDate}", startDate, endDate);
 
+        // #region agent log
+        try { System.IO.File.AppendAllText(@"d:\Workspaces\SilkRoad\TunNetCom-SilkRoadErp\.cursor\debug.log", Newtonsoft.Json.JsonConvert.SerializeObject(new { sessionId = "debug-session", runId = "run1", hypothesisId = "H1", location = "InvoicesAdvancedList.razor:526", message = "Before ODataService call", data = new { hasStartDate = startDate.HasValue, startDateValue = startDate?.ToString("o"), hasEndDate = endDate.HasValue, endDateValue = endDate?.ToString("o"), customerId = searchCriteria.SelectedCustomerId }, timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }) + "\n"); } catch { }
+        // #endregion
+
         try
         {
             _logger.LogInformation("Calling ODataService.QueryAsync for InvoiceBaseInfos");
@@ -550,6 +577,9 @@
             invoicesList = new List<InvoiceBaseInfo>();
             totalCount = 0;
             totalNetAmount = 0;
+            totalBase7 = 0;
+            totalBase13 = 0;
+            totalBase19 = 0;
             totalVatAmount = 0;
             totalVat7 = 0;
             totalVat13 = 0;
@@ -591,12 +621,18 @@
 
             if (startDate.HasValue)
             {
-                queryParams.Add($"startDate={Uri.EscapeDataString(startDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+                // Use ISO 8601 format EXACTLY like ODataService
+                var startDateStr = startDate.Value.ToString("yyyy-MM-ddTHH:mm:ss");
+                queryParams.Add($"startDate={Uri.EscapeDataString(startDateStr)}");
+                _logger.LogInformation("Excel export: Adding startDate parameter: {StartDateStr}", startDateStr);
             }
 
             if (endDate.HasValue)
             {
-                queryParams.Add($"endDate={Uri.EscapeDataString(endDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+                // Use ISO 8601 format EXACTLY like ODataService
+                var endDateStr = endDate.Value.ToString("yyyy-MM-ddTHH:mm:ss");
+                queryParams.Add($"endDate={Uri.EscapeDataString(endDateStr)}");
+                _logger.LogInformation("Excel export: Adding endDate parameter: {EndDateStr}", endDateStr);
             }
 
             if (searchCriteria.SelectedCustomerId.HasValue)
@@ -659,16 +695,21 @@
 
             fileName = fileName.Trim('"');
 
-            var base64String = Convert.ToBase64String(fileBytes);
-            await JS.InvokeVoidAsync("downloadFile", fileName, base64String, "application/pdf");
-
-            NotificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Success,
-                Summary = "Succès",
-                Detail = "Export PDF réussi.",
-                Duration = 3000
-            });
+            // Show PDF viewer dialog for preview
+            await DialogService.OpenAsync<PdfViewerDialog>(
+                "Export PDF - Liste des Factures",
+                new Dictionary<string, object>
+                {
+                    { "PdfBytes", fileBytes },
+                    { "FileName", fileName }
+                },
+                new DialogOptions()
+                {
+                    Width = "900px",
+                    Height = "800px",
+                    Resizable = true,
+                    Draggable = true
+                });
 
             _logger.LogInformation("PDF export completed successfully");
         }
@@ -700,12 +741,18 @@
 
             if (startDate.HasValue)
             {
-                queryParams.Add($"startDate={Uri.EscapeDataString(startDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+                // Use ISO 8601 format EXACTLY like ODataService
+                var startDateStr = startDate.Value.ToString("yyyy-MM-ddTHH:mm:ss");
+                queryParams.Add($"startDate={Uri.EscapeDataString(startDateStr)}");
+                _logger.LogInformation("Excel export: Adding startDate parameter: {StartDateStr}", startDateStr);
             }
 
             if (endDate.HasValue)
             {
-                queryParams.Add($"endDate={Uri.EscapeDataString(endDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+                // Use ISO 8601 format EXACTLY like ODataService
+                var endDateStr = endDate.Value.ToString("yyyy-MM-ddTHH:mm:ss");
+                queryParams.Add($"endDate={Uri.EscapeDataString(endDateStr)}");
+                _logger.LogInformation("Excel export: Adding endDate parameter: {EndDateStr}", endDateStr);
             }
 
             if (searchCriteria.SelectedCustomerId.HasValue)
