@@ -11,8 +11,12 @@ public class GetDeliveryNotesBaseInfosWithSummariesQueryHandler(
     : IRequestHandler<GetDeliveryNotesBaseInfosWithSummariesQuery, GetDeliveryNotesWithSummariesResponse>
 {
     private const string _numColumName = nameof(GetDeliveryNoteBaseInfos.Number);
+    private const string _dateColumnName = nameof(GetDeliveryNoteBaseInfos.Date);
+    private const string _customerNameColumnName = nameof(GetDeliveryNoteBaseInfos.CustomerName);
     private const string _netAmountColumnName = nameof(GetDeliveryNoteBaseInfos.NetAmount);
     private const string _grossAmountColumnName = nameof(GetDeliveryNoteBaseInfos.GrossAmount);
+    private const string _vatAmountColumnName = nameof(GetDeliveryNoteBaseInfos.VatAmount);
+    private const string _statutColumnName = nameof(GetDeliveryNoteBaseInfos.Statut);
 
     public async Task<GetDeliveryNotesWithSummariesResponse> Handle(
         GetDeliveryNotesBaseInfosWithSummariesQuery request,
@@ -180,15 +184,57 @@ public class GetDeliveryNotesBaseInfosWithSummariesQueryHandler(
         string sortProperty,
         string sortOrder)
     {
-        return (sortProperty, sortOrder) switch
+        // Normalize property name (case-insensitive comparison)
+        var normalizedProperty = sortProperty?.Trim();
+        var normalizedOrder = sortOrder?.Trim();
+        
+        _logger.LogInformation(
+            "ApplySortingToEnumerable called with property: '{Property}' (normalized: '{NormalizedProperty}'), order: '{Order}' (normalized: '{NormalizedOrder}')",
+            sortProperty, normalizedProperty, sortOrder, normalizedOrder);
+        
+        return (normalizedProperty, normalizedOrder) switch
         {
-            (_numColumName, SortConstants.Ascending) => data.OrderBy(d => d.Number),
-            (_numColumName, SortConstants.Descending) => data.OrderByDescending(d => d.Number),
-            (_netAmountColumnName, SortConstants.Ascending) => data.OrderBy(d => d.NetAmount),
-            (_netAmountColumnName, SortConstants.Descending) => data.OrderByDescending(d => d.NetAmount),
-            (_grossAmountColumnName, SortConstants.Ascending) => data.OrderBy(d => d.GrossAmount),
-            (_grossAmountColumnName, SortConstants.Descending) => data.OrderByDescending(d => d.GrossAmount),
-            _ => data
+            (var prop, SortConstants.Ascending) when string.Equals(prop, _numColumName, StringComparison.OrdinalIgnoreCase) 
+                => data.OrderBy(d => d.Number),
+            (var prop, SortConstants.Descending) when string.Equals(prop, _numColumName, StringComparison.OrdinalIgnoreCase) 
+                => data.OrderByDescending(d => d.Number),
+            (var prop, SortConstants.Ascending) when string.Equals(prop, _dateColumnName, StringComparison.OrdinalIgnoreCase) 
+                => data.OrderBy(d => d.Date),
+            (var prop, SortConstants.Descending) when string.Equals(prop, _dateColumnName, StringComparison.OrdinalIgnoreCase) 
+                => data.OrderByDescending(d => d.Date),
+            (var prop, SortConstants.Ascending) when string.Equals(prop, _customerNameColumnName, StringComparison.OrdinalIgnoreCase) 
+                => data.OrderBy(d => d.CustomerName ?? string.Empty),
+            (var prop, SortConstants.Descending) when string.Equals(prop, _customerNameColumnName, StringComparison.OrdinalIgnoreCase) 
+                => data.OrderByDescending(d => d.CustomerName ?? string.Empty),
+            (var prop, SortConstants.Ascending) when string.Equals(prop, _netAmountColumnName, StringComparison.OrdinalIgnoreCase) 
+                => data.OrderBy(d => d.NetAmount),
+            (var prop, SortConstants.Descending) when string.Equals(prop, _netAmountColumnName, StringComparison.OrdinalIgnoreCase) 
+                => data.OrderByDescending(d => d.NetAmount),
+            (var prop, SortConstants.Ascending) when string.Equals(prop, _grossAmountColumnName, StringComparison.OrdinalIgnoreCase) 
+                => data.OrderBy(d => d.GrossAmount),
+            (var prop, SortConstants.Descending) when string.Equals(prop, _grossAmountColumnName, StringComparison.OrdinalIgnoreCase) 
+                => data.OrderByDescending(d => d.GrossAmount),
+            (var prop, SortConstants.Ascending) when string.Equals(prop, _vatAmountColumnName, StringComparison.OrdinalIgnoreCase) 
+                => data.OrderBy(d => d.VatAmount),
+            (var prop, SortConstants.Descending) when string.Equals(prop, _vatAmountColumnName, StringComparison.OrdinalIgnoreCase) 
+                => data.OrderByDescending(d => d.VatAmount),
+            (var prop, SortConstants.Ascending) when string.Equals(prop, _statutColumnName, StringComparison.OrdinalIgnoreCase) 
+                => data.OrderBy(d => d.Statut),
+            (var prop, SortConstants.Descending) when string.Equals(prop, _statutColumnName, StringComparison.OrdinalIgnoreCase) 
+                => data.OrderByDescending(d => d.Statut),
+            _ => LogAndReturnUnchanged(data, normalizedProperty, normalizedOrder)
         };
+    }
+
+    private IEnumerable<GetDeliveryNoteBaseInfos> LogAndReturnUnchanged(
+        IEnumerable<GetDeliveryNoteBaseInfos> data,
+        string? normalizedProperty,
+        string? normalizedOrder)
+    {
+        _logger.LogWarning(
+            "Unknown sort property '{Property}' or order '{Order}'. Available properties: {AvailableProperties}",
+            normalizedProperty, normalizedOrder, 
+            string.Join(", ", new[] { _numColumName, _dateColumnName, _customerNameColumnName, _netAmountColumnName, _grossAmountColumnName, _vatAmountColumnName, _statutColumnName }));
+        return data;
     }
 }

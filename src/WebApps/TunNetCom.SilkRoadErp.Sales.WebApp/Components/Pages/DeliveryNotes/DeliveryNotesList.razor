@@ -23,8 +23,13 @@
 @inject Radzen.NotificationService NotificationService
 @inject DialogService DialogService
 @inject IInvoicesApiClient InvoicesService
+@inject IJSRuntime JS
+@inject HttpClient HttpClient
+@inject IConfiguration Configuration
 @using TunNetCom.SilkRoadErp.Sales.Domain.Entites
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Sorting
 
 
 <div class="delivery-notes-list-container">
@@ -127,6 +132,20 @@
                           Title="Valider la sélection"
                           AriaLabel="Valider la sélection"
                           class="action-button" />
+            <RadzenButton Icon="table_chart"
+                          ButtonStyle="ButtonStyle.Info"
+                          Click="@ExportToExcelAsync"
+                          class="action-button"
+                          Style="margin-left: 8px;"
+                          Title="Exporter vers Excel"
+                          AriaLabel="Exporter vers Excel" />
+            <RadzenButton Icon="picture_as_pdf"
+                          ButtonStyle="ButtonStyle.Warning"
+                          Click="@ExportToPdfAsync"
+                          class="action-button"
+                          Style="margin-left: 8px;"
+                          Title="Exporter vers PDF"
+                          AriaLabel="Exporter vers PDF" />
         </div>
     </div>
     <div class="list-card">
@@ -639,9 +658,15 @@
         _logger.LogInformation("DeliveryNotesList.Callback called with Skip: {Skip}, Top: {Top}", args.Skip, args.Top);
         
         // Update pageSize if Top is provided
-        if (args.Top.HasValue)
+        if (args.Top.HasValue && args.Top.Value > 0)
         {
             pageSize = args.Top.Value;
+        }
+        
+        // Ensure pageSize is valid
+        if (pageSize <= 0)
+        {
+            pageSize = GridPageSizeConstants.PageSize10;
         }
         
         var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
@@ -656,7 +681,8 @@
             _logger.LogInformation("Calling DeliveryNoteService.GetDeliveryNotesWithSummariesAsync");
             
             // Calculate page number from Skip and pageSize
-            var pageNumber = (args.Skip ?? 0) / pageSize + 1;
+            var skip = args.Skip ?? 0;
+            var pageNumber = skip / pageSize + 1;
             
             // Determine sort order and property from args
             string? sortOrder = null;
@@ -664,7 +690,7 @@
             if (args.Sorts != null && args.Sorts.Any())
             {
                 var firstSort = args.Sorts.First();
-                sortOrder = firstSort.SortOrder == SortOrder.Ascending ? "asc" : "desc";
+                sortOrder = firstSort.SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending;
                 sortProperty = firstSort.Property;
             }
 
@@ -786,6 +812,210 @@
         {
             // Optionnel : recharger la liste des BL
             await SearchDeliveryNotes();
+        }
+    }
+
+    private async Task ExportToExcelAsync()
+    {
+        try
+        {
+            _logger.LogInformation("ExportToExcelAsync called for delivery notes");
+
+            var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
+                searchCriteria.PeriodFilter,
+                searchCriteria.StartDate,
+                searchCriteria.EndDate);
+
+            var queryParams = new List<string>();
+
+            if (startDate.HasValue)
+            {
+                queryParams.Add($"startDate={Uri.EscapeDataString(startDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+            }
+
+            if (endDate.HasValue)
+            {
+                queryParams.Add($"endDate={Uri.EscapeDataString(endDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+            }
+
+            if (searchCriteria.SelectedCustomerId.HasValue)
+            {
+                queryParams.Add($"customerId={searchCriteria.SelectedCustomerId.Value}");
+            }
+
+            if (searchCriteria.SelectedTechnicianId.HasValue)
+            {
+                queryParams.Add($"technicianId={searchCriteria.SelectedTechnicianId.Value}");
+            }
+
+            if (searchCriteria.SelectedTagIds != null && searchCriteria.SelectedTagIds.Any())
+            {
+                foreach (var tagId in searchCriteria.SelectedTagIds)
+                {
+                    queryParams.Add($"tagIds={tagId}");
+                }
+            }
+
+            if (searchCriteria.Status.HasValue)
+            {
+                queryParams.Add($"status={searchCriteria.Status.Value}");
+            }
+
+            // Add columns to export (include all visible columns)
+            var columnsToExport = new[] { "Number", "Date", "CustomerName", "NetAmount", "VatAmount" };
+            foreach (var column in columnsToExport)
+            {
+                queryParams.Add($"selectedColumns={Uri.EscapeDataString(column)}");
+            }
+
+            var baseUrl = Configuration.GetValue<string>("ApiSettings:BaseUrl")
+                ?? throw new InvalidOperationException("ApiSettings:BaseUrl configuration is missing");
+            
+            var url = $"{baseUrl.TrimEnd('/')}/api/delivery-notes/export/excel";
+            if (queryParams.Any())
+            {
+                url += "?" + string.Join("&", queryParams);
+            }
+
+            var response = await HttpClient.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["Error"],
+                    Detail = "Erreur lors de l'export Excel"
+                });
+                return;
+            }
+
+            var fileBytes = await response.Content.ReadAsByteArrayAsync();
+            var fileName = response.Content.Headers.ContentDisposition?.FileName ?? $"BonsLivraison_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+            fileName = fileName.Trim('"');
+
+            await JS.InvokeVoidAsync("downloadFile", fileName, Convert.ToBase64String(fileBytes));
+            
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = Localizer["Success"],
+                Detail = "Export Excel réussi"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error exporting delivery notes to Excel");
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Error"],
+                Detail = $"Erreur lors de l'export: {ex.Message}"
+            });
+        }
+    }
+
+    private async Task ExportToPdfAsync()
+    {
+        try
+        {
+            _logger.LogInformation("ExportToPdfAsync called for delivery notes");
+
+            var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
+                searchCriteria.PeriodFilter,
+                searchCriteria.StartDate,
+                searchCriteria.EndDate);
+
+            var queryParams = new List<string>();
+
+            if (startDate.HasValue)
+            {
+                queryParams.Add($"startDate={Uri.EscapeDataString(startDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+            }
+
+            if (endDate.HasValue)
+            {
+                queryParams.Add($"endDate={Uri.EscapeDataString(endDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+            }
+
+            if (searchCriteria.SelectedCustomerId.HasValue)
+            {
+                queryParams.Add($"customerId={searchCriteria.SelectedCustomerId.Value}");
+            }
+
+            if (searchCriteria.SelectedTechnicianId.HasValue)
+            {
+                queryParams.Add($"technicianId={searchCriteria.SelectedTechnicianId.Value}");
+            }
+
+            if (searchCriteria.SelectedTagIds != null && searchCriteria.SelectedTagIds.Any())
+            {
+                foreach (var tagId in searchCriteria.SelectedTagIds)
+                {
+                    queryParams.Add($"tagIds={tagId}");
+                }
+            }
+
+            if (searchCriteria.Status.HasValue)
+            {
+                queryParams.Add($"status={searchCriteria.Status.Value}");
+            }
+
+            // Add columns to export (include all visible columns)
+            var columnsToExport = new[] { "Number", "Date", "CustomerName", "NetAmount", "VatAmount" };
+            foreach (var column in columnsToExport)
+            {
+                queryParams.Add($"selectedColumns={Uri.EscapeDataString(column)}");
+            }
+
+            var baseUrl = Configuration.GetValue<string>("ApiSettings:BaseUrl")
+                ?? throw new InvalidOperationException("ApiSettings:BaseUrl configuration is missing");
+            
+            var url = $"{baseUrl.TrimEnd('/')}/api/delivery-notes/export/pdf";
+            if (queryParams.Any())
+            {
+                url += "?" + string.Join("&", queryParams);
+            }
+
+            var pdfResult = await HttpClient.GetAsync(url);
+            if (!pdfResult.IsSuccessStatusCode)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["Error"],
+                    Detail = "Erreur lors de l'export PDF"
+                });
+                return;
+            }
+
+            var fileBytes = await pdfResult.Content.ReadAsByteArrayAsync();
+            var fileName = pdfResult.Content.Headers.ContentDisposition?.FileName ?? $"BonsLivraison_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+            fileName = fileName.Trim('"');
+
+            await DialogService.OpenAsync<PdfViewerDialog>(
+                Localizer["print_mode"],
+                new Dictionary<string, object>
+                {
+                    { "PdfBytes", fileBytes },
+                    { "FileName", fileName }
+                },
+                new DialogOptions()
+                {
+                    Width = "900px",
+                    Height = "800px",
+                    Resizable = true,
+                    Draggable = true
+                });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error exporting delivery notes to PDF");
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Error"],
+                Detail = $"Erreur lors de l'export: {ex.Message}"
+            });
         }
     }
 }
