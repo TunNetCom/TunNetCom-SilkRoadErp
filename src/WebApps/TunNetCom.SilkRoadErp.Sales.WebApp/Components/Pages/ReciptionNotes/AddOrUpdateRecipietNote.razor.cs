@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using Radzen;
@@ -621,10 +621,9 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
                 Draggable = true,
                 Resize = OnResize,
                 Drag = OnDrag,
-                Width = Settings != null ? Settings.Width : "700px",
-                Height = Settings != null ? Settings.Height : "512px",
-                Left = Settings != null ? Settings.Left : null,
-                Top = Settings != null ? Settings.Top : null
+                Width = ProductHistoryDialog.DefaultWidth,
+                Height = ProductHistoryDialog.DefaultHeight,
+                Style = "width: " + ProductHistoryDialog.DefaultWidth + "; min-width: " + ProductHistoryDialog.DefaultWidth
             });
 
         await SaveStateAsync();
