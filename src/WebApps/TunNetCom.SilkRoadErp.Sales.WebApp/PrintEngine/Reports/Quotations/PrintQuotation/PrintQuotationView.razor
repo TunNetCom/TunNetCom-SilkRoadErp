@@ -78,6 +78,13 @@
             font-size: 11px;
             font-weight: bold;
         }
+
+        @@media print {
+            .footer-container {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+        }
     </style>
 </head>
 <body>
