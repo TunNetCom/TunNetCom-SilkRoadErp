@@ -1,4 +1,6 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure;
+using TunNetCom.SilkRoadErp.Sales.Api.Exceptions;
+
+namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure;
 
 public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IExceptionHandler
 {
@@ -10,6 +12,21 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IE
     public async Task<bool> HandleExceptionAsync(HttpContext context, Exception exception, CancellationToken cancellationToken = default)
     {
         logger.LogError(exception, "An unhandled exception has occurred while executing the request.");
+
+        if (exception is InvalidPaginationParamsException invalidPaginationException)
+        {
+            var problemDetails = new ProblemDetails
+            {
+                Status = (int)HttpStatusCode.BadRequest,
+                Title = "Paramètres invalides",
+                Detail = invalidPaginationException.Message,
+                Instance = context.Request.Path
+            };
+            context.Response.ContentType = "application/json";
+            context.Response.StatusCode = problemDetails.Status ?? 400;
+            await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(problemDetails), cancellationToken);
+            return true;
+        }
 
         if (exception is ValidationException validationException)
         {

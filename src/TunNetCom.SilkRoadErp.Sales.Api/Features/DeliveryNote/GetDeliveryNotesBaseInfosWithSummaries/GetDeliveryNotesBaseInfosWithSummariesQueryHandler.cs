@@ -132,6 +132,13 @@ public class GetDeliveryNotesBaseInfosWithSummariesQueryHandler(
         _logger.LogInformation("Converting to list for in-memory operations");
         var allFilteredData = deliveryNoteQuery.ToList();
 
+        const int MaxFilteredResults = 5000;
+        if (allFilteredData.Count > MaxFilteredResults)
+        {
+            throw new InvalidPaginationParamsException(
+                $"Trop de résultats ({allFilteredData.Count}). Veuillez affiner les filtres (période, client, etc.). Maximum {MaxFilteredResults} lignes.");
+        }
+
         // Calculate totals from all filtered data (before pagination)
         _logger.LogInformation("Getting Gross, Vat, and Net amounts from filtered data");
         var totalGrossAmount = allFilteredData.Sum(d => d.GrossAmount);
