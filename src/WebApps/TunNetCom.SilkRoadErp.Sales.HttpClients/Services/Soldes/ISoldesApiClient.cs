@@ -20,6 +20,14 @@ public interface ISoldesApiClient
         int pageSize,
         int? accountingYearId = null,
         CancellationToken cancellationToken = default);
+
+    Task<(byte[] Content, string FileName)> ExportClientsAvecProblemesSoldeToPdfAsync(
+        int? accountingYearId = null,
+        CancellationToken cancellationToken = default);
+
+    Task<(byte[] Content, string FileName)> ExportClientsAvecProblemesSoldeToExcelAsync(
+        int? accountingYearId = null,
+        CancellationToken cancellationToken = default);
 }
 
 

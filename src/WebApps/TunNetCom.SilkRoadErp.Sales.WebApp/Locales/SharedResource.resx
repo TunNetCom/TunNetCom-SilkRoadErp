@@ -1036,4 +1036,16 @@
   <data name="Date_Dernier_Document" xml:space="preserve">
     <value />
   </data>
+  <data name="Export_Excel" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Export_Pdf" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Export_Excel_Success" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Erreur_Export" xml:space="preserve">
+    <value />
+  </data>
 </root>

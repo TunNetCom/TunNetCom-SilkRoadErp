@@ -105,5 +105,31 @@ public class SoldesApiClient : ISoldesApiClient
             throw;
         }
     }
+
+    public async Task<(byte[] Content, string FileName)> ExportClientsAvecProblemesSoldeToPdfAsync(
+        int? accountingYearId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var queryString = accountingYearId.HasValue ? $"?accountingYearId={accountingYearId.Value}" : string.Empty;
+        var requestUri = $"/soldes/clients-avec-problemes/export/pdf{queryString}";
+        var response = await _httpClient.GetAsync(requestUri, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        var content = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+        var fileName = response.Content.Headers.ContentDisposition?.FileName?.Trim('"') ?? $"ClientsProblemesSolde_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+        return (content, fileName);
+    }
+
+    public async Task<(byte[] Content, string FileName)> ExportClientsAvecProblemesSoldeToExcelAsync(
+        int? accountingYearId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var queryString = accountingYearId.HasValue ? $"?accountingYearId={accountingYearId.Value}" : string.Empty;
+        var requestUri = $"/soldes/clients-avec-problemes/export/excel{queryString}";
+        var response = await _httpClient.GetAsync(requestUri, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        var content = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+        var fileName = response.Content.Headers.ContentDisposition?.FileName?.Trim('"') ?? $"ClientsProblemesSolde_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+        return (content, fileName);
+    }
 }
 
