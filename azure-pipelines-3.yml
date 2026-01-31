@@ -1,6 +1,8 @@
 # ============================================================
 # Deploy SilkRoad API & WebApp to Etablissement Nizar Kubernetes
 # ============================================================
+trigger: none
+pr: none
 
 pool:
   name: OnPremAgents
