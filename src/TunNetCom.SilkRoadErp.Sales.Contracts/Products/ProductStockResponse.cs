@@ -16,6 +16,12 @@ public class ProductStockResponse
     [JsonPropertyName("totalVentes")]
     public int TotalVentes { get; set; }
 
+    /// <summary>
+    /// Total des avoirs clients (retours clients, tous statuts)
+    /// </summary>
+    [JsonPropertyName("totalAvoirsClients")]
+    public int TotalAvoirsClients { get; set; }
+
     [JsonPropertyName("stockCalcule")]
     public int StockCalcule { get; set; }
 
