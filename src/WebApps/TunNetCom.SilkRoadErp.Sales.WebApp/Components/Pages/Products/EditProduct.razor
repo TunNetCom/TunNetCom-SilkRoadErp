@@ -5,6 +5,7 @@
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProductSubFamilies
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Services
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using System.ComponentModel.DataAnnotations
@@ -26,8 +27,12 @@
             <h3 style="margin: 0;">@(Id == null ? Localizer["add_product"] : Localizer["edit_product"])</h3>
             @if (Id.HasValue)
             {
-                <RadzenButton Icon="history" Text="Historique" Click="@ShowAuditLog" 
-                              ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" />
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem">
+                    <RadzenButton Icon="history" Text="Historique" Click="@ShowAuditLog" 
+                                  ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" />
+                    <RadzenButton Icon="trending_up" Text="@Localizer["historique_achat_vente"]" Click="@ShowHistoriqueAchatVente" 
+                                  ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" />
+                </RadzenStack>
             }
         </RadzenStack>
 
@@ -519,6 +524,20 @@
                 Height = "600px",
                 Resizable = true, 
                 Draggable = true 
+            });
+    }
+
+    private async Task ShowHistoriqueAchatVente()
+    {
+        await DialogService.OpenAsync<ProductHistoryDialog>($"{Localizer["history"]} {Localizer["article"]} {productModel.Reference}",
+            new Dictionary<string, object> { { "ProductReference", productModel.Reference } },
+            new DialogOptions
+            {
+                Resizable = true,
+                Draggable = true,
+                Width = ProductHistoryDialog.DefaultWidth,
+                Height = ProductHistoryDialog.DefaultHeight,
+                Style = "width: " + ProductHistoryDialog.DefaultWidth + "; min-width: " + ProductHistoryDialog.DefaultWidth
             });
     }
 

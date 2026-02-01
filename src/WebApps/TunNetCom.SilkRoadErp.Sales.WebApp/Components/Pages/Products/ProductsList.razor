@@ -8,6 +8,7 @@
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Products
 @using TunNetCom.SilkRoadErp.Sales.Contracts.ProductFamilies
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 @using Radzen
 @using Radzen.Blazor
 @using BlazorBootstrap
@@ -229,11 +230,14 @@
                     </Template>
                 </RadzenDataGridColumn>
 
-                <RadzenDataGridColumn TItem="ProductResponse" Filterable="false" Sortable="false" Width="200px" TextAlign="TextAlign.Center">
+                <RadzenDataGridColumn TItem="ProductResponse" Filterable="false" Sortable="false" Width="260px" TextAlign="TextAlign.Center">
                     <Template Context="product">
                         <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Success" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter" Class="rz-my-1 rz-ms-1"
                                       Click="@(() => EditProduct(product))"
                                       Title="@Localizer["edit_button_label"]" />
+                        <RadzenButton Icon="trending_up" ButtonStyle="ButtonStyle.Info" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter" Class="rz-my-1 rz-ms-1"
+                                      Click="@(() => ShowHistoriqueAchatVente(product.Reference))"
+                                      Title="@Localizer["historique_achat_vente"]" />
                         <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter"
                                       Click="@(() => ConfirmDeleteProduct(product.Reference))"
                                       Title="@Localizer["delete_button_label"]" />
@@ -874,6 +878,20 @@
 		    await productGrid.Reload();
 	    }
 
+    }
+
+    private async Task ShowHistoriqueAchatVente(string refProduit)
+    {
+        await DialogService.OpenAsync<ProductHistoryDialog>($"{Localizer["history"]} {Localizer["article"]} {refProduit}",
+            new Dictionary<string, object> { { "ProductReference", refProduit } },
+            new DialogOptions
+            {
+                Resizable = true,
+                Draggable = true,
+                Width = ProductHistoryDialog.DefaultWidth,
+                Height = ProductHistoryDialog.DefaultHeight,
+                Style = "width: " + ProductHistoryDialog.DefaultWidth + "; min-width: " + ProductHistoryDialog.DefaultWidth
+            });
     }
 
     void OnRowRender(RowRenderEventArgs<ProductResponse> args)
