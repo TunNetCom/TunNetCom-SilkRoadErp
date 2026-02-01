@@ -1422,4 +1422,43 @@
   <data name="Erreur_Export" xml:space="preserve">
     <value>Erreur lors de l'export</value>
   </data>
+  <data name="Cloture_Caisse" xml:space="preserve">
+    <value>Clôture de caisse</value>
+  </data>
+  <data name="Date" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="Imprimer_PDF" xml:space="preserve">
+    <value>Imprimer PDF</value>
+  </data>
+  <data name="Somme_Espece" xml:space="preserve">
+    <value>Somme Espèce</value>
+  </data>
+  <data name="Somme_Cheque" xml:space="preserve">
+    <value>Somme Chèque</value>
+  </data>
+  <data name="Somme_Traite" xml:space="preserve">
+    <value>Somme Traite</value>
+  </data>
+  <data name="Somme_Virement" xml:space="preserve">
+    <value>Somme Virement</value>
+  </data>
+  <data name="Total_Paiements" xml:space="preserve">
+    <value>Total Paiements</value>
+  </data>
+  <data name="Total" xml:space="preserve">
+    <value>Total</value>
+  </data>
+  <data name="Afficher_Detail" xml:space="preserve">
+    <value>Afficher le détail</value>
+  </data>
+  <data name="Masquer_Detail" xml:space="preserve">
+    <value>Masquer le détail</value>
+  </data>
+  <data name="Avoirs" xml:space="preserve">
+    <value>Avoirs</value>
+  </data>
+  <data name="Export_PDF_Reussi" xml:space="preserve">
+    <value>Export PDF réussi.</value>
+  </data>
 </root>

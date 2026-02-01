@@ -76,6 +76,8 @@ public class PaiementClientApiClient : IPaiementClientApiClient
     public async Task<PagedList<PaiementClientResponse>> GetPaiementsClientAsync(
         int? clientId,
         IEnumerable<int>? accountingYearIds,
+        DateTime? datePaiementFrom,
+        DateTime? datePaiementTo,
         DateTime? dateEcheanceFrom,
         DateTime? dateEcheanceTo,
         decimal? montantMin,
@@ -99,6 +101,16 @@ public class PaiementClientApiClient : IPaiementClientApiClient
             {
                 queryString += $"&accountingYearIds={id}";
             }
+        }
+
+        if (datePaiementFrom.HasValue)
+        {
+            queryString += $"&datePaiementFrom={Uri.EscapeDataString(datePaiementFrom.Value.ToString("yyyy-MM-dd"))}";
+        }
+
+        if (datePaiementTo.HasValue)
+        {
+            queryString += $"&datePaiementTo={Uri.EscapeDataString(datePaiementTo.Value.ToString("yyyy-MM-dd"))}";
         }
 
         if (dateEcheanceFrom.HasValue)

@@ -5,6 +5,8 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.PaiementClient.GetPaiementsCl
 public record GetPaiementsClientQuery(
     int? ClientId = null,
     IEnumerable<int>? AccountingYearIds = null,
+    DateTime? DatePaiementFrom = null,
+    DateTime? DatePaiementTo = null,
     DateTime? DateEcheanceFrom = null,
     DateTime? DateEcheanceTo = null,
     decimal? MontantMin = null,

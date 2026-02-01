@@ -1275,4 +1275,43 @@
   <data name="Close" xml:space="preserve">
     <value>Close</value>
   </data>
+  <data name="Cloture_Caisse" xml:space="preserve">
+    <value>Cash register closure</value>
+  </data>
+  <data name="Date" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="Imprimer_PDF" xml:space="preserve">
+    <value>Print PDF</value>
+  </data>
+  <data name="Somme_Espece" xml:space="preserve">
+    <value>Cash sum</value>
+  </data>
+  <data name="Somme_Cheque" xml:space="preserve">
+    <value>Cheque sum</value>
+  </data>
+  <data name="Somme_Traite" xml:space="preserve">
+    <value>Draft sum</value>
+  </data>
+  <data name="Somme_Virement" xml:space="preserve">
+    <value>Transfer sum</value>
+  </data>
+  <data name="Total_Paiements" xml:space="preserve">
+    <value>Total payments</value>
+  </data>
+  <data name="Total" xml:space="preserve">
+    <value>Total</value>
+  </data>
+  <data name="Afficher_Detail" xml:space="preserve">
+    <value>Show detail</value>
+  </data>
+  <data name="Masquer_Detail" xml:space="preserve">
+    <value>Hide detail</value>
+  </data>
+  <data name="Avoirs" xml:space="preserve">
+    <value>Credit notes</value>
+  </data>
+  <data name="Export_PDF_Reussi" xml:space="preserve">
+    <value>PDF export successful.</value>
+  </data>
 </root>

@@ -1,0 +1,357 @@
+@page "/cloture-caisse"
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.PaiementClient
+@using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Avoirs
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Sorting
+@using TunNetCom.SilkRoadErp.Sales.Domain.Entites
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PaiementClient
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Avoirs
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.ClotureCaisse
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure
+@using Radzen.Blazor
+@using Radzen
+@using System.Linq
+@inject IStringLocalizer<SharedResource> Localizer
+@inject IPaiementClientApiClient PaiementClientService
+@inject IDeliveryNoteApiClient DeliveryNoteService
+@inject IAvoirsApiClient AvoirsService
+@inject IDecimalFormatService DecimalFormatService
+@inject PrintClotureCaisseService PrintClotureCaisseService
+@inject IPrintService PrintService
+@inject ToastService ToastService
+@inject Radzen.NotificationService NotificationService
+
+<div class="cloture-caisse-container">
+    <div class="cloture-caisse-card">
+        <div class="cloture-caisse-header">
+            <h3 class="cloture-caisse-title">@Localizer["Cloture_Caisse"]</h3>
+            <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                <div>
+                    <label style="margin-right: 0.5rem;">@Localizer["Date"]</label>
+                    <RadzenDatePicker @bind-Value="@selectedDate"
+                                      DateFormat="dd/MM/yyyy"
+                                      Style="width: 160px;"
+                                      Change="@OnDateChanged" />
+                </div>
+                <RadzenButton Icon="picture_as_pdf"
+                              Text="@Localizer["Imprimer_PDF"]"
+                              ButtonStyle="ButtonStyle.Danger"
+                              Variant="Variant.Outlined"
+                              Disabled="@(isLoading || isPrinting)"
+                              Click="@ExportToPdfAsync" />
+            </div>
+        </div>
+
+        @if (isLoading)
+        {
+            <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Style="margin: 2rem auto; display: block;" />
+        }
+        else
+        {
+            <div class="cloture-sections">
+                <RadzenCard class="section-card">
+                    <h4>@Localizer["Paiements_Clients"]</h4>
+                    <RadzenDataGrid TItem="PaiementClientResponse"
+                                   Data="@paiements"
+                                   AllowPaging="true"
+                                   PageSize="10"
+                                   Density="Density.Compact"
+                                   Style="margin-top: 0.5rem;">
+                        <Columns>
+                            <RadzenDataGridColumn TItem="PaiementClientResponse" Property="ClientNom" Title="@Localizer["Client_Col"]" Width="200px" />
+                            <RadzenDataGridColumn TItem="PaiementClientResponse" Property="DatePaiement" Title="@Localizer["Date_Paiement_Col"]" Width="120px">
+                                <Template Context="p">@p.DatePaiement.ToString("dd/MM/yyyy")</Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="PaiementClientResponse" Property="MethodePaiement" Title="@Localizer["Methode_Col"]" Width="120px" />
+                            <RadzenDataGridColumn TItem="PaiementClientResponse" Property="Montant" Title="@Localizer["Montant_Col"]" Width="140px">
+                                <Template Context="p">@p.Montant.FormatAmount(decimalPlaces) TND</Template>
+                            </RadzenDataGridColumn>
+                        </Columns>
+                    </RadzenDataGrid>
+                    <div class="recap paiements-recap">
+                        <span>@Localizer["Somme_Espece"]:</span>
+                        <strong>@sommeEspece.FormatAmount(decimalPlaces) TND</strong>
+                        <span>@Localizer["Somme_Cheque"]:</span>
+                        <strong>@sommeCheque.FormatAmount(decimalPlaces) TND</strong>
+                        <span>@Localizer["Somme_Traite"]:</span>
+                        <strong>@sommeTraite.FormatAmount(decimalPlaces) TND</strong>
+                        <span>@Localizer["Somme_Virement"]:</span>
+                        <strong>@sommeVirement.FormatAmount(decimalPlaces) TND</strong>
+                        <span>@Localizer["Total_Paiements"]:</span>
+                        <strong>@totalPaiementsSum.FormatAmount(decimalPlaces) TND</strong>
+                    </div>
+                </RadzenCard>
+
+                <RadzenCard class="section-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                        <h4 style="margin: 0;">@Localizer["Bons_Livraison"]</h4>
+                        <span><strong>@Localizer["Total"]:</strong> @totalBl.FormatAmount(decimalPlaces) TND</span>
+                        <RadzenButton Icon="@(showBlDetail ? "expand_less" : "expand_more")"
+                                      ButtonStyle="ButtonStyle.Light"
+                                      Variant="Variant.Text"
+                                      Size="ButtonSize.Small"
+                                      Click="@(() => showBlDetail = !showBlDetail)"
+                                      Text="@(showBlDetail ? Localizer["Masquer_Detail"] : Localizer["Afficher_Detail"])" />
+                    </div>
+                    @if (showBlDetail && blList.Any())
+                    {
+                        <RadzenDataGrid TItem="GetDeliveryNoteBaseInfos"
+                                        Data="@blList"
+                                        AllowPaging="true"
+                                        PageSize="5"
+                                        Density="Density.Compact"
+                                        Style="margin-top: 0.5rem;">
+                            <Columns>
+                                <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos" Property="Number" Title="@Localizer["Numero_Col"]" Width="100px" />
+                                <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos" Property="Date" Title="@Localizer["date"]" Width="120px">
+                                    <Template Context="bl">@bl.Date.ToString("dd/MM/yyyy")</Template>
+                                </RadzenDataGridColumn>
+                                <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos" Property="CustomerName" Title="@Localizer["Client_Col"]" Width="200px" />
+                                <RadzenDataGridColumn TItem="GetDeliveryNoteBaseInfos" Property="NetAmount" Title="@Localizer["Montant_Col"]" Width="140px">
+                                    <Template Context="bl">@bl.NetAmount.FormatAmount(decimalPlaces) TND</Template>
+                                </RadzenDataGridColumn>
+                            </Columns>
+                        </RadzenDataGrid>
+                    }
+                </RadzenCard>
+
+                <RadzenCard class="section-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                        <h4 style="margin: 0;">@Localizer["Avoirs"]</h4>
+                        <span><strong>@Localizer["Total"]:</strong> @totalAvoirs.FormatAmount(decimalPlaces) TND</span>
+                        <RadzenButton Icon="@(showAvoirsDetail ? "expand_less" : "expand_more")"
+                                      ButtonStyle="ButtonStyle.Light"
+                                      Variant="Variant.Text"
+                                      Size="ButtonSize.Small"
+                                      Click="@(() => showAvoirsDetail = !showAvoirsDetail)"
+                                      Text="@(showAvoirsDetail ? Localizer["Masquer_Detail"] : Localizer["Afficher_Detail"])" />
+                    </div>
+                    @if (showAvoirsDetail && avoirsList.Any())
+                    {
+                        <RadzenDataGrid TItem="AvoirBaseInfo"
+                                        Data="@avoirsList"
+                                        AllowPaging="true"
+                                        PageSize="5"
+                                        Density="Density.Compact"
+                                        Style="margin-top: 0.5rem;">
+                            <Columns>
+                                <RadzenDataGridColumn TItem="AvoirBaseInfo" Property="Num" Title="@Localizer["Numero_Col"]" Width="100px" />
+                                <RadzenDataGridColumn TItem="AvoirBaseInfo" Property="Date" Title="@Localizer["date"]" Width="120px">
+                                    <Template Context="a">@a.Date.ToString("dd/MM/yyyy")</Template>
+                                </RadzenDataGridColumn>
+                                <RadzenDataGridColumn TItem="AvoirBaseInfo" Property="ClientName" Title="@Localizer["Client_Col"]" Width="200px" />
+                                <RadzenDataGridColumn TItem="AvoirBaseInfo" Property="TotalIncludingTaxAmount" Title="@Localizer["Montant_Col"]" Width="140px">
+                                    <Template Context="a">@a.TotalIncludingTaxAmount.FormatAmount(decimalPlaces) TND</Template>
+                                </RadzenDataGridColumn>
+                            </Columns>
+                        </RadzenDataGrid>
+                    }
+                </RadzenCard>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .cloture-caisse-container { padding: 1rem; }
+    .cloture-caisse-card { max-width: 1200px; margin: 0 auto; }
+    .cloture-caisse-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
+    .cloture-caisse-title { margin: 0; }
+    .cloture-sections { display: flex; flex-direction: column; gap: 1.5rem; }
+    .section-card { padding: 1rem; }
+    .recap { display: flex; flex-wrap: wrap; gap: 1rem 2rem; margin-top: 1rem; padding: 0.75rem; background: var(--rz-base-100); border-radius: 6px; }
+    .recap span { margin-right: 0.25rem; }
+    .paiements-recap span + strong { margin-right: 1rem; }
+</style>
+
+@code {
+    private DateTime selectedDate = DateTime.Today;
+    private List<PaiementClientResponse> paiements = new();
+    private List<GetDeliveryNoteBaseInfos> blList = new();
+    private List<AvoirBaseInfo> avoirsList = new();
+    private decimal totalBl;
+    private decimal totalAvoirs;
+    private bool isLoading = true;
+    private bool isPrinting;
+    private bool showBlDetail;
+    private bool showAvoirsDetail;
+    private int decimalPlaces = AmountHelper.DEFAULT_DECIMAL_PLACES;
+    private CancellationTokenSource _cts = new();
+
+    private decimal sommeEspece => paiements.Where(p => string.Equals(p.MethodePaiement, MethodePaiement.Espece.ToString(), StringComparison.OrdinalIgnoreCase)).Sum(p => p.Montant);
+    private decimal sommeCheque => paiements.Where(p => string.Equals(p.MethodePaiement, MethodePaiement.Cheque.ToString(), StringComparison.OrdinalIgnoreCase)).Sum(p => p.Montant);
+    private decimal sommeTraite => paiements.Where(p => string.Equals(p.MethodePaiement, MethodePaiement.Traite.ToString(), StringComparison.OrdinalIgnoreCase)).Sum(p => p.Montant);
+    private decimal sommeVirement => paiements.Where(p => string.Equals(p.MethodePaiement, MethodePaiement.Virement.ToString(), StringComparison.OrdinalIgnoreCase)).Sum(p => p.Montant);
+    private decimal totalPaiementsSum => paiements.Sum(p => p.Montant);
+
+    protected override async Task OnInitializedAsync()
+    {
+        decimalPlaces = await DecimalFormatService.GetDecimalPlacesAsync();
+        await LoadDataAsync();
+    }
+
+    private async Task OnDateChanged()
+    {
+        await LoadDataAsync();
+    }
+
+    private const int MaxPageSize = 100;
+
+    private async Task LoadDataAsync()
+    {
+        isLoading = true;
+        StateHasChanged();
+        try
+        {
+            var dateStart = selectedDate.Date;
+            var dateEnd = selectedDate.Date;
+
+            var paiementsAll = new List<PaiementClientResponse>();
+            var page = 1;
+            PagedList<PaiementClientResponse> paiementsPage;
+            do
+            {
+                paiementsPage = await PaiementClientService.GetPaiementsClientAsync(
+                    null, null, dateStart, dateEnd, null, null, null, null, null,
+                    page, MaxPageSize, _cts.Token);
+                paiementsAll.AddRange(paiementsPage.Items ?? new List<PaiementClientResponse>());
+                page++;
+            } while (paiementsPage.Items?.Count == MaxPageSize && paiementsAll.Count < paiementsPage.TotalCount);
+
+            paiements = paiementsAll;
+
+            var blAll = new List<GetDeliveryNoteBaseInfos>();
+            var blResponseFirst = await DeliveryNoteService.GetDeliveryNotesWithSummariesAsync(
+                customerId: null,
+                invoiceId: null,
+                isInvoiced: null,
+                sortOrder: SortConstants.Ascending,
+                sortProperty: nameof(GetDeliveryNoteBaseInfos.Number),
+                pageNumber: 1,
+                pageSize: MaxPageSize,
+                searchKeyword: null,
+                startDate: dateStart,
+                EndDate: dateEnd,
+                status: null,
+                technicianId: null,
+                tagIds: null,
+                _cts.Token);
+            totalBl = blResponseFirst.TotalNetAmount;
+            var blPaged = blResponseFirst.GetDeliveryNoteBaseInfos;
+            if (blPaged?.Items != null)
+                blAll.AddRange(blPaged.Items);
+            var totalBlCount = blPaged?.TotalCount ?? 0;
+            page = 2;
+            while (blAll.Count < totalBlCount && totalBlCount > MaxPageSize)
+            {
+                var blNext = await DeliveryNoteService.GetDeliveryNotesWithSummariesAsync(
+                    customerId: null, invoiceId: null, isInvoiced: null,
+                    sortOrder: SortConstants.Ascending, sortProperty: nameof(GetDeliveryNoteBaseInfos.Number),
+                    pageNumber: page, pageSize: MaxPageSize, searchKeyword: null,
+                    startDate: dateStart, EndDate: dateEnd, status: null, technicianId: null, tagIds: null,
+                    _cts.Token);
+                if (blNext.GetDeliveryNoteBaseInfos?.Items != null)
+                    blAll.AddRange(blNext.GetDeliveryNoteBaseInfos.Items);
+                page++;
+                if (blNext.GetDeliveryNoteBaseInfos?.Items?.Count < MaxPageSize)
+                    break;
+            }
+            blList = blAll;
+
+            var avoirsAll = new List<AvoirBaseInfo>();
+            var avoirsResponseFirst = await AvoirsService.GetAvoirsWithSummariesAsync(
+                null, null, null, 1, MaxPageSize, null, dateStart, dateEnd, _cts.Token, status: null);
+            totalAvoirs = avoirsResponseFirst.TotalIncludingTaxAmount;
+            var avoirsPaged = avoirsResponseFirst.Avoirs;
+            if (avoirsPaged?.Items != null)
+                avoirsAll.AddRange(avoirsPaged.Items);
+            var totalAvoirsCount = avoirsPaged?.TotalCount ?? 0;
+            page = 2;
+            while (avoirsAll.Count < totalAvoirsCount && totalAvoirsCount > MaxPageSize)
+            {
+                var avoirsNext = await AvoirsService.GetAvoirsWithSummariesAsync(
+                    null, null, null, page, MaxPageSize, null, dateStart, dateEnd, _cts.Token, status: null);
+                if (avoirsNext.Avoirs?.Items != null)
+                    avoirsAll.AddRange(avoirsNext.Avoirs.Items);
+                page++;
+                if (avoirsNext.Avoirs?.Items?.Count < MaxPageSize)
+                    break;
+            }
+            avoirsList = avoirsAll;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = ex.Message
+            });
+        }
+        finally
+        {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task ExportToPdfAsync()
+    {
+        if (isPrinting) return;
+        isPrinting = true;
+        try
+        {
+            var result = await PrintClotureCaisseService.GeneratePdfAsync(
+                selectedDate,
+                paiements,
+                sommeEspece,
+                sommeCheque,
+                sommeTraite,
+                sommeVirement,
+                blList,
+                totalBl,
+                avoirsList,
+                totalAvoirs,
+                decimalPlaces,
+                _cts.Token);
+
+            if (result.IsFailed)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["Erreur"],
+                    Detail = result.Errors.FirstOrDefault()?.Message ?? "Erreur génération PDF"
+                });
+                return;
+            }
+
+            var fileName = $"Cloture_Caisse_{selectedDate:yyyyMMdd}.pdf";
+            await PrintService.PrintAsync(
+                result.Value,
+                new PrintOptions { Mode = PrintMode.Download, FileName = fileName },
+                _cts.Token);
+
+            ToastService.Notify(new ToastMessage(ToastType.Success, Localizer["Export_PDF_Reussi"]?.ToString() ?? "Export PDF réussi."));
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = ex.Message
+            });
+        }
+        finally
+        {
+            isPrinting = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+}

@@ -1206,4 +1206,43 @@
   <data name="Erreur_Export" xml:space="preserve">
     <value>خطأ أثناء التصدير</value>
   </data>
+  <data name="Cloture_Caisse" xml:space="preserve">
+    <value>إقفال الصندوق</value>
+  </data>
+  <data name="Date" xml:space="preserve">
+    <value>التاريخ</value>
+  </data>
+  <data name="Imprimer_PDF" xml:space="preserve">
+    <value>طباعة PDF</value>
+  </data>
+  <data name="Somme_Espece" xml:space="preserve">
+    <value>مجموع النقد</value>
+  </data>
+  <data name="Somme_Cheque" xml:space="preserve">
+    <value>مجموع الشيكات</value>
+  </data>
+  <data name="Somme_Traite" xml:space="preserve">
+    <value>مجموع السندات</value>
+  </data>
+  <data name="Somme_Virement" xml:space="preserve">
+    <value>مجموع التحويلات</value>
+  </data>
+  <data name="Total_Paiements" xml:space="preserve">
+    <value>إجمالي المدفوعات</value>
+  </data>
+  <data name="Total" xml:space="preserve">
+    <value>المجموع</value>
+  </data>
+  <data name="Afficher_Detail" xml:space="preserve">
+    <value>عرض التفاصيل</value>
+  </data>
+  <data name="Masquer_Detail" xml:space="preserve">
+    <value>إخفاء التفاصيل</value>
+  </data>
+  <data name="Avoirs" xml:space="preserve">
+    <value>الائتمانات</value>
+  </data>
+  <data name="Export_PDF_Reussi" xml:space="preserve">
+    <value>تم تصدير PDF بنجاح.</value>
+  </data>
 </root>

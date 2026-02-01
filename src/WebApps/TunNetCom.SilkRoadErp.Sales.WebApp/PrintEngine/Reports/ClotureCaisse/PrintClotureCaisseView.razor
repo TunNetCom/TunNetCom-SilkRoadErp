@@ -1,0 +1,140 @@
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.ClotureCaisse
+
+@code {
+    [Parameter] public PrintClotureCaisseModel Model { get; set; } = null!;
+}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 11px; margin: 20px; color: #222; }
+        h2 { margin-bottom: 4px; }
+        .section-title { font-size: 14px; font-weight: bold; margin-top: 24px; border-bottom: 2px solid #444; padding-bottom: 4px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+        th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; }
+        th { background-color: #f5f5f5; font-size: 11px; }
+        .text-right { text-align: right; }
+        .recap-line { margin-top: 8px; padding: 6px; background: #f9f9f9; border-radius: 4px; }
+        .footer { margin-top: 32px; font-size: 10px; text-align: right; }
+    </style>
+</head>
+<body>
+    <h2>Clôture de caisse</h2>
+    <div>Date: @Model.DateDuJour.ToString("dd/MM/yyyy") - Généré le @Model.GeneratedAt.ToString("dd/MM/yyyy HH:mm")</div>
+
+    <div class="section-title">Paiements clients</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Client</th>
+                <th>Date Paiement</th>
+                <th>Méthode</th>
+                <th class="text-right">Montant</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.PaiementsRows.Any())
+            {
+                foreach (var row in Model.PaiementsRows)
+                {
+                    <tr>
+                        <td>@row.ClientNom</td>
+                        <td>@row.DatePaiement.ToString("dd/MM/yyyy")</td>
+                        <td>@row.MethodePaiement</td>
+                        <td class="text-right">@row.Montant.FormatAmount(Model.DecimalPlaces) TND</td>
+                    </tr>
+                }
+                <tr style="font-weight: bold;">
+                    <td colspan="3" class="text-right">Total Paiements</td>
+                    <td class="text-right">@Model.TotalPaiements.FormatAmount(Model.DecimalPlaces) TND</td>
+                </tr>
+            }
+            else
+            {
+                <tr><td colspan="4" style="text-align:center;">Aucun paiement</td></tr>
+            }
+        </tbody>
+    </table>
+    <div class="recap-line">
+        Espèce: @Model.SommeEspece.FormatAmount(Model.DecimalPlaces) TND |
+        Chèque: @Model.SommeCheque.FormatAmount(Model.DecimalPlaces) TND |
+        Traite: @Model.SommeTraite.FormatAmount(Model.DecimalPlaces) TND |
+        Virement: @Model.SommeVirement.FormatAmount(Model.DecimalPlaces) TND
+    </div>
+
+    <div class="section-title">Bons de livraison</div>
+    <table>
+        <thead>
+            <tr>
+                <th>N°</th>
+                <th>Date</th>
+                <th>Client</th>
+                <th class="text-right">Montant net</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.BlRows.Any())
+            {
+                foreach (var row in Model.BlRows)
+                {
+                    <tr>
+                        <td>@row.Number</td>
+                        <td>@row.Date.ToString("dd/MM/yyyy")</td>
+                        <td>@(row.CustomerName ?? "-")</td>
+                        <td class="text-right">@row.NetAmount.FormatAmount(Model.DecimalPlaces) TND</td>
+                    </tr>
+                }
+                <tr style="font-weight: bold;">
+                    <td colspan="3" class="text-right">Total BL</td>
+                    <td class="text-right">@Model.TotalBL.FormatAmount(Model.DecimalPlaces) TND</td>
+                </tr>
+            }
+            else
+            {
+                <tr><td colspan="4" style="text-align:center;">Aucun bon de livraison</td></tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="section-title">Avoirs</div>
+    <table>
+        <thead>
+            <tr>
+                <th>N°</th>
+                <th>Date</th>
+                <th>Client</th>
+                <th class="text-right">Montant TTC</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.AvoirsRows.Any())
+            {
+                foreach (var row in Model.AvoirsRows)
+                {
+                    <tr>
+                        <td>@row.Num</td>
+                        <td>@row.Date.ToString("dd/MM/yyyy")</td>
+                        <td>@(row.ClientName ?? "-")</td>
+                        <td class="text-right">@row.TotalIncludingTaxAmount.FormatAmount(Model.DecimalPlaces) TND</td>
+                    </tr>
+                }
+                <tr style="font-weight: bold;">
+                    <td colspan="3" class="text-right">Total Avoirs</td>
+                    <td class="text-right">@Model.TotalAvoirs.FormatAmount(Model.DecimalPlaces) TND</td>
+                </tr>
+            }
+            else
+            {
+                <tr><td colspan="4" style="text-align:center;">Aucun avoir</td></tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="footer">
+        Société @Model.Company.Name - @Model.Company.Adresse - Tel: @Model.Company.Tel - MF: @Model.Company.Matricule
+    </div>
+</body>
+</html>

@@ -12,7 +12,7 @@ public class GetDeliveryNotesBaseInfosWithSummariesValidator : AbstractValidator
 
         _ = RuleFor(x => x.PageSize)
             .GreaterThan(0).WithMessage("page_size_must_be_greater_than_0")
-            .LessThanOrEqualTo(50).WithMessage("page_size_cannot_exceed_50");
+            .LessThanOrEqualTo(100).WithMessage("page_size_cannot_exceed_50");
 
         //RuleFor(x => x.IsInvoiced)
         //    .Equal(true)
