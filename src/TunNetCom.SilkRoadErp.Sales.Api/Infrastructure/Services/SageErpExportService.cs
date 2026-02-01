@@ -2,6 +2,11 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
 
 public class SageErpExportService
 {
+    private const string CompteHtVentes = "70700019";
+    private const string CompteTva = "43670019";
+    private const string CompteDroitsTimbre = "43710000";
+    private const string CompteTtcClients = "41100000";
+
     private readonly ILogger<SageErpExportService> _logger;
 
     public SageErpExportService(ILogger<SageErpExportService> logger)
@@ -69,29 +74,9 @@ public class SageErpExportService
         // Calcul des montants
         var ht = invoice.NetAmount - timbre; // HT = NetAmount - timbre
         var tva = invoice.VatAmount;
-        var ttc = ht + tva; // TTC = HT + TVA
+        var ttc = ht + tva + timbre; // TTC = HT + TVA + timbre
 
-        // Ligne 1: HT en débit
-        lines.Add(FormatAccountingLine(
-            journalCode,
-            invoice.Date,
-            invoice.Number,
-            invoice.CustomerId,
-            invoice.CustomerName ?? "",
-            ht,
-            0));
-
-        // Ligne 2: TVA en débit
-        lines.Add(FormatAccountingLine(
-            journalCode,
-            invoice.Date,
-            invoice.Number,
-            invoice.CustomerId,
-            invoice.CustomerName ?? "",
-            tva,
-            0));
-
-        // Ligne 3: TTC en crédit
+        // Ligne 1: HT en crédit (compte 70700019)
         lines.Add(FormatAccountingLine(
             journalCode,
             invoice.Date,
@@ -99,17 +84,41 @@ public class SageErpExportService
             invoice.CustomerId,
             invoice.CustomerName ?? "",
             0,
-            ttc));
+            ht,
+            CompteHtVentes));
 
-        // Ligne 4: Timbre en débit
+        // Ligne 2: TVA en crédit (compte 43670019)
         lines.Add(FormatAccountingLine(
             journalCode,
             invoice.Date,
             invoice.Number,
             invoice.CustomerId,
             invoice.CustomerName ?? "",
+            0,
+            tva,
+            CompteTva));
+
+        // Ligne 3: DT (droits de timbre) en crédit (compte 43710000)
+        lines.Add(FormatAccountingLine(
+            journalCode,
+            invoice.Date,
+            invoice.Number,
+            invoice.CustomerId,
+            invoice.CustomerName ?? "",
+            0,
             timbre,
-            0));
+            CompteDroitsTimbre));
+
+        // Ligne 4: TTC en débit (compte 41100000)
+        lines.Add(FormatAccountingLine(
+            journalCode,
+            invoice.Date,
+            invoice.Number,
+            invoice.CustomerId,
+            invoice.CustomerName ?? "",
+            ttc,
+            0,
+            CompteTtcClients));
 
         return lines;
     }
@@ -180,7 +189,8 @@ public class SageErpExportService
         int accountId,
         string label,
         decimal debitAmount,
-        decimal creditAmount)
+        decimal creditAmount,
+        string? generalAccountCode = null)
     {
         var sb = new StringBuilder();
 
@@ -188,17 +198,17 @@ public class SageErpExportService
         var code = journalCode.PadRight(6).Substring(0, 6);
         sb.Append(code);
 
-        // jDate: 8 caractères (format DDMMYYYY)
-        var dateStr = date.ToString("ddMMyyyy");
-        if (dateStr.Length > 8) dateStr = dateStr.Substring(0, 8);
-        sb.Append(dateStr.PadLeft(8));
+        // jDate: 6 caractères (format jjmmaa = ddMMyy)
+        var dateStr = date.ToString("ddMMyy");
+        if (dateStr.Length > 6) dateStr = dateStr.Substring(0, 6);
+        sb.Append(dateStr.PadLeft(6));
 
         // dN: 3 caractères (jour du mois)
         var dayOfMonth = date.Day.ToString().PadLeft(3, '0');
         sb.Append(dayOfMonth);
 
-        // compte gnN: 10 caractères (compte général - à configurer, par défaut vide)
-        var compteGen = "".PadRight(10).Substring(0, 10);
+        // compte gnN: 10 caractères (compte général)
+        var compteGen = (generalAccountCode ?? "").PadRight(10).Substring(0, 10);
         sb.Append(compteGen);
 
         // pièce: 16 caractères (référence document - on utilise le numéro de facture)
