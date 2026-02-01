@@ -25,7 +25,7 @@ public class ExportPaiementsClientToExcelEndpoint : ICarterModule
         [FromServices] IAccountingYearFinancialParametersService financialParametersService,
         [FromServices] ILogger<ExportPaiementsClientToExcelEndpoint> logger,
         [FromQuery] int? clientId = null,
-        [FromQuery] int? accountingYearId = null,
+        [FromQuery] int[]? accountingYearIds = null,
         [FromQuery] DateTime? dateEcheanceFrom = null,
         [FromQuery] DateTime? dateEcheanceTo = null,
         [FromQuery] decimal? montantMin = null,
@@ -35,9 +35,10 @@ public class ExportPaiementsClientToExcelEndpoint : ICarterModule
     {
         try
         {
+            var accountingYearIdsList = accountingYearIds != null && accountingYearIds.Length > 0 ? accountingYearIds.ToList() : null;
             logger.LogInformation(
-                "ExportPaiementsClientToExcelEndpoint called with clientId: {ClientId}, accountingYearId: {AccountingYearId}, dateEcheanceFrom: {DateEcheanceFrom}, dateEcheanceTo: {DateEcheanceTo}, montantMin: {MontantMin}, montantMax: {MontantMax}, hasNumeroTransactionBancaire: {HasNumeroTransactionBancaire}",
-                clientId, accountingYearId, dateEcheanceFrom, dateEcheanceTo, montantMin, montantMax, hasNumeroTransactionBancaire);
+                "ExportPaiementsClientToExcelEndpoint called with clientId: {ClientId}, accountingYearIds: {AccountingYearIds}, dateEcheanceFrom: {DateEcheanceFrom}, dateEcheanceTo: {DateEcheanceTo}, montantMin: {MontantMin}, montantMax: {MontantMax}, hasNumeroTransactionBancaire: {HasNumeroTransactionBancaire}",
+                clientId, accountingYearIdsList != null ? string.Join(",", accountingYearIdsList) : null, dateEcheanceFrom, dateEcheanceTo, montantMin, montantMax, hasNumeroTransactionBancaire);
 
             var appParams = await mediator.Send(new GetAppParametersQuery(), cancellationToken);
             var decimalPlaces = await financialParametersService.GetDecimalPlacesAsync(appParams.Value.DecimalPlaces, cancellationToken);
@@ -51,9 +52,9 @@ public class ExportPaiementsClientToExcelEndpoint : ICarterModule
                 paiementsQuery = paiementsQuery.Where(p => p.ClientId == clientId.Value);
             }
 
-            if (accountingYearId.HasValue)
+            if (accountingYearIdsList != null && accountingYearIdsList.Count > 0)
             {
-                paiementsQuery = paiementsQuery.Where(p => p.AccountingYearId == accountingYearId.Value);
+                paiementsQuery = paiementsQuery.Where(p => accountingYearIdsList.Contains(p.AccountingYearId));
             }
 
             if (dateEcheanceFrom.HasValue)

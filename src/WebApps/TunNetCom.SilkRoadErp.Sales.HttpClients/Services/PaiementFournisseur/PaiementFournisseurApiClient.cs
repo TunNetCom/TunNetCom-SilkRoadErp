@@ -67,7 +67,7 @@ public class PaiementFournisseurApiClient : IPaiementFournisseurApiClient
 
     public async Task<PagedList<PaiementFournisseurResponse>> GetPaiementsFournisseurAsync(
         int? fournisseurId,
-        int? accountingYearId,
+        IEnumerable<int>? accountingYearIds,
         DateTime? dateEcheanceFrom,
         DateTime? dateEcheanceTo,
         decimal? montantMin,
@@ -86,9 +86,12 @@ public class PaiementFournisseurApiClient : IPaiementFournisseurApiClient
             queryString += $"&fournisseurId={fournisseurId.Value}";
         }
 
-        if (accountingYearId.HasValue)
+        if (accountingYearIds != null)
         {
-            queryString += $"&accountingYearId={accountingYearId.Value}";
+            foreach (var id in accountingYearIds)
+            {
+                queryString += $"&accountingYearIds={id}";
+            }
         }
 
         if (dateEcheanceFrom.HasValue)

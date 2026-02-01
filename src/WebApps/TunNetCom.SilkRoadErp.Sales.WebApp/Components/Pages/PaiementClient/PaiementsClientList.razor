@@ -75,13 +75,15 @@
             </div>
             <div class="search-field">
                 <label>@Localizer["Exercice_Comptable_Filter"]</label>
-                <RadzenDropDown @bind-Value="@selectedAccountingYearId"
+                <RadzenDropDown @bind-Value="@selectedAccountingYearIds"
                                 Data="@accountingYears"
                                 TextProperty="Year"
                                 ValueProperty="Id"
-                                Placeholder="@Localizer["Tous_Exercices"]"
+                                Placeholder="@Localizer["Exercice_Comptable"]"
                                 AllowClear="true"
-                                Style="width: 200px;" />
+                                Multiple="true"
+                                Style="width: 220px;"
+                                Change="@OnExerciceFilterChange" />
             </div>
             <div class="search-field">
                 <label>Date Échéance Début</label>
@@ -156,6 +158,7 @@
                 <p style="font-size: 24px; text-align: center; margin: 2rem;">@Localizer["Aucun_Paiement"]</p>
             </EmptyTemplate>
             <Columns>
+                <RadzenDataGridColumn TItem="PaiementClientResponse" Property="AccountingYear" Title="@Localizer["Exercice_Comptable"]" Width="100px" />
                 <RadzenDataGridColumn TItem="PaiementClientResponse" Property="ClientNom" Title="@Localizer["Client_Col"]" Width="200px" />
                 <RadzenDataGridColumn TItem="PaiementClientResponse" Property="Montant" Title="@Localizer["Montant_Col"]" Width="150px">
                     <Template Context="paiement">
@@ -270,7 +273,8 @@
     private bool isLoadingPaiements = false;
     private int decimalPlaces = AmountHelper.DEFAULT_DECIMAL_PLACES;
     private int? selectedClientId;
-    private int? selectedAccountingYearId;
+    private List<int> selectedAccountingYearIds = new();
+    private List<GetAllAccountingYearsResponse> accountingYears = new();
     private DateTime? selectedDateEcheanceFrom;
     private DateTime? selectedDateEcheanceTo;
     private decimal? selectedMontantMin;
@@ -282,7 +286,6 @@
         new ReglementStatusOption { Text = "Régle (avec numéro)", Value = 1 },
         new ReglementStatusOption { Text = "Non réglé (sans numéro)", Value = 0 }
     };
-    private List<GetAllAccountingYearsResponse> accountingYears = new();
     private CancellationTokenSource cancellationTokenSource = new();
     private const int _defaultPageSize = 10;
 
@@ -290,14 +293,22 @@
     {
         await base.OnInitializedAsync();
         decimalPlaces = await DecimalFormatService.GetDecimalPlacesAsync();
-        await LoadAccountingYearsAsync();
-    }
-
-    async Task LoadAccountingYearsAsync()
-    {
         try
         {
-            accountingYears = await AccountingYearService.GetAllAccountingYearsAsync();
+            var activeTask = AccountingYearService.GetActiveAccountingYearAsync();
+            var allYearsTask = AccountingYearService.GetAllAccountingYearsAsync();
+            await Task.WhenAll(activeTask, allYearsTask);
+            var activeAccountingYear = await activeTask;
+            accountingYears = await allYearsTask;
+            // Par défaut : exercice en cours + exercice précédent
+            if (activeAccountingYear != null && accountingYears.Count > 0)
+            {
+                var previousYear = accountingYears.FirstOrDefault(ay => ay.Year == activeAccountingYear.Year - 1);
+                var defaultIds = new List<int> { activeAccountingYear.Id };
+                if (previousYear != null)
+                    defaultIds.Add(previousYear.Id);
+                selectedAccountingYearIds = defaultIds;
+            }
         }
         catch (Exception ex)
         {
@@ -346,10 +357,12 @@
             bool? hasNumeroTransactionBancaire = selectedReglementStatus.HasValue 
                 ? (selectedReglementStatus.Value == 1) 
                 : null;
+            var yearIds = selectedAccountingYearIds?.ToList();
+            var accountingYearIdsParam = (yearIds != null && yearIds.Count > 0) ? yearIds : null;
 
             var result = await PaiementClientService.GetPaiementsClientAsync(
                 selectedClientId,
-                selectedAccountingYearId,
+                accountingYearIdsParam,
                 selectedDateEcheanceFrom,
                 selectedDateEcheanceTo,
                 selectedMontantMin,
@@ -379,6 +392,11 @@
     }
 
     async Task SearchPaiements()
+    {
+        await paiementGrid.Reload();
+    }
+
+    async Task OnExerciceFilterChange()
     {
         await paiementGrid.Reload();
     }
@@ -429,10 +447,12 @@
             bool? hasNumeroTransactionBancaire = selectedReglementStatus.HasValue
                 ? (selectedReglementStatus.Value == 1)
                 : null;
+            var yearIds = selectedAccountingYearIds?.ToList();
+            var accountingYearIdsParam = (yearIds != null && yearIds.Count > 0) ? yearIds : null;
 
             var result = await PaiementClientService.GetPaiementsClientAsync(
                 selectedClientId,
-                selectedAccountingYearId,
+                accountingYearIdsParam,
                 selectedDateEcheanceFrom,
                 selectedDateEcheanceTo,
                 selectedMontantMin,
@@ -488,9 +508,13 @@
                 queryParams.Add($"clientId={selectedClientId.Value}");
             }
 
-            if (selectedAccountingYearId.HasValue)
+            var yearIds = selectedAccountingYearIds?.ToList();
+            if (yearIds != null && yearIds.Count > 0)
             {
-                queryParams.Add($"accountingYearId={selectedAccountingYearId.Value}");
+                foreach (var id in yearIds)
+                {
+                    queryParams.Add($"accountingYearIds={id}");
+                }
             }
 
             if (selectedDateEcheanceFrom.HasValue)

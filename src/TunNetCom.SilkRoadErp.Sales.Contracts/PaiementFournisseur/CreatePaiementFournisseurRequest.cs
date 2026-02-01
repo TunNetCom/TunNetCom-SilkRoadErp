@@ -8,6 +8,9 @@ public class CreatePaiementFournisseurRequest
     [JsonPropertyName("fournisseurId")]
     public int FournisseurId { get; set; }
 
+    [JsonPropertyName("accountingYearId")]
+    public int? AccountingYearId { get; set; }
+
     [JsonPropertyName("montant")]
     public decimal Montant { get; set; }
 

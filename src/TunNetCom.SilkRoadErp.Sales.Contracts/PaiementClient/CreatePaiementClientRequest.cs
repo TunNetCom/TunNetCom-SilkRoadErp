@@ -8,6 +8,9 @@ public class CreatePaiementClientRequest
     [JsonPropertyName("clientId")]
     public int ClientId { get; set; }
 
+    [JsonPropertyName("accountingYearId")]
+    public int? AccountingYearId { get; set; }
+
     [JsonPropertyName("montant")]
     public decimal Montant { get; set; }
 
