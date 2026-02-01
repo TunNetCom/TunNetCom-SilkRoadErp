@@ -1,4 +1,4 @@
-﻿@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Common
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Invoices.ProviderInvoices
 
@@ -75,6 +75,13 @@
             text-align: center;
             font-style: italic;
             font-size: 11px;
+        }
+
+        @@media print {
+            .footer-container {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
         }
     </style>
 </head>

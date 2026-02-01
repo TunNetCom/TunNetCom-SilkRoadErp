@@ -1407,4 +1407,16 @@
   <data name="Inactive" xml:space="preserve">
     <value>Inactif</value>
   </data>
+  <data name="Export_Excel" xml:space="preserve">
+    <value>Exporter vers Excel</value>
+  </data>
+  <data name="Export_Pdf" xml:space="preserve">
+    <value>Exporter vers PDF</value>
+  </data>
+  <data name="Export_Excel_Success" xml:space="preserve">
+    <value>Export Excel réussi</value>
+  </data>
+  <data name="Erreur_Export" xml:space="preserve">
+    <value>Erreur lors de l'export</value>
+  </data>
 </root>

@@ -1,6 +1,8 @@
 # ============================================================
 # Deploy SilkRoad API & WebApp to On-Prem Kubernetes (Mourouj)
 # ============================================================
+trigger: none
+pr: none
 
 pool:
   name: OnPremAgents

@@ -20,6 +20,7 @@ public class UpdatePaiementClientEndpoint : ICarterModule
             id,
             request.NumeroTransactionBancaire,
             request.ClientId,
+            request.AccountingYearId,
             request.Montant,
             request.DatePaiement,
             request.MethodePaiement,

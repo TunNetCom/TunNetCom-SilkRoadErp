@@ -1,4 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
+using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNoteByNum;
 
@@ -49,8 +49,8 @@ public class GetDeliveryNoteByNumQueryHandler(
                 ProductReference = l.RefProduit,
                 Description = l.DesignationLi,
                 Quantity = l.QteLi,
-                DeliveredQuantity = l.QteLivree ?? l.QteLi,
-                HasPartialDelivery = l.QteLivree.HasValue && l.QteLivree.Value < l.QteLi,
+                DeliveredQuantity = l.QteLivree ?? 0,
+                HasPartialDelivery = (l.QteLivree ?? 0) < l.QteLi,
                 UnitPriceExcludingTax = l.PrixHt,
                 DiscountPercentage = l.Remise,
                 VatPercentage = l.Tva,

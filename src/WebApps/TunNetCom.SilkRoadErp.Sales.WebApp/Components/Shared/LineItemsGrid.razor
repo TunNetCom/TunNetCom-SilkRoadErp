@@ -309,14 +309,13 @@
             <RadzenDataGridColumn Width="120px" 
                                   Title="@Localizer["vat_percentage"]">
                 <Template Context="order">
-                    <RadzenNumeric TValue="double"
-                                   Value="order.VatPercentage"
+                    <RadzenDropDown TValue="double"
+                                   Data="@VatRatesForDropdown"
+                                   Value="@order.VatPercentage"
+                                   ValueProperty="Value"
+                                   TextProperty="Text"
                                    Change="@(args => OnVatChanged(order, args))"
                                    Style="width:100%;"
-                                   Min="0"
-                                   Max="@((decimal)MaxVatPercentage)"
-                                   Step="0.01"
-                                   Format="@vatFormat"
                                    Name="Vat"
                                    Disabled="@IsReadOnly"/>
                 </Template>
@@ -574,6 +573,37 @@
 
     private sealed record ProductReceiptConstructorInfo(bool IsConstructor, string SupplierName);
 
+    private const double VatRateTolerance = 0.001;
+
+    private IReadOnlyList<VatRateOption> VatRatesForDropdown => GetVatRatesFromAppParameters();
+
+    private IReadOnlyList<VatRateOption> GetVatRatesFromAppParameters()
+    {
+        if (AppParameters == null)
+        {
+            return new[]
+            {
+                new VatRateOption(VatRateConstants.DefaultVatRate0),
+                new VatRateOption(VatRateConstants.DefaultVatRate7),
+                new VatRateOption(VatRateConstants.DefaultVatRate13),
+                new VatRateOption(VatRateConstants.DefaultVatRate19)
+            };
+        }
+        var rates = new[] { (double)AppParameters.VatRate0, (double)AppParameters.VatRate7, (double)AppParameters.VatRate13, (double)AppParameters.VatRate19 };
+        return rates.Distinct().OrderBy(r => r).Select(r => new VatRateOption(r)).ToList();
+    }
+
+    private double GetDefaultVatRate19() => (double)(AppParameters?.VatRate19 ?? (decimal)VatRateConstants.DefaultVatRate19);
+
+    private double GetEffectiveVatFromArticle(double articleVat)
+    {
+        var rate7 = AppParameters != null ? (double)AppParameters.VatRate7 : VatRateConstants.DefaultVatRate7;
+        var rate19 = AppParameters != null ? (double)AppParameters.VatRate19 : VatRateConstants.DefaultVatRate19;
+        if (Math.Abs(articleVat - rate7) < VatRateTolerance || Math.Abs(articleVat - rate19) < VatRateTolerance)
+            return articleVat;
+        return GetDefaultVatRate19();
+    }
+
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
@@ -582,6 +612,15 @@
         // Discount and VAT percentages typically use 2 decimal places
         discountFormat = AmountHelper.FORMAT_N2;
         vatFormat = AmountHelper.FORMAT_N2;
+    }
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        if (typeof(TItem) == typeof(DeliveryNoteDetailResponse))
+        {
+            showDeliveredQuantityColumn = Items?.Any(item => item is DeliveryNoteDetailResponse dn && dn.HasPartialDelivery) ?? false;
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -672,17 +711,9 @@
 
     private async Task OnVatChanged(TItem order, object value)
     {
-        if (value != null && double.TryParse(value.ToString(), out double vat))
+        double vat = value is double d ? d : (value != null && double.TryParse(value.ToString(), out double parsed) ? parsed : -1);
+        if (vat >= 0)
         {
-            // Limit VAT to MaxVatPercentage
-            if (vat > MaxVatPercentage)
-            {
-                vat = MaxVatPercentage;
-            }
-            if (vat < 0)
-            {
-                vat = 0;
-            }
             order.VatPercentage = vat;
             LineItemCalculator.CalculateTotals(order);
             UpdateCurrentProductState(order);
@@ -850,9 +881,8 @@
                     ? selectedProduct.DiscountPercentage 
                     : (double)(AppParameters?.DiscountPercentage ?? 0);
                 
-                // Always use AppParameters.VatAmount as default VAT value from Systeme entity
-                // Only use product VAT if it's explicitly set and different from default
-                order.VatPercentage = (double)(AppParameters?.VatAmount ?? 0);
+                // If article VAT matches current accounting year rate 7 or 19 use it, otherwise use exercise rate 19
+                order.VatPercentage = GetEffectiveVatFromArticle(selectedProduct.VatPercentage);
                 
                 // For inventaire, don't calculate totals here - let OnProductSelectedHandler do it
                 // after updating the quantity with quantiteTheorique
@@ -1162,7 +1192,7 @@
                 var product = productResult.AsT0;
                 item.UnitPriceExcludingTax = product.PurchasingPrice;
                 item.DiscountPercentage = product.DiscountPourcentageOfPurchasing;
-                item.VatPercentage = product.VatRate;
+                item.VatPercentage = GetEffectiveVatFromArticle(product.VatRate);
                 LineItemCalculator.CalculateTotals(item);
             }
         }
@@ -1175,7 +1205,7 @@
                 var purchaseInfo = purchaseInfoResult.AsT0;
                 item.UnitPriceExcludingTax = purchaseInfo.PrixHt;
                 item.DiscountPercentage = purchaseInfo.Remise;
-                item.VatPercentage = purchaseInfo.Tva;
+                item.VatPercentage = GetEffectiveVatFromArticle(purchaseInfo.Tva);
                 LineItemCalculator.CalculateTotals(item);
             }
             else
@@ -1187,7 +1217,7 @@
                     var product = productResult.AsT0;
                     item.UnitPriceExcludingTax = product.PurchasingPrice;
                     item.DiscountPercentage = product.DiscountPourcentageOfPurchasing;
-                    item.VatPercentage = product.VatRate;
+                    item.VatPercentage = GetEffectiveVatFromArticle(product.VatRate);
                     LineItemCalculator.CalculateTotals(item);
                 }
             }
@@ -1218,13 +1248,13 @@
             if (AppParameters != null)
             {
                 order.DiscountPercentage = (double)AppParameters.DiscountPercentage;
-                order.VatPercentage = (double)AppParameters.VatAmount;
+                order.VatPercentage = GetDefaultVatRate19();
             }
             else
             {
-                // Fallback to 0 if AppParameters is not loaded yet
+                // Fallback when AppParameters (current accounting year) is not loaded yet
                 order.DiscountPercentage = 0;
-                order.VatPercentage = 0;
+                order.VatPercentage = VatRateConstants.DefaultVatRate19;
             }
             
             if (Items == null)
@@ -1380,6 +1410,17 @@
         if (OnDeleteItem.HasDelegate)
         {
             await OnDeleteItem.InvokeAsync(order);
+        }
+    }
+
+    private sealed class VatRateOption
+    {
+        public double Value { get; }
+        public string Text => $"{Value} %";
+
+        public VatRateOption(double value)
+        {
+            Value = value;
         }
     }
 }

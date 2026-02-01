@@ -4,7 +4,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.PaiementFournisseur.GetPaieme
 
 public record GetPaiementsFournisseurQuery(
     int? FournisseurId = null,
-    int? AccountingYearId = null,
+    IEnumerable<int>? AccountingYearIds = null,
     DateTime? DateEcheanceFrom = null,
     DateTime? DateEcheanceTo = null,
     decimal? MontantMin = null,

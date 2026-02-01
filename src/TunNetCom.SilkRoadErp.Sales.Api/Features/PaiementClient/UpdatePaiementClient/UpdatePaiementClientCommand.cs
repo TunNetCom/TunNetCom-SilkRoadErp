@@ -6,6 +6,7 @@ public record UpdatePaiementClientCommand(
     int Id,
     string? NumeroTransactionBancaire,
     int ClientId,
+    int? AccountingYearId,
     decimal Montant,
     DateTime DatePaiement,
     string MethodePaiement,

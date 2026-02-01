@@ -1,4 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
+using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
 using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote;
@@ -68,4 +68,26 @@ public interface IDeliveryNoteApiClient
     Task<Result> ValidateDeliveryNotesAsync(
         List<int> ids,
         CancellationToken cancellationToken);
+
+    Task<(byte[] Content, string FileName)> ExportDeliveryNotesToPdfAsync(
+        DateTime? startDate,
+        DateTime? endDate,
+        int? customerId,
+        int? technicianId,
+        List<int>? tagIds,
+        int? status,
+        string[]? selectedColumns,
+        string? orderBy,
+        CancellationToken cancellationToken = default);
+
+    Task<(byte[] Content, string FileName)> ExportDeliveryNotesToExcelAsync(
+        DateTime? startDate,
+        DateTime? endDate,
+        int? customerId,
+        int? technicianId,
+        List<int>? tagIds,
+        int? status,
+        string[]? selectedColumns,
+        string? orderBy,
+        CancellationToken cancellationToken = default);
 }

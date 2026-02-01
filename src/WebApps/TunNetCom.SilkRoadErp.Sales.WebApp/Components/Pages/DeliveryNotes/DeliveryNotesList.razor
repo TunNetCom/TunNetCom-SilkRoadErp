@@ -24,8 +24,6 @@
 @inject DialogService DialogService
 @inject IInvoicesApiClient InvoicesService
 @inject IJSRuntime JS
-@inject HttpClient HttpClient
-@inject IConfiguration Configuration
 @using TunNetCom.SilkRoadErp.Sales.Domain.Entites
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
@@ -162,7 +160,8 @@
                         PageSize="@pageSize"
                         PageSizeOptions="@GridPageSizeConstants.PageSizeOptions"
                         Count="@totalCount"
-                        AllowColumnResize="true">
+                        AllowColumnResize="true"
+                        Loading="@_isLoadingList">
             <EmptyTemplate>
                 <p style="font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
             </EmptyTemplate>
@@ -492,6 +491,9 @@
     private SearchCriteria searchCriteria = new SearchCriteria();
     private List<CustomerResponse> _filteredCustomers = new();
     private List<InstallationTechnicianBaseInfo> _filteredTechnicians = new();
+    private string? _lastSortProperty;
+    private string? _lastSortOrder;
+    private bool _isLoadingList;
 
     protected override async Task OnInitializedAsync()
     {
@@ -656,7 +658,7 @@
     private async Task Callback(LoadDataArgs args)
     {
         _logger.LogInformation("DeliveryNotesList.Callback called with Skip: {Skip}, Top: {Top}", args.Skip, args.Top);
-        
+        _isLoadingList = true;
         // Update pageSize if Top is provided
         if (args.Top.HasValue && args.Top.Value > 0)
         {
@@ -693,6 +695,8 @@
                 sortOrder = firstSort.SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending;
                 sortProperty = firstSort.Property;
             }
+            _lastSortProperty = sortProperty;
+            _lastSortOrder = sortOrder;
 
             // Determine isInvoiced from InvoiceStatus filter
             bool? isInvoiced = null;
@@ -743,6 +747,10 @@
                 Summary = Localizer["Error"], 
                 Detail = $"Erreur lors du chargement des données: {ex.Message}" 
             });
+        }
+        finally
+        {
+            _isLoadingList = false;
         }
 
         await InvokeAsync(StateHasChanged);
@@ -826,75 +834,24 @@
                 searchCriteria.StartDate,
                 searchCriteria.EndDate);
 
-            var queryParams = new List<string>();
-
-            if (startDate.HasValue)
-            {
-                queryParams.Add($"startDate={Uri.EscapeDataString(startDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
-            }
-
-            if (endDate.HasValue)
-            {
-                queryParams.Add($"endDate={Uri.EscapeDataString(endDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
-            }
-
-            if (searchCriteria.SelectedCustomerId.HasValue)
-            {
-                queryParams.Add($"customerId={searchCriteria.SelectedCustomerId.Value}");
-            }
-
-            if (searchCriteria.SelectedTechnicianId.HasValue)
-            {
-                queryParams.Add($"technicianId={searchCriteria.SelectedTechnicianId.Value}");
-            }
-
-            if (searchCriteria.SelectedTagIds != null && searchCriteria.SelectedTagIds.Any())
-            {
-                foreach (var tagId in searchCriteria.SelectedTagIds)
-                {
-                    queryParams.Add($"tagIds={tagId}");
-                }
-            }
-
-            if (searchCriteria.Status.HasValue)
-            {
-                queryParams.Add($"status={searchCriteria.Status.Value}");
-            }
-
-            // Add columns to export (include all visible columns)
             var columnsToExport = new[] { "Number", "Date", "CustomerName", "NetAmount", "VatAmount" };
-            foreach (var column in columnsToExport)
-            {
-                queryParams.Add($"selectedColumns={Uri.EscapeDataString(column)}");
-            }
+            var orderBy = !string.IsNullOrEmpty(_lastSortProperty) && _lastSortOrder != null
+                ? $"{_lastSortProperty} {(_lastSortOrder == SortConstants.Ascending ? "asc" : "desc")}"
+                : null;
 
-            var baseUrl = Configuration.GetValue<string>("ApiSettings:BaseUrl")
-                ?? throw new InvalidOperationException("ApiSettings:BaseUrl configuration is missing");
-            
-            var url = $"{baseUrl.TrimEnd('/')}/api/delivery-notes/export/excel";
-            if (queryParams.Any())
-            {
-                url += "?" + string.Join("&", queryParams);
-            }
+            var (content, fileName) = await DeliveryNoteService.ExportDeliveryNotesToExcelAsync(
+                startDate,
+                endDate,
+                searchCriteria.SelectedCustomerId,
+                searchCriteria.SelectedTechnicianId,
+                searchCriteria.SelectedTagIds?.Any() == true ? searchCriteria.SelectedTagIds : null,
+                searchCriteria.Status,
+                columnsToExport,
+                orderBy,
+                default);
 
-            var response = await HttpClient.GetAsync(url);
-            if (!response.IsSuccessStatusCode)
-            {
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Error,
-                    Summary = Localizer["Error"],
-                    Detail = "Erreur lors de l'export Excel"
-                });
-                return;
-            }
+            await JS.InvokeVoidAsync("downloadFile", fileName, Convert.ToBase64String(content));
 
-            var fileBytes = await response.Content.ReadAsByteArrayAsync();
-            var fileName = response.Content.Headers.ContentDisposition?.FileName ?? $"BonsLivraison_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
-            fileName = fileName.Trim('"');
-
-            await JS.InvokeVoidAsync("downloadFile", fileName, Convert.ToBase64String(fileBytes));
-            
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Success,
@@ -925,78 +882,27 @@
                 searchCriteria.StartDate,
                 searchCriteria.EndDate);
 
-            var queryParams = new List<string>();
-
-            if (startDate.HasValue)
-            {
-                queryParams.Add($"startDate={Uri.EscapeDataString(startDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
-            }
-
-            if (endDate.HasValue)
-            {
-                queryParams.Add($"endDate={Uri.EscapeDataString(endDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
-            }
-
-            if (searchCriteria.SelectedCustomerId.HasValue)
-            {
-                queryParams.Add($"customerId={searchCriteria.SelectedCustomerId.Value}");
-            }
-
-            if (searchCriteria.SelectedTechnicianId.HasValue)
-            {
-                queryParams.Add($"technicianId={searchCriteria.SelectedTechnicianId.Value}");
-            }
-
-            if (searchCriteria.SelectedTagIds != null && searchCriteria.SelectedTagIds.Any())
-            {
-                foreach (var tagId in searchCriteria.SelectedTagIds)
-                {
-                    queryParams.Add($"tagIds={tagId}");
-                }
-            }
-
-            if (searchCriteria.Status.HasValue)
-            {
-                queryParams.Add($"status={searchCriteria.Status.Value}");
-            }
-
-            // Add columns to export (include all visible columns)
             var columnsToExport = new[] { "Number", "Date", "CustomerName", "NetAmount", "VatAmount" };
-            foreach (var column in columnsToExport)
-            {
-                queryParams.Add($"selectedColumns={Uri.EscapeDataString(column)}");
-            }
+            var orderBy = !string.IsNullOrEmpty(_lastSortProperty) && _lastSortOrder != null
+                ? $"{_lastSortProperty} {(_lastSortOrder == SortConstants.Ascending ? "asc" : "desc")}"
+                : null;
 
-            var baseUrl = Configuration.GetValue<string>("ApiSettings:BaseUrl")
-                ?? throw new InvalidOperationException("ApiSettings:BaseUrl configuration is missing");
-            
-            var url = $"{baseUrl.TrimEnd('/')}/api/delivery-notes/export/pdf";
-            if (queryParams.Any())
-            {
-                url += "?" + string.Join("&", queryParams);
-            }
-
-            var pdfResult = await HttpClient.GetAsync(url);
-            if (!pdfResult.IsSuccessStatusCode)
-            {
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Error,
-                    Summary = Localizer["Error"],
-                    Detail = "Erreur lors de l'export PDF"
-                });
-                return;
-            }
-
-            var fileBytes = await pdfResult.Content.ReadAsByteArrayAsync();
-            var fileName = pdfResult.Content.Headers.ContentDisposition?.FileName ?? $"BonsLivraison_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
-            fileName = fileName.Trim('"');
+            var (content, fileName) = await DeliveryNoteService.ExportDeliveryNotesToPdfAsync(
+                startDate,
+                endDate,
+                searchCriteria.SelectedCustomerId,
+                searchCriteria.SelectedTechnicianId,
+                searchCriteria.SelectedTagIds?.Any() == true ? searchCriteria.SelectedTagIds : null,
+                searchCriteria.Status,
+                columnsToExport,
+                orderBy,
+                default);
 
             await DialogService.OpenAsync<PdfViewerDialog>(
                 Localizer["print_mode"],
                 new Dictionary<string, object>
                 {
-                    { "PdfBytes", fileBytes },
+                    { "PdfBytes", content },
                     { "FileName", fileName }
                 },
                 new DialogOptions()

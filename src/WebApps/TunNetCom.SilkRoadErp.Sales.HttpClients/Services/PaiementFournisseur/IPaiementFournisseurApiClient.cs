@@ -14,7 +14,7 @@ public interface IPaiementFournisseurApiClient
 
     Task<PagedList<PaiementFournisseurResponse>> GetPaiementsFournisseurAsync(
         int? fournisseurId,
-        int? accountingYearId,
+        IEnumerable<int>? accountingYearIds,
         DateTime? dateEcheanceFrom,
         DateTime? dateEcheanceTo,
         decimal? montantMin,

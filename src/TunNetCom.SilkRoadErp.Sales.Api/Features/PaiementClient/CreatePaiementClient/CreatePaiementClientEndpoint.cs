@@ -18,6 +18,7 @@ public class CreatePaiementClientEndpoint : ICarterModule
         var command = new CreatePaiementClientCommand(
             request.NumeroTransactionBancaire,
             request.ClientId,
+            request.AccountingYearId,
             request.Montant,
             request.DatePaiement,
             request.MethodePaiement,

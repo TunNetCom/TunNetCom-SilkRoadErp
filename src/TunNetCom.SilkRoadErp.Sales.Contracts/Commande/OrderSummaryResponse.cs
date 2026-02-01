@@ -1,8 +1,9 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Contracts.Commande;
+namespace TunNetCom.SilkRoadErp.Sales.Contracts.Commande;
 public class OrderSummaryResponse
 {
     public int OrderNumber { get; set; }
     public int? SupplierId { get; set; }
+    public string? SupplierName { get; set; }
     public DateTime Date { get; set; }
     public decimal TotalExcludingVat { get; set; }
     public decimal TotalVat { get; set; }

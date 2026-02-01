@@ -1,4 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
+using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
 using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 using JsonException = System.Text.Json.JsonException;
 
@@ -403,5 +403,81 @@ public class DeliveryNoteApiClient(HttpClient _httpClient) : IDeliveryNoteApiCli
         {
             return Result.Fail($"Unexpected error: {ex.Message}");
         }
+    }
+
+    public async Task<(byte[] Content, string FileName)> ExportDeliveryNotesToPdfAsync(
+        DateTime? startDate,
+        DateTime? endDate,
+        int? customerId,
+        int? technicianId,
+        List<int>? tagIds,
+        int? status,
+        string[]? selectedColumns,
+        string? orderBy,
+        CancellationToken cancellationToken = default)
+    {
+        var queryString = BuildExportQueryString(startDate, endDate, customerId, technicianId, tagIds, status, selectedColumns, orderBy);
+        var requestUri = $"/api/delivery-notes/export/pdf{queryString}";
+        var response = await _httpClient.GetAsync(requestUri, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        var content = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+        var fileName = response.Content.Headers.ContentDisposition?.FileName?.Trim('"') ?? $"BonsLivraison_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+        return (content, fileName);
+    }
+
+    public async Task<(byte[] Content, string FileName)> ExportDeliveryNotesToExcelAsync(
+        DateTime? startDate,
+        DateTime? endDate,
+        int? customerId,
+        int? technicianId,
+        List<int>? tagIds,
+        int? status,
+        string[]? selectedColumns,
+        string? orderBy,
+        CancellationToken cancellationToken = default)
+    {
+        var queryString = BuildExportQueryString(startDate, endDate, customerId, technicianId, tagIds, status, selectedColumns, orderBy);
+        var requestUri = $"/api/delivery-notes/export/excel{queryString}";
+        var response = await _httpClient.GetAsync(requestUri, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        var content = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+        var fileName = response.Content.Headers.ContentDisposition?.FileName?.Trim('"') ?? $"BonsLivraison_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+        return (content, fileName);
+    }
+
+    private static string BuildExportQueryString(
+        DateTime? startDate,
+        DateTime? endDate,
+        int? customerId,
+        int? technicianId,
+        List<int>? tagIds,
+        int? status,
+        string[]? selectedColumns,
+        string? orderBy)
+    {
+        var queryParams = new List<string>();
+        if (startDate.HasValue)
+            queryParams.Add($"startDate={Uri.EscapeDataString(startDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+        if (endDate.HasValue)
+            queryParams.Add($"endDate={Uri.EscapeDataString(endDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+        if (customerId.HasValue)
+            queryParams.Add($"customerId={customerId.Value}");
+        if (technicianId.HasValue)
+            queryParams.Add($"technicianId={technicianId.Value}");
+        if (tagIds != null)
+        {
+            foreach (var tagId in tagIds)
+                queryParams.Add($"tagIds={tagId}");
+        }
+        if (status.HasValue)
+            queryParams.Add($"status={status.Value}");
+        if (!string.IsNullOrEmpty(orderBy))
+            queryParams.Add($"orderBy={Uri.EscapeDataString(orderBy)}");
+        if (selectedColumns != null && selectedColumns.Length > 0)
+        {
+            foreach (var column in selectedColumns)
+                queryParams.Add($"selectedColumns={Uri.EscapeDataString(column)}");
+        }
+        return queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : string.Empty;
     }
 }

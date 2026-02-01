@@ -18,6 +18,7 @@ public class CreatePaiementFournisseurEndpoint : ICarterModule
         var command = new CreatePaiementFournisseurCommand(
             request.NumeroTransactionBancaire,
             request.FournisseurId,
+            request.AccountingYearId,
             request.Montant,
             request.DatePaiement,
             request.MethodePaiement,

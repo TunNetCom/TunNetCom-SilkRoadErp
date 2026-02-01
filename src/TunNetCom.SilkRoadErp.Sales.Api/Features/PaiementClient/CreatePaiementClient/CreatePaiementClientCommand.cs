@@ -5,6 +5,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.PaiementClient.CreatePaiement
 public record CreatePaiementClientCommand(
     string? NumeroTransactionBancaire,
     int ClientId,
+    int? AccountingYearId,
     decimal Montant,
     DateTime DatePaiement,
     string MethodePaiement,

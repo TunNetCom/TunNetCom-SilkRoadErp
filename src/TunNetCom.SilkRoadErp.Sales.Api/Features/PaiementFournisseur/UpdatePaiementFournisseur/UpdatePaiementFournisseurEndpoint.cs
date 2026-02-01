@@ -20,6 +20,7 @@ public class UpdatePaiementFournisseurEndpoint : ICarterModule
             id,
             request.NumeroTransactionBancaire,
             request.FournisseurId,
+            request.AccountingYearId,
             request.Montant,
             request.DatePaiement,
             request.MethodePaiement,

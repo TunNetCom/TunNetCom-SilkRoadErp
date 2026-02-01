@@ -1191,4 +1191,16 @@
   <data name="Close" xml:space="preserve">
     <value>إغلاق</value>
   </data>
+  <data name="Export_Excel" xml:space="preserve">
+    <value>تصدير إلى Excel</value>
+  </data>
+  <data name="Export_Pdf" xml:space="preserve">
+    <value>تصدير إلى PDF</value>
+  </data>
+  <data name="Export_Excel_Success" xml:space="preserve">
+    <value>تم التصدير إلى Excel بنجاح</value>
+  </data>
+  <data name="Erreur_Export" xml:space="preserve">
+    <value>خطأ أثناء التصدير</value>
+  </data>
 </root>

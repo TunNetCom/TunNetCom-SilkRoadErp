@@ -234,7 +234,6 @@ stages:
         echo ""
         echo "📋 Applying deployment manifests..."
         kubectl apply -f $(Pipeline.Workspace)/k8s-manifests/prod-deployment.yaml -n silkroad-prod
-        kubectl apply -f $(Pipeline.Workspace)/k8s-manifests/prod-service.yaml -n silkroad-prod || true
         
         echo ""
         echo "🔍 Verifying image references in deployment spec:"

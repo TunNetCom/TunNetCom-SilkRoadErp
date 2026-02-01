@@ -1095,6 +1095,18 @@
   <data name="Date_Dernier_Document" xml:space="preserve">
     <value>Last Document Date</value>
   </data>
+  <data name="Export_Excel" xml:space="preserve">
+    <value>Export to Excel</value>
+  </data>
+  <data name="Export_Pdf" xml:space="preserve">
+    <value>Export to PDF</value>
+  </data>
+  <data name="Export_Excel_Success" xml:space="preserve">
+    <value>Excel export successful</value>
+  </data>
+  <data name="Erreur_Export" xml:space="preserve">
+    <value>Export error</value>
+  </data>
   <data name="Confirmation_Validation_Titre" xml:space="preserve">
     <value>Confirm validation</value>
   </data>

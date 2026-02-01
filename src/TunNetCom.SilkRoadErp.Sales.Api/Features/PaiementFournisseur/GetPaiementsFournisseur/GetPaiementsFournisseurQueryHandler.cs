@@ -9,8 +9,9 @@ public class GetPaiementsFournisseurQueryHandler(
 {
     public async Task<Result<PagedList<PaiementFournisseurResponse>>> Handle(GetPaiementsFournisseurQuery query, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Fetching PaiementsFournisseur with filters FournisseurId={FournisseurId}, AccountingYearId={AccountingYearId}, DateEcheanceFrom={DateEcheanceFrom}, DateEcheanceTo={DateEcheanceTo}, MontantMin={MontantMin}, MontantMax={MontantMax}, HasNumeroTransactionBancaire={HasNumeroTransactionBancaire}, Mois={Mois}", 
-            query.FournisseurId, query.AccountingYearId, query.DateEcheanceFrom, query.DateEcheanceTo, query.MontantMin, query.MontantMax, query.HasNumeroTransactionBancaire, query.Mois);
+        var accountingYearIdsList = query.AccountingYearIds?.ToList();
+        _logger.LogInformation("Fetching PaiementsFournisseur with filters FournisseurId={FournisseurId}, AccountingYearIds={AccountingYearIds}, DateEcheanceFrom={DateEcheanceFrom}, DateEcheanceTo={DateEcheanceTo}, MontantMin={MontantMin}, MontantMax={MontantMax}, HasNumeroTransactionBancaire={HasNumeroTransactionBancaire}, Mois={Mois}",
+            query.FournisseurId, accountingYearIdsList != null ? string.Join(",", accountingYearIdsList) : null, query.DateEcheanceFrom, query.DateEcheanceTo, query.MontantMin, query.MontantMax, query.HasNumeroTransactionBancaire, query.Mois);
 
         var paiementsQuery = _context.PaiementFournisseur
             .AsNoTracking()
@@ -21,9 +22,9 @@ public class GetPaiementsFournisseurQueryHandler(
             paiementsQuery = paiementsQuery.Where(p => p.FournisseurId == query.FournisseurId.Value);
         }
 
-        if (query.AccountingYearId.HasValue)
+        if (accountingYearIdsList != null && accountingYearIdsList.Count > 0)
         {
-            paiementsQuery = paiementsQuery.Where(p => p.AccountingYearId == query.AccountingYearId.Value);
+            paiementsQuery = paiementsQuery.Where(p => accountingYearIdsList.Contains(p.AccountingYearId));
         }
 
         if (query.DateEcheanceFrom.HasValue)
@@ -71,6 +72,7 @@ public class GetPaiementsFournisseurQueryHandler(
                 FournisseurId = p.FournisseurId,
                 FournisseurNom = p.Fournisseur.Nom,
                 AccountingYearId = p.AccountingYearId,
+                AccountingYear = p.AccountingYear.Year,
                 Montant = p.Montant,
                 DatePaiement = p.DatePaiement,
                 MethodePaiement = p.MethodePaiement.ToString(),

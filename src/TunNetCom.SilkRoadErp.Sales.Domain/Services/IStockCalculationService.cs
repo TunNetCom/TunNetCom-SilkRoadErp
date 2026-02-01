@@ -26,7 +26,12 @@ public class ProductStockResult
     public int TotalVentes { get; set; }
     
     /// <summary>
-    /// Stock calculé = StockInitial + TotalAchats - TotalVentes
+    /// Total des avoirs clients (retours clients, tous statuts)
+    /// </summary>
+    public int TotalAvoirsClients { get; set; }
+    
+    /// <summary>
+    /// Stock calculé = StockInitial + TotalAchats - TotalVentes + TotalAvoirsClients
     /// </summary>
     public int StockCalcule { get; set; }
     

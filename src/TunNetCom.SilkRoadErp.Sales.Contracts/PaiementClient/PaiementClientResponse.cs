@@ -17,6 +17,9 @@ public class PaiementClientResponse
     [JsonPropertyName("accountingYearId")]
     public int AccountingYearId { get; set; }
 
+    [JsonPropertyName("accountingYear")]
+    public int AccountingYear { get; set; }
+
     [JsonPropertyName("montant")]
     public decimal Montant { get; set; }
 

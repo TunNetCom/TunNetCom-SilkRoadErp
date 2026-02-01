@@ -8,6 +8,7 @@ using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Quotations.PrintQuo
 using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Orders.PrintOrder;
 using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Soldes.PrintSoldeClient;
 using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Soldes.PrintSoldeFournisseur;
+using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.PaiementClient.PrintPaiementsClientList;
 using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.PaiementFournisseur.PrintTraite;
 using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.RetourMarchandiseFournisseur;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PrintHistory;
@@ -28,6 +29,7 @@ public static class PrintEngineStartupExtensions
         _ = services.AddScoped<PrintSoldeClientService>();
         _ = services.AddScoped<PrintSoldeFournisseurService>();
         _ = services.AddScoped<PrintTraiteService>();
+        _ = services.AddScoped<PrintPaiementsClientListService>();
         _ = services.AddScoped<PrintRetourFournisseurService>();
         _ = services.AddScoped(typeof(IPrintPdfService<,>), typeof(PrintPdfPlayWrightService<,>));
 

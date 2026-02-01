@@ -16,8 +16,11 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Orders.PrintOrder
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Tags
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
 
 @inject IStringLocalizer<SharedResource> Localizer
+@inject ITagsApiClient TagsService
 @inject Radzen.NotificationService NotificationService
 @inject IOrderApiClient orderApiClient
 @inject IProductsApiClient productsApiClient
@@ -111,6 +114,15 @@ else
                    ProductTextProperty="ProductReferenceAndDescription"
                    ProductValueProperty="ProductReference"
                    CreateNewItem="@(() => new OrderDetailResponse { Quantity = 1 })" />
+
+    <!-- Tags Section -->
+    @if (!string.IsNullOrEmpty(orderNumber) && int.TryParse(orderNumber, out var orderNum))
+    {
+        <TagSelector @ref="tagSelectorRef"
+                    DocumentType="Commande"
+                    DocumentId="@orderNum"
+                    SaveOnChange="false" />
+    }
 }
 
 @code {
@@ -130,6 +142,7 @@ else
     DateTime orderDate = DateTime.Now;
     private GetAppParametersResponse getAppParametersResponse;
     private int? selectedProviderId;
+    private TagSelector? tagSelectorRef;
 
     protected override async Task OnInitializedAsync()
     {
@@ -194,6 +207,7 @@ else
                 
                 if (updateResponse.IsSuccess)
                 {
+                    await SaveTags();
                     NotificationService.Notify(new NotificationMessage
                     {
                         Severity = NotificationSeverity.Success,
@@ -304,6 +318,26 @@ else
                     totalHt = orderResult.TotalExcludingVat;
                     totalVat = orderResult.TotalVat;
                     totalTtc = orderResult.NetToPay;
+
+                    if (orderResult.Supplier != null)
+                    {
+                        var providerFromOrder = new ProviderResponse
+                        {
+                            Id = orderResult.Supplier.Id,
+                            Nom = orderResult.Supplier.Name ?? string.Empty,
+                            Tel = orderResult.Supplier.Phone ?? string.Empty,
+                            Adresse = orderResult.Supplier.Address,
+                            Matricule = orderResult.Supplier.RegistrationNumber,
+                            Code = orderResult.Supplier.Code,
+                            CodeCat = orderResult.Supplier.CategoryCode,
+                            EtbSec = orderResult.Supplier.SecondaryEstablishment,
+                            Mail = orderResult.Supplier.Mail
+                        };
+                        if (_filteredProviders.All(p => p.Id != providerFromOrder.Id))
+                        {
+                            _filteredProviders = new List<ProviderResponse> { providerFromOrder }.Concat(_filteredProviders).ToList();
+                        }
+                    }
                 }
                 else
                 {
@@ -324,6 +358,46 @@ else
 
             logger.LogError(e, "Failed to fetch order");
             await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task SaveTags()
+    {
+        if (tagSelectorRef == null || string.IsNullOrEmpty(orderNumber) || !int.TryParse(orderNumber, out var orderNum))
+        {
+            return;
+        }
+
+        try
+        {
+            var tagsToAdd = tagSelectorRef.GetTagsToAdd();
+            var tagIdsToRemove = tagSelectorRef.GetTagIdsToRemove();
+
+            var validTagIdsToRemove = tagIdsToRemove.Where(id => id > 0).ToList();
+            if (validTagIdsToRemove.Any())
+            {
+                var removeRequest = new RemoveTagsFromDocumentRequest { TagIds = validTagIdsToRemove };
+                await TagsService.RemoveTagsFromDocumentAsync("Commande", orderNum, removeRequest);
+            }
+
+            if (tagsToAdd.Any())
+            {
+                var addRequest = new AddTagsToDocumentByNameRequest { TagNames = tagsToAdd };
+                await TagsService.AddTagsToDocumentByNameAsync("Commande", orderNum, addRequest);
+            }
+
+            await tagSelectorRef.LoadDocumentTags();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to save tags for order {OrderNumber}", orderNumber);
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["error"],
+                Detail = "Les tags n'ont pas pu être enregistrés."
+            });
         }
     }
 

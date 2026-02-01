@@ -31,6 +31,7 @@ public class GetProductsStockQueryHandler(
             StockInitial = s.StockInitial,
             TotalAchats = s.TotalAchats,
             TotalVentes = s.TotalVentes,
+            TotalAvoirsClients = s.TotalAvoirsClients,
             StockCalcule = s.StockCalcule,
             StockDisponible = s.StockDisponible,
             QteEnRetourFournisseur = s.QteEnRetourFournisseur,

@@ -71,9 +71,13 @@
             </RadzenFormField>
 
             <RadzenFormField Text="@($"{Localizer["Exercice_Comptable"]} *")" class="rz-col-12 rz-md-6">
-                <RadzenTextBox Value="@(activeAccountingYear?.Year.ToString() ?? Localizer["Chargement"])" 
-                               ReadOnly="true" 
-                               Style="width: 100%;" />
+                <RadzenDropDown @bind-Value="paiement.AccountingYearId"
+                                Data="@accountingYears"
+                                TextProperty="Year"
+                                ValueProperty="Id"
+                                Placeholder="@Localizer["Exercice_Comptable"]"
+                                AllowClear="false"
+                                Style="width: 100%;" />
             </RadzenFormField>
 
             <RadzenFormField Text="@($"{Localizer["Montant"]} *")" class="rz-col-12 rz-md-6">
@@ -389,6 +393,7 @@
     private bool isSaving = false;
     private CreatePaiementFournisseurRequest paiement = new();
     private GetActiveAccountingYearResponse? activeAccountingYear;
+    private List<GetAllAccountingYearsResponse> accountingYears = new();
     private string? selectedMethodePaiement;
     private List<ProviderResponse> _filteredProviders = new();
     private List<ProviderInvoiceResponse> _filteredInvoices = new();
@@ -449,6 +454,7 @@
             };
             
             await LoadActiveAccountingYearAsync();
+            await LoadAccountingYearsAsync();
             await LoadBanquesAsync();
             
             if (IsEditMode && Id.HasValue)
@@ -457,12 +463,31 @@
             }
             else
             {
+                if (activeAccountingYear != null)
+                    paiement.AccountingYearId = activeAccountingYear.Id;
                 paiement.DatePaiement = DateTime.Now;
             }
         }
         catch (Exception ex)
         {
             throw;
+        }
+    }
+
+    async Task LoadAccountingYearsAsync()
+    {
+        try
+        {
+            accountingYears = await AccountingYearService.GetAllAccountingYearsAsync();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = $"{Localizer["Erreur_Chargement_Accounting_Year"]}: {ex.Message}"
+            });
         }
     }
 
@@ -521,6 +546,7 @@
                 {
                     NumeroTransactionBancaire = paiementResponse.NumeroTransactionBancaire,
                     FournisseurId = paiementResponse.FournisseurId,
+                    AccountingYearId = paiementResponse.AccountingYearId,
                     Montant = paiementResponse.Montant,
                     DatePaiement = paiementResponse.DatePaiement,
                     MethodePaiement = paiementResponse.MethodePaiement,
@@ -849,7 +875,7 @@
             return;
         }
 
-        if (activeAccountingYear == null)
+        if (!paiement.AccountingYearId.HasValue)
         {
             NotificationService.Notify(new NotificationMessage
             {
@@ -893,6 +919,7 @@
                 {
                     NumeroTransactionBancaire = paiement.NumeroTransactionBancaire,
                     FournisseurId = paiement.FournisseurId,
+                    AccountingYearId = paiement.AccountingYearId,
                     Montant = paiement.Montant,
                     DatePaiement = paiement.DatePaiement,
                     MethodePaiement = paiement.MethodePaiement,
