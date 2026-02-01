@@ -15,10 +15,11 @@
             <h3 class="products-title">@Localizer["products"]</h3>
         </div>
 
-        <RadzenTextBox Placeholder="@Localizer["Search"]"
-                       @bind-Value="searchKeyword"
-                       Change="@(async (string value) => await productGrid.Reload())"
-                       Class="products-search" />
+        <input type="text"
+               placeholder="@Localizer["Search"]"
+               value="@searchKeyword"
+               @oninput="OnSearchInput"
+               class="products-search" />
 
         <RadzenDataGrid @ref="productGrid"
                         TItem="ProductResponse"
@@ -134,19 +135,22 @@
     .products-search {
         width: 100%;
         border-radius: var(--border-radius);
-        border: 1px solid var(--border-color);
+        border: 1px solid var(--rz-border-color, var(--border-color));
         padding: 0.75rem 1rem;
         margin-bottom: 1.25rem;
         font-size: 0.95rem;
-        color: var(--text-color);
-        background: #fafafa;
+        background-color: var(--rz-base-background-color, var(--card-bg));
+        color: var(--rz-text-color, var(--text-color));
     }
+
+        .products-search::placeholder {
+            color: var(--rz-text-secondary-color, #5f6368);
+        }
 
         .products-search:focus {
             border-color: var(--primary-color);
             box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
             outline: none;
-            background: #ffffff;
         }
 
     .products-grid {
@@ -240,6 +244,8 @@
     private bool isLoadingProducts;
     private string searchKeyword = string.Empty;
     private CancellationTokenSource cancellationTokenSource = new();
+    private CancellationTokenSource searchDebounceCts = new();
+    private const int SearchDebounceMs = 350;
     private int defaultPageSize = 10;
 
     protected override async Task OnInitializedAsync()
@@ -286,6 +292,25 @@
         }
     }
 
+    private async Task OnSearchInput(ChangeEventArgs e)
+    {
+        searchKeyword = e.Value?.ToString() ?? string.Empty;
+        StateHasChanged();
+        searchDebounceCts.Cancel();
+        searchDebounceCts.Dispose();
+        searchDebounceCts = new CancellationTokenSource();
+        var token = searchDebounceCts.Token;
+        try
+        {
+            await Task.Delay(SearchDebounceMs, token);
+            await productGrid.Reload();
+        }
+        catch (OperationCanceledException)
+        {
+            // Debounce cancelled by new keystroke
+        }
+    }
+
     void OnRowRender(RowRenderEventArgs<ProductResponse> args)
     {
         if (args.Data.StockCalcule.HasValue && args.Data.StockCalcule.Value < args.Data.QteLimit)
@@ -296,6 +321,8 @@
 
     public void Dispose()
     {
+        searchDebounceCts?.Cancel();
+        searchDebounceCts?.Dispose();
         cancellationTokenSource?.Cancel();
         cancellationTokenSource?.Dispose();
     }

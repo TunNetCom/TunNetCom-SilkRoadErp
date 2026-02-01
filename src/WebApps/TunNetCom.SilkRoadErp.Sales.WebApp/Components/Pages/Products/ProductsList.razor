@@ -38,10 +38,11 @@
             </div>
         </div>
 
-        <RadzenTextBox Placeholder="@Localizer["Search"]"
-                       @bind-Value="searchKeyword"
-                       Change="@(async (string value) => await productGrid.Reload())"
-                       Class="products-search" />
+        <input type="text"
+               placeholder="@Localizer["Search"]"
+               value="@searchKeyword"
+               @oninput="OnSearchInput"
+               class="products-search" />
 
         <RadzenCard Class="products-filters-card">
             <RadzenStack Gap="1rem">
@@ -315,11 +316,17 @@
     .products-search {
         width: 100%;
         border-radius: var(--border-radius);
-        border: 1px solid var(--border-color);
+        border: 1px solid var(--rz-border-color, var(--border-color));
         padding: 0.75rem 1rem;
         margin-bottom: 1.25rem;
         font-size: 0.95rem;
+        background-color: var(--rz-base-background-color, var(--card-bg));
+        color: var(--rz-text-color, var(--text-color));
     }
+
+        .products-search::placeholder {
+            color: var(--rz-text-secondary-color, #5f6368);
+        }
 
         .products-search:focus {
             border-color: var(--primary-color);
@@ -574,6 +581,8 @@
     private string searchKeyword = string.Empty;
     private string currentProductRefeToDelete;
     private CancellationTokenSource cancellationTokenSource = new();
+    private CancellationTokenSource searchDebounceCts = new();
+    private const int SearchDebounceMs = 350;
     private int defaultPageSize = 10;
     private HashSet<string> selectedProducts = new();
     private List<SousFamilleProduitResponse> subFamilies = new();
@@ -668,6 +677,25 @@
         stockCalculeMax = null;
         await LoadSubFamilies();
         await productGrid.Reload();
+    }
+
+    private async Task OnSearchInput(ChangeEventArgs e)
+    {
+        searchKeyword = e.Value?.ToString() ?? string.Empty;
+        StateHasChanged();
+        searchDebounceCts.Cancel();
+        searchDebounceCts.Dispose();
+        searchDebounceCts = new CancellationTokenSource();
+        var token = searchDebounceCts.Token;
+        try
+        {
+            await Task.Delay(SearchDebounceMs, token);
+            await productGrid.Reload();
+        }
+        catch (OperationCanceledException)
+        {
+            // Debounce cancelled by new keystroke
+        }
     }
 
     private bool GetSelectedState(ProductResponse product)
@@ -859,6 +887,8 @@
 
     public void Dispose()
 	    {
+	        searchDebounceCts?.Cancel();
+	        searchDebounceCts?.Dispose();
 	        cancellationTokenSource.Cancel();
 	        cancellationTokenSource.Dispose();
 	    }
