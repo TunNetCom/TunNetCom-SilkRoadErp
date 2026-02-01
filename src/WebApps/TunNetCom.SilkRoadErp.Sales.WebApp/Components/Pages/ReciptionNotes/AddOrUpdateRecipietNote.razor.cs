@@ -614,7 +614,11 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
         await LoadStateAsync();
 
         await DialogService.OpenAsync<ProductHistoryDialog>($"{Localizer["history"]} {Localizer["article"]} {ProductReference}",
-            new Dictionary<string, object>() { { "ProductReference", ProductReference } },
+            new Dictionary<string, object>() 
+            { 
+                { "ProductReference", ProductReference },
+                { "Mode", HistoryMode.Achat }
+            },
             new DialogOptions()
             {
                 Resizable = true,

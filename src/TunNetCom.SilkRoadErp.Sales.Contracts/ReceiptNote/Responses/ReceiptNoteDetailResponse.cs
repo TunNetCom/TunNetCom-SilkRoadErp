@@ -7,6 +7,15 @@ public class ReceiptNoteDetailResponse : ILineItem
     [JsonPropertyName("provider")]
     public string Provider { get; set; } = string.Empty;
 
+    [JsonPropertyName("fournisseurId")]
+    public int FournisseurId { get; set; }
+
+    [JsonPropertyName("constructeur")]
+    public bool Constructeur { get; set; }
+
+    [JsonPropertyName("fodecPercentage")]
+    public decimal FodecPercentage { get; set; }
+
     [JsonPropertyName("date")]
     public DateTime Date { get; set; }
 

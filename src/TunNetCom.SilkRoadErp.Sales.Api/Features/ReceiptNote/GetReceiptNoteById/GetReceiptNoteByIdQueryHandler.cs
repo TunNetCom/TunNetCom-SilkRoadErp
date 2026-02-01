@@ -1,4 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNote.Responses;
+using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNote.Responses;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNoteById;
 
@@ -40,6 +40,9 @@ public class GetReceiptNoteByIdQueryHandler(
                     Id = l.IdLigne,
                     ProductReference = l.RefProduit,
                     Description = l.DesignationLi,
+                    FournisseurId = br.IdFournisseur,
+                    Constructeur = br.IdFournisseurNavigation.Constructeur,
+                    FodecPercentage = fodecRate,
                     Quantity = l.QteLi,
                     UnitPriceExcludingTax = l.PrixHt,
                     DiscountPercentage = l.Remise,

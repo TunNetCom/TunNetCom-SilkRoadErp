@@ -11,6 +11,7 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.Inventaires
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Services
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Products
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 @typeparam TItem where TItem : class, ILineItem
@@ -18,6 +19,8 @@
 @inject DialogService DialogService
 @inject IDecimalFormatService DecimalFormatService
 @inject IProductsApiClient ProductsApiClient
+@inject ICurrentProductStateService CurrentProductStateService
+@inject IReceiptNoteApiClient ReceiptNoteApiClient
 
 <div id="@componentId">
 <RadzenDataGrid @ref="ordersGrid" 
@@ -114,28 +117,8 @@
                                 @Localizer["total_vat"]: <strong>@TotalVat.FormatAmount()</strong>
                             </RadzenText>
                         }
-                        @if (TotalFodec > 0 && IsConstructorProvider)
-                        {
-                            <RadzenText TextStyle="TextStyle.Body1" class="summary-text" style="color: #f59e0b;">
-                                FODEC HT: <strong>@TotalFodec.FormatAmount()</strong>
-                            </RadzenText>
-                        }
                     </RadzenStack>
                 </RadzenCard>
-                @if (IsConstructorProvider && TotalFodec > 0)
-                {
-                    <RadzenAlert AlertStyle="AlertStyle.Info" class="constructor-alert" style="margin-top: 8px;">
-                        <RadzenIcon Icon="info" style="margin-right: 8px;" />
-                        <span>Fournisseur constructeur - FODEC appliqué</span>
-                    </RadzenAlert>
-                }
-                else if (IsConstructorProvider && TotalFodec == 0)
-                {
-                    <RadzenAlert AlertStyle="AlertStyle.Info" class="constructor-alert" style="margin-top: 8px;">
-                        <RadzenIcon Icon="info" style="margin-right: 8px;" />
-                        <span>Fournisseur constructeur - FODEC non appliqué (exercice en cours)</span>
-                    </RadzenAlert>
-                }
             }
         </div>
     </HeaderTemplate>
@@ -292,7 +275,7 @@
                                       ButtonStyle="ButtonStyle.Light" 
                                       Variant="Variant.Flat"
                                       Size="ButtonSize.Small" 
-                                      Click="@(() => OnShowPriceHistory.InvokeAsync(GetProductReference(order)))" 
+                                      Click="@(() => ShowPriceHistoryWithState(order))" 
                                       Title="@Localizer["price_history"]" />
                     }
                 </div>
@@ -377,19 +360,6 @@
                         {
                             @inventaireItem.DernierPrixAchat.FormatAmount()
                         }
-                    }
-                </Template>
-            </RadzenDataGridColumn>
-        }
-
-        @* FODEC column - only shown for ReceiptNoteDetailResponse when provider is constructor *@
-        @if (typeof(TItem) == typeof(ReceiptNoteDetailResponse))
-        {
-            <RadzenDataGridColumn Width="120px" Title="FODEC HT">
-                <Template Context="order">
-                    @{
-                        var receiptNoteItem = order as ReceiptNoteDetailResponse;
-                        @(receiptNoteItem?.PrixHtFodec?.FormatAmount() ?? "-")
                     }
                 </Template>
             </RadzenDataGridColumn>
@@ -567,6 +537,7 @@
     [Parameter] public decimal TotalTtc { get; set; }
     [Parameter] public decimal TotalFodec { get; set; } = 0;
     [Parameter] public bool IsConstructorProvider { get; set; } = false;
+    [Parameter] public bool AutoDetectConstructorProviderFromReceiptHistory { get; set; } = false;
     [Parameter] public IStringLocalizer<SharedResource> Localizer { get; set; }
     
     // Product-related properties accessors
@@ -599,6 +570,9 @@
     private string discountFormat = AmountHelper.FORMAT_N2;
     private string vatFormat = AmountHelper.FORMAT_N2;
     private int decimalPlaces = AmountHelper.DEFAULT_DECIMAL_PLACES;
+    private readonly Dictionary<string, ProductReceiptConstructorInfo> _receiptConstructorCache = new(StringComparer.OrdinalIgnoreCase);
+
+    private sealed record ProductReceiptConstructorInfo(bool IsConstructor, string SupplierName);
 
     protected override async Task OnInitializedAsync()
     {
@@ -660,6 +634,7 @@
             }
             
             LineItemCalculator.CalculateTotals(order);
+            UpdateCurrentProductState(order);
             await NotifyItemsChanged();
         }
     }
@@ -670,6 +645,7 @@
         {
             order.UnitPriceExcludingTax = price;
             LineItemCalculator.CalculateTotals(order);
+            UpdateCurrentProductState(order);
             await NotifyItemsChanged();
         }
     }
@@ -689,6 +665,7 @@
             }
             order.DiscountPercentage = discount;
             LineItemCalculator.CalculateTotals(order);
+            UpdateCurrentProductState(order);
             await NotifyItemsChanged();
         }
     }
@@ -708,6 +685,7 @@
             }
             order.VatPercentage = vat;
             LineItemCalculator.CalculateTotals(order);
+            UpdateCurrentProductState(order);
             await NotifyItemsChanged();
         }
     }
@@ -919,6 +897,101 @@
             await ItemsChanged.InvokeAsync(Items);
         }
         await InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>
+    /// Updates the current product state service and invokes the price history callback.
+    /// This enables reactive updates in the ProductHistoryDialog.
+    /// </summary>
+    private async Task ShowPriceHistoryWithState(TItem order)
+    {
+        var productRef = GetProductReference?.Invoke(order) ?? string.Empty;
+        var productDesc = GetProductDescription?.Invoke(order) ?? string.Empty;
+        
+        if (!string.IsNullOrEmpty(productRef))
+        {
+            var receiptInfo = await GetReceiptConstructorInfoAsync(productRef);
+            var isConstructorEffective = IsConstructorProvider || (receiptInfo?.IsConstructor ?? false);
+
+            // Update the state service with current line item values
+            var state = new CurrentProductState(
+                ProductReference: productRef,
+                ProductName: productDesc,
+                UnitPriceHt: order.UnitPriceExcludingTax,
+                TotalHt: order.TotalExcludingTax,
+                TotalTtc: order.TotalIncludingTax,
+                DiscountPercentage: order.DiscountPercentage,
+                VatPercentage: order.VatPercentage,
+                IsConstructorProvider: isConstructorEffective,
+                FodecPercentage: isConstructorEffective ? (AppParameters?.PourcentageFodec ?? 0) : 0,
+                Quantity: order.Quantity
+            );
+            CurrentProductStateService.UpdateState(state);
+            
+            // Invoke the callback to open the dialog
+            if (OnShowPriceHistory.HasDelegate)
+            {
+                await OnShowPriceHistory.InvokeAsync(productRef);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Updates the current product state in the state service.
+    /// Called when line item values change to keep the dialog reactive.
+    /// </summary>
+    private void UpdateCurrentProductState(TItem order)
+    {
+        var productRef = GetProductReference?.Invoke(order) ?? string.Empty;
+        var productDesc = GetProductDescription?.Invoke(order) ?? string.Empty;
+        
+        // Only update if there's a product selected and the state service has a matching product
+        if (!string.IsNullOrEmpty(productRef) && 
+            CurrentProductStateService.State?.ProductReference == productRef)
+        {
+            var isConstructorEffective = CurrentProductStateService.State.IsConstructorProvider;
+            var state = new CurrentProductState(
+                ProductReference: productRef,
+                ProductName: productDesc,
+                UnitPriceHt: order.UnitPriceExcludingTax,
+                TotalHt: order.TotalExcludingTax,
+                TotalTtc: order.TotalIncludingTax,
+                DiscountPercentage: order.DiscountPercentage,
+                VatPercentage: order.VatPercentage,
+                IsConstructorProvider: isConstructorEffective,
+                FodecPercentage: isConstructorEffective ? (AppParameters?.PourcentageFodec ?? 0) : 0,
+                Quantity: order.Quantity
+            );
+            CurrentProductStateService.UpdateState(state);
+        }
+    }
+
+    private async Task<ProductReceiptConstructorInfo?> GetReceiptConstructorInfoAsync(string productRef)
+    {
+        if (!AutoDetectConstructorProviderFromReceiptHistory || string.IsNullOrWhiteSpace(productRef))
+        {
+            return null;
+        }
+
+        if (_receiptConstructorCache.TryGetValue(productRef, out var cached))
+        {
+            return cached;
+        }
+
+        try
+        {
+            var result = await ReceiptNoteApiClient.GetReceiptNotesByProductReferenceAsync(productRef, 1, 1);
+            var first = result?.Items?.FirstOrDefault();
+            var info = new ProductReceiptConstructorInfo(first?.Constructeur ?? false, first?.Provider ?? string.Empty);
+            _receiptConstructorCache[productRef] = info;
+            return info;
+        }
+        catch
+        {
+            var info = new ProductReceiptConstructorInfo(false, string.Empty);
+            _receiptConstructorCache[productRef] = info;
+            return info;
+        }
     }
 
     private async Task OpenDiscountDialog()
@@ -1310,4 +1383,3 @@
         }
     }
 }
-
