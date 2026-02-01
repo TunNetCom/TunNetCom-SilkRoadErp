@@ -13,6 +13,10 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Tags
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.PaiementClient.PrintPaiementsClientList
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure
+@using Microsoft.JSInterop
+@using Microsoft.Extensions.Configuration
 @inject NavigationManager NavigationManager
 @inject ITagsApiClient TagsService
 @inject IStringLocalizer<SharedResource> Localizer
@@ -23,15 +27,32 @@
 @inject DialogService DialogService
 @inject Radzen.NotificationService NotificationService
 @inject IDecimalFormatService DecimalFormatService
+@inject PrintPaiementsClientListService PrintPaiementsClientListService
+@inject IPrintService PrintService
+@inject IJSRuntime JS
+@inject HttpClient HttpClient
+@inject IConfiguration Configuration
 
 <div class="paiements-container">
     <div class="paiements-card">
         <div class="paiements-header">
             <h3 class="paiements-title">@Localizer["Paiements_Clients"]</h3>
-            <RadzenButton Icon="add" Text="@Localizer["Ajouter_Paiement"]"
-                          ButtonStyle="ButtonStyle.Primary"
-                          Click="CreatePaiement"
-                          Class="btn-primary" />
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <RadzenButton Icon="table_chart" Text="Export Excel"
+                              ButtonStyle="ButtonStyle.Success"
+                              Click="@ExportToExcelAsync"
+                              Variant="Variant.Outlined"
+                              Class="btn-export" />
+                <RadzenButton Icon="picture_as_pdf" Text="Imprimer PDF"
+                              ButtonStyle="ButtonStyle.Danger"
+                              Click="@ExportToPdfAsync"
+                              Variant="Variant.Outlined"
+                              Class="btn-export" />
+                <RadzenButton Icon="add" Text="@Localizer["Ajouter_Paiement"]"
+                              ButtonStyle="ButtonStyle.Primary"
+                              Click="CreatePaiement"
+                              Class="btn-primary" />
+            </div>
         </div>
 
         <div class="search-filters">
@@ -135,7 +156,6 @@
                 <p style="font-size: 24px; text-align: center; margin: 2rem;">@Localizer["Aucun_Paiement"]</p>
             </EmptyTemplate>
             <Columns>
-                <RadzenDataGridColumn TItem="PaiementClientResponse" Property="NumeroTransactionBancaire" Title="@Localizer["Numero_Col"]" Width="150px" />
                 <RadzenDataGridColumn TItem="PaiementClientResponse" Property="ClientNom" Title="@Localizer["Client_Col"]" Width="200px" />
                 <RadzenDataGridColumn TItem="PaiementClientResponse" Property="Montant" Title="@Localizer["Montant_Col"]" Width="150px">
                     <Template Context="paiement">
@@ -148,8 +168,11 @@
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="PaiementClientResponse" Property="MethodePaiement" Title="@Localizer["Methode_Col"]" Width="120px" />
-                <RadzenDataGridColumn TItem="PaiementClientResponse" Property="BanqueNom" Title="@Localizer["Banque_Col"]" Width="150px" />
-                <RadzenDataGridColumn TItem="PaiementClientResponse" Property="NumeroTransactionBancaire" Title="N° Transaction Bancaire" Width="180px" />
+                <RadzenDataGridColumn TItem="PaiementClientResponse" Property="DateEcheance" Title="@Localizer["Date_Echeance"]" Width="120px">
+                    <Template Context="paiement">
+                        @(paiement.DateEcheance?.ToString("dd/MM/yyyy") ?? "-")
+                    </Template>
+                </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="PaiementClientResponse" Title="Tags" Width="250px" Sortable="false" Filterable="false">
                     <Template Context="paiement">
                         <TagSelector DocumentType="PaiementClient" 
@@ -396,6 +419,145 @@
             {
                 ToastService.Notify(new(ToastType.Danger, $"{Localizer["Erreur_Suppression"]}: {result.Errors.FirstOrDefault()?.Message}"));
             }
+        }
+    }
+
+    private async Task ExportToPdfAsync()
+    {
+        try
+        {
+            bool? hasNumeroTransactionBancaire = selectedReglementStatus.HasValue
+                ? (selectedReglementStatus.Value == 1)
+                : null;
+
+            var result = await PaiementClientService.GetPaiementsClientAsync(
+                selectedClientId,
+                selectedAccountingYearId,
+                selectedDateEcheanceFrom,
+                selectedDateEcheanceTo,
+                selectedMontantMin,
+                selectedMontantMax,
+                hasNumeroTransactionBancaire,
+                1,
+                10000,
+                cancellationTokenSource.Token);
+
+            var pdfResult = await PrintPaiementsClientListService.GeneratePdfAsync(
+                result.Items,
+                decimalPlaces,
+                cancellationTokenSource.Token);
+
+            if (pdfResult.IsFailed)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["Erreur"],
+                    Detail = pdfResult.Errors.FirstOrDefault()?.Message ?? Localizer["Erreur_Chargement_Paiements"]?.ToString() ?? "Erreur export PDF"
+                });
+                return;
+            }
+
+            var fileName = $"Paiements_Clients_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+            await PrintService.PrintAsync(
+                pdfResult.Value,
+                new PrintOptions { Mode = PrintMode.Download, FileName = fileName },
+                cancellationTokenSource.Token);
+
+            ToastService.Notify(new(ToastType.Success, "Export PDF réussi."));
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = $"Erreur lors de l'export PDF: {ex.Message}"
+            });
+        }
+    }
+
+    private async Task ExportToExcelAsync()
+    {
+        try
+        {
+            var queryParams = new List<string>();
+
+            if (selectedClientId.HasValue)
+            {
+                queryParams.Add($"clientId={selectedClientId.Value}");
+            }
+
+            if (selectedAccountingYearId.HasValue)
+            {
+                queryParams.Add($"accountingYearId={selectedAccountingYearId.Value}");
+            }
+
+            if (selectedDateEcheanceFrom.HasValue)
+            {
+                queryParams.Add($"dateEcheanceFrom={Uri.EscapeDataString(selectedDateEcheanceFrom.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+            }
+
+            if (selectedDateEcheanceTo.HasValue)
+            {
+                queryParams.Add($"dateEcheanceTo={Uri.EscapeDataString(selectedDateEcheanceTo.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+            }
+
+            if (selectedMontantMin.HasValue)
+            {
+                queryParams.Add($"montantMin={selectedMontantMin.Value}");
+            }
+
+            if (selectedMontantMax.HasValue)
+            {
+                queryParams.Add($"montantMax={selectedMontantMax.Value}");
+            }
+
+            if (selectedReglementStatus.HasValue)
+            {
+                bool hasNumeroTransactionBancaire = selectedReglementStatus.Value == 1;
+                queryParams.Add($"hasNumeroTransactionBancaire={hasNumeroTransactionBancaire.ToString().ToLowerInvariant()}");
+            }
+
+            var baseUrl = Configuration.GetValue<string>("ApiSettings:BaseUrl")
+                ?? throw new InvalidOperationException("ApiSettings:BaseUrl configuration is missing");
+
+            var url = $"{baseUrl.TrimEnd('/')}/api/paiement-client/export/excel";
+            if (queryParams.Count > 0)
+            {
+                url += "?" + string.Join("&", queryParams);
+            }
+
+            var response = await HttpClient.GetAsync(url);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["Erreur"],
+                    Detail = "Erreur lors de l'export Excel. Veuillez réessayer."
+                });
+                return;
+            }
+
+            var fileBytes = await response.Content.ReadAsByteArrayAsync();
+            var fileName = response.Content.Headers.ContentDisposition?.FileName
+                ?? $"Paiements_Clients_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+            fileName = fileName.Trim('"');
+
+            await JS.InvokeVoidAsync("downloadFile", fileName, Convert.ToBase64String(fileBytes), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+            ToastService.Notify(new(ToastType.Success, "Export Excel réussi."));
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = $"Erreur lors de l'export Excel: {ex.Message}"
+            });
         }
     }
 
