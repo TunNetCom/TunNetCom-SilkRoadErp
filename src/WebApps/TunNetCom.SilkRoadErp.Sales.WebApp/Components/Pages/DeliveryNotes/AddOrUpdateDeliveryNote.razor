@@ -20,6 +20,9 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.DeliveryNotes.PrintDeliveryNote
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Invoices.PrintInvoiceWithDetails
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PrintHistory
+@using static TunNetCom.SilkRoadErp.Sales.Domain.Entites.DocumentTypes
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Tags
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
@@ -49,6 +52,8 @@
 @inject DialogService DialogService
 @inject IPaiementClientApiClient PaiementClientService
 @inject PrintDeliveryNoteService PrintDeliveryNoteService
+@inject PrintFullInvoiceService PrintFullInvoiceService
+@inject IPrintHistoryClient PrintHistoryClient
 @inject IPrintService PrintService
 @inject ITagsApiClient TagsService
 @inject AuthenticationStateProvider AuthenticationStateProvider
@@ -366,6 +371,16 @@ else
                               Click="@CreateNewInvoice"
                               Title="@Localizer["create_new_invoice"]"
                               AriaLabel="@Localizer["create_new_invoice"]" />
+                <RadzenButton Icon="get_app" 
+                              ButtonStyle="ButtonStyle.Light" 
+                              Variant="Variant.Flat"
+                              Size="ButtonSize.Medium"
+                              Disabled="@(isReadOnly || !_selectedInvoiceId.HasValue)"
+                              Click="@PrintSelectedInvoice"
+                              Title="@Localizer["print_invoice"]"
+                              AriaLabel="@Localizer["print_invoice"]">
+                    <span style="font-size: 0.85rem;">@Localizer["print_invoice"]</span>
+                </RadzenButton>
             </RadzenStack>
         </div>
     </div>
@@ -1467,6 +1482,71 @@ else
                 Detail = $"{Localizer["failed_to_print_delivery_note"] ?? "Failed to print delivery note"}: {ex.Message}"
             });
             logger.LogError(ex, "Failed to print delivery note");
+        }
+    }
+
+    private async Task PrintSelectedInvoice()
+    {
+        if (!_selectedInvoiceId.HasValue || _selectedInvoiceId.Value <= 0)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["warning"],
+                Detail = Localizer["select_invoice"]
+            });
+            return;
+        }
+
+        bool isDuplicata = false;
+        try
+        {
+            var existingHistory = await PrintHistoryClient.GetPrintHistoryByDocumentAsync(Facture, _selectedInvoiceId.Value, _cancellationTokenSource.Token);
+            isDuplicata = existingHistory.Any();
+        }
+        catch
+        {
+            // If we can't check, assume it's not a duplicata
+        }
+
+        var pdfResult = await PrintFullInvoiceService
+            .GenerateInvoicePdfAsync(_selectedInvoiceId.Value, cancellationToken: _cancellationTokenSource.Token, isDuplicata: isDuplicata, includeHeader: true);
+
+        if (pdfResult.IsSuccess)
+        {
+            var fileName = $"Facture {_selectedInvoiceId.Value}.pdf";
+            var invoiceNum = _selectedInvoiceId.Value;
+            Func<bool, Task<Result<byte[]>>> regeneratePdf = async (includeHeader) =>
+                await PrintFullInvoiceService.GenerateInvoicePdfAsync(
+                    invoiceNum,
+                    _cancellationTokenSource.Token,
+                    isDuplicata: isDuplicata,
+                    includeHeader: includeHeader);
+
+            await DialogService.OpenAsync<PdfViewerDialog>(
+                Localizer["print_mode"],
+                new Dictionary<string, object>
+                {
+                    { "PdfBytes", pdfResult.Value },
+                    { "FileName", fileName },
+                    { "RegeneratePdfAsync", regeneratePdf }
+                },
+                new DialogOptions()
+                {
+                    Width = "800px",
+                    Height = "700px",
+                    Resizable = true,
+                    Draggable = true
+                });
+        }
+        else
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Échec de la génération du PDF: {pdfResult.Errors.FirstOrDefault()?.Message ?? "Unknown error"}"
+            });
         }
     }
 

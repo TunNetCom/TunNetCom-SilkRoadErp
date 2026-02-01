@@ -360,6 +360,9 @@
   <data name="select_invoice" xml:space="preserve">
     <value>Selectionner une facture</value>
   </data>
+  <data name="print_invoice" xml:space="preserve">
+    <value>Imprimer la facture</value>
+  </data>
   <data name="Select_Delivery_Car" xml:space="preserve">
     <value>Sélectionner un véhicule de livraison</value>
   </data>

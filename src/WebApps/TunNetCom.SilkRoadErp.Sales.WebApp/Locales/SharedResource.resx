@@ -358,6 +358,9 @@
   <data name="select_invoice" xml:space="preserve">
     <value />
   </data>
+  <data name="print_invoice" xml:space="preserve">
+    <value>Imprimer la facture</value>
+  </data>
   <data name="delivery_note_saved_successfully" xml:space="preserve">
     <value />
   </data>
