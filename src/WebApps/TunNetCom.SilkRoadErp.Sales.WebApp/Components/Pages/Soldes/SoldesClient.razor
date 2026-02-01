@@ -179,6 +179,17 @@
                                             }
                                         </Template>
                                     </RadzenDataGridColumn>
+                                    <RadzenDataGridColumn Title="@Localizer["actions_label"]" Width="80px" Sortable="false" Filterable="false" TextAlign="TextAlign.Center">
+                                        <Template Context="bl">
+                                            <RadzenButton Icon="edit"
+                                                          ButtonStyle="ButtonStyle.Primary"
+                                                          Variant="Variant.Flat"
+                                                          Size="ButtonSize.Small"
+                                                          Click="@(() => NavigationManager.NavigateTo($"/AddOrUpdateDeliveryNote/{bl.Numero}"))"
+                                                          Title="@Localizer["Edit"]"
+                                                          AriaLabel="@Localizer["Edit"]" />
+                                        </Template>
+                                    </RadzenDataGridColumn>
                                 </Columns>
                             </RadzenDataGrid>
                         </Template>

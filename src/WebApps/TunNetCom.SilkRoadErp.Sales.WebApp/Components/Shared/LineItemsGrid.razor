@@ -640,6 +640,15 @@
         vatFormat = AmountHelper.FORMAT_N2;
     }
 
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        if (typeof(TItem) == typeof(DeliveryNoteDetailResponse))
+        {
+            showDeliveredQuantityColumn = Items?.Any(item => item is DeliveryNoteDetailResponse dn && dn.HasPartialDelivery) ?? false;
+        }
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
