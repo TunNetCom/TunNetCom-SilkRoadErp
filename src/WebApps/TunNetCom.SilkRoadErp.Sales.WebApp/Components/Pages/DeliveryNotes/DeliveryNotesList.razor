@@ -686,7 +686,7 @@
             var skip = args.Skip ?? 0;
             var pageNumber = skip / pageSize + 1;
             
-            // Determine sort order and property from args
+            // Determine sort order and property from args (default: by document number ascending)
             string? sortOrder = null;
             string? sortProperty = null;
             if (args.Sorts != null && args.Sorts.Any())
@@ -694,6 +694,11 @@
                 var firstSort = args.Sorts.First();
                 sortOrder = firstSort.SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending;
                 sortProperty = firstSort.Property;
+            }
+            else
+            {
+                sortProperty = nameof(GetDeliveryNoteBaseInfos.Number);
+                sortOrder = SortConstants.Ascending;
             }
             _lastSortProperty = sortProperty;
             _lastSortOrder = sortOrder;
@@ -836,7 +841,7 @@
 
             var columnsToExport = new[] { "Number", "Date", "CustomerName", "NetAmount", "VatAmount" };
             var orderBy = !string.IsNullOrEmpty(_lastSortProperty) && _lastSortOrder != null
-                ? $"{_lastSortProperty} {(_lastSortOrder == SortConstants.Ascending ? "asc" : "desc")}"
+                ? $"{_lastSortProperty} {(_lastSortOrder == SortConstants.Ascending ? SortConstants.Ascending : SortConstants.Descending)}"
                 : null;
 
             var (content, fileName) = await DeliveryNoteService.ExportDeliveryNotesToExcelAsync(
@@ -884,7 +889,7 @@
 
             var columnsToExport = new[] { "Number", "Date", "CustomerName", "NetAmount", "VatAmount" };
             var orderBy = !string.IsNullOrEmpty(_lastSortProperty) && _lastSortOrder != null
-                ? $"{_lastSortProperty} {(_lastSortOrder == SortConstants.Ascending ? "asc" : "desc")}"
+                ? $"{_lastSortProperty} {(_lastSortOrder == SortConstants.Ascending ? SortConstants.Ascending : SortConstants.Descending)}"
                 : null;
 
             var (content, fileName) = await DeliveryNoteService.ExportDeliveryNotesToPdfAsync(

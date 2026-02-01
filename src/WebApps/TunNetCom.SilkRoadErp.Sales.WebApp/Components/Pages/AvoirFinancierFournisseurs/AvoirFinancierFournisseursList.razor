@@ -14,6 +14,7 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Providers
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Common
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Sorting
 @inject NavigationManager NavigationManager
 
 <div class="invoices-list-container">
@@ -303,12 +304,14 @@
         try
         {
             var pageNumber = (args.Skip ?? 0) / pageSize + 1;
-            
+            var (sortOrder, sortProperty) = args.Sorts != null && args.Sorts.Any()
+                ? (args.Sorts.First().SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending, args.Sorts.First().Property)
+                : (SortConstants.Ascending, nameof(AvoirFinancierFournisseursBaseInfo.Num));
             var response = await AvoirFinancierFournisseursService.GetAvoirFinancierFournisseursWithSummariesAsync(
                 searchCriteria.SelectedProviderId,
                 null,
-                args.Sorts?.FirstOrDefault()?.SortOrder == SortOrder.Ascending ? "asc" : "desc",
-                args.Sorts?.FirstOrDefault()?.Property,
+                sortOrder,
+                sortProperty,
                 pageNumber,
                 pageSize,
                 args.Filter,

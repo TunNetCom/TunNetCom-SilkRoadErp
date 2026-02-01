@@ -9,6 +9,7 @@
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Customers
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Invoice
 @using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Sorting
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Banque
 @using TunNetCom.SilkRoadErp.Sales.Domain.Entites
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
@@ -346,8 +347,8 @@
                 customerId: clientId,
                 invoiceId: null,
                 isInvoiced: null,
-                sortOrder: null,
-                sortProperty: null,
+                sortOrder: SortConstants.Ascending,
+                sortProperty: nameof(GetDeliveryNoteBaseInfos.Number),
                 pageNumber: 1,
                 pageSize: 50,
                 searchKeyword: null,

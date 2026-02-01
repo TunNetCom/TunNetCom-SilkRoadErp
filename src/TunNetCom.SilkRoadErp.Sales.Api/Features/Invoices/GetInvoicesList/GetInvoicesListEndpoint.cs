@@ -166,7 +166,7 @@ public class GetInvoicesListEndpoint : ICarterModule
             }
             else
             {
-                sortedInvoices = allInvoices.OrderByDescending(i => i.Date);
+                sortedInvoices = allInvoices.OrderBy(i => i.Number);
             }
 
             // Apply pagination

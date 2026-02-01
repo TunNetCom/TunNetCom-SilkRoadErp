@@ -653,6 +653,11 @@
             _sortProperty = sort.Property;
             _sortOrder = sort.SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending;
         }
+        else
+        {
+            _sortProperty = "Num";
+            _sortOrder = SortConstants.Ascending;
+        }
         var parameters = new QueryStringParameters
             {
                 PageNumber = (args.Skip.Value / _defaultPageSize) + 1,
@@ -690,6 +695,11 @@
             var sort = args.Sorts.First();
             _sortProperty = sort.Property;
             _sortOrder = sort.SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending;
+        }
+        else
+        {
+            _sortProperty = "Num";
+            _sortOrder = SortConstants.Ascending;
         }
         var query = new QueryStringParameters
 			{

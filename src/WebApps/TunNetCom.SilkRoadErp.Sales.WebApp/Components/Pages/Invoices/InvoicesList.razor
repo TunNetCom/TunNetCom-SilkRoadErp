@@ -620,7 +620,7 @@
             queryParams.Add($"page={page}");
             queryParams.Add($"pageSize={pageSize}");
             
-            // Handle sorting
+            // Handle sorting (default: by document number ascending)
             if (!string.IsNullOrEmpty(args.OrderBy))
             {
                 var sortParts = args.OrderBy.Split(' ');
@@ -628,6 +628,11 @@
                 var sortDescending = sortParts.Length > 1 && sortParts[1].ToLower() == "desc";
                 queryParams.Add($"sortBy={sortBy}");
                 queryParams.Add($"sortDescending={sortDescending}");
+            }
+            else
+            {
+                queryParams.Add("sortBy=Number");
+                queryParams.Add("sortDescending=false");
             }
             
             var baseUrl = Configuration.GetValue<string>("ApiSettings:BaseUrl")

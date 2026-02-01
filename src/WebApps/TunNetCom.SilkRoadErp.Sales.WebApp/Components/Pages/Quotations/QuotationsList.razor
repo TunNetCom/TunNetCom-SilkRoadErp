@@ -539,9 +539,22 @@
                 }
             }
 
+            // Default sort by document number when no user sort is specified
+            var effectiveArgs = args;
+            if (string.IsNullOrEmpty(args.OrderBy?.ToString()) && (args.Sorts == null || !args.Sorts.Any()))
+            {
+                effectiveArgs = new LoadDataArgs
+                {
+                    Skip = args.Skip,
+                    Top = args.Top,
+                    Filter = args.Filter,
+                    OrderBy = "Number"
+                };
+            }
+
             var response = await ODataService.QueryAsync<QuotationBaseInfo>(
                 entitySet: "QuotationBaseInfos",
-                args: args,
+                args: effectiveArgs,
                 startDate: startDate,
                 endDate: endDate,
                 customerId: searchCriteria.SelectedCustomerId,

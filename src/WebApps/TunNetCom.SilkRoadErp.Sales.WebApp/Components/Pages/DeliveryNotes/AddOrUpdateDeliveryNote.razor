@@ -1197,9 +1197,9 @@ else
         }
         else
         {
-            // Default: sort by Date descending to get the latest invoices first (most recent first)
-            sortProperty = nameof(InvoiceResponse.Date);
-            sortOrder = SortConstants.Descending;
+            // Default: sort by document number ascending
+            sortProperty = nameof(InvoiceResponse.Number);
+            sortOrder = SortConstants.Ascending;
         }
 
         var parameters = new QueryStringParameters

@@ -503,6 +503,32 @@
                 allOrders = allOrders.Where(o => o.Statut == selectedStatus.Value).ToList();
             }
 
+            // Default sort by document number ascending when no user sort is specified
+            if (args.Sorts == null || !args.Sorts.Any())
+            {
+                allOrders = allOrders.OrderBy(o => o.OrderNumber).ToList();
+            }
+            else
+            {
+                var firstSort = args.Sorts!.First();
+                var prop = firstSort.Property;
+                var asc = firstSort.SortOrder == SortOrder.Ascending;
+                allOrders = (prop, asc) switch
+                {
+                    (nameof(OrderSummaryResponse.OrderNumber), true) => allOrders.OrderBy(o => o.OrderNumber).ToList(),
+                    (nameof(OrderSummaryResponse.OrderNumber), false) => allOrders.OrderByDescending(o => o.OrderNumber).ToList(),
+                    (nameof(OrderSummaryResponse.Date), true) => allOrders.OrderBy(o => o.Date).ToList(),
+                    (nameof(OrderSummaryResponse.Date), false) => allOrders.OrderByDescending(o => o.Date).ToList(),
+                    (nameof(OrderSummaryResponse.SupplierName), true) => allOrders.OrderBy(o => o.SupplierName ?? string.Empty).ToList(),
+                    (nameof(OrderSummaryResponse.SupplierName), false) => allOrders.OrderByDescending(o => o.SupplierName ?? string.Empty).ToList(),
+                    (nameof(OrderSummaryResponse.NetToPay), true) => allOrders.OrderBy(o => o.NetToPay).ToList(),
+                    (nameof(OrderSummaryResponse.NetToPay), false) => allOrders.OrderByDescending(o => o.NetToPay).ToList(),
+                    (nameof(OrderSummaryResponse.Statut), true) => allOrders.OrderBy(o => o.Statut).ToList(),
+                    (nameof(OrderSummaryResponse.Statut), false) => allOrders.OrderByDescending(o => o.Statut).ToList(),
+                    _ => allOrders.OrderBy(o => o.OrderNumber).ToList()
+                };
+            }
+
             // Apply paging
             ordersList = allOrders.Skip(args.Skip ?? 0).Take(args.Top ?? pageSize).ToList();
             totalCount = allOrders.Count;
