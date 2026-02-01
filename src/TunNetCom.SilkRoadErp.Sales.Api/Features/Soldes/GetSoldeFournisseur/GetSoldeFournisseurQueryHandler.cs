@@ -1,10 +1,13 @@
+using TunNetCom.SilkRoadErp.Sales.Api.Features.AppParameters.GetAppParameters;
 using TunNetCom.SilkRoadErp.Sales.Contracts.Soldes;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Soldes.GetSoldeFournisseur;
 
 public class GetSoldeFournisseurQueryHandler(
     SalesContext _context,
-    ILogger<GetSoldeFournisseurQueryHandler> _logger)
+    ILogger<GetSoldeFournisseurQueryHandler> _logger,
+    IMediator _mediator,
+    IAccountingYearFinancialParametersService _financialParametersService)
     : IRequestHandler<GetSoldeFournisseurQuery, Result<SoldeFournisseurResponse>>
 {
     public async Task<Result<SoldeFournisseurResponse>> Handle(GetSoldeFournisseurQuery query, CancellationToken cancellationToken)
@@ -32,6 +35,10 @@ public class GetSoldeFournisseurQueryHandler(
             accountingYearId = activeYear.Id;
         }
 
+        // Get timbre from financial parameters service
+        var appParams = await _mediator.Send(new GetAppParametersQuery(), cancellationToken);
+        var timbre = await _financialParametersService.GetTimbreAsync(appParams.Value.Timbre, cancellationToken);
+
         // Get all retenues for factures fournisseur of this fournisseur
         var retenues = await _context.RetenueSourceFournisseur
             .Where(r => _context.FactureFournisseur
@@ -41,7 +48,7 @@ public class GetSoldeFournisseurQueryHandler(
             .ToDictionaryAsync(r => r.NumFactureFournisseur, cancellationToken);
 
         // Calculate total from factures fournisseur (factured BRs)
-        // For factures with retenue, use montant après retenue; otherwise use TotTtc
+        // For factures with retenue, use montant après retenue; otherwise use TotTtc + Timbre
         var facturesFournisseur = await _context.FactureFournisseur
             .Where(f => f.IdFournisseur == query.FournisseurId && f.AccountingYearId == accountingYearId.Value)
             .Include(f => f.BonDeReception)
@@ -52,13 +59,13 @@ public class GetSoldeFournisseurQueryHandler(
         {
             if (retenues.TryGetValue(f.Num, out var retenue))
             {
-                // Use montant après retenue
+                // Use montant après retenue (already includes timbre)
                 return retenue.MontantApresRetenu;
             }
             else
             {
-                // Use TotTtc for factures without retenue
-                return f.BonDeReception.SelectMany(br => br.LigneBonReception).Sum(l => l.TotTtc);
+                // Use TotTtc + Timbre for factures without retenue
+                return f.BonDeReception.SelectMany(br => br.LigneBonReception).Sum(l => l.TotTtc) + timbre;
             }
         });
 
@@ -90,7 +97,7 @@ public class GetSoldeFournisseurQueryHandler(
         // Add factures fournisseur (factures already loaded above)
         var documentsFactures = facturesFournisseur.Select(f =>
         {
-            // Use montant après retenue if retenue exists, otherwise use TotTtc
+            // Use montant après retenue if retenue exists, otherwise use TotTtc + Timbre
             decimal montant;
             if (retenues.TryGetValue(f.Num, out var retenue))
             {
@@ -98,7 +105,7 @@ public class GetSoldeFournisseurQueryHandler(
             }
             else
             {
-                montant = f.BonDeReception.SelectMany(br => br.LigneBonReception).Sum(l => l.TotTtc);
+                montant = f.BonDeReception.SelectMany(br => br.LigneBonReception).Sum(l => l.TotTtc) + timbre;
             }
 
             return new DocumentSoldeFournisseur
