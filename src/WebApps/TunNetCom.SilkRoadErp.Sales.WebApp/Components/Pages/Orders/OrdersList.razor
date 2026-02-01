@@ -18,6 +18,10 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Common
 @using TunNetCom.SilkRoadErp.Sales.Domain.Entites
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Tags
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
+
+@inject ITagsApiClient TagsService
 
 <div class="orders-list-container">
     <div class="search-header">
@@ -114,11 +118,29 @@
                                       Width="150px"
                                       FormatString="{0:d MMMM yyyy}" />
                 <RadzenDataGridColumn TItem="OrderSummaryResponse"
+                                      Property="@nameof(OrderSummaryResponse.SupplierName)"
+                                      Title="Fournisseur"
+                                      Width="200px" />
+                <RadzenDataGridColumn TItem="OrderSummaryResponse"
                                       Property="@nameof(OrderSummaryResponse.NetToPay)"
                                       Title="@Localizer["tot_ttc"]"
                                       Width="150px">
                     <Template Context="item">
                         @item.NetToPay.FormatAmount()
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="OrderSummaryResponse"
+                                      Title="Tags"
+                                      Width="300px"
+                                      Sortable="false"
+                                      Filterable="false"
+                                      Resizable="true">
+                    <Template Context="item">
+                        <div style="width: 100%; padding: 4px;">
+                            <TagSelector DocumentType="Commande"
+                                         DocumentId="@item.OrderNumber"
+                                         SaveOnChange="true" />
+                        </div>
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="OrderSummaryResponse"
