@@ -37,13 +37,16 @@
 
 <div class="paiement-form-container">
     <div class="paiement-form-card">
-        <div class="paiement-form-header">
-            <h3>@(IsEditMode ? Localizer["Modifier_Paiement"] : Localizer["Nouveau_Paiement_Fournisseur"])</h3>
-            <RadzenButton Icon="arrow_back" Text="@Localizer["Retour"]"
-                          ButtonStyle="ButtonStyle.Secondary"
-                          Click="GoBack"
-                          Variant="Variant.Outlined" />
-        </div>
+        @if (!PaiementId.HasValue)
+        {
+            <div class="paiement-form-header">
+                <h3>@(IsEditMode ? Localizer["Modifier_Paiement"] : Localizer["Nouveau_Paiement_Fournisseur"])</h3>
+                <RadzenButton Icon="arrow_back" Text="@Localizer["Retour"]"
+                              ButtonStyle="ButtonStyle.Secondary"
+                              Click="GoBack"
+                              Variant="Variant.Outlined" />
+            </div>
+        }
 
         <RadzenStack Gap="1.5rem">
             <RadzenFormField Text="@Localizer["Numero"]" class="rz-col-12 rz-md-6">
@@ -344,7 +347,7 @@
             }
 
             <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" JustifyContent="Radzen.JustifyContent.End" class="rz-col-12">
-                <RadzenButton Text="@Localizer["Annuler"]" ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Outlined" Click="GoBack" />
+                <RadzenButton Text="@Localizer["Annuler"]" ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Outlined" Click="@CancelOrGoBack" />
                 <RadzenButton Text="@(IsEditMode ? Localizer["Modifier"] : Localizer["Creer"])" 
                               ButtonStyle="ButtonStyle.Primary" 
                               Click="@SavePaiement"
@@ -385,8 +388,12 @@
 
 @code {
     [Parameter] public int? Id { get; set; }
-    
-    private bool IsEditMode => Id.HasValue;
+    [Parameter] public int? PaiementId { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private int? EffectiveId => PaiementId ?? Id;
+    private bool IsEditMode => EffectiveId.HasValue;
     private bool isLoadingProviders = false;
     private bool isLoadingInvoices = false;
     private bool isLoadingReceiptNotes = false;
@@ -457,9 +464,9 @@
             await LoadAccountingYearsAsync();
             await LoadBanquesAsync();
             
-            if (IsEditMode && Id.HasValue)
+            if (IsEditMode && EffectiveId.HasValue)
             {
-                await LoadPaiementAsync(Id.Value);
+                await LoadPaiementAsync(EffectiveId.Value);
             }
             else
             {
@@ -596,7 +603,10 @@
                     Summary = Localizer["Erreur"],
                     Detail = Localizer["Erreur_Chargement_Paiement"]
                 });
-                NavigationManager.NavigateTo("/paiements-fournisseur");
+                if (OnCancel.HasDelegate)
+                    await OnCancel.InvokeAsync();
+                else
+                    NavigationManager.NavigateTo("/paiements-fournisseur");
             }
         }
         catch (Exception ex)
@@ -608,6 +618,14 @@
                 Detail = $"{Localizer["Erreur_Chargement"]}: {ex.Message}"
             });
         }
+    }
+
+    async Task CancelOrGoBack()
+    {
+        if (OnCancel.HasDelegate)
+            await OnCancel.InvokeAsync();
+        else
+            GoBack();
     }
 
     async Task LoadProviders(LoadDataArgs args)
@@ -900,7 +918,7 @@
         isSaving = true;
         try
         {
-            if (IsEditMode && Id.HasValue)
+            if (IsEditMode && EffectiveId.HasValue)
             {
                 // Validate exclusivity
                 if (selectedFactureFournisseurIds.Count > 0 && selectedBonDeReceptionIds.Count > 0)
@@ -937,11 +955,14 @@
                     DocumentBase64 = documentBase64
                 };
 
-                var result = await PaiementFournisseurService.UpdatePaiementFournisseurAsync(Id.Value, updateRequest, cancellationTokenSource.Token);
+                var result = await PaiementFournisseurService.UpdatePaiementFournisseurAsync(EffectiveId!.Value, updateRequest, cancellationTokenSource.Token);
                 if (result.IsSuccess)
                 {
                     ToastService.Notify(new(ToastType.Success, Localizer["Paiement_Modifie"]));
-                    NavigationManager.NavigateTo("/paiements-fournisseur");
+                    if (OnSaved.HasDelegate)
+                        await OnSaved.InvokeAsync();
+                    else
+                        NavigationManager.NavigateTo("/paiements-fournisseur");
                 }
                 else
                 {
@@ -972,7 +993,10 @@
                 if (result.IsT0)
                 {
                     ToastService.Notify(new(ToastType.Success, Localizer["Paiement_Cree"]));
-                    NavigationManager.NavigateTo("/paiements-fournisseur");
+                    if (OnSaved.HasDelegate)
+                        await OnSaved.InvokeAsync();
+                    else
+                        NavigationManager.NavigateTo("/paiements-fournisseur");
                 }
                 else
                 {
@@ -1145,14 +1169,14 @@
 
     private async Task LoadExistingDocumentPreviewAsync()
     {
-        if (!string.IsNullOrWhiteSpace(existingDocumentPath) && Id.HasValue)
+        if (!string.IsNullOrWhiteSpace(existingDocumentPath) && EffectiveId.HasValue)
         {
             try
             {
                 var baseUrl = Configuration.GetValue<string>("ApiSettings:BaseUrl")
                     ?? throw new InvalidOperationException("ApiSettings:BaseUrl configuration is missing");
                 
-                var url = $"{baseUrl.TrimEnd('/')}/paiement-fournisseur/{Id.Value}/document";
+                var url = $"{baseUrl.TrimEnd('/')}/paiement-fournisseur/{EffectiveId.Value}/document";
                 
                 // Create HttpClient with authentication
                 using var httpClient = new HttpClient();
@@ -1247,13 +1271,13 @@
             // Use blob URL for better browser compatibility
             await JSRuntime.InvokeVoidAsync("openDocumentInNewTab", existingDocumentPreview);
         }
-        else if (!string.IsNullOrWhiteSpace(existingDocumentPath) && Id.HasValue)
+        else if (!string.IsNullOrWhiteSpace(existingDocumentPath) && EffectiveId.HasValue)
         {
             // Fallback: load and open
             var baseUrl = Configuration.GetValue<string>("ApiSettings:BaseUrl")
                 ?? throw new InvalidOperationException("ApiSettings:BaseUrl configuration is missing");
             
-            var url = $"{baseUrl.TrimEnd('/')}/paiement-fournisseur/{Id.Value}/document";
+            var url = $"{baseUrl.TrimEnd('/')}/paiement-fournisseur/{EffectiveId.Value}/document";
             
             // Create HttpClient with authentication
             using var httpClient = new HttpClient();

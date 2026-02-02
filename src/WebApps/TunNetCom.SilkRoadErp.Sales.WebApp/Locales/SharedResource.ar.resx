@@ -660,6 +660,12 @@
   <data name="Paiements_Fournisseurs" xml:space="preserve">
     <value>مدفوعات الموردين</value>
   </data>
+  <data name="Liste" xml:space="preserve">
+    <value>قائمة</value>
+  </data>
+  <data name="Calendrier_Echeances" xml:space="preserve">
+    <value>تقويم الاستحقاقات</value>
+  </data>
   <data name="Soldes_Clients" xml:space="preserve">
     <value>أرصدة العملاء</value>
   </data>

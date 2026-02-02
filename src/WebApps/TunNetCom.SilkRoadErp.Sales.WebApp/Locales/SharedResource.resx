@@ -634,6 +634,12 @@
   <data name="Paiements_Fournisseurs" xml:space="preserve">
     <value />
   </data>
+  <data name="Liste" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Calendrier_Echeances" xml:space="preserve">
+    <value />
+  </data>
   <data name="Soldes_Clients" xml:space="preserve">
     <value />
   </data>

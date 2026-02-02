@@ -1,0 +1,27 @@
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.PaiementFournisseur
+@using Radzen
+@inject IStringLocalizer<SharedResource> Localizer
+@inject DialogService DialogService
+
+<div style="padding: 0; overflow: auto; max-height: 85vh;">
+    <AddOrUpdatePaiementFournisseur PaiementId="@PaiementId"
+                                    OnSaved="@CloseWithTrue"
+                                    OnCancel="@CloseWithFalse" />
+</div>
+
+@code {
+    [Parameter]
+    public int PaiementId { get; set; }
+
+    private void CloseWithTrue()
+    {
+        DialogService.Close(true);
+    }
+
+    private void CloseWithFalse()
+    {
+        DialogService.Close(false);
+    }
+}

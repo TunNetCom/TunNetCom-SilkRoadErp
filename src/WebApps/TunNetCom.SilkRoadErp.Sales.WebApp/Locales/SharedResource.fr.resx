@@ -693,6 +693,12 @@
   <data name="Paiements_Fournisseurs" xml:space="preserve">
     <value>Paiements Fournisseurs</value>
   </data>
+  <data name="Liste" xml:space="preserve">
+    <value>Liste</value>
+  </data>
+  <data name="Calendrier_Echeances" xml:space="preserve">
+    <value>Calendrier des échéances</value>
+  </data>
   <data name="Soldes_Clients" xml:space="preserve">
     <value>Soldes Clients</value>
   </data>

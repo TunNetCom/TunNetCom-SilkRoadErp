@@ -15,6 +15,7 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.PaiementFournisseur.PrintTraite
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.PaiementFournisseur
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.JSInterop
@@ -59,6 +60,9 @@
             </div>
         </div>
 
+        <RadzenTabs @bind-SelectedIndex="selectedTabIndex" Change="@OnTabChange" RenderMode="TabRenderMode.Client" Style="margin-top: 0.5rem;">
+            <Tabs>
+            <RadzenTabsItem Text="@Localizer["Liste"]" Value="0" Icon="list">
         <div class="search-filters">
             <div class="search-field">
                 <label>@Localizer["providers"]</label>
@@ -227,6 +231,32 @@
                 </RadzenDataGridColumn>
             </Columns>
         </RadzenDataGrid>
+            </RadzenTabsItem>
+            <RadzenTabsItem Text="@Localizer["Calendrier_Echeances"]" Value="1" Icon="calendar_month">
+                <div class="calendar-tab-content">
+                    @if (isLoadingCalendar)
+                    {
+                        <RadzenProgressBarCircular Mode="ProgressBarMode.Indeterminate" Style="margin: 2rem auto; display: block;" />
+                    }
+                    else
+                    {
+                        <RadzenScheduler @ref="schedulerRef"
+                                         TItem="PaiementEcheanceAppointment"
+                                         Data="@calendarAppointments"
+                                         StartProperty="Start"
+                                         EndProperty="End"
+                                         TextProperty="Text"
+                                         @bind-CurrentDate="schedulerCurrentDate"
+                                         AppointmentSelect="@OnCalendarAppointmentSelect"
+                                         Style="min-height: 500px;">
+                            <RadzenMonthView />
+                            <RadzenWeekView />
+                        </RadzenScheduler>
+                    }
+                </div>
+            </RadzenTabsItem>
+            </Tabs>
+        </RadzenTabs>
     </div>
 </div>
 
@@ -296,12 +326,22 @@
         overflow: hidden;
         border: none;
     }
+
+    .calendar-tab-content {
+        padding: 1rem 0;
+        min-height: 500px;
+    }
 </style>
 
 @code {
     private RadzenDataGrid<PaiementFournisseurResponse> paiementGrid = default!;
     private List<PaiementFournisseurResponse> paiements = new();
     private int totalPaiements;
+    private int selectedTabIndex = 0;
+    private List<PaiementEcheanceAppointment> calendarAppointments = new();
+    private bool isLoadingCalendar = false;
+    private DateTime schedulerCurrentDate = DateTime.Today;
+    private RadzenScheduler<PaiementEcheanceAppointment>? schedulerRef;
     private int decimalPlaces = AmountHelper.DEFAULT_DECIMAL_PLACES;
     private bool isLoadingPaiements = false;
     private int? selectedFournisseurId;
@@ -441,19 +481,100 @@
 
     async Task SearchPaiements()
     {
-        await paiementGrid.Reload();
+        if (paiementGrid != null)
+            await paiementGrid.Reload();
     }
 
     async Task OnExerciceFilterChange()
     {
-        await paiementGrid.Reload();
+        if (paiementGrid != null)
+            await paiementGrid.Reload();
+    }
+
+    async Task OnTabChange(int index)
+    {
+        selectedTabIndex = index;
+        if (index == 1)
+        {
+            await LoadCalendarDataAsync();
+        }
+    }
+
+    private async Task LoadCalendarDataAsync()
+    {
+        isLoadingCalendar = true;
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            var start = new DateTime(schedulerCurrentDate.Year, schedulerCurrentDate.Month, 1).AddMonths(-1);
+            var end = start.AddMonths(3).AddDays(-1);
+            bool? hasNumeroTransactionBancaire = selectedReglementStatus.HasValue ? (selectedReglementStatus.Value == 1) : null;
+            var accountingYearIdsParam = (selectedAccountingYearIds != null && selectedAccountingYearIds.Count > 0) ? selectedAccountingYearIds : null;
+            var result = await PaiementFournisseurService.GetPaiementsFournisseurAsync(
+                selectedFournisseurId,
+                accountingYearIdsParam,
+                start,
+                end,
+                selectedMontantMin,
+                selectedMontantMax,
+                hasNumeroTransactionBancaire,
+                selectedMois,
+                1,
+                500,
+                cancellationTokenSource.Token);
+            calendarAppointments = result.Items
+                .Where(p => p.DateEcheance.HasValue)
+                .Select(p => new PaiementEcheanceAppointment
+                {
+                    Start = p.DateEcheance!.Value.Date,
+                    End = p.DateEcheance.Value.Date.AddDays(1),
+                    Text = $"{p.FournisseurNom} - {p.Montant:N2} TND",
+                    PaiementId = p.Id
+                })
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = $"{Localizer["Erreur_Chargement_Paiements"]}: {ex.Message}"
+            });
+            calendarAppointments = new List<PaiementEcheanceAppointment>();
+        }
+        isLoadingCalendar = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnCalendarAppointmentSelect(SchedulerAppointmentSelectEventArgs<PaiementEcheanceAppointment> args)
+    {
+        if (args?.Data?.PaiementId > 0)
+        {
+            await OpenPaiementDialogAsync(args.Data.PaiementId);
+        }
+    }
+
+    private async Task OpenPaiementDialogAsync(int paiementId)
+    {
+        var result = await DialogService.OpenAsync<AddOrUpdatePaiementFournisseurDialog>(
+            Localizer["Modifier_Paiement"],
+            new Dictionary<string, object> { { "PaiementId", paiementId } },
+            new DialogOptions { Width = "90vw", Height = "85vh", Resizable = true, Draggable = true });
+        if (result == true && selectedTabIndex == 1)
+        {
+            await LoadCalendarDataAsync();
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            await paiementGrid.Reload();
+            if (paiementGrid != null)
+                await paiementGrid.Reload();
+            else
+                await InvokeAsync(StateHasChanged);
         }
     }
 
@@ -462,9 +583,19 @@
         NavigationManager.NavigateTo("/paiement-fournisseur/add");
     }
 
-    private void EditPaiement(int id)
+    private async Task EditPaiement(int id)
     {
-        NavigationManager.NavigateTo($"/paiement-fournisseur/edit/{id}");
+        var result = await DialogService.OpenAsync<AddOrUpdatePaiementFournisseurDialog>(
+            Localizer["Modifier_Paiement"],
+            new Dictionary<string, object> { { "PaiementId", id } },
+            new DialogOptions { Width = "90vw", Height = "85vh", Resizable = true, Draggable = true });
+        if (result == true)
+        {
+            if (paiementGrid != null)
+                await paiementGrid.Reload();
+            if (selectedTabIndex == 1)
+                await LoadCalendarDataAsync();
+        }
     }
 
     async Task ConfirmDeletePaiement(int paiementId)
@@ -479,7 +610,8 @@
             if (result.IsSuccess)
             {
                 ToastService.Notify(new(ToastType.Success, Localizer["Paiement_Supprime"]));
-                await paiementGrid.Reload();
+                if (paiementGrid != null)
+                    await paiementGrid.Reload();
             }
             else
             {
