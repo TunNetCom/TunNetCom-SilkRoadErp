@@ -67,5 +67,8 @@ public class PaiementSoldeFournisseur
 
     [JsonPropertyName("methodePaiement")]
     public string MethodePaiement { get; set; } = string.Empty;
+
+    [JsonPropertyName("factures")]
+    public List<FactureRattacheeSolde> Factures { get; set; } = new();
 }
 

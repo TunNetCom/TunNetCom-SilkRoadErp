@@ -756,6 +756,9 @@
   <data name="Date_Echeance" xml:space="preserve">
     <value>Due Date</value>
   </data>
+  <data name="Factures_Rattachees" xml:space="preserve">
+    <value>Invoice(s)</value>
+  </data>
   <data name="Facture_Optionnel" xml:space="preserve">
     <value>Invoice (optional)</value>
   </data>

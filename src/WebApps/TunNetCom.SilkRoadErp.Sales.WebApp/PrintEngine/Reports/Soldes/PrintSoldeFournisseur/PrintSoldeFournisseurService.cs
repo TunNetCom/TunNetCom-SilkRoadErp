@@ -87,7 +87,8 @@ public class PrintSoldeFournisseurService(
                 NumeroTransactionBancaire = p.NumeroTransactionBancaire,
                 DatePaiement = p.DatePaiement,
                 Montant = p.Montant,
-                Methode = p.MethodePaiement
+                Methode = p.MethodePaiement,
+                Factures = p.Factures?.ToList() ?? new List<FactureRattacheeSolde>()
             }).ToList(),
             GeneratedAt = DateTime.Now,
             DecimalPlaces = AmountHelper.DEFAULT_DECIMAL_PLACES

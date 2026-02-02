@@ -210,11 +210,25 @@ public class GetSoldeClientQueryHandler(
             .ToListAsync(cancellationToken);
         documents.AddRange(facturesAvoir);
 
-        // Get payments
-        var paiements = await _context.PaiementClient
+        // Get payments with attached factures (num + TTC)
+        var paiementsEntities = await _context.PaiementClient
             .Where(p => p.ClientId == query.ClientId && p.AccountingYearId == accountingYearId.Value)
             .Include(p => p.Banque)
-            .Select(p => new PaiementSoldeClient
+            .Include(p => p.Factures)
+                .ThenInclude(pf => pf.Facture)
+                .ThenInclude(f => f.BonDeLivraison)
+            .OrderByDescending(p => p.DatePaiement)
+            .ToListAsync(cancellationToken);
+
+        var paiements = paiementsEntities.Select(p =>
+        {
+            var facturesRattachees = p.Factures.Select(pf =>
+            {
+                var f = pf.Facture;
+                var montantTtc = retenues.TryGetValue(f.Num, out var r) ? r.MontantApresRetenu : f.BonDeLivraison.Sum(b => b.NetPayer) + timbre;
+                return new FactureRattacheeSolde { Numero = f.Num, MontantTtc = montantTtc };
+            }).ToList();
+            return new PaiementSoldeClient
             {
                 Id = p.Id,
                 NumeroTransactionBancaire = p.NumeroTransactionBancaire,
@@ -223,10 +237,10 @@ public class GetSoldeClientQueryHandler(
                 MethodePaiement = p.MethodePaiement.ToString(),
                 NumeroChequeTraite = p.NumeroChequeTraite,
                 BanqueNom = p.Banque != null ? p.Banque.Nom : null,
-                DateEcheance = p.DateEcheance
-            })
-            .OrderByDescending(p => p.DatePaiement)
-            .ToListAsync(cancellationToken);
+                DateEcheance = p.DateEcheance,
+                Factures = facturesRattachees
+            };
+        }).ToList();
 
         var response = new SoldeClientResponse
         {

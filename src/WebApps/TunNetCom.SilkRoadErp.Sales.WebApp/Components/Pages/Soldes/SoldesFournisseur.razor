@@ -139,6 +139,13 @@
                             </Template>
                         </RadzenDataGridColumn>
                         <RadzenDataGridColumn TItem="PaiementSoldeFournisseur" Property="MethodePaiement" Title="@Localizer["Methode_Col"]" Width="120px" />
+                        <RadzenDataGridColumn TItem="PaiementSoldeFournisseur" Title="@Localizer["Factures_Rattachees"]" Width="220px">
+                            <Template Context="paiement">
+                                @(paiement.Factures?.Any() == true
+                                    ? string.Join(", ", paiement.Factures.Select(f => $"{f.Numero} ({f.MontantTtc.FormatAmount(decimalPlaces)} TND)"))
+                                    : "-")
+                            </Template>
+                        </RadzenDataGridColumn>
                     </Columns>
                 </RadzenDataGrid>
             </div>

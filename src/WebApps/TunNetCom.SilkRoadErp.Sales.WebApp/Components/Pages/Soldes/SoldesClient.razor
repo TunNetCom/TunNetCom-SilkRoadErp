@@ -250,6 +250,13 @@
                                 @(paiement.DateEcheance.HasValue ? paiement.DateEcheance.Value.ToString("dd/MM/yyyy") : "-")
                             </Template>
                         </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="PaiementSoldeClient" Title="@Localizer["Factures_Rattachees"]" Width="220px">
+                            <Template Context="paiement">
+                                @(paiement.Factures?.Any() == true
+                                    ? string.Join(", ", paiement.Factures.Select(f => $"{f.Numero} ({f.MontantTtc.FormatAmount(decimalPlaces)} TND)"))
+                                    : "-")
+                            </Template>
+                        </RadzenDataGridColumn>
                     </Columns>
                 </RadzenDataGrid>
             </div>

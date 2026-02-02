@@ -697,6 +697,9 @@
   <data name="Date_Echeance" xml:space="preserve">
     <value />
   </data>
+  <data name="Factures_Rattachees" xml:space="preserve">
+    <value />
+  </data>
   <data name="Facture_Optionnel" xml:space="preserve">
     <value />
   </data>

@@ -213,6 +213,7 @@
                 <th>Numéro traite/chèque</th>
                 <th>Banque</th>
                 <th>Date échéance</th>
+                <th>Facture(s)</th>
                 <th class="text-right">Montant</th>
             </tr>
         </thead>
@@ -228,6 +229,7 @@
                         <td>@(payment.NumeroChequeTraite ?? "-")</td>
                         <td>@(payment.BanqueNom ?? "-")</td>
                         <td>@(payment.DateEcheance.HasValue ? payment.DateEcheance.Value.ToString("dd/MM/yyyy") : "-")</td>
+                        <td>@(payment.Factures?.Any() == true ? string.Join(", ", payment.Factures.Select(f => $"{f.Numero} ({f.MontantTtc.FormatAmount(Model.DecimalPlaces)} TND)")) : "-")</td>
                         <td class="text-right">@payment.Montant.FormatAmount(Model.DecimalPlaces) TND</td>
                     </tr>
                 }
@@ -235,7 +237,7 @@
             else
             {
                 <tr>
-                    <td colspan="7" style="text-align:center;">Aucun paiement</td>
+                    <td colspan="8" style="text-align:center;">Aucun paiement</td>
                 </tr>
             }
         </tbody>

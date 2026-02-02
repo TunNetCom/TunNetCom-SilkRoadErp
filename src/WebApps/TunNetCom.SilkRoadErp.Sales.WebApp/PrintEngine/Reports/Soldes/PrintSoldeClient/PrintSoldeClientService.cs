@@ -84,7 +84,8 @@ public class PrintSoldeClientService(
                 Methode = p.MethodePaiement,
                 NumeroChequeTraite = p.NumeroChequeTraite,
                 BanqueNom = p.BanqueNom,
-                DateEcheance = p.DateEcheance
+                DateEcheance = p.DateEcheance,
+                Factures = p.Factures?.ToList() ?? new List<FactureRattacheeSolde>()
             }).ToList(),
             GeneratedAt = DateTime.Now,
             DecimalPlaces = AmountHelper.DEFAULT_DECIMAL_PLACES,

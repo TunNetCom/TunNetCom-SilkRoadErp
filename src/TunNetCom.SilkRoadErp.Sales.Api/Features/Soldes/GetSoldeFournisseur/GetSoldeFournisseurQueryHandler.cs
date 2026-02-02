@@ -163,19 +163,34 @@ public class GetSoldeFournisseurQueryHandler(
             .ToListAsync(cancellationToken);
         documents.AddRange(retours);
 
-        // Get payments
-        var paiements = await _context.PaiementFournisseur
+        // Get payments with attached factures (num + TTC)
+        var paiementsEntities = await _context.PaiementFournisseur
             .Where(p => p.FournisseurId == query.FournisseurId && p.AccountingYearId == accountingYearId.Value)
-            .Select(p => new PaiementSoldeFournisseur
+            .Include(p => p.FactureFournisseurs)
+                .ThenInclude(pf => pf.FactureFournisseur)
+                .ThenInclude(f => f.BonDeReception)
+                .ThenInclude(br => br.LigneBonReception)
+            .OrderByDescending(p => p.DatePaiement)
+            .ToListAsync(cancellationToken);
+
+        var paiements = paiementsEntities.Select(p =>
+        {
+            var facturesRattachees = p.FactureFournisseurs.Select(pf =>
+            {
+                var f = pf.FactureFournisseur;
+                var montantTtc = retenues.TryGetValue(f.Num, out var r) ? r.MontantApresRetenu : f.BonDeReception.SelectMany(br => br.LigneBonReception).Sum(l => l.TotTtc) + timbre;
+                return new FactureRattacheeSolde { Numero = f.Num, MontantTtc = montantTtc };
+            }).ToList();
+            return new PaiementSoldeFournisseur
             {
                 Id = p.Id,
                 NumeroTransactionBancaire = p.NumeroTransactionBancaire,
                 DatePaiement = p.DatePaiement,
                 Montant = p.Montant,
-                MethodePaiement = p.MethodePaiement.ToString()
-            })
-            .OrderByDescending(p => p.DatePaiement)
-            .ToListAsync(cancellationToken);
+                MethodePaiement = p.MethodePaiement.ToString(),
+                Factures = facturesRattachees
+            };
+        }).ToList();
 
         var response = new SoldeFournisseurResponse
         {
