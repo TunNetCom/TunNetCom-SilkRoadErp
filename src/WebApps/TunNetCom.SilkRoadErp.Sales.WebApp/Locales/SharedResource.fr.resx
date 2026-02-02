@@ -141,6 +141,12 @@
   <data name="Edit" xml:space="preserve">
     <value>Modifier</value>
   </data>
+  <data name="duplicate_quotation" xml:space="preserve">
+    <value>Dupliquer</value>
+  </data>
+  <data name="duplicate_quotation_success" xml:space="preserve">
+    <value>Devis dupliqué avec succès</value>
+  </data>
   <data name="View" xml:space="preserve">
     <value>Voir</value>
   </data>

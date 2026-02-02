@@ -152,7 +152,7 @@
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="QuotationBaseInfo"
                                       Title="@Localizer["actions_label"]"
-                                      Width="100px"
+                                      Width="140px"
                                       Sortable="false"
                                       Filterable="false">
                     <Template Context="item">
@@ -164,6 +164,14 @@
                                       Disabled="@(item.Statut == 1)"
                                       Title="@Localizer["edit"]"
                                       AriaLabel="@Localizer["edit"]" 
+                                      Style="margin-right: 4px;" />
+                        <RadzenButton Icon="content_copy"
+                                      ButtonStyle="ButtonStyle.Secondary"
+                                      Variant="Variant.Flat"
+                                      Size="ButtonSize.Small"
+                                      Click="@(() => DuplicateQuotation(item))"
+                                      Title="@Localizer["duplicate_quotation"]"
+                                      AriaLabel="@Localizer["duplicate_quotation"]"
                                       Style="margin-right: 4px;" />
                         <RadzenButton Icon="check_circle"
                                       ButtonStyle="ButtonStyle.Success"
@@ -501,6 +509,49 @@
         else
         {
             NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = Localizer["Error"], Detail = result.Errors.FirstOrDefault()?.Message ?? Localizer["Unexpected_Error"] });
+        }
+    }
+
+    private async Task DuplicateQuotation(QuotationBaseInfo item)
+    {
+        var getResult = await QuotationService.GetQuotationByIdAsync(item.Number, default);
+        if (getResult.IsFailed)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = Localizer["Error"], Detail = getResult.Errors.FirstOrDefault()?.Message ?? Localizer["Unexpected_Error"] });
+            return;
+        }
+
+        var full = getResult.Value;
+        var request = new CreateQuotationRequest
+        {
+            IdClient = full.CustomerId,
+            Date = DateTime.Today,
+            TotHTva = full.TotalExcludingTax,
+            TotTva = full.TotalVat,
+            TotTtc = full.TotalAmount,
+            Items = (full.Items ?? new List<QuotationDetailResponse>()).Select(o => new QuotationItemRequest
+            {
+                Id = 0,
+                ProductReference = o.ProductReference,
+                Description = o.Description,
+                Quantity = o.Quantity,
+                UnitPriceExcludingTax = o.UnitPriceExcludingTax,
+                DiscountPercentage = o.DiscountPercentage,
+                TotalExcludingTax = o.TotalExcludingTax,
+                VatPercentage = o.VatPercentage,
+                TotalIncludingTax = o.TotalIncludingTax
+            }).ToList()
+        };
+
+        var createResult = await QuotationService.CreateQuotationAsync(request, default);
+        if (createResult.IsSuccess)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = Localizer["Success"], Detail = Localizer["duplicate_quotation_success"] });
+            NavigationManager.NavigateTo($"/AddOrUpdateQuotation/{createResult.Value}");
+        }
+        else
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = Localizer["Error"], Detail = createResult.Errors.FirstOrDefault()?.Message ?? Localizer["Unexpected_Error"] });
         }
     }
 
