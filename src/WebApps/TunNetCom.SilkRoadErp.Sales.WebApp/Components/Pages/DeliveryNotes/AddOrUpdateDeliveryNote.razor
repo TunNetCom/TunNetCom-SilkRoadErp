@@ -406,6 +406,7 @@ else
                    TotalHt="@totalHt"
                    TotalVat="@totalVat"
                    TotalTtc="@totalTtc"
+                   AutoDetectConstructorProviderFromReceiptHistory="true"
                    Localizer="@Localizer"
                    GetProductReference="@(item => item.ProductReference)"
                    SetProductReference="@((item, value) => item.ProductReference = value)"
@@ -1653,7 +1654,11 @@ else
         await LoadStateAsync();
 
         await DialogService.OpenAsync<ProductHistoryDialog>($"{Localizer["history"]} {Localizer["article"]} {ProductReference}",
-            new Dictionary<string, object>() { { "ProductReference", ProductReference } },
+            new Dictionary<string, object>() 
+            { 
+                { "ProductReference", ProductReference },
+                { "Mode", HistoryMode.Vente }
+            },
             new DialogOptions()
             {
                 Resizable = true,

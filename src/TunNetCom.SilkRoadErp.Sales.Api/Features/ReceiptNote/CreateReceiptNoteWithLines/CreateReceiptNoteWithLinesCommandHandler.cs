@@ -1,4 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
+using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
 using TunNetCom.SilkRoadErp.Sales.Domain.Services;
 using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
@@ -100,7 +100,7 @@ internal class CreateReceiptNoteWithLinesCommandHandler(
 
             await transaction.CommitAsync(cancellationToken);
 
-            return Result.Ok(recipetNote.Id);
+            return Result.Ok(recipetNote.Num);
         }
         catch (Exception ex)
         {

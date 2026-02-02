@@ -1,0 +1,155 @@
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote
+@using TunNetCom.SilkRoadErp.Sales.Contracts
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Common
+@using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNote.Responses
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using System.Globalization
+@using Radzen
+@using Radzen.Blazor
+@inject IReceiptNoteApiClient ReceiptNoteService
+
+<RadzenStack Gap="0.5rem" Style="margin-bottom: 0.5rem;">
+    <RadzenTextBox @bind-Value="@searchText" 
+                   Placeholder="Rechercher par fournisseur, description ou date..." 
+                   Style="width: 100%;"
+                   @oninput="OnSearchChanged"
+                   aria-label="Rechercher">
+        <ChildContent>
+            <RadzenIcon Icon="search" Style="margin-right: 0.5rem;" />
+        </ChildContent>
+    </RadzenTextBox>
+</RadzenStack>
+
+<RadzenDataGrid @ref="gridRef"
+               Data="@pagedList?.Items" 
+               TItem="ReceiptNoteDetailResponse" 
+               AllowSorting="true" 
+               AllowPaging="true" 
+               PageSize="@PageSize"
+               Count="@(pagedList?.TotalCount ?? 0)"
+               LoadData="@LoadData">
+    <Columns>
+        <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailResponse.Provider)" Title="Nom du fournisseur" Width="150px"/>
+        <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailResponse.Date)" Title="Date de réception" Width="150px">
+            <Template Context="item">
+                @(item.Date == default || item.Date.Year < 1900 ? "XX/XX/XXXX" : item.Date.ToString("dd/MM/yyyy", CultureInfo.GetCultureInfo("fr-FR")))
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailResponse.Description)" Title="Description" Width="200px"/>
+        <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailResponse.UnitPriceExcludingTax)" Title="Prix unitaire (HT)" Width="150px">
+            <Template Context="item">
+                @item.UnitPriceExcludingTax.ToString(AmountHelper.FORMAT_N3, CultureInfo.GetCultureInfo("fr-FR"))
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailResponse.DiscountPercentage)" Title="Remise (%)" Width="100px">
+            <Template Context="item">
+                @item.DiscountPercentage.ToString(AmountHelper.FORMAT_N2, CultureInfo.GetCultureInfo("fr-FR"))
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailResponse.VatPercentage)" Title="TVA (%)" Width="100px">
+            <Template Context="item">
+                @item.VatPercentage.ToString(AmountHelper.FORMAT_N2, CultureInfo.GetCultureInfo("fr-FR"))
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailResponse.TotalExcludingTax)" Title="Total HT" Width="110px">
+            <Template Context="item">
+                @item.TotalExcludingTax.ToString(AmountHelper.FORMAT_N3, CultureInfo.GetCultureInfo("fr-FR"))
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailResponse.TotalIncludingTax)" Title="TTC Unitaire" Width="100px">
+            <Template Context="item">
+                @(item.Quantity > 0 ? (item.TotalIncludingTax / item.Quantity).ToString(AmountHelper.FORMAT_N3, CultureInfo.GetCultureInfo("fr-FR")) : "-")
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    [Parameter] public string ProductReference { get; set; } = string.Empty;
+    [Parameter] public int PageSize { get; set; } = 7;
+
+    private RadzenDataGrid<ReceiptNoteDetailResponse>? gridRef;
+    private PagedList<ReceiptNoteDetailResponse>? pagedList;
+    private string searchText = string.Empty;
+    private List<ReceiptNoteDetailResponse> searchCache = new();
+    private string? _lastProductRef;
+
+    protected override void OnParametersSet()
+    {
+        if (_lastProductRef != ProductReference)
+        {
+            _lastProductRef = ProductReference;
+            pagedList = null;
+            searchCache.Clear();
+        }
+    }
+
+    private static List<ReceiptNoteDetailResponse> EmptyRows(int count) =>
+        Enumerable.Range(0, count).Select(_ => new ReceiptNoteDetailResponse()).ToList();
+
+    private async Task OnSearchChanged(ChangeEventArgs e)
+    {
+        searchText = (e.Value?.ToString() ?? string.Empty).Trim();
+        if (string.IsNullOrEmpty(searchText))
+            searchCache.Clear();
+        await ReloadGrid();
+    }
+
+    private async Task ReloadGrid()
+    {
+        if (gridRef != null)
+            await gridRef.Reload();
+        StateHasChanged();
+    }
+
+    private async Task LoadData(LoadDataArgs args)
+    {
+        if (string.IsNullOrWhiteSpace(ProductReference))
+        {
+            pagedList = new PagedList<ReceiptNoteDetailResponse>(EmptyRows(PageSize), 0, 1, PageSize);
+            return;
+        }
+
+        try
+        {
+            var pageSize = args.Top ?? PageSize;
+            var skip = args.Skip ?? 0;
+
+            if (string.IsNullOrEmpty(searchText))
+            {
+                var pageNumber = pageSize > 0 ? (skip / pageSize) + 1 : 1;
+                var result = await ReceiptNoteService.GetReceiptNotesByProductReferenceAsync(ProductReference, pageNumber, pageSize);
+                var items = result?.Items ?? new List<ReceiptNoteDetailResponse>();
+                var totalCount = result?.TotalCount ?? 0;
+                var displayItems = items.Count > 0 && items.Count < PageSize
+                    ? items.Concat(EmptyRows(PageSize - items.Count)).ToList()
+                    : (items.Count > 0 ? items : EmptyRows(PageSize));
+                pagedList = new PagedList<ReceiptNoteDetailResponse>(displayItems, totalCount, pageNumber, pageSize);
+            }
+            else
+            {
+                if (searchCache.Count == 0)
+                {
+                    var result = await ReceiptNoteService.GetReceiptNotesByProductReferenceAsync(ProductReference, 1, 300);
+                    searchCache = result?.Items ?? new List<ReceiptNoteDetailResponse>();
+                }
+                var search = searchText.ToLower();
+                var filtered = searchCache.Where(item =>
+                    (!string.IsNullOrEmpty(item.Provider) && item.Provider.ToLower().Contains(search)) ||
+                    (!string.IsNullOrEmpty(item.Description) && item.Description.ToLower().Contains(search)) ||
+                    (item.Date != default && item.Date.ToString("dd/MM/yyyy", CultureInfo.GetCultureInfo("fr-FR")).Contains(search, StringComparison.OrdinalIgnoreCase))
+                ).ToList();
+                var totalCount = filtered.Count;
+                var pageItems = filtered.Skip(skip).Take(PageSize).ToList();
+                while (pageItems.Count < PageSize)
+                    pageItems.Add(new ReceiptNoteDetailResponse());
+                var pageNumber = pageSize > 0 ? (skip / pageSize) + 1 : 1;
+                pagedList = new PagedList<ReceiptNoteDetailResponse>(pageItems, totalCount, pageNumber, pageSize);
+            }
+        }
+        catch
+        {
+            pagedList = new PagedList<ReceiptNoteDetailResponse>(EmptyRows(PageSize), 0, 1, PageSize);
+        }
+    }
+}
