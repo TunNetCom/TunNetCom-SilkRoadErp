@@ -129,6 +129,18 @@ public static class Permissions
     public const string ViewReports = "CanViewReports";
     public const string ExportData = "CanExportData";
 
+    // ==================== TIERS DÉPENSES DE FONCTIONNEMENT ====================
+    public const string ViewTiersDepenseFonctionnement = "CanViewTiersDepenseFonctionnement";
+    public const string CreateTiersDepenseFonctionnement = "CanCreateTiersDepenseFonctionnement";
+    public const string UpdateTiersDepenseFonctionnement = "CanUpdateTiersDepenseFonctionnement";
+    public const string ViewFactureDepense = "CanViewFactureDepense";
+    public const string CreateFactureDepense = "CanCreateFactureDepense";
+    public const string UpdateFactureDepense = "CanUpdateFactureDepense";
+    public const string ValidateFactureDepense = "CanValidateFactureDepense";
+    public const string ViewPaiementTiersDepense = "CanViewPaiementTiersDepense";
+    public const string CreatePaiementTiersDepense = "CanCreatePaiementTiersDepense";
+    public const string UpdatePaiementTiersDepense = "CanUpdatePaiementTiersDepense";
+    public const string ViewSoldeTiersDepense = "CanViewSoldeTiersDepense";
 
     // ==================== USER MANAGEMENT ====================
     public const string ViewUsers = "CanViewUsers";
@@ -283,6 +295,19 @@ public static class Permissions
             (ViewSoldes, "Peut voir les soldes"),
             (ViewReports, "Peut voir les rapports"),
             (ExportData, "Peut exporter les données"),
+
+            // Tiers dépenses de fonctionnement
+            (ViewTiersDepenseFonctionnement, "Peut voir les tiers dépenses de fonctionnement"),
+            (CreateTiersDepenseFonctionnement, "Peut créer des tiers dépenses de fonctionnement"),
+            (UpdateTiersDepenseFonctionnement, "Peut modifier des tiers dépenses de fonctionnement"),
+            (ViewFactureDepense, "Peut voir les factures dépenses"),
+            (CreateFactureDepense, "Peut créer des factures dépenses"),
+            (UpdateFactureDepense, "Peut modifier des factures dépenses"),
+            (ValidateFactureDepense, "Peut valider des factures dépenses"),
+            (ViewPaiementTiersDepense, "Peut voir les paiements tiers dépenses"),
+            (CreatePaiementTiersDepense, "Peut créer des paiements tiers dépenses"),
+            (UpdatePaiementTiersDepense, "Peut modifier des paiements tiers dépenses"),
+            (ViewSoldeTiersDepense, "Peut voir les soldes tiers dépenses"),
 
             // User Management
             (ViewUsers, "Peut voir les utilisateurs"),

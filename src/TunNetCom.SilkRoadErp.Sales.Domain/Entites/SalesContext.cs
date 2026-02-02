@@ -130,6 +130,14 @@ public partial class SalesContext : DbContext
 
     public virtual DbSet<Notification> Notification { get; set; }
 
+    public virtual DbSet<TiersDepenseFonctionnement> TiersDepenseFonctionnement { get; set; }
+
+    public virtual DbSet<FactureDepense> FactureDepense { get; set; }
+
+    public virtual DbSet<PaiementTiersDepense> PaiementTiersDepense { get; set; }
+
+    public virtual DbSet<PaiementTiersDepenseFactureDepense> PaiementTiersDepenseFactureDepense { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(FactureConfiguration).Assembly);

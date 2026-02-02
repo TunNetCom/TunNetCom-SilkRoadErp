@@ -131,5 +131,35 @@ public class SoldesApiClient : ISoldesApiClient
         var fileName = response.Content.Headers.ContentDisposition?.FileName?.Trim('"') ?? $"ClientsProblemesSolde_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
         return (content, fileName);
     }
+
+    public async Task<Result<SoldeTiersDepenseResponse>> GetSoldeTiersDepenseAsync(
+        int tiersDepenseFonctionnementId,
+        int? accountingYearId,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Fetching solde tiers dépense from API /soldes/tiers-depenses/{TiersDepenseFonctionnementId}", tiersDepenseFonctionnementId);
+        var queryString = $"/soldes/tiers-depenses/{tiersDepenseFonctionnementId}";
+
+        if (accountingYearId.HasValue)
+        {
+            queryString += $"?accountingYearId={accountingYearId.Value}";
+        }
+
+        var response = await _httpClient.GetAsync(queryString, cancellationToken: cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.OK)
+        {
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var solde = JsonConvert.DeserializeObject<SoldeTiersDepenseResponse>(responseContent);
+            return Result.Ok(solde!);
+        }
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return Result.Fail("solde_tiers_depense_not_found");
+        }
+
+        throw new Exception($"Soldes tiers dépense: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
+    }
 }
 

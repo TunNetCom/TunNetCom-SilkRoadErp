@@ -1,0 +1,151 @@
+@page "/factures-depenses"
+@implements IDisposable
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.FactureDepense
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.TiersDepenseFonctionnement
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AccountingYear
+@using TunNetCom.SilkRoadErp.Sales.Contracts
+@using TunNetCom.SilkRoadErp.Sales.Contracts.FactureDepense
+@using TunNetCom.SilkRoadErp.Sales.Contracts.TiersDepenseFonctionnement
+@using TunNetCom.SilkRoadErp.Sales.Contracts.AccountingYear
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
+@using Radzen
+@using Radzen.Blazor
+@inject IFactureDepenseApiClient FactureDepenseService
+@inject ITiersDepenseFonctionnementApiClient TiersDepenseService
+@inject IAccountingYearApiClient AccountingYearService
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<SharedResource> Localizer
+@inject Radzen.NotificationService NotificationService
+@inject IDecimalFormatService DecimalFormatService
+
+<div class="factures-container">
+    <div class="factures-card">
+        <div class="factures-header">
+            <h3 class="factures-title">Factures dépenses</h3>
+            <RadzenButton Icon="add" Text="Nouvelle facture dépense"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Click="@(() => NavigationManager.NavigateTo("/factures-depenses/add"))"
+                          Class="btn-primary" />
+        </div>
+
+        <div class="filters">
+            <RadzenDropDown @bind-Value="selectedTiersId"
+                            Data="@tiersList"
+                            TextProperty="Nom"
+                            ValueProperty="Id"
+                            Placeholder="Tous les tiers"
+                            AllowClear="true"
+                            Style="width: 220px;"
+                            Change="@OnFilterChange" />
+            <RadzenDropDown @bind-Value="selectedAccountingYearId"
+                            Data="@accountingYears"
+                            TextProperty="Year"
+                            ValueProperty="Id"
+                            Placeholder="Exercice"
+                            AllowClear="true"
+                            Style="width: 180px;"
+                            Change="@OnFilterChange" />
+            <RadzenButton Text="Rechercher" Icon="search" Click="@LoadData" />
+        </div>
+
+        <RadzenDataGrid TItem="FactureDepenseSummaryItem"
+                        Data="@items"
+                        AllowPaging="true"
+                        PageSize="10"
+                        Density="Density.Compact"
+                        Class="factures-grid">
+            <Columns>
+                <RadzenDataGridColumn TItem="FactureDepenseSummaryItem" Property="Num" Title="N°" Width="80px" />
+                <RadzenDataGridColumn TItem="FactureDepenseSummaryItem" Property="TiersDepenseFonctionnementNom" Title="Tiers" Width="180px" />
+                <RadzenDataGridColumn TItem="FactureDepenseSummaryItem" Property="Date" Title="Date" Width="110px">
+                    <Template Context="f">@f.Date.ToString("dd/MM/yyyy")</Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="FactureDepenseSummaryItem" Property="Description" Title="Description" Width="200px" />
+                <RadzenDataGridColumn TItem="FactureDepenseSummaryItem" Property="MontantTotal" Title="Montant" Width="120px">
+                    <Template Context="f">@f.MontantTotal.FormatAmount(decimalPlaces) TND</Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="FactureDepenseSummaryItem" Property="Statut" Title="Statut" Width="100px" />
+                <RadzenDataGridColumn TItem="FactureDepenseSummaryItem" Filterable="false" Sortable="false" Width="100px" TextAlign="TextAlign.Center">
+                    <Template Context="f">
+                        <RadzenButton Icon="edit" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Success" Variant="Variant.Outlined"
+                                      Click="@(() => EditFacture(f.Id))" Title="Modifier" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <p style="text-align: center; margin: 2rem;">Aucune facture dépense.</p>
+            </EmptyTemplate>
+        </RadzenDataGrid>
+    </div>
+</div>
+
+@code {
+    private List<FactureDepenseSummaryItem> items = new();
+    private List<TiersDepenseFonctionnementResponse> tiersList = new();
+    private List<GetAllAccountingYearsResponse> accountingYears = new();
+    private int? selectedTiersId;
+    private int? selectedAccountingYearId;
+    private int pageNumber = 1;
+    private const int pageSize = 10;
+    private int totalCount;
+    private int decimalPlaces = 2;
+    private CancellationTokenSource _cts = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        decimalPlaces = await DecimalFormatService.GetDecimalPlacesAsync();
+        await LoadTiers();
+        await LoadAccountingYears();
+        await LoadData();
+    }
+
+    private async Task LoadTiers()
+    {
+        var result = await TiersDepenseService.GetPagedAsync(new QueryStringParameters { PageNumber = 1, PageSize = 500 }, _cts.Token);
+        tiersList = result.Items?.ToList() ?? new();
+    }
+
+    private async Task LoadAccountingYears()
+    {
+        var result = await AccountingYearService.GetAllAccountingYearsAsync(_cts.Token);
+        accountingYears = result ?? new();
+    }
+
+    private async Task OnFilterChange()
+    {
+        pageNumber = 1;
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        var result = await FactureDepenseService.GetWithSummariesAsync(
+            pageNumber, pageSize,
+            selectedTiersId, selectedAccountingYearId, null, _cts.Token);
+        items = result.Items ?? new();
+        totalCount = result.TotalCount;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void EditFacture(int id)
+    {
+        NavigationManager.NavigateTo($"/factures-depenses/edit/{id}");
+    }
+
+    public void Dispose()
+    {
+        _cts.Cancel();
+        _cts.Dispose();
+    }
+}
+
+<style>
+    .factures-container { padding: 1.25rem; max-width: 1200px; margin: 1rem auto; }
+    .factures-card { border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); padding: 1.5rem; }
+    .factures-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    .factures-title { font-weight: 600; margin: 0; font-size: 1.5rem; }
+    .filters { display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
+</style>

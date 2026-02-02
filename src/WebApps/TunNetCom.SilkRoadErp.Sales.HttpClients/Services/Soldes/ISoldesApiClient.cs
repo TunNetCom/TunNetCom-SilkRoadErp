@@ -28,6 +28,11 @@ public interface ISoldesApiClient
     Task<(byte[] Content, string FileName)> ExportClientsAvecProblemesSoldeToExcelAsync(
         int? accountingYearId = null,
         CancellationToken cancellationToken = default);
+
+    Task<Result<SoldeTiersDepenseResponse>> GetSoldeTiersDepenseAsync(
+        int tiersDepenseFonctionnementId,
+        int? accountingYearId,
+        CancellationToken cancellationToken);
 }
 
 

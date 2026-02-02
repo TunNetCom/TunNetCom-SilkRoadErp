@@ -72,3 +72,81 @@ public class PaiementSoldeFournisseur
     public List<FactureRattacheeSolde> Factures { get; set; } = new();
 }
 
+public class SoldeTiersDepenseResponse
+{
+    [JsonPropertyName("tiersDepenseFonctionnementId")]
+    public int TiersDepenseFonctionnementId { get; set; }
+
+    [JsonPropertyName("tiersDepenseFonctionnementNom")]
+    public string TiersDepenseFonctionnementNom { get; set; } = string.Empty;
+
+    [JsonPropertyName("accountingYearId")]
+    public int AccountingYearId { get; set; }
+
+    [JsonPropertyName("totalFacturesDepense")]
+    public decimal TotalFacturesDepense { get; set; }
+
+    [JsonPropertyName("totalPaiements")]
+    public decimal TotalPaiements { get; set; }
+
+    [JsonPropertyName("solde")]
+    public decimal Solde { get; set; }
+
+    [JsonPropertyName("documents")]
+    public List<DocumentSoldeTiersDepense> Documents { get; set; } = new();
+
+    [JsonPropertyName("paiements")]
+    public List<PaiementSoldeTiersDepense> Paiements { get; set; } = new();
+}
+
+public class DocumentSoldeTiersDepense
+{
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = string.Empty;
+
+    [JsonPropertyName("id")]
+    public int Id { get; set; }
+
+    [JsonPropertyName("numero")]
+    public int Numero { get; set; }
+
+    [JsonPropertyName("date")]
+    public DateTime Date { get; set; }
+
+    [JsonPropertyName("montant")]
+    public decimal Montant { get; set; }
+
+    [JsonPropertyName("description")]
+    public string? Description { get; set; }
+}
+
+public class PaiementSoldeTiersDepense
+{
+    [JsonPropertyName("id")]
+    public int Id { get; set; }
+
+    [JsonPropertyName("numeroTransactionBancaire")]
+    public string? NumeroTransactionBancaire { get; set; }
+
+    [JsonPropertyName("datePaiement")]
+    public DateTime DatePaiement { get; set; }
+
+    [JsonPropertyName("montant")]
+    public decimal Montant { get; set; }
+
+    [JsonPropertyName("methodePaiement")]
+    public string MethodePaiement { get; set; } = string.Empty;
+
+    [JsonPropertyName("factures")]
+    public List<FactureDepenseRattacheeSolde> Factures { get; set; } = new();
+}
+
+public class FactureDepenseRattacheeSolde
+{
+    [JsonPropertyName("numero")]
+    public int Numero { get; set; }
+
+    [JsonPropertyName("montantTtc")]
+    public decimal MontantTtc { get; set; }
+}
+

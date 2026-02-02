@@ -16,5 +16,6 @@ public static class DocumentTypes
     public const string Avoirs = "Avoirs";
     public const string AvoirFournisseur = "AvoirFournisseur";
     public const string RetourMarchandiseFournisseur = "RetourMarchandiseFournisseur";
+    public const string FactureDepense = "FactureDepense";
 }
 

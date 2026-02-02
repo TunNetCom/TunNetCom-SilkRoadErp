@@ -26,6 +26,9 @@ public static class EndpointTags
     public const string Auth = "Authentication";
     public const string RetourMarchandiseFournisseur = "RetourMarchandiseFournisseur";
     public const string AccountingYears = "AccountingYears";
+    public const string TiersDepenseFonctionnement = "TiersDepenseFonctionnement";
+    public const string FactureDepense = "FactureDepense";
+    public const string PaiementTiersDepense = "PaiementTiersDepense";
 }
 
 

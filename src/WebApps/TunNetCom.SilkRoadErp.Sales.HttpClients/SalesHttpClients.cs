@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.Extensions.DependencyInjection;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AccountingYear;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters;
@@ -32,6 +32,9 @@ using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.RetenueSourceFournisseur;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Notifications;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryCar;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.RetourMarchandiseFournisseur;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.TiersDepenseFonctionnement;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.FactureDepense;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PaiementTiersDepense;
 
 
 public static class SalesHttpClients
@@ -190,6 +193,18 @@ public static class SalesHttpClients
         _ = AddClient<IRetourMarchandiseFournisseurApiClient, RetourMarchandiseFournisseurApiClient>(retourMarchandiseFournisseur =>
         {
             retourMarchandiseFournisseur.BaseAddress = new Uri(baseUrl);
+        });
+        _ = AddClient<ITiersDepenseFonctionnementApiClient, TiersDepenseFonctionnementApiClient>(tiersDepense =>
+        {
+            tiersDepense.BaseAddress = new Uri(baseUrl);
+        });
+        _ = AddClient<IFactureDepenseApiClient, FactureDepenseApiClient>(factureDepense =>
+        {
+            factureDepense.BaseAddress = new Uri(baseUrl);
+        });
+        _ = AddClient<IPaiementTiersDepenseApiClient, PaiementTiersDepenseApiClient>(paiementTiersDepense =>
+        {
+            paiementTiersDepense.BaseAddress = new Uri(baseUrl);
         });
     }
 }

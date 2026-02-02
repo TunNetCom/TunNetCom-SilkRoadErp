@@ -1,0 +1,146 @@
+@page "/paiements-tiers-depenses"
+@implements IDisposable
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PaiementTiersDepense
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.TiersDepenseFonctionnement
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AccountingYear
+@using TunNetCom.SilkRoadErp.Sales.Contracts.PaiementTiersDepense
+@using TunNetCom.SilkRoadErp.Sales.Contracts.TiersDepenseFonctionnement
+@using TunNetCom.SilkRoadErp.Sales.Contracts
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
+@using Radzen
+@using Radzen.Blazor
+@inject IPaiementTiersDepenseApiClient PaiementTiersDepenseService
+@inject ITiersDepenseFonctionnementApiClient TiersDepenseService
+@inject IAccountingYearApiClient AccountingYearService
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<SharedResource> Localizer
+@inject Radzen.NotificationService NotificationService
+@inject IDecimalFormatService DecimalFormatService
+
+<div class="paiements-container">
+    <div class="paiements-card">
+        <div class="paiements-header">
+            <h3 class="paiements-title">Paiements tiers dépenses</h3>
+            <RadzenButton Icon="add" Text="Nouveau paiement"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Click="@(() => NavigationManager.NavigateTo("/paiements-tiers-depenses/add"))"
+                          Class="btn-primary" />
+        </div>
+
+        <div class="filters">
+            <RadzenDropDown @bind-Value="selectedTiersId"
+                            Data="@tiersList"
+                            TextProperty="Nom"
+                            ValueProperty="Id"
+                            Placeholder="Tous les tiers"
+                            AllowClear="true"
+                            Style="width: 220px;"
+                            Change="@OnFilterChange" />
+            <RadzenDropDown @bind-Value="selectedAccountingYearId"
+                            Data="@accountingYears"
+                            TextProperty="Year"
+                            ValueProperty="Id"
+                            Placeholder="Exercice"
+                            AllowClear="true"
+                            Style="width: 180px;"
+                            Change="@OnFilterChange" />
+            <RadzenButton Text="Rechercher" Icon="search" Click="@LoadData" />
+        </div>
+
+        <RadzenDataGrid TItem="PaiementTiersDepenseResponse"
+                        Data="@items"
+                        AllowPaging="true"
+                        PageSize="10"
+                        Density="Density.Compact"
+                        Class="paiements-grid">
+            <Columns>
+                <RadzenDataGridColumn TItem="PaiementTiersDepenseResponse" Property="TiersDepenseFonctionnementNom" Title="Tiers" Width="180px" />
+                <RadzenDataGridColumn TItem="PaiementTiersDepenseResponse" Property="DatePaiement" Title="Date" Width="110px">
+                    <Template Context="p">@p.DatePaiement.ToString("dd/MM/yyyy")</Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="PaiementTiersDepenseResponse" Property="Montant" Title="Montant" Width="120px">
+                    <Template Context="p">@p.Montant.FormatAmount(decimalPlaces) TND</Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="PaiementTiersDepenseResponse" Property="MethodePaiement" Title="Méthode" Width="120px" />
+                <RadzenDataGridColumn TItem="PaiementTiersDepenseResponse" Property="NumeroTransactionBancaire" Title="N° transaction" Width="140px" />
+                <RadzenDataGridColumn TItem="PaiementTiersDepenseResponse" Filterable="false" Sortable="false" Width="100px" TextAlign="TextAlign.Center">
+                    <Template Context="p">
+                        <RadzenButton Icon="edit" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Success" Variant="Variant.Outlined"
+                                      Click="@(() => EditPaiement(p.Id))" Title="Modifier" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <p style="text-align: center; margin: 2rem;">Aucun paiement.</p>
+            </EmptyTemplate>
+        </RadzenDataGrid>
+    </div>
+</div>
+
+@code {
+    private List<PaiementTiersDepenseResponse> items = new();
+    private List<TiersDepenseFonctionnementResponse> tiersList = new();
+    private List<GetAllAccountingYearsResponse> accountingYears = new();
+    private int? selectedTiersId;
+    private int? selectedAccountingYearId;
+    private int pageNumber = 1;
+    private const int pageSize = 10;
+    private int decimalPlaces = 2;
+    private CancellationTokenSource _cts = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        decimalPlaces = await DecimalFormatService.GetDecimalPlacesAsync();
+        await LoadTiers();
+        await LoadAccountingYears();
+        await LoadData();
+    }
+
+    private async Task LoadTiers()
+    {
+        var result = await TiersDepenseService.GetPagedAsync(new QueryStringParameters { PageNumber = 1, PageSize = 500 }, _cts.Token);
+        tiersList = result.Items?.ToList() ?? new();
+    }
+
+    private async Task LoadAccountingYears()
+    {
+        var result = await AccountingYearService.GetAllAccountingYearsAsync(_cts.Token);
+        accountingYears = result ?? new();
+    }
+
+    private async Task OnFilterChange()
+    {
+        pageNumber = 1;
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        var result = await PaiementTiersDepenseService.GetPagedAsync(
+            selectedTiersId, selectedAccountingYearId, pageNumber, pageSize, _cts.Token);
+        items = result.Items?.ToList() ?? new();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void EditPaiement(int id)
+    {
+        NavigationManager.NavigateTo($"/paiements-tiers-depenses/edit/{id}");
+    }
+
+    public void Dispose()
+    {
+        _cts.Cancel();
+        _cts.Dispose();
+    }
+}
+
+<style>
+    .paiements-container { padding: 1.25rem; max-width: 1200px; margin: 1rem auto; }
+    .paiements-card { border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); padding: 1.5rem; }
+    .paiements-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    .paiements-title { font-weight: 600; margin: 0; font-size: 1.5rem; }
+    .filters { display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
+</style>

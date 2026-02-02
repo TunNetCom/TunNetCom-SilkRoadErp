@@ -1,0 +1,235 @@
+@page "/paiements-tiers-depenses/add"
+@page "/paiements-tiers-depenses/edit/{Id:int}"
+@using TunNetCom.SilkRoadErp.Sales.Contracts.PaiementTiersDepense
+@using TunNetCom.SilkRoadErp.Sales.Contracts.TiersDepenseFonctionnement
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PaiementTiersDepense
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.TiersDepenseFonctionnement
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AccountingYear
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Banque
+@using TunNetCom.SilkRoadErp.Sales.Contracts
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Banque
+@using TunNetCom.SilkRoadErp.Sales.HttpClients
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@inject IPaiementTiersDepenseApiClient PaiementTiersDepenseService
+@inject ITiersDepenseFonctionnementApiClient TiersDepenseService
+@inject IAccountingYearApiClient AccountingYearService
+@inject IBanqueApiClient BanqueService
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<SharedResource> Localizer
+@inject Radzen.NotificationService NotificationService
+
+<RadzenCard Style="padding: 20px; max-width: 800px; margin: auto;">
+    <RadzenTemplateForm Data="@model" Submit="@SubmitCallback">
+        <RadzenStack Gap="1rem" Style="margin-bottom: 1rem;">
+            <h3 style="margin: 0;">@(Id > 0 ? "Modifier le paiement" : "Nouveau paiement tiers dépenses")</h3>
+        </RadzenStack>
+
+        <RadzenFormField Text="Tiers dépenses *" IsRequired="true">
+            <ChildContent>
+                <RadzenDropDown @bind-Value="model.TiersDepenseFonctionnementId"
+                                Data="@tiersList"
+                                TextProperty="Nom"
+                                ValueProperty="Id"
+                                Placeholder="Choisir un tiers"
+                                Style="width: 100%;" />
+            </ChildContent>
+        </RadzenFormField>
+        <RadzenFormField Text="Exercice comptable">
+            <ChildContent>
+                <RadzenDropDown @bind-Value="model.AccountingYearId"
+                                Data="@accountingYears"
+                                TextProperty="Year"
+                                ValueProperty="Id"
+                                Placeholder="Exercice (optionnel)"
+                                AllowClear="true"
+                                Style="width: 100%;" />
+            </ChildContent>
+        </RadzenFormField>
+        <RadzenFormField Text="Montant *" IsRequired="true">
+            <ChildContent>
+                <RadzenNumeric @bind-Value="model.Montant" Min="0" Format="n3" Style="width: 100%;" />
+            </ChildContent>
+        </RadzenFormField>
+        <RadzenFormField Text="Date paiement *" IsRequired="true">
+            <ChildContent>
+                <RadzenDatePicker @bind-Value="model.DatePaiement" DateFormat="dd/MM/yyyy" Style="width: 100%;" />
+            </ChildContent>
+        </RadzenFormField>
+        <RadzenFormField Text="Méthode de paiement *" IsRequired="true">
+            <ChildContent>
+                <RadzenDropDown @bind-Value="model.MethodePaiement"
+                                Data="@methodeOptions"
+                                TextProperty="Text"
+                                ValueProperty="Value"
+                                Placeholder="Choisir"
+                                Style="width: 100%;" />
+            </ChildContent>
+        </RadzenFormField>
+        <RadzenFormField Text="N° transaction bancaire">
+            <ChildContent>
+                <RadzenTextBox @bind-Value="model.NumeroTransactionBancaire" Style="width: 100%;" />
+            </ChildContent>
+        </RadzenFormField>
+        <RadzenFormField Text="N° chèque / traite">
+            <ChildContent>
+                <RadzenTextBox @bind-Value="model.NumeroChequeTraite" Style="width: 100%;" />
+            </ChildContent>
+        </RadzenFormField>
+        <RadzenFormField Text="Banque">
+            <ChildContent>
+                <RadzenDropDown @bind-Value="model.BanqueId"
+                                Data="@banques"
+                                TextProperty="Nom"
+                                ValueProperty="Id"
+                                Placeholder="Choisir une banque"
+                                AllowClear="true"
+                                Style="width: 100%;" />
+            </ChildContent>
+        </RadzenFormField>
+        <RadzenFormField Text="Date échéance">
+            <ChildContent>
+                <RadzenDatePicker @bind-Value="model.DateEcheance" DateFormat="dd/MM/yyyy" Style="width: 100%;" />
+            </ChildContent>
+        </RadzenFormField>
+        <RadzenFormField Text="Commentaire">
+            <ChildContent>
+                <RadzenTextBox @bind-Value="model.Commentaire" Style="width: 100%;" MaxLength="500" />
+            </ChildContent>
+        </RadzenFormField>
+
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" Style="margin-top: 1.5rem;">
+            <RadzenButton ButtonType="Radzen.ButtonType.Submit" Text="@Localizer["save_label"]" Icon="save" />
+            <RadzenButton Text="@Localizer["cancel_label"]" ButtonStyle="ButtonStyle.Light" Icon="close" Click="@(async () => Cancel())" />
+        </RadzenStack>
+    </RadzenTemplateForm>
+</RadzenCard>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private PaiementTiersDepenseFormModel model = new();
+    private List<TiersDepenseFonctionnementResponse> tiersList = new();
+    private List<GetAllAccountingYearsResponse> accountingYears = new();
+    private List<BanqueResponse> banques = new();
+    private static readonly List<MethodeOption> methodeOptions = new()
+    {
+        new MethodeOption("Espèces", "Especes"),
+        new MethodeOption("Chèque", "Cheque"),
+        new MethodeOption("Virement", "Virement"),
+        new MethodeOption("Traite", "Traite"),
+        new MethodeOption("Autre", "Autre")
+    };
+    private CancellationTokenSource _cts = new();
+    private EventCallback<PaiementTiersDepenseFormModel> SubmitCallback => EventCallback.Factory.Create<PaiementTiersDepenseFormModel>(this, HandleValidSubmit);
+
+    protected override async Task OnInitializedAsync()
+    {
+        var tiersResult = await TiersDepenseService.GetPagedAsync(new QueryStringParameters { PageNumber = 1, PageSize = 500 }, _cts.Token);
+        tiersList = tiersResult.Items?.ToList() ?? new();
+        accountingYears = await AccountingYearService.GetAllAccountingYearsAsync(_cts.Token) ?? new();
+        var banquesResult = await BanqueService.GetBanquesAsync(_cts.Token);
+        banques = banquesResult ?? new();
+
+        if (Id > 0)
+        {
+            var result = await PaiementTiersDepenseService.GetByIdAsync(Id, _cts.Token);
+            if (result.IsT0)
+            {
+                var r = result.AsT0;
+                model = new PaiementTiersDepenseFormModel
+                {
+                    TiersDepenseFonctionnementId = r.TiersDepenseFonctionnementId,
+                    AccountingYearId = r.AccountingYearId,
+                    Montant = r.Montant,
+                    DatePaiement = r.DatePaiement,
+                    MethodePaiement = r.MethodePaiement ?? "Especes",
+                    NumeroTransactionBancaire = r.NumeroTransactionBancaire,
+                    NumeroChequeTraite = r.NumeroChequeTraite,
+                    BanqueId = r.BanqueId,
+                    DateEcheance = r.DateEcheance,
+                    Commentaire = r.Commentaire
+                };
+            }
+            else
+            {
+                NavigationManager.NavigateTo("/paiements-tiers-depenses");
+            }
+        }
+        else
+        {
+            model.DatePaiement = DateTime.Today;
+            model.MethodePaiement = "Especes";
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (Id == 0)
+        {
+            var createResult = await PaiementTiersDepenseService.CreateAsync(new CreatePaiementTiersDepenseRequest
+            {
+                TiersDepenseFonctionnementId = model.TiersDepenseFonctionnementId,
+                AccountingYearId = model.AccountingYearId,
+                Montant = model.Montant,
+                DatePaiement = model.DatePaiement,
+                MethodePaiement = model.MethodePaiement,
+                NumeroTransactionBancaire = model.NumeroTransactionBancaire,
+                NumeroChequeTraite = model.NumeroChequeTraite,
+                BanqueId = model.BanqueId,
+                DateEcheance = model.DateEcheance,
+                Commentaire = model.Commentaire,
+                FactureDepenseIds = null
+            }, _cts.Token);
+            if (createResult.IsT0)
+            {
+                NotificationService.Notify(NotificationSeverity.Success, "Paiement créé.");
+                NavigationManager.NavigateTo("/paiements-tiers-depenses");
+                return;
+            }
+            NotificationService.Notify(NotificationSeverity.Error, "Erreur lors de la création.");
+            return;
+        }
+        var updateResult = await PaiementTiersDepenseService.UpdateAsync(Id, new UpdatePaiementTiersDepenseRequest
+        {
+            TiersDepenseFonctionnementId = model.TiersDepenseFonctionnementId,
+            AccountingYearId = model.AccountingYearId,
+            Montant = model.Montant,
+            DatePaiement = model.DatePaiement,
+            MethodePaiement = model.MethodePaiement,
+            NumeroTransactionBancaire = model.NumeroTransactionBancaire,
+            NumeroChequeTraite = model.NumeroChequeTraite,
+            BanqueId = model.BanqueId,
+            DateEcheance = model.DateEcheance,
+            Commentaire = model.Commentaire,
+            FactureDepenseIds = null
+        }, _cts.Token);
+        if (updateResult.IsT0 && updateResult.AsT0 == ResponseTypes.Success)
+        {
+            NotificationService.Notify(NotificationSeverity.Success, "Paiement mis à jour.");
+            NavigationManager.NavigateTo("/paiements-tiers-depenses");
+            return;
+        }
+        NotificationService.Notify(NotificationSeverity.Error, "Erreur lors de la mise à jour.");
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/paiements-tiers-depenses");
+    }
+
+    private class PaiementTiersDepenseFormModel
+    {
+        public int TiersDepenseFonctionnementId { get; set; }
+        public int? AccountingYearId { get; set; }
+        public decimal Montant { get; set; }
+        public DateTime DatePaiement { get; set; }
+        public string MethodePaiement { get; set; } = "Especes";
+        public string? NumeroTransactionBancaire { get; set; }
+        public string? NumeroChequeTraite { get; set; }
+        public int? BanqueId { get; set; }
+        public DateTime? DateEcheance { get; set; }
+        public string? Commentaire { get; set; }
+    }
+
+    private record MethodeOption(string Text, string Value);
+}

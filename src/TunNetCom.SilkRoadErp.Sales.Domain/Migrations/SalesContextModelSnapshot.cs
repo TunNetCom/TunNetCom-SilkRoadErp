@@ -801,6 +801,52 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.ToTable("FactureAvoirFournisseur");
                 });
 
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.FactureDepense", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AccountingYearId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("IdTiersDepenseFonctionnement")
+                        .HasColumnType("int")
+                        .HasColumnName("IdTiersDepenseFonctionnement");
+
+                    b.Property<decimal>("MontantTotal")
+                        .HasColumnType("decimal(18, 3)");
+
+                    b.Property<int>("Num")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Statut")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountingYearId");
+
+                    b.HasIndex("IdTiersDepenseFonctionnement");
+
+                    b.HasIndex("Num", "AccountingYearId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_FactureDepense_Num_AccountingYearId");
+
+                    b.ToTable("FactureDepense", (string)null);
+                });
+
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.FactureFournisseur", b =>
                 {
                     b.Property<int>("Id")
@@ -1872,6 +1918,107 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.ToTable("PaiementFournisseurFactureFournisseur", (string)null);
                 });
 
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.PaiementTiersDepense", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AccountingYearId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("BanqueId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Commentaire")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("DateEcheance")
+                        .HasColumnType("datetime");
+
+                    b.Property<DateTime?>("DateModification")
+                        .HasColumnType("datetime");
+
+                    b.Property<DateTime>("DatePaiement")
+                        .HasColumnType("datetime");
+
+                    b.Property<string>("MethodePaiement")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int?>("Mois")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Montant")
+                        .HasColumnType("decimal(18, 3)");
+
+                    b.Property<string>("NumeroChequeTraite")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("NumeroTransactionBancaire")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("RibCle")
+                        .HasMaxLength(5)
+                        .HasColumnType("nvarchar(5)");
+
+                    b.Property<string>("RibCodeAgence")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("RibCodeEtab")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("RibNumeroCompte")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("TiersDepenseFonctionnementId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountingYearId")
+                        .HasDatabaseName("IX_PaiementTiersDepense_AccountingYearId");
+
+                    b.HasIndex("BanqueId");
+
+                    b.HasIndex("DatePaiement")
+                        .HasDatabaseName("IX_PaiementTiersDepense_DatePaiement");
+
+                    b.HasIndex("TiersDepenseFonctionnementId")
+                        .HasDatabaseName("IX_PaiementTiersDepense_TiersDepenseFonctionnementId");
+
+                    b.ToTable("PaiementTiersDepense", null, t =>
+                        {
+                            t.HasCheckConstraint("CHK_PaiementTiersDepense_Mois", "Mois IS NULL OR (Mois >= 1 AND Mois <= 12)");
+
+                            t.HasCheckConstraint("CHK_PaiementTiersDepense_Montant", "Montant > 0");
+                        });
+                });
+
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.PaiementTiersDepenseFactureDepense", b =>
+                {
+                    b.Property<int>("PaiementTiersDepenseId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("FactureDepenseId")
+                        .HasColumnType("int");
+
+                    b.HasKey("PaiementTiersDepenseId", "FactureDepenseId");
+
+                    b.HasIndex("FactureDepenseId");
+
+                    b.ToTable("PaiementTiersDepenseFactureDepense", (string)null);
+                });
+
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Permission", b =>
                 {
                     b.Property<int>("Id")
@@ -2526,6 +2673,52 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.ToTable("Tag", (string)null);
                 });
 
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.TiersDepenseFonctionnement", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Adresse")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("CodeCat")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("EtbSec")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Mail")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Matricule")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Nom")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Tel")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TiersDepenseFonctionnement", (string)null);
+                });
+
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Transaction", b =>
                 {
                     b.Property<int>("BonDeLivraisonId")
@@ -2898,6 +3091,27 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Navigation("IdFournisseurNavigation");
                 });
 
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.FactureDepense", b =>
+                {
+                    b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.AccountingYear", "AccountingYear")
+                        .WithMany("FactureDepense")
+                        .HasForeignKey("AccountingYearId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_FactureDepense_AccountingYear");
+
+                    b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.TiersDepenseFonctionnement", "IdTiersDepenseFonctionnementNavigation")
+                        .WithMany("FactureDepense")
+                        .HasForeignKey("IdTiersDepenseFonctionnement")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_FactureDepense_TiersDepenseFonctionnement");
+
+                    b.Navigation("AccountingYear");
+
+                    b.Navigation("IdTiersDepenseFonctionnementNavigation");
+                });
+
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.FactureFournisseur", b =>
                 {
                     b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.AccountingYear", "AccountingYear")
@@ -3246,6 +3460,56 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Navigation("PaiementFournisseur");
                 });
 
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.PaiementTiersDepense", b =>
+                {
+                    b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.AccountingYear", "AccountingYear")
+                        .WithMany("PaiementTiersDepense")
+                        .HasForeignKey("AccountingYearId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_PaiementTiersDepense_AccountingYear");
+
+                    b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Banque", "Banque")
+                        .WithMany("PaiementTiersDepense")
+                        .HasForeignKey("BanqueId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("FK_PaiementTiersDepense_Banque");
+
+                    b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.TiersDepenseFonctionnement", "TiersDepenseFonctionnement")
+                        .WithMany("PaiementTiersDepense")
+                        .HasForeignKey("TiersDepenseFonctionnementId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_PaiementTiersDepense_TiersDepenseFonctionnement");
+
+                    b.Navigation("AccountingYear");
+
+                    b.Navigation("Banque");
+
+                    b.Navigation("TiersDepenseFonctionnement");
+                });
+
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.PaiementTiersDepenseFactureDepense", b =>
+                {
+                    b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.FactureDepense", "FactureDepense")
+                        .WithMany("PaiementTiersDepenseFactureDepense")
+                        .HasForeignKey("FactureDepenseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_PaiementTiersDepenseFactureDepense_FactureDepense");
+
+                    b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.PaiementTiersDepense", "PaiementTiersDepense")
+                        .WithMany("FactureDepenses")
+                        .HasForeignKey("PaiementTiersDepenseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_PaiementTiersDepenseFactureDepense_PaiementTiersDepense");
+
+                    b.Navigation("FactureDepense");
+
+                    b.Navigation("PaiementTiersDepense");
+                });
+
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Produit", b =>
                 {
                     b.HasOne("TunNetCom.SilkRoadErp.Sales.Domain.Entites.SousFamilleProduit", "SousFamilleProduit")
@@ -3421,9 +3685,13 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 
                     b.Navigation("FactureAvoirFournisseur");
 
+                    b.Navigation("FactureDepense");
+
                     b.Navigation("FactureFournisseur");
 
                     b.Navigation("Inventaires");
+
+                    b.Navigation("PaiementTiersDepense");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.AvoirFournisseur", b =>
@@ -3441,6 +3709,8 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Navigation("PaiementClient");
 
                     b.Navigation("PaiementFournisseur");
+
+                    b.Navigation("PaiementTiersDepense");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.BonDeLivraison", b =>
@@ -3502,6 +3772,11 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Navigation("AvoirFournisseur");
                 });
 
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.FactureDepense", b =>
+                {
+                    b.Navigation("PaiementTiersDepenseFactureDepense");
+                });
+
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.FactureFournisseur", b =>
                 {
                     b.Navigation("AvoirFinancierFournisseurs");
@@ -3557,6 +3832,11 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Navigation("FactureFournisseurs");
                 });
 
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.PaiementTiersDepense", b =>
+                {
+                    b.Navigation("FactureDepenses");
+                });
+
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Permission", b =>
                 {
                     b.Navigation("RolePermissions");
@@ -3601,6 +3881,13 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.Tag", b =>
                 {
                     b.Navigation("DocumentTags");
+                });
+
+            modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.TiersDepenseFonctionnement", b =>
+                {
+                    b.Navigation("FactureDepense");
+
+                    b.Navigation("PaiementTiersDepense");
                 });
 
             modelBuilder.Entity("TunNetCom.SilkRoadErp.Sales.Domain.Entites.User", b =>

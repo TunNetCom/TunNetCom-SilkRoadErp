@@ -1,0 +1,166 @@
+@page "/factures-depenses/add"
+@page "/factures-depenses/edit/{Id:int}"
+@using TunNetCom.SilkRoadErp.Sales.Contracts.FactureDepense
+@using TunNetCom.SilkRoadErp.Sales.Contracts.TiersDepenseFonctionnement
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.FactureDepense
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.TiersDepenseFonctionnement
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AccountingYear
+@using TunNetCom.SilkRoadErp.Sales.Contracts
+@using TunNetCom.SilkRoadErp.Sales.HttpClients
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@inject IFactureDepenseApiClient FactureDepenseService
+@inject ITiersDepenseFonctionnementApiClient TiersDepenseService
+@inject IAccountingYearApiClient AccountingYearService
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<SharedResource> Localizer
+@inject Radzen.NotificationService NotificationService
+
+<RadzenCard Style="padding: 20px; max-width: 700px; margin: auto;">
+    <RadzenTemplateForm Data="@model" Submit="@SubmitCallback">
+        <RadzenStack Gap="1rem" Style="margin-bottom: 1rem;">
+            <h3 style="margin: 0;">@(Id > 0 ? "Modifier la facture dépense" : "Nouvelle facture dépense")</h3>
+        </RadzenStack>
+
+        <RadzenFormField Text="Tiers dépenses" IsRequired="true">
+            <ChildContent>
+                <RadzenDropDown @bind-Value="model.IdTiersDepenseFonctionnement"
+                                Data="@tiersList"
+                                TextProperty="Nom"
+                                ValueProperty="Id"
+                                Placeholder="Choisir un tiers"
+                                Style="width: 100%;"
+                                Disabled="@(Id > 0)" />
+            </ChildContent>
+        </RadzenFormField>
+        <RadzenFormField Text="Date" IsRequired="true">
+            <ChildContent>
+                <RadzenDatePicker @bind-Value="model.Date" DateFormat="dd/MM/yyyy" Style="width: 100%;" />
+            </ChildContent>
+        </RadzenFormField>
+        <RadzenFormField Text="Description">
+            <ChildContent>
+                <RadzenTextBox @bind-Value="model.Description" Style="width: 100%;" MaxLength="500" />
+            </ChildContent>
+        </RadzenFormField>
+        <RadzenFormField Text="Montant total (TND)" IsRequired="true">
+            <ChildContent>
+                <RadzenNumeric @bind-Value="model.MontantTotal" Min="0" Format="n3" Style="width: 100%;" />
+            </ChildContent>
+        </RadzenFormField>
+
+        @if (Id > 0 && model.Statut == "Draft")
+        {
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" Style="margin-top: 1rem;">
+                <RadzenButton ButtonType="Radzen.ButtonType.Button" Text="Valider la facture" Icon="check_circle"
+                              ButtonStyle="ButtonStyle.Success" Click="@ValidateFacture" />
+            </RadzenStack>
+        }
+
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" Style="margin-top: 1.5rem;">
+            <RadzenButton ButtonType="Radzen.ButtonType.Submit" Text="@Localizer["save_label"]" Icon="save" Disabled="@(Id > 0 && model.Statut != "Draft")" />
+            <RadzenButton Text="@Localizer["cancel_label"]" ButtonStyle="ButtonStyle.Light" Icon="close" Click="@(async () => Cancel())" />
+        </RadzenStack>
+    </RadzenTemplateForm>
+</RadzenCard>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private FactureDepenseFormModel model = new();
+    private List<TiersDepenseFonctionnementResponse> tiersList = new();
+    private CancellationTokenSource _cts = new();
+    private EventCallback<FactureDepenseFormModel> SubmitCallback => EventCallback.Factory.Create<FactureDepenseFormModel>(this, HandleValidSubmit);
+
+    protected override async Task OnInitializedAsync()
+    {
+        var tiersResult = await TiersDepenseService.GetPagedAsync(new QueryStringParameters { PageNumber = 1, PageSize = 500 }, _cts.Token);
+        tiersList = tiersResult.Items?.ToList() ?? new();
+
+        if (Id > 0)
+        {
+            var result = await FactureDepenseService.GetByIdAsync(Id, _cts.Token);
+            if (result.IsT0)
+            {
+                var r = result.AsT0;
+                model = new FactureDepenseFormModel
+                {
+                    Id = r.Id,
+                    IdTiersDepenseFonctionnement = r.IdTiersDepenseFonctionnement,
+                    Date = r.Date,
+                    Description = r.Description ?? "",
+                    MontantTotal = r.MontantTotal,
+                    Statut = r.Statut ?? ""
+                };
+            }
+            else
+            {
+                NavigationManager.NavigateTo("/factures-depenses");
+            }
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (Id == 0)
+        {
+            var createResult = await FactureDepenseService.CreateAsync(new CreateFactureDepenseRequest
+            {
+                IdTiersDepenseFonctionnement = model.IdTiersDepenseFonctionnement,
+                Date = model.Date,
+                Description = model.Description,
+                MontantTotal = model.MontantTotal,
+                AccountingYearId = null
+            }, _cts.Token);
+            if (createResult.IsT0)
+            {
+                NotificationService.Notify(NotificationSeverity.Success, "Facture dépense créée.");
+                NavigationManager.NavigateTo("/factures-depenses");
+                return;
+            }
+            NotificationService.Notify(NotificationSeverity.Error, "Erreur lors de la création.");
+            return;
+        }
+        if (model.Statut != "Draft") return;
+        var updateResult = await FactureDepenseService.UpdateAsync(Id, new UpdateFactureDepenseRequest
+        {
+            Date = model.Date,
+            Description = model.Description,
+            MontantTotal = model.MontantTotal
+        }, _cts.Token);
+        if (updateResult.IsT0 && updateResult.AsT0 == ResponseTypes.Success)
+        {
+            NotificationService.Notify(NotificationSeverity.Success, "Facture mise à jour.");
+            NavigationManager.NavigateTo("/factures-depenses");
+            return;
+        }
+        NotificationService.Notify(NotificationSeverity.Error, "Erreur lors de la mise à jour.");
+    }
+
+    private async Task ValidateFacture()
+    {
+        var result = await FactureDepenseService.ValidateAsync(Id, _cts.Token);
+        if (result.IsT0 && result.AsT0 == ResponseTypes.Success)
+        {
+            NotificationService.Notify(NotificationSeverity.Success, "Facture validée.");
+            model.Statut = "Valid";
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+        NotificationService.Notify(NotificationSeverity.Error, "Erreur lors de la validation.");
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/factures-depenses");
+    }
+
+    private class FactureDepenseFormModel
+    {
+        public int Id { get; set; }
+        public int IdTiersDepenseFonctionnement { get; set; }
+        public DateTime Date { get; set; } = DateTime.Today;
+        public string Description { get; set; } = "";
+        public decimal MontantTotal { get; set; }
+        public string Statut { get; set; } = "";
+    }
+}
