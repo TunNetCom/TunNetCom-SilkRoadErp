@@ -1198,15 +1198,15 @@ else
         }
         else
         {
-            // Default: sort by document number ascending
-            sortProperty = nameof(InvoiceResponse.Number);
-            sortOrder = SortConstants.Ascending;
+            // Default: sort by date descending (most recent first)
+            sortProperty = nameof(InvoiceResponse.Date);
+            sortOrder = SortConstants.Descending;
         }
 
         var parameters = new QueryStringParameters
         {
             PageNumber = 1,
-            PageSize = 5, // Get only the last 5 invoices
+            PageSize = 8, // Get only the last 8 invoices
             SearchKeyword = args?.Filter,
             SortProprety = sortProperty,
             SortOrder = sortOrder
