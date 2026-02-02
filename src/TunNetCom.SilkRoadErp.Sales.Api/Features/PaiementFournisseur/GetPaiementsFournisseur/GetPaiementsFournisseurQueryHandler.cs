@@ -27,14 +27,17 @@ public class GetPaiementsFournisseurQueryHandler(
             paiementsQuery = paiementsQuery.Where(p => accountingYearIdsList.Contains(p.AccountingYearId));
         }
 
-        if (query.DateEcheanceFrom.HasValue)
+        if (query.DateEcheanceFrom.HasValue || query.DateEcheanceTo.HasValue)
         {
-            paiementsQuery = paiementsQuery.Where(p => p.DateEcheance.HasValue && p.DateEcheance >= query.DateEcheanceFrom.Value);
-        }
-
-        if (query.DateEcheanceTo.HasValue)
-        {
-            paiementsQuery = paiementsQuery.Where(p => p.DateEcheance.HasValue && p.DateEcheance <= query.DateEcheanceTo.Value);
+            var fromDate = query.DateEcheanceFrom?.Date;
+            var toDate = query.DateEcheanceTo?.Date;
+            paiementsQuery = paiementsQuery.Where(p =>
+                (p.DateEcheance.HasValue &&
+                 (!fromDate.HasValue || p.DateEcheance.Value.Date >= fromDate.Value) &&
+                 (!toDate.HasValue || p.DateEcheance.Value.Date <= toDate.Value)) ||
+                (!p.DateEcheance.HasValue &&
+                 (!fromDate.HasValue || p.DatePaiement.Date >= fromDate.Value) &&
+                 (!toDate.HasValue || p.DatePaiement.Date <= toDate.Value)));
         }
 
         if (query.MontantMin.HasValue)

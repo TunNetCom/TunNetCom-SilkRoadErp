@@ -184,9 +184,9 @@
                         @paiement.Montant.FormatAmount(decimalPlaces) TND
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Property="DatePaiement" Title="@Localizer["Date_Paiement_Col"]" Width="150px">
+                <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Property="DateEcheance" Title="@Localizer["Date_Echeance"]" Width="150px">
                     <Template Context="paiement">
-                        @paiement.DatePaiement.ToString("dd/MM/yyyy")
+                        @(paiement.DateEcheance?.ToString("dd/MM/yyyy") ?? "-")
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Property="MethodePaiement" Title="@Localizer["Methode_Col"]" Width="120px" />
@@ -234,25 +234,20 @@
             </RadzenTabsItem>
             <RadzenTabsItem Text="@Localizer["Calendrier_Echeances"]" Value="1" Icon="calendar_month">
                 <div class="calendar-tab-content">
-                    @if (isLoadingCalendar)
-                    {
-                        <RadzenProgressBarCircular Mode="ProgressBarMode.Indeterminate" Style="margin: 2rem auto; display: block;" />
-                    }
-                    else
-                    {
-                        <RadzenScheduler @ref="schedulerRef"
-                                         TItem="PaiementEcheanceAppointment"
-                                         Data="@calendarAppointments"
-                                         StartProperty="Start"
-                                         EndProperty="End"
-                                         TextProperty="Text"
-                                         @bind-CurrentDate="schedulerCurrentDate"
-                                         AppointmentSelect="@OnCalendarAppointmentSelect"
-                                         Style="min-height: 500px;">
-                            <RadzenMonthView />
-                            <RadzenWeekView />
-                        </RadzenScheduler>
-                    }
+                    <RadzenScheduler @ref="schedulerRef"
+                                     TItem="PaiementEcheanceAppointment"
+                                     Data="@calendarAppointments"
+                                     StartProperty="Start"
+                                     EndProperty="End"
+                                     TextProperty="Text"
+                                     @bind-CurrentDate="schedulerCurrentDate"
+                                     LoadData="@OnSchedulerLoadData"
+                                     AppointmentSelect="@OnCalendarAppointmentSelect"
+                                     SelectedIndex="1"
+                                     Style="min-height: 500px;">
+                        <RadzenMonthView />
+                        <RadzenWeekView />
+                    </RadzenScheduler>
                 </div>
             </RadzenTabsItem>
             </Tabs>
@@ -339,7 +334,6 @@
     private int totalPaiements;
     private int selectedTabIndex = 0;
     private List<PaiementEcheanceAppointment> calendarAppointments = new();
-    private bool isLoadingCalendar = false;
     private DateTime schedulerCurrentDate = DateTime.Today;
     private RadzenScheduler<PaiementEcheanceAppointment>? schedulerRef;
     private int decimalPlaces = AmountHelper.DEFAULT_DECIMAL_PLACES;
@@ -494,27 +488,22 @@
     async Task OnTabChange(int index)
     {
         selectedTabIndex = index;
-        if (index == 1)
+        if (index == 1 && schedulerRef != null)
         {
-            await LoadCalendarDataAsync();
+            await schedulerRef.Reload();
         }
     }
 
-    private async Task LoadCalendarDataAsync()
+    private async Task OnSchedulerLoadData(SchedulerLoadDataEventArgs args)
     {
-        isLoadingCalendar = true;
-        await InvokeAsync(StateHasChanged);
         try
         {
-            var start = new DateTime(schedulerCurrentDate.Year, schedulerCurrentDate.Month, 1).AddMonths(-1);
-            var end = start.AddMonths(3).AddDays(-1);
             bool? hasNumeroTransactionBancaire = selectedReglementStatus.HasValue ? (selectedReglementStatus.Value == 1) : null;
-            var accountingYearIdsParam = (selectedAccountingYearIds != null && selectedAccountingYearIds.Count > 0) ? selectedAccountingYearIds : null;
             var result = await PaiementFournisseurService.GetPaiementsFournisseurAsync(
                 selectedFournisseurId,
-                accountingYearIdsParam,
-                start,
-                end,
+                null,
+                null,
+                null,
                 selectedMontantMin,
                 selectedMontantMax,
                 hasNumeroTransactionBancaire,
@@ -523,15 +512,20 @@
                 500,
                 cancellationTokenSource.Token);
             calendarAppointments = result.Items
-                .Where(p => p.DateEcheance.HasValue)
-                .Select(p => new PaiementEcheanceAppointment
+                .Select(p =>
                 {
-                    Start = p.DateEcheance!.Value.Date,
-                    End = p.DateEcheance.Value.Date.AddDays(1),
-                    Text = $"{p.FournisseurNom} - {p.Montant:N2} TND",
-                    PaiementId = p.Id
+                    var start = (p.DateEcheance ?? p.DatePaiement).Date;
+                    return new PaiementEcheanceAppointment
+                    {
+                        Start = start,
+                        End = start.AddDays(1),
+                        Text = $"{p.FournisseurNom} - {p.Montant:N2} TND",
+                        PaiementId = p.Id
+                    };
                 })
                 .ToList();
+            if (schedulerRef != null)
+                await schedulerRef.Reload();
         }
         catch (Exception ex)
         {
@@ -543,7 +537,6 @@
             });
             calendarAppointments = new List<PaiementEcheanceAppointment>();
         }
-        isLoadingCalendar = false;
         await InvokeAsync(StateHasChanged);
     }
 
@@ -561,9 +554,9 @@
             Localizer["Modifier_Paiement"],
             new Dictionary<string, object> { { "PaiementId", paiementId } },
             new DialogOptions { Width = "90vw", Height = "85vh", Resizable = true, Draggable = true });
-        if (result == true && selectedTabIndex == 1)
+        if (result == true && selectedTabIndex == 1 && schedulerRef != null)
         {
-            await LoadCalendarDataAsync();
+            await schedulerRef.Reload();
         }
     }
 
@@ -593,8 +586,8 @@
         {
             if (paiementGrid != null)
                 await paiementGrid.Reload();
-            if (selectedTabIndex == 1)
-                await LoadCalendarDataAsync();
+            if (selectedTabIndex == 1 && schedulerRef != null)
+                await schedulerRef.Reload();
         }
     }
 
