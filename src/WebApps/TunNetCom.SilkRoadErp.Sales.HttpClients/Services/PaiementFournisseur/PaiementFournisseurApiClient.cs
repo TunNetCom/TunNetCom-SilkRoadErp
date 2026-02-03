@@ -79,6 +79,19 @@ public class PaiementFournisseurApiClient : IPaiementFournisseurApiClient
         CancellationToken cancellationToken)
     {
         _logger.LogInformation("Fetching paiements fournisseur from API /paiement-fournisseur");
+        const int maxPageSize = 50;
+        if (pageNumber < 1)
+        {
+            pageNumber = 1;
+        }
+        if (pageSize < 1)
+        {
+            pageSize = 1;
+        }
+        if (pageSize > maxPageSize)
+        {
+            pageSize = maxPageSize;
+        }
         var queryString = $"/paiement-fournisseur?pageNumber={pageNumber}&pageSize={pageSize}";
 
         if (fournisseurId.HasValue)
