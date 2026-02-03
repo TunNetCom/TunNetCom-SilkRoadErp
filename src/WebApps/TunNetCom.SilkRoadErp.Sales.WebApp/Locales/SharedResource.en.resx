@@ -384,6 +384,12 @@
   <data name="Erreur_Impression_Solde" xml:space="preserve">
     <value>Unable to generate balance report.</value>
   </data>
+  <data name="Print_Restes_ALivrer" xml:space="preserve">
+    <value>Print remaining to deliver</value>
+  </data>
+  <data name="Erreur_Impression_Restes_ALivrer" xml:space="preserve">
+    <value>Unable to generate the remaining to deliver report.</value>
+  </data>
   <data name="Show_Only_Missing_Products" xml:space="preserve">
     <value>Show only missing products</value>
   </data>

@@ -29,6 +29,10 @@ public interface ISoldesApiClient
         int? accountingYearId = null,
         CancellationToken cancellationToken = default);
 
+    Task<Result<RestesALivrerParClientResponse>> GetRestesALivrerParClientAsync(
+        int? accountingYearId,
+        CancellationToken cancellationToken);
+
     Task<Result<SoldeTiersDepenseResponse>> GetSoldeTiersDepenseAsync(
         int tiersDepenseFonctionnementId,
         int? accountingYearId,

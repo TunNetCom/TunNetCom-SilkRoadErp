@@ -132,6 +132,34 @@ public class SoldesApiClient : ISoldesApiClient
         return (content, fileName);
     }
 
+    public async Task<Result<RestesALivrerParClientResponse>> GetRestesALivrerParClientAsync(
+        int? accountingYearId,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Fetching restes à livrer par client from API /soldes/clients-avec-problemes/restes-a-livrer");
+        var queryString = "/soldes/clients-avec-problemes/restes-a-livrer";
+        if (accountingYearId.HasValue)
+        {
+            queryString += $"?accountingYearId={accountingYearId.Value}";
+        }
+
+        var response = await _httpClient.GetAsync(queryString, cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.OK)
+        {
+            var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+            var result = JsonConvert.DeserializeObject<RestesALivrerParClientResponse>(responseContent);
+            return Result.Ok(result!);
+        }
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return Result.Fail("restes_a_livrer_not_found");
+        }
+
+        throw new Exception($"Restes à livrer: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync(cancellationToken)}");
+    }
+
     public async Task<Result<SoldeTiersDepenseResponse>> GetSoldeTiersDepenseAsync(
         int tiersDepenseFonctionnementId,
         int? accountingYearId,
