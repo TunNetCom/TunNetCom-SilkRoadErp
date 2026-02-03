@@ -365,6 +365,7 @@
         }
         catch (Exception ex)
         {
+            if (IsCancellationRelated(ex)) return;
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Error,
@@ -458,7 +459,8 @@
             isLoadingPaiements = false;
         }
 
-        await InvokeAsync(StateHasChanged);
+        try { await InvokeAsync(StateHasChanged); }
+        catch (Exception ex) when (IsCancellationRelated(ex)) { /* navigation/dispose */ }
     }
 
     async Task SearchPaiements()
@@ -482,14 +484,27 @@
     }
 
     /// <summary>
-    /// Indique si l'exception est liée à une annulation (OperationCanceledException, SocketException/IOException "abandonnée"/"aborted").
+    /// Indique si l'exception est liée à une annulation (navigation, circuit fermé, requête annulée, transport fermé).
     /// </summary>
     private static bool IsCancellationRelated(Exception? ex)
     {
         if (ex == null) return false;
-        if (ex is OperationCanceledException) return true;
+        if (ex is OperationCanceledException or TaskCanceledException) return true;
         var msg = ex.Message ?? "";
-        if (msg.Contains("abandonnée", StringComparison.OrdinalIgnoreCase) || msg.Contains("aborted", StringComparison.OrdinalIgnoreCase))
+        if (ex is System.Net.Sockets.SocketException or System.IO.IOException)
+        {
+            if (msg.Contains("abandonnée", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("aborted", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("cancel", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("reset", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("Unable to read data", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("transport connection", StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        if (msg.Contains("abandonnée", StringComparison.OrdinalIgnoreCase) ||
+            msg.Contains("aborted", StringComparison.OrdinalIgnoreCase) ||
+            msg.Contains("Unable to read data", StringComparison.OrdinalIgnoreCase) ||
+            msg.Contains("transport connection", StringComparison.OrdinalIgnoreCase))
             return true;
         return IsCancellationRelated(ex.InnerException);
     }

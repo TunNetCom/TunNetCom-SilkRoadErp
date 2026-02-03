@@ -99,6 +99,11 @@
             </div>
         </div>
 
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="0.5rem" class="rz-p-4 rz-mb-6 rz-border-radius-1" Style="border: var(--rz-grid-cell-border);height:4rem;">
+            <RadzenLabel Text="@(Localizer["Afficher_En_tete"] ?? "Afficher l'en-tête")" />
+            <RadzenSwitch @bind-Value="showHeader" />
+        </RadzenStack>
+
         <div class="calendar-content">
             <RadzenScheduler @ref="schedulerRef"
                              TItem="PaiementEcheanceAppointment"
@@ -107,12 +112,13 @@
                              EndProperty="End"
                              TextProperty="Text"
                              @bind-CurrentDate="schedulerCurrentDate"
-                             LoadData="@OnSchedulerLoadData"
+                             ShowHeader="@showHeader"
                              AppointmentSelect="@OnCalendarAppointmentSelect"
                              SelectedIndex="1"
                              Style="min-height: 500px;">
-                <RadzenMonthView />
+                <RadzenDayView />
                 <RadzenWeekView />
+                <RadzenMonthView />
             </RadzenScheduler>
         </div>
     </div>
@@ -189,6 +195,7 @@
     private List<PaiementEcheanceAppointment> calendarAppointments = new();
     private DateTime schedulerCurrentDate = DateTime.Today;
     private RadzenScheduler<PaiementEcheanceAppointment>? schedulerRef;
+    private bool showHeader = true;
     private int? selectedFournisseurId;
     private decimal? selectedMontantMin;
     private decimal? selectedMontantMax;
@@ -216,6 +223,7 @@
         new MoisOption { Text = "Décembre", Value = 12 }
     };
     private CancellationTokenSource cancellationTokenSource = new();
+    private bool _disposed;
 
     private void GoToList()
     {
@@ -224,6 +232,7 @@
 
     async Task LoadProviders(LoadDataArgs args)
     {
+        if (_disposed) return;
         var skip = args.Skip ?? 0;
         var top = args.Top ?? 20;
         var parameters = new QueryStringParameters
@@ -236,6 +245,7 @@
         try
         {
             var pagedProviders = await ProvidersService.GetPagedAsync(parameters, cancellationTokenSource.Token);
+            if (_disposed) return;
             _filteredProviders = pagedProviders.Items;
         }
         catch (Exception ex)
@@ -254,36 +264,58 @@
     private static bool IsCancellationRelated(Exception? ex)
     {
         if (ex == null) return false;
-        if (ex is OperationCanceledException) return true;
+        if (ex is OperationCanceledException or TaskCanceledException) return true;
         var msg = ex.Message ?? "";
-        if (msg.Contains("abandonnée", StringComparison.OrdinalIgnoreCase) || msg.Contains("aborted", StringComparison.OrdinalIgnoreCase))
+        if (ex is System.Net.Sockets.SocketException or System.IO.IOException)
+        {
+            if (msg.Contains("abandonnée", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("aborted", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("cancel", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("reset", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("Unable to read data", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("transport connection", StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        if (msg.Contains("abandonnée", StringComparison.OrdinalIgnoreCase) ||
+            msg.Contains("aborted", StringComparison.OrdinalIgnoreCase) ||
+            msg.Contains("Unable to read data", StringComparison.OrdinalIgnoreCase) ||
+            msg.Contains("transport connection", StringComparison.OrdinalIgnoreCase))
             return true;
         return IsCancellationRelated(ex.InnerException);
     }
 
     private async Task OnFilterChange()
     {
+        if (_disposed) return;
         await RefreshCalendar();
     }
 
     private async Task RefreshCalendar()
     {
-        if (schedulerRef != null)
-        {
-            await schedulerRef.Reload();
-        }
+        if (_disposed) return;
+        await LoadCalendarDataAsync();
+        if (_disposed || schedulerRef == null) return;
+        try { await schedulerRef.Reload(); }
+        catch (Exception ex) when (IsCancellationRelated(ex)) { /* navigation/dispose */ }
     }
 
-    private async Task OnSchedulerLoadData(SchedulerLoadDataEventArgs args)
+    /// <summary>
+    /// Charge les rendez-vous pour une plage de dates (pattern officiel Radzen : Data sans LoadData).
+    /// Appelé au premier rendu et sur "Rechercher" — plus d'appel API à chaque changement de semaine.
+    /// </summary>
+    private async Task LoadCalendarDataAsync()
     {
+        if (_disposed) return;
+        var start = schedulerCurrentDate.AddMonths(-6).Date;
+        var end = schedulerCurrentDate.AddMonths(6).Date;
         try
         {
             bool? hasNumeroTransactionBancaire = selectedReglementStatus.HasValue ? (selectedReglementStatus.Value == 1) : null;
             var result = await PaiementFournisseurService.GetPaiementsFournisseurAsync(
                 selectedFournisseurId,
                 null,
-                null,
-                null,
+                start,
+                end,
                 selectedMontantMin,
                 selectedMontantMax,
                 hasNumeroTransactionBancaire,
@@ -291,25 +323,25 @@
                 1,
                 500,
                 cancellationTokenSource.Token);
+            if (_disposed) return;
             calendarAppointments = result.Items
                 .Select(p =>
                 {
-                    var start = (p.DateEcheance ?? p.DatePaiement).Date;
+                    var d = (p.DateEcheance ?? p.DatePaiement).Date;
                     return new PaiementEcheanceAppointment
                     {
-                        Start = start,
-                        End = start.AddDays(1),
+                        Start = d,
+                        End = d.AddDays(1),
                         Text = $"{p.FournisseurNom} - {p.Montant:N2} TND",
                         PaiementId = p.Id
                     };
                 })
                 .ToList();
-            if (schedulerRef != null)
-                await schedulerRef.Reload();
         }
         catch (Exception ex)
         {
-            if (!IsCancellationRelated(ex))
+            if (IsCancellationRelated(ex)) return;
+            if (!_disposed)
             {
                 NotificationService.Notify(new NotificationMessage
                 {
@@ -320,11 +352,16 @@
                 calendarAppointments = new List<PaiementEcheanceAppointment>();
             }
         }
-        await InvokeAsync(StateHasChanged);
+        if (!_disposed)
+        {
+            try { await InvokeAsync(StateHasChanged); }
+            catch (Exception ex) when (IsCancellationRelated(ex)) { /* navigation/dispose */ }
+        }
     }
 
     private async Task OnCalendarAppointmentSelect(SchedulerAppointmentSelectEventArgs<PaiementEcheanceAppointment> args)
     {
+        if (_disposed) return;
         if (args?.Data?.PaiementId > 0)
         {
             await OpenPaiementDialogAsync(args.Data.PaiementId);
@@ -333,28 +370,36 @@
 
     private async Task OpenPaiementDialogAsync(int paiementId)
     {
+        if (_disposed) return;
         var result = await DialogService.OpenAsync<AddOrUpdatePaiementFournisseurDialog>(
             Localizer["Modifier_Paiement"],
             new Dictionary<string, object> { { "PaiementId", paiementId } },
             new DialogOptions { Width = "90vw", Height = "85vh", Resizable = true, Draggable = true });
-        if (result == true && schedulerRef != null)
+        if (!_disposed && result == true)
         {
-            await schedulerRef.Reload();
+            await LoadCalendarDataAsync();
+            if (!_disposed && schedulerRef != null)
+            {
+                try { await schedulerRef.Reload(); }
+                catch (Exception ex) when (IsCancellationRelated(ex)) { /* navigation/dispose */ }
+            }
         }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender && schedulerRef != null)
+        if (_disposed) return;
+        if (firstRender)
         {
-            await schedulerRef.Reload();
+            await LoadCalendarDataAsync();
         }
     }
 
     public void Dispose()
     {
-        cancellationTokenSource.Cancel();
-        cancellationTokenSource.Dispose();
+        _disposed = true;
+        try { cancellationTokenSource?.Cancel(); } catch { }
+        try { cancellationTokenSource?.Dispose(); } catch { }
     }
 
     private class ReglementStatusOption
