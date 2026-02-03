@@ -1473,6 +1473,9 @@
   <data name="Avoirs" xml:space="preserve">
     <value>Avoirs</value>
   </data>
+  <data name="Resultat_Cloture" xml:space="preserve">
+    <value>Résultat (Total BL - Total Avoirs)</value>
+  </data>
   <data name="Export_PDF_Reussi" xml:space="preserve">
     <value>Export PDF réussi.</value>
   </data>

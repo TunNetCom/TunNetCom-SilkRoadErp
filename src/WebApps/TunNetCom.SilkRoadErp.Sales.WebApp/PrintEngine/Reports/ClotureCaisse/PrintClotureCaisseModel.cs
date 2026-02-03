@@ -21,6 +21,7 @@ public class PrintClotureCaisseModel
 
     public List<PrintClotureCaisseAvoirRow> AvoirsRows { get; set; } = new();
     public decimal TotalAvoirs { get; set; }
+    public decimal Resultat { get; set; }
 }
 
 public class PrintClotureCaissePaiementRow

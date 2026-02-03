@@ -1251,6 +1251,9 @@
   <data name="Avoirs" xml:space="preserve">
     <value>الائتمانات</value>
   </data>
+  <data name="Resultat_Cloture" xml:space="preserve">
+    <value>النتيجة (إجمالي أوامر التسليم - إجمالي الإشعارات الدائنة)</value>
+  </data>
   <data name="Export_PDF_Reussi" xml:space="preserve">
     <value>تم تصدير PDF بنجاح.</value>
   </data>

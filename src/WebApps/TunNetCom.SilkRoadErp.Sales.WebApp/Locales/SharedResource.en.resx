@@ -1320,6 +1320,9 @@
   <data name="Avoirs" xml:space="preserve">
     <value>Credit notes</value>
   </data>
+  <data name="Resultat_Cloture" xml:space="preserve">
+    <value>Result (Total BL - Total Credit Notes)</value>
+  </data>
   <data name="Export_PDF_Reussi" xml:space="preserve">
     <value>PDF export successful.</value>
   </data>

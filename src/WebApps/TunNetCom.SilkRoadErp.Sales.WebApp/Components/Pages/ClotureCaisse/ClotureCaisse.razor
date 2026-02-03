@@ -152,6 +152,13 @@
                         </RadzenDataGrid>
                     }
                 </RadzenCard>
+
+                <RadzenCard class="section-card resultat-card">
+                    <div class="recap">
+                        <span>@Localizer["Resultat_Cloture"]:</span>
+                        <strong>@resultatCloture.FormatAmount(decimalPlaces) TND</strong>
+                    </div>
+                </RadzenCard>
             </div>
         }
     </div>
@@ -179,7 +186,7 @@
     private bool isLoading = true;
     private bool isPrinting;
     private bool showBlDetail;
-    private bool showAvoirsDetail;
+    private bool showAvoirsDetail = true;
     private int decimalPlaces = AmountHelper.DEFAULT_DECIMAL_PLACES;
     private CancellationTokenSource _cts = new();
 
@@ -188,6 +195,7 @@
     private decimal sommeTraite => paiements.Where(p => string.Equals(p.MethodePaiement, MethodePaiement.Traite.ToString(), StringComparison.OrdinalIgnoreCase)).Sum(p => p.Montant);
     private decimal sommeVirement => paiements.Where(p => string.Equals(p.MethodePaiement, MethodePaiement.Virement.ToString(), StringComparison.OrdinalIgnoreCase)).Sum(p => p.Montant);
     private decimal totalPaiementsSum => paiements.Sum(p => p.Montant);
+    private decimal resultatCloture => totalBl - totalAvoirs;
 
     protected override async Task OnInitializedAsync()
     {

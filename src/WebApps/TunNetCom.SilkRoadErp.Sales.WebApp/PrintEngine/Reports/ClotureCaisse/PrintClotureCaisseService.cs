@@ -113,7 +113,8 @@ public class PrintClotureCaisseService(
             BlRows = blRows,
             TotalBL = totalBl,
             AvoirsRows = avoirsRows,
-            TotalAvoirs = totalAvoirs
+            TotalAvoirs = totalAvoirs,
+            Resultat = totalBl - totalAvoirs
         };
     }
 
