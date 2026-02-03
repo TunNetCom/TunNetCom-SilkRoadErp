@@ -41,6 +41,9 @@ public class GetReceiptNotesBasedOnProductReferenceHandler(
                 FournisseurId = ligne.NumBonRecNavigation.IdFournisseur,
                 Constructeur = ligne.NumBonRecNavigation.IdFournisseurNavigation.Constructeur,
                 FodecPercentage = fodecPercentage,
+                PrixHtFodec = ligne.NumBonRecNavigation.IdFournisseurNavigation.Constructeur && ligne.TotHt > 0
+                    ? ligne.TotHt * (fodecPercentage / 100)
+                    : (decimal?)null,
                 Date = ligne.NumBonRecNavigation.Date
             });
 

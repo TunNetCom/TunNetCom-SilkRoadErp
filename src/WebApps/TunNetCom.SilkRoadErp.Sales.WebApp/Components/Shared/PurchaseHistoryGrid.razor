@@ -51,9 +51,9 @@
                 @item.VatPercentage.ToString(AmountHelper.FORMAT_N2, CultureInfo.GetCultureInfo("fr-FR"))
             </Template>
         </RadzenDataGridColumn>
-        <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailResponse.TotalExcludingTax)" Title="Total HT" Width="110px">
+        <RadzenDataGridColumn Title="Prix HT + FODEC" Width="120px">
             <Template Context="item">
-                @item.TotalExcludingTax.ToString(AmountHelper.FORMAT_N3, CultureInfo.GetCultureInfo("fr-FR"))
+                @(item.Constructeur ? (item.TotalExcludingTax + (item.PrixHtFodec ?? 0)).ToString(AmountHelper.FORMAT_N3, CultureInfo.GetCultureInfo("fr-FR")) : "-")
             </Template>
         </RadzenDataGridColumn>
         <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailResponse.TotalIncludingTax)" Title="TTC Unitaire" Width="100px">

@@ -5,7 +5,6 @@
 @using System.Globalization
 @implements IDisposable
 @inject ICurrentProductStateService StateService
-@inject ICurrentProductCalculationService CalculationService
 
 <div class="current-product-card">
 @if (StateService.State != null)
@@ -38,11 +37,6 @@
             <div class="cp-metric">
                 <div class="cp-label">TVA</div>
                 <div class="cp-value">@StateService.State.VatPercentage.ToString(AmountHelper.FORMAT_N2, CultureInfo.GetCultureInfo("fr-FR"))%</div>
-            </div>
-            <div class="cp-divider"></div>
-            <div class="cp-metric cp-metric-fodec">
-                <div class="cp-label">FODEC</div>
-                <div class="cp-value">@CalculationService.CalculateFodecValue(StateService.State).ToString(AmountHelper.FORMAT_N3, CultureInfo.GetCultureInfo("fr-FR"))</div>
             </div>
             <div class="cp-divider"></div>
             <div class="cp-metric">
@@ -127,16 +121,6 @@ else
     .cp-divider {
         border-left: 1px solid var(--rz-border-color, rgba(148, 163, 184, 0.55));
         height: 28px;
-    }
-
-    .cp-metric-fodec {
-        background: rgba(245, 158, 11, 0.10);
-        background: color-mix(in srgb, var(--rz-warning, #f59e0b) 12%, transparent);
-        border: 1px solid rgba(245, 158, 11, 0.30);
-        border: 1px solid color-mix(in srgb, var(--rz-warning, #f59e0b) 30%, transparent);
-        border-radius: 8px;
-        padding: 0.25rem 0.55rem;
-        min-width: 88px;
     }
 
     .cp-metric-total {

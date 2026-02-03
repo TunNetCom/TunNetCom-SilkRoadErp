@@ -10,7 +10,7 @@
         <CurrentProductInfoCard />
     }
 
-    @* Three tabs: Achats, Ventes (default), Prix du système *@
+    @* Three tabs: Achats (default), Ventes, Prix du système *@
     <RadzenTabs @bind-SelectedIndex="selectedTabIndex">
         <Tabs>
             <RadzenTabsItem Text="Achats" Icon="shopping_cart">
@@ -72,6 +72,6 @@
     [Parameter] 
     public bool ShowClose { get; set; } = true;
 
-    /// <summary>Selected tab index: 0=Achats, 1=Ventes (default), 2=Prix du système.</summary>
-    private int selectedTabIndex = 1;
+    /// <summary>Selected tab index: 0=Achats (default), 1=Ventes, 2=Prix du système.</summary>
+    private int selectedTabIndex = 0;
 }
