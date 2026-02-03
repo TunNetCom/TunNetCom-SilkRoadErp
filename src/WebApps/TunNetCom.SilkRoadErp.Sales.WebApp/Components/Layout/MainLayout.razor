@@ -73,7 +73,10 @@
                 <RadzenPanelMenuItem Text="@Localizer["Receipt_Notes_List"]" Icon="pageview" Path="/reciption_notes" />
                 <RadzenPanelMenuItem Text="@Localizer["Retour_Marchandise_Fournisseur"]" Icon="assignment_return" Path="/add_or_update_retour_marchandise_fournisseur" />
                 <RadzenPanelMenuItem Text="@Localizer["Retours_Marchandise_Fournisseur_List"]" Icon="list" Path="/retours-marchandise-fournisseur" />
-                <RadzenPanelMenuItem Text="@Localizer["Paiements_Fournisseurs"]" Icon="payment" Path="/paiements-fournisseur" />
+                <RadzenPanelMenuItem Text="@Localizer["Paiements_Fournisseurs"]" Icon="payment">
+                <RadzenPanelMenuItem Text="@Localizer["Liste"]" Icon="list" Path="/paiements-fournisseur" />
+                <RadzenPanelMenuItem Text="@Localizer["Calendrier_Echeances"]" Icon="calendar_month" Path="/paiements-fournisseur/calendrier" />
+            </RadzenPanelMenuItem>
                 <RadzenPanelMenuItem Text="@Localizer["Soldes_Fournisseurs"]" Icon="account_balance" Path="/soldes-fournisseur" />
             </RadzenPanelMenuItem>
             <RadzenPanelMenuItem Text="Dépenses de fonctionnement" Icon="receipt_long">

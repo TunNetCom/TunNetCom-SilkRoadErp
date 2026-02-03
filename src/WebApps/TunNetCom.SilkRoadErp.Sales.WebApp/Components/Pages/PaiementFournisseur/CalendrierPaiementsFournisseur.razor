@@ -1,0 +1,365 @@
+@page "/paiements-fournisseur/calendrier"
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.PaiementFournisseur
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PaiementFournisseur
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using Radzen.Blazor
+@using Radzen
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Providers
+@using TunNetCom.SilkRoadErp.Sales.Contracts
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.PaiementFournisseur
+@implements IDisposable
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<SharedResource> Localizer
+@inject IPaiementFournisseurApiClient PaiementFournisseurService
+@inject IProvidersApiClient ProvidersService
+@inject DialogService DialogService
+@inject Radzen.NotificationService NotificationService
+
+<div class="calendar-container">
+    <div class="calendar-card">
+        <div class="calendar-header">
+            <h3 class="calendar-title">@Localizer["Calendrier_Echeances"]</h3>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <RadzenButton Icon="list" Text="@Localizer["Liste"]"
+                              ButtonStyle="ButtonStyle.Light"
+                              Click="GoToList"
+                              Variant="Variant.Outlined"
+                              Title="Retour à la liste" />
+            </div>
+        </div>
+
+        <div class="calendar-filters">
+            <div class="search-field">
+                <label>@Localizer["providers"]</label>
+                <RadzenDropDownDataGrid AllowClear="true"
+                                        @bind-Value="@selectedFournisseurId"
+                                        LoadData="@LoadProviders"
+                                        AllowFiltering="true"
+                                        Style="width: 300px;"
+                                        Data="@_filteredProviders"
+                                        TextProperty="@nameof(ProviderResponse.Nom)"
+                                        ValueProperty="@nameof(ProviderResponse.Id)"
+                                        Placeholder="@Localizer["Select_Provider"]"
+                                        Change="@OnFilterChange">
+                    <Columns>
+                        <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Id)" Title="ID" Width="80px" />
+                        <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Nom)" Title="@Localizer["Nom"]" Width="220px" />
+                    </Columns>
+                </RadzenDropDownDataGrid>
+            </div>
+            <div class="search-field">
+                <label>Statut Règlement</label>
+                <RadzenDropDown @bind-Value="@selectedReglementStatus"
+                                Data="@reglementStatusOptions"
+                                TextProperty="Text"
+                                ValueProperty="Value"
+                                Placeholder="Tous"
+                                AllowClear="true"
+                                Style="width: 200px;"
+                                Change="@OnFilterChange" />
+            </div>
+            <div class="search-field">
+                <label>Mois</label>
+                <RadzenDropDown @bind-Value="@selectedMois"
+                                Data="@moisOptions"
+                                TextProperty="Text"
+                                ValueProperty="Value"
+                                Placeholder="Tous"
+                                AllowClear="true"
+                                Style="width: 200px;"
+                                Change="@OnFilterChange" />
+            </div>
+            <div class="search-field">
+                <label>Montant Min</label>
+                <RadzenNumeric @bind-Value="@selectedMontantMin"
+                              Min="0"
+                              Format="@AmountHelper.FORMAT_N3"
+                              Step="0.001"
+                              Placeholder="Montant min"
+                              Style="width: 200px;" />
+            </div>
+            <div class="search-field">
+                <label>Montant Max</label>
+                <RadzenNumeric @bind-Value="@selectedMontantMax"
+                              Min="0"
+                              Format="@AmountHelper.FORMAT_N3"
+                              Step="0.001"
+                              Placeholder="Montant max"
+                              Style="width: 200px;" />
+            </div>
+            <div class="search-button">
+                <RadzenButton Text="@Localizer["Rechercher"]"
+                              Icon="search"
+                              ButtonStyle="ButtonStyle.Primary"
+                              Click="@(async () => await RefreshCalendar())"
+                              Class="action-button" />
+            </div>
+        </div>
+
+        <div class="calendar-content">
+            <RadzenScheduler @ref="schedulerRef"
+                             TItem="PaiementEcheanceAppointment"
+                             Data="@calendarAppointments"
+                             StartProperty="Start"
+                             EndProperty="End"
+                             TextProperty="Text"
+                             @bind-CurrentDate="schedulerCurrentDate"
+                             LoadData="@OnSchedulerLoadData"
+                             AppointmentSelect="@OnCalendarAppointmentSelect"
+                             SelectedIndex="1"
+                             Style="min-height: 500px;">
+                <RadzenMonthView />
+                <RadzenWeekView />
+            </RadzenScheduler>
+        </div>
+    </div>
+</div>
+
+<style>
+    .calendar-container {
+        padding: 0.25rem 1.25rem 1.25rem 1.25rem;
+        max-width: 1400px;
+        margin: 0.25rem auto 1rem auto;
+    }
+
+    .calendar-card {
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        padding: 0.75rem 1.5rem 1.5rem 1.5rem;
+        border: none;
+    }
+
+    .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.25rem;
+    }
+
+    .calendar-title {
+        font-weight: 600;
+        margin: 0;
+        font-size: 2rem;
+        line-height: 1.2;
+    }
+
+    .calendar-filters {
+        display: flex;
+        gap: 1rem;
+        align-items: flex-end;
+        margin-bottom: 1.25rem;
+        flex-wrap: wrap;
+    }
+
+    .search-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .search-field label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #5f6368;
+    }
+
+    .search-button {
+        display: flex;
+        align-items: flex-end;
+    }
+
+    .action-button {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 8px 12px;
+        border-radius: 6px;
+    }
+
+    .calendar-content {
+        padding: 1rem 0;
+        min-height: 500px;
+    }
+</style>
+
+@code {
+    private List<PaiementEcheanceAppointment> calendarAppointments = new();
+    private DateTime schedulerCurrentDate = DateTime.Today;
+    private RadzenScheduler<PaiementEcheanceAppointment>? schedulerRef;
+    private int? selectedFournisseurId;
+    private decimal? selectedMontantMin;
+    private decimal? selectedMontantMax;
+    private int? selectedReglementStatus;
+    private int? selectedMois;
+    private List<ProviderResponse> _filteredProviders = new();
+    private List<ReglementStatusOption> reglementStatusOptions = new()
+    {
+        new ReglementStatusOption { Text = "Régle (avec numéro)", Value = 1 },
+        new ReglementStatusOption { Text = "Non réglé (sans numéro)", Value = 0 }
+    };
+    private List<MoisOption> moisOptions = new()
+    {
+        new MoisOption { Text = "Janvier", Value = 1 },
+        new MoisOption { Text = "Février", Value = 2 },
+        new MoisOption { Text = "Mars", Value = 3 },
+        new MoisOption { Text = "Avril", Value = 4 },
+        new MoisOption { Text = "Mai", Value = 5 },
+        new MoisOption { Text = "Juin", Value = 6 },
+        new MoisOption { Text = "Juillet", Value = 7 },
+        new MoisOption { Text = "Août", Value = 8 },
+        new MoisOption { Text = "Septembre", Value = 9 },
+        new MoisOption { Text = "Octobre", Value = 10 },
+        new MoisOption { Text = "Novembre", Value = 11 },
+        new MoisOption { Text = "Décembre", Value = 12 }
+    };
+    private CancellationTokenSource cancellationTokenSource = new();
+
+    private void GoToList()
+    {
+        NavigationManager.NavigateTo("/paiements-fournisseur");
+    }
+
+    async Task LoadProviders(LoadDataArgs args)
+    {
+        var skip = args.Skip ?? 0;
+        var top = args.Top ?? 20;
+        var parameters = new QueryStringParameters
+        {
+            PageNumber = top > 0 ? (skip / top) + 1 : 1,
+            PageSize = top,
+            SearchKeyword = args?.Filter ?? string.Empty
+        };
+
+        try
+        {
+            var pagedProviders = await ProvidersService.GetPagedAsync(parameters, cancellationTokenSource.Token);
+            _filteredProviders = pagedProviders.Items;
+        }
+        catch (OperationCanceledException)
+        {
+            // Annulation normale (navigation, nouveau chargement) : ne pas afficher d'erreur
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = $"{Localizer["Erreur_Chargement_Providers"]}: {ex.Message}"
+            });
+            _filteredProviders = new List<ProviderResponse>();
+        }
+    }
+
+    private async Task OnFilterChange()
+    {
+        await RefreshCalendar();
+    }
+
+    private async Task RefreshCalendar()
+    {
+        if (schedulerRef != null)
+        {
+            await schedulerRef.Reload();
+        }
+    }
+
+    private async Task OnSchedulerLoadData(SchedulerLoadDataEventArgs args)
+    {
+        try
+        {
+            bool? hasNumeroTransactionBancaire = selectedReglementStatus.HasValue ? (selectedReglementStatus.Value == 1) : null;
+            var result = await PaiementFournisseurService.GetPaiementsFournisseurAsync(
+                selectedFournisseurId,
+                null,
+                null,
+                null,
+                selectedMontantMin,
+                selectedMontantMax,
+                hasNumeroTransactionBancaire,
+                selectedMois,
+                1,
+                500,
+                cancellationTokenSource.Token);
+            calendarAppointments = result.Items
+                .Select(p =>
+                {
+                    var start = (p.DateEcheance ?? p.DatePaiement).Date;
+                    return new PaiementEcheanceAppointment
+                    {
+                        Start = start,
+                        End = start.AddDays(1),
+                        Text = $"{p.FournisseurNom} - {p.Montant:N2} TND",
+                        PaiementId = p.Id
+                    };
+                })
+                .ToList();
+            if (schedulerRef != null)
+                await schedulerRef.Reload();
+        }
+        catch (OperationCanceledException)
+        {
+            // Annulation normale (navigation, nouveau chargement) : ne pas afficher d'erreur
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = $"{Localizer["Erreur_Chargement_Paiements"]}: {ex.Message}"
+            });
+            calendarAppointments = new List<PaiementEcheanceAppointment>();
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnCalendarAppointmentSelect(SchedulerAppointmentSelectEventArgs<PaiementEcheanceAppointment> args)
+    {
+        if (args?.Data?.PaiementId > 0)
+        {
+            await OpenPaiementDialogAsync(args.Data.PaiementId);
+        }
+    }
+
+    private async Task OpenPaiementDialogAsync(int paiementId)
+    {
+        var result = await DialogService.OpenAsync<AddOrUpdatePaiementFournisseurDialog>(
+            Localizer["Modifier_Paiement"],
+            new Dictionary<string, object> { { "PaiementId", paiementId } },
+            new DialogOptions { Width = "90vw", Height = "85vh", Resizable = true, Draggable = true });
+        if (result == true && schedulerRef != null)
+        {
+            await schedulerRef.Reload();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && schedulerRef != null)
+        {
+            await schedulerRef.Reload();
+        }
+    }
+
+    public void Dispose()
+    {
+        cancellationTokenSource.Cancel();
+        cancellationTokenSource.Dispose();
+    }
+
+    private class ReglementStatusOption
+    {
+        public string Text { get; set; } = string.Empty;
+        public int? Value { get; set; }
+    }
+
+    private class MoisOption
+    {
+        public string Text { get; set; } = string.Empty;
+        public int? Value { get; set; }
+    }
+}
