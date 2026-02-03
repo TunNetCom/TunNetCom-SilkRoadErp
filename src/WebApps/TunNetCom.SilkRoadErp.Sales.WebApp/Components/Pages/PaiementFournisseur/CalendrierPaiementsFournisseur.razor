@@ -238,12 +238,9 @@
             var pagedProviders = await ProvidersService.GetPagedAsync(parameters, cancellationTokenSource.Token);
             _filteredProviders = pagedProviders.Items;
         }
-        catch (OperationCanceledException)
-        {
-            // Annulation normale (navigation, nouveau chargement) : ne pas afficher d'erreur
-        }
         catch (Exception ex)
         {
+            if (IsCancellationRelated(ex)) return;
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Error,
@@ -252,6 +249,16 @@
             });
             _filteredProviders = new List<ProviderResponse>();
         }
+    }
+
+    private static bool IsCancellationRelated(Exception? ex)
+    {
+        if (ex == null) return false;
+        if (ex is OperationCanceledException) return true;
+        var msg = ex.Message ?? "";
+        if (msg.Contains("abandonnée", StringComparison.OrdinalIgnoreCase) || msg.Contains("aborted", StringComparison.OrdinalIgnoreCase))
+            return true;
+        return IsCancellationRelated(ex.InnerException);
     }
 
     private async Task OnFilterChange()
@@ -300,19 +307,18 @@
             if (schedulerRef != null)
                 await schedulerRef.Reload();
         }
-        catch (OperationCanceledException)
-        {
-            // Annulation normale (navigation, nouveau chargement) : ne pas afficher d'erreur
-        }
         catch (Exception ex)
         {
-            NotificationService.Notify(new NotificationMessage
+            if (!IsCancellationRelated(ex))
             {
-                Severity = NotificationSeverity.Error,
-                Summary = Localizer["Erreur"],
-                Detail = $"{Localizer["Erreur_Chargement_Paiements"]}: {ex.Message}"
-            });
-            calendarAppointments = new List<PaiementEcheanceAppointment>();
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["Erreur"],
+                    Detail = $"{Localizer["Erreur_Chargement_Paiements"]}: {ex.Message}"
+                });
+                calendarAppointments = new List<PaiementEcheanceAppointment>();
+            }
         }
         await InvokeAsync(StateHasChanged);
     }

@@ -44,11 +44,6 @@
         <div class="paiements-header">
             <h3 class="paiements-title">@Localizer["Paiements_Fournisseurs"]</h3>
             <div style="display: flex; gap: 0.5rem; align-items: center;">
-                <RadzenButton Icon="calendar_month" Text="@Localizer["Calendrier_Echeances"]"
-                              ButtonStyle="ButtonStyle.Light"
-                              Click="GoToCalendrier"
-                              Variant="Variant.Outlined"
-                              Class="btn-export" />
                 <RadzenButton Icon="table_chart" Text="Export Excel"
                               ButtonStyle="ButtonStyle.Success"
                               Click="@ExportToExcelAsync"
@@ -311,7 +306,6 @@
     private int totalPaiements;
     private int decimalPlaces = AmountHelper.DEFAULT_DECIMAL_PLACES;
     private bool isLoadingPaiements = false;
-    private bool isLoadingCalendar = false;
     private int? selectedFournisseurId;
     private List<int> selectedAccountingYearIds = new();
     private List<GetAllAccountingYearsResponse> accountingYears = new();
@@ -344,10 +338,8 @@
     };
     private const int _defaultPageSize = 10;
     private const int _maxPageSize = 50;
-    private const int _calendarMaxItems = 1000;
     private CancellationTokenSource _providersCts = new();
     private CancellationTokenSource _paiementsCts = new();
-    private CancellationTokenSource _calendarCts = new();
     private CancellationTokenSource _actionsCts = new();
 
     protected override async Task OnInitializedAsync()
@@ -400,12 +392,9 @@
 
             _filteredProviders = pagedProviders.Items;
         }
-        catch (OperationCanceledException)
-        {
-            // Ignorer l'annulation
-        }
         catch (Exception ex)
         {
+            if (IsCancellationRelated(ex)) return;
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Error,
@@ -428,19 +417,11 @@
             var accountingYearIdsParam = (selectedAccountingYearIds != null && selectedAccountingYearIds.Count > 0) ? selectedAccountingYearIds : null;
             var pageSize = args.Top ?? _defaultPageSize;
             if (pageSize > _maxPageSize)
-            {
                 pageSize = _maxPageSize;
-            }
             if (pageSize < 1)
-            {
                 pageSize = 1;
-            }
             var pageNumber = ((args.Skip ?? 0) / pageSize) + 1;
             var token = ResetCts(ref _paiementsCts);
-
-            var skip = args.Skip ?? 0;
-            var top = args.Top ?? _defaultPageSize;
-            var pageNumber = top > 0 ? (skip / top) + 1 : 1;
 
             var result = await PaiementFournisseurService.GetPaiementsFournisseurAsync(
                 selectedFournisseurId,
@@ -458,27 +439,26 @@
             paiements = result.Items;
             totalPaiements = result.TotalCount;
         }
-        catch (OperationCanceledException)
-        {
-            // Annulation normale (navigation, nouveau chargement) : ne pas afficher d'erreur
-        }
         catch (Exception ex)
         {
-            NotificationService.Notify(new NotificationMessage
+            if (!IsCancellationRelated(ex))
             {
-                Severity = NotificationSeverity.Error,
-                Summary = Localizer["Erreur"],
-                Detail = $"{Localizer["Erreur_Chargement_Paiements"]}: {ex.Message}"
-            });
-            paiements = new List<PaiementFournisseurResponse>();
-            totalPaiements = 0;
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["Erreur"],
+                    Detail = $"{Localizer["Erreur_Chargement_Paiements"]}: {ex.Message}"
+                });
+                paiements = new List<PaiementFournisseurResponse>();
+                totalPaiements = 0;
+            }
         }
         finally
         {
             isLoadingPaiements = false;
         }
 
-        isLoadingPaiements = false;
+        await InvokeAsync(StateHasChanged);
     }
 
     async Task SearchPaiements()
@@ -493,124 +473,25 @@
             await paiementGrid.Reload();
     }
 
-    async Task OnTabChange(int index)
-    {
-        selectedTabIndex = index;
-        if (index == 1 && schedulerRef != null)
-        {
-            await schedulerRef.Reload();
-        }
-    }
-
-    private async Task OnSchedulerLoadData(SchedulerLoadDataEventArgs args)
-    {
-        await LoadCalendarDataAsync();
-    }
-
-    private async Task LoadCalendarDataAsync()
-    {
-        isLoadingCalendar = true;
-        await InvokeAsync(StateHasChanged);
-
-        try
-        {
-            var start = new DateTime(schedulerCurrentDate.Year, schedulerCurrentDate.Month, 1).AddMonths(-1);
-            var end = start.AddMonths(3).AddDays(-1);
-            bool? hasNumeroTransactionBancaire = selectedReglementStatus.HasValue ? (selectedReglementStatus.Value == 1) : null;
-            var accountingYearIdsParam = (selectedAccountingYearIds != null && selectedAccountingYearIds.Count > 0) ? selectedAccountingYearIds : null;
-            var token = ResetCts(ref _calendarCts);
-            var allItems = new List<PaiementFournisseurResponse>();
-            var fetchedIds = new HashSet<int>();
-            var pageNumber = 1;
-            PagedList<PaiementFournisseurResponse>? page = null;
-
-            do
-            {
-                page = await PaiementFournisseurService.GetPaiementsFournisseurAsync(
-                    selectedFournisseurId,
-                    accountingYearIdsParam,
-                    start,
-                    end,
-                    selectedMontantMin,
-                    selectedMontantMax,
-                    hasNumeroTransactionBancaire,
-                    selectedMois,
-                    pageNumber,
-                    _maxPageSize,
-                    token);
-
-                foreach (var item in page.Items)
-                {
-                    if (fetchedIds.Add(item.Id))
-                    {
-                        allItems.Add(item);
-                        if (allItems.Count >= _calendarMaxItems)
-                        {
-                            break;
-                        }
-                    }
-                }
-
-                pageNumber++;
-            }
-            while (page != null && allItems.Count < page.TotalCount && allItems.Count < _calendarMaxItems);
-
-            calendarAppointments = allItems
-                .Where(p => p.DateEcheance.HasValue)
-                .Select(p => new PaiementEcheanceAppointment
-                {
-                    Start = p.DateEcheance!.Value.Date,
-                    End = p.DateEcheance.Value.Date.AddDays(1),
-                    Text = $"{p.FournisseurNom} - {p.Montant:N2} TND",
-                    PaiementId = p.Id
-                })
-                .ToList();
-        }
-        catch (OperationCanceledException)
-        {
-            // Ignorer l'annulation
-        }
-        catch (Exception ex)
-        {
-            NotificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Error,
-                Summary = Localizer["Erreur"],
-                Detail = $"{Localizer["Erreur_Chargement_Paiements"]}: {ex.Message}"
-            });
-            calendarAppointments = new List<PaiementEcheanceAppointment>();
-        }
-
-        isLoadingCalendar = false;
-        await InvokeAsync(StateHasChanged);
-    }
-
-    private async Task OnCalendarAppointmentSelect(SchedulerAppointmentSelectEventArgs<PaiementEcheanceAppointment> args)
-    {
-        if (args?.Data?.PaiementId > 0)
-        {
-            await OpenPaiementDialogAsync(args.Data.PaiementId);
-        }
-    }
-
-    private async Task OpenPaiementDialogAsync(int paiementId)
-    {
-        var result = await DialogService.OpenAsync<AddOrUpdatePaiementFournisseurDialog>(
-            Localizer["Modifier_Paiement"],
-            new Dictionary<string, object> { { "PaiementId", paiementId } },
-            new DialogOptions { Width = "90vw", Height = "85vh", Resizable = true, Draggable = true });
-        if (result == true && selectedTabIndex == 1)
-        {
-            await LoadCalendarDataAsync();
-        }
-    }
-
     private static CancellationToken ResetCts(ref CancellationTokenSource cts)
     {
         cts.Cancel();
         cts.Dispose();
         cts = new CancellationTokenSource();
         return cts.Token;
+    }
+
+    /// <summary>
+    /// Indique si l'exception est liée à une annulation (OperationCanceledException, SocketException/IOException "abandonnée"/"aborted").
+    /// </summary>
+    private static bool IsCancellationRelated(Exception? ex)
+    {
+        if (ex == null) return false;
+        if (ex is OperationCanceledException) return true;
+        var msg = ex.Message ?? "";
+        if (msg.Contains("abandonnée", StringComparison.OrdinalIgnoreCase) || msg.Contains("aborted", StringComparison.OrdinalIgnoreCase))
+            return true;
+        return IsCancellationRelated(ex.InnerException);
     }
 
     private void CreatePaiement()
@@ -628,8 +509,6 @@
         {
             if (paiementGrid != null)
                 await paiementGrid.Reload();
-            if (selectedTabIndex == 1)
-                await LoadCalendarDataAsync();
         }
     }
 
@@ -641,8 +520,10 @@
 
         if (confirmed == true)
         {
-            var result = await PaiementFournisseurService.DeletePaiementFournisseurAsync(paiementId, _actionsCts.Token);
-            if (result.IsSuccess)
+            try
+            {
+                var result = await PaiementFournisseurService.DeletePaiementFournisseurAsync(paiementId, _actionsCts.Token);
+                if (result.IsSuccess)
             {
                 ToastService.Notify(new(ToastType.Success, Localizer["Paiement_Supprime"]));
                 if (paiementGrid != null)
@@ -651,6 +532,12 @@
             else
             {
                 ToastService.Notify(new(ToastType.Danger, $"{Localizer["Erreur_Suppression"]}: {result.Errors.FirstOrDefault()?.Message}"));
+            }
+            }
+            catch (Exception ex)
+            {
+                if (!IsCancellationRelated(ex))
+                    ToastService.Notify(new(ToastType.Danger, $"{Localizer["Erreur_Suppression"]}: {ex.Message}"));
             }
         }
     }
@@ -717,12 +604,9 @@
 
             await PrintService.PrintAsync(pdfResult.Value, printOptions, _actionsCts.Token);
         }
-        catch (OperationCanceledException)
-        {
-            // Annulation normale : ne pas afficher d'erreur
-        }
         catch (Exception ex)
         {
+            if (IsCancellationRelated(ex)) return;
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Error,
@@ -832,12 +716,9 @@
 
             _logger.LogInformation("Excel export completed successfully");
         }
-        catch (OperationCanceledException)
-        {
-            // Annulation normale : ne pas afficher d'erreur
-        }
         catch (Exception ex)
         {
+            if (IsCancellationRelated(ex)) return;
             _logger.LogError(ex, "Error exporting to Excel");
             NotificationService.Notify(new NotificationMessage
             {
@@ -949,12 +830,9 @@
 
             _logger.LogInformation("PDF export completed successfully");
         }
-        catch (OperationCanceledException)
-        {
-            // Annulation normale : ne pas afficher d'erreur
-        }
         catch (Exception ex)
         {
+            if (IsCancellationRelated(ex)) return;
             _logger.LogError(ex, "Error exporting to PDF");
             NotificationService.Notify(new NotificationMessage
             {
@@ -972,8 +850,6 @@
         _providersCts.Dispose();
         _paiementsCts.Cancel();
         _paiementsCts.Dispose();
-        _calendarCts.Cancel();
-        _calendarCts.Dispose();
         _actionsCts.Cancel();
         _actionsCts.Dispose();
     }
