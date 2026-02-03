@@ -423,7 +423,12 @@
         {
             var token = ResetCts(ref _providersCts);
             var pagedProviders = await ProvidersService.GetPagedAsync(parameters, token);
+
             _filteredProviders = pagedProviders.Items;
+        }
+        catch (OperationCanceledException)
+        {
+            // Ignorer l'annulation
         }
         catch (Exception ex)
         {
@@ -574,6 +579,10 @@
                     PaiementId = p.Id
                 })
                 .ToList();
+        }
+        catch (OperationCanceledException)
+        {
+            // Ignorer l'annulation
         }
         catch (Exception ex)
         {
