@@ -1,4 +1,5 @@
 @page "/paiements-fournisseur"
+@implements IDisposable
 @using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.Contracts.PaiementFournisseur
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PaiementFournisseur
@@ -374,8 +375,13 @@
         new MoisOption { Text = "Novembre", Value = 11 },
         new MoisOption { Text = "Décembre", Value = 12 }
     };
-    private CancellationTokenSource cancellationTokenSource = new();
     private const int _defaultPageSize = 10;
+    private const int _maxPageSize = 50;
+    private const int _calendarMaxItems = 1000;
+    private CancellationTokenSource _providersCts = new();
+    private CancellationTokenSource _paiementsCts = new();
+    private CancellationTokenSource _calendarCts = new();
+    private CancellationTokenSource _actionsCts = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -420,7 +426,8 @@
 
         try
         {
-            var pagedProviders = await ProvidersService.GetPagedAsync(parameters, cancellationTokenSource.Token);
+            var token = ResetCts(ref _providersCts);
+            var pagedProviders = await ProvidersService.GetPagedAsync(parameters, token);
             _filteredProviders = pagedProviders.Items;
         }
         catch (Exception ex)
@@ -438,7 +445,6 @@
     async Task LoadPaiementData(LoadDataArgs args)
     {
         isLoadingPaiements = true;
-        await Task.Yield();
 
         try
         {
@@ -446,6 +452,17 @@
                 ? (selectedReglementStatus.Value == 1) 
                 : null;
             var accountingYearIdsParam = (selectedAccountingYearIds != null && selectedAccountingYearIds.Count > 0) ? selectedAccountingYearIds : null;
+            var pageSize = args.Top ?? _defaultPageSize;
+            if (pageSize > _maxPageSize)
+            {
+                pageSize = _maxPageSize;
+            }
+            if (pageSize < 1)
+            {
+                pageSize = 1;
+            }
+            var pageNumber = ((args.Skip ?? 0) / pageSize) + 1;
+            var token = ResetCts(ref _paiementsCts);
 
             var result = await PaiementFournisseurService.GetPaiementsFournisseurAsync(
                 selectedFournisseurId,
@@ -456,9 +473,9 @@
                 selectedMontantMax,
                 hasNumeroTransactionBancaire,
                 selectedMois,
-                (args.Skip.Value / _defaultPageSize) + 1,
-                args.Top ?? _defaultPageSize,
-                cancellationTokenSource.Token);
+                pageNumber,
+                pageSize,
+                token);
 
             paiements = result.Items;
             totalPaiements = result.TotalCount;
@@ -476,7 +493,6 @@
         }
 
         isLoadingPaiements = false;
-        await InvokeAsync(StateHasChanged);
     }
 
     async Task SearchPaiements()
@@ -510,19 +526,44 @@
             var end = start.AddMonths(3).AddDays(-1);
             bool? hasNumeroTransactionBancaire = selectedReglementStatus.HasValue ? (selectedReglementStatus.Value == 1) : null;
             var accountingYearIdsParam = (selectedAccountingYearIds != null && selectedAccountingYearIds.Count > 0) ? selectedAccountingYearIds : null;
-            var result = await PaiementFournisseurService.GetPaiementsFournisseurAsync(
-                selectedFournisseurId,
-                accountingYearIdsParam,
-                start,
-                end,
-                selectedMontantMin,
-                selectedMontantMax,
-                hasNumeroTransactionBancaire,
-                selectedMois,
-                1,
-                500,
-                cancellationTokenSource.Token);
-            calendarAppointments = result.Items
+            var token = ResetCts(ref _calendarCts);
+            var allItems = new List<PaiementFournisseurResponse>();
+            var fetchedIds = new HashSet<int>();
+            var pageNumber = 1;
+            PagedList<PaiementFournisseurResponse>? page = null;
+
+            do
+            {
+                page = await PaiementFournisseurService.GetPaiementsFournisseurAsync(
+                    selectedFournisseurId,
+                    accountingYearIdsParam,
+                    start,
+                    end,
+                    selectedMontantMin,
+                    selectedMontantMax,
+                    hasNumeroTransactionBancaire,
+                    selectedMois,
+                    pageNumber,
+                    _maxPageSize,
+                    token);
+
+                foreach (var item in page.Items)
+                {
+                    if (fetchedIds.Add(item.Id))
+                    {
+                        allItems.Add(item);
+                        if (allItems.Count >= _calendarMaxItems)
+                        {
+                            break;
+                        }
+                    }
+                }
+
+                pageNumber++;
+            }
+            while (page != null && allItems.Count < page.TotalCount && allItems.Count < _calendarMaxItems);
+
+            calendarAppointments = allItems
                 .Where(p => p.DateEcheance.HasValue)
                 .Select(p => new PaiementEcheanceAppointment
                 {
@@ -567,15 +608,12 @@
         }
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    private static CancellationToken ResetCts(ref CancellationTokenSource cts)
     {
-        if (firstRender)
-        {
-            if (paiementGrid != null)
-                await paiementGrid.Reload();
-            else
-                await InvokeAsync(StateHasChanged);
-        }
+        cts.Cancel();
+        cts.Dispose();
+        cts = new CancellationTokenSource();
+        return cts.Token;
     }
 
     private void CreatePaiement()
@@ -606,7 +644,7 @@
 
         if (confirmed == true)
         {
-            var result = await PaiementFournisseurService.DeletePaiementFournisseurAsync(paiementId, cancellationTokenSource.Token);
+            var result = await PaiementFournisseurService.DeletePaiementFournisseurAsync(paiementId, _actionsCts.Token);
             if (result.IsSuccess)
             {
                 ToastService.Notify(new(ToastType.Success, Localizer["Paiement_Supprime"]));
@@ -653,7 +691,7 @@
             // Générer le PDF
             var pdfResult = await PrintTraiteService.GenerateTraitePdfAsync(
                 paiementId,
-                cancellationTokenSource.Token);
+                _actionsCts.Token);
 
             if (pdfResult.IsFailed)
             {
@@ -680,7 +718,7 @@
                 IsDuplicata = false
             };
 
-            await PrintService.PrintAsync(pdfResult.Value, printOptions, cancellationTokenSource.Token);
+            await PrintService.PrintAsync(pdfResult.Value, printOptions, _actionsCts.Token);
         }
         catch (Exception ex)
         {
@@ -921,8 +959,14 @@
 
     public void Dispose()
     {
-        cancellationTokenSource.Cancel();
-        cancellationTokenSource.Dispose();
+        _providersCts.Cancel();
+        _providersCts.Dispose();
+        _paiementsCts.Cancel();
+        _paiementsCts.Dispose();
+        _calendarCts.Cancel();
+        _calendarCts.Dispose();
+        _actionsCts.Cancel();
+        _actionsCts.Dispose();
     }
 
     private class ReglementStatusOption

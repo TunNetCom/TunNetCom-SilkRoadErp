@@ -1,9 +1,13 @@
 using TunNetCom.SilkRoadErp.Sales.Contracts.PaiementFournisseur;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.EntityFrameworkCore;
+using TunNetCom.SilkRoadErp.Sales.Api.Exceptions;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.PaiementFournisseur.GetPaiementsFournisseur;
 
 public class GetPaiementsFournisseurQueryHandler(
     SalesContext _context,
+    IMemoryCache _cache,
     ILogger<GetPaiementsFournisseurQueryHandler> _logger)
     : IRequestHandler<GetPaiementsFournisseurQuery, Result<PagedList<PaiementFournisseurResponse>>>
 {
@@ -64,6 +68,20 @@ public class GetPaiementsFournisseurQueryHandler(
             paiementsQuery = paiementsQuery.Where(p => p.Mois.HasValue && p.Mois.Value == query.Mois.Value);
         }
 
+        if (query.PageNumber < 1 || query.PageSize < 1)
+        {
+            throw new InvalidPaginationParamsException();
+        }
+
+        var activeAccountingYearId = SalesContext.GetActiveAccountingYearId();
+        var countCacheKey = BuildCountCacheKey(query, activeAccountingYearId);
+
+        var totalCount = await _cache.GetOrCreateAsync(countCacheKey, async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30);
+            return await paiementsQuery.CountAsync(cancellationToken);
+        });
+
         var paiements = paiementsQuery
             .Select(p => new PaiementFournisseurResponse
             {
@@ -95,14 +113,38 @@ public class GetPaiementsFournisseurQueryHandler(
             })
             .OrderByDescending(p => p.DatePaiement);
 
-        var pagedResult = await PagedList<PaiementFournisseurResponse>.ToPagedListAsync(
-            paiements,
+        var items = await paiements
+            .Skip((query.PageNumber - 1) * query.PageSize)
+            .Take(query.PageSize)
+            .ToListAsync(cancellationToken);
+
+        var pagedResult = new PagedList<PaiementFournisseurResponse>(
+            items,
+            totalCount,
             query.PageNumber,
-            query.PageSize,
-            cancellationToken);
+            query.PageSize);
 
         _logger.LogInformation("Fetched {Count} PaiementsFournisseur", pagedResult.TotalCount);
         return Result.Ok(pagedResult);
+    }
+
+    private static string BuildCountCacheKey(GetPaiementsFournisseurQuery query, int? activeAccountingYearId)
+    {
+        var accountingYearIdsKey = query.AccountingYearIds == null
+            ? "null"
+            : string.Join(",", query.AccountingYearIds.OrderBy(x => x));
+
+        return string.Join("|",
+            "PaiementFournisseurCount",
+            $"activeYear:{activeAccountingYearId?.ToString() ?? "null"}",
+            $"fournisseurId:{query.FournisseurId?.ToString() ?? "null"}",
+            $"accountingYearIds:{accountingYearIdsKey}",
+            $"dateEcheanceFrom:{query.DateEcheanceFrom?.ToString("O") ?? "null"}",
+            $"dateEcheanceTo:{query.DateEcheanceTo?.ToString("O") ?? "null"}",
+            $"montantMin:{query.MontantMin?.ToString() ?? "null"}",
+            $"montantMax:{query.MontantMax?.ToString() ?? "null"}",
+            $"hasNumeroTransactionBancaire:{query.HasNumeroTransactionBancaire?.ToString() ?? "null"}",
+            $"mois:{query.Mois?.ToString() ?? "null"}");
     }
 }
 

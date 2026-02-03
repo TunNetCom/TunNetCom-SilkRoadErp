@@ -1,5 +1,6 @@
 using TunNetCom.SilkRoadErp.Sales.Contracts.PaiementFournisseur;
 using TunNetCom.SilkRoadErp.Sales.Contracts;
+using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Constants;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.PaiementFournisseur.GetPaiementsFournisseur;
 
@@ -8,6 +9,8 @@ public class GetPaiementsFournisseurEndpoint : ICarterModule
     public void AddRoutes(IEndpointRouteBuilder app)
     {
         _ = app.MapGet("/paiement-fournisseur", HandleGetPaiementsFournisseurAsync)
+            .RequireAuthorization($"Permission:{Permissions.ViewPaymentsFournisseur}")
+            .RequireRateLimiting("paiement-fournisseur")
             .WithTags(EndpointTags.PaiementFournisseur);
     }
 

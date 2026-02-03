@@ -1,4 +1,6 @@
 using Serilog.Sinks.Grafana.Loki;
+using Microsoft.AspNetCore.HttpOverrides;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,6 +45,15 @@ builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(optio
 // Add HttpContextAccessor for accessing current user in services
 builder.Services.AddHttpContextAccessor();
 
+builder.Services.AddMemoryCache();
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 builder.Services.AddDbContext<SalesContext>((serviceProvider, options) =>
 {
     options.UseSqlServer(
@@ -61,9 +72,29 @@ builder.Services.AddDbContext<SalesContext>((serviceProvider, options) =>
 
 builder.Services.AddRateLimiter(options =>
 {
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    static string GetClientPartitionKey(HttpContext httpContext)
+    {
+        if (httpContext.User?.Identity?.IsAuthenticated == true)
+        {
+            return httpContext.User.FindFirstValue("sub")
+                   ?? httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                   ?? httpContext.User.Identity?.Name
+                   ?? "authenticated";
+        }
+
+        var forwardedFor = httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+        var clientIp = forwardedFor?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault();
+
+        return clientIp
+               ?? httpContext.Connection.RemoteIpAddress?.ToString()
+               ?? "unknown";
+    }
+
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            partitionKey: GetClientPartitionKey(httpContext),
             factory: _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 400,
@@ -72,6 +103,18 @@ builder.Services.AddRateLimiter(options =>
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst
             }
         ));
+
+    options.AddPolicy("paiement-fournisseur", httpContext =>
+        RateLimitPartition.GetTokenBucketLimiter(
+            partitionKey: GetClientPartitionKey(httpContext),
+            factory: _ => new TokenBucketRateLimiterOptions
+            {
+                TokenLimit = 10,
+                TokensPerPeriod = 10,
+                ReplenishmentPeriod = TimeSpan.FromSeconds(5),
+                AutoReplenishment = true,
+                QueueLimit = 0
+            }));
 });
 
 var assembly = typeof(Program).Assembly;
@@ -320,6 +363,7 @@ using (IServiceScope scope = app.Services.CreateScope())
     }
 }
 
+app.UseForwardedHeaders();
 app.UseRateLimiter();
 
 //if (app.Environment.IsDevelopment())

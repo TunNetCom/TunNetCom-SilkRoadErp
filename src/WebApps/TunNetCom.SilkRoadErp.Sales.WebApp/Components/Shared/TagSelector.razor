@@ -177,16 +177,14 @@
     private string newTagName = string.Empty;
     private bool showSuggestions = false;
     private List<TagResponse> filteredSuggestions = new();
+    private bool _availableTagsLoaded = false;
+    private int _lastLoadedDocumentId = -1;
+    private string _lastLoadedDocumentType = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadAvailableTags();
+        await EnsureAvailableTagsLoadedAsync();
         _localSelectedTags = SelectedTags?.ToList() ?? new List<TagResponse>();
-        if (DocumentId > 0)
-        {
-            await LoadDocumentTags();
-        }
-        StateHasChanged();
     }
 
     protected override async Task OnParametersSetAsync()
@@ -196,27 +194,26 @@
         {
             _localSelectedTags = SelectedTags.ToList();
         }
-        
-        if (DocumentId > 0) // Only reload if DocumentId is valid
+
+        if (DocumentId > 0 && (DocumentId != _lastLoadedDocumentId || !string.Equals(DocumentType, _lastLoadedDocumentType, StringComparison.Ordinal)))
         {
+            _lastLoadedDocumentId = DocumentId;
+            _lastLoadedDocumentType = DocumentType;
             await LoadDocumentTags();
         }
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    private async Task EnsureAvailableTagsLoadedAsync()
     {
-        if (firstRender && DocumentId > 0)
+        if (_availableTagsLoaded)
         {
-            await LoadDocumentTags();
-            StateHasChanged();
+            return;
         }
-    }
 
-    private async Task LoadAvailableTags()
-    {
         try
         {
             AvailableTags = await TagsService.GetAllTagsAsync();
+            _availableTagsLoaded = true;
         }
         catch (Exception ex)
         {
@@ -236,8 +233,10 @@
             _localSelectedTags = new List<TagResponse>();
             InitialTags = new List<TagResponse>();
             SelectedTags = _localSelectedTags;
-            await SelectedTagsChanged.InvokeAsync(SelectedTags);
-            StateHasChanged();
+            if (SelectedTagsChanged.HasDelegate)
+            {
+                await SelectedTagsChanged.InvokeAsync(SelectedTags);
+            }
             return;
         }
 
@@ -255,8 +254,10 @@
                 InitialTags = new List<TagResponse>();
             }
             SelectedTags = _localSelectedTags;
-            await SelectedTagsChanged.InvokeAsync(SelectedTags);
-            StateHasChanged();
+            if (SelectedTagsChanged.HasDelegate)
+            {
+                await SelectedTagsChanged.InvokeAsync(SelectedTags);
+            }
         }
         catch (Exception ex)
         {
@@ -264,8 +265,10 @@
             _localSelectedTags = new List<TagResponse>();
             InitialTags = new List<TagResponse>();
             SelectedTags = _localSelectedTags;
-            await SelectedTagsChanged.InvokeAsync(SelectedTags);
-            StateHasChanged();
+            if (SelectedTagsChanged.HasDelegate)
+            {
+                await SelectedTagsChanged.InvokeAsync(SelectedTags);
+            }
         }
     }
 
