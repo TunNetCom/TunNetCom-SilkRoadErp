@@ -188,6 +188,13 @@
                                     <RadzenDataGridColumn Property="@nameof(GetDeliveryNoteBaseInfos.Number)"
                                                           Title="@Localizer["number"]"
                                                           Width="140px" />
+                                    <RadzenDataGridColumn Property="@nameof(GetDeliveryNoteBaseInfos.Date)"
+                                                          Title="@Localizer["date"]"
+                                                          Width="140px">
+                                        <Template Context="bl">
+                                            @bl.Date.ToString("d")
+                                        </Template>
+                                    </RadzenDataGridColumn>
                                     <RadzenDataGridColumn Property="@nameof(GetDeliveryNoteBaseInfos.GrossAmount)"
                                                           Title="@Localizer["total_ex_tax"]"
                                                           Width="140px">
@@ -340,6 +347,13 @@
                         <RadzenDataGridColumn Property="@nameof(GetDeliveryNoteBaseInfos.Number)"
                                               Title="@Localizer["number"]"
                                               Width="140px" />
+                        <RadzenDataGridColumn Property="@nameof(GetDeliveryNoteBaseInfos.Date)"
+                                              Title="@Localizer["date"]"
+                                              Width="140px">
+                            <Template Context="detail">
+                                @detail.Date.ToString("d")
+                            </Template>
+                        </RadzenDataGridColumn>
                         <RadzenDataGridColumn Property="@nameof(GetDeliveryNoteBaseInfos.NetAmount)"
                                               Title="@Localizer["total_ex_tax"]"
                                               Width="140px">
