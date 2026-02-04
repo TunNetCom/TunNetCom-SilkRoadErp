@@ -1,3 +1,4 @@
+using FluentResults;
 using TunNetCom.SilkRoadErp.Sales.Contracts;
 using TunNetCom.SilkRoadErp.Sales.Contracts.PaiementTiersDepense;
 using TunNetCom.SilkRoadErp.Sales.HttpClients;
@@ -91,6 +92,21 @@ public class PaiementTiersDepenseApiClient : IPaiementTiersDepenseApiClient
         if (response.StatusCode == HttpStatusCode.BadRequest)
             return await response.ReadJsonAsync<BadRequestResponse>();
         throw new Exception($"PaiementTiersDepense: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
+    }
+
+    public async Task<Result> DeleteAsync(int id, CancellationToken cancellationToken)
+    {
+        var response = await _httpClient.DeleteAsync($"/paiements-tiers-depenses/{id}", cancellationToken);
+        if (response.StatusCode == HttpStatusCode.NoContent)
+            return Result.Ok();
+        if (response.StatusCode == HttpStatusCode.NotFound)
+            return Result.Fail("paiement_tiers_depense_not_found");
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            var content = await response.Content.ReadAsStringAsync(cancellationToken);
+            return Result.Fail(content);
+        }
+        throw new Exception($"PaiementTiersDepense Delete: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
     }
 
     private class CreatedIdResponse

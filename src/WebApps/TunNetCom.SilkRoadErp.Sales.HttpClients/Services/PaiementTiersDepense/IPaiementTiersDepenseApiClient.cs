@@ -25,4 +25,6 @@ public interface IPaiementTiersDepenseApiClient
         int id,
         UpdatePaiementTiersDepenseRequest request,
         CancellationToken cancellationToken);
+
+    Task<Result> DeleteAsync(int id, CancellationToken cancellationToken);
 }

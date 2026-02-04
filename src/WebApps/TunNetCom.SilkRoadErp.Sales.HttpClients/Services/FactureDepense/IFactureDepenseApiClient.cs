@@ -30,4 +30,6 @@ public interface IFactureDepenseApiClient
     Task<OneOf<ResponseTypes, BadRequestResponse>> ValidateAsync(
         int id,
         CancellationToken cancellationToken);
+
+    Task<Result> DeleteAsync(int id, CancellationToken cancellationToken);
 }

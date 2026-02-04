@@ -1,5 +1,6 @@
 @page "/factures-depenses/add"
 @page "/factures-depenses/edit/{Id:int}"
+@using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.Contracts.FactureDepense
 @using TunNetCom.SilkRoadErp.Sales.Contracts.TiersDepenseFonctionnement
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.FactureDepense
@@ -7,10 +8,12 @@
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AccountingYear
 @using TunNetCom.SilkRoadErp.Sales.Contracts
 @using TunNetCom.SilkRoadErp.Sales.HttpClients
-@using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Services
+@using Radzen.Blazor
+@using Radzen
 @using Microsoft.JSInterop
 @inject IFactureDepenseApiClient FactureDepenseService
 @inject ITiersDepenseFonctionnementApiClient TiersDepenseService
@@ -18,132 +21,163 @@
 @inject NavigationManager NavigationManager
 @inject IStringLocalizer<SharedResource> Localizer
 @inject Radzen.NotificationService NotificationService
+@inject ToastService ToastService
 @inject DialogService DialogService
 @inject IJSRuntime JSRuntime
 @inject IConfiguration Configuration
 @inject IAuthService AuthService
 
-<RadzenCard Style="padding: 20px; max-width: 700px; margin: auto;">
-    <RadzenTemplateForm Data="@model" Submit="@SubmitCallback">
-        <RadzenStack Gap="1rem" Style="margin-bottom: 1rem;">
-            <h3 style="margin: 0;">@(Id > 0 ? "Modifier la facture dépense" : "Nouvelle facture dépense")</h3>
-        </RadzenStack>
+<div class="facture-depense-form-container">
+    <div class="facture-depense-form-card">
+        <div class="facture-depense-form-header">
+            <h3>@(IsEditMode ? Localizer["Modifier_Facture"] : Localizer["Nouvelle_Facture_Depense"])</h3>
+            <RadzenButton Icon="arrow_back" Text="@Localizer["Retour"]"
+                          ButtonStyle="ButtonStyle.Secondary"
+                          Click="GoBack"
+                          Variant="Variant.Outlined" />
+        </div>
 
-        <RadzenFormField Text="Tiers dépenses" IsRequired="true">
-            <ChildContent>
-                <RadzenDropDown @bind-Value="model.IdTiersDepenseFonctionnement"
-                                Data="@tiersList"
-                                TextProperty="Nom"
-                                ValueProperty="Id"
-                                Placeholder="Choisir un tiers"
-                                Style="width: 100%;"
-                                Disabled="@(Id > 0)" />
-            </ChildContent>
-        </RadzenFormField>
-        <RadzenFormField Text="Date" IsRequired="true">
-            <ChildContent>
-                <RadzenDatePicker @bind-Value="model.Date" DateFormat="dd/MM/yyyy" Style="width: 100%;" />
-            </ChildContent>
-        </RadzenFormField>
-        <RadzenFormField Text="Description">
-            <ChildContent>
-                <RadzenTextBox @bind-Value="model.Description" Style="width: 100%;" MaxLength="500" />
-            </ChildContent>
-        </RadzenFormField>
-        <RadzenFormField Text="Montant total (TND)" IsRequired="true">
-            <ChildContent>
-                <RadzenNumeric @bind-Value="model.MontantTotal" Min="0" Format="n3" Style="width: 100%;" />
-            </ChildContent>
-        </RadzenFormField>
+        <RadzenStack Gap="1.5rem">
+            <RadzenFormField Text="@($"{Localizer["Tiers_Depenses"]} *")" class="rz-col-12 rz-md-6">
+                <RadzenDropDownDataGrid AllowClear="false"
+                                        IsLoading="@isLoadingTiers"
+                                        @bind-Value="model.IdTiersDepenseFonctionnement"
+                                        LoadData="@LoadTiers"
+                                        AllowFiltering="true"
+                                        Style="width: 100%;"
+                                        Data="@_filteredTiers"
+                                        TextProperty="Nom"
+                                        ValueProperty="Id"
+                                        Placeholder="@Localizer["Select_Tiers"]"
+                                        Disabled="@(Id > 0)">
+                    <Columns>
+                        <RadzenDropDownDataGridColumn Property="Id" Title="ID" Width="80px" />
+                        <RadzenDropDownDataGridColumn Property="Nom" Title="@Localizer["Nom"]" Width="220px" />
+                    </Columns>
+                </RadzenDropDownDataGrid>
+            </RadzenFormField>
 
-        <RadzenFormField Text="@Localizer["Document_Paiement"]" class="rz-col-12">
-            <RadzenCard Style="padding: 1rem;">
-                <RadzenStack Gap="1rem">
-                    @if (!string.IsNullOrWhiteSpace(documentPreview) || !string.IsNullOrWhiteSpace(existingDocumentPath))
-                    {
-                        <div style="text-align: center;">
-                            @if (!string.IsNullOrWhiteSpace(documentPreview))
-                            {
-                                @if (documentPreview.StartsWith("data:application/pdf", StringComparison.OrdinalIgnoreCase))
+            <RadzenFormField Text="@($"{Localizer["Date"]} *")" class="rz-col-12 rz-md-6">
+                <RadzenDatePicker @bind-Value="model.Date" DateFormat="dd/MM/yyyy" ShowTime="false" Style="width: 100%;" />
+            </RadzenFormField>
+
+            <RadzenFormField Text="@Localizer["Description"]" class="rz-col-12">
+                <RadzenTextBox @bind-Value="model.Description" Placeholder="@Localizer["Description_Optionnel"]" Style="width: 100%;" MaxLength="500" />
+            </RadzenFormField>
+
+            <RadzenFormField Text="@($"{Localizer["Montant_Total"]} (TND) *")" class="rz-col-12 rz-md-6">
+                <RadzenNumeric @bind-Value="model.MontantTotal" Min="0" Format="@AmountHelper.FORMAT_N3" Style="width: 100%;" />
+            </RadzenFormField>
+
+            <RadzenFormField Text="@Localizer["Document_Photo_Facture"]" class="rz-col-12">
+                <RadzenCard Style="padding: 1rem; border-radius: 8px; border: 1px solid var(--rz-base-300);">
+                    <RadzenStack Gap="1rem">
+                        @if (!string.IsNullOrWhiteSpace(documentPreview) || !string.IsNullOrWhiteSpace(existingDocumentPath))
+                        {
+                            <div style="text-align: center;">
+                                @if (!string.IsNullOrWhiteSpace(documentPreview))
                                 {
-                                    <RadzenStack Gap="0.5rem">
-                                        <iframe src="@documentPreview" style="width: 100%; height: 400px; border: 1px solid #ddd; border-radius: 4px;" frameborder="0"></iframe>
-                                        <RadzenButton Text="@Localizer["Supprimer"]" Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click="RemoveDocument" />
-                                    </RadzenStack>
-                                }
-                                else
-                                {
-                                    <RadzenStack Gap="0.5rem">
-                                        <img src="@documentPreview" alt="Document preview" style="max-width: 100%; max-height: 400px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;" @onclick="@(() => ShowImagePreview(documentPreview))" />
-                                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="Radzen.JustifyContent.Center">
-                                            <RadzenButton Text="@Localizer["Voir_Image"]" Icon="visibility" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Click="@(() => ShowImagePreview(documentPreview))" />
+                                    @if (documentPreview.StartsWith("data:application/pdf", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <RadzenStack Gap="0.5rem">
+                                            <iframe src="@documentPreview" style="width: 100%; height: 400px; border: 1px solid #ddd; border-radius: 8px;" frameborder="0"></iframe>
                                             <RadzenButton Text="@Localizer["Supprimer"]" Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click="RemoveDocument" />
                                         </RadzenStack>
-                                    </RadzenStack>
+                                    }
+                                    else
+                                    {
+                                        <RadzenStack Gap="0.5rem">
+                                            <img src="@documentPreview" alt="Document preview" style="max-width: 100%; max-height: 400px; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; object-fit: contain;" @onclick="@(() => ShowImagePreview(documentPreview))" />
+                                            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="Radzen.JustifyContent.Center">
+                                                <RadzenButton Text="@Localizer["Voir_Image"]" Icon="visibility" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Click="@(() => ShowImagePreview(documentPreview))" />
+                                                <RadzenButton Text="@Localizer["Supprimer"]" Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click="RemoveDocument" />
+                                            </RadzenStack>
+                                        </RadzenStack>
+                                    }
                                 }
-                            }
-                            else if (!string.IsNullOrWhiteSpace(existingDocumentPath) && !string.IsNullOrWhiteSpace(existingDocumentPreview))
-                            {
-                                @if (existingDocumentPreview.StartsWith("data:application/pdf", StringComparison.OrdinalIgnoreCase))
+                                else if (!string.IsNullOrWhiteSpace(existingDocumentPath) && !string.IsNullOrWhiteSpace(existingDocumentPreview))
+                                {
+                                    @if (existingDocumentPreview.StartsWith("data:application/pdf", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <RadzenStack Gap="0.5rem">
+                                            <iframe src="@existingDocumentPreview" style="width: 100%; height: 400px; border: 1px solid #ddd; border-radius: 8px;" frameborder="0"></iframe>
+                                            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="Radzen.JustifyContent.Center">
+                                                <RadzenButton Text="@Localizer["Ouvrir_Dans_Nouvel_Onglet"]" Icon="open_in_new" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Click="@(() => OpenExistingDocumentInNewTab())" />
+                                                <RadzenButton Text="@Localizer["Supprimer"]" Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click="RemoveDocument" />
+                                            </RadzenStack>
+                                        </RadzenStack>
+                                    }
+                                    else
+                                    {
+                                        <RadzenStack Gap="0.5rem">
+                                            <img src="@existingDocumentPreview" alt="Document preview" style="max-width: 100%; max-height: 400px; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; object-fit: contain;" @onclick="@(() => ShowImagePreview(existingDocumentPreview))" />
+                                            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="Radzen.JustifyContent.Center">
+                                                <RadzenButton Text="@Localizer["Voir_Image"]" Icon="visibility" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Click="@(() => ShowImagePreview(existingDocumentPreview))" />
+                                                <RadzenButton Text="@Localizer["Ouvrir_Dans_Nouvel_Onglet"]" Icon="open_in_new" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Click="@(() => OpenExistingDocumentInNewTab())" />
+                                                <RadzenButton Text="@Localizer["Supprimer"]" Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click="RemoveDocument" />
+                                            </RadzenStack>
+                                        </RadzenStack>
+                                    }
+                                }
+                                else if (!string.IsNullOrWhiteSpace(existingDocumentPath))
                                 {
                                     <RadzenStack Gap="0.5rem">
-                                        <iframe src="@existingDocumentPreview" style="width: 100%; height: 400px; border: 1px solid #ddd; border-radius: 4px;" frameborder="0"></iframe>
-                                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="Radzen.JustifyContent.Center">
-                                            <RadzenButton Text="@Localizer["Ouvrir_Dans_Nouvel_Onglet"]" Icon="open_in_new" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Click="@(() => OpenExistingDocumentInNewTab())" />
-                                            <RadzenButton Text="@Localizer["Supprimer"]" Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click="RemoveDocument" />
-                                        </RadzenStack>
+                                        <RadzenIcon Icon="attach_file" Style="font-size: 48px; color: #2196F3;" />
+                                        <div>@Localizer["Chargement_Document"]...</div>
                                     </RadzenStack>
                                 }
-                                else
-                                {
-                                    <RadzenStack Gap="0.5rem">
-                                        <img src="@existingDocumentPreview" alt="Document preview" style="max-width: 100%; max-height: 400px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;" @onclick="@(() => ShowImagePreview(existingDocumentPreview))" />
-                                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="Radzen.JustifyContent.Center">
-                                            <RadzenButton Text="@Localizer["Voir_Image"]" Icon="visibility" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Click="@(() => ShowImagePreview(existingDocumentPreview))" />
-                                            <RadzenButton Text="@Localizer["Ouvrir_Dans_Nouvel_Onglet"]" Icon="open_in_new" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Click="@(() => OpenExistingDocumentInNewTab())" />
-                                            <RadzenButton Text="@Localizer["Supprimer"]" Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click="RemoveDocument" />
-                                        </RadzenStack>
-                                    </RadzenStack>
-                                }
-                            }
-                            else if (!string.IsNullOrWhiteSpace(existingDocumentPath))
-                            {
-                                <RadzenStack Gap="0.5rem">
-                                    <RadzenIcon Icon="attach_file" Style="font-size: 48px; color: #2196F3;" />
-                                    <div>@Localizer["Chargement_Document"]...</div>
-                                </RadzenStack>
-                            }
-                        </div>
-                    }
-                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="Radzen.JustifyContent.Center">
-                        <RadzenButton Text="Fichier" Icon="attach_file" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Secondary" Click="TriggerFileInput" />
+                            </div>
+                        }
+                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="Radzen.JustifyContent.Center">
+                            <RadzenButton Text="Caméra" Icon="camera_alt" Size="ButtonSize.Small"
+                                        Click="CaptureDocumentFromCamera"
+                                        Disabled="@isSaving" />
+                            <RadzenButton Text="Fichier" Icon="attach_file" Size="ButtonSize.Small"
+                                        ButtonStyle="ButtonStyle.Secondary"
+                                        Click="TriggerFileInput"
+                                        Disabled="@isSaving" />
+                        </RadzenStack>
+                        <InputFile OnChange="HandleFileSelected" accept="image/*,application/pdf" style="display: none;" id="fileInputDocumentFacture" @ref="fileInputElement" />
                     </RadzenStack>
-                    <InputFile OnChange="HandleFileSelected" accept="image/*,application/pdf" style="display: none;" id="fileInputDocumentFacture" @ref="fileInputElement" />
+                </RadzenCard>
+            </RadzenFormField>
+
+            @if (Id > 0 && model.Statut == "Draft")
+            {
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" class="rz-col-12">
+                    <RadzenButton ButtonType="Radzen.ButtonType.Button" Text="@Localizer["Valider_Facture"]" Icon="check_circle"
+                                  ButtonStyle="ButtonStyle.Success" Click="@ValidateFacture" Disabled="@isSaving" />
                 </RadzenStack>
-            </RadzenCard>
-        </RadzenFormField>
+            }
 
-        @if (Id > 0 && model.Statut == "Draft")
-        {
-            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" Style="margin-top: 1rem;">
-                <RadzenButton ButtonType="Radzen.ButtonType.Button" Text="Valider la facture" Icon="check_circle"
-                              ButtonStyle="ButtonStyle.Success" Click="@ValidateFacture" />
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" JustifyContent="Radzen.JustifyContent.End" class="rz-col-12">
+                <RadzenButton Text="@Localizer["Annuler"]" ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Outlined" Click="CancelOrGoBack" />
+                <RadzenButton Text="@(IsEditMode ? Localizer["Modifier"] : Localizer["Creer"])"
+                              ButtonStyle="ButtonStyle.Primary"
+                              Click="SaveFacture"
+                              IsBusy="@isSaving"
+                              Disabled="@(Id > 0 && model.Statut != "Draft")" />
             </RadzenStack>
-        }
-
-        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" Style="margin-top: 1.5rem;">
-            <RadzenButton ButtonType="Radzen.ButtonType.Submit" Text="@Localizer["save_label"]" Icon="save" Disabled="@(Id > 0 && model.Statut != "Draft")" />
-            <RadzenButton Text="@Localizer["cancel_label"]" ButtonStyle="ButtonStyle.Light" Icon="close" Click="@(async () => Cancel())" />
         </RadzenStack>
-    </RadzenTemplateForm>
-</RadzenCard>
+    </div>
+</div>
+
+<style>
+    .facture-depense-form-container { padding: 0; margin: 0; }
+    .facture-depense-form-card { background: transparent; border-radius: 0; box-shadow: none; padding: 1rem; max-width: 800px; margin: 0 auto; }
+    .facture-depense-form-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #e0e0e0; }
+    .facture-depense-form-header h3 { margin: 0; font-size: 1.5rem; font-weight: 600; }
+</style>
 
 @code {
     [Parameter] public int Id { get; set; }
+
+    private bool IsEditMode => Id > 0;
+    private bool isSaving;
+    private bool isLoadingTiers;
     private FactureDepenseFormModel model = new();
-    private List<TiersDepenseFonctionnementResponse> tiersList = new();
+    private List<TiersDepenseFonctionnementResponse> _filteredTiers = new();
     private CancellationTokenSource _cts = new();
-    private EventCallback<FactureDepenseFormModel> SubmitCallback => EventCallback.Factory.Create<FactureDepenseFormModel>(this, HandleValidSubmit);
 
     private string? documentBase64;
     private string? documentPreview;
@@ -151,11 +185,18 @@
     private string? existingDocumentPreview;
     private InputFile? fileInputElement;
 
+    private class FactureDepenseFormModel
+    {
+        public int Id { get; set; }
+        public int IdTiersDepenseFonctionnement { get; set; }
+        public DateTime Date { get; set; } = DateTime.Today;
+        public string Description { get; set; } = "";
+        public decimal MontantTotal { get; set; }
+        public string Statut { get; set; } = "";
+    }
+
     protected override async Task OnInitializedAsync()
     {
-        var tiersResult = await TiersDepenseService.GetPagedAsync(new QueryStringParameters { PageNumber = 1, PageSize = 500 }, _cts.Token);
-        tiersList = tiersResult.Items?.ToList() ?? new();
-
         if (Id > 0)
         {
             var result = await FactureDepenseService.GetByIdAsync(Id, _cts.Token);
@@ -176,6 +217,12 @@
                     existingDocumentPath = r.DocumentStoragePath;
                     await LoadExistingDocumentPreviewAsync();
                 }
+                if (model.IdTiersDepenseFonctionnement > 0)
+                {
+                    var tierResult = await TiersDepenseService.GetByIdAsync(model.IdTiersDepenseFonctionnement, _cts.Token);
+                    if (tierResult.IsT0)
+                        _filteredTiers = new List<TiersDepenseFonctionnementResponse> { tierResult.AsT0 };
+                }
             }
             else
             {
@@ -184,71 +231,138 @@
         }
     }
 
-    private async Task HandleValidSubmit()
+    private async Task LoadTiers(LoadDataArgs args)
     {
-        if (Id == 0)
+        isLoadingTiers = true;
+        var parameters = new QueryStringParameters
         {
-            var createResult = await FactureDepenseService.CreateAsync(new CreateFactureDepenseRequest
+            PageNumber = args.Skip.HasValue && args.Top.HasValue && args.Top.Value > 0 ? (args.Skip.Value / args.Top.Value) + 1 : 1,
+            PageSize = args.Top.HasValue && args.Top.Value > 0 ? args.Top.Value : 20,
+            SearchKeyword = args.Filter ?? string.Empty
+        };
+        try
+        {
+            var result = await TiersDepenseService.GetPagedAsync(parameters, _cts.Token);
+            _filteredTiers = result.Items?.ToList() ?? new();
+        }
+        catch { _filteredTiers = new(); }
+        isLoadingTiers = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SaveFacture()
+    {
+        if (model.IdTiersDepenseFonctionnement <= 0)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Warning, Summary = Localizer["Validation"], Detail = Localizer["Select_Tiers_Validation"] ?? "Veuillez sélectionner un tiers." });
+            return;
+        }
+
+        isSaving = true;
+        try
+        {
+            if (Id == 0)
             {
-                IdTiersDepenseFonctionnement = model.IdTiersDepenseFonctionnement,
+                var createResult = await FactureDepenseService.CreateAsync(new CreateFactureDepenseRequest
+                {
+                    IdTiersDepenseFonctionnement = model.IdTiersDepenseFonctionnement,
+                    Date = model.Date,
+                    Description = model.Description,
+                    MontantTotal = model.MontantTotal,
+                    AccountingYearId = null,
+                    DocumentBase64 = documentBase64
+                }, _cts.Token);
+                if (createResult.IsT0)
+                {
+                    ToastService.Notify(new(ToastType.Success, Localizer["Facture_Depense_Creee"] ?? "Facture dépense créée."));
+                    NavigationManager.NavigateTo("/factures-depenses");
+                    return;
+                }
+                NotificationService.Notify(NotificationSeverity.Error, "Erreur lors de la création.");
+                return;
+            }
+            if (model.Statut != "Draft")
+            {
+                isSaving = false;
+                return;
+            }
+            var updateResult = await FactureDepenseService.UpdateAsync(Id, new UpdateFactureDepenseRequest
+            {
                 Date = model.Date,
                 Description = model.Description,
                 MontantTotal = model.MontantTotal,
-                AccountingYearId = null,
                 DocumentBase64 = documentBase64
             }, _cts.Token);
-            if (createResult.IsT0)
+            if (updateResult.IsT0 && updateResult.AsT0 == ResponseTypes.Success)
             {
-                NotificationService.Notify(NotificationSeverity.Success, "Facture dépense créée.");
+                ToastService.Notify(new(ToastType.Success, Localizer["Facture_Mise_A_Jour"] ?? "Facture mise à jour."));
                 NavigationManager.NavigateTo("/factures-depenses");
                 return;
             }
-            NotificationService.Notify(NotificationSeverity.Error, "Erreur lors de la création.");
-            return;
+            NotificationService.Notify(NotificationSeverity.Error, "Erreur lors de la mise à jour.");
         }
-        if (model.Statut != "Draft") return;
-        var updateResult = await FactureDepenseService.UpdateAsync(Id, new UpdateFactureDepenseRequest
+        finally
         {
-            Date = model.Date,
-            Description = model.Description,
-            MontantTotal = model.MontantTotal,
-            DocumentBase64 = documentBase64
-        }, _cts.Token);
-        if (updateResult.IsT0 && updateResult.AsT0 == ResponseTypes.Success)
-        {
-            NotificationService.Notify(NotificationSeverity.Success, "Facture mise à jour.");
-            NavigationManager.NavigateTo("/factures-depenses");
-            return;
+            isSaving = false;
         }
-        NotificationService.Notify(NotificationSeverity.Error, "Erreur lors de la mise à jour.");
     }
 
     private async Task ValidateFacture()
     {
-        var result = await FactureDepenseService.ValidateAsync(Id, _cts.Token);
-        if (result.IsT0 && result.AsT0 == ResponseTypes.Success)
+        isSaving = true;
+        try
         {
-            NotificationService.Notify(NotificationSeverity.Success, "Facture validée.");
-            model.Statut = "Valid";
-            await InvokeAsync(StateHasChanged);
-            return;
+            var result = await FactureDepenseService.ValidateAsync(Id, _cts.Token);
+            if (result.IsT0 && result.AsT0 == ResponseTypes.Success)
+            {
+                ToastService.Notify(new(ToastType.Success, Localizer["Facture_Validee"] ?? "Facture validée."));
+                model.Statut = "Valid";
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+            NotificationService.Notify(NotificationSeverity.Error, "Erreur lors de la validation.");
         }
-        NotificationService.Notify(NotificationSeverity.Error, "Erreur lors de la validation.");
+        finally
+        {
+            isSaving = false;
+        }
     }
 
-    private void Cancel()
-    {
-        NavigationManager.NavigateTo("/factures-depenses");
-    }
+    private void CancelOrGoBack() => NavigationManager.NavigateTo("/factures-depenses");
+    private void GoBack() => NavigationManager.NavigateTo("/factures-depenses");
 
-    private class FactureDepenseFormModel
+    private async Task CaptureDocumentFromCamera()
     {
-        public int Id { get; set; }
-        public int IdTiersDepenseFonctionnement { get; set; }
-        public DateTime Date { get; set; } = DateTime.Today;
-        public string Description { get; set; } = "";
-        public decimal MontantTotal { get; set; }
-        public string Statut { get; set; } = "";
+        try
+        {
+            var base64Image = await JSRuntime.InvokeAsync<string>("window.captureImageFromCamera");
+            if (string.IsNullOrEmpty(base64Image))
+            {
+                NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Warning, Summary = Localizer["Erreur"], Detail = "Erreur lors de la capture de l'image" });
+                return;
+            }
+            var imageSizeBytes = (base64Image.Length * 3) / 4;
+            const long maxImageSize = 5 * 1024 * 1024;
+            if (imageSizeBytes > maxImageSize)
+            {
+                NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Warning, Summary = Localizer["Erreur"], Detail = "L'image est trop grande (max 5 MB)." });
+                return;
+            }
+            documentBase64 = base64Image;
+            documentPreview = $"data:image/jpeg;base64,{base64Image}";
+            existingDocumentPath = null;
+            await InvokeAsync(StateHasChanged);
+            ToastService.Notify(new(ToastType.Success, "Document capturé avec succès"));
+        }
+        catch (JSException ex)
+        {
+            var msg = ex.Message.Contains("cancelled") || ex.Message.Contains("annulée") ? "Capture annulée" : ex.Message;
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = Localizer["Erreur"], Detail = msg });
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = Localizer["Erreur"], Detail = ex.Message });
+        }
     }
 
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
@@ -261,6 +375,11 @@
             NotificationService.Notify(NotificationSeverity.Warning, "Fichier trop volumineux (max 5 Mo).");
             return;
         }
+        if (!file.ContentType.StartsWith("image/") && file.ContentType != "application/pdf")
+        {
+            NotificationService.Notify(NotificationSeverity.Warning, "Veuillez sélectionner un fichier image ou PDF.");
+            return;
+        }
         try
         {
             using var stream = file.OpenReadStream(maxFileSize);
@@ -271,10 +390,11 @@
             documentPreview = file.ContentType == "application/pdf" ? "data:application/pdf;base64," + base64 : $"data:{file.ContentType};base64,{base64}";
             existingDocumentPath = null;
             await InvokeAsync(StateHasChanged);
+            ToastService.Notify(new(ToastType.Success, "Fichier sélectionné avec succès"));
         }
-        catch
+        catch (Exception ex)
         {
-            NotificationService.Notify(NotificationSeverity.Error, "Erreur lors du téléchargement du fichier.");
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = Localizer["Erreur"], Detail = ex.Message });
         }
     }
 

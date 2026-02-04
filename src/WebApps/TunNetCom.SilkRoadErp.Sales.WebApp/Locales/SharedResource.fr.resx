@@ -927,6 +927,39 @@
   <data name="Select_Tiers_Validation" xml:space="preserve">
     <value>Veuillez sélectionner un tiers.</value>
   </data>
+  <data name="Document_Photo_Facture" xml:space="preserve">
+    <value>Document / Photo</value>
+  </data>
+  <data name="Nouvelle_Facture_Depense" xml:space="preserve">
+    <value>Nouvelle facture dépense</value>
+  </data>
+  <data name="Modifier_Facture" xml:space="preserve">
+    <value>Modifier la facture</value>
+  </data>
+  <data name="Valider_Facture" xml:space="preserve">
+    <value>Valider la facture</value>
+  </data>
+  <data name="Facture_Depense_Creee" xml:space="preserve">
+    <value>Facture dépense créée.</value>
+  </data>
+  <data name="Facture_Mise_A_Jour" xml:space="preserve">
+    <value>Facture mise à jour.</value>
+  </data>
+  <data name="Facture_Validee" xml:space="preserve">
+    <value>Facture validée.</value>
+  </data>
+  <data name="Facture_Supprimee" xml:space="preserve">
+    <value>Facture supprimée.</value>
+  </data>
+  <data name="Facture_Has_Paiement" xml:space="preserve">
+    <value>Impossible de supprimer : cette facture est liée à un ou plusieurs paiements.</value>
+  </data>
+  <data name="Montant_Total" xml:space="preserve">
+    <value>Montant total</value>
+  </data>
+  <data name="Description_Optionnel" xml:space="preserve">
+    <value>Description (optionnel)</value>
+  </data>
   <data name="Select_Provider_Validation" xml:space="preserve">
     <value>Veuillez sélectionner un fournisseur</value>
   </data>

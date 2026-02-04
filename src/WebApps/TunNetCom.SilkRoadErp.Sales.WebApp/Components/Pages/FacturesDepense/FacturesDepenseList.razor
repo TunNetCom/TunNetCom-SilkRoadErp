@@ -20,6 +20,8 @@
 @inject NavigationManager NavigationManager
 @inject IStringLocalizer<SharedResource> Localizer
 @inject Radzen.NotificationService NotificationService
+@inject ToastService ToastService
+@inject DialogService DialogService
 @inject IDecimalFormatService DecimalFormatService
 
 <div class="factures-container">
@@ -33,14 +35,25 @@
         </div>
 
         <div class="filters">
-            <RadzenDropDown @bind-Value="selectedTiersId"
-                            Data="@tiersList"
-                            TextProperty="Nom"
-                            ValueProperty="Id"
-                            Placeholder="Tous les tiers"
-                            AllowClear="true"
-                            Style="width: 220px;"
-                            Change="@OnFilterChange" />
+            <div class="search-field">
+                <label>@Localizer["Tiers_Depenses"]</label>
+                <RadzenDropDownDataGrid AllowClear="true"
+                                        IsLoading="@isLoadingTiers"
+                                        @bind-Value="selectedTiersId"
+                                        LoadData="@LoadTiers"
+                                        AllowFiltering="true"
+                                        Style="width: 280px;"
+                                        Data="@_filteredTiers"
+                                        TextProperty="Nom"
+                                        ValueProperty="Id"
+                                        Placeholder="@Localizer["Select_Tiers"]"
+                                        Change="@OnFilterChange">
+                    <Columns>
+                        <RadzenDropDownDataGridColumn Property="Id" Title="ID" Width="80px" />
+                        <RadzenDropDownDataGridColumn Property="Nom" Title="@Localizer["Nom"]" Width="220px" />
+                    </Columns>
+                </RadzenDropDownDataGrid>
+            </div>
             <RadzenDropDown @bind-Value="selectedAccountingYearId"
                             Data="@accountingYears"
                             TextProperty="Year"
@@ -53,6 +66,7 @@
         </div>
 
         <RadzenDataGrid TItem="FactureDepenseSummaryItem"
+                        @ref="factureGrid"
                         Data="@items"
                         AllowPaging="true"
                         PageSize="10"
@@ -64,7 +78,6 @@
                 <RadzenDataGridColumn TItem="FactureDepenseSummaryItem" Property="Date" Title="Date" Width="110px">
                     <Template Context="f">@f.Date.ToString("dd/MM/yyyy")</Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="FactureDepenseSummaryItem" Property="Description" Title="Description" Width="200px" />
                 <RadzenDataGridColumn TItem="FactureDepenseSummaryItem" Property="MontantTotal" Title="Montant" Width="120px">
                     <Template Context="f">@f.MontantTotal.FormatAmount(decimalPlaces) TND</Template>
                 </RadzenDataGridColumn>
@@ -88,10 +101,15 @@
                         <TagSelector DocumentType="FactureDepense" DocumentId="@f.Id" SaveOnChange="true" />
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="FactureDepenseSummaryItem" Filterable="false" Sortable="false" Width="100px" TextAlign="TextAlign.Center">
+                <RadzenDataGridColumn TItem="FactureDepenseSummaryItem" Title="Actions" Filterable="false" Sortable="false" Width="120px" TextAlign="TextAlign.Center">
                     <Template Context="f">
-                        <RadzenButton Icon="edit" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Success" Variant="Variant.Outlined"
-                                      Click="@(() => EditFacture(f.Id))" Title="Modifier" />
+                        <div style="display: flex; gap: 6px; justify-content: center; align-items: center;">
+                            <RadzenButton Icon="edit" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Success" Variant="Variant.Outlined"
+                                          Click="@(() => EditFacture(f.Id))" Title="@Localizer["Modifier"]" />
+                            <RadzenButton Icon="delete" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Outlined"
+                                          Click="@(() => ConfirmDeleteFacture(f.Id))"
+                                          Title="@Localizer["Supprimer"]" />
+                        </div>
                     </Template>
                 </RadzenDataGridColumn>
             </Columns>
@@ -104,7 +122,7 @@
 
 @code {
     private List<FactureDepenseSummaryItem> items = new();
-    private List<TiersDepenseFonctionnementResponse> tiersList = new();
+    private List<TiersDepenseFonctionnementResponse> _filteredTiers = new();
     private List<GetAllAccountingYearsResponse> accountingYears = new();
     private int? selectedTiersId;
     private int? selectedAccountingYearId;
@@ -112,20 +130,34 @@
     private const int pageSize = 10;
     private int totalCount;
     private int decimalPlaces = 2;
+    private bool isLoadingTiers;
     private CancellationTokenSource _cts = new();
+    private RadzenDataGrid<FactureDepenseSummaryItem>? factureGrid;
 
     protected override async Task OnInitializedAsync()
     {
         decimalPlaces = await DecimalFormatService.GetDecimalPlacesAsync();
-        await LoadTiers();
         await LoadAccountingYears();
         await LoadData();
     }
 
-    private async Task LoadTiers()
+    private async Task LoadTiers(LoadDataArgs args)
     {
-        var result = await TiersDepenseService.GetPagedAsync(new QueryStringParameters { PageNumber = 1, PageSize = 500 }, _cts.Token);
-        tiersList = result.Items?.ToList() ?? new();
+        isLoadingTiers = true;
+        var parameters = new QueryStringParameters
+        {
+            PageNumber = args.Skip.HasValue && args.Top.HasValue && args.Top.Value > 0 ? (args.Skip.Value / args.Top.Value) + 1 : 1,
+            PageSize = args.Top.HasValue && args.Top.Value > 0 ? args.Top.Value : 20,
+            SearchKeyword = args.Filter ?? string.Empty
+        };
+        try
+        {
+            var result = await TiersDepenseService.GetPagedAsync(parameters, _cts.Token);
+            _filteredTiers = result.Items?.ToList() ?? new();
+        }
+        catch { _filteredTiers = new(); }
+        isLoadingTiers = false;
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task LoadAccountingYears()
@@ -161,6 +193,33 @@
         NavigationManager.NavigateTo(documentUrl, forceLoad: true);
     }
 
+    private async Task ConfirmDeleteFacture(int factureId)
+    {
+        bool? confirmed = await DialogService.Confirm(Localizer["Confirmation_Suppression"] ?? "Confirmer la suppression", Localizer["Confirmation_Suppression_Titre"] ?? "Supprimer cette facture dépense ?", new ConfirmOptions { OkButtonText = Localizer["Oui"] ?? "Oui", CancelButtonText = Localizer["Non"] ?? "Non" });
+        if (confirmed != true) return;
+        try
+        {
+            var result = await FactureDepenseService.DeleteAsync(factureId, _cts.Token);
+            if (result.IsSuccess)
+            {
+                ToastService.Notify(new(ToastType.Success, Localizer["Facture_Supprimee"] ?? "Facture supprimée."));
+                await LoadData();
+                if (factureGrid != null) await factureGrid.Reload();
+            }
+            else
+            {
+                var msg = result.Errors.FirstOrDefault()?.Message ?? Localizer["Erreur_Suppression"] ?? "Erreur lors de la suppression.";
+                if (msg.Contains("facture_has_paiement", StringComparison.OrdinalIgnoreCase))
+                    msg = Localizer["Facture_Has_Paiement"] ?? "Impossible de supprimer : cette facture est liée à un ou plusieurs paiements.";
+                ToastService.Notify(new(ToastType.Danger, msg));
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.Notify(new(ToastType.Danger, ex.Message));
+        }
+    }
+
     public void Dispose()
     {
         _cts.Cancel();
@@ -174,4 +233,6 @@
     .factures-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
     .factures-title { font-weight: 600; margin: 0; font-size: 1.5rem; }
     .filters { display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
+    .search-field { display: flex; flex-direction: column; gap: 0.25rem; }
+    .search-field label { font-weight: 500; font-size: 0.875rem; }
 </style>

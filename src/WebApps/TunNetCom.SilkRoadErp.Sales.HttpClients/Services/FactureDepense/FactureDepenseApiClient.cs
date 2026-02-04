@@ -1,3 +1,4 @@
+using FluentResults;
 using TunNetCom.SilkRoadErp.Sales.Contracts.FactureDepense;
 using TunNetCom.SilkRoadErp.Sales.HttpClients;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services;
@@ -107,6 +108,38 @@ public class FactureDepenseApiClient : IFactureDepenseApiClient
         if (response.StatusCode == HttpStatusCode.BadRequest)
             return await response.ReadJsonAsync<BadRequestResponse>();
         throw new Exception($"FactureDepense Validate: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
+    }
+
+    public async Task<Result> DeleteAsync(int id, CancellationToken cancellationToken)
+    {
+        var response = await _httpClient.DeleteAsync($"/factures-depenses/{id}", cancellationToken);
+        if (response.StatusCode == HttpStatusCode.NoContent)
+            return Result.Ok();
+        if (response.StatusCode == HttpStatusCode.NotFound)
+            return Result.Fail("facture_depense_not_found");
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            var content = await response.Content.ReadAsStringAsync(cancellationToken);
+            try
+            {
+                var problem = JsonConvert.DeserializeObject<ValidationProblemDetails>(content);
+                var msg = problem?.Errors?.Values?.FirstOrDefault()?.FirstOrDefault() ?? problem?.Detail ?? "facture_has_paiement";
+                return Result.Fail(msg);
+            }
+            catch
+            {
+                return Result.Fail("facture_has_paiement");
+            }
+        }
+        throw new Exception($"FactureDepense Delete: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
+    }
+
+    private class ValidationProblemDetails
+    {
+        [JsonProperty("detail")]
+        public string? Detail { get; set; }
+        [JsonProperty("errors")]
+        public Dictionary<string, string[]>? Errors { get; set; }
     }
 
     private class CreatedIdResponse

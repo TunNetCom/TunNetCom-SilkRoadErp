@@ -51,14 +51,22 @@
             </RadzenFormField>
 
             <RadzenFormField Text="@($"{Localizer["Tiers_Depenses"]} *")" class="rz-col-12 rz-md-6">
-                <RadzenDropDown @bind-Value="model.TiersDepenseFonctionnementId"
-                                Data="@tiersList"
-                                TextProperty="Nom"
-                                ValueProperty="Id"
-                                Placeholder="@Localizer["Select_Tiers"]"
-                                AllowClear="false"
-                                Style="width: 100%;"
-                                Change="@OnTiersChanged" />
+                <RadzenDropDownDataGrid AllowClear="false"
+                                        IsLoading="@isLoadingTiers"
+                                        @bind-Value="model.TiersDepenseFonctionnementId"
+                                        LoadData="@LoadTiers"
+                                        AllowFiltering="true"
+                                        Style="width: 100%;"
+                                        Data="@_filteredTiers"
+                                        TextProperty="Nom"
+                                        ValueProperty="Id"
+                                        Placeholder="@Localizer["Select_Tiers"]"
+                                        Change="@OnTiersChanged">
+                    <Columns>
+                        <RadzenDropDownDataGridColumn Property="Id" Title="ID" Width="80px" />
+                        <RadzenDropDownDataGridColumn Property="Nom" Title="@Localizer["Nom"]" Width="220px" />
+                    </Columns>
+                </RadzenDropDownDataGrid>
             </RadzenFormField>
 
             <RadzenFormField Text="@($"{Localizer["Exercice_Comptable"]} *")" class="rz-col-12 rz-md-6">
@@ -288,9 +296,10 @@
     private int? EffectiveId => Id > 0 ? Id : null;
     private bool IsEditMode => EffectiveId.HasValue;
     private bool isLoadingFacturesDepense;
+    private bool isLoadingTiers;
     private bool isSaving;
     private PaiementTiersDepenseFormModel model = new();
-    private List<TiersDepenseFonctionnementResponse> tiersList = new();
+    private List<TiersDepenseFonctionnementResponse> _filteredTiers = new();
     private List<GetAllAccountingYearsResponse> accountingYears = new();
     private List<BanqueResponse> banques = new();
     private List<FactureDepenseSummaryItem> _filteredFacturesDepense = new();
@@ -353,8 +362,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var tiersResult = await TiersDepenseService.GetPagedAsync(new QueryStringParameters { PageNumber = 1, PageSize = 500 }, _cts.Token);
-        tiersList = tiersResult.Items?.ToList() ?? new();
         accountingYears = await AccountingYearService.GetAllAccountingYearsAsync(_cts.Token) ?? new();
         banques = await BanqueService.GetBanquesAsync(_cts.Token) ?? new();
 
@@ -400,10 +407,35 @@
             selectedFactureDepenseIds = r.FactureDepenseIds?.ToList() ?? new();
             existingDocumentPath = r.DocumentStoragePath;
             if (!string.IsNullOrWhiteSpace(existingDocumentPath)) await LoadExistingDocumentPreviewAsync();
-            if (model.TiersDepenseFonctionnementId > 0) await LoadFacturesDepenseForTiersAsync(model.TiersDepenseFonctionnementId);
+            if (model.TiersDepenseFonctionnementId > 0)
+            {
+                var tierResult = await TiersDepenseService.GetByIdAsync(model.TiersDepenseFonctionnementId, _cts.Token);
+                if (tierResult.IsT0)
+                    _filteredTiers = new List<TiersDepenseFonctionnementResponse> { tierResult.AsT0 };
+                await LoadFacturesDepenseForTiersAsync(model.TiersDepenseFonctionnementId);
+            }
         }
         else
             NavigationManager.NavigateTo("/paiements-tiers-depenses");
+    }
+
+    private async Task LoadTiers(LoadDataArgs args)
+    {
+        isLoadingTiers = true;
+        var parameters = new QueryStringParameters
+        {
+            PageNumber = args.Skip.HasValue && args.Top.HasValue && args.Top.Value > 0 ? (args.Skip.Value / args.Top.Value) + 1 : 1,
+            PageSize = args.Top.HasValue && args.Top.Value > 0 ? args.Top.Value : 20,
+            SearchKeyword = args.Filter ?? string.Empty
+        };
+        try
+        {
+            var result = await TiersDepenseService.GetPagedAsync(parameters, _cts.Token);
+            _filteredTiers = result.Items?.ToList() ?? new();
+        }
+        catch { _filteredTiers = new(); }
+        isLoadingTiers = false;
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task OnTiersChanged(object? value)
