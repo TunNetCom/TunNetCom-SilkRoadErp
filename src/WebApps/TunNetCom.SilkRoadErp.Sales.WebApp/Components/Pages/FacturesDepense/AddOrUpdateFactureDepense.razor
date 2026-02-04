@@ -9,12 +9,19 @@
 @using TunNetCom.SilkRoadErp.Sales.HttpClients
 @using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
+@using Microsoft.JSInterop
 @inject IFactureDepenseApiClient FactureDepenseService
 @inject ITiersDepenseFonctionnementApiClient TiersDepenseService
 @inject IAccountingYearApiClient AccountingYearService
 @inject NavigationManager NavigationManager
 @inject IStringLocalizer<SharedResource> Localizer
 @inject Radzen.NotificationService NotificationService
+@inject DialogService DialogService
+@inject IJSRuntime JSRuntime
+@inject IConfiguration Configuration
+@inject IAuthService AuthService
 
 <RadzenCard Style="padding: 20px; max-width: 700px; margin: auto;">
     <RadzenTemplateForm Data="@model" Submit="@SubmitCallback">
@@ -49,6 +56,73 @@
             </ChildContent>
         </RadzenFormField>
 
+        <RadzenFormField Text="@Localizer["Document_Paiement"]" class="rz-col-12">
+            <RadzenCard Style="padding: 1rem;">
+                <RadzenStack Gap="1rem">
+                    @if (!string.IsNullOrWhiteSpace(documentPreview) || !string.IsNullOrWhiteSpace(existingDocumentPath))
+                    {
+                        <div style="text-align: center;">
+                            @if (!string.IsNullOrWhiteSpace(documentPreview))
+                            {
+                                @if (documentPreview.StartsWith("data:application/pdf", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    <RadzenStack Gap="0.5rem">
+                                        <iframe src="@documentPreview" style="width: 100%; height: 400px; border: 1px solid #ddd; border-radius: 4px;" frameborder="0"></iframe>
+                                        <RadzenButton Text="@Localizer["Supprimer"]" Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click="RemoveDocument" />
+                                    </RadzenStack>
+                                }
+                                else
+                                {
+                                    <RadzenStack Gap="0.5rem">
+                                        <img src="@documentPreview" alt="Document preview" style="max-width: 100%; max-height: 400px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;" @onclick="@(() => ShowImagePreview(documentPreview))" />
+                                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="Radzen.JustifyContent.Center">
+                                            <RadzenButton Text="@Localizer["Voir_Image"]" Icon="visibility" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Click="@(() => ShowImagePreview(documentPreview))" />
+                                            <RadzenButton Text="@Localizer["Supprimer"]" Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click="RemoveDocument" />
+                                        </RadzenStack>
+                                    </RadzenStack>
+                                }
+                            }
+                            else if (!string.IsNullOrWhiteSpace(existingDocumentPath) && !string.IsNullOrWhiteSpace(existingDocumentPreview))
+                            {
+                                @if (existingDocumentPreview.StartsWith("data:application/pdf", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    <RadzenStack Gap="0.5rem">
+                                        <iframe src="@existingDocumentPreview" style="width: 100%; height: 400px; border: 1px solid #ddd; border-radius: 4px;" frameborder="0"></iframe>
+                                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="Radzen.JustifyContent.Center">
+                                            <RadzenButton Text="@Localizer["Ouvrir_Dans_Nouvel_Onglet"]" Icon="open_in_new" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Click="@(() => OpenExistingDocumentInNewTab())" />
+                                            <RadzenButton Text="@Localizer["Supprimer"]" Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click="RemoveDocument" />
+                                        </RadzenStack>
+                                    </RadzenStack>
+                                }
+                                else
+                                {
+                                    <RadzenStack Gap="0.5rem">
+                                        <img src="@existingDocumentPreview" alt="Document preview" style="max-width: 100%; max-height: 400px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;" @onclick="@(() => ShowImagePreview(existingDocumentPreview))" />
+                                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="Radzen.JustifyContent.Center">
+                                            <RadzenButton Text="@Localizer["Voir_Image"]" Icon="visibility" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Click="@(() => ShowImagePreview(existingDocumentPreview))" />
+                                            <RadzenButton Text="@Localizer["Ouvrir_Dans_Nouvel_Onglet"]" Icon="open_in_new" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Click="@(() => OpenExistingDocumentInNewTab())" />
+                                            <RadzenButton Text="@Localizer["Supprimer"]" Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click="RemoveDocument" />
+                                        </RadzenStack>
+                                    </RadzenStack>
+                                }
+                            }
+                            else if (!string.IsNullOrWhiteSpace(existingDocumentPath))
+                            {
+                                <RadzenStack Gap="0.5rem">
+                                    <RadzenIcon Icon="attach_file" Style="font-size: 48px; color: #2196F3;" />
+                                    <div>@Localizer["Chargement_Document"]...</div>
+                                </RadzenStack>
+                            }
+                        </div>
+                    }
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="Radzen.JustifyContent.Center">
+                        <RadzenButton Text="Fichier" Icon="attach_file" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Secondary" Click="TriggerFileInput" />
+                    </RadzenStack>
+                    <InputFile OnChange="HandleFileSelected" accept="image/*,application/pdf" style="display: none;" id="fileInputDocumentFacture" @ref="fileInputElement" />
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenFormField>
+
         @if (Id > 0 && model.Statut == "Draft")
         {
             <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" Style="margin-top: 1rem;">
@@ -71,6 +145,12 @@
     private CancellationTokenSource _cts = new();
     private EventCallback<FactureDepenseFormModel> SubmitCallback => EventCallback.Factory.Create<FactureDepenseFormModel>(this, HandleValidSubmit);
 
+    private string? documentBase64;
+    private string? documentPreview;
+    private string? existingDocumentPath;
+    private string? existingDocumentPreview;
+    private InputFile? fileInputElement;
+
     protected override async Task OnInitializedAsync()
     {
         var tiersResult = await TiersDepenseService.GetPagedAsync(new QueryStringParameters { PageNumber = 1, PageSize = 500 }, _cts.Token);
@@ -91,6 +171,11 @@
                     MontantTotal = r.MontantTotal,
                     Statut = r.Statut ?? ""
                 };
+                if (!string.IsNullOrWhiteSpace(r.DocumentStoragePath))
+                {
+                    existingDocumentPath = r.DocumentStoragePath;
+                    await LoadExistingDocumentPreviewAsync();
+                }
             }
             else
             {
@@ -109,7 +194,8 @@
                 Date = model.Date,
                 Description = model.Description,
                 MontantTotal = model.MontantTotal,
-                AccountingYearId = null
+                AccountingYearId = null,
+                DocumentBase64 = documentBase64
             }, _cts.Token);
             if (createResult.IsT0)
             {
@@ -125,7 +211,8 @@
         {
             Date = model.Date,
             Description = model.Description,
-            MontantTotal = model.MontantTotal
+            MontantTotal = model.MontantTotal,
+            DocumentBase64 = documentBase64
         }, _cts.Token);
         if (updateResult.IsT0 && updateResult.AsT0 == ResponseTypes.Success)
         {
@@ -162,5 +249,104 @@
         public string Description { get; set; } = "";
         public decimal MontantTotal { get; set; }
         public string Statut { get; set; } = "";
+    }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file == null) return;
+        const long maxFileSize = 5 * 1024 * 1024;
+        if (file.Size > maxFileSize)
+        {
+            NotificationService.Notify(NotificationSeverity.Warning, "Fichier trop volumineux (max 5 Mo).");
+            return;
+        }
+        try
+        {
+            using var stream = file.OpenReadStream(maxFileSize);
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            var base64 = Convert.ToBase64String(memoryStream.ToArray());
+            documentBase64 = base64;
+            documentPreview = file.ContentType == "application/pdf" ? "data:application/pdf;base64," + base64 : $"data:{file.ContentType};base64,{base64}";
+            existingDocumentPath = null;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Erreur lors du téléchargement du fichier.");
+        }
+    }
+
+    private void RemoveDocument()
+    {
+        documentBase64 = null;
+        documentPreview = null;
+        existingDocumentPath = null;
+        existingDocumentPreview = null;
+        StateHasChanged();
+    }
+
+    private async Task TriggerFileInput() => await JSRuntime.InvokeVoidAsync("eval", "document.getElementById('fileInputDocumentFacture')?.click()");
+
+    private async Task LoadExistingDocumentPreviewAsync()
+    {
+        if (string.IsNullOrWhiteSpace(existingDocumentPath) || Id <= 0) return;
+        try
+        {
+            var baseUrl = Configuration.GetValue<string>("ApiSettings:BaseUrl") ?? "";
+            var url = $"{baseUrl.TrimEnd('/')}/factures-depenses/{Id}/document";
+            using var httpClient = new HttpClient();
+            var token = AuthService.AccessToken;
+            if (!string.IsNullOrEmpty(token))
+                httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var response = await httpClient.GetAsync(url, _cts.Token);
+            if (!response.IsSuccessStatusCode) return;
+            var documentBytes = await response.Content.ReadAsByteArrayAsync(_cts.Token);
+            var contentType = "application/octet-stream";
+            if (documentBytes.Length >= 4)
+            {
+                if (documentBytes[0] == 0x25 && documentBytes[1] == 0x50 && documentBytes[2] == 0x44 && documentBytes[3] == 0x46) contentType = "application/pdf";
+                else if (documentBytes[0] == 0x89 && documentBytes[1] == 0x50 && documentBytes[2] == 0x4E && documentBytes[3] == 0x47) contentType = "image/png";
+                else if (documentBytes.Length >= 3 && documentBytes[0] == 0xFF && documentBytes[1] == 0xD8 && documentBytes[2] == 0xFF) contentType = "image/jpeg";
+            }
+            existingDocumentPreview = $"data:{contentType};base64,{Convert.ToBase64String(documentBytes)}";
+            await InvokeAsync(StateHasChanged);
+        }
+        catch { /* ignore */ }
+    }
+
+    private async Task ShowImagePreview(string? imageUrl)
+    {
+        if (string.IsNullOrWhiteSpace(imageUrl)) return;
+        if (!imageUrl.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase))
+        {
+            await OpenExistingDocumentInNewTab();
+            return;
+        }
+        await DialogService.OpenAsync<ImagePreviewDialog>("Aperçu de l'image", new Dictionary<string, object> { { "ImageUrl", imageUrl } },
+            new DialogOptions { Width = "90%", Height = "90%", Resizable = true, Draggable = true, ShowClose = true });
+    }
+
+    private async Task OpenExistingDocumentInNewTab()
+    {
+        if (!string.IsNullOrWhiteSpace(existingDocumentPreview))
+        {
+            await JSRuntime.InvokeVoidAsync("openDocumentInNewTab", existingDocumentPreview);
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(existingDocumentPath) || Id <= 0) return;
+        var baseUrl = Configuration.GetValue<string>("ApiSettings:BaseUrl") ?? "";
+        var url = $"{baseUrl.TrimEnd('/')}/factures-depenses/{Id}/document";
+        using var httpClient = new HttpClient();
+        var token = AuthService.AccessToken;
+        if (!string.IsNullOrEmpty(token))
+            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        var response = await httpClient.GetAsync(url, _cts.Token);
+        if (!response.IsSuccessStatusCode) return;
+        var documentBytes = await response.Content.ReadAsByteArrayAsync(_cts.Token);
+        var contentType = response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream";
+        var dataUrl = $"data:{contentType};base64,{Convert.ToBase64String(documentBytes)}";
+        await JSRuntime.InvokeVoidAsync("openDocumentInNewTab", dataUrl);
     }
 }

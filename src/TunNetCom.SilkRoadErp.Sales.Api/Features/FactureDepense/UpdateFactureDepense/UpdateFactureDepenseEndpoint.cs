@@ -11,7 +11,7 @@ public class UpdateFactureDepenseEndpoint : ICarterModule
     {
         _ = app.MapPut("/factures-depenses/{id:int}", async (IMediator mediator, int id, UpdateFactureDepenseRequest request, CancellationToken cancellationToken) =>
         {
-            var command = new UpdateFactureDepenseCommand(id, request.Date, request.Description ?? string.Empty, request.MontantTotal);
+            var command = new UpdateFactureDepenseCommand(id, request.Date, request.Description ?? string.Empty, request.MontantTotal, request.DocumentBase64);
             var result = await mediator.Send(command, cancellationToken);
             if (result.IsFailed)
                 return result.IsEntityNotFound() ? Results.NotFound() : Results.BadRequest(result.Errors);

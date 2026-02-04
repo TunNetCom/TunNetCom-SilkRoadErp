@@ -61,6 +61,10 @@ public class PaiementTiersDepenseConfiguration : IEntityTypeConfiguration<Paieme
         entity.Property(e => e.RibCle)
             .HasMaxLength(5);
 
+        entity.Property(e => e.DocumentStoragePath)
+            .HasColumnName("DocumentStoragePath")
+            .HasColumnType("nvarchar(max)");
+
         entity.Property(e => e.DateEcheance)
             .HasColumnType("datetime");
 

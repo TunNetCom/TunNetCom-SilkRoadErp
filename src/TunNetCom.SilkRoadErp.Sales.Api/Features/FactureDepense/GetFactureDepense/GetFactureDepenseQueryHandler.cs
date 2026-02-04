@@ -23,7 +23,9 @@ public class GetFactureDepenseQueryHandler(SalesContext _context, ILogger<GetFac
                 Description = f.Description,
                 MontantTotal = f.MontantTotal,
                 AccountingYearId = f.AccountingYearId,
-                Statut = f.Statut.ToString()
+                Statut = f.Statut.ToString(),
+                DocumentStoragePath = f.DocumentStoragePath,
+                HasDocument = !string.IsNullOrEmpty(f.DocumentStoragePath)
             })
             .FirstOrDefaultAsync(cancellationToken);
 

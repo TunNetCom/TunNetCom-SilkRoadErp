@@ -66,6 +66,20 @@
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="PaiementTiersDepenseResponse" Property="MethodePaiement" Title="Méthode" Width="120px" />
                 <RadzenDataGridColumn TItem="PaiementTiersDepenseResponse" Property="NumeroTransactionBancaire" Title="N° transaction" Width="140px" />
+                <RadzenDataGridColumn TItem="PaiementTiersDepenseResponse" Title="Document" Width="100px" Sortable="false" Filterable="false" TextAlign="TextAlign.Center">
+                    <Template Context="p">
+                        @if (p.HasDocument)
+                        {
+                            <RadzenButton Icon="attachment" ButtonStyle="ButtonStyle.Light" Variant="Variant.Outlined" Size="ButtonSize.Small"
+                                          Click="@(() => ViewDocument(p.Id))"
+                                          Title="Voir le document" />
+                        }
+                        else
+                        {
+                            <span style="color: #999;">-</span>
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="PaiementTiersDepenseResponse" Filterable="false" Sortable="false" Width="100px" TextAlign="TextAlign.Center">
                     <Template Context="p">
                         <RadzenButton Icon="edit" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Success" Variant="Variant.Outlined"
@@ -128,6 +142,12 @@
     private void EditPaiement(int id)
     {
         NavigationManager.NavigateTo($"/paiements-tiers-depenses/edit/{id}");
+    }
+
+    private void ViewDocument(int paiementId)
+    {
+        var documentUrl = $"/api/paiements-tiers-depenses/{paiementId}/document";
+        NavigationManager.NavigateTo(documentUrl, forceLoad: true);
     }
 
     public void Dispose()

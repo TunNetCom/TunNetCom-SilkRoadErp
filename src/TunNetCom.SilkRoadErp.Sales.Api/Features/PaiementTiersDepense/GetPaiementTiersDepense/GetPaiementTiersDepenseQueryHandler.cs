@@ -38,6 +38,8 @@ public class GetPaiementTiersDepenseQueryHandler(SalesContext _context, ILogger<
                 RibNumeroCompte = p.RibNumeroCompte,
                 RibCle = p.RibCle,
                 Mois = p.Mois,
+                DocumentStoragePath = p.DocumentStoragePath,
+                HasDocument = !string.IsNullOrEmpty(p.DocumentStoragePath),
                 DateModification = p.DateModification
             })
             .FirstOrDefaultAsync(cancellationToken);

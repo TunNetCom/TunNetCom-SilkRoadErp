@@ -29,6 +29,7 @@ public partial class PaiementTiersDepense : IAccountingYearEntity
         string? ribCodeAgence,
         string? ribNumeroCompte,
         string? ribCle,
+        string? documentStoragePath,
         int? mois)
     {
         var entity = new PaiementTiersDepense
@@ -47,16 +48,10 @@ public partial class PaiementTiersDepense : IAccountingYearEntity
             RibCodeAgence = ribCodeAgence,
             RibNumeroCompte = ribNumeroCompte,
             RibCle = ribCle,
+            DocumentStoragePath = documentStoragePath,
             Mois = mois,
             FactureDepenses = new List<PaiementTiersDepenseFactureDepense>()
         };
-        if (factureDepenseIds != null)
-        {
-            foreach (var factureDepenseId in factureDepenseIds)
-            {
-                entity.FactureDepenses.Add(PaiementTiersDepenseFactureDepense.Create(0, factureDepenseId));
-            }
-        }
         return entity;
     }
 
@@ -76,6 +71,7 @@ public partial class PaiementTiersDepense : IAccountingYearEntity
         string? ribCodeAgence,
         string? ribNumeroCompte,
         string? ribCle,
+        string? documentStoragePath,
         int? mois)
     {
         NumeroTransactionBancaire = numeroTransactionBancaire;
@@ -92,6 +88,7 @@ public partial class PaiementTiersDepense : IAccountingYearEntity
         RibCodeAgence = ribCodeAgence;
         RibNumeroCompte = ribNumeroCompte;
         RibCle = ribCle;
+        DocumentStoragePath = documentStoragePath;
         Mois = mois;
         DateModification = DateTime.UtcNow;
 
@@ -136,6 +133,8 @@ public partial class PaiementTiersDepense : IAccountingYearEntity
     public string? RibCle { get; private set; }
 
     public int? Mois { get; private set; }
+
+    public string? DocumentStoragePath { get; private set; }
 
     public DateTime? DateModification { get; private set; }
 

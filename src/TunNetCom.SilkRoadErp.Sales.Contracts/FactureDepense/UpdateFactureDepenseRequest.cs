@@ -10,4 +10,7 @@ public class UpdateFactureDepenseRequest
 
     [JsonPropertyName("montantTotal")]
     public decimal MontantTotal { get; set; }
+
+    [JsonPropertyName("documentBase64")]
+    public string? DocumentBase64 { get; set; }
 }

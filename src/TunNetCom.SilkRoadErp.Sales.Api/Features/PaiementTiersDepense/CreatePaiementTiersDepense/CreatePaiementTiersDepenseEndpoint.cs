@@ -27,6 +27,7 @@ public class CreatePaiementTiersDepenseEndpoint : ICarterModule
                 request.RibCodeAgence,
                 request.RibNumeroCompte,
                 request.RibCle,
+                request.DocumentBase64,
                 request.Mois);
             var result = await mediator.Send(command, cancellationToken);
             if (result.IsFailed)

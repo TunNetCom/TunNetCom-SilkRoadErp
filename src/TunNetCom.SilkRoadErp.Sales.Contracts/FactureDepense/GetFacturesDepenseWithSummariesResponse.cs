@@ -34,4 +34,7 @@ public class FactureDepenseSummaryItem
 
     [JsonPropertyName("statut")]
     public string Statut { get; set; } = string.Empty;
+
+    [JsonPropertyName("hasDocument")]
+    public bool HasDocument { get; set; }
 }

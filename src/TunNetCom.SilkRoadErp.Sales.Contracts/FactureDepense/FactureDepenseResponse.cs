@@ -28,4 +28,10 @@ public class FactureDepenseResponse
 
     [JsonPropertyName("statut")]
     public string Statut { get; set; } = string.Empty;
+
+    [JsonPropertyName("documentStoragePath")]
+    public string? DocumentStoragePath { get; set; }
+
+    [JsonPropertyName("hasDocument")]
+    public bool HasDocument { get; set; }
 }

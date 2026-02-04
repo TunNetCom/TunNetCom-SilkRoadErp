@@ -5,4 +5,5 @@ public record CreateFactureDepenseCommand(
     DateTime Date,
     string Description,
     decimal MontantTotal,
-    int? AccountingYearId) : IRequest<Result<int>>;
+    int? AccountingYearId,
+    string? DocumentBase64) : IRequest<Result<int>>;

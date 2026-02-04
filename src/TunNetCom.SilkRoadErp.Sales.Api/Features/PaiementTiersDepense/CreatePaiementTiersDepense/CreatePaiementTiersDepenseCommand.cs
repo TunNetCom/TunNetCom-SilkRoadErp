@@ -16,4 +16,5 @@ public record CreatePaiementTiersDepenseCommand(
     string? RibCodeAgence,
     string? RibNumeroCompte,
     string? RibCle,
+    string? DocumentBase64,
     int? Mois) : IRequest<Result<int>>;

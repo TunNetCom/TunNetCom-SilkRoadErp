@@ -11,6 +11,7 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Services
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 @using Radzen
 @using Radzen.Blazor
 @inject IFactureDepenseApiClient FactureDepenseService
@@ -68,6 +69,25 @@
                     <Template Context="f">@f.MontantTotal.FormatAmount(decimalPlaces) TND</Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="FactureDepenseSummaryItem" Property="Statut" Title="Statut" Width="100px" />
+                <RadzenDataGridColumn TItem="FactureDepenseSummaryItem" Title="Document" Width="100px" Sortable="false" Filterable="false" TextAlign="TextAlign.Center">
+                    <Template Context="f">
+                        @if (f.HasDocument)
+                        {
+                            <RadzenButton Icon="attachment" ButtonStyle="ButtonStyle.Light" Variant="Variant.Outlined" Size="ButtonSize.Small"
+                                          Click="@(() => ViewDocument(f.Id))"
+                                          Title="Voir le document" />
+                        }
+                        else
+                        {
+                            <span style="color: #999;">-</span>
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="FactureDepenseSummaryItem" Title="Tags" Width="250px" Sortable="false" Filterable="false">
+                    <Template Context="f">
+                        <TagSelector DocumentType="FactureDepense" DocumentId="@f.Id" SaveOnChange="true" />
+                    </Template>
+                </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="FactureDepenseSummaryItem" Filterable="false" Sortable="false" Width="100px" TextAlign="TextAlign.Center">
                     <Template Context="f">
                         <RadzenButton Icon="edit" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Success" Variant="Variant.Outlined"
@@ -133,6 +153,12 @@
     private void EditFacture(int id)
     {
         NavigationManager.NavigateTo($"/factures-depenses/edit/{id}");
+    }
+
+    private void ViewDocument(int factureId)
+    {
+        var documentUrl = $"/api/factures-depenses/{factureId}/document";
+        NavigationManager.NavigateTo(documentUrl, forceLoad: true);
     }
 
     public void Dispose()

@@ -48,6 +48,10 @@ public class FactureDepenseConfiguration : IEntityTypeConfiguration<FactureDepen
             .HasMaxLength(50)
             .IsRequired();
 
+        entity.Property(e => e.DocumentStoragePath)
+            .HasColumnName("DocumentStoragePath")
+            .HasColumnType("nvarchar(max)");
+
         entity.HasOne(d => d.IdTiersDepenseFonctionnementNavigation)
             .WithMany(p => p.FactureDepense)
             .HasForeignKey(d => d.IdTiersDepenseFonctionnement)

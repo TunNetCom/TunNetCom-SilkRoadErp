@@ -1,9 +1,13 @@
 using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.ResultExtensions;
+using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.DocumentStorage;
 using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.PaiementTiersDepense.UpdatePaiementTiersDepense;
 
-public class UpdatePaiementTiersDepenseCommandHandler(SalesContext _context, ILogger<UpdatePaiementTiersDepenseCommandHandler> _logger)
+public class UpdatePaiementTiersDepenseCommandHandler(
+    SalesContext _context,
+    ILogger<UpdatePaiementTiersDepenseCommandHandler> _logger,
+    IDocumentStorageService _documentStorageService)
     : IRequestHandler<UpdatePaiementTiersDepenseCommand, Result>
 {
     public async Task<Result> Handle(UpdatePaiementTiersDepenseCommand command, CancellationToken cancellationToken)
@@ -41,6 +45,39 @@ public class UpdatePaiementTiersDepenseCommandHandler(SalesContext _context, ILo
             return Result.Fail("invalid_methode_paiement");
         }
 
+        string? documentStoragePath = entity.DocumentStoragePath;
+        if (!string.IsNullOrWhiteSpace(command.DocumentBase64))
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(entity.DocumentStoragePath))
+                {
+                    try
+                    {
+                        await _documentStorageService.DeleteAsync(entity.DocumentStoragePath, cancellationToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Error deleting old document, continuing with new document");
+                    }
+                }
+
+                var documentBytes = Convert.FromBase64String(command.DocumentBase64);
+                var fileName = $"paiement_tiers_depense_{command.NumeroTransactionBancaire}_{DateTime.UtcNow:yyyyMMddHHmmss}";
+                documentStoragePath = await _documentStorageService.SaveAsync(documentBytes, fileName, cancellationToken);
+            }
+            catch (FormatException ex)
+            {
+                _logger.LogError(ex, "Invalid Base64 format for document");
+                return Result.Fail("invalid_document_format");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error storing document");
+                return Result.Fail("error_storing_document");
+            }
+        }
+
         entity.Update(
             command.NumeroTransactionBancaire,
             command.TiersDepenseFonctionnementId,
@@ -57,6 +94,7 @@ public class UpdatePaiementTiersDepenseCommandHandler(SalesContext _context, ILo
             command.RibCodeAgence,
             command.RibNumeroCompte,
             command.RibCle,
+            documentStoragePath,
             command.Mois);
 
         await _context.SaveChangesAsync(cancellationToken);

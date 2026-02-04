@@ -838,6 +838,24 @@
   <data name="Nouveau_Paiement_Fournisseur" xml:space="preserve">
     <value />
   </data>
+  <data name="Nouveau_Paiement_Tiers_Depenses" xml:space="preserve">
+    <value>Nouveau paiement tiers dépenses</value>
+  </data>
+  <data name="Select_Tiers" xml:space="preserve">
+    <value>Choisir un tiers</value>
+  </data>
+  <data name="Tiers_Depenses" xml:space="preserve">
+    <value>Tiers dépenses</value>
+  </data>
+  <data name="Facture_Depense_Optionnel" xml:space="preserve">
+    <value>Facture dépense (optionnel)</value>
+  </data>
+  <data name="Select_Facture_Depense" xml:space="preserve">
+    <value>Choisir une facture dépense</value>
+  </data>
+  <data name="Select_Tiers_Validation" xml:space="preserve">
+    <value>Veuillez sélectionner un tiers.</value>
+  </data>
   <data name="Select_Provider_Validation" xml:space="preserve">
     <value />
   </data>

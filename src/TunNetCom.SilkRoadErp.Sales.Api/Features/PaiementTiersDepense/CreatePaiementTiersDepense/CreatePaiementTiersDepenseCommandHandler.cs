@@ -1,10 +1,14 @@
 using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.ResultExtensions;
+using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.DocumentStorage;
 using Domain = TunNetCom.SilkRoadErp.Sales.Domain;
 using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.PaiementTiersDepense.CreatePaiementTiersDepense;
 
-public class CreatePaiementTiersDepenseCommandHandler(SalesContext _context, ILogger<CreatePaiementTiersDepenseCommandHandler> _logger)
+public class CreatePaiementTiersDepenseCommandHandler(
+    SalesContext _context,
+    ILogger<CreatePaiementTiersDepenseCommandHandler> _logger,
+    IDocumentStorageService _documentStorageService)
     : IRequestHandler<CreatePaiementTiersDepenseCommand, Result<int>>
 {
     public async Task<Result<int>> Handle(CreatePaiementTiersDepenseCommand command, CancellationToken cancellationToken)
@@ -32,6 +36,27 @@ public class CreatePaiementTiersDepenseCommandHandler(SalesContext _context, ILo
             return Result.Fail("invalid_methode_paiement");
         }
 
+        string? documentStoragePath = null;
+        if (!string.IsNullOrWhiteSpace(command.DocumentBase64))
+        {
+            try
+            {
+                var documentBytes = Convert.FromBase64String(command.DocumentBase64);
+                var fileName = $"paiement_tiers_depense_{command.NumeroTransactionBancaire ?? "n/a"}_{DateTime.UtcNow:yyyyMMddHHmmss}";
+                documentStoragePath = await _documentStorageService.SaveAsync(documentBytes, fileName, cancellationToken);
+            }
+            catch (FormatException ex)
+            {
+                _logger.LogError(ex, "Invalid Base64 format for document");
+                return Result.Fail("invalid_document_format");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error storing document");
+                return Result.Fail("error_storing_document");
+            }
+        }
+
         var entity = Domain.Entites.PaiementTiersDepense.Create(
             command.NumeroTransactionBancaire,
             command.TiersDepenseFonctionnementId,
@@ -39,7 +64,7 @@ public class CreatePaiementTiersDepenseCommandHandler(SalesContext _context, ILo
             command.Montant,
             command.DatePaiement,
             methodePaiement,
-            command.FactureDepenseIds,
+            null,
             command.NumeroChequeTraite,
             command.BanqueId,
             command.DateEcheance,
@@ -48,10 +73,21 @@ public class CreatePaiementTiersDepenseCommandHandler(SalesContext _context, ILo
             command.RibCodeAgence,
             command.RibNumeroCompte,
             command.RibCle,
+            documentStoragePath,
             command.Mois);
 
         _context.PaiementTiersDepense.Add(entity);
         await _context.SaveChangesAsync(cancellationToken);
+
+        if (command.FactureDepenseIds is { Count: > 0 })
+        {
+            foreach (var factureDepenseId in command.FactureDepenseIds)
+            {
+                var junction = PaiementTiersDepenseFactureDepense.Create(entity.Id, factureDepenseId);
+                _context.PaiementTiersDepenseFactureDepense.Add(junction);
+            }
+            await _context.SaveChangesAsync(cancellationToken);
+        }
 
         _logger.LogInformation("PaiementTiersDepense created with Id {Id}", entity.Id);
         return Result.Ok(entity.Id);

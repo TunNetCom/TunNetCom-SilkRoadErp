@@ -62,6 +62,12 @@ public class PaiementTiersDepenseResponse
     [JsonPropertyName("mois")]
     public int? Mois { get; set; }
 
+    [JsonPropertyName("documentStoragePath")]
+    public string? DocumentStoragePath { get; set; }
+
+    [JsonPropertyName("hasDocument")]
+    public bool HasDocument { get; set; }
+
     [JsonPropertyName("dateModification")]
     public DateTime? DateModification { get; set; }
 }

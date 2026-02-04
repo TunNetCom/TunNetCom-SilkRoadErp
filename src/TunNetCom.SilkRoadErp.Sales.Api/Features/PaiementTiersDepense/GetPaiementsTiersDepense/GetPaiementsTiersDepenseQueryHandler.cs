@@ -48,6 +48,8 @@ public class GetPaiementsTiersDepenseQueryHandler(SalesContext _context, ILogger
             RibNumeroCompte = p.RibNumeroCompte,
             RibCle = p.RibCle,
             Mois = p.Mois,
+            DocumentStoragePath = null,
+            HasDocument = !string.IsNullOrEmpty(p.DocumentStoragePath),
             DateModification = p.DateModification
         });
 

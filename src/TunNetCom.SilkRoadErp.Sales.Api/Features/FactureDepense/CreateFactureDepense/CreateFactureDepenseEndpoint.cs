@@ -15,7 +15,8 @@ public class CreateFactureDepenseEndpoint : ICarterModule
                 request.Date,
                 request.Description ?? string.Empty,
                 request.MontantTotal,
-                request.AccountingYearId);
+                request.AccountingYearId,
+                request.DocumentBase64);
             var result = await mediator.Send(command, cancellationToken);
             if (result.IsFailed)
                 return result.IsEntityNotFound() ? Results.NotFound() : Results.BadRequest(result.Errors);

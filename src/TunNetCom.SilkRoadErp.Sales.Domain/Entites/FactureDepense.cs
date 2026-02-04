@@ -20,7 +20,8 @@ public partial class FactureDepense : IAccountingYearEntity
         DateTime date,
         string description,
         decimal montantTotal,
-        int accountingYearId)
+        int accountingYearId,
+        string? documentStoragePath = null)
     {
         return new FactureDepense
         {
@@ -30,18 +31,21 @@ public partial class FactureDepense : IAccountingYearEntity
             Description = description ?? string.Empty,
             MontantTotal = montantTotal,
             AccountingYearId = accountingYearId,
-            Statut = DocumentStatus.Draft
+            Statut = DocumentStatus.Draft,
+            DocumentStoragePath = documentStoragePath
         };
     }
 
     public void Update(
         DateTime date,
         string description,
-        decimal montantTotal)
+        decimal montantTotal,
+        string? documentStoragePath)
     {
         Date = date;
         Description = description ?? string.Empty;
         MontantTotal = montantTotal;
+        DocumentStoragePath = documentStoragePath;
     }
 
     public void Valider()
@@ -68,6 +72,8 @@ public partial class FactureDepense : IAccountingYearEntity
     public int AccountingYearId { get; private set; }
 
     public DocumentStatus Statut { get; private set; }
+
+    public string? DocumentStoragePath { get; private set; }
 
     public virtual TiersDepenseFonctionnement IdTiersDepenseFonctionnementNavigation { get; set; } = null!;
 

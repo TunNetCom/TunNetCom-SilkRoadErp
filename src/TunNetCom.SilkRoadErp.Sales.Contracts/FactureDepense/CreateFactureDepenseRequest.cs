@@ -16,4 +16,7 @@ public class CreateFactureDepenseRequest
 
     [JsonPropertyName("accountingYearId")]
     public int? AccountingYearId { get; set; }
+
+    [JsonPropertyName("documentBase64")]
+    public string? DocumentBase64 { get; set; }
 }
