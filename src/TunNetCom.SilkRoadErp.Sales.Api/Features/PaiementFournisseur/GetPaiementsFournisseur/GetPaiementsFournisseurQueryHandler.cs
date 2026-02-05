@@ -44,6 +44,17 @@ public class GetPaiementsFournisseurQueryHandler(
                  (!toDate.HasValue || p.DatePaiement.Date <= toDate.Value)));
         }
 
+        if (query.DatePaiementFrom.HasValue)
+        {
+            paiementsQuery = paiementsQuery.Where(p => p.DatePaiement.Date >= query.DatePaiementFrom.Value.Date);
+        }
+
+        if (query.DatePaiementTo.HasValue)
+        {
+            var endDateInclusive = query.DatePaiementTo.Value.Date.AddDays(1).AddTicks(-1);
+            paiementsQuery = paiementsQuery.Where(p => p.DatePaiement <= endDateInclusive);
+        }
+
         if (query.MontantMin.HasValue)
         {
             paiementsQuery = paiementsQuery.Where(p => p.Montant >= query.MontantMin.Value);

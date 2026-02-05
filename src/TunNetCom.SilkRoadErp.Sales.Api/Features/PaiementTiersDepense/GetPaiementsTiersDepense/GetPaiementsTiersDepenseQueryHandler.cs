@@ -24,6 +24,15 @@ public class GetPaiementsTiersDepenseQueryHandler(SalesContext _context, ILogger
         if (query.AccountingYearId.HasValue)
             q = q.Where(p => p.AccountingYearId == query.AccountingYearId.Value);
 
+        if (query.DatePaiementFrom.HasValue)
+            q = q.Where(p => p.DatePaiement.Date >= query.DatePaiementFrom.Value.Date);
+
+        if (query.DatePaiementTo.HasValue)
+        {
+            var endDateInclusive = query.DatePaiementTo.Value.Date.AddDays(1).AddTicks(-1);
+            q = q.Where(p => p.DatePaiement <= endDateInclusive);
+        }
+
         q = q.OrderByDescending(p => p.DatePaiement).ThenByDescending(p => p.Id);
 
         var projected = q.Select(p => new PaiementTiersDepenseResponse

@@ -21,6 +21,7 @@ using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PaiementFournisseur;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Banque;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Soldes;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags;
+using TunNetCom.SilkRoadErp.Sales.WebApp.Services.Recap;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -87,6 +88,13 @@ builder.Services.AddHttpClient<ODataService>(client =>
 {
     client.BaseAddress = new Uri(baseUrl);
     client.Timeout = TimeSpan.FromMinutes(5); // Increase timeout for large requests
+})
+.AddHttpMessageHandler<AuthHttpClientHandler>();
+
+// Recap Ventes/Achats service (calls /api/invoices/totals, /api/provider-invoices/totals + API clients)
+builder.Services.AddHttpClient<IRecapVentesAchatsService, RecapVentesAchatsService>(client =>
+{
+    client.BaseAddress = new Uri(baseUrl);
 })
 .AddHttpMessageHandler<AuthHttpClientHandler>();
 

@@ -7,4 +7,6 @@ public record GetFacturesDepenseWithSummariesQuery(
     int PageSize,
     int? TiersDepenseFonctionnementId,
     int? AccountingYearId,
-    string? SearchKeyword) : IRequest<GetFacturesDepenseWithSummariesResponse>;
+    string? SearchKeyword,
+    DateTime? StartDate = null,
+    DateTime? EndDate = null) : IRequest<GetFacturesDepenseWithSummariesResponse>;

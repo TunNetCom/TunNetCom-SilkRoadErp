@@ -172,7 +172,7 @@
     private async Task LoadData()
     {
         var result = await PaiementTiersDepenseService.GetPagedAsync(
-            selectedTiersId, selectedAccountingYearId, pageNumber, pageSize, _cts.Token);
+            selectedTiersId, selectedAccountingYearId, null, null, pageNumber, pageSize, _cts.Token);
         items = result.Items?.ToList() ?? new();
         await InvokeAsync(StateHasChanged);
     }

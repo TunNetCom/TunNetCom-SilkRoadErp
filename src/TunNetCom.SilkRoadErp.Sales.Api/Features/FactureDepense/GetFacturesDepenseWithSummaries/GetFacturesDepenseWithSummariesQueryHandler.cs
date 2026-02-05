@@ -19,6 +19,15 @@ public class GetFacturesDepenseWithSummariesQueryHandler(SalesContext _context, 
         if (query.AccountingYearId.HasValue)
             q = q.Where(f => f.AccountingYearId == query.AccountingYearId.Value);
 
+        if (query.StartDate.HasValue)
+            q = q.Where(f => f.Date >= query.StartDate.Value);
+
+        if (query.EndDate.HasValue)
+        {
+            var endDateInclusive = query.EndDate.Value.Date.AddDays(1).AddTicks(-1);
+            q = q.Where(f => f.Date <= endDateInclusive);
+        }
+
         if (!string.IsNullOrWhiteSpace(query.SearchKeyword))
         {
             var kw = query.SearchKeyword.Trim();

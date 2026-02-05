@@ -17,6 +17,8 @@ public interface IPaiementFournisseurApiClient
         IEnumerable<int>? accountingYearIds,
         DateTime? dateEcheanceFrom,
         DateTime? dateEcheanceTo,
+        DateTime? datePaiementFrom,
+        DateTime? datePaiementTo,
         decimal? montantMin,
         decimal? montantMax,
         bool? hasNumeroTransactionBancaire,

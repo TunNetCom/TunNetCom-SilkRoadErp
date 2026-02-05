@@ -1,0 +1,199 @@
+@page "/dashboard/recap-ventes-achats"
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services.Recap
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
+@inject IStringLocalizer<SharedResource> Localizer
+@inject IRecapVentesAchatsService RecapService
+@inject IDecimalFormatService DecimalFormatService
+@inject ILogger<RecapVentesAchats> Logger
+
+<RadzenStack Gap="1.5rem">
+    <RadzenRow>
+        <RadzenColumn Size="12" SizeMD="8">
+            <RadzenText TextStyle="TextStyle.H5">@Localizer["Recap_ventes_achats"]</RadzenText>
+        </RadzenColumn>
+    </RadzenRow>
+
+    <div class="search-header" style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 1rem;">
+        <PeriodFilter @bind-SelectedPeriod="selectedPeriod"
+                      @bind-StartDate="startDate"
+                      @bind-EndDate="endDate"
+                      OnPeriodChanged="@LoadRecapAsync" />
+        <RadzenButton Icon="refresh" Text="Actualiser" ButtonStyle="ButtonStyle.Primary" Click="@LoadRecapAsync" />
+    </div>
+
+    @if (recap?.HasError == true)
+    {
+        <RadzenAlert AlertStyle="AlertStyle.Danger" Shade="Shade.Lighter" AllowClose="true">
+            @recap.ErrorMessage
+        </RadzenAlert>
+    }
+
+    @if (loading)
+    {
+        <RadzenProgressBarCircular ShowValue="false" Size="ProgressBarCircularSize.Medium" />
+    }
+
+    @if (recap != null && !recap.HasError)
+    {
+        <RadzenRow>
+            <RadzenColumn Size="12" SizeMD="6" SizeLG="3">
+                <RadzenCard Variant="Variant.Outlined">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenText TextStyle="TextStyle.Subtitle2">Factures clients</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H6">HT: @Format(recap.VentesFactures.TotalHT)</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2">TTC: @Format(recap.VentesFactures.TotalTTC) | TVA: @Format(recap.VentesFactures.TotalTVA)</RadzenText>
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeMD="6" SizeLG="3">
+                <RadzenCard Variant="Variant.Outlined">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenText TextStyle="TextStyle.Subtitle2">Avoirs clients</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H6">HT: @Format(recap.VentesAvoirs.TotalHT)</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2">TTC: @Format(recap.VentesAvoirs.TotalTTC) | TVA: @Format(recap.VentesAvoirs.TotalTVA)</RadzenText>
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeMD="6" SizeLG="3">
+                <RadzenCard Variant="Variant.Outlined" Style="border-left: 4px solid var(--rz-success);">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenText TextStyle="TextStyle.Subtitle2">Ventes nettes</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H6">HT: @Format(recap.VentesNettes.TotalHT)</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2">TTC: @Format(recap.VentesNettes.TotalTTC)</RadzenText>
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+        </RadzenRow>
+
+        <RadzenRow>
+            <RadzenColumn Size="12">
+                <RadzenText TextStyle="TextStyle.H6">Achats</RadzenText>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeMD="6" SizeLG="3">
+                <RadzenCard Variant="Variant.Outlined">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenText TextStyle="TextStyle.Subtitle2">Factures fournisseurs</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H6">HT: @Format(recap.AchatsFacturesFournisseurs.TotalHT)</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2">TTC: @Format(recap.AchatsFacturesFournisseurs.TotalTTC)</RadzenText>
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeMD="6" SizeLG="3">
+                <RadzenCard Variant="Variant.Outlined">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenText TextStyle="TextStyle.Subtitle2">Avoirs fournisseur</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H6">HT: @Format(recap.AchatsAvoirsFournisseur.TotalHT)</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2">TTC: @Format(recap.AchatsAvoirsFournisseur.TotalTTC)</RadzenText>
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeMD="6" SizeLG="3">
+                <RadzenCard Variant="Variant.Outlined">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenText TextStyle="TextStyle.Subtitle2">Factures dépenses</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H6">@Format(recap.AchatsFacturesDepensesTotal)</RadzenText>
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeMD="6" SizeLG="3">
+                <RadzenCard Variant="Variant.Outlined" Style="border-left: 4px solid var(--rz-danger);">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenText TextStyle="TextStyle.Subtitle2">Achats nets</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H6">HT: @Format(recap.AchatsNets.TotalHT)</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2">TTC: @Format(recap.AchatsNets.TotalTTC)</RadzenText>
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+        </RadzenRow>
+
+        <RadzenRow>
+            <RadzenColumn Size="12">
+                <RadzenText TextStyle="TextStyle.H6">Paiements (période)</RadzenText>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeMD="4">
+                <RadzenCard Variant="Variant.Outlined">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenText TextStyle="TextStyle.Subtitle2">Paiements clients</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H6">@Format(recap.PaiementsClientsTotal)</RadzenText>
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeMD="4">
+                <RadzenCard Variant="Variant.Outlined">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenText TextStyle="TextStyle.Subtitle2">Paiements fournisseurs</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H6">@Format(recap.PaiementsFournisseursTotal)</RadzenText>
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeMD="4">
+                <RadzenCard Variant="Variant.Outlined">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenText TextStyle="TextStyle.Subtitle2">Paiements dépenses</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H6">@Format(recap.PaiementsTiersDepensesTotal)</RadzenText>
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+        </RadzenRow>
+
+        <RadzenRow>
+            <RadzenColumn Size="12" SizeMD="6">
+                <RadzenCard Variant="Variant.Flat" Style="background: var(--rz-base-100); border: 2px solid var(--rz-primary);">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenText TextStyle="TextStyle.H6">Résultat (Ventes - Achats)</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H5">HT: @Format(recap.Resultat.TotalHT) | TTC: @Format(recap.Resultat.TotalTTC)</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2">TVA: @Format(recap.Resultat.TotalTVA)</RadzenText>
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+        </RadzenRow>
+    }
+</RadzenStack>
+
+@code {
+    private string selectedPeriod = "CurrentMonth";
+    private DateTime? startDate;
+    private DateTime? endDate;
+    private RecapVentesAchatsViewModel? recap;
+    private bool loading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var (s, e) = PeriodFilterHelper.GetDateRangeFromPeriod(selectedPeriod, startDate, endDate);
+        startDate = s;
+        endDate = e;
+        await LoadRecapAsync();
+    }
+
+    private async Task LoadRecapAsync()
+    {
+        var (s, e) = PeriodFilterHelper.GetDateRangeFromPeriod(selectedPeriod, startDate, endDate);
+        if (!s.HasValue || !e.HasValue)
+            return;
+        loading = true;
+        StateHasChanged();
+        try
+        {
+            recap = await RecapService.GetRecapAsync(s.Value, e.Value);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "LoadRecap failed");
+            recap = new RecapVentesAchatsViewModel { HasError = true, ErrorMessage = ex.Message };
+        }
+        finally
+        {
+            loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private string Format(decimal value)
+    {
+        return DecimalFormatService.FormatAmount(value);
+    }
+}

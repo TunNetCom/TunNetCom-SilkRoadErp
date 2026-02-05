@@ -7,6 +7,8 @@ public record GetPaiementsFournisseurQuery(
     IEnumerable<int>? AccountingYearIds = null,
     DateTime? DateEcheanceFrom = null,
     DateTime? DateEcheanceTo = null,
+    DateTime? DatePaiementFrom = null,
+    DateTime? DatePaiementTo = null,
     decimal? MontantMin = null,
     decimal? MontantMax = null,
     bool? HasNumeroTransactionBancaire = null,

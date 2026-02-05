@@ -9,9 +9,11 @@ public interface IPaiementTiersDepenseApiClient
     Task<PagedList<PaiementTiersDepenseResponse>> GetPagedAsync(
         int? tiersDepenseFonctionnementId,
         int? accountingYearId,
-        int pageNumber,
-        int pageSize,
-        CancellationToken cancellationToken);
+        DateTime? datePaiementFrom = null,
+        DateTime? datePaiementTo = null,
+        int pageNumber = 1,
+        int pageSize = 10,
+        CancellationToken cancellationToken = default);
 
     Task<OneOf<PaiementTiersDepenseResponse, bool>> GetByIdAsync(
         int id,

@@ -13,11 +13,13 @@ public class GetPaiementsTiersDepenseEndpoint : ICarterModule
             IMediator mediator,
             int? tiersDepenseFonctionnementId = null,
             int? accountingYearId = null,
+            DateTime? datePaiementFrom = null,
+            DateTime? datePaiementTo = null,
             int pageNumber = 1,
             int pageSize = 10,
             CancellationToken cancellationToken = default) =>
         {
-            var query = new GetPaiementsTiersDepenseQuery(tiersDepenseFonctionnementId, accountingYearId, pageNumber, pageSize);
+            var query = new GetPaiementsTiersDepenseQuery(tiersDepenseFonctionnementId, accountingYearId, datePaiementFrom, datePaiementTo, pageNumber, pageSize);
             var result = await mediator.Send(query, cancellationToken);
             if (result.IsFailed)
                 return Results.BadRequest(result.Errors);

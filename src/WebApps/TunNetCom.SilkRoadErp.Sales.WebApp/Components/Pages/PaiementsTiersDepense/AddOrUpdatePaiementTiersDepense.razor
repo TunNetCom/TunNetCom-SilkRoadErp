@@ -453,7 +453,7 @@
         isLoadingFacturesDepense = true;
         try
         {
-            var resp = await FactureDepenseService.GetWithSummariesAsync(1, 50, tiersId, model.AccountingYearId, null, _cts.Token);
+            var resp = await FactureDepenseService.GetWithSummariesAsync(1, 50, tiersId, model.AccountingYearId, null, null, null, _cts.Token);
             _filteredFacturesDepense = resp?.Items ?? new();
         }
         catch (Exception ex)

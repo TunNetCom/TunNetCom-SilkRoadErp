@@ -351,6 +351,18 @@
   <data name="current_month" xml:space="preserve">
     <value>Mois actuel</value>
   </data>
+  <data name="current_day" xml:space="preserve">
+    <value>Jour</value>
+  </data>
+  <data name="current_week" xml:space="preserve">
+    <value>Semaine</value>
+  </data>
+  <data name="Tableau_de_bord" xml:space="preserve">
+    <value>Tableau de bord</value>
+  </data>
+  <data name="Recap_ventes_achats" xml:space="preserve">
+    <value>Récap ventes &amp; achats</value>
+  </data>
   <data name="last_month" xml:space="preserve">
     <value>Mois précédent</value>
   </data>

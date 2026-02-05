@@ -6,5 +6,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.PaiementTiersDepense.GetPaiem
 public record GetPaiementsTiersDepenseQuery(
     int? TiersDepenseFonctionnementId = null,
     int? AccountingYearId = null,
+    DateTime? DatePaiementFrom = null,
+    DateTime? DatePaiementTo = null,
     int PageNumber = 1,
     int PageSize = 10) : IRequest<Result<PagedList<PaiementTiersDepenseResponse>>>;

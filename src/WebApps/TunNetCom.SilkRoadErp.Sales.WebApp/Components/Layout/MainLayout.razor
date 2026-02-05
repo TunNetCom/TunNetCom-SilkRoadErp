@@ -40,7 +40,10 @@
     <RadzenSidebar Responsive="false" Style="width: max-content; display: flex; flex-direction: column;">
         <RadzenPanelMenu DisplayStyle="@(sidebarExpanded? MenuItemDisplayStyle.IconAndText: MenuItemDisplayStyle.Icon)" ShowArrow="false" Style="flex: 1;">
             <RadzenPanelMenuItem Text="@Localizer["Overview"]" Icon="home" />
-            <RadzenPanelMenuItem Text="@Localizer["Dashboard"]" Icon="dashboard" />
+            <RadzenPanelMenuItem Text="@Localizer["Dashboard"]" Icon="dashboard">
+                <RadzenPanelMenuItem Text="@Localizer["Tableau_de_bord"]" Icon="dashboard" Path="/dashboard" />
+                <RadzenPanelMenuItem Text="@Localizer["Recap_ventes_achats"]" Icon="summarize" Path="/dashboard/recap-ventes-achats" />
+            </RadzenPanelMenuItem>
             <RadzenPanelMenuItem Text="@Localizer["Clients"]" Icon="account_circle">
                 <RadzenPanelMenuItem Text="@Localizer["Accounts"]" Icon="description" Path="/customers_list" />
                 <RadzenPanelMenuItem Text="@Localizer["manage_invoices"]" Icon="chrome_reader_mode" Path="/manage-invoice" />

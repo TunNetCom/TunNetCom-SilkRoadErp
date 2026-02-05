@@ -12,7 +12,9 @@ public interface IFactureDepenseApiClient
         int? tiersDepenseFonctionnementId,
         int? accountingYearId,
         string? searchKeyword,
-        CancellationToken cancellationToken);
+        DateTime? startDate = null,
+        DateTime? endDate = null,
+        CancellationToken cancellationToken = default);
 
     Task<OneOf<FactureDepenseResponse, bool>> GetByIdAsync(
         int id,

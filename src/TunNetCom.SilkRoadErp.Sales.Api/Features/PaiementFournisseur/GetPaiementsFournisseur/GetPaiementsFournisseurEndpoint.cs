@@ -24,6 +24,8 @@ public class GetPaiementsFournisseurEndpoint : ICarterModule
             queryParams.AccountingYearIds,
             queryParams.DateEcheanceFrom,
             queryParams.DateEcheanceTo,
+            queryParams.DatePaiementFrom,
+            queryParams.DatePaiementTo,
             queryParams.MontantMin,
             queryParams.MontantMax,
             queryParams.HasNumeroTransactionBancaire,
@@ -43,6 +45,8 @@ public class GetPaiementsFournisseurQueryParams : QueryStringParameters
     public int[]? AccountingYearIds { get; set; }
     public DateTime? DateEcheanceFrom { get; set; }
     public DateTime? DateEcheanceTo { get; set; }
+    public DateTime? DatePaiementFrom { get; set; }
+    public DateTime? DatePaiementTo { get; set; }
     public decimal? MontantMin { get; set; }
     public decimal? MontantMax { get; set; }
     public bool? HasNumeroTransactionBancaire { get; set; }

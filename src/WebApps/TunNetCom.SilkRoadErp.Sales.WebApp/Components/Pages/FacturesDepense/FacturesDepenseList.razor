@@ -176,7 +176,7 @@
     {
         var result = await FactureDepenseService.GetWithSummariesAsync(
             pageNumber, pageSize,
-            selectedTiersId, selectedAccountingYearId, null, _cts.Token);
+            selectedTiersId, selectedAccountingYearId, null, null, null, _cts.Token);
         items = result.Items ?? new();
         totalCount = result.TotalCount;
         await InvokeAsync(StateHasChanged);

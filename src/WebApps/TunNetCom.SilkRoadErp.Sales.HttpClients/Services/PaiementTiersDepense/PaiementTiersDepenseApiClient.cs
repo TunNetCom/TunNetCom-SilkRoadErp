@@ -20,15 +20,21 @@ public class PaiementTiersDepenseApiClient : IPaiementTiersDepenseApiClient
     public async Task<PagedList<PaiementTiersDepenseResponse>> GetPagedAsync(
         int? tiersDepenseFonctionnementId,
         int? accountingYearId,
-        int pageNumber,
-        int pageSize,
-        CancellationToken cancellationToken)
+        DateTime? datePaiementFrom = null,
+        DateTime? datePaiementTo = null,
+        int pageNumber = 1,
+        int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
         var query = $"/paiements-tiers-depenses?pageNumber={pageNumber}&pageSize={pageSize}";
         if (tiersDepenseFonctionnementId.HasValue)
             query += $"&tiersDepenseFonctionnementId={tiersDepenseFonctionnementId.Value}";
         if (accountingYearId.HasValue)
             query += $"&accountingYearId={accountingYearId.Value}";
+        if (datePaiementFrom.HasValue)
+            query += $"&datePaiementFrom={Uri.EscapeDataString(datePaiementFrom.Value.ToString("yyyy-MM-dd"))}";
+        if (datePaiementTo.HasValue)
+            query += $"&datePaiementTo={Uri.EscapeDataString(datePaiementTo.Value.ToString("yyyy-MM-dd"))}";
 
         var response = await _httpClient.GetAsync(query, cancellationToken: cancellationToken);
         response.EnsureSuccessStatusCode();

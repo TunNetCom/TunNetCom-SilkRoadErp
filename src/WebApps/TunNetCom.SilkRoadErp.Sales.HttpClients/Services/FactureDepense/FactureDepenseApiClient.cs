@@ -22,7 +22,9 @@ public class FactureDepenseApiClient : IFactureDepenseApiClient
         int? tiersDepenseFonctionnementId,
         int? accountingYearId,
         string? searchKeyword,
-        CancellationToken cancellationToken)
+        DateTime? startDate = null,
+        DateTime? endDate = null,
+        CancellationToken cancellationToken = default)
     {
         var query = $"/factures-depenses?pageNumber={pageNumber}&pageSize={pageSize}";
         if (tiersDepenseFonctionnementId.HasValue)
@@ -31,6 +33,10 @@ public class FactureDepenseApiClient : IFactureDepenseApiClient
             query += $"&accountingYearId={accountingYearId.Value}";
         if (!string.IsNullOrWhiteSpace(searchKeyword))
             query += $"&searchKeyword={Uri.EscapeDataString(searchKeyword)}";
+        if (startDate.HasValue)
+            query += $"&startDate={Uri.EscapeDataString(startDate.Value.ToString("yyyy-MM-dd"))}";
+        if (endDate.HasValue)
+            query += $"&endDate={Uri.EscapeDataString(endDate.Value.ToString("yyyy-MM-dd"))}";
 
         var response = await _httpClient.GetAsync(query, cancellationToken: cancellationToken);
         response.EnsureSuccessStatusCode();

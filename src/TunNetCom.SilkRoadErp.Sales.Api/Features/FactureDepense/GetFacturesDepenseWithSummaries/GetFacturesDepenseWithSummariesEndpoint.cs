@@ -15,6 +15,8 @@ public class GetFacturesDepenseWithSummariesEndpoint : ICarterModule
             int? tiersDepenseFonctionnementId = null,
             int? accountingYearId = null,
             string? searchKeyword = null,
+            DateTime? startDate = null,
+            DateTime? endDate = null,
             CancellationToken cancellationToken = default) =>
         {
             var query = new GetFacturesDepenseWithSummariesQuery(
@@ -22,7 +24,9 @@ public class GetFacturesDepenseWithSummariesEndpoint : ICarterModule
                 pageSize,
                 tiersDepenseFonctionnementId,
                 accountingYearId,
-                searchKeyword);
+                searchKeyword,
+                startDate,
+                endDate);
             var result = await mediator.Send(query, cancellationToken);
             return Results.Ok(result);
         })

@@ -70,6 +70,8 @@ public class PaiementFournisseurApiClient : IPaiementFournisseurApiClient
         IEnumerable<int>? accountingYearIds,
         DateTime? dateEcheanceFrom,
         DateTime? dateEcheanceTo,
+        DateTime? datePaiementFrom,
+        DateTime? datePaiementTo,
         decimal? montantMin,
         decimal? montantMax,
         bool? hasNumeroTransactionBancaire,
@@ -115,6 +117,16 @@ public class PaiementFournisseurApiClient : IPaiementFournisseurApiClient
         if (dateEcheanceTo.HasValue)
         {
             queryString += $"&dateEcheanceTo={Uri.EscapeDataString(dateEcheanceTo.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}";
+        }
+
+        if (datePaiementFrom.HasValue)
+        {
+            queryString += $"&datePaiementFrom={Uri.EscapeDataString(datePaiementFrom.Value.ToString("yyyy-MM-dd"))}";
+        }
+
+        if (datePaiementTo.HasValue)
+        {
+            queryString += $"&datePaiementTo={Uri.EscapeDataString(datePaiementTo.Value.ToString("yyyy-MM-dd"))}";
         }
 
         if (montantMin.HasValue)
