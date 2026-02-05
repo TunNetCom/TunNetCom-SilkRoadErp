@@ -77,7 +77,7 @@
                         Change="@OnMethodePaiementChanged" />
     </RadzenFormField>
 
-    @if (selectedMethodePaiement == "Cheque" || selectedMethodePaiement == "Traite")
+    @if (selectedMethodePaiement == MethodePaiementConsts.Cheque || selectedMethodePaiement == MethodePaiementConsts.Traite)
     {
         <RadzenFormField Text="@Localizer["Numero_Cheque_Traite"]" class="rz-col-12 rz-md-6">
             <RadzenTextBox @bind-Value="paiement.NumeroChequeTraite" Placeholder="@Localizer["Numero"]" />
@@ -100,7 +100,7 @@
             </RadzenStack>
         </RadzenFormField>
 
-        @if (selectedMethodePaiement == "Traite")
+        @if (selectedMethodePaiement == MethodePaiementConsts.Traite)
         {
             <RadzenFormField Text="@Localizer["Date_Echeance"]" class="rz-col-12 rz-md-6">
                 <RadzenDatePicker @bind-Value="paiement.DateEcheance" DateFormat="dd/MM/yyyy" ShowTime="false" Style="width: 100%;" />
@@ -183,9 +183,9 @@
     {
         methodePaiementOptions = new()
         {
-            new MethodePaiementOption { Text = Localizer["Espece"], Value = "Espece" },
-            new MethodePaiementOption { Text = Localizer["Cheque"], Value = "Cheque" },
-            new MethodePaiementOption { Text = Localizer["Traite"], Value = "Traite" }
+            new MethodePaiementOption { Text = Localizer["Espece"], Value = MethodePaiementConsts.Espece },
+            new MethodePaiementOption { Text = Localizer["Cheque"], Value = MethodePaiementConsts.Cheque },
+            new MethodePaiementOption { Text = Localizer["Traite"], Value = MethodePaiementConsts.Traite }
         };
         
         // Pré-remplir les valeurs
@@ -388,7 +388,7 @@
         if (value is string methode)
         {
             paiement.MethodePaiement = methode;
-            if (methode != "Cheque" && methode != "Traite")
+            if (methode != MethodePaiementConsts.Cheque && methode != MethodePaiementConsts.Traite)
             {
                 paiement.NumeroChequeTraite = null;
                 paiement.BanqueId = null;

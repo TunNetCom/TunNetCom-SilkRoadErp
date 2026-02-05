@@ -2,6 +2,7 @@
 @implements IDisposable
 @using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.Contracts.PaiementFournisseur
+@using TunNetCom.SilkRoadErp.Sales.Domain.Entites
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PaiementFournisseur
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AccountingYear
@@ -213,7 +214,7 @@
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Filterable="false" Sortable="false" Width="250px" TextAlign="TextAlign.Center">
                     <Template Context="paiement">
-                        @if (paiement.MethodePaiement == "Traite")
+                        @if (paiement.MethodePaiement == MethodePaiementConsts.Traite)
                         {
                             <RadzenButton Icon="print" ButtonStyle="ButtonStyle.Info" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter"
                                           Click="@(() => PrintTraite(paiement.Id))"

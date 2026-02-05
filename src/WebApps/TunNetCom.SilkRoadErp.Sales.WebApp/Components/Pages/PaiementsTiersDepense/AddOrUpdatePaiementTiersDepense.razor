@@ -11,6 +11,7 @@
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Banque
 @using TunNetCom.SilkRoadErp.Sales.Contracts
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Banque
+@using TunNetCom.SilkRoadErp.Sales.Domain.Entites
 @using TunNetCom.SilkRoadErp.Sales.HttpClients
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
@@ -98,7 +99,7 @@
                                 Change="@OnMethodePaiementChanged" />
             </RadzenFormField>
 
-            @if (selectedMethodePaiement == "Cheque" || selectedMethodePaiement == "Traite")
+            @if (selectedMethodePaiement == MethodePaiementConsts.Cheque || selectedMethodePaiement == MethodePaiementConsts.Traite)
             {
                 <RadzenFormField Text="@Localizer["Numero_Cheque_Traite"]" class="rz-col-12 rz-md-6">
                     <RadzenTextBox @bind-Value="model.NumeroChequeTraite" Placeholder="@Localizer["Numero"]" />
@@ -121,7 +122,7 @@
                     </RadzenStack>
                 </RadzenFormField>
 
-                @if (selectedMethodePaiement == "Traite")
+                @if (selectedMethodePaiement == MethodePaiementConsts.Traite)
                 {
                     <RadzenFormField Text="@Localizer["Date_Echeance"]" class="rz-col-12 rz-md-6">
                         <RadzenDatePicker @bind-Value="model.DateEcheance" DateFormat="dd/MM/yyyy" ShowTime="false" Style="width: 100%;" />
@@ -129,7 +130,7 @@
                 }
             }
 
-            @if (selectedMethodePaiement == "Traite" || selectedMethodePaiement == "Virement")
+            @if (selectedMethodePaiement == MethodePaiementConsts.Traite || selectedMethodePaiement == MethodePaiementConsts.Virement)
             {
                 <RadzenFormField Text="@Localizer["RIB_Code_Etablissement"]" class="rz-col-12 rz-md-3">
                     <RadzenTextBox @bind-Value="model.RibCodeEtab" Placeholder="@Localizer["Code_Etab"]" MaxLength="10" />
@@ -310,10 +311,11 @@
 
     private static readonly List<MethodeOption> methodeOptions = new()
     {
-        new MethodeOption("Espèces", "Espece"),
-        new MethodeOption("Chèque", "Cheque"),
-        new MethodeOption("Traite", "Traite"),
-        new MethodeOption("Virement", "Virement"),
+        new MethodeOption("Espèces", MethodePaiementConsts.Espece),
+        new MethodeOption("Chèque", MethodePaiementConsts.Cheque),
+        new MethodeOption("Traite", MethodePaiementConsts.Traite),
+        new MethodeOption("Virement", MethodePaiementConsts.Virement),
+        new MethodeOption("TPE", MethodePaiementConsts.Tpe),
         new MethodeOption("Autre", "Autre")
     };
 
@@ -344,7 +346,7 @@
         public int? AccountingYearId { get; set; }
         public decimal Montant { get; set; }
         public DateTime DatePaiement { get; set; }
-        public string MethodePaiement { get; set; } = "Espece";
+        public string MethodePaiement { get; set; } = MethodePaiementConsts.Espece;
         public string? NumeroTransactionBancaire { get; set; }
         public string? NumeroChequeTraite { get; set; }
         public int? BanqueId { get; set; }
@@ -372,8 +374,8 @@
         else
         {
             model.DatePaiement = DateTime.Today;
-            model.MethodePaiement = "Espece";
-            selectedMethodePaiement = "Espece";
+            model.MethodePaiement = MethodePaiementConsts.Espece;
+            selectedMethodePaiement = MethodePaiementConsts.Espece;
             var activeYear = await AccountingYearService.GetActiveAccountingYearAsync(_cts.Token);
             if (activeYear != null) model.AccountingYearId = activeYear.Id;
         }
@@ -391,7 +393,7 @@
                 AccountingYearId = r.AccountingYearId,
                 Montant = r.Montant,
                 DatePaiement = r.DatePaiement,
-                MethodePaiement = r.MethodePaiement ?? "Espece",
+                MethodePaiement = r.MethodePaiement ?? MethodePaiementConsts.Espece,
                 NumeroTransactionBancaire = r.NumeroTransactionBancaire,
                 NumeroChequeTraite = r.NumeroChequeTraite,
                 BanqueId = r.BanqueId,
@@ -484,8 +486,8 @@
         {
             selectedMethodePaiement = methode;
             model.MethodePaiement = methode;
-            if (methode != "Cheque" && methode != "Traite") { model.NumeroChequeTraite = null; model.BanqueId = null; model.DateEcheance = null; }
-            if (methode != "Traite" && methode != "Virement") { model.RibCodeEtab = null; model.RibCodeAgence = null; model.RibNumeroCompte = null; model.RibCle = null; }
+            if (methode != MethodePaiementConsts.Cheque && methode != MethodePaiementConsts.Traite) { model.NumeroChequeTraite = null; model.BanqueId = null; model.DateEcheance = null; }
+            if (methode != MethodePaiementConsts.Traite && methode != MethodePaiementConsts.Virement) { model.RibCodeEtab = null; model.RibCodeAgence = null; model.RibNumeroCompte = null; model.RibCle = null; }
         }
     }
 

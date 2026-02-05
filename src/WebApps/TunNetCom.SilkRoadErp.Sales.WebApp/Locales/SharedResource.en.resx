@@ -870,6 +870,9 @@
   <data name="Traite" xml:space="preserve">
     <value>Draft</value>
   </data>
+  <data name="TPE" xml:space="preserve">
+    <value>TPE</value>
+  </data>
   <data name="Rechercher" xml:space="preserve">
     <value>Search</value>
   </data>
@@ -1310,6 +1313,9 @@
   </data>
   <data name="Somme_Virement" xml:space="preserve">
     <value>Transfer sum</value>
+  </data>
+  <data name="Somme_TPE" xml:space="preserve">
+    <value>TPE total</value>
   </data>
   <data name="Total_Paiements" xml:space="preserve">
     <value>Total payments</value>

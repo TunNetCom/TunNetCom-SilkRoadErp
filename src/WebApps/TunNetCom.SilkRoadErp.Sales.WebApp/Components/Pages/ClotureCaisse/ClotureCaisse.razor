@@ -82,6 +82,8 @@
                         <strong>@sommeTraite.FormatAmount(decimalPlaces) TND</strong>
                         <span>@Localizer["Somme_Virement"]:</span>
                         <strong>@sommeVirement.FormatAmount(decimalPlaces) TND</strong>
+                        <span>@Localizer["Somme_TPE"]:</span>
+                        <strong>@sommeTpe.FormatAmount(decimalPlaces) TND</strong>
                         <span>@Localizer["Total_Paiements"]:</span>
                         <strong>@totalPaiementsSum.FormatAmount(decimalPlaces) TND</strong>
                     </div>
@@ -190,10 +192,11 @@
     private int decimalPlaces = AmountHelper.DEFAULT_DECIMAL_PLACES;
     private CancellationTokenSource _cts = new();
 
-    private decimal sommeEspece => paiements.Where(p => string.Equals(p.MethodePaiement, MethodePaiement.Espece.ToString(), StringComparison.OrdinalIgnoreCase)).Sum(p => p.Montant);
-    private decimal sommeCheque => paiements.Where(p => string.Equals(p.MethodePaiement, MethodePaiement.Cheque.ToString(), StringComparison.OrdinalIgnoreCase)).Sum(p => p.Montant);
-    private decimal sommeTraite => paiements.Where(p => string.Equals(p.MethodePaiement, MethodePaiement.Traite.ToString(), StringComparison.OrdinalIgnoreCase)).Sum(p => p.Montant);
-    private decimal sommeVirement => paiements.Where(p => string.Equals(p.MethodePaiement, MethodePaiement.Virement.ToString(), StringComparison.OrdinalIgnoreCase)).Sum(p => p.Montant);
+    private decimal sommeEspece => paiements.Where(p => string.Equals(p.MethodePaiement, MethodePaiementConsts.Espece, StringComparison.OrdinalIgnoreCase)).Sum(p => p.Montant);
+    private decimal sommeCheque => paiements.Where(p => string.Equals(p.MethodePaiement, MethodePaiementConsts.Cheque, StringComparison.OrdinalIgnoreCase)).Sum(p => p.Montant);
+    private decimal sommeTraite => paiements.Where(p => string.Equals(p.MethodePaiement, MethodePaiementConsts.Traite, StringComparison.OrdinalIgnoreCase)).Sum(p => p.Montant);
+    private decimal sommeVirement => paiements.Where(p => string.Equals(p.MethodePaiement, MethodePaiementConsts.Virement, StringComparison.OrdinalIgnoreCase)).Sum(p => p.Montant);
+    private decimal sommeTpe => paiements.Where(p => string.Equals(p.MethodePaiement, MethodePaiementConsts.Tpe, StringComparison.OrdinalIgnoreCase)).Sum(p => p.Montant);
     private decimal totalPaiementsSum => paiements.Sum(p => p.Montant);
     private decimal resultatCloture => totalBl - totalAvoirs;
 
@@ -321,6 +324,7 @@
                 sommeCheque,
                 sommeTraite,
                 sommeVirement,
+                sommeTpe,
                 blList,
                 totalBl,
                 avoirsList,

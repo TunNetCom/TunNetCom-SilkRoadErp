@@ -14,6 +14,7 @@ public class PrintClotureCaisseModel
     public decimal SommeCheque { get; set; }
     public decimal SommeTraite { get; set; }
     public decimal SommeVirement { get; set; }
+    public decimal SommeTpe { get; set; }
     public decimal TotalPaiements { get; set; }
 
     public List<PrintClotureCaisseBlRow> BlRows { get; set; } = new();

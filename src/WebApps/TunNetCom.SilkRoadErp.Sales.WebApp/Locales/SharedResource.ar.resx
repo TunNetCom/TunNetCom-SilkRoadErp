@@ -831,6 +831,9 @@
   <data name="Traite" xml:space="preserve">
     <value>سند</value>
   </data>
+  <data name="TPE" xml:space="preserve">
+    <value>TPE</value>
+  </data>
   <data name="Rechercher" xml:space="preserve">
     <value>بحث</value>
   </data>
@@ -1235,6 +1238,9 @@
   </data>
   <data name="Somme_Virement" xml:space="preserve">
     <value>مجموع التحويلات</value>
+  </data>
+  <data name="Somme_TPE" xml:space="preserve">
+    <value>مجموع TPE</value>
   </data>
   <data name="Total_Paiements" xml:space="preserve">
     <value>إجمالي المدفوعات</value>
