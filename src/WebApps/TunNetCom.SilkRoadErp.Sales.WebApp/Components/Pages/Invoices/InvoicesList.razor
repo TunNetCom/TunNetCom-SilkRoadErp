@@ -187,47 +187,16 @@
                 </RadzenDataGridColumn>
             </Columns>
         </RadzenDataGrid>
-        <RadzenCard class="summary-card" Variant="Variant.Outlined">
-            <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" JustifyContent="JustifyContent.End">
-                    <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                        <strong>Total HT:</strong> @totalNetAmount.FormatAmount()
-                    </RadzenText>
-                </RadzenStack>
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" JustifyContent="JustifyContent.End">
-                    <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                        Base HT 7%: @totalBase7.FormatAmount()
-                    </RadzenText>
-                    <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                        Base HT 13%: @totalBase13.FormatAmount()
-                    </RadzenText>
-                    <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                        Base HT 19%: @totalBase19.FormatAmount()
-                    </RadzenText>
-                </RadzenStack>
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" JustifyContent="JustifyContent.End">
-                    <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                        TVA 7%: @totalVat7.FormatAmount()
-                    </RadzenText>
-                    <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                        TVA 13%: @totalVat13.FormatAmount()
-                    </RadzenText>
-                    <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                        TVA 19%: @totalVat19.FormatAmount()
-                    </RadzenText>
-                </RadzenStack>
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" JustifyContent="JustifyContent.End">
-                    <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                        <strong>Total TVA:</strong> @totalVatAmount.FormatAmount()
-                    </RadzenText>
-                </RadzenStack>
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" JustifyContent="JustifyContent.End">
-                    <RadzenText TextStyle="TextStyle.H6" class="summary-text">
-                        <strong>Total TTC:</strong> @totalTtc.FormatAmount()
-                    </RadzenText>
-                </RadzenStack>
-            </RadzenStack>
-        </RadzenCard>
+        <InvoiceTotalsSummary TotalNet="totalNetAmount"
+                              TotalVat="totalVatAmount"
+                              TotalTtc="totalTtc"
+                              ShowDetailByRate="true"
+                              Base7="totalBase7"
+                              Base13="totalBase13"
+                              Base19="totalBase19"
+                              Vat7="totalVat7"
+                              Vat13="totalVat13"
+                              Vat19="totalVat19" />
     </div>
 </div>
 

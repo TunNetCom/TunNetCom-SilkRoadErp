@@ -1,0 +1,188 @@
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using Radzen.Blazor
+@inject IStringLocalizer<SharedResource> Localizer
+
+<RadzenCard class="invoice-totals-summary" Variant="Variant.Outlined">
+    <div class="invoice-totals-grid">
+        <div class="invoice-totals-row">
+            <span class="invoice-totals-label">@Localizer["total_ex_tax"]</span>
+            <span class="invoice-totals-value">@TotalNet.FormatAmount() TND</span>
+        </div>
+        @if (ShowDetailByRate && (HasBaseByRate || HasVatByRate))
+        {
+            @if (HasBaseByRate)
+            {
+                <div class="invoice-totals-detail-row">
+                    <span class="invoice-totals-label invoice-totals-detail-label">Base HT 7%</span>
+                    <span class="invoice-totals-value">@(Base7?.FormatAmount() ?? "0,000") TND</span>
+                </div>
+                <div class="invoice-totals-detail-row">
+                    <span class="invoice-totals-label invoice-totals-detail-label">Base HT 13%</span>
+                    <span class="invoice-totals-value">@(Base13?.FormatAmount() ?? "0,000") TND</span>
+                </div>
+                <div class="invoice-totals-detail-row">
+                    <span class="invoice-totals-label invoice-totals-detail-label">Base HT 19%</span>
+                    <span class="invoice-totals-value">@(Base19?.FormatAmount() ?? "0,000") TND</span>
+                </div>
+            }
+            @if (HasVatByRate)
+            {
+                <div class="invoice-totals-detail-row">
+                    <span class="invoice-totals-label invoice-totals-detail-label">TVA 7%</span>
+                    <span class="invoice-totals-value">@(Vat7?.FormatAmount() ?? "0,000") TND</span>
+                </div>
+                <div class="invoice-totals-detail-row">
+                    <span class="invoice-totals-label invoice-totals-detail-label">TVA 13%</span>
+                    <span class="invoice-totals-value">@(Vat13?.FormatAmount() ?? "0,000") TND</span>
+                </div>
+                <div class="invoice-totals-detail-row">
+                    <span class="invoice-totals-label invoice-totals-detail-label">TVA 19%</span>
+                    <span class="invoice-totals-value">@(Vat19?.FormatAmount() ?? "0,000") TND</span>
+                </div>
+            }
+        }
+        <div class="invoice-totals-row invoice-totals-separator">
+            <span class="invoice-totals-label">@Localizer["total_vat"]</span>
+            <span class="invoice-totals-value">@TotalVat.FormatAmount() TND</span>
+        </div>
+        <div class="invoice-totals-row invoice-totals-ttc">
+            <span class="invoice-totals-label">@Localizer["total_incl_tax"]</span>
+            <span class="invoice-totals-value invoice-totals-ttc-value">@TotalTtc.FormatAmount() TND</span>
+        </div>
+    </div>
+</RadzenCard>
+
+<style>
+    .invoice-totals-summary {
+        border: 1px solid var(--rz-base-300, #e5e7eb);
+        border-radius: 8px;
+        padding: 1rem 1.25rem;
+        margin-top: 1rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .invoice-totals-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        max-width: 420px;
+        margin-left: auto;
+    }
+
+    .invoice-totals-row,
+    .invoice-totals-detail-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: 1.5rem;
+        font-size: 0.875rem;
+        line-height: 1.5;
+    }
+
+    .invoice-totals-detail-row {
+        padding-left: 0.75rem;
+    }
+
+    .invoice-totals-detail-label {
+        font-size: 0.8125rem;
+        color: var(--rz-text-secondary-color, #6b7280);
+    }
+
+    .invoice-totals-label {
+        font-weight: 500;
+        color: var(--rz-text-color, #374151);
+    }
+
+    .invoice-totals-value {
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+        font-weight: 500;
+    }
+
+    .invoice-totals-separator {
+        padding-top: 0.5rem;
+        margin-top: 0.25rem;
+        border-top: 1px solid var(--rz-base-300, #e5e7eb);
+    }
+
+    .invoice-totals-ttc {
+        padding-top: 0.5rem;
+        margin-top: 0.25rem;
+        border-top: 1px solid var(--rz-base-300, #e5e7eb);
+        font-size: 1rem;
+    }
+
+    .invoice-totals-ttc .invoice-totals-label {
+        font-weight: 600;
+    }
+
+    .invoice-totals-ttc-value {
+        font-weight: 700;
+        font-size: 1.125rem;
+    }
+
+    @@media (max-width: 768px) {
+        .invoice-totals-summary {
+            padding: 0.75rem 1rem;
+        }
+
+        .invoice-totals-grid {
+            max-width: 100%;
+        }
+
+        .invoice-totals-row,
+        .invoice-totals-detail-row {
+            font-size: 0.8125rem;
+            gap: 1rem;
+        }
+
+        .invoice-totals-ttc {
+            font-size: 0.9375rem;
+        }
+
+        .invoice-totals-ttc-value {
+            font-size: 1rem;
+        }
+    }
+</style>
+
+@code {
+    /// <summary>Total HT (net).</summary>
+    [Parameter]
+    public decimal TotalNet { get; set; }
+
+    /// <summary>Total TVA.</summary>
+    [Parameter]
+    public decimal TotalVat { get; set; }
+
+    /// <summary>Total TTC.</summary>
+    [Parameter]
+    public decimal TotalTtc { get; set; }
+
+    /// <summary>When true, shows optional detail rows for Base HT and TVA by rate (7%, 13%, 19%).</summary>
+    [Parameter]
+    public bool ShowDetailByRate { get; set; }
+
+    [Parameter]
+    public decimal? Base7 { get; set; }
+
+    [Parameter]
+    public decimal? Base13 { get; set; }
+
+    [Parameter]
+    public decimal? Base19 { get; set; }
+
+    [Parameter]
+    public decimal? Vat7 { get; set; }
+
+    [Parameter]
+    public decimal? Vat13 { get; set; }
+
+    [Parameter]
+    public decimal? Vat19 { get; set; }
+
+    private bool HasBaseByRate => Base7.HasValue || Base13.HasValue || Base19.HasValue;
+    private bool HasVatByRate => Vat7.HasValue || Vat13.HasValue || Vat19.HasValue;
+}

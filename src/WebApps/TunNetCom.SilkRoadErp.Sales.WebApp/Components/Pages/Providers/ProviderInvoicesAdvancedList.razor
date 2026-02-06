@@ -157,36 +157,16 @@
                 </RadzenDataGridColumn>
             </Columns>
         </RadzenDataGrid>
-        <RadzenCard class="summary-card" Variant="Variant.Outlined">
-            <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem" class="summary-stack">
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" JustifyContent="JustifyContent.End">
-                    <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                        <strong>Total HT:</strong> @totalNetAmount.FormatAmount()
-                    </RadzenText>
-                </RadzenStack>
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" JustifyContent="JustifyContent.End">
-                    <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                        TVA 7%: @totalVat7.FormatAmount()
-                    </RadzenText>
-                    <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                        TVA 13%: @totalVat13.FormatAmount()
-                    </RadzenText>
-                    <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                        TVA 19%: @totalVat19.FormatAmount()
-                    </RadzenText>
-                </RadzenStack>
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" JustifyContent="JustifyContent.End">
-                    <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                        <strong>Total TVA:</strong> @totalVatAmount.FormatAmount()
-                    </RadzenText>
-                </RadzenStack>
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" JustifyContent="JustifyContent.End">
-                    <RadzenText TextStyle="TextStyle.H6" class="summary-text">
-                        <strong>Total TTC:</strong> @totalTtc.FormatAmount()
-                    </RadzenText>
-                </RadzenStack>
-            </RadzenStack>
-        </RadzenCard>
+        <InvoiceTotalsSummary TotalNet="totalNetAmount"
+                              TotalVat="totalVatAmount"
+                              TotalTtc="totalTtc"
+                              ShowDetailByRate="true"
+                              Base7="totalBase7"
+                              Base13="totalBase13"
+                              Base19="totalBase19"
+                              Vat7="totalVat7"
+                              Vat13="totalVat13"
+                              Vat19="totalVat19" />
     </div>
 </div>
 
@@ -319,6 +299,9 @@
     private List<ColumnInfo> availableColumns = new();
     private decimal totalNetAmount = 0;
     private decimal totalVatAmount = 0;
+    private decimal totalBase7 = 0;
+    private decimal totalBase13 = 0;
+    private decimal totalBase19 = 0;
     private decimal totalVat7 = 0;
     private decimal totalVat13 = 0;
     private decimal totalVat19 = 0;
@@ -457,6 +440,9 @@
             if (totals != null)
             {
                 totalNetAmount = totals.TotalHT;
+                totalBase7 = totals.TotalBase7;
+                totalBase13 = totals.TotalBase13;
+                totalBase19 = totals.TotalBase19;
                 totalVat7 = totals.TotalVat7;
                 totalVat13 = totals.TotalVat13;
                 totalVat19 = totals.TotalVat19;
@@ -551,6 +537,9 @@
             totalCount = 0;
             totalNetAmount = 0;
             totalVatAmount = 0;
+            totalBase7 = 0;
+            totalBase13 = 0;
+            totalBase19 = 0;
             totalVat7 = 0;
             totalVat13 = 0;
             totalVat19 = 0;

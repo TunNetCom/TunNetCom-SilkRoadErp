@@ -315,18 +315,9 @@
                         </RadzenDataGridColumn>
                     </Columns>
                 </RadzenDataGrid>
-                <!-- Invoice Summary -->
-                <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e0e0e0; flex-wrap: wrap;">
-                    <span style="font-size: 0.85rem; color: #666;">
-                        @Localizer["total_net"]: <strong style="color: #333;">@_invoicesList?.TotalNetAmount.FormatAmount()</strong>
-                    </span>
-                    <span style="font-size: 0.85rem; color: #666;">
-                        @Localizer["total_gross"]: <strong style="color: #333;">@_invoicesList?.TotalGrossAmount.FormatAmount()</strong>
-                    </span>
-                    <span style="font-size: 0.85rem; color: #666;">
-                        @Localizer["total_vat"]: <strong style="color: #333;">@_invoicesList?.TotalVATAmount.FormatAmount()</strong>
-                    </span>
-                </div>
+                <InvoiceTotalsSummary TotalNet="_invoicesList?.TotalNetAmount ?? 0"
+                                      TotalVat="_invoicesList?.TotalVATAmount ?? 0"
+                                      TotalTtc="_invoicesList?.TotalGrossAmount ?? 0" />
             </RadzenCard>
         </RadzenColumn>
     </RadzenRow>
@@ -395,18 +386,9 @@
                         </RadzenDataGridColumn>
                     </Columns>
                 </RadzenDataGrid>
-                <!-- Uninvoiced Receipt Notes Summary -->
-                <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e0e0e0; flex-wrap: wrap;">
-                    <span style="font-size: 0.85rem; color: #666;">
-                        @Localizer["total_net"]: <strong style="color: #333;">@_uninvoicedReceiptNotesWithSummary?.TotalNetAmount.FormatAmount()</strong>
-                    </span>
-                    <span style="font-size: 0.85rem; color: #666;">
-                        @Localizer["total_gross"]: <strong style="color: #333;">@_uninvoicedReceiptNotesWithSummary?.TotalGrossAmount.FormatAmount()</strong>
-                    </span>
-                    <span style="font-size: 0.85rem; color: #666;">
-                        @Localizer["total_vat"]: <strong style="color: #333;">@_uninvoicedReceiptNotesWithSummary?.TotalVATAmount.FormatAmount()</strong>
-                    </span>
-                </div>
+                <InvoiceTotalsSummary TotalNet="_uninvoicedReceiptNotesWithSummary?.TotalNetAmount ?? 0"
+                                      TotalVat="_uninvoicedReceiptNotesWithSummary?.TotalVATAmount ?? 0"
+                                      TotalTtc="_uninvoicedReceiptNotesWithSummary?.TotalGrossAmount ?? 0" />
             </RadzenCard>
         </RadzenColumn>
     </RadzenRow>

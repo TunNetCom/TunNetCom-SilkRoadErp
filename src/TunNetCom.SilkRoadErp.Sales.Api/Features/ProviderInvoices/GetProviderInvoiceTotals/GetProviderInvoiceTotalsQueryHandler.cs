@@ -59,6 +59,9 @@ public class GetProviderInvoiceTotalsQueryHandler(
         return new ProviderInvoiceTotalsResponse
         {
             TotalHT = result.TotalHT,
+            TotalBase7 = result.TotalBase7,
+            TotalBase13 = result.TotalBase13,
+            TotalBase19 = result.TotalBase19,
             TotalVat7 = result.TotalVat7,
             TotalVat13 = result.TotalVat13,
             TotalVat19 = result.TotalVat19,
