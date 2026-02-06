@@ -303,7 +303,7 @@
                                                   ButtonStyle="ButtonStyle.Info" 
                                                   Size="ButtonSize.Small"
                                                   Title="@Localizer["retenue_source"]"
-                                                  Click="@(() => OpenRetenueDialog(invoiceWithBRs.Invoice.Num, invoiceWithBRs.Invoice.TotTTC))" />
+                                                  Click="@(() => OpenRetenueDialog(invoiceWithBRs.Invoice))" />
                                 }
                             </Template>
                         </RadzenDataGridColumn>
@@ -814,8 +814,13 @@
         args.Expandable = true;
     }
 
-    private async Task OpenRetenueDialog(int numFactureFournisseur, decimal montantTTC)
+    private async Task OpenRetenueDialog(ProviderInvoiceResponse invoice)
     {
+        var numFactureFournisseur = invoice.Num;
+        var totalAvoirsFinanciers = invoice.AvoirsFinanciers?.Sum(af => af.TotTtc) ?? 0;
+        var totalFacturesAvoir = invoice.TotalFacturesAvoir;
+        var montantTTC = invoice.TotTTC - totalAvoirsFinanciers - totalFacturesAvoir;
+
         try
         {
             // Check if retenue already exists

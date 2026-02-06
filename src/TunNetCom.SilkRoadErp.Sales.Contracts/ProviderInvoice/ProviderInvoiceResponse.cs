@@ -40,6 +40,10 @@ public class ProviderInvoiceResponse
 
     [JsonPropertyName("avoirsFinanciers")]
     public List<AvoirFinancierSummary> AvoirsFinanciers { get; set; } = new();
+
+    /// <summary>Total TTC des factures avoir fournisseur rattachées à cette facture (avoirs normaux).</summary>
+    [JsonPropertyName("totalFacturesAvoir")]
+    public decimal TotalFacturesAvoir { get; set; }
 }
 
 public class AvoirFinancierSummary
