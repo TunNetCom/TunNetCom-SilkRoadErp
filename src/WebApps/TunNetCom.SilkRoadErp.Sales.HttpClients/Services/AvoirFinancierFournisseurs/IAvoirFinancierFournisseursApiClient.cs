@@ -38,5 +38,7 @@ public interface IAvoirFinancierFournisseursApiClient
     Task<Result> AttachAvoirFinancierToInvoiceAsync(int id, int numFactureFournisseur, CancellationToken cancellationToken);
 
     Task<Result> DetachAvoirFinancierFromInvoiceAsync(int id, CancellationToken cancellationToken);
+
+    Task<Result> DeleteAvoirFinancierFournisseurAsync(int id, CancellationToken cancellationToken);
 }
 

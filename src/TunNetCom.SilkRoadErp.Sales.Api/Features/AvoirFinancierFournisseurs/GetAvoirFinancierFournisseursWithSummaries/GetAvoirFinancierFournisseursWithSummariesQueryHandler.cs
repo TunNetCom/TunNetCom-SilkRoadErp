@@ -40,7 +40,8 @@ public class GetAvoirFinancierFournisseursWithSummariesQueryHandler(
 
         if (request.ProviderId.HasValue && request.ProviderId.Value != 0)
         {
-            avoirFinancierQuery = avoirFinancierQuery.Where(a => a.ProviderId == request.ProviderId.Value);
+            // Inclure les avoirs du fournisseur ET les avoirs non rattachés (ProviderId = 0) pour permettre le rattachement depuis le popup
+            avoirFinancierQuery = avoirFinancierQuery.Where(a => a.ProviderId == request.ProviderId.Value || a.ProviderId == 0);
         }
 
         if (request.NumFactureFournisseur.HasValue && request.NumFactureFournisseur.Value != 0)

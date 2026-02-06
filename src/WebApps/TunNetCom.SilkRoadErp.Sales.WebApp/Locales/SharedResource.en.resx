@@ -993,6 +993,9 @@
   <data name="Confirmation_Suppression_Banque" xml:space="preserve">
     <value>Are you sure you want to delete this bank?</value>
   </data>
+  <data name="Confirmation_Suppression_AvoirFinancier" xml:space="preserve">
+    <value>Are you sure you want to delete the financial credit note #{0}?</value>
+  </data>
   <data name="Fonctionnalite_Non_Disponible" xml:space="preserve">
     <value>This feature is not yet available</value>
   </data>

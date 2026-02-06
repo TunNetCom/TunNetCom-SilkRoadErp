@@ -7,6 +7,8 @@
 @inject IProvidersApiClient ProvidersService
 @inject IStringLocalizer<SharedResource> Localizer
 @inject ILogger<AvoirFinancierFournisseursList> _logger
+@inject Radzen.DialogService DialogService
+@inject Radzen.NotificationService NotificationService
 @using Radzen.Blazor
 @using Radzen
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers
@@ -102,7 +104,7 @@
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="AvoirFinancierFournisseursBaseInfo"
                                       Title="@Localizer["actions_label"]"
-                                      Width="100px"
+                                      Width="140px"
                                       Sortable="false"
                                       Filterable="false">
                     <Template Context="item">
@@ -113,6 +115,13 @@
                                       Click="@(() => EditAvoirFinancierFournisseurs(item.Num))"
                                       Title="@Localizer["Edit"]"
                                       AriaLabel="@Localizer["Edit"]" />
+                        <RadzenButton Icon="delete"
+                                      ButtonStyle="ButtonStyle.Danger"
+                                      Variant="Variant.Flat"
+                                      Size="ButtonSize.Small"
+                                      Click="@(() => DeleteAvoirFinancierFournisseur(item))"
+                                      Title="@Localizer["Delete"]"
+                                      AriaLabel="@Localizer["Delete"]" />
                     </Template>
                 </RadzenDataGridColumn>
             </Columns>
@@ -345,6 +354,50 @@
     private void EditAvoirFinancierFournisseurs(int num)
     {
         NavigationManager.NavigateTo($"/AddOrUpdateAvoirFinancierFournisseurs/{num}");
+    }
+
+    private async Task DeleteAvoirFinancierFournisseur(AvoirFinancierFournisseursBaseInfo item)
+    {
+        var message = string.Format(Localizer["Confirmation_Suppression_AvoirFinancier"] ?? "Êtes-vous sûr de vouloir supprimer l'avoir financier n°{0} ?", item.Num);
+        bool? confirmed = await DialogService.Confirm(
+            message,
+            Localizer["Confirmation_Suppression_Titre"] ?? "Confirmation de suppression",
+            new ConfirmOptions() { OkButtonText = Localizer["Oui"] ?? "Oui", CancelButtonText = Localizer["Non"] ?? "Non" });
+
+        if (confirmed != true) return;
+
+        try
+        {
+            var result = await AvoirFinancierFournisseursService.DeleteAvoirFinancierFournisseurAsync(item.Id, default);
+            if (result.IsSuccess)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = Localizer["success"] ?? "Succès",
+                    Detail = Localizer["delete_success"] ?? "Avoir financier supprimé avec succès"
+                });
+                await Callback(new LoadDataArgs { Skip = 0, Top = pageSize });
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"] ?? "Erreur",
+                    Detail = result.Errors.FirstOrDefault()?.Message ?? Localizer["Unexpected_Error"] ?? "Erreur inattendue"
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"] ?? "Erreur",
+                Detail = ex.Message
+            });
+        }
     }
 }
 

@@ -951,6 +951,9 @@
   <data name="Confirmation_Suppression_Banque" xml:space="preserve">
     <value>هل أنت متأكد من حذف هذا البنك؟</value>
   </data>
+  <data name="Confirmation_Suppression_AvoirFinancier" xml:space="preserve">
+    <value>هل أنت متأكد من حذف الائتمان المالي رقم {0}؟</value>
+  </data>
   <data name="Fonctionnalite_Non_Disponible" xml:space="preserve">
     <value>هذه الميزة غير متاحة بعد</value>
   </data>

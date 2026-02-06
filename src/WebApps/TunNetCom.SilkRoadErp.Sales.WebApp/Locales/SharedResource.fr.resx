@@ -1050,6 +1050,9 @@
   <data name="Confirmation_Suppression_Banque" xml:space="preserve">
     <value>Êtes-vous sûr de vouloir supprimer cette banque ?</value>
   </data>
+  <data name="Confirmation_Suppression_AvoirFinancier" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir supprimer l'avoir financier n°{0} ?</value>
+  </data>
   <data name="Fonctionnalite_Non_Disponible" xml:space="preserve">
     <value>Cette fonctionnalité n'est pas encore disponible</value>
   </data>

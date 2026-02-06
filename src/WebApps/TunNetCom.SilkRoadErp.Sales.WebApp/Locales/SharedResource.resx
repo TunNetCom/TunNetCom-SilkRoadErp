@@ -979,6 +979,9 @@
   <data name="Confirmation_Suppression_Banque" xml:space="preserve">
     <value />
   </data>
+  <data name="Confirmation_Suppression_AvoirFinancier" xml:space="preserve">
+    <value />
+  </data>
   <data name="Fonctionnalite_Non_Disponible" xml:space="preserve">
     <value />
   </data>

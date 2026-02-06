@@ -239,5 +239,29 @@ public class AvoirFinancierFournisseursApiClient : IAvoirFinancierFournisseursAp
 
         throw new Exception($"AvoirFinancierFournisseurs Detach: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
     }
+
+    public async Task<Result> DeleteAvoirFinancierFournisseurAsync(int id, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Deleting avoir financier fournisseur {Id} via API", id);
+        var response = await _httpClient.DeleteAsync($"/avoir-financier-fournisseurs/{id}", cancellationToken: cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.NoContent)
+        {
+            return Result.Ok();
+        }
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return Result.Fail("avoir_financier_not_found");
+        }
+
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            var badRequest = await response.ReadJsonAsync<BadRequestResponse>();
+            return Result.Fail($"validation_error: {JsonConvert.SerializeObject(badRequest)}");
+        }
+
+        throw new Exception($"AvoirFinancierFournisseurs Delete: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
+    }
 }
 
