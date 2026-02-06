@@ -36,6 +36,7 @@
 @inject IConfiguration Configuration
 @inject IAuthService AuthService
 @inject ILogger<AddOrUpdatePaiementClient> Logger
+@inject IDecimalFormatService DecimalFormatService
 
 <div class="paiement-form-container">
     <div class="paiement-form-card">
@@ -83,7 +84,7 @@
             </RadzenFormField>
 
             <RadzenFormField Text="@($"{Localizer["Montant"]} *")" class="rz-col-12 rz-md-6">
-                <RadzenNumeric @bind-Value="paiement.Montant" Min="0" Format="@AmountHelper.FORMAT_N2" Style="width: 100%;" />
+                <RadzenNumeric @bind-Value="paiement.Montant" Min="0" Format="@amountFormat" Style="width: 100%;" />
             </RadzenFormField>
 
             <RadzenFormField Text="@($"{Localizer["Date_Paiement"]} *")" class="rz-col-12 rz-md-6">
@@ -377,6 +378,7 @@
     private int? selectedDeliveryNoteToAdd;
     private List<BanqueResponse> banques = new();
     private CancellationTokenSource cancellationTokenSource = new();
+    private string amountFormat = AmountHelper.FORMAT_N3;
 
     // Computed properties for available and selected items
     private List<InvoiceResponse> AvailableInvoices =>
@@ -408,6 +410,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        amountFormat = await DecimalFormatService.GetDecimalFormatAsync();
         methodePaiementOptions = new()
         {
             new MethodePaiementOption { Text = Localizer["Espece"], Value = MethodePaiementConsts.Espece },
