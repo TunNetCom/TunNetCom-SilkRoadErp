@@ -1548,6 +1548,12 @@
   <data name="Avoirs" xml:space="preserve">
     <value>Avoirs</value>
   </data>
+  <data name="Aucun_avoir_date" xml:space="preserve">
+    <value>Aucun avoir pour cette date.</value>
+  </data>
+  <data name="Aucun_bl_date" xml:space="preserve">
+    <value>Aucun bon de livraison pour cette date.</value>
+  </data>
   <data name="Resultat_Cloture" xml:space="preserve">
     <value>Résultat (Total BL - Total Avoirs)</value>
   </data>

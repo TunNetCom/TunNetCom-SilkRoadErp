@@ -1165,6 +1165,12 @@
   <data name="Avoirs" xml:space="preserve">
     <value />
   </data>
+  <data name="Aucun_avoir_date" xml:space="preserve">
+    <value>No credit notes for this date.</value>
+  </data>
+  <data name="Aucun_bl_date" xml:space="preserve">
+    <value>No delivery notes for this date.</value>
+  </data>
   <data name="Resultat_Cloture" xml:space="preserve">
     <value>Résultat (Total BL - Total Avoirs)</value>
   </data>

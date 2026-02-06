@@ -1269,6 +1269,12 @@
   <data name="Avoirs" xml:space="preserve">
     <value>الائتمانات</value>
   </data>
+  <data name="Aucun_avoir_date" xml:space="preserve">
+    <value>لا توجد إشعارات دائنة لهذا التاريخ.</value>
+  </data>
+  <data name="Aucun_bl_date" xml:space="preserve">
+    <value>لا توجد أوامر تسليم لهذا التاريخ.</value>
+  </data>
   <data name="Resultat_Cloture" xml:space="preserve">
     <value>النتيجة (إجمالي أوامر التسليم - إجمالي الإشعارات الدائنة)</value>
   </data>
