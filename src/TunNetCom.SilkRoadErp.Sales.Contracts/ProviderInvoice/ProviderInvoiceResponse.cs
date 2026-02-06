@@ -37,4 +37,25 @@ public class ProviderInvoiceResponse
 
     [JsonPropertyName("hasRetenueSource")]
     public bool HasRetenueSource { get; set; }
+
+    [JsonPropertyName("avoirsFinanciers")]
+    public List<AvoirFinancierSummary> AvoirsFinanciers { get; set; } = new();
+}
+
+public class AvoirFinancierSummary
+{
+    [JsonPropertyName("id")]
+    public int Id { get; set; }
+
+    [JsonPropertyName("num")]
+    public int Num { get; set; }
+
+    [JsonPropertyName("date")]
+    public DateTime Date { get; set; }
+
+    [JsonPropertyName("totTtc")]
+    public decimal TotTtc { get; set; }
+
+    [JsonPropertyName("description")]
+    public string? Description { get; set; }
 }

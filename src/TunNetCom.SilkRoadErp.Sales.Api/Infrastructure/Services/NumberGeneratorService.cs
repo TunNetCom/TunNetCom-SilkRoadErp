@@ -9,6 +9,7 @@ public interface INumberGeneratorService
     Task<int> GenerateAvoirNumberAsync(int accountingYearId, CancellationToken cancellationToken = default);
     Task<int> GenerateAvoirFournisseurNumberAsync(int accountingYearId, CancellationToken cancellationToken = default);
     Task<int> GenerateFactureAvoirFournisseurNumberAsync(int accountingYearId, CancellationToken cancellationToken = default);
+    Task<int> GenerateAvoirFinancierFournisseurNumAsync(int accountingYearId, CancellationToken cancellationToken = default);
     Task<int> GenerateRetourMarchandiseFournisseurNumberAsync(int accountingYearId, CancellationToken cancellationToken = default);
     Task<int> GenerateFactureDepenseNumberAsync(int accountingYearId, CancellationToken cancellationToken = default);
 }
@@ -182,6 +183,26 @@ public class NumberGeneratorService : INumberGeneratorService
         var newNum = year * 100000 + nextSequence;
 
         _logger.LogInformation("Generated FactureAvoirFournisseur number: {Num} for accounting year {Year}", newNum, year);
+        return newNum;
+    }
+
+    public async Task<int> GenerateAvoirFinancierFournisseurNumAsync(int accountingYearId, CancellationToken cancellationToken = default)
+    {
+        var accountingYear = await _context.AccountingYear.FindAsync(new object[] { accountingYearId }, cancellationToken);
+        if (accountingYear == null)
+        {
+            throw new InvalidOperationException($"Accounting year with Id {accountingYearId} not found");
+        }
+
+        var year = accountingYear.Year;
+        var lastNum = await _context.AvoirFinancierFournisseurs
+            .IgnoreQueryFilters()
+            .MaxAsync(a => (int?)a.Num, cancellationToken) ?? 0;
+
+        var nextSequence = GetNextSequence(lastNum, year);
+        var newNum = year * 100000 + nextSequence;
+
+        _logger.LogInformation("Generated AvoirFinancierFournisseur number: {Num} for accounting year {Year}", newNum, year);
         return newNum;
     }
 

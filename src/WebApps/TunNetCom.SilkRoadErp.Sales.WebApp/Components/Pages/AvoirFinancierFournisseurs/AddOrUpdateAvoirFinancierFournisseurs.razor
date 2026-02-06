@@ -257,37 +257,6 @@ else
             if (result.IsT0)
             {
                 _filteredInvoices = result.AsT0.Invoices.Items;
-                
-                // In edit mode, filter out invoices that already have an avoir financier (except the current one)
-                if (isEditMode && int.TryParse(num, out var currentNum))
-                {
-                    // Get all invoices that already have an avoir financier
-                    var invoicesWithAvoir = await avoirFinancierFournisseursApiClient.GetAvoirFinancierFournisseursWithSummariesAsync(
-                        selectedFournisseurId, null, null, null, 1, 1000, null, null, null, _cancellationTokenSource.Token);
-                    
-                    var excludedNums = invoicesWithAvoir.AvoirFinancierFournisseurs.Items
-                        .Where(a => a.Num != currentNum)
-                        .Select(a => a.NumFactureFournisseur)
-                        .ToList();
-                    
-                    _filteredInvoices = _filteredInvoices
-                        .Where(i => !excludedNums.Contains(i.Num))
-                        .ToList();
-                }
-                else
-                {
-                    // In create mode, filter out invoices that already have an avoir financier
-                    var invoicesWithAvoir = await avoirFinancierFournisseursApiClient.GetAvoirFinancierFournisseursWithSummariesAsync(
-                        selectedFournisseurId, null, null, null, 1, 1000, null, null, null, _cancellationTokenSource.Token);
-                    
-                    var excludedNums = invoicesWithAvoir.AvoirFinancierFournisseurs.Items
-                        .Select(a => a.NumFactureFournisseur)
-                        .ToList();
-                    
-                    _filteredInvoices = _filteredInvoices
-                        .Where(i => !excludedNums.Contains(i.Num))
-                        .ToList();
-                }
             }
             else
             {
@@ -331,9 +300,9 @@ else
                     numSurPage = data.NumSurPage;
                     description = data.Description;
                     totTtc = data.TotTtc;
-                    selectedFournisseurId = data.FactureFournisseur.ProviderId;
+                    selectedFournisseurId = data.FactureFournisseur?.ProviderId;
                     await LoadInvoices(null);
-                    selectedFactureFournisseurNum = data.FactureFournisseur.Num;
+                    selectedFactureFournisseurNum = data.FactureFournisseur?.Num;
                 }
             }
         }

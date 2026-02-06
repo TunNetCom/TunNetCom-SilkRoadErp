@@ -18,7 +18,7 @@ public class FullAvoirFinancierFournisseursResponse
     public decimal TotTtc { get; set; }
 
     [JsonPropertyName("factureFournisseur")]
-    public AvoirFinancierFournisseursFactureFournisseurResponse FactureFournisseur { get; set; } = null!;
+    public AvoirFinancierFournisseursFactureFournisseurResponse? FactureFournisseur { get; set; }
 }
 
 public class AvoirFinancierFournisseursFactureFournisseurResponse

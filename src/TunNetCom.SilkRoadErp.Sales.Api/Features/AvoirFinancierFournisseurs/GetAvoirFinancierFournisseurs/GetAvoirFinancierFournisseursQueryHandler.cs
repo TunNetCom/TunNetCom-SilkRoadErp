@@ -21,7 +21,7 @@ public class GetAvoirFinancierFournisseursQueryHandler(
                 Date = a.Date,
                 Description = a.Description,
                 TotTtc = a.TotTtc,
-                NumFactureFournisseur = a.Num
+                NumFactureFournisseur = a.NumFactureFournisseur ?? 0
             })
             .FirstOrDefaultAsync(cancellationToken);
 

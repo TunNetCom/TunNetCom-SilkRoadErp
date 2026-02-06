@@ -308,13 +308,26 @@
                             </Template>
                         </RadzenDataGridColumn>
                         <RadzenDataGridColumn Title="Facture avoir / Avoir financier"
-                                              Width="180px">
+                                              Width="280px">
                             <Template Context="invoiceWithBRs">
-                                <RadzenButton Icon="link" 
-                                              ButtonStyle="ButtonStyle.Secondary" 
-                                              Size="ButtonSize.Small"
-                                              Title="Rattacher facture avoir ou avoir financier"
-                                              Click="@(() => OpenAttachDialog(invoiceWithBRs.Invoice.Num, invoiceWithBRs.Invoice.ProviderId))" />
+                                <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                                    @if (invoiceWithBRs.Invoice.AvoirsFinanciers?.Any() == true)
+                                    {
+                                        <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
+                                            @foreach (var af in invoiceWithBRs.Invoice.AvoirsFinanciers)
+                                            {
+                                                <RadzenBadge BadgeStyle="BadgeStyle.Info" 
+                                                            Text="@($"N°{af.Num} {af.TotTtc.FormatAmount()}")" 
+                                                            Style="font-size: 0.75rem;" />
+                                            }
+                                        </div>
+                                    }
+                                    <RadzenButton Icon="link" 
+                                                  ButtonStyle="ButtonStyle.Secondary" 
+                                                  Size="ButtonSize.Small"
+                                                  Title="Rattacher facture avoir ou avoir financier"
+                                                  Click="@(() => OpenAttachDialog(invoiceWithBRs.Invoice.Num, invoiceWithBRs.Invoice.ProviderId))" />
+                                </div>
                             </Template>
                         </RadzenDataGridColumn>
                     </Columns>

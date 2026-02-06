@@ -1,4 +1,5 @@
 using TunNetCom.SilkRoadErp.Sales.Api.Features.AppParameters.GetAppParameters;
+using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;
 using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderInvoice.GetProvidersInvoices;
@@ -65,6 +66,19 @@ public class GetProvidersInvoicesQueryHandler(
             query.PageNumber,
             query.PageSize,
             cancellationToken);
+
+        var invoiceNums = pagedResult.Items.Select(i => i.Num).ToList();
+        var avoirsByInvoice = await _context.AvoirFinancierFournisseurs
+            .AsNoTracking()
+            .Where(a => a.NumFactureFournisseur != null && invoiceNums.Contains(a.NumFactureFournisseur.Value))
+            .Select(a => new { a.NumFactureFournisseur!.Value, Avoir = new AvoirFinancierSummary { Id = a.Id, Num = a.Num, Date = a.Date, TotTtc = a.TotTtc, Description = a.Description } })
+            .ToListAsync(cancellationToken);
+        var avoirsGrouped = avoirsByInvoice.GroupBy(x => x.Value).ToDictionary(g => g.Key, g => g.Select(x => x.Avoir).ToList());
+
+        foreach (var invoice in pagedResult.Items)
+        {
+            invoice.AvoirsFinanciers = avoirsGrouped.TryGetValue(invoice.Num, out var list) ? list : new List<AvoirFinancierSummary>();
+        }
 
         var totalGrossAmount = await invoiceQuery.SumAsync(r => r.TotHTva, cancellationToken);
         var totalNetAmount = await invoiceQuery.SumAsync(r => r.TotTTC, cancellationToken);

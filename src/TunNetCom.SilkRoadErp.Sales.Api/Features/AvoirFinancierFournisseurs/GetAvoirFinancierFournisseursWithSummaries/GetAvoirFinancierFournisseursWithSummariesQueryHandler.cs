@@ -18,29 +18,32 @@ public class GetAvoirFinancierFournisseursWithSummariesQueryHandler(
         _logger.LogPaginationRequest(nameof(Domain.Entites.AvoirFinancierFournisseurs), request.PageNumber, request.PageSize);
 
         var avoirFinancierQuery = (from a in _context.AvoirFinancierFournisseurs
-                                    join ff in _context.FactureFournisseur on a.Num equals ff.Num
-                                    join fournisseur in _context.Fournisseur on ff.IdFournisseur equals fournisseur.Id
+                                    join ff in _context.FactureFournisseur on a.NumFactureFournisseur equals ff.Num into ffGroup
+                                    from ff in ffGroup.DefaultIfEmpty()
+                                    join fournisseur in _context.Fournisseur on ff.IdFournisseur equals fournisseur.Id into fournisseurGroup
+                                    from fournisseur in fournisseurGroup.DefaultIfEmpty()
                                     select new AvoirFinancierFournisseursBaseInfo
                                     {
+                                        Id = a.Id,
                                         Num = a.Num,
                                         NumSurPage = a.NumSurPage,
                                         Date = a.Date,
                                         Description = a.Description,
                                         TotTtc = a.TotTtc,
-                                        NumFactureFournisseur = a.Num,
-                                        ProviderId = ff.IdFournisseur,
-                                        ProviderName = fournisseur.Nom,
-                                        ProviderInvoiceNumber = ff.NumFactureFournisseur
+                                        NumFactureFournisseur = a.NumFactureFournisseur ?? 0,
+                                        ProviderId = ff != null ? ff.IdFournisseur : 0,
+                                        ProviderName = fournisseur != null ? fournisseur.Nom : "",
+                                        ProviderInvoiceNumber = ff != null ? ff.NumFactureFournisseur : 0
                                     })
                                     .AsNoTracking()
                                     .AsQueryable();
 
-        if (request.ProviderId.HasValue)
+        if (request.ProviderId.HasValue && request.ProviderId.Value != 0)
         {
             avoirFinancierQuery = avoirFinancierQuery.Where(a => a.ProviderId == request.ProviderId.Value);
         }
 
-        if (request.NumFactureFournisseur.HasValue)
+        if (request.NumFactureFournisseur.HasValue && request.NumFactureFournisseur.Value != 0)
         {
             avoirFinancierQuery = avoirFinancierQuery.Where(a => a.NumFactureFournisseur == request.NumFactureFournisseur.Value);
         }

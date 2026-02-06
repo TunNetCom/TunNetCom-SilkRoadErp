@@ -11,6 +11,9 @@ public class GetAvoirFinancierFournisseursWithSummariesResponse
 
 public class AvoirFinancierFournisseursBaseInfo
 {
+    [JsonPropertyName("id")]
+    public int Id { get; set; }
+
     [JsonPropertyName("num")]
     public int Num { get; set; }
 
