@@ -175,7 +175,7 @@
     private RadzenDataGrid<ClientSoldeProblemeResponse>? clientsGrid;
     private IEnumerable<ClientSoldeProblemeResponse> clients = new List<ClientSoldeProblemeResponse>();
     private int totalCount = 0;
-    private int defaultPageSize = GridPageSizeConstants.PageSize10;
+    private int defaultPageSize = GridPageSizeConstants.PageSize100;
     private bool isLoading = false;
     private CancellationTokenSource cancellationTokenSource = new();
     private int decimalPlaces = AmountHelper.DEFAULT_DECIMAL_PLACES;
