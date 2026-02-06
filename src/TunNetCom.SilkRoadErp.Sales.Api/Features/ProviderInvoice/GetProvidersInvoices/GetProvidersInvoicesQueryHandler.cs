@@ -76,11 +76,12 @@ public class GetProvidersInvoicesQueryHandler(
             query.PageNumber,
             query.PageSize);
 
+        // TotalNetAmount = HT (hors taxes), TotalGrossAmount = TTC (toutes taxes comprises)
         var result = new GetProviderInvoicesWithSummary
         {
             Invoices = pagedResult,
-            TotalGrossAmount = totalGrossAmount,
-            TotalNetAmount = totalNetAmount,
+            TotalGrossAmount = totalNetAmount,
+            TotalNetAmount = totalGrossAmount,
             TotalVATAmount = totalVATAmount
         };
 

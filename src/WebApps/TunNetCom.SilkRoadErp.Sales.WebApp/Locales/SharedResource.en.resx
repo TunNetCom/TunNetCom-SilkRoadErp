@@ -207,6 +207,9 @@
   <data name="date" xml:space="preserve">
     <value>Date</value>
   </data>
+  <data name="date_livraison" xml:space="preserve">
+    <value>Delivery date</value>
+  </data>
   <data name="total_incl_tax" xml:space="preserve">
     <value>Total Incl. Tax</value>
   </data>
