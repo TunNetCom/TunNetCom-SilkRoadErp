@@ -1,4 +1,5 @@
 using TunNetCom.SilkRoadErp.Sales.Api.Features.AppParameters.GetAppParameters;
+using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Soldes;
 using TunNetCom.SilkRoadErp.Sales.Contracts.Soldes;
 using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
@@ -48,31 +49,18 @@ public class GetSoldeClientQueryHandler(
                 .Contains(r.NumFacture))
             .ToDictionaryAsync(r => r.NumFacture, cancellationToken);
 
-        // Calculate total from factures (factured BLs)
-        var facturesCount = await _context.Facture
-            .Where(f => f.IdClient == query.ClientId && f.AccountingYearId == accountingYearId.Value)
-            .CountAsync(cancellationToken);
-        
-        // Calculate total factures: for factures with retenue, use montant après retenue; otherwise use NetPayer + Timbre
+        // Calculate total from factures (factured BLs): use calculator for retenue / NetPayer + timbre
         var factures = await _context.Facture
             .Where(f => f.IdClient == query.ClientId && f.AccountingYearId == accountingYearId.Value)
             .Include(f => f.BonDeLivraison)
                 .ThenInclude(b => b.LigneBl)
             .ToListAsync(cancellationToken);
 
+        var montantApresRetenuByNum = retenues.ToDictionary(r => r.Key, r => r.Value.MontantApresRetenu);
         var totalFactures = factures.Sum(f =>
-        {
-            if (retenues.TryGetValue(f.Num, out var retenue))
-            {
-                // Use montant après retenue (which already includes timbre)
-                return retenue.MontantApresRetenu;
-            }
-            else
-            {
-                // Use NetPayer + Timbre for factures without retenue
-                return f.BonDeLivraison.Sum(b => b.NetPayer) + timbre;
-            }
-        });
+            SoldeClientCalculator.ComputeMontantFactureClient(
+                f.Num, montantApresRetenuByNum,
+                f.BonDeLivraison.Sum(b => b.NetPayer), timbre));
 
         // Calculate total from non-factured BLs
         var totalBonsLivraisonNonFactures = await _context.BonDeLivraison
@@ -101,7 +89,8 @@ public class GetSoldeClientQueryHandler(
             .Where(p => p.ClientId == query.ClientId && p.AccountingYearId == accountingYearId.Value)
             .SumAsync(p => p.Montant, cancellationToken);
 
-        var solde = totalAvoirs + totalFacturesAvoir + totalPaiements - totalFactures - totalBonsLivraisonNonFactures;
+        var solde = SoldeClientCalculator.ComputeSolde(
+            totalFactures, totalBonsLivraisonNonFactures, totalAvoirs, totalFacturesAvoir, totalPaiements);
 
         // Get documents
         var documents = new List<DocumentSoldeClient>();
@@ -143,18 +132,9 @@ public class GetSoldeClientQueryHandler(
         {
             var bls = f.BonDeLivraison.Select(CreateBlDocument).ToList();
             var hasQuantitesNonLivrees = bls.Any(bl => bl.HasQuantitesNonLivrees);
-
-            // Use montant après retenue if retenue exists, otherwise use NetPayer + Timbre
-            decimal montant;
-            if (retenues.TryGetValue(f.Num, out var retenue))
-            {
-                montant = retenue.MontantApresRetenu;
-            }
-            else
-            {
-                montant = f.BonDeLivraison.Sum(b => b.NetPayer) + timbre;
-            }
-
+            var montant = SoldeClientCalculator.ComputeMontantFactureClient(
+                f.Num, montantApresRetenuByNum,
+                f.BonDeLivraison.Sum(b => b.NetPayer), timbre);
             return new DocumentSoldeClient
             {
                 Type = DocumentTypes.Facture,
@@ -225,7 +205,9 @@ public class GetSoldeClientQueryHandler(
             var facturesRattachees = p.Factures.Select(pf =>
             {
                 var f = pf.Facture;
-                var montantTtc = retenues.TryGetValue(f.Num, out var r) ? r.MontantApresRetenu : f.BonDeLivraison.Sum(b => b.NetPayer) + timbre;
+                var montantTtc = SoldeClientCalculator.ComputeMontantFactureClient(
+                    f.Num, montantApresRetenuByNum,
+                    f.BonDeLivraison.Sum(b => b.NetPayer), timbre);
                 return new FactureRattacheeSolde { Numero = f.Num, MontantTtc = montantTtc };
             }).ToList();
             return new PaiementSoldeClient

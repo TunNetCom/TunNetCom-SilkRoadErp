@@ -1,15 +1,12 @@
-using TunNetCom.SilkRoadErp.Sales.Api.Features.AppParameters.GetAppParameters;
 using TunNetCom.SilkRoadErp.Sales.Contracts.Soldes;
-using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Soldes.GetRestesALivrerParClient;
 
 public class GetRestesALivrerParClientQueryHandler(
     SalesContext _context,
     ILogger<GetRestesALivrerParClientQueryHandler> _logger,
-    IMediator mediator,
     IActiveAccountingYearService _activeAccountingYearService,
-    IAccountingYearFinancialParametersService _financialParametersService)
+    ISoldeClientCalculationService _soldeClientCalculationService)
     : IRequestHandler<GetRestesALivrerParClientQuery, Result<RestesALivrerParClientResponse>>
 {
     public async Task<Result<RestesALivrerParClientResponse>> Handle(
@@ -30,51 +27,14 @@ public class GetRestesALivrerParClientQueryHandler(
             accountingYearId = activeYearId.Value;
         }
 
-        var appParams = await mediator.Send(new GetAppParametersQuery(), cancellationToken);
-        var timbre = await _financialParametersService.GetTimbreAsync(appParams.Value.Timbre, cancellationToken);
+        var soldes = await _soldeClientCalculationService.GetSoldesClientsForAccountingYearAsync(accountingYearId.Value, cancellationToken);
+        var clientIds = soldes.Select(x => x.ClientId).ToList();
 
-        var clientsData = await _context.Client
-            .AsNoTracking()
-            .Select(client => new
-            {
-                Client = client,
-                FacturesCount = _context.Facture
-                    .Where(f => f.IdClient == client.Id && f.AccountingYearId == accountingYearId.Value)
-                    .Count(),
-                TotalFacturesNetPayer = _context.Facture
-                    .Where(f => f.IdClient == client.Id && f.AccountingYearId == accountingYearId.Value)
-                    .SelectMany(f => f.BonDeLivraison)
-                    .Sum(b => (decimal?)b.NetPayer) ?? 0,
-                TotalBonsLivraisonNonFactures = _context.BonDeLivraison
-                    .Where(b => b.ClientId == client.Id
-                        && b.AccountingYearId == accountingYearId.Value
-                        && b.NumFacture == null)
-                    .Sum(b => (decimal?)b.NetPayer) ?? 0,
-                TotalAvoirs = _context.Avoirs
-                    .Where(a => a.ClientId == client.Id
-                        && a.AccountingYearId == accountingYearId.Value
-                        && a.NumFactureAvoirClient == null)
-                    .SelectMany(a => a.LigneAvoirs)
-                    .Sum(l => (decimal?)l.TotTtc) ?? 0,
-                TotalFacturesAvoir = _context.FactureAvoirClient
-                    .Where(fa => fa.IdClient == client.Id && fa.AccountingYearId == accountingYearId.Value)
-                    .SelectMany(fa => fa.Avoirs)
-                    .SelectMany(a => a.LigneAvoirs)
-                    .Sum(l => (decimal?)l.TotTtc) ?? 0,
-                TotalPaiements = _context.PaiementClient
-                    .Where(p => p.ClientId == client.Id && p.AccountingYearId == accountingYearId.Value)
-                    .Sum(p => (decimal?)p.Montant) ?? 0
-            })
-            .ToListAsync(cancellationToken);
-
-        var clientIds = clientsData.Select(x => x.Client.Id).ToList();
         var quantitesParClient = new Dictionary<int, int>();
-
         if (clientIds.Any())
         {
-            var yearId = accountingYearId.Value;
             var quantitesNonLivrees = await _context.BonDeLivraison
-                .Where(b => b.ClientId.HasValue && clientIds.Contains(b.ClientId.Value) && b.AccountingYearId == yearId)
+                .Where(b => b.ClientId.HasValue && clientIds.Contains(b.ClientId.Value) && b.AccountingYearId == accountingYearId.Value)
                 .Include(b => b.LigneBl)
                 .ToListAsync(cancellationToken);
 
@@ -91,14 +51,11 @@ public class GetRestesALivrerParClientQueryHandler(
                 );
         }
 
-        var clientsWithProblems = clientsData
-            .Select(x =>
+        var clientsWithProblems = soldes
+            .Select(item =>
             {
-                var totalFactures = x.TotalFacturesNetPayer + (timbre * x.FacturesCount);
-                var solde = x.TotalAvoirs + x.TotalFacturesAvoir + x.TotalPaiements
-                    - totalFactures - x.TotalBonsLivraisonNonFactures;
-                var nombreQuantitesNonLivrees = quantitesParClient.GetValueOrDefault(x.Client.Id, 0);
-                return new { x.Client, Solde = solde, NombreQuantitesNonLivrees = nombreQuantitesNonLivrees };
+                var nombreQuantitesNonLivrees = quantitesParClient.GetValueOrDefault(item.ClientId, 0);
+                return new { item.ClientId, item.ClientNom, item.Solde, NombreQuantitesNonLivrees = nombreQuantitesNonLivrees };
             })
             .Where(x => x.Solde != 0 || x.NombreQuantitesNonLivrees > 0)
             .OrderByDescending(x => x.Solde < 0 ? 1 : 0)
@@ -110,10 +67,9 @@ public class GetRestesALivrerParClientQueryHandler(
             return Result.Ok(new RestesALivrerParClientResponse { Clients = new List<ClientRestesALivrerItem>() });
         }
 
-        var problemClientIds = clientsWithProblems.Select(x => x.Client.Id).ToList();
-        var problemYearId = accountingYearId!.Value;
+        var problemClientIds = clientsWithProblems.Select(x => x.ClientId).ToList();
         var bonsLivraison = await _context.BonDeLivraison
-            .Where(b => b.ClientId.HasValue && problemClientIds.Contains(b.ClientId.Value) && b.AccountingYearId == problemYearId)
+            .Where(b => b.ClientId.HasValue && problemClientIds.Contains(b.ClientId.Value) && b.AccountingYearId == accountingYearId.Value)
             .Include(b => b.LigneBl)
             .ToListAsync(cancellationToken);
 
@@ -147,11 +103,11 @@ public class GetRestesALivrerParClientQueryHandler(
 
         var responseClients = clientsWithProblems.Select(c =>
         {
-            var lignes = lignesParClient.GetValueOrDefault(c.Client.Id, new List<LigneResteaLivrer>());
+            var lignes = lignesParClient.GetValueOrDefault(c.ClientId, new List<LigneResteaLivrer>());
             return new ClientRestesALivrerItem
             {
-                ClientId = c.Client.Id,
-                ClientNom = c.Client.Nom,
+                ClientId = c.ClientId,
+                ClientNom = c.ClientNom ?? string.Empty,
                 Solde = c.Solde,
                 LignesRestesALivrer = lignes
             };

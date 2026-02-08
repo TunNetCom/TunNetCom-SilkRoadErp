@@ -215,6 +215,8 @@ builder.Services.AddScoped<IStockCalculationService,StockCalculationService>();
 
 // Register SoldeFournisseurCalculationService
 builder.Services.AddScoped<ISoldeFournisseurCalculationService, SoldeFournisseurCalculationService>();
+// Register SoldeClientCalculationService
+builder.Services.AddScoped<ISoldeClientCalculationService, SoldeClientCalculationService>();
 
 // Register SageErpExportService
 builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.SageErpExportService>();

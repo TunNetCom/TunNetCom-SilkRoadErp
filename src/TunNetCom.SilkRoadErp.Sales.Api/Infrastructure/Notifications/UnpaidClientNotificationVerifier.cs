@@ -1,8 +1,6 @@
-using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using TunNetCom.SilkRoadErp.Sales.Api.Features.AppParameters.GetAppParameters;
-using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
+using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
 using TunNetCom.SilkRoadErp.Sales.Domain.Services;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Notifications;
@@ -11,22 +9,19 @@ public class UnpaidClientNotificationVerifier : INotificationVerifier
 {
     private readonly SalesContext _context;
     private readonly ILogger<UnpaidClientNotificationVerifier> _logger;
-    private readonly IMediator _mediator;
     private readonly IActiveAccountingYearService _activeAccountingYearService;
-    private readonly IAccountingYearFinancialParametersService _financialParametersService;
+    private readonly ISoldeClientCalculationService _soldeClientCalculationService;
 
     public UnpaidClientNotificationVerifier(
         SalesContext context,
         ILogger<UnpaidClientNotificationVerifier> logger,
-        IMediator mediator,
         IActiveAccountingYearService activeAccountingYearService,
-        IAccountingYearFinancialParametersService financialParametersService)
+        ISoldeClientCalculationService soldeClientCalculationService)
     {
         _context = context;
         _logger = logger;
-        _mediator = mediator;
         _activeAccountingYearService = activeAccountingYearService;
-        _financialParametersService = financialParametersService;
+        _soldeClientCalculationService = soldeClientCalculationService;
     }
 
     public async Task<List<NotificationData>> VerifyAsync(CancellationToken cancellationToken)
@@ -42,49 +37,10 @@ public class UnpaidClientNotificationVerifier : INotificationVerifier
                 return notifications;
             }
 
-            // Get timbre from financial parameters service
-            var appParams = await _mediator.Send(new GetAppParametersQuery(), cancellationToken);
-            var timbre = await _financialParametersService.GetTimbreAsync(appParams.Value.Timbre, cancellationToken);
+            var soldes = await _soldeClientCalculationService.GetSoldesClientsForAccountingYearAsync(accountingYearId.Value, cancellationToken);
+            var clientIds = soldes.Select(x => x.ClientId).ToList();
 
-            // Get all clients with their related data
-            var clientsData = await _context.Client
-                .AsNoTracking()
-                .Select(client => new
-                {
-                    Client = client,
-                    FacturesCount = _context.Facture
-                        .Where(f => f.IdClient == client.Id && f.AccountingYearId == accountingYearId.Value)
-                        .Count(),
-                    TotalFacturesNetPayer = _context.Facture
-                        .Where(f => f.IdClient == client.Id && f.AccountingYearId == accountingYearId.Value)
-                        .SelectMany(f => f.BonDeLivraison)
-                        .Sum(b => (decimal?)b.NetPayer) ?? 0,
-                    TotalBonsLivraisonNonFactures = _context.BonDeLivraison
-                        .Where(b => b.ClientId == client.Id
-                            && b.AccountingYearId == accountingYearId.Value
-                            && b.NumFacture == null)
-                        .Sum(b => (decimal?)b.NetPayer) ?? 0,
-                    TotalAvoirs = _context.Avoirs
-                        .Where(a => a.ClientId == client.Id
-                            && a.AccountingYearId == accountingYearId.Value
-                            && a.NumFactureAvoirClient == null)
-                        .SelectMany(a => a.LigneAvoirs)
-                        .Sum(l => (decimal?)l.TotTtc) ?? 0,
-                    TotalFacturesAvoir = _context.FactureAvoirClient
-                        .Where(fa => fa.IdClient == client.Id && fa.AccountingYearId == accountingYearId.Value)
-                        .SelectMany(fa => fa.Avoirs)
-                        .SelectMany(a => a.LigneAvoirs)
-                        .Sum(l => (decimal?)l.TotTtc) ?? 0,
-                    TotalPaiements = _context.PaiementClient
-                        .Where(p => p.ClientId == client.Id && p.AccountingYearId == accountingYearId.Value)
-                        .Sum(p => (decimal?)p.Montant) ?? 0
-                })
-                .ToListAsync(cancellationToken);
-
-            // Calculate quantités non livrées
-            var clientIds = clientsData.Select(x => x.Client.Id).ToList();
             var quantitesParClient = new Dictionary<int, int>();
-
             if (clientIds.Any())
             {
                 var quantitesNonLivrees = await _context.BonDeLivraison
@@ -105,30 +61,25 @@ public class UnpaidClientNotificationVerifier : INotificationVerifier
                     );
             }
 
-            // Find clients with problems
-            foreach (var clientData in clientsData)
+            foreach (var item in soldes)
             {
-                var totalFactures = clientData.TotalFacturesNetPayer + (timbre * clientData.FacturesCount);
-                var solde = clientData.TotalAvoirs + clientData.TotalFacturesAvoir + clientData.TotalPaiements
-                    - totalFactures - clientData.TotalBonsLivraisonNonFactures;
-                var nombreQuantitesNonLivrees = quantitesParClient.GetValueOrDefault(clientData.Client.Id, 0);
-
-                if (solde < 0 || nombreQuantitesNonLivrees > 0)
+                var nombreQuantitesNonLivrees = quantitesParClient.GetValueOrDefault(item.ClientId, 0);
+                if (item.Solde < 0 || nombreQuantitesNonLivrees > 0)
                 {
-                    var title = solde < 0
-                        ? $"Client non réglé: {clientData.Client.Nom}"
-                        : $"Quantités non livrées: {clientData.Client.Nom}";
+                    var title = item.Solde < 0
+                        ? $"Client non réglé: {item.ClientNom}"
+                        : $"Quantités non livrées: {item.ClientNom}";
 
-                    var message = solde < 0
-                        ? $"Le client {clientData.Client.Nom} a un solde impayé de {Math.Abs(solde):F2} TND."
-                        : $"Le client {clientData.Client.Nom} a {nombreQuantitesNonLivrees} quantités non livrées.";
+                    var message = item.Solde < 0
+                        ? $"Le client {item.ClientNom} a un solde impayé de {Math.Abs(item.Solde):F2} TND."
+                        : $"Le client {item.ClientNom} a {nombreQuantitesNonLivrees} quantités non livrées.";
 
                     notifications.Add(new NotificationData
                     {
                         Type = NotificationType.UnpaidClient,
                         Title = title,
                         Message = message,
-                        RelatedEntityId = clientData.Client.Id,
+                        RelatedEntityId = item.ClientId,
                         RelatedEntityType = "Client"
                     });
                 }
@@ -144,4 +95,3 @@ public class UnpaidClientNotificationVerifier : INotificationVerifier
         return notifications;
     }
 }
-
