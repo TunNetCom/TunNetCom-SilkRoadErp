@@ -120,6 +120,15 @@ public class ExportProviderInvoiceToTejXmlEndpoint : ICarterModule
                 return TypedResults.BadRequest($"Le matricule fiscal du fournisseur n'est pas configuré pour la facture {invoiceNumber}.");
             }
 
+            // Normalize matricule fiscal for filename (7 digits + 1 letter)
+            var matriculeNormaliseResult = TryNormalizeMatriculeFiscal(systeme.MatriculeFiscale.Trim());
+            if (matriculeNormaliseResult is null)
+            {
+                logger.LogWarning("MatriculeFiscale format invalid: expected 7 digits + 1 letter, got {Value}", systeme.MatriculeFiscale);
+                return TypedResults.BadRequest(
+                    "Le matricule fiscal de l'entreprise doit être au format 7 chiffres et une lettre clé (ex. 0001238L).");
+            }
+
             // Generate XML
             var xmlBytes = exportService.ExportProviderInvoiceToTejXml(
                 factureFournisseur,
@@ -128,8 +137,11 @@ public class ExportProviderInvoiceToTejXmlEndpoint : ICarterModule
                 appParams,
                 financialParams);
 
-            // Generate filename
-            var filename = $"Facture_Fournisseur_{invoiceNumber}_TEJ_{DateTime.Now:yyyyMMdd_HHmmss}.xml";
+            // Generate filename per regulatory format: [MATRICULEFISCAL]-[EXERCICE]-[mois]-[code acte].xml
+            var exercice = factureFournisseur.Date.Year;
+            var mois = factureFournisseur.Date.Month.ToString("D2");
+            const string codeActe = "0"; // 0 = déclaration initiale
+            var filename = $"{matriculeNormaliseResult}-{exercice}-{mois}-{codeActe}.xml";
 
             logger.LogInformation("TEJ XML export completed successfully for invoice {InvoiceNumber}", invoiceNumber);
 
@@ -143,6 +155,33 @@ public class ExportProviderInvoiceToTejXmlEndpoint : ICarterModule
             logger.LogError(ex, "Error exporting invoice {InvoiceNumber} to TEJ XML format", invoiceNumber);
             return TypedResults.StatusCode(500);
         }
+    }
+
+    /// <summary>
+    /// Normalizes matricule fiscal to regulatory format: 7 digits + 1 letter (8 characters).
+    /// Removes non-alphanumeric characters, pads numeric part with leading zeros, takes first letter as key.
+    /// </summary>
+    /// <returns>Normalized string (e.g. "0001238L") or null if format is invalid (no letter or empty).</returns>
+    private static string? TryNormalizeMatriculeFiscal(string matriculeFiscale)
+    {
+        if (string.IsNullOrWhiteSpace(matriculeFiscale))
+            return null;
+
+        var cleaned = new string(matriculeFiscale.Where(c => char.IsLetterOrDigit(c)).ToArray());
+        if (cleaned.Length == 0)
+            return null;
+
+        var digits = new string(cleaned.Where(char.IsDigit).Take(7).ToArray());
+        var letterPart = new string(cleaned.Where(char.IsLetter).ToArray());
+        if (letterPart.Length == 0)
+            return null;
+
+        var digitsPadded = digits.PadLeft(7, '0');
+        var letter = letterPart[0];
+        if (!char.IsLetter(letter))
+            return null;
+
+        return digitsPadded + char.ToUpperInvariant(letter);
     }
 }
 
