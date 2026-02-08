@@ -322,11 +322,22 @@
                                             }
                                         </div>
                                     }
+                                    @if (invoiceWithBRs.Invoice.FacturesAvoir?.Any() == true)
+                                    {
+                                        <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
+                                            @foreach (var fa in invoiceWithBRs.Invoice.FacturesAvoir)
+                                            {
+                                                <RadzenBadge BadgeStyle="BadgeStyle.Success" 
+                                                            Text="@($"FA N°{fa.NumFactureAvoirFourSurPage} {fa.TotTtc.FormatAmount()}")" 
+                                                            Style="font-size: 0.75rem;" />
+                                            }
+                                        </div>
+                                    }
                                     <RadzenButton Icon="link" 
                                                   ButtonStyle="ButtonStyle.Secondary" 
                                                   Size="ButtonSize.Small"
                                                   Title="Rattacher facture avoir ou avoir financier"
-                                                  Click="@(() => OpenAttachDialog(invoiceWithBRs.Invoice.Num, invoiceWithBRs.Invoice.ProviderId))" />
+                                                  Click="@(() => OpenAttachDialog(invoiceWithBRs.Invoice.Num, invoiceWithBRs.Invoice.ProviderId, invoiceWithBRs.Invoice.Id))" />
                                 </div>
                             </Template>
                         </RadzenDataGridColumn>
@@ -934,7 +945,7 @@
         }
     }
 
-    private async Task OpenAttachDialog(int invoiceNum, int providerId)
+    private async Task OpenAttachDialog(int invoiceNum, int providerId, int invoiceId)
     {
         try
         {
@@ -951,7 +962,8 @@
                 new Dictionary<string, object>
                 {
                     { "InvoiceNum", invoiceNum },
-                    { "ProviderId", providerId }
+                    { "ProviderId", providerId },
+                    { "InvoiceId", invoiceId }
                 },
                 dialogOptions);
 

@@ -77,7 +77,7 @@ public class GetProvidersInvoicesQueryHandler(
             .ToListAsync(cancellationToken);
         var avoirsGrouped = avoirsByInvoice.GroupBy(x => x.Value).ToDictionary(g => g.Key, g => g.Select(x => x.Avoir).ToList());
 
-        // Total des factures avoir fournisseur (avoirs normaux) rattachées à chaque facture (par FactureFournisseurId = Id)
+        // Total et liste des factures avoir fournisseur (avoirs normaux) rattachées à chaque facture (par FactureFournisseurId = Id)
         var facturesAvoirTotals = await _context.FactureAvoirFournisseur
             .AsNoTracking()
             .Where(fa => fa.FactureFournisseurId != null && invoiceIds.Contains(fa.FactureFournisseurId.Value))
@@ -87,10 +87,30 @@ public class GetProvidersInvoicesQueryHandler(
             .GroupBy(x => x.FactureFournisseurId!.Value)
             .ToDictionary(g => g.Key, g => g.Sum(x => x.Total));
 
+        var facturesAvoirList = await _context.FactureAvoirFournisseur
+            .AsNoTracking()
+            .Where(fa => fa.FactureFournisseurId != null && invoiceIds.Contains(fa.FactureFournisseurId.Value))
+            .Select(fa => new
+            {
+                fa.FactureFournisseurId,
+                Summary = new FactureAvoirSummary
+                {
+                    Id = fa.Id,
+                    NumFactureAvoirFourSurPage = fa.NumFactureAvoirFourSurPage,
+                    Date = fa.Date,
+                    TotTtc = fa.AvoirFournisseur.SelectMany(a => a.LigneAvoirFournisseur).Sum(l => l.TotTtc)
+                }
+            })
+            .ToListAsync(cancellationToken);
+        var facturesAvoirGrouped = facturesAvoirList
+            .GroupBy(x => x.FactureFournisseurId!.Value)
+            .ToDictionary(g => g.Key, g => g.Select(x => x.Summary).ToList());
+
         foreach (var invoice in pagedResult.Items)
         {
             invoice.AvoirsFinanciers = avoirsGrouped.TryGetValue(invoice.Num, out var list) ? list : new List<AvoirFinancierSummary>();
             invoice.TotalFacturesAvoir = facturesAvoirByInvoiceId.TryGetValue(invoice.Id, out var totalFa) ? totalFa : 0;
+            invoice.FacturesAvoir = facturesAvoirGrouped.TryGetValue(invoice.Id, out var facturesAvoir) ? facturesAvoir : new List<FactureAvoirSummary>();
         }
 
         var totalGrossAmount = await invoiceQuery.SumAsync(r => r.TotHTva, cancellationToken);

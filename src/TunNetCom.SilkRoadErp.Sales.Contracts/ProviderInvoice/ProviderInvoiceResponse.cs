@@ -44,6 +44,24 @@ public class ProviderInvoiceResponse
     /// <summary>Total TTC des factures avoir fournisseur rattachées à cette facture (avoirs normaux).</summary>
     [JsonPropertyName("totalFacturesAvoir")]
     public decimal TotalFacturesAvoir { get; set; }
+
+    [JsonPropertyName("facturesAvoir")]
+    public List<FactureAvoirSummary> FacturesAvoir { get; set; } = new();
+}
+
+public class FactureAvoirSummary
+{
+    [JsonPropertyName("id")]
+    public int Id { get; set; }
+
+    [JsonPropertyName("numFactureAvoirFourSurPage")]
+    public int NumFactureAvoirFourSurPage { get; set; }
+
+    [JsonPropertyName("date")]
+    public DateTime Date { get; set; }
+
+    [JsonPropertyName("totTtc")]
+    public decimal TotTtc { get; set; }
 }
 
 public class AvoirFinancierSummary
