@@ -30,7 +30,9 @@ public class SoldeFournisseurCalculationService(
 
         var appParams = await _mediator.Send(new GetAppParametersQuery(), cancellationToken);
         var timbre = await _financialParametersService.GetTimbreAsync(appParams.Value.Timbre, cancellationToken);
-        var defaultTauxRetenu = fournisseur.TauxRetenu ?? await _financialParametersService.GetPourcentageRetenuAsync(appParams.Value.PourcentageRetenu, cancellationToken);
+        double? effectiveDefaultTauxRetenu = fournisseur.ExonereRetenueSource
+            ? null
+            : (fournisseur.TauxRetenu ?? await _financialParametersService.GetPourcentageRetenuAsync(appParams.Value.PourcentageRetenu, cancellationToken));
 
         var facturesFournisseur = await _context.FactureFournisseur
             .Where(f => f.IdFournisseur == fournisseurId && f.AccountingYearId == accountingYearId)
@@ -42,7 +44,7 @@ public class SoldeFournisseurCalculationService(
             f.BonDeReception.SelectMany(br => br.LigneBonReception).Sum(l => l.TotTtc) + timbre);
 
         var totalMontantsApresRetenue = await ComputeTotalMontantsApresRetenueForFournisseurAsync(
-            fournisseurId, accountingYearId, facturesFournisseur, timbre, defaultTauxRetenu, cancellationToken);
+            fournisseurId, accountingYearId, facturesFournisseur, timbre, effectiveDefaultTauxRetenu, cancellationToken);
 
         var totalBonsReceptionNonFactures = await _context.BonDeReception
             .Where(b => b.IdFournisseur == fournisseurId
@@ -217,13 +219,14 @@ public class SoldeFournisseurCalculationService(
 
     /// <summary>
     /// Calcule la somme des montants après retenue par facture pour un fournisseur (même formule que GetSoldeFournisseur).
+    /// Si defaultTauxRetenu est null (fournisseur exonéré), aucune retenue n'est appliquée.
     /// </summary>
     private async Task<decimal> ComputeTotalMontantsApresRetenueForFournisseurAsync(
         int fournisseurId,
         int accountingYearId,
         List<TunNetCom.SilkRoadErp.Sales.Domain.Entites.FactureFournisseur> facturesFournisseur,
         decimal timbre,
-        double defaultTauxRetenu,
+        double? defaultTauxRetenu,
         CancellationToken cancellationToken)
     {
         if (facturesFournisseur.Count == 0)
@@ -274,6 +277,7 @@ public class SoldeFournisseurCalculationService(
 
     /// <summary>
     /// Calcule pour chaque fournisseur la somme des montants après retenue par facture (même formule que GetSoldeFournisseur).
+    /// Les fournisseurs exonérés (ExonereRetenueSource) ont un taux effectif null.
     /// </summary>
     private async Task<Dictionary<int, decimal>> GetTotalMontantsApresRetenueByFournisseurAsync(
         int accountingYearId,
@@ -325,9 +329,9 @@ public class SoldeFournisseurCalculationService(
         var fournisseurTaux = await _context.Fournisseur
             .AsNoTracking()
             .Where(f => fournisseurIdsWithActivity.Contains(f.Id))
-            .Select(f => new { f.Id, f.TauxRetenu })
+            .Select(f => new { f.Id, f.TauxRetenu, f.ExonereRetenueSource })
             .ToListAsync(cancellationToken);
-        var fournisseurTauxById = fournisseurTaux.ToDictionary(x => x.Id, x => x.TauxRetenu);
+        var fournisseurInfoById = fournisseurTaux.ToDictionary(x => x.Id, x => (x.TauxRetenu, x.ExonereRetenueSource));
 
         var result = new Dictionary<int, decimal>();
         foreach (var grp in factures.GroupBy(f => f.IdFournisseur))
@@ -335,7 +339,7 @@ public class SoldeFournisseurCalculationService(
             var fournisseurId = grp.Key;
             var facturesF = grp.ToList();
             var totalFacturesAvoirFournisseur = totalFacturesAvoirByFournisseur.GetValueOrDefault(fournisseurId, 0m);
-            var fournisseurTauxRetenu = fournisseurTauxById.GetValueOrDefault(fournisseurId);
+            var (fournisseurTauxRetenu, exonereRetenueSource) = fournisseurInfoById.GetValueOrDefault(fournisseurId, (null, false));
 
             decimal sum = 0m;
             foreach (var f in facturesF)
@@ -345,7 +349,8 @@ public class SoldeFournisseurCalculationService(
                 var factureAvoirTotal = factureAvoirTotalByFactureId.GetValueOrDefault(f.Id, 0m);
                 if (facturesF.Count == 1 && factureAvoirTotal == 0 && totalFacturesAvoirFournisseur > 0)
                     factureAvoirTotal = totalFacturesAvoirFournisseur;
-                var tauxRetenu = retenueByNumFacture.TryGetValue(f.Num, out var tr) ? tr : (fournisseurTauxRetenu ?? defaultTauxRetenu);
+                double? effectiveDefaultTaux = exonereRetenueSource ? null : (fournisseurTauxRetenu ?? defaultTauxRetenu);
+                var tauxRetenu = retenueByNumFacture.TryGetValue(f.Num, out var tr) ? tr : effectiveDefaultTaux;
                 var (montant, _) = SoldeFournisseurCalculator.ComputeMontantEtFormuleFactureFournisseur(
                     sumLigneBr, timbre, avoirFinancier, factureAvoirTotal, tauxRetenu);
                 sum += montant;

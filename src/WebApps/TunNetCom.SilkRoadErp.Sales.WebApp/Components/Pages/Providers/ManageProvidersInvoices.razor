@@ -116,7 +116,7 @@
             </RadzenButton>
             @{
                 var selectedInvoice = SelectedInvoices?.FirstOrDefault();
-                var canExportTej = selectedInvoice != null && selectedInvoice.Invoice.TotTTC >= _seuilRetenueSource;
+                var canExportTej = selectedInvoice != null && selectedInvoice.Invoice.TotTTC >= _seuilRetenueSource && !SelectedProviderExonereRetenue;
             }
             <RadzenButton ButtonStyle="ButtonStyle.Light"
                           Size="ButtonSize.Small"
@@ -281,7 +281,7 @@
                         <RadzenDataGridColumn Title="@Localizer["retenue_status"]"
                                               Width="120px">
                             <Template Context="invoiceWithBRs">
-                                @if (invoiceWithBRs.Invoice.TotTTC >= _seuilRetenueSource)
+                                @if (!SelectedProviderExonereRetenue && invoiceWithBRs.Invoice.TotTTC >= _seuilRetenueSource)
                                 {
                                     @if (invoiceWithBRs.Invoice.HasRetenueSource)
                                     {
@@ -292,12 +292,16 @@
                                         <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="@Localizer["retenue_not_exists"]" />
                                     }
                                 }
+                                @if (SelectedProviderExonereRetenue)
+                                {
+                                    <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="@Localizer["exonere_retenue_source"]" />
+                                }
                             </Template>
                         </RadzenDataGridColumn>
                         <RadzenDataGridColumn Title="@Localizer["retenue_action"]"
                                               Width="120px">
                             <Template Context="invoiceWithBRs">
-                                @if (invoiceWithBRs.Invoice.TotTTC >= _seuilRetenueSource)
+                                @if (!SelectedProviderExonereRetenue && invoiceWithBRs.Invoice.TotTTC >= _seuilRetenueSource)
                                 {
                                     <RadzenButton Icon="@(invoiceWithBRs.Invoice.HasRetenueSource ? "edit" : "add")" 
                                                   ButtonStyle="ButtonStyle.Info" 
@@ -539,6 +543,7 @@
     bool isLoadingInvoices = false;
     bool isLoadingUninvoicedDeliveryNotes = false;
     private IList<ProviderResponse> _providersList = new List<ProviderResponse>();
+    private bool SelectedProviderExonereRetenue => _providersList?.FirstOrDefault(p => p.Id == SelectedProviderId)?.ExonereRetenueSource ?? false;
     private IList<ReceiptNoteDetailsResponse> _selectedReceiptNotesIdsToDetach = new List<ReceiptNoteDetailsResponse>();
     private IList<ReceiptNoteDetailsResponse> _selectedReceiptNotesToAttach { get; set; } = new List<ReceiptNoteDetailsResponse>();
     private CancellationTokenSource _cancellationTokenSource = new();

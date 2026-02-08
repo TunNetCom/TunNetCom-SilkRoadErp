@@ -132,7 +132,9 @@ public class GetSoldeFournisseurQueryHandler(
                 Montant = fa.AvoirFournisseur.SelectMany(a => a.LigneAvoirFournisseur).Sum(l => l.TotTtc)
             }).ToList());
 
-        var defaultTauxRetenu = fournisseur.TauxRetenu ?? await _financialParametersService.GetPourcentageRetenuAsync(appParams.Value.PourcentageRetenu, cancellationToken);
+        double? effectiveTauxRetenu = fournisseur.ExonereRetenueSource
+            ? null
+            : (fournisseur.TauxRetenu ?? await _financialParametersService.GetPourcentageRetenuAsync(appParams.Value.PourcentageRetenu, cancellationToken));
 
         var documents = new List<DocumentSoldeFournisseur>();
         var montantTtcParFactureNum = new Dictionary<int, decimal>();
@@ -144,7 +146,7 @@ public class GetSoldeFournisseurQueryHandler(
             var factureAvoirTotal = factureAvoirTotalByFactureId.GetValueOrDefault(f.Id, 0m);
             if (facturesFournisseur.Count == 1 && factureAvoirTotal == 0 && totalFacturesAvoirFournisseur > 0)
                 factureAvoirTotal = totalFacturesAvoirFournisseur;
-            var tauxRetenu = retenueByNumFacture.GetValueOrDefault(f.Num)?.TauxRetenu ?? defaultTauxRetenu;
+            var tauxRetenu = retenueByNumFacture.GetValueOrDefault(f.Num)?.TauxRetenu ?? effectiveTauxRetenu;
 
             var (montantAvecRetenue, formuleMontant) = SoldeFournisseurCalculator.ComputeMontantEtFormuleFactureFournisseur(
                 sumLigneBr, timbre, avoirFinancier, factureAvoirTotal, tauxRetenu);

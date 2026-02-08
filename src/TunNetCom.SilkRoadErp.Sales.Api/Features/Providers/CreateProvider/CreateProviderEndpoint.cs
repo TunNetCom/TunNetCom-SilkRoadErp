@@ -19,6 +19,7 @@ public class CreateProviderEndPoint : ICarterModule
                  Constructeur: request.Constructeur,
                  Adresse: request.Adresse,
                  TauxRetenu: request.TauxRetenu,
+                 ExonereRetenueSource: request.ExonereRetenueSource,
                  RibCodeEtab: request.RibCodeEtab,
                  RibCodeAgence: request.RibCodeAgence,
                  RibNumeroCompte: request.RibNumeroCompte,

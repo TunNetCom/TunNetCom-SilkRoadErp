@@ -65,6 +65,11 @@
                         <span class="grid-cell">@provider.Mail</span>
                     </Template>
                 </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ProviderResponse" Property="ExonereRetenueSource" Title="@Localizer["exonere_retenue_source"]" Width="140px">
+                    <Template Context="provider">
+                        <span class="grid-cell">@(provider.ExonereRetenueSource ? Localizer["Oui"] : Localizer["Non"])</span>
+                    </Template>
+                </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="ProviderResponse" Filterable="false" Sortable="false" Width="@ActionsColumnWidth" TextAlign="TextAlign.Center">
                     <Template Context="provider">
                         <RadzenButton Icon="account_circle" ButtonStyle="ButtonStyle.Info" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter"

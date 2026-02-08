@@ -43,6 +43,8 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations
             .HasColumnName("tel");
             entity.Property(e => e.TauxRetenu)
             .HasColumnName("taux_retenu");
+            entity.Property(e => e.ExonereRetenueSource)
+            .HasColumnName("exonere_retenue_source");
             entity.Property(e => e.RibCodeEtab)
             .HasMaxLength(10)
             .HasColumnName("rib_code_etab");

@@ -358,7 +358,7 @@ using (IServiceScope scope = app.Services.CreateScope())
         logger.LogInformation("=== DÉBUT DU PROCESSUS DE SEEDING ===");
         var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
         logger.LogInformation("Appel du seeder...");
-        await seeder.SeedAsync(dbContext);
+        //await seeder.SeedAsync(dbContext);
         logger.LogInformation("=== FIN DU PROCESSUS DE SEEDING ===");
     }
     catch (Exception ex)

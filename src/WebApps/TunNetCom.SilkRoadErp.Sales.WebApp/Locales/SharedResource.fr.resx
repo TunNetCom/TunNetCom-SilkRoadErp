@@ -1335,6 +1335,9 @@
   <data name="retenue_source" xml:space="preserve">
     <value>Retenue à la source</value>
   </data>
+  <data name="exonere_retenue_source" xml:space="preserve">
+    <value>Exonéré de retenue à la source</value>
+  </data>
   <data name="num_tej" xml:space="preserve">
     <value>Numéro TEJ</value>
   </data>

@@ -1398,4 +1398,7 @@
   <data name="Voir_recap_detaille" xml:space="preserve">
     <value>View detailed recap</value>
   </data>
+  <data name="exonere_retenue_source" xml:space="preserve">
+    <value>Exempt from withholding tax</value>
+  </data>
 </root>

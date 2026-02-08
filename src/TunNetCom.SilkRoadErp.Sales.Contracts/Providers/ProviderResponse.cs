@@ -41,6 +41,9 @@ public class ProviderResponse
     [JsonPropertyName("tauxRetenu")]
     public double? TauxRetenu { get; set; }
 
+    [JsonPropertyName("exonereRetenueSource")]
+    public bool ExonereRetenueSource { get; set; }
+
     [JsonPropertyName("ribCodeEtab")]
     public string? RibCodeEtab { get; set; }
 

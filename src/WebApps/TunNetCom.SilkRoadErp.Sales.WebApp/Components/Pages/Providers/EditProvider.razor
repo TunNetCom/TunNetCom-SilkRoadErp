@@ -82,6 +82,11 @@
                     <Start><RadzenIcon Icon="percent" /></Start>
                     <ChildContent><RadzenNumeric @bind-Value="provider.TauxRetenu" Min="0" Max="100" Style="width: 100%;" /></ChildContent>
                 </RadzenFormField>
+
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                    <RadzenLabel Text="@localizer["exonere_retenue_source"]" />
+                    <RadzenSwitch @bind-Value="provider.ExonereRetenueSource" TValue="bool" />
+                </RadzenStack>
             </RadzenColumn>
         </RadzenRow>
 
@@ -183,6 +188,7 @@
                         Constructeur = provider.Constructeur,
                         Adresse = provider.Adresse,
                         TauxRetenu = provider.TauxRetenu,
+                        ExonereRetenueSource = provider.ExonereRetenueSource,
                         RibCodeEtab = provider.RibCodeEtab,
                         RibCodeAgence = provider.RibCodeAgence,
                         RibNumeroCompte = provider.RibNumeroCompte,
@@ -215,6 +221,7 @@
                    Constructeur = provider.Constructeur,
                    Adresse = provider.Adresse,
                    TauxRetenu = provider.TauxRetenu,
+                   ExonereRetenueSource = provider.ExonereRetenueSource,
                    RibCodeEtab = provider.RibCodeEtab,
                    RibCodeAgence = provider.RibCodeAgence,
                    RibNumeroCompte = provider.RibNumeroCompte,

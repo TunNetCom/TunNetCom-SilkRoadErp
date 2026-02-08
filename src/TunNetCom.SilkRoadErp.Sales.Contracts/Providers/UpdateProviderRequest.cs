@@ -26,6 +26,8 @@ public class UpdateProviderRequest
 
     public double? TauxRetenu { get; set; }
 
+    public bool ExonereRetenueSource { get; set; }
+
     public string? RibCodeEtab { get; set; }
 
     public string? RibCodeAgence { get; set; }

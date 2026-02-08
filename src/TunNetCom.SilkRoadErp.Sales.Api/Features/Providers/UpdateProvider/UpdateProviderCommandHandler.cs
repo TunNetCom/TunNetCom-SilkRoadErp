@@ -35,6 +35,7 @@ public class UpdateProviderCommandHandler(SalesContext _context, ILogger<UpdateP
             constructeur: updateProviderCommand.Constructeur,
             adresse: updateProviderCommand.Adresse,
             tauxRetenu: updateProviderCommand.TauxRetenu,
+            exonereRetenueSource: updateProviderCommand.ExonereRetenueSource,
             ribCodeEtab: updateProviderCommand.RibCodeEtab,
             ribCodeAgence: updateProviderCommand.RibCodeAgence,
             ribNumeroCompte: updateProviderCommand.RibNumeroCompte,

@@ -13,6 +13,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.UpdateProvider;
     bool Constructeur,
     string? Adresse,
     double? TauxRetenu,
+    bool ExonereRetenueSource,
     string? RibCodeEtab,
     string? RibCodeAgence,
     string? RibNumeroCompte,

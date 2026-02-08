@@ -13,7 +13,7 @@ public class CreateProviderCommandHandler(SalesContext _context, ILogger<CreateP
             return Result.Fail("provider_name_exists");
         }
 
-        var provider = Fournisseur.CreateProvider(    
+        var provider = Fournisseur.CreateProvider(
            createProviderCommand.Nom,
            createProviderCommand.Tel,
            createProviderCommand.Fax,
@@ -26,6 +26,7 @@ public class CreateProviderCommandHandler(SalesContext _context, ILogger<CreateP
            createProviderCommand.Constructeur,
            createProviderCommand.Adresse,
            createProviderCommand.TauxRetenu,
+           createProviderCommand.ExonereRetenueSource,
            createProviderCommand.RibCodeEtab,
            createProviderCommand.RibCodeAgence,
            createProviderCommand.RibNumeroCompte,

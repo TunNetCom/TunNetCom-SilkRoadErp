@@ -317,6 +317,7 @@ public class DatabaseSeeder
             f.Constructeur ?? false, // Valeur par défaut si null
             f.Adresse,
             null, // TauxRetenu
+            false, // ExonereRetenueSource
             null, // RibCodeEtab
             null, // RibCodeAgence
             null, // RibNumeroCompte

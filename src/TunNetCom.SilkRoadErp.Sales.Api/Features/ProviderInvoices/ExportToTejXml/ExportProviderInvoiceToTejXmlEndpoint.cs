@@ -62,6 +62,12 @@ public class ExportProviderInvoiceToTejXmlEndpoint : ICarterModule
                 return TypedResults.BadRequest($"Fournisseur introuvable pour la facture {invoiceNumber}.");
             }
 
+            if (factureFournisseur.IdFournisseurNavigation.ExonereRetenueSource)
+            {
+                logger.LogWarning("TEJ export not applicable: provider is exempt from withholding tax for invoice {InvoiceNumber}", invoiceNumber);
+                return TypedResults.BadRequest("Le fournisseur est exonéré de retenue à la source ; l'export TEJ n'est pas applicable.");
+            }
+
             // Calculate TTC
             var montantTTC = factureFournisseur.BonDeReception
                 .SelectMany(br => br.LigneBonReception)

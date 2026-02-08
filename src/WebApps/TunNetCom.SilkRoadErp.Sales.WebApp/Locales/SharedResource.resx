@@ -1219,4 +1219,7 @@
   <data name="Voir_recap_detaille" xml:space="preserve">
     <value>Voir le récap détaillé</value>
   </data>
+  <data name="exonere_retenue_source" xml:space="preserve">
+    <value>Exonéré de retenue à la source</value>
+  </data>
 </root>

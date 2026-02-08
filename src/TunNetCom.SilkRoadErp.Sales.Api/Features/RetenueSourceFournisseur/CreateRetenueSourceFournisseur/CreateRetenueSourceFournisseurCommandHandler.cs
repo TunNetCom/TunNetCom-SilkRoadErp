@@ -41,6 +41,12 @@ public class CreateRetenueSourceFournisseurCommandHandler(
             return Result.Fail(EntityNotFound.Error());
         }
 
+        if (factureFournisseur.IdFournisseurNavigation?.ExonereRetenueSource == true)
+        {
+            _logger.LogWarning("Cannot create RetenueSourceFournisseur: provider {ProviderId} is exempt from withholding tax", factureFournisseur.IdFournisseur);
+            return Result.Fail("fournisseur_exonere_retenue_source");
+        }
+
         // Check if retenue already exists
         var retenueExists = await _context.RetenueSourceFournisseur
             .AnyAsync(r => r.NumFactureFournisseur == command.NumFactureFournisseur, cancellationToken);
