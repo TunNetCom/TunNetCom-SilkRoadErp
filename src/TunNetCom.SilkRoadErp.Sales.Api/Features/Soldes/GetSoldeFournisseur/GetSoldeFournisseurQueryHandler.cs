@@ -40,13 +40,6 @@ public class GetSoldeFournisseurQueryHandler(
         var appParams = await _mediator.Send(new GetAppParametersQuery(), cancellationToken);
         var timbre = await _financialParametersService.GetTimbreAsync(appParams.Value.Timbre, cancellationToken);
 
-        var retenues = await _context.RetenueSourceFournisseur
-            .Where(r => _context.FactureFournisseur
-                .Where(f => f.IdFournisseur == fournisseurId && f.AccountingYearId == yearId)
-                .Select(f => f.Num)
-                .Contains(r.NumFactureFournisseur))
-            .ToDictionaryAsync(r => r.NumFactureFournisseur, cancellationToken);
-
         var facturesFournisseur = await _context.FactureFournisseur
             .Where(f => f.IdFournisseur == fournisseurId && f.AccountingYearId == yearId)
             .Include(f => f.BonDeReception)
@@ -97,35 +90,28 @@ public class GetSoldeFournisseurQueryHandler(
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        var montantApresRetenuByNum = retenues.ToDictionary(r => r.Key, r => r.Value.MontantApresRetenu);
-
-        var totalFactures = facturesFournisseur.Sum(f =>
-            SoldeFournisseurCalculator.ComputeMontantFactureFournisseur(
-                f.Num, montantApresRetenuByNum,
-                f.BonDeReception.SelectMany(br => br.LigneBonReception).Sum(l => l.TotTtc), timbre));
-
-        var totalBonsReceptionNonFactures = bonsReception.Sum(b => b.LigneBonReception.Sum(l => l.TotTtc));
-        var totalFacturesAvoir = facturesAvoir.Sum(fa => fa.AvoirFournisseur.SelectMany(a => a.LigneAvoirFournisseur).Sum(l => l.TotTtc));
-        var totalAvoirsFinanciers = avoirsFinanciers.Sum(d => d.Montant);
-        var totalPaiements = paiementsData.Sum(p => p.Montant);
-        var solde = SoldeFournisseurCalculator.ComputeSolde(totalFactures, totalBonsReceptionNonFactures, totalFacturesAvoir, totalAvoirsFinanciers, totalPaiements);
-
         var documents = new List<DocumentSoldeFournisseur>();
 
         foreach (var f in facturesFournisseur)
         {
-            var montant = SoldeFournisseurCalculator.ComputeMontantFactureFournisseur(
-                f.Num, montantApresRetenuByNum,
-                f.BonDeReception.SelectMany(br => br.LigneBonReception).Sum(l => l.TotTtc), timbre);
+            var montantBrut = f.BonDeReception.SelectMany(br => br.LigneBonReception).Sum(l => l.TotTtc) + timbre;
             documents.Add(new DocumentSoldeFournisseur
             {
                 Type = "FactureFournisseur",
                 Id = f.Id,
                 Numero = f.Num,
                 Date = f.Date,
-                Montant = montant
+                Montant = montantBrut
             });
         }
+
+        var totalFactures = documents.Where(d => d.Type == "FactureFournisseur").Sum(d => d.Montant);
+
+        var totalBonsReceptionNonFactures = bonsReception.Sum(b => b.LigneBonReception.Sum(l => l.TotTtc));
+        var totalFacturesAvoir = facturesAvoir.Sum(fa => fa.AvoirFournisseur.SelectMany(a => a.LigneAvoirFournisseur).Sum(l => l.TotTtc));
+        var totalAvoirsFinanciers = avoirsFinanciers.Sum(d => d.Montant);
+        var totalPaiements = paiementsData.Sum(p => p.Montant);
+        var solde = SoldeFournisseurCalculator.ComputeSolde(totalFactures, totalBonsReceptionNonFactures, totalFacturesAvoir, totalAvoirsFinanciers, totalPaiements);
 
         foreach (var b in bonsReception)
         {
@@ -166,11 +152,9 @@ public class GetSoldeFournisseurQueryHandler(
             });
         }
 
-        var montantTtcParFactureNum = facturesFournisseur.ToDictionary(
-            f => f.Num,
-            f => SoldeFournisseurCalculator.ComputeMontantFactureFournisseur(
-                f.Num, montantApresRetenuByNum,
-                f.BonDeReception.SelectMany(br => br.LigneBonReception).Sum(l => l.TotTtc), timbre));
+        var montantTtcParFactureNum = documents
+            .Where(d => d.Type == "FactureFournisseur")
+            .ToDictionary(d => d.Numero, d => d.Montant);
 
         var paiements = paiementsData.Select(p =>
         {

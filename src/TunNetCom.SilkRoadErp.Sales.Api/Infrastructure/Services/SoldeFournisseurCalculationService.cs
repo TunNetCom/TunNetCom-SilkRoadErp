@@ -30,24 +30,14 @@ public class SoldeFournisseurCalculationService(
         var appParams = await _mediator.Send(new GetAppParametersQuery(), cancellationToken);
         var timbre = await _financialParametersService.GetTimbreAsync(appParams.Value.Timbre, cancellationToken);
 
-        var retenues = await _context.RetenueSourceFournisseur
-            .Where(r => _context.FactureFournisseur
-                .Where(f => f.IdFournisseur == fournisseurId && f.AccountingYearId == accountingYearId)
-                .Select(f => f.Num)
-                .Contains(r.NumFactureFournisseur))
-            .ToDictionaryAsync(r => r.NumFactureFournisseur, cancellationToken);
-
         var facturesFournisseur = await _context.FactureFournisseur
             .Where(f => f.IdFournisseur == fournisseurId && f.AccountingYearId == accountingYearId)
             .Include(f => f.BonDeReception)
                 .ThenInclude(br => br.LigneBonReception)
             .ToListAsync(cancellationToken);
 
-        var montantApresRetenuByNum = retenues.ToDictionary(r => r.Key, r => r.Value.MontantApresRetenu);
         var totalFactures = facturesFournisseur.Sum(f =>
-            SoldeFournisseurCalculator.ComputeMontantFactureFournisseur(
-                f.Num, montantApresRetenuByNum,
-                f.BonDeReception.SelectMany(br => br.LigneBonReception).Sum(l => l.TotTtc), timbre));
+            f.BonDeReception.SelectMany(br => br.LigneBonReception).Sum(l => l.TotTtc) + timbre);
 
         var totalBonsReceptionNonFactures = await _context.BonDeReception
             .Where(b => b.IdFournisseur == fournisseurId
@@ -203,23 +193,16 @@ public class SoldeFournisseurCalculationService(
         decimal timbre,
         CancellationToken cancellationToken)
     {
-        var retenues = await _context.RetenueSourceFournisseur
-            .Where(r => r.AccountingYearId == accountingYearId)
-            .ToDictionaryAsync(r => r.NumFactureFournisseur, cancellationToken);
-
         var factures = await _context.FactureFournisseur
             .Where(f => f.AccountingYearId == accountingYearId)
             .Include(f => f.BonDeReception)
                 .ThenInclude(br => br.LigneBonReception)
             .ToListAsync(cancellationToken);
 
-        var montantApresRetenuByNum = retenues.ToDictionary(r => r.Key, r => r.Value.MontantApresRetenu);
         return factures
             .GroupBy(f => f.IdFournisseur)
             .ToDictionary(
                 g => g.Key,
-                g => g.Sum(f => SoldeFournisseurCalculator.ComputeMontantFactureFournisseur(
-                    f.Num, montantApresRetenuByNum,
-                    f.BonDeReception.SelectMany(br => br.LigneBonReception).Sum(l => l.TotTtc), timbre)));
+                g => g.Sum(f => f.BonDeReception.SelectMany(br => br.LigneBonReception).Sum(l => l.TotTtc) + timbre));
     }
 }
