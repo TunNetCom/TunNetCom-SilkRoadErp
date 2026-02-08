@@ -1284,4 +1284,34 @@
   <data name="Export_PDF_Reussi" xml:space="preserve">
     <value>تم تصدير PDF بنجاح.</value>
   </data>
+  <data name="Actualiser" xml:space="preserve">
+    <value>تحديث</value>
+  </data>
+  <data name="Ventes_nettes" xml:space="preserve">
+    <value>المبيعات الصافية</value>
+  </data>
+  <data name="Achats_nets" xml:space="preserve">
+    <value>المشتريات الصافية</value>
+  </data>
+  <data name="Resultat" xml:space="preserve">
+    <value>النتيجة</value>
+  </data>
+  <data name="HT" xml:space="preserve">
+    <value>بدون ض.م.ع</value>
+  </data>
+  <data name="Evolution_ventes_achats" xml:space="preserve">
+    <value>تطور المبيعات والمشتريات</value>
+  </data>
+  <data name="Alertes_soldes" xml:space="preserve">
+    <value>تنبيهات الأرصدة</value>
+  </data>
+  <data name="Aucune_donnee_evolution" xml:space="preserve">
+    <value>لا توجد بيانات تطور متاحة.</value>
+  </data>
+  <data name="Voir_tout" xml:space="preserve">
+    <value>عرض الكل</value>
+  </data>
+  <data name="Voir_recap_detaille" xml:space="preserve">
+    <value>عرض الملخص التفصيلي</value>
+  </data>
 </root>

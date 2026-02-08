@@ -1189,4 +1189,34 @@
   <data name="Export_PDF_Reussi" xml:space="preserve">
     <value />
   </data>
+  <data name="Actualiser" xml:space="preserve">
+    <value>Actualiser</value>
+  </data>
+  <data name="Ventes_nettes" xml:space="preserve">
+    <value>Ventes nettes</value>
+  </data>
+  <data name="Achats_nets" xml:space="preserve">
+    <value>Achats nets</value>
+  </data>
+  <data name="Resultat" xml:space="preserve">
+    <value>Résultat</value>
+  </data>
+  <data name="HT" xml:space="preserve">
+    <value>HT</value>
+  </data>
+  <data name="Evolution_ventes_achats" xml:space="preserve">
+    <value>Évolution ventes / achats</value>
+  </data>
+  <data name="Alertes_soldes" xml:space="preserve">
+    <value>Alertes soldes</value>
+  </data>
+  <data name="Aucune_donnee_evolution" xml:space="preserve">
+    <value>Aucune donnée d'évolution disponible.</value>
+  </data>
+  <data name="Voir_tout" xml:space="preserve">
+    <value>Voir tout</value>
+  </data>
+  <data name="Voir_recap_detaille" xml:space="preserve">
+    <value>Voir le récap détaillé</value>
+  </data>
 </root>

@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Components.Authorization;
-using RadzenBlazorDemos.Services;
 using TunNetCom.SilkRoadErp.Sales.WebApp.Services;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote;
@@ -22,6 +21,7 @@ using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Banque;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Soldes;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags;
 using TunNetCom.SilkRoadErp.Sales.WebApp.Services.Recap;
+using TunNetCom.SilkRoadErp.Sales.WebApp.Services.Dashboard;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -98,6 +98,13 @@ builder.Services.AddHttpClient<IRecapVentesAchatsService, RecapVentesAchatsServi
 })
 .AddHttpMessageHandler<AuthHttpClientHandler>();
 
+// Dashboard evolution (ventes/achats by month for chart)
+builder.Services.AddHttpClient<IDashboardEvolutionService, DashboardEvolutionService>(client =>
+{
+    client.BaseAddress = new Uri(baseUrl);
+})
+.AddHttpMessageHandler<AuthHttpClientHandler>();
+
 // Add HttpClient for auth endpoints
 builder.Services.AddHttpClient<IAuthService, AuthService>(client =>
 {
@@ -107,7 +114,6 @@ builder.Services.AddHttpClient<IAuthService, AuthService>(client =>
 builder.Services.AddPrintEngine(builder.Configuration);
 builder.Services.AddLocalization();
 builder.Services.AddControllers();
-builder.Services.AddScoped<GitHubService>();
 builder.Services.AddScoped<IDecimalFormatService, DecimalFormatService>();
 builder.Services.AddScoped<ISilkRoadNotificationService, TunNetCom.SilkRoadErp.Sales.WebApp.Services.SilkRoadNotificationService>();
 builder.Services.AddScoped<ICurrentProductStateService, CurrentProductStateService>();

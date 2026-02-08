@@ -1368,4 +1368,34 @@
   <data name="Export_PDF_Reussi" xml:space="preserve">
     <value>PDF export successful.</value>
   </data>
+  <data name="Actualiser" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="Ventes_nettes" xml:space="preserve">
+    <value>Net sales</value>
+  </data>
+  <data name="Achats_nets" xml:space="preserve">
+    <value>Net purchases</value>
+  </data>
+  <data name="Resultat" xml:space="preserve">
+    <value>Result</value>
+  </data>
+  <data name="HT" xml:space="preserve">
+    <value>excl. VAT</value>
+  </data>
+  <data name="Evolution_ventes_achats" xml:space="preserve">
+    <value>Sales and purchases trend</value>
+  </data>
+  <data name="Alertes_soldes" xml:space="preserve">
+    <value>Balance alerts</value>
+  </data>
+  <data name="Aucune_donnee_evolution" xml:space="preserve">
+    <value>No trend data available.</value>
+  </data>
+  <data name="Voir_tout" xml:space="preserve">
+    <value>View all</value>
+  </data>
+  <data name="Voir_recap_detaille" xml:space="preserve">
+    <value>View detailed recap</value>
+  </data>
 </root>
