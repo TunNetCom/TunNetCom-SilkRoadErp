@@ -52,6 +52,30 @@ public class DocumentSoldeFournisseur
 
     [JsonPropertyName("montant")]
     public decimal Montant { get; set; }
+
+    /// <summary>Formule du montant (pour les factures fournisseur : ((BR - timbre) - avoirs) × (1 - taux retenue) + timbre).</summary>
+    [JsonPropertyName("formuleMontant")]
+    public string? FormuleMontant { get; set; }
+
+    /// <summary>Avoirs rattachés à cette facture (avoir financier, facture avoir) pour affichage dans la liste des documents.</summary>
+    [JsonPropertyName("avoirsRattaches")]
+    public List<AvoirRattacheSolde>? AvoirsRattaches { get; set; }
+}
+
+/// <summary>Résumé d'un avoir rattaché à une facture fournisseur (type + numéro/libellé + montant).</summary>
+public class AvoirRattacheSolde
+{
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = string.Empty; // "AvoirFinancier" ou "FactureAvoir"
+
+    [JsonPropertyName("numero")]
+    public int Numero { get; set; }
+
+    [JsonPropertyName("libelle")]
+    public string? Libelle { get; set; }
+
+    [JsonPropertyName("montant")]
+    public decimal Montant { get; set; }
 }
 
 public class PaiementSoldeFournisseur

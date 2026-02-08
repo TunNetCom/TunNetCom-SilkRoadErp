@@ -1,6 +1,7 @@
 using TunNetCom.SilkRoadErp.Sales.Api.Features.AppParameters.GetAppParameters;
 using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Soldes;
 using TunNetCom.SilkRoadErp.Sales.Contracts.Soldes;
+using Microsoft.EntityFrameworkCore;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
 
@@ -15,10 +16,10 @@ public class SoldeFournisseurCalculationService(
         int accountingYearId,
         CancellationToken cancellationToken = default)
     {
-        var exists = await _context.Fournisseur
+        var fournisseur = await _context.Fournisseur
             .AsNoTracking()
-            .AnyAsync(f => f.Id == fournisseurId, cancellationToken);
-        if (!exists)
+            .FirstOrDefaultAsync(f => f.Id == fournisseurId, cancellationToken);
+        if (fournisseur == null)
             return null;
 
         var yearExists = await _context.AccountingYear
@@ -29,6 +30,7 @@ public class SoldeFournisseurCalculationService(
 
         var appParams = await _mediator.Send(new GetAppParametersQuery(), cancellationToken);
         var timbre = await _financialParametersService.GetTimbreAsync(appParams.Value.Timbre, cancellationToken);
+        var defaultTauxRetenu = fournisseur.TauxRetenu ?? await _financialParametersService.GetPourcentageRetenuAsync(appParams.Value.PourcentageRetenu, cancellationToken);
 
         var facturesFournisseur = await _context.FactureFournisseur
             .Where(f => f.IdFournisseur == fournisseurId && f.AccountingYearId == accountingYearId)
@@ -38,6 +40,9 @@ public class SoldeFournisseurCalculationService(
 
         var totalFactures = facturesFournisseur.Sum(f =>
             f.BonDeReception.SelectMany(br => br.LigneBonReception).Sum(l => l.TotTtc) + timbre);
+
+        var totalMontantsApresRetenue = await ComputeTotalMontantsApresRetenueForFournisseurAsync(
+            fournisseurId, accountingYearId, facturesFournisseur, timbre, defaultTauxRetenu, cancellationToken);
 
         var totalBonsReceptionNonFactures = await _context.BonDeReception
             .Where(b => b.IdFournisseur == fournisseurId
@@ -61,7 +66,7 @@ public class SoldeFournisseurCalculationService(
             .Where(p => p.FournisseurId == fournisseurId && p.AccountingYearId == accountingYearId)
             .SumAsync(p => p.Montant, cancellationToken);
 
-        var solde = SoldeFournisseurCalculator.ComputeSolde(totalFactures, totalBonsReceptionNonFactures, totalFacturesAvoir, totalAvoirsFinanciers, totalPaiements);
+        var solde = SoldeFournisseurCalculator.ComputeSoldeAvecRetenue(totalMontantsApresRetenue, totalBonsReceptionNonFactures, totalPaiements);
 
         return new SoldeFournisseurCalculDto
         {
@@ -80,6 +85,7 @@ public class SoldeFournisseurCalculationService(
     {
         var appParams = await _mediator.Send(new GetAppParametersQuery(), cancellationToken);
         var timbre = await _financialParametersService.GetTimbreAsync(appParams.Value.Timbre, cancellationToken);
+        var defaultTauxRetenu = await _financialParametersService.GetPourcentageRetenuAsync(appParams.Value.PourcentageRetenu, cancellationToken);
 
         var fournisseurIdsWithActivity = await GetFournisseurIdsWithActivityAsync(accountingYearId, cancellationToken);
         if (fournisseurIdsWithActivity.Count == 0)
@@ -88,6 +94,8 @@ public class SoldeFournisseurCalculationService(
             return Array.Empty<SoldeFournisseurItemDto>();
         }
 
+        var totalMontantsApresRetenueByFournisseur = await GetTotalMontantsApresRetenueByFournisseurAsync(
+            accountingYearId, timbre, defaultTauxRetenu, fournisseurIdsWithActivity, cancellationToken);
         var totalFacturesByFournisseur = await GetTotalFacturesByFournisseurAsync(accountingYearId, timbre, cancellationToken);
 
         var aggregates = await _context.Fournisseur
@@ -133,7 +141,8 @@ public class SoldeFournisseurCalculationService(
         foreach (var a in aggregates)
         {
             var totalFactures = totalFacturesByFournisseur.GetValueOrDefault(a.Id, 0m);
-            var solde = SoldeFournisseurCalculator.ComputeSolde(totalFactures, a.TotalBonsReceptionNonFactures, a.TotalFacturesAvoir, a.TotalAvoirsFinanciers, a.TotalPaiements);
+            var totalMontantsApresRetenue = totalMontantsApresRetenueByFournisseur.GetValueOrDefault(a.Id, 0m);
+            var solde = SoldeFournisseurCalculator.ComputeSoldeAvecRetenue(totalMontantsApresRetenue, a.TotalBonsReceptionNonFactures, a.TotalPaiements);
             result.Add(new SoldeFournisseurItemDto
             {
                 FournisseurId = a.Id,
@@ -204,5 +213,145 @@ public class SoldeFournisseurCalculationService(
             .ToDictionary(
                 g => g.Key,
                 g => g.Sum(f => f.BonDeReception.SelectMany(br => br.LigneBonReception).Sum(l => l.TotTtc) + timbre));
+    }
+
+    /// <summary>
+    /// Calcule la somme des montants après retenue par facture pour un fournisseur (même formule que GetSoldeFournisseur).
+    /// </summary>
+    private async Task<decimal> ComputeTotalMontantsApresRetenueForFournisseurAsync(
+        int fournisseurId,
+        int accountingYearId,
+        List<TunNetCom.SilkRoadErp.Sales.Domain.Entites.FactureFournisseur> facturesFournisseur,
+        decimal timbre,
+        double defaultTauxRetenu,
+        CancellationToken cancellationToken)
+    {
+        if (facturesFournisseur.Count == 0)
+            return 0m;
+
+        var factureNums = facturesFournisseur.Select(f => f.Num).ToList();
+        var retenues = await _context.RetenueSourceFournisseur
+            .AsNoTracking()
+            .Where(r => factureNums.Contains(r.NumFactureFournisseur))
+            .Select(r => new { r.NumFactureFournisseur, r.TauxRetenu })
+            .ToListAsync(cancellationToken);
+        var retenueByNumFacture = retenues.ToDictionary(r => r.NumFactureFournisseur, r => r.TauxRetenu);
+
+        var avoirsFinanciersByNum = await (from af in _context.AvoirFinancierFournisseurs
+                                           join ff in _context.FactureFournisseur on af.NumFactureFournisseur equals ff.Num
+                                           where ff.IdFournisseur == fournisseurId && ff.AccountingYearId == accountingYearId
+                                           group af by af.NumFactureFournisseur into g
+                                           select new { Num = g.Key!.Value, Total = g.Sum(af => af.TotTtc) })
+            .ToListAsync(cancellationToken);
+        var avoirsFinanciersByNumFacture = avoirsFinanciersByNum.ToDictionary(x => x.Num, x => x.Total);
+
+        var facturesAvoir = await _context.FactureAvoirFournisseur
+            .Where(fa => fa.IdFournisseur == fournisseurId && fa.AccountingYearId == accountingYearId)
+            .Include(fa => fa.AvoirFournisseur)
+                .ThenInclude(a => a.LigneAvoirFournisseur)
+            .ToListAsync(cancellationToken);
+        var factureAvoirTotalByFactureId = facturesAvoir
+            .Where(fa => fa.FactureFournisseurId.HasValue)
+            .GroupBy(fa => fa.FactureFournisseurId!.Value)
+            .ToDictionary(g => g.Key, g => g.Sum(fa => fa.AvoirFournisseur.SelectMany(a => a.LigneAvoirFournisseur).Sum(l => l.TotTtc)));
+        var totalFacturesAvoirFournisseur = facturesAvoir.Sum(fa => fa.AvoirFournisseur.SelectMany(a => a.LigneAvoirFournisseur).Sum(l => l.TotTtc));
+
+        decimal sum = 0m;
+        foreach (var f in facturesFournisseur)
+        {
+            var sumLigneBr = f.BonDeReception.SelectMany(br => br.LigneBonReception).Sum(l => l.TotTtc);
+            var avoirFinancier = avoirsFinanciersByNumFacture.GetValueOrDefault(f.Num, 0m);
+            var factureAvoirTotal = factureAvoirTotalByFactureId.GetValueOrDefault(f.Id, 0m);
+            if (facturesFournisseur.Count == 1 && factureAvoirTotal == 0 && totalFacturesAvoirFournisseur > 0)
+                factureAvoirTotal = totalFacturesAvoirFournisseur;
+            var tauxRetenu = retenueByNumFacture.TryGetValue(f.Num, out var tr) ? tr : defaultTauxRetenu;
+            var (montant, _) = SoldeFournisseurCalculator.ComputeMontantEtFormuleFactureFournisseur(
+                sumLigneBr, timbre, avoirFinancier, factureAvoirTotal, tauxRetenu);
+            sum += montant;
+        }
+        return sum;
+    }
+
+    /// <summary>
+    /// Calcule pour chaque fournisseur la somme des montants après retenue par facture (même formule que GetSoldeFournisseur).
+    /// </summary>
+    private async Task<Dictionary<int, decimal>> GetTotalMontantsApresRetenueByFournisseurAsync(
+        int accountingYearId,
+        decimal timbre,
+        double defaultTauxRetenu,
+        HashSet<int> fournisseurIdsWithActivity,
+        CancellationToken cancellationToken)
+    {
+        var factures = await _context.FactureFournisseur
+            .AsNoTracking()
+            .Where(f => f.AccountingYearId == accountingYearId && fournisseurIdsWithActivity.Contains(f.IdFournisseur))
+            .Include(f => f.BonDeReception)
+                .ThenInclude(br => br.LigneBonReception)
+            .ToListAsync(cancellationToken);
+
+        if (factures.Count == 0)
+            return new Dictionary<int, decimal>();
+
+        var factureNums = factures.Select(f => f.Num).ToList();
+        var retenues = await _context.RetenueSourceFournisseur
+            .AsNoTracking()
+            .Where(r => factureNums.Contains(r.NumFactureFournisseur))
+            .Select(r => new { r.NumFactureFournisseur, r.TauxRetenu })
+            .ToListAsync(cancellationToken);
+        var retenueByNumFacture = retenues.ToDictionary(r => r.NumFactureFournisseur, r => r.TauxRetenu);
+
+        var avoirsFinanciersByNum = await (from af in _context.AvoirFinancierFournisseurs
+                                           join ff in _context.FactureFournisseur on af.NumFactureFournisseur equals ff.Num
+                                           where ff.AccountingYearId == accountingYearId && fournisseurIdsWithActivity.Contains(ff.IdFournisseur)
+                                           group af by af.NumFactureFournisseur into g
+                                           select new { Num = g.Key!.Value, Total = g.Sum(af => af.TotTtc) })
+            .ToListAsync(cancellationToken);
+        var avoirsFinanciersByNumFacture = avoirsFinanciersByNum.ToDictionary(x => x.Num, x => x.Total);
+
+        var facturesAvoir = await _context.FactureAvoirFournisseur
+            .AsNoTracking()
+            .Where(fa => fa.AccountingYearId == accountingYearId && fournisseurIdsWithActivity.Contains(fa.IdFournisseur))
+            .Include(fa => fa.AvoirFournisseur)
+                .ThenInclude(a => a.LigneAvoirFournisseur)
+            .ToListAsync(cancellationToken);
+        var factureAvoirTotalByFactureId = facturesAvoir
+            .Where(fa => fa.FactureFournisseurId.HasValue)
+            .GroupBy(fa => fa.FactureFournisseurId!.Value)
+            .ToDictionary(g => g.Key, g => g.Sum(fa => fa.AvoirFournisseur.SelectMany(a => a.LigneAvoirFournisseur).Sum(l => l.TotTtc)));
+        var totalFacturesAvoirByFournisseur = facturesAvoir
+            .GroupBy(fa => fa.IdFournisseur)
+            .ToDictionary(g => g.Key, g => g.Sum(fa => fa.AvoirFournisseur.SelectMany(a => a.LigneAvoirFournisseur).Sum(l => l.TotTtc)));
+
+        var fournisseurTaux = await _context.Fournisseur
+            .AsNoTracking()
+            .Where(f => fournisseurIdsWithActivity.Contains(f.Id))
+            .Select(f => new { f.Id, f.TauxRetenu })
+            .ToListAsync(cancellationToken);
+        var fournisseurTauxById = fournisseurTaux.ToDictionary(x => x.Id, x => x.TauxRetenu);
+
+        var result = new Dictionary<int, decimal>();
+        foreach (var grp in factures.GroupBy(f => f.IdFournisseur))
+        {
+            var fournisseurId = grp.Key;
+            var facturesF = grp.ToList();
+            var totalFacturesAvoirFournisseur = totalFacturesAvoirByFournisseur.GetValueOrDefault(fournisseurId, 0m);
+            var fournisseurTauxRetenu = fournisseurTauxById.GetValueOrDefault(fournisseurId);
+
+            decimal sum = 0m;
+            foreach (var f in facturesF)
+            {
+                var sumLigneBr = f.BonDeReception.SelectMany(br => br.LigneBonReception).Sum(l => l.TotTtc);
+                var avoirFinancier = avoirsFinanciersByNumFacture.GetValueOrDefault(f.Num, 0m);
+                var factureAvoirTotal = factureAvoirTotalByFactureId.GetValueOrDefault(f.Id, 0m);
+                if (facturesF.Count == 1 && factureAvoirTotal == 0 && totalFacturesAvoirFournisseur > 0)
+                    factureAvoirTotal = totalFacturesAvoirFournisseur;
+                var tauxRetenu = retenueByNumFacture.TryGetValue(f.Num, out var tr) ? tr : (fournisseurTauxRetenu ?? defaultTauxRetenu);
+                var (montant, _) = SoldeFournisseurCalculator.ComputeMontantEtFormuleFactureFournisseur(
+                    sumLigneBr, timbre, avoirFinancier, factureAvoirTotal, tauxRetenu);
+                sum += montant;
+            }
+            result[fournisseurId] = sum;
+        }
+        return result;
     }
 }
