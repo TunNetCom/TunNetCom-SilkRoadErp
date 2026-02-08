@@ -20,6 +20,9 @@ public class SoldeFournisseurResponse
     [JsonPropertyName("totalFacturesAvoir")]
     public decimal TotalFacturesAvoir { get; set; }
 
+    [JsonPropertyName("totalAvoirsFinanciers")]
+    public decimal TotalAvoirsFinanciers { get; set; }
+
     [JsonPropertyName("totalPaiements")]
     public decimal TotalPaiements { get; set; }
 

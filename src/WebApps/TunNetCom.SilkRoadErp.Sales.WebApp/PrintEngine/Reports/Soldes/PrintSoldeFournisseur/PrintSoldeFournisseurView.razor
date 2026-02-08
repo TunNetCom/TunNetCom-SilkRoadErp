@@ -96,6 +96,8 @@
             <div class="label">Solde</div>
             <div class="value">@Model.Summary.Solde.FormatAmount(Model.DecimalPlaces) TND</div>
             <div class="label">Total factures: @Model.Summary.TotalFactures.FormatAmount(Model.DecimalPlaces)</div>
+            <div class="label">Total factures avoir: @Model.Summary.TotalFacturesAvoir.FormatAmount(Model.DecimalPlaces)</div>
+            <div class="label">Total avoirs financiers: @Model.Summary.TotalAvoirsFinanciers.FormatAmount(Model.DecimalPlaces)</div>
             <div class="label">Total paiements: @Model.Summary.TotalPaiements.FormatAmount(Model.DecimalPlaces)</div>
         </div>
     </div>

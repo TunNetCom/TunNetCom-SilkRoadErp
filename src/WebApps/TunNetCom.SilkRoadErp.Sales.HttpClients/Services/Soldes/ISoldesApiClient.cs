@@ -21,6 +21,12 @@ public interface ISoldesApiClient
         int? accountingYearId = null,
         CancellationToken cancellationToken = default);
 
+    Task<PagedList<FournisseurSoldeProblemeResponse>> GetFournisseursAvecProblemesSoldeAsync(
+        int pageNumber,
+        int pageSize,
+        int? accountingYearId = null,
+        CancellationToken cancellationToken = default);
+
     Task<(byte[] Content, string FileName)> ExportClientsAvecProblemesSoldeToPdfAsync(
         int? accountingYearId = null,
         CancellationToken cancellationToken = default);

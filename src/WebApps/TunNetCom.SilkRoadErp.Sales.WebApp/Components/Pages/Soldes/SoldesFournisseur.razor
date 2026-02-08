@@ -82,6 +82,10 @@
                             <span class="solde-value">@solde.TotalFacturesAvoir.FormatAmount(decimalPlaces) TND</span>
                         </div>
                         <div class="solde-item">
+                            <span class="solde-label">@Localizer["Total_Avoirs_Financiers"]:</span>
+                            <span class="solde-value">@solde.TotalAvoirsFinanciers.FormatAmount(decimalPlaces) TND</span>
+                        </div>
+                        <div class="solde-item">
                             <span class="solde-label">@Localizer["Total_Paiements"]:</span>
                             <span class="solde-value">@solde.TotalPaiements.FormatAmount(decimalPlaces) TND</span>
                         </div>
@@ -127,7 +131,6 @@
                                 PageSize="10"
                                 Density="Density.Compact">
                     <Columns>
-                        <RadzenDataGridColumn TItem="PaiementSoldeFournisseur" Property="Numero" Title="@Localizer["Numero_Col"]" Width="150px" />
                         <RadzenDataGridColumn TItem="PaiementSoldeFournisseur" Property="DatePaiement" Title="@Localizer["Date_Paiement_Col"]" Width="150px">
                             <Template Context="paiement">
                                 @paiement.DatePaiement.ToString("dd/MM/yyyy")
@@ -257,6 +260,9 @@
 </style>
 
 @code {
+    [SupplyParameterFromQuery(Name = "fournisseurId")]
+    public int? FournisseurIdFromQuery { get; set; }
+
     private SoldeFournisseurResponse? solde;
     private int? selectedFournisseurId;
     private List<ProviderResponse> _filteredProviders = new();
@@ -268,6 +274,18 @@
     {
         await base.OnInitializedAsync();
         decimalPlaces = await DecimalFormatService.GetDecimalPlacesAsync();
+        if (FournisseurIdFromQuery.HasValue && FournisseurIdFromQuery.Value > 0)
+        {
+            selectedFournisseurId = FournisseurIdFromQuery.Value;
+            try
+            {
+                var providerResult = await ProvidersService.GetAsync(FournisseurIdFromQuery.Value, cancellationTokenSource.Token);
+                if (providerResult.IsT0 && providerResult.AsT0 != null)
+                    _filteredProviders = new List<ProviderResponse> { providerResult.AsT0 };
+            }
+            catch { /* ignore */ }
+            await LoadSolde();
+        }
     }
 
     async Task LoadProviders(LoadDataArgs args)

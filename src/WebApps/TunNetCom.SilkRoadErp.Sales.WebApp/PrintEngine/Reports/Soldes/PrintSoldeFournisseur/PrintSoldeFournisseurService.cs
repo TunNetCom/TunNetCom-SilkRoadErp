@@ -72,6 +72,7 @@ public class PrintSoldeFournisseurService(
                 TotalFactures = solde.TotalFactures,
                 TotalBonsReceptionNonFactures = solde.TotalBonsReceptionNonFactures,
                 TotalFacturesAvoir = solde.TotalFacturesAvoir,
+                TotalAvoirsFinanciers = solde.TotalAvoirsFinanciers,
                 TotalPaiements = solde.TotalPaiements,
                 Solde = solde.Solde
             },

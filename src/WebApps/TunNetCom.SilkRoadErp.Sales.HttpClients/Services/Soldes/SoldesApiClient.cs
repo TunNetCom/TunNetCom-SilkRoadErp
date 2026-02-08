@@ -106,6 +106,37 @@ public class SoldesApiClient : ISoldesApiClient
         }
     }
 
+    public async Task<PagedList<FournisseurSoldeProblemeResponse>> GetFournisseursAvecProblemesSoldeAsync(
+        int pageNumber,
+        int pageSize,
+        int? accountingYearId = null,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Fetching fournisseurs avec problemes solde from API /soldes/fournisseurs-avec-problemes");
+
+        var queryString = $"/soldes/fournisseurs-avec-problemes?pageNumber={pageNumber}&pageSize={pageSize}";
+
+        if (accountingYearId.HasValue)
+        {
+            queryString += $"&accountingYearId={accountingYearId.Value}";
+        }
+
+        try
+        {
+            var response = await _httpClient.GetAsync(queryString, cancellationToken: cancellationToken);
+            response.EnsureSuccessStatusCode();
+
+            var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+            var result = JsonConvert.DeserializeObject<PagedList<FournisseurSoldeProblemeResponse>>(responseContent);
+            return result ?? new PagedList<FournisseurSoldeProblemeResponse>(new List<FournisseurSoldeProblemeResponse>(), 0, pageNumber, pageSize);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching fournisseurs avec problemes solde");
+            throw;
+        }
+    }
+
     public async Task<(byte[] Content, string FileName)> ExportClientsAvecProblemesSoldeToPdfAsync(
         int? accountingYearId = null,
         CancellationToken cancellationToken = default)

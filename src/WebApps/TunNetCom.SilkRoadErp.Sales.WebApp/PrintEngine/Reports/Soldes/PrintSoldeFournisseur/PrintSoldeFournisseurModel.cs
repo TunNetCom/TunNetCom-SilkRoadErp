@@ -28,6 +28,7 @@ public class PrintSoldeFournisseurSummary
     public decimal TotalFactures { get; set; }
     public decimal TotalBonsReceptionNonFactures { get; set; }
     public decimal TotalFacturesAvoir { get; set; }
+    public decimal TotalAvoirsFinanciers { get; set; }
     public decimal TotalPaiements { get; set; }
     public decimal Solde { get; set; }
 }

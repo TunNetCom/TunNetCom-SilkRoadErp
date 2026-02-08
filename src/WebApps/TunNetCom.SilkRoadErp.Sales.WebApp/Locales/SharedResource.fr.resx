@@ -1401,6 +1401,12 @@
   <data name="Clients_Avec_Problemes_Solde" xml:space="preserve">
     <value>Clients avec problèmes de solde</value>
   </data>
+  <data name="Fournisseurs_Avec_Problemes_Solde" xml:space="preserve">
+    <value>Fournisseurs avec problème de solde</value>
+  </data>
+  <data name="Total_Avoirs_Financiers" xml:space="preserve">
+    <value>Total avoirs financiers</value>
+  </data>
   <data name="Quantites_Non_Livrees" xml:space="preserve">
     <value>Quantités non livrées</value>
   </data>
