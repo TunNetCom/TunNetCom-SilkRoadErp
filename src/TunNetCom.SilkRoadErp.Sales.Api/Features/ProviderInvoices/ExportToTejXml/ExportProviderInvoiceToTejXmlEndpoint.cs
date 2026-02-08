@@ -120,6 +120,15 @@ public class ExportProviderInvoiceToTejXmlEndpoint : ICarterModule
                 return TypedResults.BadRequest($"Le matricule fiscal du fournisseur n'est pas configuré pour la facture {invoiceNumber}.");
             }
 
+            // Normalize and validate beneficiaire (provider) matricule fiscal: 7 digits + 1 letter (CCT pattern)
+            var providerMatriculeNormalise = TryNormalizeMatriculeFiscal(factureFournisseur.IdFournisseurNavigation.Matricule.Trim());
+            if (providerMatriculeNormalise is null)
+            {
+                logger.LogWarning("Provider Matricule format invalid for invoice {InvoiceNumber}: expected 7 digits + 1 letter", invoiceNumber);
+                return TypedResults.BadRequest(
+                    "Le matricule fiscal du fournisseur doit être au format 7 chiffres et une lettre clé (ex. 0001238L).");
+            }
+
             // Normalize matricule fiscal for filename (7 digits + 1 letter)
             var matriculeNormaliseResult = TryNormalizeMatriculeFiscal(systeme.MatriculeFiscale.Trim());
             if (matriculeNormaliseResult is null)
@@ -129,13 +138,14 @@ public class ExportProviderInvoiceToTejXmlEndpoint : ICarterModule
                     "Le matricule fiscal de l'entreprise doit être au format 7 chiffres et une lettre clé (ex. 0001238L).");
             }
 
-            // Generate XML
+            // Generate XML (pass normalized beneficiaire matricule for CCT-compliant Identifiant)
             var xmlBytes = exportService.ExportProviderInvoiceToTejXml(
                 factureFournisseur,
                 factureFournisseur.IdFournisseurNavigation,
                 systeme,
                 appParams,
-                financialParams);
+                financialParams,
+                normalizedBeneficiaireMatricule: providerMatriculeNormalise);
 
             // Generate filename per regulatory format: [MATRICULEFISCAL]-[EXERCICE]-[mois]-[code acte].xml
             var exercice = factureFournisseur.Date.Year;
