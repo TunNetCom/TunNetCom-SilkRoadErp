@@ -144,13 +144,14 @@ public class ExportProviderInvoiceToTejXmlEndpoint : ICarterModule
                     "Le matricule fiscal de l'entreprise doit être au format 7 chiffres et une lettre clé (ex. 0001238L).");
             }
 
-            // Generate XML (pass normalized beneficiaire matricule for CCT-compliant Identifiant)
+            // Generate XML (pass normalized declarant and beneficiaire matricules for CCT-compliant Identifiant, e.g. without "/")
             var xmlBytes = exportService.ExportProviderInvoiceToTejXml(
                 factureFournisseur,
                 factureFournisseur.IdFournisseurNavigation,
                 systeme,
                 appParams,
                 financialParams,
+                normalizedDeclarantMatricule: matriculeNormaliseResult,
                 normalizedBeneficiaireMatricule: providerMatriculeNormalise);
 
             // Generate filename per regulatory format: [MATRICULEFISCAL]-[EXERCICE]-[mois]-[code acte].xml

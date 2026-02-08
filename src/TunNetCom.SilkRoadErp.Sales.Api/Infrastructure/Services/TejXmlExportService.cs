@@ -20,6 +20,7 @@ public class TejXmlExportService
     /// <summary>
     /// Exporte une facture fournisseur au format XML TEJ.
     /// </summary>
+    /// <param name="normalizedDeclarantMatricule">Matricule fiscal déclarant normalisé (7 chiffres + 1 lettre, sans /). Si fourni, utilisé pour Declarant/Identifiant.</param>
     /// <param name="normalizedBeneficiaireMatricule">Matricule fiscal bénéficiaire normalisé (7 chiffres + 1 lettre). Si fourni, utilisé pour IdTaxpayer/Identifiant.</param>
     public byte[] ExportProviderInvoiceToTejXml(
         FactureFournisseur factureFournisseur,
@@ -27,6 +28,7 @@ public class TejXmlExportService
         Systeme systeme,
         GetAppParametersResponse appParams,
         AccountingYearFinancialParameters financialParams,
+        string? normalizedDeclarantMatricule = null,
         string? normalizedBeneficiaireMatricule = null)
     {
         try
@@ -52,9 +54,10 @@ public class TejXmlExportService
             // Determine VAT rate (use the highest rate found, or default to 19)
             var tauxTVA = DetermineVatRate(factureFournisseur, financialParams);
 
-            // Extract TypeIdentifiant and CategorieContribuable from MatriculeFiscale
-            var (declarantTypeIdentifiant, declarantIdentifiant, declarantCategorie) = 
+            // Extract TypeIdentifiant and CategorieContribuable from MatriculeFiscale; use normalized declarant matricule (e.g. without "/") when provided
+            var (declarantTypeIdentifiant, _, declarantCategorie) = 
                 ExtractIdentifiantInfo(systeme.MatriculeFiscale, systeme.CodeCategorie);
+            var declarantIdentifiant = normalizedDeclarantMatricule ?? systeme.MatriculeFiscale?.Replace("/", string.Empty).Trim() ?? "";
 
             var (beneficiaireTypeIdentifiant, _, beneficiaireCategorie) = 
                 ExtractIdentifiantInfo(fournisseur.Matricule, fournisseur.CodeCat);
