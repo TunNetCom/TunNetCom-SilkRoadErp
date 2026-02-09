@@ -22,6 +22,7 @@ public class TejXmlExportService
     /// </summary>
     /// <param name="normalizedDeclarantMatricule">Matricule fiscal déclarant normalisé (7 chiffres + 1 lettre, sans /). Si fourni, utilisé pour Declarant/Identifiant.</param>
     /// <param name="normalizedBeneficiaireMatricule">Matricule fiscal bénéficiaire normalisé (7 chiffres + 1 lettre). Si fourni, utilisé pour IdTaxpayer/Identifiant.</param>
+    /// <param name="beneficiaireTel8Digits">Téléphone bénéficiaire au format XXXXXXXX (8 chiffres) pour TEJ. Si fourni, utilisé pour NumTel.</param>
     public byte[] ExportProviderInvoiceToTejXml(
         FactureFournisseur factureFournisseur,
         Fournisseur fournisseur,
@@ -29,7 +30,8 @@ public class TejXmlExportService
         GetAppParametersResponse appParams,
         AccountingYearFinancialParameters financialParams,
         string? normalizedDeclarantMatricule = null,
-        string? normalizedBeneficiaireMatricule = null)
+        string? normalizedBeneficiaireMatricule = null,
+        string? beneficiaireTel8Digits = null)
     {
         try
         {
@@ -72,7 +74,7 @@ public class TejXmlExportService
                     new XElement("Declarant",
                         new XElement("TypeIdentifiant", declarantTypeIdentifiant),
                         new XElement("Identifiant", declarantIdentifiant ?? ""),
-                        new XElement("CategorieContribuable", declarantCategorie ?? "PM")
+                        new XElement("CategorieContribuable", NormalizeCategorieContribuable(declarantCategorie))
                     ),
                     // ReferenceDeclaration
                     new XElement("ReferenceDeclaration",
@@ -89,7 +91,7 @@ public class TejXmlExportService
                                     new XElement("MatriculeFiscal",
                                         new XElement("TypeIdentifiant", beneficiaireTypeIdentifiant),
                                         new XElement("Identifiant", beneficiaireIdentifiant),
-                                        new XElement("CategorieContribuable", beneficiaireCategorie ?? "PM")
+                                        new XElement("CategorieContribuable", NormalizeCategorieContribuable(beneficiaireCategorie))
                                     )
                                 ),
                                 new XElement("Resident", "1"),
@@ -97,8 +99,8 @@ public class TejXmlExportService
                                 new XElement("Adresse", SanitizeTejTextField(fournisseur.Adresse)),
                                 new XElement("Activite", ""),
                                 new XElement("InfosContact",
-                                    new XElement("AdresseMail", SanitizeTejTextField(fournisseur.Mail)),
-                                    new XElement("NumTel", SanitizeTejTextField(fournisseur.Tel))
+                                    new XElement("AdresseMail", EnsureNonEmptyEmail(SanitizeTejTextField(fournisseur.Mail))),
+                                    new XElement("NumTel", !string.IsNullOrEmpty(beneficiaireTel8Digits) ? beneficiaireTel8Digits : SanitizeTejTextField(fournisseur.Tel))
                                 )
                             ),
                             // DatePayement
@@ -162,10 +164,32 @@ public class TejXmlExportService
         // Default TypeIdentifiant is 1 (could be enhanced based on business rules)
         var typeIdentifiant = 1;
         
-        // Use CodeCategorie if available, otherwise default to PM
-        var categorie = codeCategorie ?? "PM";
+        // TEJ accepts only PM (Personne Morale) or PP (Personne Physique); map M -> PM, P -> PP
+        var categorie = NormalizeCategorieContribuable(codeCategorie);
 
         return (typeIdentifiant, matricule.Trim(), categorie);
+    }
+
+    /// <summary>
+    /// Ensures AdresseMail is never empty (TEJ rejects empty). Uses placeholder when missing.
+    /// </summary>
+    private static string EnsureNonEmptyEmail(string? value)
+    {
+        var s = (value ?? string.Empty).Trim();
+        return string.IsNullOrEmpty(s) ? "non-donne@declarant.local" : s;
+    }
+
+    /// <summary>
+    /// Normalizes category to TEJ values: PM (Personne Morale) or PP (Personne Physique) only.
+    /// </summary>
+    private static string NormalizeCategorieContribuable(string? codeCategorie)
+    {
+        if (string.IsNullOrWhiteSpace(codeCategorie))
+            return "PM";
+        var c = codeCategorie.Trim().ToUpperInvariant();
+        if (c == "PP" || c == "P")
+            return "PP";
+        return "PM"; // M, PM, or any other value -> PM
     }
 
     /// <summary>

@@ -126,6 +126,22 @@ public class ExportProviderInvoiceToTejXmlEndpoint : ICarterModule
                 return TypedResults.BadRequest($"Le matricule fiscal du fournisseur n'est pas configuré pour la facture {invoiceNumber}.");
             }
 
+            // TEJ export requires provider email and phone (format XXXXXXXX = 8 digits)
+            var provider = factureFournisseur.IdFournisseurNavigation;
+            if (string.IsNullOrWhiteSpace(provider.Mail))
+            {
+                logger.LogWarning("Provider Mail missing for invoice {InvoiceNumber}, TEJ export blocked", invoiceNumber);
+                return TypedResults.BadRequest(
+                    "L'export TEJ exige l'adresse e-mail du fournisseur. Veuillez renseigner l'e-mail du fournisseur avant d'exporter.");
+            }
+            var telDigitsOnly = new string((provider.Tel ?? "").Where(char.IsDigit).ToArray());
+            if (telDigitsOnly.Length != 8)
+            {
+                logger.LogWarning("Provider Tel not in format XXXXXXXX (8 digits) for invoice {InvoiceNumber}, TEJ export blocked", invoiceNumber);
+                return TypedResults.BadRequest(
+                    "L'export TEJ exige le téléphone du fournisseur au format XXXXXXXX (8 chiffres). Veuillez corriger le numéro du fournisseur.");
+            }
+
             // Normalize and validate beneficiaire (provider) matricule fiscal: 7 digits + 1 letter (CCT pattern)
             var providerMatriculeNormalise = TryNormalizeMatriculeFiscal(factureFournisseur.IdFournisseurNavigation.Matricule.Trim());
             if (providerMatriculeNormalise is null)
@@ -144,7 +160,7 @@ public class ExportProviderInvoiceToTejXmlEndpoint : ICarterModule
                     "Le matricule fiscal de l'entreprise doit être au format 7 chiffres et une lettre clé (ex. 0001238L).");
             }
 
-            // Generate XML (pass normalized declarant and beneficiaire matricules for CCT-compliant Identifiant, e.g. without "/")
+            // Generate XML (pass normalized declarant/beneficiaire matricules and beneficiaire tel 8 digits for TEJ)
             var xmlBytes = exportService.ExportProviderInvoiceToTejXml(
                 factureFournisseur,
                 factureFournisseur.IdFournisseurNavigation,
@@ -152,7 +168,19 @@ public class ExportProviderInvoiceToTejXmlEndpoint : ICarterModule
                 appParams,
                 financialParams,
                 normalizedDeclarantMatricule: matriculeNormaliseResult,
-                normalizedBeneficiaireMatricule: providerMatriculeNormalise);
+                normalizedBeneficiaireMatricule: providerMatriculeNormalise,
+                beneficiaireTel8Digits: telDigitsOnly);
+
+            // Validate against TEJ XSD when schema is available
+            var validationErrors = TejXsdValidator.Validate(xmlBytes)
+                .Where(e => !e.Contains("introuvable", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            if (validationErrors.Count > 0)
+            {
+                logger.LogWarning("TEJ XSD validation failed for invoice {InvoiceNumber}: {Errors}", invoiceNumber, string.Join("; ", validationErrors));
+                return TypedResults.BadRequest(
+                    "Le fichier XML n'est pas conforme au schéma TEJ: " + string.Join("; ", validationErrors));
+            }
 
             // Generate filename per regulatory format: [MATRICULEFISCAL]-[EXERCICE]-[mois]-[code acte].xml
             var exercice = factureFournisseur.Date.Year;

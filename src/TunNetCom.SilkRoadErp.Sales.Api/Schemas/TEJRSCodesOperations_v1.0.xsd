@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<!-- Liste des opérations soumises à la retenue à la source -->
+	<xs:simpleType name="TypeCodesOperations" final="restriction">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="RS1_000001">
+				<xs:annotation>
+					<xs:documentation>Loyers d'hôtels servis aux personnes morales et aux personnes physiques soumises à l'impôt sur le revenu selon le régime réel </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS1_000002">
+				<xs:annotation>
+					<xs:documentation>Loyers servis à des résidents établis </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS2_000001">
+				<xs:annotation>
+					<xs:documentation>Honoraires servis aux BNC forfait d'assiette, commissions, courtages, rémunérations des activités non commerciales qu'elle qu'en soit l'appellation servis à des résidents établis. </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS2_000002">
+				<xs:annotation>
+					<xs:documentation>Honoraires servis aux BNC régime réel résidents établis. </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS2_000003">
+				<xs:annotation>
+					<xs:documentation>Rémunérations en contrepartie de la performance. </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS2_000004">
+				<xs:annotation>
+					<xs:documentation>Rémunérations servies aux artistes, aux créateurs soumis à l'impôt sur le revenu selon le régime réel et aux personnes morales au titre de la production, la diffusion et la présentation des œuvres théâtrales, scénique, musicale, littéraire et plastiques et cinématographique, et au titre des rémunérations servies aux titulaires des droits d'auteur et des droits voisins dans le cadre de la gestion collective des droits de la propriété littéraire et artistique </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS3_000001">
+				<xs:annotation>
+					<xs:documentation>Revenus de capitaux mobiliers (autres que les dépôts en devise ou en dinars convertible) servis aux résidents soumi à l'impots (IS ou IRPP). </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS3_000003">
+				<xs:annotation>
+					<xs:documentation>Revenus de capitaux mobiliers (autres que les dépôts en devise ou en dinars convertible) servis aux non résidents autres que banques </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS3_000004">
+				<xs:annotation>
+					<xs:documentation>Revenus de capitaux mobiliers servis aux banques non établit </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS3_000005">
+				<xs:annotation>
+					<xs:documentation>Revenus de capitaux mobiliers servis aux non établit (autres que les banques) et résidents dans un Etat ou un territoire dont le régime fiscal est privilégié </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS4_000001">
+				<xs:annotation>
+					<xs:documentation>Revenus de valeurs mobilières(cession d'actions, parts sociales et parts des fonds) servis à des personnes morales non résidentes non établis. </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS4_000002">
+				<xs:annotation>
+					<xs:documentation>Revenus de valeurs mobilières(cession d'actions, parts sociales et parts des fonds) servis à des personnes physiques non résidentes non établis. </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS5_000001">
+				<xs:annotation>
+					<xs:documentation>Dividendes servies à des personnes physiques résidentes </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS5_000002">
+				<xs:annotation>
+					<xs:documentation>Dividendes servis à des personnes physiques et personnes morales non résidentes. </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS5_000003">
+				<xs:annotation>
+					<xs:documentation>Dividendes servis à des personnes physiques et personnes morales résidentes dans un Etat ou un territoire dont le régime fiscal est privilégié </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS6_000001">
+				<xs:annotation>
+					<xs:documentation>Cession de fonds de commerce par les personnes morales et les personnes physiques résidentes </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS6_000002">
+				<xs:annotation>
+					<xs:documentation>Cession d'immeubles et des droits sociaux dans les sociétés immobilières par les personnes morales et les personnes physiques résidentes </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS6_000003">
+				<xs:annotation>
+					<xs:documentation>Cession d'immeubles et des droits sociaux dans les sociétés immobilières par les personnes physiques non residentes </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS6_000005">
+				<xs:annotation>
+					<xs:documentation>Cession d'immeubles et des droits sociaux dans les sociétés immobilières par les personnes morales non résidentes et non établies en Tunisie. </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS7_000001">
+				<xs:annotation>
+					<xs:documentation>Montants égaux ou supérieurs à 1.000 D y compris la TVA au titre des acquisitions des marchandises, matériel équipements et de services, auprés des personnes physiques et des peronnes morales soumis à l'IS au taux autres que 15% et 10% </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS7_000002">
+				<xs:annotation>
+					<xs:documentation>Montants égaux ou supérieurs à 1.000 D y compris la TVA au titre des acquisitions des marchandises, matériel équipements et de services, auprés des personnes physiques et des peronnes morales soumis à l'IS au taux de 15% </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS7_000003">
+				<xs:annotation>
+					<xs:documentation>Montants égaux ou supérieurs à 1.000 D y compris la TVA au titre des acquisitions des marchandises, matériel équipements et de servicesauprés des personnes physiques bénéfiçiant de la déduction de 2/3 et des peronnes morales soumois à l'IS au taux de 10% </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS7_000004">
+				<xs:annotation>
+					<xs:documentation>Le montant de la commission revenant aux distributeurs agréés des opérateurs de réseaux des télécommunications(personne physique). </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS7_000005">
+				<xs:annotation>
+					<xs:documentation>Le montant de la commission revenant aux distributeurs agréés des opérateurs de réseaux des télécommunications( personne morale). </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS8_000001">
+				<xs:annotation>
+					<xs:documentation>Rémunérations et primes servies aux membres des conseils, des directoires et des comités des sociétés anonymes payes aux résidents. </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS8_000002">
+				<xs:annotation>
+					<xs:documentation>Rémunérations et primes servies aux membres des conseils, des directoires et des comités des sociétés anonymes payes aux non résidents. </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS8_000003">
+				<xs:annotation>
+					<xs:documentation>Rémunérations et primes servies aux membres des conseils, des directoires et des comités des sociétés anonymes payes aux résidents dans ans un Etat ou un territoire dont le régime fiscal est privilégié </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS9_000001">
+				<xs:annotation>
+					<xs:documentation>Rémunérations servies à des non-résidents non établis en Tunisie. </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS9_000002">
+				<xs:annotation>
+					<xs:documentation>Redevances (Rémunérations servies à des non-résidents non établis en Tunisie.) </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS9_000003">
+				<xs:annotation>
+					<xs:documentation>Rémunérations payées aux nresidents dans un Etat ou un territoire dont le régime fiscal est privilégié </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS9_000004">
+				<xs:annotation>
+					<xs:documentation>Rémunérations payées aux non-résidents et établis en Tunisie pour une période n'excédant pas 6 mois au titre : des travaux de construction </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS9_000005">
+				<xs:annotation>
+					<xs:documentation>Rémunérations payées aux non-résidents et établis en Tunisie pour une période n'excédant pas 6 mois au titre : des opérations de montage </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS9_000006">
+				<xs:annotation>
+					<xs:documentation>Rémunérations payées aux non-résidents et établis en Tunisie pour une période n'excédant pas 6 mois au titre : des autres services </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS9_000007">
+				<xs:annotation>
+					<xs:documentation>Les rémunérations payées aux non résidents établis en Tunisie qui ne procèdent pas au dépôt de la déclaration d'existence autre qu'établissement stable d'une spersonne physique ou morale residente dans un Etat ou un territoire dont le régime fiscal est privilégié </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS9_000008">
+				<xs:annotation>
+					<xs:documentation>Les rémunérations payées aux non résidents établis en Tunisie et residents dans un Etat ou un territoire dont le régime fiscal est privilégié qui ne procèdent pas au dépôt de la déclaration d'existence </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RS11_000001">
+				<xs:annotation>
+					<xs:documentation>Jeux de pari et loterie autres que les paris mutuels sur les courses de chevaux et des concours de pronostics sportifs et les gains en nature des jeux de pari, de hasard et de loterie. </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+		</xs:restriction>
+	</xs:simpleType>
+</xs:schema>
