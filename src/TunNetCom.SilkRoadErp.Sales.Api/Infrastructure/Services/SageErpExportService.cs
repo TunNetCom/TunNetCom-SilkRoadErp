@@ -1,3 +1,5 @@
+using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.BankStatement;
+
 namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
 
 public class SageErpExportService
@@ -247,6 +249,42 @@ public class SageErpExportService
         var amountInCents = (long)(amount * 100);
         var amountStr = amountInCents.ToString();
         return amountStr.PadLeft(width, '0');
+    }
+
+    /// <summary>
+    /// Exporte des écritures bancaires au format Sage ERP (journal BQ).
+    /// Chaque ligne métier est doublée d'une contrepartie 53200000.
+    /// </summary>
+    public byte[] ExportBankTransactionsToSageFormat(IEnumerable<BankTransactionSageLine> lines, string journalCode = "BQ")
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("Code jDate dN° compte génN° pièce     Numéro facture   N° compte tiers  Libellé écriture                   Montant débit Montant crédit");
+
+        foreach (var line in lines)
+        {
+            sb.AppendLine(FormatBankAccountingLine(journalCode, line));
+        }
+
+        var encoding = Encoding.GetEncoding("Windows-1252");
+        return encoding.GetBytes(sb.ToString());
+    }
+
+    private string FormatBankAccountingLine(string journalCode, BankTransactionSageLine line)
+    {
+        var date = new DateTimeOffset(line.Date, TimeSpan.Zero);
+        var code = journalCode.PadRight(6).Substring(0, 6);
+        var dateStr = date.ToString("ddMMyy");
+        if (dateStr.Length > 6) dateStr = dateStr.Substring(0, 6);
+        var dayOfMonth = date.Day.ToString().PadLeft(3, '0');
+        var compteGen = (line.CompteGeneral ?? "").PadRight(10).Substring(0, 10);
+        var piece = (line.NumPiece ?? "").PadRight(16).Substring(0, 16);
+        var numFacture = "0".PadLeft(10, '0');
+        var compteTiers = "0".PadLeft(16, '0');
+        var libelle = (line.Libelle ?? "").PadRight(40);
+        if (libelle.Length > 40) libelle = libelle.Substring(0, 40);
+        var montantDebit = FormatAmount(line.Debit, 28);
+        var montantCredit = FormatAmount(line.Credit, 28);
+        return code + dateStr.PadLeft(6) + dayOfMonth + compteGen + piece + numFacture + compteTiers + libelle + montantDebit + montantCredit;
     }
 }
 

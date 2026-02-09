@@ -220,6 +220,7 @@ builder.Services.AddScoped<ISoldeClientCalculationService, SoldeClientCalculatio
 
 // Register SageErpExportService
 builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.SageErpExportService>();
+builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.BankStatement.IBankStatementFileParser, TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.BankStatement.BankStatementFileParser>();
 
 // Register TejXmlExportService
 builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.TejXmlExportService>();

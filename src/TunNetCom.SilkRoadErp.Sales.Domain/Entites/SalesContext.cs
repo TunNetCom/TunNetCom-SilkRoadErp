@@ -96,6 +96,12 @@ public partial class SalesContext : DbContext
 
     public virtual DbSet<Banque> Banque { get; set; }
 
+    public virtual DbSet<CompteBancaire> CompteBancaire { get; set; }
+
+    public virtual DbSet<BankTransactionImport> BankTransactionImport { get; set; }
+
+    public virtual DbSet<BankTransaction> BankTransaction { get; set; }
+
     public virtual DbSet<PaiementClient> PaiementClient { get; set; }
 
     public virtual DbSet<PaiementFournisseur> PaiementFournisseur { get; set; }

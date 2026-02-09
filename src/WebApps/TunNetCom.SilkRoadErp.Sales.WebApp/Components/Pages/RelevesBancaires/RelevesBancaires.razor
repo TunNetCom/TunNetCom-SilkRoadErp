@@ -1,0 +1,201 @@
+@page "/releves-bancaires"
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.BankTransaction
+@using TunNetCom.SilkRoadErp.Sales.Contracts.CompteBancaire
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.BankTransactions
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.CompteBancaire
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using Radzen.Blazor
+@using Radzen
+@inject IStringLocalizer<SharedResource> Localizer
+@inject IBankTransactionsApiClient BankTransactionsService
+@inject ICompteBancaireApiClient CompteBancaireService
+@inject ToastService ToastService
+@inject NotificationService NotificationService
+@inject IJSRuntime JSRuntime
+
+<div class="releves-container">
+    <div class="releves-card">
+        <h3 class="releves-title">@Localizer["Releves_Bancaires"]</h3>
+
+        <RadzenCard class="rz-mb-3">
+            <h4>@Localizer["Importer_Fichier"]</h4>
+            <RadzenRow>
+                <RadzenColumn Size="12" SizeMD="4">
+                    <RadzenFormField Text="@Localizer["Comptes_Bancaires"]">
+                        <RadzenDropDown @bind-Value="selectedCompteBancaireIdForImport"
+                                       Data="@compteBancaires"
+                                       TextProperty="BanqueNom"
+                                       ValueProperty="Id"
+                                       Placeholder="@Localizer["Select_Compte_Bancaire"]"
+                                       Style="width: 100%;"
+                                       AllowClear="false" />
+                    </RadzenFormField>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="4">
+                    <RadzenFormField Text="@Localizer["Fichier"]">
+                        <InputFile OnChange="OnFileSelected" accept=".xlsx,.xls,.csv,.txt" class="rz-file-upload" />
+                        @if (!string.IsNullOrEmpty(selectedFileName))
+                        {
+                            <RadzenLabel Text="@selectedFileName" class="rz-mt-1" />
+                        }
+                    </RadzenFormField>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="4">
+                    <RadzenButton Text="@Localizer["Importer"]" Icon="upload" ButtonStyle="ButtonStyle.Primary"
+                                  Click="UploadFile" IsBusy="@isUploading" Disabled="@(selectedFile == null || selectedCompteBancaireIdForImport <= 0)" />
+                </RadzenColumn>
+            </RadzenRow>
+        </RadzenCard>
+
+        <RadzenDataGrid TItem="BankTransactionImportResponse"
+                       Data="@imports"
+                       LoadData="@LoadImports"
+                       AllowPaging="true"
+                       PageSize="10"
+                       Density="Density.Compact"
+                       IsLoading="@isLoading"
+                       ShowPagingSummary="true"
+                       Responsive="true"
+                       FilterFilterType="FilterType.Contains">
+            <EmptyTemplate>
+                <p class="rz-text-center rz-p-3">@Localizer["Aucun_Import_Releve"]</p>
+            </EmptyTemplate>
+            <Columns>
+                <RadzenDataGridColumn TItem="BankTransactionImportResponse" Property="FileName" Title="@Localizer["Fichier"]" Width="250px" />
+                <RadzenDataGridColumn TItem="BankTransactionImportResponse" Property="CompteBancaireLibelle" Title="@Localizer["Compte_Bancaire"]" Width="220px" />
+                <RadzenDataGridColumn TItem="BankTransactionImportResponse" Property="ImportedAt" Title="@Localizer["Date_Import"]" Width="160px" FormatString="{0:g}" />
+                <RadzenDataGridColumn TItem="BankTransactionImportResponse" Property="RowCount" Title="@Localizer["Nombre_Lignes"]" Width="120px" />
+                <RadzenDataGridColumn TItem="BankTransactionImportResponse" Filterable="false" Sortable="false" Width="140px" TextAlign="TextAlign.Center">
+                    <Template Context="imp">
+                        <RadzenButton Icon="file_download" ButtonStyle="ButtonStyle.Info" Variant="Variant.Outlined" Size="ButtonSize.Medium"
+                                      Click="@(() => ExportToSage(imp.Id, null, null, null))"
+                                      Title="@Localizer["Exporter_Sage"]" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    </div>
+</div>
+
+<style>
+    .releves-container { padding: 0.25rem 1.25rem 1.25rem; max-width: 1200px; margin: 0 auto; }
+    .releves-card { border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); padding: 1rem 1.5rem; }
+    .releves-title { margin: 0 0 1rem 0; font-size: 1.5rem; font-weight: 600; }
+</style>
+
+@code {
+    private List<BankTransactionImportResponse> imports = new();
+    private List<CompteBancaireResponse> compteBancaires = new();
+    private int selectedCompteBancaireIdForImport;
+    private bool isLoading;
+    private bool isUploading;
+    private IBrowserFile? selectedFile;
+    private string selectedFileName = "";
+    private CancellationTokenSource _cts = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCompteBancaires();
+        await LoadImports(new LoadDataArgs());
+    }
+
+    async Task LoadCompteBancaires()
+    {
+        try
+        {
+            compteBancaires = await CompteBancaireService.GetCompteBancairesAsync(_cts.Token);
+            if (compteBancaires.Count > 0 && selectedCompteBancaireIdForImport <= 0)
+            {
+                selectedCompteBancaireIdForImport = compteBancaires[0].Id;
+            }
+        }
+        catch
+        {
+            compteBancaires = new List<CompteBancaireResponse>();
+        }
+    }
+
+    async Task LoadImports(LoadDataArgs args)
+    {
+        isLoading = true;
+        try
+        {
+            imports = await BankTransactionsService.GetImportsAsync(null, _cts.Token);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = Localizer["Erreur"], Detail = ex.Message });
+            imports = new List<BankTransactionImportResponse>();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    void OnFileSelected(InputFileChangeEventArgs e)
+    {
+        selectedFile = e.File;
+        selectedFileName = e.File.Name;
+    }
+
+    async Task UploadFile()
+    {
+        if (selectedFile == null || selectedCompteBancaireIdForImport <= 0)
+        {
+            return;
+        }
+        isUploading = true;
+        try
+        {
+            await using var stream = selectedFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+            var result = await BankTransactionsService.ImportAsync(stream, selectedFile.Name, selectedCompteBancaireIdForImport, _cts.Token);
+            if (result.IsT0)
+            {
+                var r = result.AsT0;
+                ToastService.Notify(new(ToastType.Success, $"{Localizer["Import_Reussi"]}: {r.RowsImported} {Localizer["Lignes"]}."));
+                selectedFile = null;
+                selectedFileName = "";
+                await LoadImports(new LoadDataArgs());
+            }
+            else
+            {
+                var bad = result.AsT1;
+                ToastService.Notify(new(ToastType.Danger, bad.Detail ?? Localizer["Erreur"]));
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = Localizer["Erreur"], Detail = ex.Message });
+        }
+        finally
+        {
+            isUploading = false;
+        }
+    }
+
+    async Task ExportToSage(int? importId, int? compteBancaireId, DateTime? dateDebut, DateTime? dateFin)
+    {
+        try
+        {
+            var result = await BankTransactionsService.ExportToSageAsync(importId, compteBancaireId, dateDebut, dateFin, _cts.Token);
+            if (result.IsT0)
+            {
+                var bytes = result.AsT0;
+                var base64 = Convert.ToBase64String(bytes);
+                var fileName = $"Releve_Bancaire_Sage_{DateTime.Now:yyyyMMdd_HHmmss}.txt";
+                await JSRuntime.InvokeVoidAsync("downloadFile", fileName, base64, "text/plain; charset=windows-1252");
+                ToastService.Notify(new(ToastType.Success, Localizer["Export_Sage_Reussi"]));
+            }
+            else
+            {
+                ToastService.Notify(new(ToastType.Danger, Localizer["Erreur"]));
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = Localizer["Erreur"], Detail = ex.Message });
+        }
+    }
+}

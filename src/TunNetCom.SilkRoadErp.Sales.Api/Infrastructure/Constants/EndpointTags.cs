@@ -21,6 +21,7 @@ public static class EndpointTags
     public const string PaiementFournisseur = "PaiementFournisseur";
     public const string Soldes = "Soldes";
     public const string Banque = "Banque";
+    public const string CompteBancaire = "CompteBancaire";
     public const string Tags = "Tags";
     public const string DeliveryCars = "DeliveryCars";
     public const string Auth = "Authentication";

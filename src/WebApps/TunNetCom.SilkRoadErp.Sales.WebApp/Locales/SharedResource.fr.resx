@@ -1071,6 +1071,90 @@
   <data name="Banque_Creee" xml:space="preserve">
     <value>Banque créée avec succès</value>
   </data>
+  <data name="Comptes_Bancaires" xml:space="preserve">
+    <value>Comptes bancaires</value>
+  </data>
+  <data name="Ajouter_Compte_Bancaire" xml:space="preserve">
+    <value>Ajouter un compte bancaire</value>
+  </data>
+  <data name="Aucun_Compte_Bancaire" xml:space="preserve">
+    <value>Aucun compte bancaire trouvé.</value>
+  </data>
+  <data name="Modifier_Compte_Bancaire" xml:space="preserve">
+    <value>Modifier le compte bancaire</value>
+  </data>
+  <data name="Informations_Bancaires_Entreprise" xml:space="preserve">
+    <value>Informations Bancaires Entreprise</value>
+  </data>
+  <data name="Confirmation_Suppression_Compte_Bancaire" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir supprimer ce compte bancaire ?</value>
+  </data>
+  <data name="Compte_Bancaire_Supprime" xml:space="preserve">
+    <value>Compte bancaire supprimé avec succès</value>
+  </data>
+  <data name="Compte_Bancaire_Modifie" xml:space="preserve">
+    <value>Compte bancaire modifié avec succès</value>
+  </data>
+  <data name="Compte_Bancaire_Cree" xml:space="preserve">
+    <value>Compte bancaire créé avec succès</value>
+  </data>
+  <data name="Code_Etablissement" xml:space="preserve">
+    <value>Code Établissement</value>
+  </data>
+  <data name="Code_Agence" xml:space="preserve">
+    <value>Code Agence</value>
+  </data>
+  <data name="Numero_Compte" xml:space="preserve">
+    <value>Numéro de Compte</value>
+  </data>
+  <data name="Cle_RIB" xml:space="preserve">
+    <value>Clé RIB</value>
+  </data>
+  <data name="Libelle" xml:space="preserve">
+    <value>Libellé</value>
+  </data>
+  <data name="Champs_Requis" xml:space="preserve">
+    <value>Veuillez remplir tous les champs obligatoires.</value>
+  </data>
+  <data name="Releves_Bancaires" xml:space="preserve">
+    <value>Relevés bancaires</value>
+  </data>
+  <data name="Importer_Fichier" xml:space="preserve">
+    <value>Importer un fichier</value>
+  </data>
+  <data name="Select_Compte_Bancaire" xml:space="preserve">
+    <value>Sélectionner un compte bancaire</value>
+  </data>
+  <data name="Fichier" xml:space="preserve">
+    <value>Fichier</value>
+  </data>
+  <data name="Importer" xml:space="preserve">
+    <value>Importer</value>
+  </data>
+  <data name="Aucun_Import_Releve" xml:space="preserve">
+    <value>Aucun import de relevé.</value>
+  </data>
+  <data name="Date_Import" xml:space="preserve">
+    <value>Date d'import</value>
+  </data>
+  <data name="Nombre_Lignes" xml:space="preserve">
+    <value>Nombre de lignes</value>
+  </data>
+  <data name="Exporter_Sage" xml:space="preserve">
+    <value>Exporter vers Sage</value>
+  </data>
+  <data name="Import_Reussi" xml:space="preserve">
+    <value>Import réussi</value>
+  </data>
+  <data name="Lignes" xml:space="preserve">
+    <value>lignes</value>
+  </data>
+  <data name="Export_Sage_Reussi" xml:space="preserve">
+    <value>Export Sage réussi</value>
+  </data>
+  <data name="Compte_Bancaire" xml:space="preserve">
+    <value>Compte bancaire</value>
+  </data>
   <data name="inventaires" xml:space="preserve">
     <value>Inventaires</value>
   </data>

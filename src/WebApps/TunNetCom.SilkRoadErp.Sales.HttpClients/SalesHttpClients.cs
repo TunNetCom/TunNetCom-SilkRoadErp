@@ -19,6 +19,8 @@ using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PaiementClient;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PaiementFournisseur;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Banque;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.CompteBancaire;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.BankTransactions;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Soldes;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.InstallationTechnician;
@@ -141,6 +143,14 @@ public static class SalesHttpClients
         _ = AddClient<IBanqueApiClient, BanqueApiClient>(banque =>
         {
             banque.BaseAddress = new Uri(baseUrl);
+        });
+        _ = AddClient<ICompteBancaireApiClient, CompteBancaireApiClient>(compteBancaire =>
+        {
+            compteBancaire.BaseAddress = new Uri(baseUrl);
+        });
+        _ = AddClient<IBankTransactionsApiClient, BankTransactionsApiClient>(bankTransactions =>
+        {
+            bankTransactions.BaseAddress = new Uri(baseUrl);
         });
         _ = AddClient<ISoldesApiClient, SoldesApiClient>(soldes =>
         {

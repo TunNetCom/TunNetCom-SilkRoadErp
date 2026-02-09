@@ -1,0 +1,133 @@
+@page "/comptes-bancaires"
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.CompteBancaire
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.CompteBancaire
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Banque
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using Radzen.Blazor
+@using Radzen
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<SharedResource> Localizer
+@inject ICompteBancaireApiClient CompteBancaireService
+@inject IBanqueApiClient BanqueService
+@inject ToastService ToastService
+@inject DialogService DialogService
+@inject Radzen.NotificationService NotificationService
+
+<div class="comptes-bancaires-container">
+    <div class="comptes-bancaires-card">
+        <div class="comptes-bancaires-header">
+            <h3 class="comptes-bancaires-title">@Localizer["Comptes_Bancaires"]</h3>
+            <RadzenButton Icon="add" Text="@Localizer["Ajouter_Compte_Bancaire"]"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Click="CreateCompteBancaire"
+                          Class="btn-primary" />
+        </div>
+
+        <RadzenDataGrid @ref="compteBancaireGrid"
+                        TItem="CompteBancaireResponse"
+                        Data="@compteBancaires"
+                        LoadData="@LoadCompteBancaires"
+                        AllowFiltering="true"
+                        AllowPaging="true"
+                        AllowSorting="true"
+                        FilterPopupRenderMode="PopupRenderMode.OnDemand"
+                        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                        PageSize="10"
+                        Density="Density.Compact"
+                        Class="comptes-bancaires-grid"
+                        IsLoading="@isLoading"
+                        ShowPagingSummary="true"
+                        Responsive="true">
+            <EmptyTemplate>
+                <p style="font-size: 24px; text-align: center; margin: 2rem;">@Localizer["Aucun_Compte_Bancaire"]</p>
+            </EmptyTemplate>
+            <Columns>
+                <RadzenDataGridColumn TItem="CompteBancaireResponse" Property="Id" Title="ID" Width="80px" />
+                <RadzenDataGridColumn TItem="CompteBancaireResponse" Property="BanqueNom" Title="@Localizer["Banque_Col"]" Width="200px" />
+                <RadzenDataGridColumn TItem="CompteBancaireResponse" Property="NumeroCompte" Title="@Localizer["Numero_Compte"]" Width="180px" />
+                <RadzenDataGridColumn TItem="CompteBancaireResponse" Property="CodeEtablissement" Title="@Localizer["Code_Etablissement"]" Width="120px" />
+                <RadzenDataGridColumn TItem="CompteBancaireResponse" Property="CodeAgence" Title="@Localizer["Code_Agence"]" Width="120px" />
+                <RadzenDataGridColumn TItem="CompteBancaireResponse" Property="CleRib" Title="@Localizer["Cle_RIB"]" Width="80px" />
+                <RadzenDataGridColumn TItem="CompteBancaireResponse" Filterable="false" Sortable="false" Width="150px" TextAlign="TextAlign.Center">
+                    <Template Context="compte">
+                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Success" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter"
+                                      Click="@(() => EditCompteBancaire(compte.Id))"
+                                      Title="@Localizer["Modifier"]" />
+                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter" Class="rz-my-1 rz-ms-1"
+                                      Click="@(() => ConfirmDeleteCompteBancaire(compte.Id))"
+                                      Title="@Localizer["Supprimer"]" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    </div>
+</div>
+
+<style>
+    .comptes-bancaires-container { padding: 0.25rem 1.25rem 1.25rem 1.25rem; max-width: 1400px; margin: 0.25rem auto 1rem auto; }
+    .comptes-bancaires-card { border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 0.75rem 1.5rem 1.5rem 1.5rem; border: none; }
+    .comptes-bancaires-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
+    .comptes-bancaires-title { margin: 0; font-size: 1.5rem; font-weight: 600; }
+    .comptes-bancaires-grid { width: 100%; }
+</style>
+
+@code {
+    private RadzenDataGrid<CompteBancaireResponse> compteBancaireGrid = default!;
+    private List<CompteBancaireResponse> compteBancaires = new();
+    private bool isLoading = false;
+    private CancellationTokenSource cancellationTokenSource = new();
+
+    async Task LoadCompteBancaires(LoadDataArgs args)
+    {
+        isLoading = true;
+        try
+        {
+            compteBancaires = await CompteBancaireService.GetCompteBancairesAsync(cancellationTokenSource.Token);
+            await compteBancaireGrid.Reload();
+        }
+        catch (Exception)
+        {
+            compteBancaires = new List<CompteBancaireResponse>();
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = Localizer["Erreur"], Detail = Localizer["Erreur_Chargement_Banques"] });
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCompteBancaires(new LoadDataArgs());
+    }
+
+    void CreateCompteBancaire()
+    {
+        NavigationManager.NavigateTo("/compte-bancaire/add");
+    }
+
+    void EditCompteBancaire(int id)
+    {
+        NavigationManager.NavigateTo($"/compte-bancaire/edit/{id}");
+    }
+
+    async Task ConfirmDeleteCompteBancaire(int id)
+    {
+        var confirmed = await DialogService.Confirm(Localizer["Confirmation_Suppression_Compte_Bancaire"], Localizer["Attention"], new ConfirmOptions { OkButtonText = Localizer["Supprimer"], CancelButtonText = Localizer["Annuler"] });
+        if (confirmed == true)
+        {
+            var result = await CompteBancaireService.DeleteCompteBancaireAsync(id, cancellationTokenSource.Token);
+            if (result.IsT0)
+            {
+                ToastService.Notify(new(ToastType.Success, Localizer["Compte_Bancaire_Supprime"]));
+                await LoadCompteBancaires(new LoadDataArgs());
+            }
+            else
+            {
+                var badRequest = result.AsT1;
+                ToastService.Notify(new(ToastType.Danger, badRequest.Detail ?? Localizer["Erreur"]));
+            }
+        }
+    }
+}

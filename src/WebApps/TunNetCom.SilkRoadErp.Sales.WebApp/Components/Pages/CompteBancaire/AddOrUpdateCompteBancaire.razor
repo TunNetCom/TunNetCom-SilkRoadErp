@@ -1,0 +1,191 @@
+@page "/compte-bancaire/add"
+@page "/compte-bancaire/edit/{Id:int}"
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.CompteBancaire
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Banque
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.CompteBancaire
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Banque
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using Radzen.Blazor
+@using Radzen
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<SharedResource> Localizer
+@inject ICompteBancaireApiClient CompteBancaireService
+@inject IBanqueApiClient BanqueService
+@inject ToastService ToastService
+@inject Radzen.NotificationService NotificationService
+
+<div class="compte-bancaire-form-container">
+    <div class="compte-bancaire-form-card">
+        <div class="compte-bancaire-form-header">
+            <h3>@(IsEditMode ? Localizer["Modifier_Compte_Bancaire"] : Localizer["Informations_Bancaires_Entreprise"])</h3>
+            <RadzenButton Icon="arrow_back" Text="@Localizer["Retour"]"
+                          ButtonStyle="ButtonStyle.Secondary"
+                          Click="GoBack"
+                          Variant="Variant.Outlined" />
+        </div>
+
+        <RadzenRow>
+            <RadzenColumn Size="12" SizeMD="6">
+                <RadzenFormField Text="@($"{Localizer["Banque_Col"]} *")" class="rz-col-12">
+                    <RadzenDropDown @bind-Value="model.BanqueId"
+                                   Data="@banques"
+                                   TextProperty="Nom"
+                                   ValueProperty="Id"
+                                   Placeholder="@Localizer["Select_Banque"]"
+                                   Style="width: 100%;"
+                                   AllowClear="false" />
+                </RadzenFormField>
+                <RadzenFormField Text="@($"{Localizer["Code_Etablissement"]} *")" class="rz-col-12">
+                    <RadzenTextBox @bind-Value="model.CodeEtablissement" Placeholder="25" MaxLength="10" Style="width: 100%;" />
+                </RadzenFormField>
+                <RadzenFormField Text="@($"{Localizer["Code_Agence"]} *")" class="rz-col-12">
+                    <RadzenTextBox @bind-Value="model.CodeAgence" Placeholder="049" MaxLength="10" Style="width: 100%;" />
+                </RadzenFormField>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeMD="6">
+                <RadzenFormField Text="@($"{Localizer["Numero_Compte"]} *")" class="rz-col-12">
+                    <RadzenTextBox @bind-Value="model.NumeroCompte" Placeholder="0000000542284" MaxLength="20" Style="width: 100%;" />
+                </RadzenFormField>
+                <RadzenFormField Text="@($"{Localizer["Cle_RIB"]} *")" class="rz-col-12">
+                    <RadzenTextBox @bind-Value="model.CleRib" Placeholder="64" MaxLength="5" Style="width: 100%;" />
+                </RadzenFormField>
+                <RadzenFormField Text="@Localizer["Libelle"]" class="rz-col-12">
+                    <RadzenTextBox @bind-Value="model.Libelle" Placeholder="@Localizer["Libelle"]" MaxLength="200" Style="width: 100%;" />
+                </RadzenFormField>
+            </RadzenColumn>
+        </RadzenRow>
+
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" JustifyContent="Radzen.JustifyContent.Center" class="rz-mt-3">
+            <RadzenButton Icon="save" Text="@Localizer["save"]"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Click="Save"
+                          IsBusy="@isSaving" />
+            <RadzenButton Text="@Localizer["Annuler"]" ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Outlined" Click="GoBack" />
+        </RadzenStack>
+    </div>
+</div>
+
+<style>
+    .compte-bancaire-form-container { padding: 0; margin: 0; }
+    .compte-bancaire-form-card { background: transparent; border-radius: 0; box-shadow: none; padding: 1rem; }
+    .compte-bancaire-form-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--rz-base-300); }
+    .compte-bancaire-form-header h3 { margin: 0; font-size: 1.5rem; font-weight: 600; }
+</style>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private bool IsEditMode => Id.HasValue;
+    private bool isSaving = false;
+    private CreateCompteBancaireRequest model = new();
+    private List<BanqueResponse> banques = new();
+    private CancellationTokenSource cancellationTokenSource = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            banques = await BanqueService.GetBanquesAsync(cancellationTokenSource.Token);
+        }
+        catch
+        {
+            banques = new List<BanqueResponse>();
+        }
+
+        if (IsEditMode && Id.HasValue)
+        {
+            var existing = await CompteBancaireService.GetCompteBancaireByIdAsync(Id.Value, cancellationTokenSource.Token);
+            if (existing != null)
+            {
+                model = new CreateCompteBancaireRequest
+                {
+                    BanqueId = existing.BanqueId,
+                    CodeEtablissement = existing.CodeEtablissement,
+                    CodeAgence = existing.CodeAgence,
+                    NumeroCompte = existing.NumeroCompte,
+                    CleRib = existing.CleRib,
+                    Libelle = existing.Libelle
+                };
+            }
+        }
+        else if (banques.Count > 0)
+        {
+            model.BanqueId = banques[0].Id;
+        }
+    }
+
+    async Task Save()
+    {
+        if (model.BanqueId <= 0 || string.IsNullOrWhiteSpace(model.CodeEtablissement) || string.IsNullOrWhiteSpace(model.CodeAgence)
+            || string.IsNullOrWhiteSpace(model.NumeroCompte) || string.IsNullOrWhiteSpace(model.CleRib))
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Warning, Summary = Localizer["Validation"], Detail = Localizer["Champs_Requis"] });
+            return;
+        }
+
+        isSaving = true;
+        try
+        {
+            if (IsEditMode && Id.HasValue)
+            {
+                var updateRequest = new UpdateCompteBancaireRequest
+                {
+                    BanqueId = model.BanqueId,
+                    CodeEtablissement = model.CodeEtablissement,
+                    CodeAgence = model.CodeAgence,
+                    NumeroCompte = model.NumeroCompte,
+                    CleRib = model.CleRib,
+                    Libelle = model.Libelle
+                };
+                var result = await CompteBancaireService.UpdateCompteBancaireAsync(Id.Value, updateRequest, cancellationTokenSource.Token);
+                if (result.IsT0)
+                {
+                    ToastService.Notify(new(ToastType.Success, Localizer["Compte_Bancaire_Modifie"]));
+                    NavigationManager.NavigateTo("/comptes-bancaires");
+                }
+                else
+                {
+                    var badRequest = result.AsT1;
+                    ToastService.Notify(new(ToastType.Danger, badRequest.Detail ?? Localizer["Erreur"]));
+                }
+            }
+            else
+            {
+                var createRequest = new CreateCompteBancaireRequest
+                {
+                    BanqueId = model.BanqueId,
+                    CodeEtablissement = model.CodeEtablissement,
+                    CodeAgence = model.CodeAgence,
+                    NumeroCompte = model.NumeroCompte,
+                    CleRib = model.CleRib,
+                    Libelle = model.Libelle
+                };
+                var result = await CompteBancaireService.CreateCompteBancaireAsync(createRequest, cancellationTokenSource.Token);
+                if (result.IsT0)
+                {
+                    ToastService.Notify(new(ToastType.Success, Localizer["Compte_Bancaire_Cree"]));
+                    NavigationManager.NavigateTo("/comptes-bancaires");
+                }
+                else
+                {
+                    var badRequest = result.AsT1;
+                    ToastService.Notify(new(ToastType.Danger, badRequest.Detail ?? Localizer["Erreur"]));
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = Localizer["Erreur"], Detail = ex.Message });
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    void GoBack()
+    {
+        NavigationManager.NavigateTo("/comptes-bancaires");
+    }
+}
