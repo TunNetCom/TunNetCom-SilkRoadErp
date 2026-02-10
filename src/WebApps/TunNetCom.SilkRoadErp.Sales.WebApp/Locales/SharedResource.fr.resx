@@ -1443,6 +1443,9 @@
   <data name="upload_pdf_tej" xml:space="preserve">
     <value>Uploader le PDF TEJ</value>
   </data>
+  <data name="tej_export_info_retenue" xml:space="preserve">
+    <value>Lors de l'export TEJ, le montant envoyé est le montant avant retenue ; la plateforme TEJ effectue le calcul de la retenue.</value>
+  </data>
   <data name="seuil_non_atteint" xml:space="preserve">
     <value>Seuil non atteint</value>
   </data>

@@ -1317,4 +1317,7 @@
   <data name="exonere_retenue_source" xml:space="preserve">
     <value>معفى من الاقتطاع في المنبع</value>
   </data>
+  <data name="tej_export_info_retenue" xml:space="preserve">
+    <value>عند التصدير إلى TEJ، يتم إرسال المبلغ قبل الاقتطاع؛ منصة TEJ تقوم بحساب الاقتطاع.</value>
+  </data>
 </root>

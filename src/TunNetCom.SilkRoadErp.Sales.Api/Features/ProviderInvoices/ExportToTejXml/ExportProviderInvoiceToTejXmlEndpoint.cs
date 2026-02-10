@@ -43,11 +43,15 @@ public class ExportProviderInvoiceToTejXmlEndpoint : ICarterModule
             }
             var appParams = appParamsResult.Value;
 
-            // Get invoice with related data
+            // Get invoice with related data (avoirs et avoirs financiers pour montant avant retenue et ref TEJ)
             var factureFournisseur = await context.FactureFournisseur
                 .Include(f => f.IdFournisseurNavigation)
                 .Include(f => f.BonDeReception)
                     .ThenInclude(br => br.LigneBonReception)
+                .Include(f => f.FactureAvoirFournisseur)
+                    .ThenInclude(fav => fav.AvoirFournisseur)
+                        .ThenInclude(a => a.LigneAvoirFournisseur)
+                .Include(f => f.AvoirFinancierFournisseurs)
                 .FirstOrDefaultAsync(f => f.Num == invoiceNumber, cancellationToken);
 
             if (factureFournisseur == null)
@@ -68,23 +72,34 @@ public class ExportProviderInvoiceToTejXmlEndpoint : ICarterModule
                 return TypedResults.BadRequest("Le fournisseur est exonéré de retenue à la source ; l'export TEJ n'est pas applicable.");
             }
 
-            // Calculate TTC
-            var montantTTC = factureFournisseur.BonDeReception
+            // Montant TTC brut (somme des lignes BR)
+            var montantTTCBrut = factureFournisseur.BonDeReception
                 .SelectMany(br => br.LigneBonReception)
                 .Sum(l => l.TotTtc);
+
+            // Montant final avant retenue = TTC - avoirs financiers - factures avoir (la plateforme TEJ fait le calcul de retenue)
+            var totalAvoirsFinanciers = factureFournisseur.AvoirFinancierFournisseurs?.Sum(a => a.TotTtc) ?? 0;
+            var totalFacturesAvoir = factureFournisseur.FactureAvoirFournisseur?
+                .SelectMany(fav => fav.AvoirFournisseur)
+                .SelectMany(a => a.LigneAvoirFournisseur)
+                .Sum(l => l.TotTtc) ?? 0;
+            var montantAvantRetenue = montantTTCBrut - totalAvoirsFinanciers - totalFacturesAvoir;
 
             // Get seuil from financial parameters service
             var seuilRetenueSource = await financialParametersService.GetSeuilRetenueSourceAsync(1000, cancellationToken);
 
-            // Validate threshold
-            if (montantTTC < seuilRetenueSource)
+            // Validate threshold (sur le montant avant retenue)
+            if (montantAvantRetenue < seuilRetenueSource)
             {
                 logger.LogWarning(
-                    "Montant TTC {MontantTTC} is below threshold {Seuil} for Invoice {InvoiceNumber}",
-                    montantTTC, seuilRetenueSource, invoiceNumber);
+                    "Montant avant retenue {MontantAvantRetenue} is below threshold {Seuil} for Invoice {InvoiceNumber}",
+                    montantAvantRetenue, seuilRetenueSource, invoiceNumber);
                 return TypedResults.BadRequest(
-                    $"Le montant TTC ({montantTTC:F2}) doit être supérieur ou égal au seuil ({seuilRetenueSource:F2}) pour pouvoir exporter en XML TEJ.");
+                    $"Le montant avant retenue ({montantAvantRetenue:F2}) doit être supérieur ou égal au seuil ({seuilRetenueSource:F2}) pour pouvoir exporter en XML TEJ.");
             }
+
+            // Référence certificat TEJ : F{num}+AV{numAvoir}+AF{numAvoirFinancier} (ex. F1515+AV2236+AF8547)
+            var refCertifTej = BuildTejRefCertifChezDeclarant(factureFournisseur);
 
             // Get active accounting year ID
             var activeAccountingYearId = await activeAccountingYearService.GetActiveAccountingYearIdAsync(cancellationToken);
@@ -160,13 +175,15 @@ public class ExportProviderInvoiceToTejXmlEndpoint : ICarterModule
                     "Le matricule fiscal de l'entreprise doit être au format 7 chiffres et une lettre clé (ex. 0001238L).");
             }
 
-            // Generate XML (pass normalized declarant/beneficiaire matricules and beneficiaire tel 8 digits for TEJ)
+            // Generate XML : montant avant retenue + ref F+AV+AF ; la plateforme TEJ effectue le calcul de retenue
             var xmlBytes = exportService.ExportProviderInvoiceToTejXml(
                 factureFournisseur,
                 factureFournisseur.IdFournisseurNavigation,
                 systeme,
                 appParams,
                 financialParams,
+                montantAvantRetenue: montantAvantRetenue,
+                refCertifChezDeclarant: refCertifTej,
                 normalizedDeclarantMatricule: matriculeNormaliseResult,
                 normalizedBeneficiaireMatricule: providerMatriculeNormalise,
                 beneficiaireTel8Digits: telDigitsOnly);
@@ -200,6 +217,26 @@ public class ExportProviderInvoiceToTejXmlEndpoint : ICarterModule
             logger.LogError(ex, "Error exporting invoice {InvoiceNumber} to TEJ XML format", invoiceNumber);
             return TypedResults.StatusCode(500);
         }
+    }
+
+    /// <summary>
+    /// Construit la référence certificat chez déclarant pour TEJ : F{numFacture}+AV{numAvoir}+AF{numAvoirFinancier}.
+    /// Exemple : F1515+AV2236+AF8547
+    /// </summary>
+    private static string BuildTejRefCertifChezDeclarant(FactureFournisseur facture)
+    {
+        var parts = new List<string> { "F" + facture.Num };
+        if (facture.FactureAvoirFournisseur?.Count > 0)
+        {
+            foreach (var fav in facture.FactureAvoirFournisseur.OrderBy(f => f.NumFactureAvoirFourSurPage))
+                parts.Add("AV" + fav.NumFactureAvoirFourSurPage);
+        }
+        if (facture.AvoirFinancierFournisseurs?.Count > 0)
+        {
+            foreach (var af in facture.AvoirFinancierFournisseurs.OrderBy(a => a.Num))
+                parts.Add("AF" + af.Num);
+        }
+        return string.Join("+", parts);
     }
 
     /// <summary>

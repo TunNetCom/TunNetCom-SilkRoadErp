@@ -19,7 +19,10 @@ public class TejXmlExportService
 
     /// <summary>
     /// Exporte une facture fournisseur au format XML TEJ.
+    /// Pour chaque export TEJ on envoie le montant final avant retenue ; la plateforme TEJ effectue le calcul de retenue.
     /// </summary>
+    /// <param name="montantAvantRetenue">Montant TTC avant retenue (après déduction des avoirs financiers et factures avoir). Si null, calculé à partir des bons de réception.</param>
+    /// <param name="refCertifChezDeclarant">Référence certificat chez déclarant (ex. F1515+AV2236+AF8547). Si null, utilise le numéro de facture.</param>
     /// <param name="normalizedDeclarantMatricule">Matricule fiscal déclarant normalisé (7 chiffres + 1 lettre, sans /). Si fourni, utilisé pour Declarant/Identifiant.</param>
     /// <param name="normalizedBeneficiaireMatricule">Matricule fiscal bénéficiaire normalisé (7 chiffres + 1 lettre). Si fourni, utilisé pour IdTaxpayer/Identifiant.</param>
     /// <param name="beneficiaireTel8Digits">Téléphone bénéficiaire au format XXXXXXXX (8 chiffres) pour TEJ. Si fourni, utilisé pour NumTel.</param>
@@ -29,32 +32,45 @@ public class TejXmlExportService
         Systeme systeme,
         GetAppParametersResponse appParams,
         AccountingYearFinancialParameters financialParams,
+        decimal? montantAvantRetenue = null,
+        string? refCertifChezDeclarant = null,
         string? normalizedDeclarantMatricule = null,
         string? normalizedBeneficiaireMatricule = null,
         string? beneficiaireTel8Digits = null)
     {
         try
         {
-            // Calculate totals from receipt notes
-            var montantHT = factureFournisseur.BonDeReception
-                .SelectMany(br => br.LigneBonReception)
-                .Sum(l => l.TotHt);
-
-            var montantTVA = factureFournisseur.BonDeReception
-                .SelectMany(br => br.LigneBonReception)
-                .Sum(l => l.TotTtc - l.TotHt);
-
-            var montantTTC = factureFournisseur.BonDeReception
+            // Montant TTC : montant final avant retenue (la plateforme TEJ fait le calcul de retenue)
+            var montantTTC = montantAvantRetenue ?? factureFournisseur.BonDeReception
                 .SelectMany(br => br.LigneBonReception)
                 .Sum(l => l.TotTtc);
 
-            // Get retenue source rate from financial parameters
-            var tauxRS = financialParams.PourcentageRetenu;
-            var montantRS = montantTTC * ((decimal)tauxRS / 100);
-            var montantNetServi = montantTTC - montantRS;
-
-            // Determine VAT rate (use the highest rate found, or default to 19)
             var tauxTVA = DetermineVatRate(factureFournisseur, financialParams);
+            var tauxRS = financialParams.PourcentageRetenu;
+
+            // Calculs centralisés (TejCalculations) : tout en millimes
+            long montantTTCMillimes = TejCalculations.ToMillimesLong(montantTTC);
+            long montantHTMillimes;
+            long montantTVAMillimes;
+            if (montantAvantRetenue.HasValue)
+            {
+                (montantHTMillimes, montantTVAMillimes) = TejCalculations.DeriveHtAndTvaFromTtc(montantTTCMillimes, tauxTVA);
+            }
+            else
+            {
+                var montantHT = factureFournisseur.BonDeReception
+                    .SelectMany(br => br.LigneBonReception)
+                    .Sum(l => l.TotHt);
+                montantHTMillimes = TejCalculations.ToMillimesLong(montantHT);
+                montantTVAMillimes = TejCalculations.ComputeMontantTvaMillimes(montantHTMillimes, tauxTVA);
+            }
+
+            var montantRSMillimes = TejCalculations.ComputeMontantRsMillimes(montantTTCMillimes, (decimal)tauxRS);
+            var montantNetServiMillimes = TejCalculations.ComputeMontantNetServiMillimes(montantTTCMillimes, montantRSMillimes);
+
+            var refCertif = !string.IsNullOrWhiteSpace(refCertifChezDeclarant)
+                ? refCertifChezDeclarant
+                : factureFournisseur.Num.ToString();
 
             // Extract TypeIdentifiant and CategorieContribuable from MatriculeFiscale; use normalized declarant matricule (e.g. without "/") when provided
             var (declarantTypeIdentifiant, _, declarantCategorie) = 
@@ -105,8 +121,8 @@ public class TejXmlExportService
                             ),
                             // DatePayement
                             new XElement("DatePayement", factureFournisseur.Date.ToString("dd/MM/yyyy")),
-                            // Ref_certif_chez_declarant (numeric id; sanitize in case of custom ref in future)
-                            new XElement("Ref_certif_chez_declarant", SanitizeTejTextField(factureFournisseur.Num.ToString())),
+                            // Ref_certif_chez_declarant : F{num}+AV{avoir}+AF{avoir financier} (ex. F1515+AV2236+AF8547)
+                            new XElement("Ref_certif_chez_declarant", SanitizeTejTextField(refCertif)),
                             // ListeOperations
                             new XElement("ListeOperations",
                                 new XElement("Operation",
@@ -114,22 +130,22 @@ public class TejXmlExportService
                                     new XElement("AnneeFacturation", factureFournisseur.Date.Year),
                                     new XElement("CNPC", "0"),
                                     new XElement("P_Charge", "0"),
-                                    new XElement("MontantHT", ConvertToMillimes(montantHT)),
+                                    new XElement("MontantHT", montantHTMillimes),
                                     new XElement("TauxRS", tauxRS.ToString("F2")),
                                     new XElement("TauxTVA", tauxTVA.ToString("F2")),
-                                    new XElement("MontantTVA", ConvertToMillimes(montantTVA)),
-                                    new XElement("MontantTTC", ConvertToMillimes(montantTTC)),
-                                    new XElement("MontantRS", ConvertToMillimes(montantRS)),
-                                    new XElement("MontantNetServi", ConvertToMillimes(montantNetServi))
+                                    new XElement("MontantTVA", montantTVAMillimes),
+                                    new XElement("MontantTTC", montantTTCMillimes),
+                                    new XElement("MontantRS", montantRSMillimes),
+                                    new XElement("MontantNetServi", montantNetServiMillimes)
                                 )
                             ),
-                            // TotalPayement
+                            // TotalPayement (same values as single operation)
                             new XElement("TotalPayement",
-                                new XElement("TotalMontantHT", ConvertToMillimes(montantHT)),
-                                new XElement("TotalMontantTVA", ConvertToMillimes(montantTVA)),
-                                new XElement("TotalMontantTTC", ConvertToMillimes(montantTTC)),
-                                new XElement("TotalMontantRS", ConvertToMillimes(montantRS)),
-                                new XElement("TotalMontantNetServi", ConvertToMillimes(montantNetServi))
+                                new XElement("TotalMontantHT", montantHTMillimes),
+                                new XElement("TotalMontantTVA", montantTVAMillimes),
+                                new XElement("TotalMontantTTC", montantTTCMillimes),
+                                new XElement("TotalMontantRS", montantRSMillimes),
+                                new XElement("TotalMontantNetServi", montantNetServiMillimes)
                             )
                         )
                     )
@@ -286,14 +302,5 @@ public class TejXmlExportService
         return sb.ToString().Normalize(NormalizationForm.FormC);
     }
 
-    /// <summary>
-    /// Converts decimal amount (dinars) to millimes (1 dinar = 1000 millimes) per CCT.
-    /// </summary>
-    private static string ConvertToMillimes(decimal amount)
-    {
-        var rounded = Math.Round(amount, 3, MidpointRounding.AwayFromZero);
-        var millimes = (long)(rounded * 1000);
-        return millimes.ToString();
-    }
 }
 

@@ -1306,4 +1306,7 @@
   <data name="exonere_retenue_source" xml:space="preserve">
     <value>Exonéré de retenue à la source</value>
   </data>
+  <data name="tej_export_info_retenue" xml:space="preserve">
+    <value>When exporting to TEJ, the amount sent is the amount before withholding; the TEJ platform performs the withholding calculation.</value>
+  </data>
 </root>
