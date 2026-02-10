@@ -41,18 +41,23 @@ public static class TejCalculations
     }
 
     /// <summary>
-    /// À partir du montant TTC avant retenue (en millimes) et du taux TVA, déduit le montant HT en millimes
-    /// pour que MontantTVA = MontantHT × TauxTVA/100 et MontantHT + MontantTVA = MontantTTC.
+    /// À partir du montant TTC avant retenue (en millimes) et du taux TVA, calcule HT et TVA selon les formules TEJ :
+    /// - MontantHT = TTC / (1 + TauxTVA/100)
+    /// - MontantTVA = MontantHT × TauxTVA/100 (formule imposée par la plateforme TEJ)
+    /// - MontantTTC = MontantHT + MontantTVA (pour cohérence du fichier).
     /// </summary>
-    public static (long MontantHTMillimes, long MontantTVAMillimes) DeriveHtAndTvaFromTtc(long montantTTCMillimes, decimal tauxTvaPercent)
+    public static (long MontantHTMillimes, long MontantTVAMillimes, long MontantTTCMillimes) DeriveHtTvaTtcForTej(long montantTTCMillimes, decimal tauxTvaPercent)
     {
         if (tauxTvaPercent <= 0)
         {
-            return (montantTTCMillimes, 0);
+            return (montantTTCMillimes, 0, montantTTCMillimes);
         }
-        // MontantTTC = MontantHT * (1 + TauxTVA/100) => MontantHT = MontantTTC / (1 + TauxTVA/100)
+        // HT = TTC / (1 + TauxTVA/100)
         var montantHTMillimes = (long)Math.Round(montantTTCMillimes / (1 + (double)tauxTvaPercent / 100), MidpointRounding.AwayFromZero);
-        var montantTVAMillimes = montantTTCMillimes - montantHTMillimes; // pour que HT + TVA = TTC exactement
-        return (montantHTMillimes, montantTVAMillimes);
+        // TEJ exige : MONTANT_TVA = montant brut * taux TVA / 100 (pas TTC - HT)
+        var montantTVAMillimes = ComputeMontantTvaMillimes(montantHTMillimes, tauxTvaPercent);
+        // TTC cohérent = HT + TVA (peut différer d'un millime du TTC initial)
+        var montantTTCCoherent = montantHTMillimes + montantTVAMillimes;
+        return (montantHTMillimes, montantTVAMillimes, montantTTCCoherent);
     }
 }

@@ -48,13 +48,13 @@ public class TejXmlExportService
             var tauxTVA = DetermineVatRate(factureFournisseur, financialParams);
             var tauxRS = financialParams.PourcentageRetenu;
 
-            // Calculs centralisés (TejCalculations) : tout en millimes
+            // Calculs conformes à la validation TEJ : MONTANT_TVA = HT × TauxTVA/100, MONTANT_RS = TTC × TauxRS/100
             long montantTTCMillimes = TejCalculations.ToMillimesLong(montantTTC);
             long montantHTMillimes;
             long montantTVAMillimes;
             if (montantAvantRetenue.HasValue)
             {
-                (montantHTMillimes, montantTVAMillimes) = TejCalculations.DeriveHtAndTvaFromTtc(montantTTCMillimes, tauxTVA);
+                (montantHTMillimes, montantTVAMillimes, montantTTCMillimes) = TejCalculations.DeriveHtTvaTtcForTej(montantTTCMillimes, tauxTVA);
             }
             else
             {
@@ -63,6 +63,8 @@ public class TejXmlExportService
                     .Sum(l => l.TotHt);
                 montantHTMillimes = TejCalculations.ToMillimesLong(montantHT);
                 montantTVAMillimes = TejCalculations.ComputeMontantTvaMillimes(montantHTMillimes, tauxTVA);
+                // TTC cohérent = HT + TVA (exigé par TEJ pour que les formules soient respectées)
+                montantTTCMillimes = montantHTMillimes + montantTVAMillimes;
             }
 
             var montantRSMillimes = TejCalculations.ComputeMontantRsMillimes(montantTTCMillimes, (decimal)tauxRS);
