@@ -1,0 +1,7 @@
+C002             STE E G A CAP-BON                  041100000     
+C004             BEN YOUSSEF BEN BRAHIM MRAD        041100000     
+C005             STE CHELLY AUTO                    041100000     
+C007             MR ADEL BEN ACHOUR ATAYA           041100000     
+C008             HABIB BEN HASSEN                   041100000     
+C009             STE DES PIECES DETACHEES           041100000     
+C010             KAMEL BEN MED BEN                  041100000     

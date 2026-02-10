@@ -81,7 +81,7 @@ public class ExportToSageErpEndpoint : ICarterModule
                 var emptyFileBytes = exportService.ExportInvoicesToSageFormat(Enumerable.Empty<InvoiceBaseInfo>(), timbre);
                 return TypedResults.File(
                     emptyFileBytes,
-                    contentType: "text/plain; charset=windows-1252",
+                    contentType: "text/plain; charset=utf-8",
                     fileDownloadName: $"Factures_Sage_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
             }
 
@@ -100,7 +100,7 @@ public class ExportToSageErpEndpoint : ICarterModule
 
             // Step 4: Group and calculate in memory
             var invoices = facturesWithClients
-                .GroupBy(fc => new { fc.Facture.Num, fc.Facture.Date, fc.Facture.IdClient, fc.Client.Nom })
+                .GroupBy(fc => new { fc.Facture.Num, fc.Facture.Date, fc.Facture.IdClient, fc.Client.Nom, fc.Client.Code })
                 .Select(g =>
                 {
                     var factureNum = g.Key.Num;
@@ -112,6 +112,7 @@ public class ExportToSageErpEndpoint : ICarterModule
                         Date = new DateTimeOffset(g.Key.Date, TimeSpan.Zero),
                         CustomerId = g.Key.IdClient,
                         CustomerName = g.Key.Nom,
+                        CustomerCode = g.Key.Code,
                         NetAmount = relatedDeliveryNotes.Sum(bdl => bdl.NetPayer) + timbre,
                         VatAmount = relatedDeliveryNotes.Sum(bdl => bdl.TotTva)
                     };
@@ -122,15 +123,15 @@ public class ExportToSageErpEndpoint : ICarterModule
 
             logger.LogInformation("Exporting {Count} invoices to Sage ERP format", invoices.Count);
 
-            // Generate the Sage ERP file with journal code "VTE" for sales
-            var fileBytes = exportService.ExportInvoicesToSageFormat(invoices, timbre, "VTE");
+            // Generate the Sage ERP file with journal code "VT" for sales
+            var fileBytes = exportService.ExportInvoicesToSageFormat(invoices, timbre, "VT");
 
             // Generate filename with date range
             var filename = $"Factures_Sage_{DateTime.Now:yyyyMMdd_HHmmss}.txt";
 
             return TypedResults.File(
                 fileBytes,
-                contentType: "text/plain; charset=windows-1252",
+                contentType: "text/plain; charset=utf-8",
                 fileDownloadName: filename);
         }
         catch (Exception ex)
