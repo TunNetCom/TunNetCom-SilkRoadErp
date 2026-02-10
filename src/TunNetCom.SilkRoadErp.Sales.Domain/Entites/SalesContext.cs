@@ -134,6 +134,10 @@ public partial class SalesContext : DbContext
 
     public virtual DbSet<RetenueSourceFournisseur> RetenueSourceFournisseur { get; set; }
 
+    public virtual DbSet<TejCertificatSequence> TejCertificatSequence { get; set; }
+
+    public virtual DbSet<TejCertificatFacture> TejCertificatFacture { get; set; }
+
     public virtual DbSet<Notification> Notification { get; set; }
 
     public virtual DbSet<TiersDepenseFonctionnement> TiersDepenseFonctionnement { get; set; }

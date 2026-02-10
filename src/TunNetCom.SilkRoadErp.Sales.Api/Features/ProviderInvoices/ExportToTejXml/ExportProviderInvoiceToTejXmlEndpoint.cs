@@ -23,6 +23,7 @@ public class ExportProviderInvoiceToTejXmlEndpoint : ICarterModule
     public static async Task<Results<FileContentHttpResult, BadRequest<string>, NotFound<string>, StatusCodeHttpResult>> HandleExportToTejXmlAsync(
         [FromServices] SalesContext context,
         [FromServices] TejXmlExportService exportService,
+        [FromServices] INumberGeneratorService numberGeneratorService,
         [FromServices] IMediator mediator,
         [FromServices] ILogger<ExportProviderInvoiceToTejXmlEndpoint> logger,
         [FromServices] IActiveAccountingYearService activeAccountingYearService,
@@ -98,8 +99,29 @@ public class ExportProviderInvoiceToTejXmlEndpoint : ICarterModule
                     $"Le montant avant retenue ({montantAvantRetenue:F2}) doit être supérieur ou égal au seuil ({seuilRetenueSource:F2}) pour pouvoir exporter en XML TEJ.");
             }
 
-            // Référence certificat TEJ : F{num}+AV{numAvoir}+AF{numAvoirFinancier} (ex. F1515+AV2236+AF8547)
-            var refCertifTej = BuildTejRefCertifChezDeclarant(factureFournisseur);
+            // Référence certificat TEJ : attribuée une fois à la facture (par Id), réutilisée à chaque export
+            var factureId = factureFournisseur.Id;
+            var existingAttribution = await context.TejCertificatFacture
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.FactureFournisseurId == factureId, cancellationToken);
+
+            string refCertifTej;
+            if (existingAttribution != null)
+            {
+                refCertifTej = existingAttribution.RefCertif;
+            }
+            else
+            {
+                var year = factureFournisseur.Date.Year;
+                var month = factureFournisseur.Date.Month;
+                refCertifTej = await numberGeneratorService.GetNextTejCertificatRefAsync(year, month, cancellationToken);
+                context.TejCertificatFacture.Add(new TejCertificatFacture
+                {
+                    FactureFournisseurId = factureId,
+                    RefCertif = refCertifTej
+                });
+                await context.SaveChangesAsync(cancellationToken);
+            }
 
             // Get active accounting year ID
             var activeAccountingYearId = await activeAccountingYearService.GetActiveAccountingYearIdAsync(cancellationToken);
@@ -217,26 +239,6 @@ public class ExportProviderInvoiceToTejXmlEndpoint : ICarterModule
             logger.LogError(ex, "Error exporting invoice {InvoiceNumber} to TEJ XML format", invoiceNumber);
             return TypedResults.StatusCode(500);
         }
-    }
-
-    /// <summary>
-    /// Construit la référence certificat chez déclarant pour TEJ : F{numFacture}+AV{numAvoir}+AF{numAvoirFinancier}.
-    /// Exemple : F1515+AV2236+AF8547
-    /// </summary>
-    private static string BuildTejRefCertifChezDeclarant(FactureFournisseur facture)
-    {
-        var parts = new List<string> { "F" + facture.Num };
-        if (facture.FactureAvoirFournisseur?.Count > 0)
-        {
-            foreach (var fav in facture.FactureAvoirFournisseur.OrderBy(f => f.NumFactureAvoirFourSurPage))
-                parts.Add("AV" + fav.NumFactureAvoirFourSurPage);
-        }
-        if (facture.AvoirFinancierFournisseurs?.Count > 0)
-        {
-            foreach (var af in facture.AvoirFinancierFournisseurs.OrderBy(a => a.Num))
-                parts.Add("AF" + af.Num);
-        }
-        return string.Join("+", parts);
     }
 
     /// <summary>
