@@ -17,19 +17,20 @@ public static class TejCalculations
 
     /// <summary>
     /// Calcule le montant TVA en millimes : MontantHT × TauxTVA / 100 (formule CCT).
+    /// La plateforme TEJ valide par troncature (partie entière), pas par arrondi.
     /// </summary>
     public static long ComputeMontantTvaMillimes(long montantHTMillimes, decimal tauxTvaPercent)
     {
-        return (long)Math.Round(montantHTMillimes * (double)tauxTvaPercent / 100, MidpointRounding.AwayFromZero);
+        return (long)(montantHTMillimes * (double)tauxTvaPercent / 100);
     }
 
     /// <summary>
     /// Calcule le montant retenue à la source en millimes : MontantTTC × TauxRS / 100 (formule CCT).
-    /// La plateforme TEJ utilise cette formule ; on l'expose pour cohérence du XML si requis par le schéma.
+    /// La plateforme TEJ valide par troncature (partie entière), pas par arrondi.
     /// </summary>
     public static long ComputeMontantRsMillimes(long montantTTCMillimes, decimal tauxRsPercent)
     {
-        return (long)Math.Round(montantTTCMillimes * (double)tauxRsPercent / 100, MidpointRounding.AwayFromZero);
+        return (long)(montantTTCMillimes * (double)tauxRsPercent / 100);
     }
 
     /// <summary>
