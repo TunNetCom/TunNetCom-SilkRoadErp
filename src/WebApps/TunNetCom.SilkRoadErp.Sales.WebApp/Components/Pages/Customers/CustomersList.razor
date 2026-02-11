@@ -6,12 +6,14 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using Radzen.Blazor
 @using Radzen
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tiers
 @using TunNetCom.DeleteModal
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Sorting
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.Providers
 @inject NavigationManager navigationManager
 @inject IStringLocalizer<SharedResource> Localizer
 @inject ICustomersApiClient customerService
+@inject ITiersApiClient TiersService
 @inject ToastService toastService
 @inject DialogService DialogService
 @inject IJSRuntime JSRuntime
@@ -22,10 +24,17 @@
     <div class="clients-card">
         <div class="clients-header">
             <h3 class="clients-title">@Localizer["Clients"]</h3>
-            <RadzenButton Icon="add" Text="@Localizer["AddClient"]"
-                          ButtonStyle="ButtonStyle.Primary"
-                          Click="CreateCustomer"
-                          Class="btn-primary" />
+            <div style="display: flex; gap: 8px;">
+                <RadzenButton Icon="contacts"
+                              ButtonStyle="ButtonStyle.Light"
+                              Click="@ExportTiersToTxtAsync"
+                              Title="Exporter Tiers (Clients + Fournisseurs)"
+                              AriaLabel="Exporter Tiers" />
+                <RadzenButton Icon="add" Text="@Localizer["AddClient"]"
+                              ButtonStyle="ButtonStyle.Primary"
+                              Click="CreateCustomer"
+                              Class="btn-primary" />
+            </div>
         </div>
 
         <RadzenTextBox Placeholder="@Localizer["Search"]"
@@ -370,6 +379,28 @@
             });
     }
 
+    private async Task ExportTiersToTxtAsync()
+    {
+        try
+        {
+            var fileBytes = await TiersService.ExportTiersToTxtAsync("client", default);
+            var fileName = $"Clients_{DateTime.Now:yyyyMMdd_HHmmss}.txt";
+
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileName, Convert.ToBase64String(fileBytes));
+            
+            ShowNotification(
+                NotificationSeverity.Success,
+                "Succès",
+                "Export Clients réussi");
+        }
+        catch (Exception ex)
+        {
+            ShowNotification(
+                NotificationSeverity.Error,
+                "Erreur",
+                $"Erreur lors de l'export Clients: {ex.Message}");
+        }
+    }
 }
 
 

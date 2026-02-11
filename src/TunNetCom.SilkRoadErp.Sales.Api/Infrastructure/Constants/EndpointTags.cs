@@ -31,6 +31,7 @@ public static class EndpointTags
     public const string FactureDepense = "FactureDepense";
     public const string PaiementTiersDepense = "PaiementTiersDepense";
     public const string Dashboard = "Dashboard";
+    public const string Tiers = "Tiers";
 }
 
 

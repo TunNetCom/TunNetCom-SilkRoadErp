@@ -37,6 +37,7 @@ using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.RetourMarchandiseFourniss
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.TiersDepenseFonctionnement;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.FactureDepense;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PaiementTiersDepense;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tiers;
 
 
 public static class SalesHttpClients
@@ -215,6 +216,10 @@ public static class SalesHttpClients
         _ = AddClient<IPaiementTiersDepenseApiClient, PaiementTiersDepenseApiClient>(paiementTiersDepense =>
         {
             paiementTiersDepense.BaseAddress = new Uri(baseUrl);
+        });
+        _ = AddClient<ITiersApiClient, TiersApiClient>(tiers =>
+        {
+            tiers.BaseAddress = new Uri(baseUrl);
         });
     }
 }
