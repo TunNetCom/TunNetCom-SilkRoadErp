@@ -24,9 +24,6 @@ public class SageErpExportService
     {
         var sb = new StringBuilder();
         
-        // Ligne d'en-tête avec espacement exact
-        sb.AppendLine("Code jDate dN° compte génN° pièce     Numéro facture   N° compte tiers  Libellé écriture                   Montant débit Montant crédit");
-
         var invoiceList = invoices.ToList();
         // Numéro de pièce par mois : M001, M002, ... (ex. mars → 3001, 3002)
         var monthCounters = new Dictionary<(int year, int month), int>();
@@ -59,9 +56,6 @@ public class SageErpExportService
     {
         var sb = new StringBuilder();
         
-        // Ligne d'en-tête avec espacement exact
-        sb.AppendLine("Code jDate dN° compte génN° pièce     Numéro facture   N° compte tiers  Libellé écriture                   Montant débit Montant crédit");
-
         // Lignes de données - 4 lignes par facture
         foreach (var invoice in invoices)
         {
@@ -84,7 +78,7 @@ public class SageErpExportService
     {
         var lines = new List<string>();
         var libelle = "FRE " + invoice.Number + " " + (invoice.CustomerName ?? "");
-        var customerCode = invoice.CustomerCode ?? "";
+        var customerTiersCode = "C" + invoice.CustomerId.ToString();
 
         // Calcul des montants
         var ht = invoice.NetAmount - timbre; // HT = NetAmount - timbre
@@ -133,7 +127,7 @@ public class SageErpExportService
             tiersCode: null,
             amountWithDecimals: true));
 
-        // Ligne 4: TTC en débit (compte 41100000) — N° compte tiers = code client
+        // Ligne 4: TTC en débit (compte 41100000) — N° compte tiers = C + ID
         lines.Add(FormatAccountingLine(
             journalCode,
             invoice.Date,
@@ -144,7 +138,7 @@ public class SageErpExportService
             ttc,
             0,
             CompteTtcClients,
-            tiersCode: customerCode,
+            tiersCode: customerTiersCode,
             amountWithDecimals: true));
 
         return lines;
@@ -156,6 +150,7 @@ public class SageErpExportService
     private List<string> FormatProviderInvoiceAccountingLines(ProviderInvoiceBaseInfo invoice, string journalCode)
     {
         var lines = new List<string>();
+        var providerTiersCode = "F" + invoice.ProviderId.ToString();
         
         // Calcul des montants
         var ht = invoice.NetAmount;
@@ -185,18 +180,7 @@ public class SageErpExportService
             tva,
             0));
 
-        // Ligne 3: TTC en crédit
-        lines.Add(FormatAccountingLine(
-            journalCode,
-            invoice.Date,
-            invoice.Number,
-            invoice.Number,
-            invoice.ProviderId,
-            invoice.ProviderName ?? "",
-            0,
-            ttc));
-
-        // Ligne 4: Timbre (0) en débit
+        // Ligne 3: Timbre (0) en débit
         lines.Add(FormatAccountingLine(
             journalCode,
             invoice.Date,
@@ -206,6 +190,18 @@ public class SageErpExportService
             invoice.ProviderName ?? "",
             timbre,
             0));
+
+        // Ligne 4: TTC en crédit — N° compte tiers = F + ID
+        lines.Add(FormatAccountingLine(
+            journalCode,
+            invoice.Date,
+            invoice.Number,
+            invoice.Number,
+            invoice.ProviderId,
+            invoice.ProviderName ?? "",
+            0,
+            ttc,
+            tiersCode: providerTiersCode));
 
         return lines;
     }
@@ -250,11 +246,10 @@ public class SageErpExportService
         var numFacture = invoiceNumber.ToString().PadRight(10).Substring(0, 10);
         sb.Append(numFacture);
 
-        // N° compte tiers: 16 caractères (vide sauf ligne 4 = code client pour ventes)
+        // N° compte tiers: 16 caractères (vide sauf ligne 4 = code client/fournisseur)
         var compteTiers = tiersCode != null
-            ? (tiersCode ?? "").PadRight(16).Substring(0, 16)
-            : accountId.ToString().PadLeft(16, '0');
-        if (compteTiers.Length > 16) compteTiers = compteTiers.Substring(0, 16);
+            ? (tiersCode ?? "").PadLeft(16).Substring(0, 16)
+            : "".PadLeft(16);
         sb.Append(compteTiers);
 
         // Libellé écriture: 40 caractères
