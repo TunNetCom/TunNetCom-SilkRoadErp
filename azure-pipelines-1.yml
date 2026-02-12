@@ -10,7 +10,7 @@ pool:
     - Agent.Name -equals ubuntu-self-hosted-mourouj
 
 variables:
-- group: silkroad-prod   # Contains Connection_String_Mourouj
+- group: silkroad-mourouj   # Contains Connection_String_Mourouj
 - name: kubeNamespace
   value: silkroad-prod
 - name: deploymentApiName
