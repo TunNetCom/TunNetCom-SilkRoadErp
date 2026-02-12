@@ -750,6 +750,21 @@
   <data name="Select_Bon_Livraison" xml:space="preserve">
     <value>اختر إيصال تسليم</value>
   </data>
+  <data name="Rattacher_A" xml:space="preserve">
+    <value>ربط بـ</value>
+  </data>
+  <data name="Rattacher_Facture" xml:space="preserve">
+    <value>ربط بالفاتورة</value>
+  </data>
+  <data name="Rattacher_BL" xml:space="preserve">
+    <value>ربط بإيصال التسليم</value>
+  </data>
+  <data name="Paiements" xml:space="preserve">
+    <value>المدفوعات</value>
+  </data>
+  <data name="Reste_A_Payer" xml:space="preserve">
+    <value>المبلغ المستحق</value>
+  </data>
   <data name="Commentaire_Optionnel" xml:space="preserve">
     <value>تعليق (اختياري)</value>
   </data>

@@ -29,7 +29,14 @@
 @inject DialogService DialogService
 @inject IDecimalFormatService DecimalFormatService
 
+<ErrorBoundary @ref="_errorBoundary">
+    <ChildContent>
 <RadzenStack Gap="1.5rem">
+    @{
+        // #region agent log
+        try { DebugLog.Write("CreatePaiementFromBlDialog:render", "Rendering", new { d = DeliveryNoteId, c = CustomerId, i = InvoiceId }, "H3"); } catch { }
+        // #endregion
+    }
     <RadzenFormField Text="@Localizer["Numero"]" class="rz-col-12 rz-md-6">
         <RadzenTextBox @bind-Value="paiement.NumeroTransactionBancaire" Placeholder="@Localizer["Numero_Transaction_Bancaire"]" />
         <RadzenFormFieldDescription>@Localizer["Numero_Transaction_Bancaire_Description"]</RadzenFormFieldDescription>
@@ -110,35 +117,80 @@
         }
     }
 
-    <RadzenFormField Text="@Localizer["Facture_Optionnel"]" class="rz-col-12 rz-md-6">
-        <RadzenListBox AllowMultipleSelection="true"
-                       IsLoading="@isLoadingInvoices"
-                       @bind-Value="@selectedFactureIds"
-                       LoadData="@LoadInvoices"
-                       AllowFiltering="true"
-                       Style="width: 100%;"
-                       Data="@_filteredInvoices"
-                       TextProperty="@nameof(InvoiceResponse.Number)"
-                       ValueProperty="@nameof(InvoiceResponse.Id)"
-                       Placeholder="@Localizer["Select_Facture"]"
-                       Disabled="@(paiement.ClientId <= 0)">
-        </RadzenListBox>
-    </RadzenFormField>
+    @if (HasBothBlAndInvoice)
+    {
+        <RadzenFormField Text="@Localizer["Rattacher_A"]" class="rz-col-12">
+            <RadzenRadioButtonList @bind-Value="attachmentChoice"
+                                  Data="@attachmentOptions"
+                                  TextProperty="Text"
+                                  ValueProperty="Value"
+                                  Orientation="Radzen.Orientation.Horizontal" />
+        </RadzenFormField>
+    }
 
-    <RadzenFormField Text="@Localizer["Bon_Livraison_Optionnel"]" class="rz-col-12 rz-md-6">
-        <RadzenListBox AllowMultipleSelection="true"
-                       IsLoading="@isLoadingDeliveryNotes"
-                       @bind-Value="@selectedBonDeLivraisonIds"
-                       LoadData="@LoadDeliveryNotes"
-                       AllowFiltering="true"
-                       Style="width: 100%;"
-                       Data="@_filteredDeliveryNotes"
-                       TextProperty="@nameof(GetDeliveryNoteBaseInfos.Number)"
-                       ValueProperty="@nameof(GetDeliveryNoteBaseInfos.Id)"
-                       Placeholder="@Localizer["Select_Bon_Livraison"]"
-                       Disabled="@(paiement.ClientId <= 0)">
-        </RadzenListBox>
-    </RadzenFormField>
+    @if (ShowFactureList)
+    {
+        <RadzenFormField Text="@Localizer["Facture_Optionnel"]" class="rz-col-12 rz-md-6">
+            <div class="rz-form-control" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--rz-base-300); border-radius: var(--rz-border-radius); padding: 0.5rem;">
+                @if (isLoadingInvoices)
+                {
+                    <span>@Localizer["Chargement"]...</span>
+                }
+                else if (paiement.ClientId <= 0)
+                {
+                    <span class="rz-color-secondary">@Localizer["Select_Client"]</span>
+                }
+                else if (_filteredInvoices.Count == 0)
+                {
+                    <span class="rz-color-secondary">@Localizer["no_records_to_display"]</span>
+                }
+                else
+                {
+                    @foreach (var inv in _filteredInvoices)
+                    {
+                        <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0;">
+                            <RadzenCheckBox TValue="bool"
+                                            Value="@selectedFactureIds.Contains(inv.Id)"
+                                            Change="@(args => ToggleFactureSelection(inv.Id, args))" />
+                            <span>@inv.Number</span>
+                        </div>
+                    }
+                }
+            </div>
+        </RadzenFormField>
+    }
+
+    @if (ShowBlList)
+    {
+        <RadzenFormField Text="@Localizer["Bon_Livraison_Optionnel"]" class="rz-col-12 rz-md-6">
+            <div class="rz-form-control" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--rz-base-300); border-radius: var(--rz-border-radius); padding: 0.5rem;">
+                @if (isLoadingDeliveryNotes)
+                {
+                    <span>@Localizer["Chargement"]...</span>
+                }
+                else if (paiement.ClientId <= 0)
+                {
+                    <span class="rz-color-secondary">@Localizer["Select_Client"]</span>
+                }
+                else if (_filteredDeliveryNotes.Count == 0)
+                {
+                    <span class="rz-color-secondary">@Localizer["no_records_to_display"]</span>
+                }
+                else
+                {
+                    @foreach (var bl in _filteredDeliveryNotes)
+                    {
+                        <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0;">
+                            <RadzenCheckBox TValue="bool"
+                                            Value="@selectedBonDeLivraisonIds.Contains(bl.Id)"
+                                            Change="@(args => ToggleBonDeLivraisonSelection(bl.Id, args))" />
+                            <span>@bl.Number</span>
+                        </div>
+                    }
+                }
+            </div>
+        </RadzenFormField>
+    }
 
     <RadzenFormField Text="@Localizer["Commentaire"]" class="rz-col-12">
         <RadzenTextArea @bind-Value="paiement.Commentaire" Placeholder="@Localizer["Commentaire_Optionnel"]" Rows="3" Style="width: 100%;" />
@@ -146,18 +198,59 @@
 
     <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" JustifyContent="Radzen.JustifyContent.End" class="rz-col-12">
         <RadzenButton Text="@Localizer["Annuler"]" ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Outlined" Click="@Cancel" />
-        <RadzenButton Text="@Localizer["Creer"]" 
+        <RadzenButton Text="@(IsEditMode ? Localizer["Modifier"] : Localizer["Creer"])" 
                       ButtonStyle="ButtonStyle.Primary" 
                       Click="@SavePaiement"
                       IsBusy="@isSaving" />
     </RadzenStack>
 </RadzenStack>
+    </ChildContent>
+    <ErrorContent Context="ex">
+        @{ LogRenderError(ex); }
+        <p>@ex.Message</p>
+    </ErrorContent>
+</ErrorBoundary>
 
 @code {
+    private const string AttachmentFacture = "Facture";
+    private const string AttachmentBl = "Bl";
+
     [Parameter] public int DeliveryNoteId { get; set; }
     [Parameter] public int CustomerId { get; set; }
     [Parameter] public int? InvoiceId { get; set; }
-    
+    [Parameter] public decimal? SuggestedAmount { get; set; }
+    [Parameter] public int? PaiementId { get; set; }
+
+    private bool IsEditMode => PaiementId.HasValue && PaiementId.Value > 0;
+    private bool HasBothBlAndInvoice => DeliveryNoteId > 0 && InvoiceId.HasValue && InvoiceId.Value > 0;
+    private bool ShowFactureList => HasBothBlAndInvoice ? attachmentChoice == AttachmentFacture : (InvoiceId.HasValue && InvoiceId.Value > 0);
+    private bool ShowBlList => HasBothBlAndInvoice ? attachmentChoice == AttachmentBl : DeliveryNoteId > 0;
+
+    private string _attachmentChoice = AttachmentBl;
+    private string attachmentChoice
+    {
+        get => _attachmentChoice;
+        set
+        {
+            if (_attachmentChoice != value)
+            {
+                _attachmentChoice = value;
+                ApplyAttachmentChoice();
+            }
+        }
+    }
+    private List<AttachmentOption> attachmentOptions => new()
+    {
+        new AttachmentOption { Text = Localizer["Rattacher_Facture"], Value = AttachmentFacture },
+        new AttachmentOption { Text = Localizer["Rattacher_BL"], Value = AttachmentBl }
+    };
+
+    private class AttachmentOption
+    {
+        public string Text { get; set; } = string.Empty;
+        public string Value { get; set; } = string.Empty;
+    }
+
     private bool isLoadingCustomers = false;
     private bool isLoadingInvoices = false;
     private bool isLoadingDeliveryNotes = false;
@@ -170,6 +263,14 @@
     private List<GetDeliveryNoteBaseInfos> _filteredDeliveryNotes = new();
     private List<BanqueResponse> banques = new();
     private CancellationTokenSource cancellationTokenSource = new();
+    private ErrorBoundary? _errorBoundary;
+
+    private void LogRenderError(Exception ex)
+    {
+        // #region agent log
+        DebugLog.Write("CreatePaiementFromBlDialog:ErrorBoundary", "Render crash caught", new { message = ex.Message, stackTrace = ex.StackTrace, toString = ex.ToString() }, "H3");
+        // #endregion
+    }
     private string amountFormat = AmountHelper.FORMAT_N3;
     private List<int> selectedFactureIds = new();
     private List<int> selectedBonDeLivraisonIds = new();
@@ -182,8 +283,20 @@
         public string Value { get; set; } = string.Empty;
     }
 
+    protected override void OnParametersSet()
+    {
+        // #region agent log
+        DebugLog.Write("CreatePaiementFromBlDialog.OnParametersSet", "Params received", new { DeliveryNoteId, CustomerId, InvoiceId, SuggestedAmount }, "H5");
+        // #endregion
+    }
+
     protected override async Task OnInitializedAsync()
     {
+        try
+        {
+        // #region agent log
+        DebugLog.Write("CreatePaiementFromBlDialog.OnInitializedAsync:entry", "Enter", new { DeliveryNoteId, CustomerId, InvoiceId, SuggestedAmount }, "H2");
+        // #endregion
         amountFormat = await DecimalFormatService.GetDecimalFormatAsync();
         methodePaiementOptions = new()
         {
@@ -192,26 +305,96 @@
             new MethodePaiementOption { Text = Localizer["Traite"], Value = MethodePaiementConsts.Traite }
         };
         
-        // Pré-remplir les valeurs
-        paiement.ClientId = CustomerId;
-        if (DeliveryNoteId > 0)
+        if (IsEditMode)
         {
-            selectedBonDeLivraisonIds = new List<int> { DeliveryNoteId };
+            var loadResult = await PaiementClientService.GetPaiementClientAsync(PaiementId!.Value, cancellationTokenSource.Token);
+            if (loadResult.IsFailed)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["Erreur"],
+                    Detail = loadResult.Errors.FirstOrDefault()?.Message ?? Localizer["Erreur_Chargement_Paiements"]?.ToString() ?? "Erreur chargement paiement"
+                });
+                return;
+            }
+            var existing = loadResult.Value;
+            paiement.ClientId = existing.ClientId;
+            paiement.NumeroTransactionBancaire = existing.NumeroTransactionBancaire;
+            paiement.Montant = existing.Montant;
+            paiement.DatePaiement = existing.DatePaiement;
+            paiement.MethodePaiement = existing.MethodePaiement;
+            paiement.NumeroChequeTraite = existing.NumeroChequeTraite;
+            paiement.BanqueId = existing.BanqueId;
+            paiement.DateEcheance = existing.DateEcheance;
+            paiement.Commentaire = existing.Commentaire;
+            paiement.AccountingYearId = existing.AccountingYearId;
+            selectedMethodePaiement = existing.MethodePaiement;
+            selectedFactureIds = existing.FactureIds?.ToList() ?? new List<int>();
+            selectedBonDeLivraisonIds = existing.BonDeLivraisonIds?.ToList() ?? new List<int>();
+            if (selectedFactureIds.Any())
+                _attachmentChoice = AttachmentFacture;
+            else if (selectedBonDeLivraisonIds.Any())
+                _attachmentChoice = AttachmentBl;
         }
-        if (InvoiceId.HasValue && InvoiceId.Value > 0)
+        else
         {
-            selectedFactureIds = new List<int> { InvoiceId.Value };
+            paiement.ClientId = CustomerId;
+            if (HasBothBlAndInvoice)
+            {
+                if (attachmentChoice == AttachmentBl)
+                {
+                    selectedBonDeLivraisonIds = new List<int> { DeliveryNoteId };
+                    selectedFactureIds = new List<int>();
+                }
+                else
+                {
+                    selectedFactureIds = new List<int> { InvoiceId!.Value };
+                    selectedBonDeLivraisonIds = new List<int>();
+                }
+            }
+            else
+            {
+                if (DeliveryNoteId > 0)
+                    selectedBonDeLivraisonIds = new List<int> { DeliveryNoteId };
+                if (InvoiceId.HasValue && InvoiceId.Value > 0)
+                    selectedFactureIds = new List<int> { InvoiceId.Value };
+            }
+            paiement.DatePaiement = DateTime.Now;
+            if (SuggestedAmount.HasValue && SuggestedAmount.Value > 0)
+                paiement.Montant = SuggestedAmount.Value;
+            selectedMethodePaiement = MethodePaiementConsts.Espece;
+            paiement.MethodePaiement = MethodePaiementConsts.Espece;
         }
-        paiement.DatePaiement = DateTime.Now;
         
         await LoadActiveAccountingYearAsync();
+        // #region agent log
+        DebugLog.Write("CreatePaiementFromBlDialog:after LoadActiveAccountingYear", "done", null, "H2");
+        // #endregion
         await LoadBanquesAsync();
+        // #region agent log
+        DebugLog.Write("CreatePaiementFromBlDialog:after LoadBanques", "done", new { banquesCount = banques.Count }, "H2");
+        // #endregion
         await LoadCustomers(new LoadDataArgs { Filter = string.Empty });
-        
-        if (CustomerId > 0)
+        // #region agent log
+        DebugLog.Write("CreatePaiementFromBlDialog:after LoadCustomers", "done", new { customersCount = _filteredCustomers.Count }, "H2");
+        // #endregion
+        var clientIdToLoad = IsEditMode ? paiement.ClientId : CustomerId;
+        if (clientIdToLoad > 0)
         {
-            await LoadInvoicesForClient(CustomerId);
-            await LoadDeliveryNotesForClient(CustomerId);
+            await LoadInvoicesForClient(clientIdToLoad);
+            await LoadDeliveryNotesForClient(clientIdToLoad);
+        }
+        // #region agent log
+        DebugLog.Write("CreatePaiementFromBlDialog.OnInitializedAsync:exit", "Success", new { HasBothBlAndInvoice, ShowFactureList, ShowBlList }, "H2");
+        // #endregion
+        }
+        catch (Exception ex)
+        {
+            // #region agent log
+            DebugLog.Write("CreatePaiementFromBlDialog.OnInitializedAsync:exception", "Crash", new { exception = ex.ToString(), message = ex.Message }, "H2");
+            // #endregion
+            throw;
         }
     }
 
@@ -387,6 +570,50 @@
         }
     }
 
+    void ToggleFactureSelection(int invoiceId, bool? selected)
+    {
+        if (selected == true)
+        {
+            if (!selectedFactureIds.Contains(invoiceId))
+            {
+                selectedFactureIds = new List<int>(selectedFactureIds) { invoiceId };
+            }
+        }
+        else
+        {
+            selectedFactureIds = selectedFactureIds.Where(id => id != invoiceId).ToList();
+        }
+    }
+
+    void ToggleBonDeLivraisonSelection(int blId, bool? selected)
+    {
+        if (selected == true)
+        {
+            if (!selectedBonDeLivraisonIds.Contains(blId))
+            {
+                selectedBonDeLivraisonIds = new List<int>(selectedBonDeLivraisonIds) { blId };
+            }
+        }
+        else
+        {
+            selectedBonDeLivraisonIds = selectedBonDeLivraisonIds.Where(id => id != blId).ToList();
+        }
+    }
+
+    void ApplyAttachmentChoice()
+    {
+        // #region agent log
+        DebugLog.Write("CreatePaiementFromBlDialog.ApplyAttachmentChoice", "Called", new { _attachmentChoice, HasBothBlAndInvoice, InvoiceId }, "H4");
+        // #endregion
+        if (!HasBothBlAndInvoice) return;
+        selectedFactureIds = new List<int>();
+        selectedBonDeLivraisonIds = new List<int>();
+        if (_attachmentChoice == AttachmentFacture)
+            selectedFactureIds = new List<int> { InvoiceId!.Value };
+        else
+            selectedBonDeLivraisonIds = new List<int> { DeliveryNoteId };
+    }
+
     void OnMethodePaiementChanged(object? value)
     {
         if (value is string methode)
@@ -462,16 +689,49 @@
         isSaving = true;
         try
         {
-            var result = await PaiementClientService.CreatePaiementClientAsync(paiement, cancellationTokenSource.Token);
-            if (result.IsT0)
+            if (IsEditMode)
             {
-                ToastService.Notify(new(ToastType.Success, Localizer["Paiement_Cree"]));
-                DialogService.Close(true);
+                var updateRequest = new UpdatePaiementClientRequest
+                {
+                    NumeroTransactionBancaire = paiement.NumeroTransactionBancaire,
+                    ClientId = paiement.ClientId,
+                    AccountingYearId = paiement.AccountingYearId,
+                    Montant = paiement.Montant,
+                    DatePaiement = paiement.DatePaiement,
+                    MethodePaiement = paiement.MethodePaiement,
+                    FactureIds = selectedFactureIds.Count > 0 ? selectedFactureIds : null,
+                    BonDeLivraisonIds = selectedBonDeLivraisonIds.Count > 0 ? selectedBonDeLivraisonIds : null,
+                    NumeroChequeTraite = paiement.NumeroChequeTraite,
+                    BanqueId = paiement.BanqueId,
+                    DateEcheance = paiement.DateEcheance,
+                    Commentaire = paiement.Commentaire
+                };
+                var updateResult = await PaiementClientService.UpdatePaiementClientAsync(PaiementId!.Value, updateRequest, cancellationTokenSource.Token);
+                if (updateResult.IsSuccess)
+                {
+                    ToastService.Notify(new(ToastType.Success, Localizer["Paiement_Modifie"]));
+                    DialogService.Close(true);
+                }
+                else
+                {
+                    ToastService.Notify(new(ToastType.Danger, $"{Localizer["Erreur"]}: {updateResult.Errors.FirstOrDefault()?.Message}"));
+                }
             }
             else
             {
-                var badRequest = result.AsT1;
-                ToastService.Notify(new(ToastType.Danger, $"Erreur: {badRequest.Detail}"));
+                if (activeAccountingYear != null)
+                    paiement.AccountingYearId = activeAccountingYear.Id;
+                var result = await PaiementClientService.CreatePaiementClientAsync(paiement, cancellationTokenSource.Token);
+                if (result.IsT0)
+                {
+                    ToastService.Notify(new(ToastType.Success, Localizer["Paiement_Cree"]));
+                    DialogService.Close(true);
+                }
+                else
+                {
+                    var badRequest = result.AsT1;
+                    ToastService.Notify(new(ToastType.Danger, $"Erreur: {badRequest.Detail}"));
+                }
             }
         }
         catch (Exception ex)

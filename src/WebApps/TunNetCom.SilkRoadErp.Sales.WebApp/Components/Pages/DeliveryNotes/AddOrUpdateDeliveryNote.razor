@@ -37,6 +37,7 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.Security.Claims
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PaiementClient
+@using TunNetCom.SilkRoadErp.Sales.Contracts.PaiementClient
 @inject ITagsApiClient TagsService
 @inject IInstallationTechnicianApiClient TechnicianService
 @inject IDeliveryCarApiClient DeliveryCarService
@@ -440,7 +441,67 @@ else
                     DocumentId="@blNumber"
                     SaveOnChange="false"
                     IsReadOnly="@isReadOnly" />
-        
+
+        @if (deliveryNoteId.HasValue && selectedCustomerId.HasValue)
+        {
+            <RadzenCard Style="margin-top: 1rem;">
+                <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" JustifyContent="Radzen.JustifyContent.SpaceBetween" AlignItems="Radzen.AlignItems.Center">
+                        <RadzenText TextStyle="TextStyle.H6">@Localizer["Paiements"]</RadzenText>
+                        <RadzenButton Icon="payment" 
+                                      Text="@Localizer["Ajouter_Paiement"]" 
+                                      Click="@OpenCreatePaiementFromBlDialog" 
+                                      ButtonStyle="ButtonStyle.Info" 
+                                      Size="ButtonSize.Small" />
+                    </RadzenStack>
+                    @if (isLoadingPaiements)
+                    {
+                        <RadzenProgressBarCircular Mode="Radzen.ProgressBarMode.Indeterminate" ShowValue="false" />
+                    }
+                    else if (paiementsLinkedToBl.Any())
+                    {
+                        <RadzenDataGrid Data="@paiementsLinkedToBl" TItem="PaiementClientResponse" Density="Density.Compact" AllowPaging="false">
+                            <Columns>
+                                <RadzenDataGridColumn Property="DatePaiement" Title="@Localizer["Date_Paiement"]" Width="120px">
+                                    <Template Context="p">@p.DatePaiement.ToString("dd/MM/yyyy")</Template>
+                                </RadzenDataGridColumn>
+                                <RadzenDataGridColumn Property="Montant" Title="@Localizer["Montant"]" Width="120px">
+                                    <Template Context="p">@p.Montant.FormatAmount() TND</Template>
+                                </RadzenDataGridColumn>
+                                <RadzenDataGridColumn Property="MethodePaiement" Title="@Localizer["Methode_Paiement"]" Width="100px" />
+                                <RadzenDataGridColumn Property="NumeroChequeTraite" Title="@Localizer["Numero_Cheque_Traite"]" Width="120px">
+                                    <Template Context="p">@(p.NumeroChequeTraite ?? "-")</Template>
+                                </RadzenDataGridColumn>
+                                <RadzenDataGridColumn TItem="PaiementClientResponse" Filterable="false" Sortable="false" Width="120px" TextAlign="TextAlign.Center">
+                                    <Template Context="p">
+                                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Success" Variant="Variant.Outlined" Size="ButtonSize.Small"
+                                                      Click="@(() => OpenEditPaiementFromBlDialog(p))"
+                                                      Title="@Localizer["Modifier"]"
+                                                      Disabled="@isReadOnly" />
+                                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Outlined" Size="ButtonSize.Small"
+                                                      Click="@(() => ConfirmDeletePaiement(p.Id))"
+                                                      Title="@Localizer["Supprimer"]"
+                                                      Disabled="@isReadOnly" />
+                                    </Template>
+                                </RadzenDataGridColumn>
+                            </Columns>
+                        </RadzenDataGrid>
+                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem" Style="margin-top: 0.5rem;">
+                            <RadzenText TextStyle="TextStyle.Body1"><strong>@Localizer["Total_Paiements"]:</strong> @totalPaiementsLinked.FormatAmount() TND</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1"><strong>@Localizer["Reste_A_Payer"]:</strong> @resteAPayer.FormatAmount() TND</RadzenText>
+                        </RadzenStack>
+                    }
+                    else
+                    {
+                        <RadzenText TextStyle="TextStyle.Body2">@Localizer["Aucun_Paiement"]</RadzenText>
+                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="2rem">
+                            <RadzenText TextStyle="TextStyle.Body1"><strong>@Localizer["Reste_A_Payer"]:</strong> @totalTtc.FormatAmount() TND</RadzenText>
+                        </RadzenStack>
+                    }
+                </RadzenStack>
+            </RadzenCard>
+        }
+
         <!-- Print History Button -->
         <RadzenCard Style="margin-top: 1rem;">
             <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem">
@@ -483,7 +544,11 @@ else
     private int documentStatut = 0; // 0 = Brouillon, 1 = Validé
     private bool isReadOnly = false; // Mode lecture seule si validé
     private int? deliveryNoteId; // Id du BL pour l'audit log
-    
+    private List<PaiementClientResponse> paiementsLinkedToBl = new();
+    private bool isLoadingPaiements = false;
+    private decimal totalPaiementsLinked => paiementsLinkedToBl.Sum(p => p.Montant);
+    private decimal resteAPayer => Math.Max(0, totalTtc - totalPaiementsLinked);
+
     private void UpdateReadOnlyState()
     {
         isReadOnly = documentStatut == 1;
@@ -909,6 +974,8 @@ else
                     totalHt = deliveryNote.TotalExcludingTax;
                     totalVat = deliveryNote.TotalVat;
                     totalTtc = deliveryNote.TotalAmount;
+
+                    await LoadPaiementsLinkedToBlOrFactureAsync();
                 }
                 
                 // Forcer la mise à jour de l'interface après avoir récupéré le statut
@@ -1955,6 +2022,11 @@ else
 
     private async Task OpenCreatePaiementFromBlDialog()
     {
+        try
+        {
+        // #region agent log
+        DebugLog.Write("AddOrUpdateDeliveryNote.OpenCreatePaiementFromBlDialog:entry", "Enter", new { deliveryNoteId = deliveryNoteId, selectedCustomerId = selectedCustomerId, totalTtc = totalTtc }, "H1");
+        // #endregion
         if (!deliveryNoteId.HasValue || !selectedCustomerId.HasValue)
         {
             NotificationService.Notify(new NotificationMessage
@@ -1971,20 +2043,30 @@ else
         // Si le BL a une facture associée, récupérer son ID
         if (selectedInvoiceId.HasValue)
         {
+            // #region agent log
+            DebugLog.Write("AddOrUpdateDeliveryNote:before GetInvoiceId", "Calling GetInvoiceIdByNumberAsync", new { selectedInvoiceId = selectedInvoiceId.Value }, "H1");
+            // #endregion
             var invoiceIdResult = await invoicesApiClient.GetInvoiceIdByNumberAsync(selectedInvoiceId.Value, _cancellationTokenSource.Token);
             if (invoiceIdResult.IsSuccess)
             {
                 invoiceId = invoiceIdResult.Value;
             }
+            // #region agent log
+            DebugLog.Write("AddOrUpdateDeliveryNote:after GetInvoiceId", "Result", new { invoiceId = invoiceId, isSuccess = invoiceIdResult.IsSuccess }, "H1");
+            // #endregion
         }
         
+        // #region agent log
+        DebugLog.Write("AddOrUpdateDeliveryNote:before OpenAsync", "Opening dialog", new { deliveryNoteId = deliveryNoteId!.Value, customerId = selectedCustomerId!.Value, invoiceId, suggestedAmount = totalTtc }, "H1");
+        // #endregion
         var result = await DialogService.OpenAsync<CreatePaiementFromBlDialog>(
             "Nouveau Paiement",
             new Dictionary<string, object>
             {
                 { "DeliveryNoteId", deliveryNoteId.Value },
                 { "CustomerId", selectedCustomerId.Value },
-                { "InvoiceId", invoiceId }
+                { "InvoiceId", invoiceId },
+                { "SuggestedAmount", totalTtc }
             },
             new DialogOptions
             {
@@ -1994,14 +2076,138 @@ else
                 Draggable = true
             });
         
+        // #region agent log
+        DebugLog.Write("AddOrUpdateDeliveryNote:after OpenAsync", "Dialog closed", new { result = result?.ToString() }, "H1");
+        // #endregion
         if (result == true)
         {
+            await LoadPaiementsLinkedToBlOrFactureAsync();
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Success,
                 Summary = Localizer["Success"],
                 Detail = "Paiement créé avec succès"
             });
+        }
+        }
+        catch (Exception ex)
+        {
+            // #region agent log
+            DebugLog.Write("AddOrUpdateDeliveryNote:exception", "Crash in OpenCreatePaiementFromBlDialog", new { exception = ex.ToString(), message = ex.Message, stackTrace = ex.StackTrace }, "H1");
+            // #endregion
+            throw;
+        }
+    }
+
+    private async Task OpenEditPaiementFromBlDialog(PaiementClientResponse paiement)
+    {
+        if (!deliveryNoteId.HasValue || !selectedCustomerId.HasValue)
+            return;
+
+        int? invoiceId = null;
+        if (selectedInvoiceId.HasValue)
+        {
+            var invoiceIdResult = await invoicesApiClient.GetInvoiceIdByNumberAsync(selectedInvoiceId.Value, _cancellationTokenSource.Token);
+            if (invoiceIdResult.IsSuccess)
+                invoiceId = invoiceIdResult.Value;
+        }
+
+        var result = await DialogService.OpenAsync<CreatePaiementFromBlDialog>(
+            Localizer["Modifier_Paiement"],
+            new Dictionary<string, object>
+            {
+                { "DeliveryNoteId", deliveryNoteId.Value },
+                { "CustomerId", selectedCustomerId.Value },
+                { "InvoiceId", invoiceId },
+                { "SuggestedAmount", totalTtc },
+                { "PaiementId", paiement.Id }
+            },
+            new DialogOptions
+            {
+                Width = "800px",
+                Height = "90%",
+                Resizable = true,
+                Draggable = true
+            });
+
+        if (result == true)
+        {
+            await LoadPaiementsLinkedToBlOrFactureAsync();
+            toastService.Notify(new(ToastType.Success, Localizer["Paiement_Modifie"]));
+        }
+    }
+
+    private async Task ConfirmDeletePaiement(int paiementId)
+    {
+        var confirmed = await DialogService.Confirm(
+            Localizer["Confirmation_Suppression"],
+            Localizer["Confirmation_Suppression_Titre"],
+            new ConfirmOptions { OkButtonText = Localizer["Oui"], CancelButtonText = Localizer["Non"] });
+
+        if (confirmed == true)
+        {
+            var result = await PaiementClientService.DeletePaiementClientAsync(paiementId, _cancellationTokenSource.Token);
+            if (result.IsSuccess)
+            {
+                toastService.Notify(new(ToastType.Success, Localizer["Paiement_Supprime"]));
+                await LoadPaiementsLinkedToBlOrFactureAsync();
+            }
+            else
+            {
+                toastService.Notify(new(ToastType.Danger, $"{Localizer["Erreur_Suppression"]}: {result.Errors.FirstOrDefault()?.Message}"));
+            }
+        }
+    }
+
+    private async Task LoadPaiementsLinkedToBlOrFactureAsync()
+    {
+        if (!deliveryNoteId.HasValue) return;
+
+        isLoadingPaiements = true;
+        StateHasChanged();
+        try
+        {
+            var allPaiements = new List<PaiementClientResponse>();
+            var seenIds = new HashSet<int>();
+
+            var blResult = await PaiementClientService.GetPaiementsClientAsync(
+                null, null, deliveryNoteId.Value, null,
+                null, null, null, null, null, null, null,
+                1, 100, _cancellationTokenSource.Token);
+            foreach (var p in blResult.Items ?? Enumerable.Empty<PaiementClientResponse>())
+            {
+                if (seenIds.Add(p.Id))
+                    allPaiements.Add(p);
+            }
+
+            if (selectedInvoiceId.HasValue)
+            {
+                var invoiceIdResult = await invoicesApiClient.GetInvoiceIdByNumberAsync(selectedInvoiceId.Value, _cancellationTokenSource.Token);
+                if (invoiceIdResult.IsSuccess && invoiceIdResult.Value > 0)
+                {
+                    var factureResult = await PaiementClientService.GetPaiementsClientAsync(
+                        null, null, null, invoiceIdResult.Value,
+                        null, null, null, null, null, null, null,
+                        1, 100, _cancellationTokenSource.Token);
+                    foreach (var p in factureResult.Items ?? Enumerable.Empty<PaiementClientResponse>())
+                    {
+                        if (seenIds.Add(p.Id))
+                            allPaiements.Add(p);
+                    }
+                }
+            }
+
+            paiementsLinkedToBl = allPaiements.OrderByDescending(p => p.DatePaiement).ToList();
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to load payments linked to BL");
+            paiementsLinkedToBl = new List<PaiementClientResponse>();
+        }
+        finally
+        {
+            isLoadingPaiements = false;
+            StateHasChanged();
         }
     }
 

@@ -64,7 +64,7 @@ public class GetRecapVentesAchatsQueryHandler(IMediator mediator, ILogger<GetRec
         response.AchatsNets.TotalTTC += response.AchatsFacturesDepensesTotal;
 
         // 8) Paiements clients
-        var paiementsClientResult = await mediator.Send(new GetPaiementsClientQuery(null, null, startDate, endDateInclusive, null, null, null, null, null, 1, 10000), cancellationToken);
+        var paiementsClientResult = await mediator.Send(new GetPaiementsClientQuery(null, null, null, null, startDate, endDateInclusive, null, null, null, null, null, 1, 10000), cancellationToken);
         response.PaiementsClientsTotal = paiementsClientResult.Value?.Items?.Sum(p => p.Montant) ?? 0;
 
         // 9) Paiements fournisseurs

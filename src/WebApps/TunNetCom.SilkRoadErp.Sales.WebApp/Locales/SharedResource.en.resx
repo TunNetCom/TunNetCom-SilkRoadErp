@@ -792,6 +792,21 @@
   <data name="Select_Bon_Livraison" xml:space="preserve">
     <value>Select Delivery Note</value>
   </data>
+  <data name="Rattacher_A" xml:space="preserve">
+    <value>Attach to</value>
+  </data>
+  <data name="Rattacher_Facture" xml:space="preserve">
+    <value>Attach to invoice</value>
+  </data>
+  <data name="Rattacher_BL" xml:space="preserve">
+    <value>Attach to delivery note</value>
+  </data>
+  <data name="Paiements" xml:space="preserve">
+    <value>Payments</value>
+  </data>
+  <data name="Reste_A_Payer" xml:space="preserve">
+    <value>Amount due</value>
+  </data>
   <data name="Commentaire_Optionnel" xml:space="preserve">
     <value>Comment (optional)</value>
   </data>

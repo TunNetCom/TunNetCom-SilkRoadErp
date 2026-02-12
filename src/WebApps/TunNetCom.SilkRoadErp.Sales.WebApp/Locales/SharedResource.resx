@@ -727,6 +727,21 @@
   <data name="Select_Bon_Livraison" xml:space="preserve">
     <value />
   </data>
+  <data name="Rattacher_A" xml:space="preserve">
+    <value>Rattacher à</value>
+  </data>
+  <data name="Rattacher_Facture" xml:space="preserve">
+    <value>Rattacher à la facture</value>
+  </data>
+  <data name="Rattacher_BL" xml:space="preserve">
+    <value>Rattacher au BL</value>
+  </data>
+  <data name="Paiements" xml:space="preserve">
+    <value>Paiements</value>
+  </data>
+  <data name="Reste_A_Payer" xml:space="preserve">
+    <value>Reste à payer</value>
+  </data>
   <data name="Commentaire_Optionnel" xml:space="preserve">
     <value />
   </data>
