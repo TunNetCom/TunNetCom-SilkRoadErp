@@ -1,11 +1,13 @@
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Inventaire
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Common
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Inventaire
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products
 @using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using Radzen
 @using Radzen.Blazor
 @inject IInventaireApiClient inventaireService
+@inject IProductsApiClient productService
 @inject IStringLocalizer<SharedResource> Localizer
 
 <RadzenStack Gap="1.5rem">
@@ -57,7 +59,23 @@
 
     private async Task LoadHistorique()
     {
-        if (ProductId <= 0)
+        var productIdToUse = ProductId;
+        if (productIdToUse <= 0 && !string.IsNullOrEmpty(RefProduit))
+        {
+            try
+            {
+                var productResult = await productService.GetAsync(RefProduit, CancellationToken.None);
+                if (productResult.IsT0)
+                {
+                    productIdToUse = productResult.AsT0.Id;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error loading product by ref for historique");
+            }
+        }
+        if (productIdToUse <= 0)
         {
             isLoading = false;
             return;
@@ -65,7 +83,7 @@
         isLoading = true;
         try
         {
-            var result = await inventaireService.GetHistoriqueAchatVenteAsync(ProductId, CancellationToken.None);
+            var result = await inventaireService.GetHistoriqueAchatVenteAsync(productIdToUse, CancellationToken.None);
             if (result.IsT0)
             {
                 historique = result.AsT0;

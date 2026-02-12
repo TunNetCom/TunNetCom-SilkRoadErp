@@ -1,4 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
+using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.DeliveryNote.GetDeliveryNotesBasedOnProductReference;
 
@@ -6,9 +6,9 @@ public class GetDeliveryNotesBasedOnProductReferenceEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        _ = app.MapGet("/deliveryNoteHistory/{productReference}", async (
+        _ = app.MapGet("/deliveryNoteHistory", async (
                 IMediator mediator,
-                string productReference,
+                [FromQuery] string? productReference,
                 [AsParameters] QueryStringParameters paginationQueryParams,
                 HttpContext httpContext,
                 CancellationToken cancellationToken) =>
