@@ -1,3 +1,4 @@
+@page "/tiers-depenses-fonctionnement/add"
 @page "/tiers-depenses-fonctionnement/edit"
 @page "/tiers-depenses-fonctionnement/edit/{Id:int}"
 @using TunNetCom.SilkRoadErp.Sales.Contracts.TiersDepenseFonctionnement
@@ -6,66 +7,68 @@
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services
 @using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using Radzen.Blazor
 @inject ITiersDepenseFonctionnementApiClient TiersDepenseService
 @inject NavigationManager NavigationManager
 @inject IStringLocalizer<SharedResource> Localizer
 @inject Radzen.NotificationService NotificationService
 
-<RadzenCard Style="padding: 20px; max-width: 900px; margin: auto;">
-    <RadzenTemplateForm Data="@model" Submit="@SubmitCallback">
-        <RadzenStack Gap="1rem" Style="margin-bottom: 1rem;">
-            <h3 style="margin: 0;">@(Id.HasValue ? "Modifier le tiers" : "Nouveau tiers dépenses")</h3>
-        </RadzenStack>
+<div class="tiers-form-container">
+    <div class="tiers-form-card">
+        <div class="tiers-form-header">
+            <h3>@(Id.HasValue && Id.Value > 0 ? Localizer["Modifier_Tiers"] : Localizer["Nouveau_Tiers_Depenses"])</h3>
+            <RadzenButton Icon="arrow_back" Text="@Localizer["Retour"]"
+                          ButtonStyle="ButtonStyle.Secondary"
+                          Click="GoBack"
+                          Variant="Variant.Outlined" />
+        </div>
 
-        <RadzenRow>
-            <RadzenColumn Size="12" SizeSM="6">
-                <RadzenFormField Text="@Localizer["Nom"]">
-                    <ChildContent><RadzenTextBox @bind-Value="model.Nom" Style="width: 100%;" /></ChildContent>
+        <RadzenTemplateForm Data="@model" Submit="@SubmitCallback">
+            <RadzenStack Gap="1.5rem">
+                <div class="rz-col-12 section-title">@Localizer["Informations_Generales"]</div>
+                <RadzenFormField Text="@($"{Localizer["Nom"]} *")" class="rz-col-12 rz-md-6">
+                    <RadzenTextBox @bind-Value="model.Nom" Style="width: 100%;" />
                 </RadzenFormField>
-            </RadzenColumn>
-            <RadzenColumn Size="12" SizeSM="6">
-                <RadzenFormField Text="Tél">
-                    <ChildContent><RadzenTextBox @bind-Value="model.Tel" Style="width: 100%;" /></ChildContent>
+                <RadzenFormField Text="@Localizer["Matricule"]" class="rz-col-12 rz-md-6">
+                    <RadzenTextBox @bind-Value="model.Matricule" Style="width: 100%;" />
                 </RadzenFormField>
-            </RadzenColumn>
-            <RadzenColumn Size="12" SizeSM="6">
-                <RadzenFormField Text="Mail">
-                    <ChildContent><RadzenTextBox @bind-Value="model.Mail" Style="width: 100%;" /></ChildContent>
+                <RadzenFormField Text="@Localizer["Code"]" class="rz-col-12 rz-md-6">
+                    <RadzenTextBox @bind-Value="model.Code" Style="width: 100%;" />
                 </RadzenFormField>
-            </RadzenColumn>
-            <RadzenColumn Size="12" SizeSM="6">
-                <RadzenFormField Text="Adresse">
-                    <ChildContent><RadzenTextBox @bind-Value="model.Adresse" Style="width: 100%;" /></ChildContent>
+                <RadzenFormField Text="@Localizer["CodeCat"]" class="rz-col-12 rz-md-6">
+                    <RadzenTextBox @bind-Value="model.CodeCat" Style="width: 100%;" />
                 </RadzenFormField>
-            </RadzenColumn>
-            <RadzenColumn Size="12" SizeSM="6">
-                <RadzenFormField Text="Matricule">
-                    <ChildContent><RadzenTextBox @bind-Value="model.Matricule" Style="width: 100%;" /></ChildContent>
+                <RadzenFormField Text="@Localizer["EtbSec"]" class="rz-col-12 rz-md-6">
+                    <RadzenTextBox @bind-Value="model.EtbSec" Style="width: 100%;" />
                 </RadzenFormField>
-            </RadzenColumn>
-            <RadzenColumn Size="12" SizeSM="6">
-                <RadzenFormField Text="Code">
-                    <ChildContent><RadzenTextBox @bind-Value="model.Code" Style="width: 100%;" /></ChildContent>
-                </RadzenFormField>
-            </RadzenColumn>
-            <RadzenColumn Size="12" SizeSM="6">
-                <RadzenFormField Text="Code cat">
-                    <ChildContent><RadzenTextBox @bind-Value="model.CodeCat" Style="width: 100%;" /></ChildContent>
-                </RadzenFormField>
-            </RadzenColumn>
-            <RadzenColumn Size="12" SizeSM="6">
-                <RadzenFormField Text="Étab. sec">
-                    <ChildContent><RadzenTextBox @bind-Value="model.EtbSec" Style="width: 100%;" /></ChildContent>
-                </RadzenFormField>
-            </RadzenColumn>
-        </RadzenRow>
 
-        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" Style="margin-top: 1.5rem;">
-            <RadzenButton ButtonType="Radzen.ButtonType.Submit" Text="@Localizer["save_label"]" Icon="save" />
-            <RadzenButton Text="@Localizer["cancel_label"]" ButtonStyle="ButtonStyle.Light" Icon="close" Click="@(async () => Cancel())" />
-        </RadzenStack>
-    </RadzenTemplateForm>
-</RadzenCard>
+                <div class="rz-col-12 section-title">@Localizer["Coordonnees"]</div>
+                <RadzenFormField Text="@Localizer["Tel"]" class="rz-col-12 rz-md-6">
+                    <RadzenTextBox @bind-Value="model.Tel" Style="width: 100%;" />
+                </RadzenFormField>
+                <RadzenFormField Text="@Localizer["Mail"]" class="rz-col-12 rz-md-6">
+                    <RadzenTextBox @bind-Value="model.Mail" Style="width: 100%;" />
+                </RadzenFormField>
+                <RadzenFormField Text="@Localizer["Adresse"]" class="rz-col-12">
+                    <RadzenTextBox @bind-Value="model.Adresse" Style="width: 100%;" />
+                </RadzenFormField>
+
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" JustifyContent="Radzen.JustifyContent.End" class="rz-col-12">
+                    <RadzenButton Text="@Localizer["Annuler"]" ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Outlined" Click="Cancel" />
+                    <RadzenButton ButtonType="Radzen.ButtonType.Submit" Text="@Localizer["save_label"]" Icon="save" />
+                </RadzenStack>
+            </RadzenStack>
+        </RadzenTemplateForm>
+    </div>
+</div>
+
+<style>
+    .tiers-form-container { padding: 0; margin: 0; }
+    .tiers-form-card { background: transparent; border-radius: 0; box-shadow: none; padding: 1rem; max-width: 800px; margin: 0 auto; }
+    .tiers-form-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #e0e0e0; }
+    .tiers-form-header h3 { margin: 0; font-size: 1.5rem; font-weight: 600; }
+    .section-title { font-weight: 600; font-size: 1rem; margin: 1rem 0 0.5rem; color: var(--rz-base-600); }
+</style>
 
 @code {
     [Parameter] public int? Id { get; set; }
@@ -101,9 +104,31 @@
 
     private async Task HandleValidSubmit()
     {
-        if (model.Id == 0)
+        try
         {
-            var createResult = await TiersDepenseService.CreateAsync(new CreateTiersDepenseFonctionnementRequest
+            if (model.Id == 0)
+            {
+                var createResult = await TiersDepenseService.CreateAsync(new CreateTiersDepenseFonctionnementRequest
+                {
+                    Nom = model.Nom,
+                    Tel = model.Tel,
+                    Adresse = model.Adresse,
+                    Mail = model.Mail,
+                    Matricule = model.Matricule,
+                    Code = model.Code,
+                    CodeCat = model.CodeCat,
+                    EtbSec = model.EtbSec
+                }, _cts.Token);
+                if (createResult.IsT0)
+                {
+                    NotificationService.Notify(NotificationSeverity.Success, "Tiers créé avec succès.");
+                    NavigationManager.NavigateTo("/tiers-depenses-fonctionnement");
+                    return;
+                }
+                NotificationService.Notify(NotificationSeverity.Error, "Erreur lors de la création.");
+                return;
+            }
+            var updateResult = await TiersDepenseService.UpdateAsync(model.Id, new UpdateTiersDepenseFonctionnementRequest
             {
                 Nom = model.Nom,
                 Tel = model.Tel,
@@ -114,39 +139,28 @@
                 CodeCat = model.CodeCat,
                 EtbSec = model.EtbSec
             }, _cts.Token);
-            if (createResult.IsT0)
+            if (updateResult.IsT0 && updateResult.AsT0 == ResponseTypes.Success)
             {
-                NotificationService.Notify(NotificationSeverity.Success, "Tiers créé avec succès.");
+                NotificationService.Notify(NotificationSeverity.Success, "Tiers mis à jour.");
                 NavigationManager.NavigateTo("/tiers-depenses-fonctionnement");
                 return;
             }
-            NotificationService.Notify(NotificationSeverity.Error, "Erreur lors de la création.");
-            return;
+            NotificationService.Notify(NotificationSeverity.Error, "Erreur lors de la mise à jour.");
         }
-        var updateResult = await TiersDepenseService.UpdateAsync(model.Id, new UpdateTiersDepenseFonctionnementRequest
+        catch (Exception ex)
         {
-            Nom = model.Nom,
-            Tel = model.Tel,
-            Adresse = model.Adresse,
-            Mail = model.Mail,
-            Matricule = model.Matricule,
-            Code = model.Code,
-            CodeCat = model.CodeCat,
-            EtbSec = model.EtbSec
-        }, _cts.Token);
-        if (updateResult.IsT0 && updateResult.AsT0 == ResponseTypes.Success)
-        {
-            NotificationService.Notify(NotificationSeverity.Success, "Tiers mis à jour.");
-            NavigationManager.NavigateTo("/tiers-depenses-fonctionnement");
-            return;
+            var is403 = ex.Message.Contains("403", StringComparison.Ordinal) || ex.Message.Contains("Forbidden", StringComparison.OrdinalIgnoreCase);
+            if (is403)
+            {
+                NotificationService.Notify(NotificationSeverity.Warning, Localizer["Acces_Refuse_Creer_Tiers"] ?? "Vous n'avez pas les droits pour créer ou modifier des tiers dépenses.");
+                return;
+            }
+            NotificationService.Notify(NotificationSeverity.Error, ex.Message);
         }
-        NotificationService.Notify(NotificationSeverity.Error, "Erreur lors de la mise à jour.");
     }
 
-    private void Cancel()
-    {
-        NavigationManager.NavigateTo("/tiers-depenses-fonctionnement");
-    }
+    private void Cancel() => NavigationManager.NavigateTo("/tiers-depenses-fonctionnement");
+    private void GoBack() => NavigationManager.NavigateTo("/tiers-depenses-fonctionnement");
 
     private class TiersDepenseFormModel
     {

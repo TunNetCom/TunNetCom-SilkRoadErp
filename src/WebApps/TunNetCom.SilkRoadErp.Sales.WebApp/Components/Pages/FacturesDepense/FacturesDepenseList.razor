@@ -174,12 +174,28 @@
 
     private async Task LoadData()
     {
-        var result = await FactureDepenseService.GetWithSummariesAsync(
-            pageNumber, pageSize,
-            selectedTiersId, selectedAccountingYearId, null, null, null, _cts.Token);
-        items = result.Items ?? new();
-        totalCount = result.TotalCount;
-        await InvokeAsync(StateHasChanged);
+        try
+        {
+            var result = await FactureDepenseService.GetWithSummariesAsync(
+                pageNumber, pageSize,
+                selectedTiersId, selectedAccountingYearId, null, null, null, _cts.Token);
+            items = result.Items ?? new();
+            totalCount = result.TotalCount;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            var is403 = ex.Message.Contains("403", StringComparison.Ordinal) || ex.Message.Contains("Forbidden", StringComparison.OrdinalIgnoreCase);
+            if (is403)
+            {
+                items = new();
+                totalCount = 0;
+                ToastService.Notify(new(ToastType.Warning, Localizer["Acces_Refuse_Factures_Depenses"] ?? "Vous n'avez pas les droits pour accéder aux factures dépenses."));
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+            throw;
+        }
     }
 
     private void EditFacture(int id)

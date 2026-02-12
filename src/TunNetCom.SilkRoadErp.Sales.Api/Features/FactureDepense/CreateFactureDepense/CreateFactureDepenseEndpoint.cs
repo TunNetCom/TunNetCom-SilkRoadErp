@@ -15,6 +15,7 @@ public class CreateFactureDepenseEndpoint : ICarterModule
                 request.Date,
                 request.Description ?? string.Empty,
                 request.MontantTotal,
+                request.LignesTVA ?? new(),
                 request.AccountingYearId,
                 request.DocumentBase64);
             var result = await mediator.Send(command, cancellationToken);

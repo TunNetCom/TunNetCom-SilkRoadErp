@@ -877,8 +877,32 @@
   <data name="Select_Tiers" xml:space="preserve">
     <value>Choisir un tiers</value>
   </data>
+  <data name="Modifier_Tiers" xml:space="preserve">
+    <value>Modifier le tiers</value>
+  </data>
+  <data name="Nouveau_Tiers_Depenses" xml:space="preserve">
+    <value>Nouveau tiers dépenses</value>
+  </data>
+  <data name="Informations_Generales" xml:space="preserve">
+    <value>Informations générales</value>
+  </data>
+  <data name="Informations_Generales_Desc" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Coordonnees" xml:space="preserve">
+    <value>Coordonnées</value>
+  </data>
+  <data name="Coordonnees_Desc" xml:space="preserve">
+    <value />
+  </data>
   <data name="Tiers_Depenses" xml:space="preserve">
     <value>Tiers dépenses</value>
+  </data>
+  <data name="Acces_Refuse_Creer_Tiers" xml:space="preserve">
+    <value>Vous n'avez pas les droits pour créer ou modifier des tiers dépenses.</value>
+  </data>
+  <data name="Acces_Refuse_Factures_Depenses" xml:space="preserve">
+    <value>Vous n'avez pas les droits pour accéder aux factures dépenses.</value>
   </data>
   <data name="Facture_Depense_Optionnel" xml:space="preserve">
     <value>Facture dépense (optionnel)</value>
@@ -918,6 +942,21 @@
   </data>
   <data name="Montant_Total" xml:space="preserve">
     <value>Montant total</value>
+  </data>
+  <data name="Montant_HT" xml:space="preserve">
+    <value>Montant HT</value>
+  </data>
+  <data name="Taux_TVA" xml:space="preserve">
+    <value>Taux TVA</value>
+  </data>
+  <data name="Montant_TVA" xml:space="preserve">
+    <value>Montant TVA</value>
+  </data>
+  <data name="Montant_TTC" xml:space="preserve">
+    <value>Montant TTC</value>
+  </data>
+  <data name="Sans_TVA" xml:space="preserve">
+    <value>Sans TVA (0%)</value>
   </data>
   <data name="Description_Optionnel" xml:space="preserve">
     <value>Description (optionnel)</value>

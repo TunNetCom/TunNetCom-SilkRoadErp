@@ -1,5 +1,6 @@
 using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.ResultExtensions;
 using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.DocumentStorage;
+using TunNetCom.SilkRoadErp.Sales.Contracts.FactureDepense;
 using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.FactureDepense.UpdateFactureDepense;
@@ -56,9 +57,26 @@ public class UpdateFactureDepenseCommandHandler(
             }
         }
 
-        entity.Update(command.Date, command.Description ?? string.Empty, command.MontantTotal, documentStoragePath);
+        var (baseHT0, montantTVA0, baseHT7, montantTVA7, baseHT13, montantTVA13, baseHT19, montantTVA19) = GetLignesFromDto(command.LignesTVA);
+        entity.Update(command.Date, command.Description ?? string.Empty, command.MontantTotal, documentStoragePath, baseHT0, montantTVA0, baseHT7, montantTVA7, baseHT13, montantTVA13, baseHT19, montantTVA19);
         await _context.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("FactureDepense updated: Id {Id}", command.Id);
         return Result.Ok();
+    }
+
+    private static (decimal baseHT0, decimal montantTVA0, decimal baseHT7, decimal montantTVA7, decimal baseHT13, decimal montantTVA13, decimal baseHT19, decimal montantTVA19) GetLignesFromDto(List<FactureDepenseLigneTvaDto>? lignes)
+    {
+        decimal b0 = 0, t0 = 0, b7 = 0, t7 = 0, b13 = 0, t13 = 0, b19 = 0, t19 = 0;
+        if (lignes != null)
+        {
+            foreach (var l in lignes)
+            {
+                if (l.TauxTVA == 0) { b0 = l.BaseHT; t0 = l.MontantTVA; }
+                else if (l.TauxTVA == 7) { b7 = l.BaseHT; t7 = l.MontantTVA; }
+                else if (l.TauxTVA == 13) { b13 = l.BaseHT; t13 = l.MontantTVA; }
+                else if (l.TauxTVA == 19) { b19 = l.BaseHT; t19 = l.MontantTVA; }
+            }
+        }
+        return (b0, t0, b7, t7, b13, t13, b19, t19);
     }
 }
