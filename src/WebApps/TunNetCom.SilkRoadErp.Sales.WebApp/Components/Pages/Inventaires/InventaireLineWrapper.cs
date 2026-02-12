@@ -6,6 +6,7 @@ namespace TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.Inventaires;
 public class InventaireLineWrapper : ILineItem
 {
     public string ProductReference { get; set; } = string.Empty;
+    public int ProductId { get; set; }
     public string? Description { get; set; }
     public int Id { get; set; }
     public int InventaireId { get; set; }
@@ -87,6 +88,7 @@ public class InventaireLineWrapper : ILineItem
             Id = response.Id,
             InventaireId = response.InventaireId,
             ProductReference = response.RefProduit,
+            ProductId = response.IdProduit,
             Description = response.NomProduit,
             QuantiteTheorique = response.QuantiteTheorique,
             QuantiteReelle = response.QuantiteReelle,

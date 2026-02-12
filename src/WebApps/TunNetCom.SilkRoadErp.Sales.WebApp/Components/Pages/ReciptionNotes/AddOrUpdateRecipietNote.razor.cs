@@ -609,14 +609,14 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
         totalTtc = totalHt + totalVat + totalFodec;
     }
 
-    public async Task ShowDialog(string ProductReference)
+    public async Task ShowDialog((int ProductId, string ProductReference) args)
     {
         await LoadStateAsync();
 
-        await DialogService.OpenAsync<ProductHistoryDialog>($"{Localizer["history"]} {Localizer["article"]} {ProductReference}",
+        await DialogService.OpenAsync<ProductHistoryDialog>($"{Localizer["history"]} {Localizer["article"]} {args.ProductReference}",
             new Dictionary<string, object>() 
             { 
-                { "ProductReference", ProductReference },
+                { "ProductReference", args.ProductReference },
                 { "Mode", HistoryMode.Achat }
             },
             new DialogOptions()

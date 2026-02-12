@@ -31,6 +31,7 @@ public class GetInventaireByIdQueryHandler(
                     Id = l.Id,
                     InventaireId = l.InventaireId,
                     RefProduit = l.RefProduit,
+                    IdProduit = l.RefProduitNavigation.Id,
                     NomProduit = l.RefProduitNavigation.Nom,
                     QuantiteTheorique = l.QuantiteTheorique,
                     QuantiteReelle = l.QuantiteReelle,

@@ -203,11 +203,11 @@ public class InventaireApiClient : IInventaireApiClient
         }
     }
 
-    public async Task<OneOf<List<HistoriqueAchatVenteResponse>, bool>> GetHistoriqueAchatVenteAsync(string refProduit, CancellationToken cancellationToken)
+    public async Task<OneOf<List<HistoriqueAchatVenteResponse>, bool>> GetHistoriqueAchatVenteAsync(int productId, CancellationToken cancellationToken)
     {
         try
         {
-            var response = await _httpClient.GetAsync($"/inventaires/historique-achat-vente/{Uri.EscapeDataString(refProduit)}", cancellationToken: cancellationToken);
+            var response = await _httpClient.GetAsync($"/inventaires/historique-achat-vente/{productId}", cancellationToken: cancellationToken);
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 return await response.ReadJsonAsync<List<HistoriqueAchatVenteResponse>>();
@@ -216,7 +216,7 @@ public class InventaireApiClient : IInventaireApiClient
             {
                 return false;
             }
-            throw new Exception($"Inventaires/historique-achat-vente/{refProduit}: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync(cancellationToken)}");
+            throw new Exception($"Inventaires/historique-achat-vente/{productId}: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync(cancellationToken)}");
         }
         catch (Exception ex)
         {

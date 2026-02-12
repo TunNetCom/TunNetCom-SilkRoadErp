@@ -522,7 +522,7 @@
     [Parameter] public Func<TItem, List<TItem>> GetProductList { get; set; }
     [Parameter] public int ProductCount { get; set; }
     [Parameter] public GetAppParametersResponse AppParameters { get; set; }
-    [Parameter] public EventCallback<string> OnShowPriceHistory { get; set; }
+    [Parameter] public EventCallback<(int ProductId, string ProductReference)> OnShowPriceHistory { get; set; }
     [Parameter] public bool ShowPriceHistoryDialog { get; set; } = true;
     [Parameter] public bool ShowPrintButton { get; set; } = true;
     [Parameter] public bool ShowSaveButton { get; set; } = true;
@@ -542,6 +542,8 @@
     // Product-related properties accessors
     [Parameter] public Func<TItem, string> GetProductReference { get; set; }
     [Parameter] public Action<TItem, string> SetProductReference { get; set; }
+    [Parameter] public Func<TItem, int>? GetProductId { get; set; }
+    [Parameter] public Action<TItem, int>? SetProductId { get; set; }
     [Parameter] public Func<TItem, string> GetProductDescription { get; set; }
     [Parameter] public Action<TItem, string> SetProductDescription { get; set; }
     [Parameter] public string ProductTextProperty { get; set; } = "ProductReferenceAndDescription";
@@ -862,6 +864,10 @@
                 {
                     SetProductReference(order, productReference);
                 }
+                if (SetProductId != null && GetProductId != null)
+                {
+                    SetProductId(order, GetProductId(selectedProduct));
+                }
                 order.UnitPriceExcludingTax = selectedProduct.UnitPriceExcludingTax;
                 
                 // Restore preserved quantity for inventaire
@@ -961,7 +967,8 @@
             // Invoke the callback to open the dialog
             if (OnShowPriceHistory.HasDelegate)
             {
-                await OnShowPriceHistory.InvokeAsync(productRef);
+                var productId = GetProductId?.Invoke(order) ?? 0;
+                await OnShowPriceHistory.InvokeAsync((productId, productRef));
             }
         }
     }
