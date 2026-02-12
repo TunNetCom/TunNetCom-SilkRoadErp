@@ -179,9 +179,6 @@ else
             <RadzenLabel Text="Numéro bon de réception" Component="ReceiptNoteNumber" AriaLabel="Numéro bon de réception" />
             <RadzenTextBox @bind-Value="receiptNoteNumber" Name="ReceiptNoteNumber" Style="width: 120px;" ReadOnly="true" AriaReadOnly="true" />
 
-            <RadzenLabel Text="@Localizer["date"]" />
-            <RadzenDatePicker @bind-Value="receiptNoteDate" Name="ReceiptNoteDate" Style="width: 200px;" DateFormat="d MMMM yyyy" ShowTime="false" />
-
             <RadzenLabel Text="@Localizer["provider"]" />
             <RadzenDropDownDataGrid AllowClear="true"
                                     IsLoading="@isLoadingProvider"
