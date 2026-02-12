@@ -5,7 +5,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: silkroad-api
-  namespace: silkroad-prod
+  namespace: silkroad-dev
   labels:
     app: silkroad-api
     environment: production
@@ -86,7 +86,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: silkroad-webapp
-  namespace: silkroad-prod
+  namespace: silkroad-dev
   labels:
     app: silkroad-webapp
     environment: production
