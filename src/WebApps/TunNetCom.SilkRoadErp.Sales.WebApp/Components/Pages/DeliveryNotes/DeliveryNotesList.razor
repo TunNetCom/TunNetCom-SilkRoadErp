@@ -61,10 +61,12 @@
                                     @bind-Value="@searchCriteria.SelectedTechnicianId"
                                     LoadData="@LoadTechnicians"
                                     AllowFiltering="true"
+                                    Count="@techniciansCount"
+                                    PageSize="15"
                                     class="w-100 search-input"
                                     Data="@_filteredTechnicians"
-                                    TextProperty="@nameof(InstallationTechnicianBaseInfo.Nom)"
-                                    ValueProperty="@nameof(InstallationTechnicianBaseInfo.Id)"
+                                    TextProperty="@nameof(InstallationTechnicianResponse.Nom)"
+                                    ValueProperty="@nameof(InstallationTechnicianResponse.Id)"
                                     Placeholder="Sélectionner un installateur">
                 <Template Context="technician">
                     <div style="display: flex; align-items: center; gap: 8px;">
@@ -78,7 +80,7 @@
                                 <RadzenIcon Icon="person" Style="font-size: 10px;" />
                             </div>
                         }
-                        <span>@technician.Nom</span>
+                        <span>@technician.Nom @(string.IsNullOrEmpty(technician.Tel) ? "" : $"({technician.Tel})")</span>
                     </div>
                 </Template>
                 <ValueTemplate Context="technician">
@@ -97,8 +99,9 @@
                     </div>
                 </ValueTemplate>
                 <Columns>
-                    <RadzenDropDownDataGridColumn Property="@nameof(InstallationTechnicianBaseInfo.Id)" Title="ID" Width="80px" />
-                    <RadzenDropDownDataGridColumn Property="@nameof(InstallationTechnicianBaseInfo.Nom)" Title="Nom" Width="220px" />
+                    <RadzenDropDownDataGridColumn Property="@nameof(InstallationTechnicianResponse.Id)" Title="ID" Width="80px" />
+                    <RadzenDropDownDataGridColumn Property="@nameof(InstallationTechnicianResponse.Nom)" Title="Nom" Width="180px" />
+                    <RadzenDropDownDataGridColumn Property="@nameof(InstallationTechnicianResponse.Tel)" Title="Téléphone" Width="120px" />
                 </Columns>
             </RadzenDropDownDataGrid>
         </div>
@@ -490,7 +493,8 @@
     private int pageSize = GridPageSizeConstants.PageSize10;
     private SearchCriteria searchCriteria = new SearchCriteria();
     private List<CustomerResponse> _filteredCustomers = new();
-    private List<InstallationTechnicianBaseInfo> _filteredTechnicians = new();
+    private List<InstallationTechnicianResponse> _filteredTechnicians = new();
+    private int techniciansCount = 0;
     private string? _lastSortProperty;
     private string? _lastSortOrder;
     private bool _isLoadingList;
@@ -544,19 +548,23 @@
     {
         try
         {
-            _filteredTechnicians = await TechnicianService.GetInstallationTechniciansBaseInfosAsync(default);
-            
-            // Apply filter if provided
-            if (!string.IsNullOrEmpty(args?.Filter))
-            {
-                _filteredTechnicians = _filteredTechnicians
-                    .Where(t => t.Nom.Contains(args.Filter, StringComparison.OrdinalIgnoreCase))
-                    .ToList();
-            }
+            var effectiveArgs = args ?? new LoadDataArgs { Skip = 0, Top = 15 };
+            if (!effectiveArgs.Top.HasValue || effectiveArgs.Top.Value <= 0)
+                effectiveArgs = new LoadDataArgs { Skip = effectiveArgs.Skip ?? 0, Top = 15, Filter = effectiveArgs.Filter };
+
+            var response = await ODataService.QueryAsync<InstallationTechnicianResponse>(
+                entitySet: "InstallationTechnicianBaseInfos",
+                args: effectiveArgs,
+                cancellationToken: default);
+
+            _filteredTechnicians = response.Value ?? new List<InstallationTechnicianResponse>();
+            techniciansCount = response.ODataCount ?? _filteredTechnicians.Count;
         }
         catch (Exception ex)
         {
-            _filteredTechnicians = new List<InstallationTechnicianBaseInfo>();
+            _logger.LogError(ex, "Error loading technicians: {Message}", ex.Message);
+            _filteredTechnicians = new List<InstallationTechnicianResponse>();
+            techniciansCount = 0;
         }
 
         await InvokeAsync(StateHasChanged);
