@@ -188,6 +188,13 @@
                                     <RadzenDataGridColumn Property="@nameof(GetDeliveryNoteBaseInfos.Number)"
                                                           Title="@Localizer["number"]"
                                                           Width="140px" />
+                                    <RadzenDataGridColumn Property="@nameof(GetDeliveryNoteBaseInfos.Date)"
+                                                          Title="@Localizer["date"]"
+                                                          Width="140px">
+                                        <Template Context="bl">
+                                            @bl.Date.ToString("d")
+                                        </Template>
+                                    </RadzenDataGridColumn>
                                     <RadzenDataGridColumn Property="@nameof(GetDeliveryNoteBaseInfos.GrossAmount)"
                                                           Title="@Localizer["total_ex_tax"]"
                                                           Width="140px">
@@ -340,6 +347,13 @@
                         <RadzenDataGridColumn Property="@nameof(GetDeliveryNoteBaseInfos.Number)"
                                               Title="@Localizer["number"]"
                                               Width="140px" />
+                        <RadzenDataGridColumn Property="@nameof(GetDeliveryNoteBaseInfos.Date)"
+                                              Title="@Localizer["date"]"
+                                              Width="140px">
+                            <Template Context="detail">
+                                @detail.Date.ToString("d")
+                            </Template>
+                        </RadzenDataGridColumn>
                         <RadzenDataGridColumn Property="@nameof(GetDeliveryNoteBaseInfos.NetAmount)"
                                               Title="@Localizer["total_ex_tax"]"
                                               Width="140px">
@@ -782,8 +796,8 @@
                 customerId: SelectedCustomerId,
                 invoiceId: null,
                 isInvoiced: false,
-                sortOrder: null,
-                sortProperty: null,
+                sortOrder: SortConstants.Ascending,
+                sortProperty: nameof(GetDeliveryNoteBaseInfos.Number),
                 pageNumber: 1,
                 pageSize: _defaultPageSize,
                 searchKeyword: null,
@@ -954,6 +968,11 @@
             _sortProperty = sort.Property;
             _sortOrder = sort.SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending;
         }
+        else
+        {
+            _sortProperty = nameof(InvoiceResponse.Number);
+            _sortOrder = SortConstants.Ascending;
+        }
         var parameters = new QueryStringParameters
         {
             PageNumber = (args.Skip.Value / _defaultPageSize) + 1,
@@ -1017,8 +1036,8 @@
                 customerId: SelectedCustomerId,
                 invoiceId: invoiceNum,
                 isInvoiced: true,
-                sortOrder: null,
-                sortProperty: null,
+                sortOrder: SortConstants.Ascending,
+                sortProperty: nameof(GetDeliveryNoteBaseInfos.Number),
                 pageNumber: 1,
                 pageSize: 50, // Maximum allowed by API
                 searchKeyword: null,
@@ -1073,6 +1092,11 @@
                 var sort = args.Sorts.First();
                 _sortProperty = sort.Property;
                 _sortOrder = sort.SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending;
+            }
+            else
+            {
+                _sortProperty = nameof(GetDeliveryNoteBaseInfos.Number);
+                _sortOrder = SortConstants.Ascending;
             }
 
             isLoadingUninvoicedDeliveryNotes = true;

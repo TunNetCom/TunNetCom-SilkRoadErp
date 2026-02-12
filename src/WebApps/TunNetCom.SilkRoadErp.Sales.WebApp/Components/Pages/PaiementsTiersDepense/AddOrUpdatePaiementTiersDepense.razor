@@ -1,0 +1,708 @@
+@page "/paiements-tiers-depenses/add"
+@page "/paiements-tiers-depenses/edit/{Id:int}"
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.PaiementTiersDepense
+@using TunNetCom.SilkRoadErp.Sales.Contracts.TiersDepenseFonctionnement
+@using TunNetCom.SilkRoadErp.Sales.Contracts.FactureDepense
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PaiementTiersDepense
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.TiersDepenseFonctionnement
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.FactureDepense
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AccountingYear
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Banque
+@using TunNetCom.SilkRoadErp.Sales.Contracts
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Banque
+@using TunNetCom.SilkRoadErp.Sales.Domain.Entites
+@using TunNetCom.SilkRoadErp.Sales.HttpClients
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
+@using Radzen.Blazor
+@using Radzen
+@using Microsoft.JSInterop
+@inject IPaiementTiersDepenseApiClient PaiementTiersDepenseService
+@inject ITiersDepenseFonctionnementApiClient TiersDepenseService
+@inject IFactureDepenseApiClient FactureDepenseService
+@inject IAccountingYearApiClient AccountingYearService
+@inject IBanqueApiClient BanqueService
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<SharedResource> Localizer
+@inject Radzen.NotificationService NotificationService
+@inject ToastService ToastService
+@inject DialogService DialogService
+@inject IJSRuntime JSRuntime
+@inject IConfiguration Configuration
+@inject IAuthService AuthService
+@inject ILogger<AddOrUpdatePaiementTiersDepense> Logger
+
+<div class="paiement-form-container">
+    <div class="paiement-form-card">
+        <div class="paiement-form-header">
+            <h3>@(IsEditMode ? Localizer["Modifier_Paiement"] : Localizer["Nouveau_Paiement_Tiers_Depenses"])</h3>
+            <RadzenButton Icon="arrow_back" Text="@Localizer["Retour"]"
+                          ButtonStyle="ButtonStyle.Secondary"
+                          Click="GoBack"
+                          Variant="Variant.Outlined" />
+        </div>
+
+        <RadzenStack Gap="1.5rem">
+            <RadzenFormField Text="@Localizer["Numero"]" class="rz-col-12 rz-md-6">
+                <RadzenTextBox @bind-Value="model.NumeroTransactionBancaire" Placeholder="@Localizer["Numero_Transaction_Bancaire"]" />
+                <RadzenFormFieldDescription>@Localizer["Numero_Transaction_Bancaire_Description"]</RadzenFormFieldDescription>
+            </RadzenFormField>
+
+            <RadzenFormField Text="@($"{Localizer["Tiers_Depenses"]} *")" class="rz-col-12 rz-md-6">
+                <RadzenDropDownDataGrid AllowClear="false"
+                                        IsLoading="@isLoadingTiers"
+                                        @bind-Value="model.TiersDepenseFonctionnementId"
+                                        LoadData="@LoadTiers"
+                                        AllowFiltering="true"
+                                        Style="width: 100%;"
+                                        Data="@_filteredTiers"
+                                        TextProperty="Nom"
+                                        ValueProperty="Id"
+                                        Placeholder="@Localizer["Select_Tiers"]"
+                                        Change="@OnTiersChanged">
+                    <Columns>
+                        <RadzenDropDownDataGridColumn Property="Id" Title="ID" Width="80px" />
+                        <RadzenDropDownDataGridColumn Property="Nom" Title="@Localizer["Nom"]" Width="220px" />
+                    </Columns>
+                </RadzenDropDownDataGrid>
+            </RadzenFormField>
+
+            <RadzenFormField Text="@($"{Localizer["Exercice_Comptable"]} *")" class="rz-col-12 rz-md-6">
+                <RadzenDropDown @bind-Value="model.AccountingYearId"
+                                Data="@accountingYears"
+                                TextProperty="Year"
+                                ValueProperty="Id"
+                                Placeholder="@Localizer["Exercice_Comptable"]"
+                                AllowClear="false"
+                                Style="width: 100%;" />
+            </RadzenFormField>
+
+            <RadzenFormField Text="@($"{Localizer["Montant"]} *")" class="rz-col-12 rz-md-6">
+                <RadzenNumeric @bind-Value="model.Montant" Min="0" Format="@AmountHelper.FORMAT_N3" Style="width: 100%;" />
+            </RadzenFormField>
+
+            <RadzenFormField Text="@($"{Localizer["Date_Paiement"]} *")" class="rz-col-12 rz-md-6">
+                <RadzenDatePicker @bind-Value="model.DatePaiement" DateFormat="dd/MM/yyyy" ShowTime="false" Style="width: 100%;" />
+            </RadzenFormField>
+
+            <RadzenFormField Text="@($"{Localizer["Methode_Paiement"]} *")" class="rz-col-12 rz-md-6">
+                <RadzenDropDown @bind-Value="selectedMethodePaiement"
+                                Data="@methodeOptions"
+                                TextProperty="Text"
+                                ValueProperty="Value"
+                                Placeholder="@Localizer["Select_Methode"]"
+                                AllowClear="false"
+                                Style="width: 100%;"
+                                Change="@OnMethodePaiementChanged" />
+            </RadzenFormField>
+
+            @if (selectedMethodePaiement == MethodePaiementConsts.Cheque || selectedMethodePaiement == MethodePaiementConsts.Traite)
+            {
+                <RadzenFormField Text="@Localizer["Numero_Cheque_Traite"]" class="rz-col-12 rz-md-6">
+                    <RadzenTextBox @bind-Value="model.NumeroChequeTraite" Placeholder="@Localizer["Numero"]" />
+                </RadzenFormField>
+
+                <RadzenFormField Text="@Localizer["Banque"]" class="rz-col-12 rz-md-6">
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" Style="width: 100%;">
+                        <RadzenDropDown @bind-Value="model.BanqueId"
+                                        Data="@banques"
+                                        TextProperty="Nom"
+                                        ValueProperty="Id"
+                                        Placeholder="@Localizer["Select_Banque"]"
+                                        AllowClear="true"
+                                        Style="flex: 1;" />
+                        <RadzenButton Icon="add" Text="@Localizer["Nouvelle_Banque"]"
+                                      ButtonStyle="ButtonStyle.Success"
+                                      Variant="Variant.Outlined"
+                                      Size="ButtonSize.Small"
+                                      Click="@OpenAddBanqueDialog" />
+                    </RadzenStack>
+                </RadzenFormField>
+
+                @if (selectedMethodePaiement == MethodePaiementConsts.Traite)
+                {
+                    <RadzenFormField Text="@Localizer["Date_Echeance"]" class="rz-col-12 rz-md-6">
+                        <RadzenDatePicker @bind-Value="model.DateEcheance" DateFormat="dd/MM/yyyy" ShowTime="false" Style="width: 100%;" />
+                    </RadzenFormField>
+                }
+            }
+
+            @if (selectedMethodePaiement == MethodePaiementConsts.Traite || selectedMethodePaiement == MethodePaiementConsts.Virement)
+            {
+                <RadzenFormField Text="@Localizer["RIB_Code_Etablissement"]" class="rz-col-12 rz-md-3">
+                    <RadzenTextBox @bind-Value="model.RibCodeEtab" Placeholder="@Localizer["Code_Etab"]" MaxLength="10" />
+                </RadzenFormField>
+                <RadzenFormField Text="@Localizer["RIB_Code_Agence"]" class="rz-col-12 rz-md-3">
+                    <RadzenTextBox @bind-Value="model.RibCodeAgence" Placeholder="@Localizer["Code_Agence"]" MaxLength="10" />
+                </RadzenFormField>
+                <RadzenFormField Text="@Localizer["RIB_Numero_Compte"]" class="rz-col-12 rz-md-3">
+                    <RadzenTextBox @bind-Value="model.RibNumeroCompte" Placeholder="@Localizer["Numero_Compte"]" MaxLength="20" />
+                </RadzenFormField>
+                <RadzenFormField Text="@Localizer["RIB_Cle"]" class="rz-col-12 rz-md-3">
+                    <RadzenTextBox @bind-Value="model.RibCle" Placeholder="@Localizer["Cle"]" MaxLength="5" />
+                </RadzenFormField>
+            }
+
+            @if (model.TiersDepenseFonctionnementId > 0)
+            {
+                <RadzenFormField Text="@Localizer["Facture_Depense_Optionnel"]" class="rz-col-12 rz-md-6">
+                    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+                        <RadzenDropDown @bind-Value="@selectedFactureToAdd"
+                                        Data="@AvailableFacturesDepense"
+                                        TextProperty="@nameof(FactureDepenseSummaryItem.Num)"
+                                        ValueProperty="@nameof(FactureDepenseSummaryItem.Id)"
+                                        Placeholder="@Localizer["Select_Facture_Depense"]"
+                                        AllowFiltering="true"
+                                        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                        Change="@OnFactureDepenseSelected"
+                                        Style="width: 100%;"
+                                        Disabled="@isLoadingFacturesDepense" />
+                        @if (SelectedFacturesDepense.Any())
+                        {
+                            <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem" Style="margin-top: 0.5rem;">
+                                <RadzenText TextStyle="TextStyle.Body2" Style="font-weight: 600;">@Localizer["Selected_Factures"] (@selectedFactureDepenseIds.Count)</RadzenText>
+                                @foreach (var fd in SelectedFacturesDepense)
+                                {
+                                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" Style="align-items: center; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; background-color: #f5f5f5;">
+                                        <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0" Style="flex: 1;">
+                                            <RadzenText TextStyle="TextStyle.Body2" Style="font-weight: 500;">@fd.Num</RadzenText>
+                                            <RadzenText TextStyle="TextStyle.Caption" Style="color: #666;">@fd.Date.ToString("dd/MM/yyyy") - @fd.MontantTotal.ToString("N2")</RadzenText>
+                                        </RadzenStack>
+                                        <RadzenButton Icon="delete" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Danger"
+                                                    Click="@(() => RemoveFactureDepense(fd))"
+                                                    Title="@Localizer["Remove"]" />
+                                    </RadzenStack>
+                                }
+                            </RadzenStack>
+                        }
+                    </RadzenStack>
+                </RadzenFormField>
+            }
+
+            <RadzenFormField Text="@Localizer["Commentaire"]" class="rz-col-12">
+                <RadzenTextArea @bind-Value="model.Commentaire" Placeholder="@Localizer["Commentaire_Optionnel"]" Rows="3" Style="width: 100%;" />
+            </RadzenFormField>
+
+            <RadzenFormField Text="Mois" class="rz-col-12 rz-md-6">
+                <RadzenDropDown @bind-Value="model.Mois"
+                                Data="@moisOptions"
+                                TextProperty="Text"
+                                ValueProperty="Value"
+                                Placeholder="Sélectionner un mois"
+                                AllowClear="true"
+                                Style="width: 100%;" />
+            </RadzenFormField>
+
+            <RadzenFormField Text="@Localizer["Document_Paiement"]" class="rz-col-12">
+                <RadzenCard Style="padding: 1rem;">
+                    <RadzenStack Gap="1rem">
+                        @if (!string.IsNullOrWhiteSpace(documentPreview) || !string.IsNullOrWhiteSpace(existingDocumentPath))
+                        {
+                            <div style="text-align: center;">
+                                @if (!string.IsNullOrWhiteSpace(documentPreview))
+                                {
+                                    @if (documentPreview.StartsWith("data:application/pdf", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <RadzenStack Gap="0.5rem">
+                                            <iframe src="@documentPreview" style="width: 100%; height: 400px; border: 1px solid #ddd; border-radius: 4px;" frameborder="0"></iframe>
+                                            <RadzenButton Text="@Localizer["Supprimer"]" Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click="RemoveDocument" />
+                                        </RadzenStack>
+                                    }
+                                    else
+                                    {
+                                        <RadzenStack Gap="0.5rem">
+                                            <img src="@documentPreview" alt="Document preview" style="max-width: 100%; max-height: 400px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;" @onclick="@(() => ShowImagePreview(documentPreview))" />
+                                            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="Radzen.JustifyContent.Center">
+                                                <RadzenButton Text="@Localizer["Voir_Image"]" Icon="visibility" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Click="@(() => ShowImagePreview(documentPreview))" />
+                                                <RadzenButton Text="@Localizer["Supprimer"]" Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click="RemoveDocument" />
+                                            </RadzenStack>
+                                        </RadzenStack>
+                                    }
+                                }
+                                else if (!string.IsNullOrWhiteSpace(existingDocumentPath) && !string.IsNullOrWhiteSpace(existingDocumentPreview))
+                                {
+                                    @if (existingDocumentPreview.StartsWith("data:application/pdf", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <RadzenStack Gap="0.5rem">
+                                            <iframe src="@existingDocumentPreview" style="width: 100%; height: 400px; border: 1px solid #ddd; border-radius: 4px;" frameborder="0"></iframe>
+                                            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="Radzen.JustifyContent.Center">
+                                                <RadzenButton Text="@Localizer["Ouvrir_Dans_Nouvel_Onglet"]" Icon="open_in_new" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Click="@(() => OpenExistingDocumentInNewTab())" />
+                                                <RadzenButton Text="@Localizer["Supprimer"]" Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click="RemoveDocument" />
+                                            </RadzenStack>
+                                        </RadzenStack>
+                                    }
+                                    else
+                                    {
+                                        <RadzenStack Gap="0.5rem">
+                                            <img src="@existingDocumentPreview" alt="Document preview" style="max-width: 100%; max-height: 400px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;" @onclick="@(() => ShowImagePreview(existingDocumentPreview))" />
+                                            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="Radzen.JustifyContent.Center">
+                                                <RadzenButton Text="@Localizer["Voir_Image"]" Icon="visibility" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Click="@(() => ShowImagePreview(existingDocumentPreview))" />
+                                                <RadzenButton Text="@Localizer["Ouvrir_Dans_Nouvel_Onglet"]" Icon="open_in_new" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Click="@(() => OpenExistingDocumentInNewTab())" />
+                                                <RadzenButton Text="@Localizer["Supprimer"]" Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click="RemoveDocument" />
+                                            </RadzenStack>
+                                        </RadzenStack>
+                                    }
+                                }
+                                else if (!string.IsNullOrWhiteSpace(existingDocumentPath))
+                                {
+                                    <RadzenStack Gap="0.5rem">
+                                        <RadzenIcon Icon="attach_file" Style="font-size: 48px; color: #2196F3;" />
+                                        <div>@Localizer["Chargement_Document"]...</div>
+                                    </RadzenStack>
+                                }
+                            </div>
+                        }
+                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="Radzen.JustifyContent.Center">
+                            <RadzenButton Text="Caméra" Icon="camera_alt" Size="ButtonSize.Small"
+                                        Click="CaptureDocumentFromCamera"
+                                        Disabled="@isSaving" />
+                            <RadzenButton Text="Fichier" Icon="attach_file" Size="ButtonSize.Small"
+                                        ButtonStyle="ButtonStyle.Secondary"
+                                        Click="TriggerFileInput"
+                                        Disabled="@isSaving" />
+                        </RadzenStack>
+                        <InputFile OnChange="HandleFileSelected"
+                                 accept="image/*,application/pdf"
+                                 style="display: none;"
+                                 id="fileInputDocument"
+                                 @ref="fileInputElement" />
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenFormField>
+
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" JustifyContent="Radzen.JustifyContent.End" class="rz-col-12">
+                <RadzenButton Text="@Localizer["Annuler"]" ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Outlined" Click="CancelOrGoBack" />
+                <RadzenButton Text="@(IsEditMode ? Localizer["Modifier"] : Localizer["Creer"])"
+                              ButtonStyle="ButtonStyle.Primary"
+                              Click="SavePaiement"
+                              IsBusy="@isSaving" />
+            </RadzenStack>
+        </RadzenStack>
+    </div>
+</div>
+
+<style>
+    .paiement-form-container { padding: 0; margin: 0; }
+    .paiement-form-card { background: transparent; border-radius: 0; box-shadow: none; padding: 1rem; }
+    .paiement-form-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #e0e0e0; }
+    .paiement-form-header h3 { margin: 0; font-size: 1.5rem; font-weight: 600; }
+</style>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private int? EffectiveId => Id > 0 ? Id : null;
+    private bool IsEditMode => EffectiveId.HasValue;
+    private bool isLoadingFacturesDepense;
+    private bool isLoadingTiers;
+    private bool isSaving;
+    private PaiementTiersDepenseFormModel model = new();
+    private List<TiersDepenseFonctionnementResponse> _filteredTiers = new();
+    private List<GetAllAccountingYearsResponse> accountingYears = new();
+    private List<BanqueResponse> banques = new();
+    private List<FactureDepenseSummaryItem> _filteredFacturesDepense = new();
+    private List<int> selectedFactureDepenseIds = new();
+    private int? selectedFactureToAdd;
+    private string? selectedMethodePaiement;
+    private CancellationTokenSource _cts = new();
+
+    private static readonly List<MethodeOption> methodeOptions = new()
+    {
+        new MethodeOption("Espèces", MethodePaiementConsts.Espece),
+        new MethodeOption("Chèque", MethodePaiementConsts.Cheque),
+        new MethodeOption("Traite", MethodePaiementConsts.Traite),
+        new MethodeOption("Virement", MethodePaiementConsts.Virement),
+        new MethodeOption("TPE", MethodePaiementConsts.Tpe),
+        new MethodeOption("Autre", "Autre")
+    };
+
+    private static readonly List<MoisOption> moisOptions = new()
+    {
+        new MoisOption { Text = "Janvier", Value = 1 }, new MoisOption { Text = "Février", Value = 2 },
+        new MoisOption { Text = "Mars", Value = 3 }, new MoisOption { Text = "Avril", Value = 4 },
+        new MoisOption { Text = "Mai", Value = 5 }, new MoisOption { Text = "Juin", Value = 6 },
+        new MoisOption { Text = "Juillet", Value = 7 }, new MoisOption { Text = "Août", Value = 8 },
+        new MoisOption { Text = "Septembre", Value = 9 }, new MoisOption { Text = "Octobre", Value = 10 },
+        new MoisOption { Text = "Novembre", Value = 11 }, new MoisOption { Text = "Décembre", Value = 12 }
+    };
+
+    private string? documentBase64;
+    private string? documentPreview;
+    private string? existingDocumentPath;
+    private string? existingDocumentPreview;
+    private InputFile? fileInputElement;
+
+    private List<FactureDepenseSummaryItem> AvailableFacturesDepense =>
+        _filteredFacturesDepense.Where(f => !selectedFactureDepenseIds.Contains(f.Id)).ToList();
+    private List<FactureDepenseSummaryItem> SelectedFacturesDepense =>
+        _filteredFacturesDepense.Where(f => selectedFactureDepenseIds.Contains(f.Id)).ToList();
+
+    private class PaiementTiersDepenseFormModel
+    {
+        public int TiersDepenseFonctionnementId { get; set; }
+        public int? AccountingYearId { get; set; }
+        public decimal Montant { get; set; }
+        public DateTime DatePaiement { get; set; }
+        public string MethodePaiement { get; set; } = MethodePaiementConsts.Espece;
+        public string? NumeroTransactionBancaire { get; set; }
+        public string? NumeroChequeTraite { get; set; }
+        public int? BanqueId { get; set; }
+        public DateTime? DateEcheance { get; set; }
+        public string? Commentaire { get; set; }
+        public string? RibCodeEtab { get; set; }
+        public string? RibCodeAgence { get; set; }
+        public string? RibNumeroCompte { get; set; }
+        public string? RibCle { get; set; }
+        public int? Mois { get; set; }
+    }
+
+    private record MethodeOption(string Text, string Value);
+    private class MoisOption { public string Text { get; set; } = ""; public int? Value { get; set; } }
+
+    protected override async Task OnInitializedAsync()
+    {
+        accountingYears = await AccountingYearService.GetAllAccountingYearsAsync(_cts.Token) ?? new();
+        banques = await BanqueService.GetBanquesAsync(_cts.Token) ?? new();
+
+        if (IsEditMode && EffectiveId.HasValue)
+        {
+            await LoadPaiementAsync(EffectiveId.Value);
+        }
+        else
+        {
+            model.DatePaiement = DateTime.Today;
+            model.MethodePaiement = MethodePaiementConsts.Espece;
+            selectedMethodePaiement = MethodePaiementConsts.Espece;
+            var activeYear = await AccountingYearService.GetActiveAccountingYearAsync(_cts.Token);
+            if (activeYear != null) model.AccountingYearId = activeYear.Id;
+        }
+    }
+
+    private async Task LoadPaiementAsync(int id)
+    {
+        var result = await PaiementTiersDepenseService.GetByIdAsync(id, _cts.Token);
+        if (result.IsT0)
+        {
+            var r = result.AsT0;
+            model = new PaiementTiersDepenseFormModel
+            {
+                TiersDepenseFonctionnementId = r.TiersDepenseFonctionnementId,
+                AccountingYearId = r.AccountingYearId,
+                Montant = r.Montant,
+                DatePaiement = r.DatePaiement,
+                MethodePaiement = r.MethodePaiement ?? MethodePaiementConsts.Espece,
+                NumeroTransactionBancaire = r.NumeroTransactionBancaire,
+                NumeroChequeTraite = r.NumeroChequeTraite,
+                BanqueId = r.BanqueId,
+                DateEcheance = r.DateEcheance,
+                Commentaire = r.Commentaire,
+                RibCodeEtab = r.RibCodeEtab,
+                RibCodeAgence = r.RibCodeAgence,
+                RibNumeroCompte = r.RibNumeroCompte,
+                RibCle = r.RibCle,
+                Mois = r.Mois
+            };
+            selectedMethodePaiement = r.MethodePaiement;
+            selectedFactureDepenseIds = r.FactureDepenseIds?.ToList() ?? new();
+            existingDocumentPath = r.DocumentStoragePath;
+            if (!string.IsNullOrWhiteSpace(existingDocumentPath)) await LoadExistingDocumentPreviewAsync();
+            if (model.TiersDepenseFonctionnementId > 0)
+            {
+                var tierResult = await TiersDepenseService.GetByIdAsync(model.TiersDepenseFonctionnementId, _cts.Token);
+                if (tierResult.IsT0)
+                    _filteredTiers = new List<TiersDepenseFonctionnementResponse> { tierResult.AsT0 };
+                await LoadFacturesDepenseForTiersAsync(model.TiersDepenseFonctionnementId);
+            }
+        }
+        else
+            NavigationManager.NavigateTo("/paiements-tiers-depenses");
+    }
+
+    private async Task LoadTiers(LoadDataArgs args)
+    {
+        isLoadingTiers = true;
+        var parameters = new QueryStringParameters
+        {
+            PageNumber = args.Skip.HasValue && args.Top.HasValue && args.Top.Value > 0 ? (args.Skip.Value / args.Top.Value) + 1 : 1,
+            PageSize = args.Top.HasValue && args.Top.Value > 0 ? args.Top.Value : 20,
+            SearchKeyword = args.Filter ?? string.Empty
+        };
+        try
+        {
+            var result = await TiersDepenseService.GetPagedAsync(parameters, _cts.Token);
+            _filteredTiers = result.Items?.ToList() ?? new();
+        }
+        catch { _filteredTiers = new(); }
+        isLoadingTiers = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnTiersChanged(object? value)
+    {
+        if (value is int tiersId && tiersId > 0)
+            await LoadFacturesDepenseForTiersAsync(tiersId);
+        else
+            _filteredFacturesDepense = new();
+    }
+
+    private async Task LoadFacturesDepenseForTiersAsync(int tiersId)
+    {
+        isLoadingFacturesDepense = true;
+        try
+        {
+            var resp = await FactureDepenseService.GetWithSummariesAsync(1, 50, tiersId, model.AccountingYearId, null, null, null, _cts.Token);
+            _filteredFacturesDepense = resp?.Items ?? new();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = Localizer["Erreur"], Detail = ex.Message });
+        }
+        isLoadingFacturesDepense = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void OnFactureDepenseSelected(object? value)
+    {
+        if (value is int id && id > 0 && !selectedFactureDepenseIds.Contains(id))
+        {
+            selectedFactureDepenseIds.Add(id);
+            selectedFactureToAdd = null;
+            StateHasChanged();
+        }
+    }
+
+    private void RemoveFactureDepense(FactureDepenseSummaryItem fd)
+    {
+        selectedFactureDepenseIds.Remove(fd.Id);
+        StateHasChanged();
+    }
+
+    private async Task OnMethodePaiementChanged(object? value)
+    {
+        if (value is string methode)
+        {
+            selectedMethodePaiement = methode;
+            model.MethodePaiement = methode;
+            if (methode != MethodePaiementConsts.Cheque && methode != MethodePaiementConsts.Traite) { model.NumeroChequeTraite = null; model.BanqueId = null; model.DateEcheance = null; }
+            if (methode != MethodePaiementConsts.Traite && methode != MethodePaiementConsts.Virement) { model.RibCodeEtab = null; model.RibCodeAgence = null; model.RibNumeroCompte = null; model.RibCle = null; }
+        }
+    }
+
+    private async Task OpenAddBanqueDialog() => await LoadBanquesAsync();
+    private async Task LoadBanquesAsync()
+    {
+        try { banques = await BanqueService.GetBanquesAsync(_cts.Token) ?? new(); }
+        catch (Exception ex) { NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = Localizer["Erreur"], Detail = ex.Message }); }
+    }
+
+    private async Task CancelOrGoBack() => NavigationManager.NavigateTo("/paiements-tiers-depenses");
+    private void GoBack() => NavigationManager.NavigateTo("/paiements-tiers-depenses");
+
+    private async Task SavePaiement()
+    {
+        if (model.TiersDepenseFonctionnementId <= 0)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Warning, Summary = Localizer["Validation"], Detail = Localizer["Select_Tiers_Validation"] ?? "Veuillez sélectionner un tiers." });
+            return;
+        }
+        if (!model.AccountingYearId.HasValue)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Warning, Summary = Localizer["Validation"], Detail = Localizer["No_Accounting_Year_Validation"] });
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(model.MethodePaiement))
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Warning, Summary = Localizer["Validation"], Detail = Localizer["Select_Methode_Validation"] });
+            return;
+        }
+
+        isSaving = true;
+        try
+        {
+            if (IsEditMode && EffectiveId.HasValue)
+            {
+                var updateRequest = new UpdatePaiementTiersDepenseRequest
+                {
+                    NumeroTransactionBancaire = model.NumeroTransactionBancaire,
+                    TiersDepenseFonctionnementId = model.TiersDepenseFonctionnementId,
+                    AccountingYearId = model.AccountingYearId,
+                    Montant = model.Montant,
+                    DatePaiement = model.DatePaiement,
+                    MethodePaiement = model.MethodePaiement,
+                    NumeroChequeTraite = model.NumeroChequeTraite,
+                    BanqueId = model.BanqueId,
+                    DateEcheance = model.DateEcheance,
+                    Commentaire = model.Commentaire,
+                    RibCodeEtab = model.RibCodeEtab,
+                    RibCodeAgence = model.RibCodeAgence,
+                    RibNumeroCompte = model.RibNumeroCompte,
+                    RibCle = model.RibCle,
+                    Mois = model.Mois,
+                    FactureDepenseIds = selectedFactureDepenseIds.Count > 0 ? selectedFactureDepenseIds : null,
+                    DocumentBase64 = documentBase64
+                };
+                var updateResult = await PaiementTiersDepenseService.UpdateAsync(EffectiveId!.Value, updateRequest, _cts.Token);
+                if (updateResult.IsT0 && updateResult.AsT0 == ResponseTypes.Success)
+                {
+                    ToastService.Notify(new(ToastType.Success, Localizer["Paiement_Modifie"]));
+                    NavigationManager.NavigateTo("/paiements-tiers-depenses");
+                    return;
+                }
+                ToastService.Notify(new(ToastType.Danger, Localizer["Erreur"] + ": " + (updateResult.IsT1 ? updateResult.AsT1.Detail : "")));
+            }
+            else
+            {
+                var createRequest = new CreatePaiementTiersDepenseRequest
+                {
+                    NumeroTransactionBancaire = model.NumeroTransactionBancaire,
+                    TiersDepenseFonctionnementId = model.TiersDepenseFonctionnementId,
+                    AccountingYearId = model.AccountingYearId,
+                    Montant = model.Montant,
+                    DatePaiement = model.DatePaiement,
+                    MethodePaiement = model.MethodePaiement,
+                    NumeroChequeTraite = model.NumeroChequeTraite,
+                    BanqueId = model.BanqueId,
+                    DateEcheance = model.DateEcheance,
+                    Commentaire = model.Commentaire,
+                    RibCodeEtab = model.RibCodeEtab,
+                    RibCodeAgence = model.RibCodeAgence,
+                    RibNumeroCompte = model.RibNumeroCompte,
+                    RibCle = model.RibCle,
+                    Mois = model.Mois,
+                    FactureDepenseIds = selectedFactureDepenseIds.Count > 0 ? selectedFactureDepenseIds : null,
+                    DocumentBase64 = documentBase64
+                };
+                var createResult = await PaiementTiersDepenseService.CreateAsync(createRequest, _cts.Token);
+                if (createResult.IsT0)
+                {
+                    ToastService.Notify(new(ToastType.Success, Localizer["Paiement_Cree"]));
+                    NavigationManager.NavigateTo("/paiements-tiers-depenses");
+                    return;
+                }
+                var badRequest = createResult.AsT1;
+                ToastService.Notify(new(ToastType.Danger, Localizer["Erreur"] + ": " + (badRequest?.Detail ?? "")));
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = Localizer["Erreur"], Detail = ex.Message });
+        }
+        finally { isSaving = false; }
+    }
+
+    private async Task CaptureDocumentFromCamera()
+    {
+        try
+        {
+            var base64Image = await JSRuntime.InvokeAsync<string>("window.captureImageFromCamera");
+            if (string.IsNullOrEmpty(base64Image))
+            {
+                NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Warning, Summary = Localizer["Erreur"], Detail = "Erreur lors de la capture de l'image" });
+                return;
+            }
+            var imageSizeBytes = (base64Image.Length * 3) / 4;
+            const long maxImageSize = 5 * 1024 * 1024;
+            if (imageSizeBytes > maxImageSize)
+            {
+                NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Warning, Summary = Localizer["Erreur"], Detail = "L'image est trop grande (max 5 MB)." });
+                return;
+            }
+            documentBase64 = base64Image;
+            documentPreview = $"data:image/jpeg;base64,{base64Image}";
+            existingDocumentPath = null;
+            await InvokeAsync(StateHasChanged);
+            ToastService.Notify(new(ToastType.Success, "Document capturé avec succès"));
+        }
+        catch (JSException ex)
+        {
+            var msg = ex.Message.Contains("cancelled") || ex.Message.Contains("annulée") ? "Capture annulée" : ex.Message;
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = Localizer["Erreur"], Detail = msg });
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = Localizer["Erreur"], Detail = ex.Message });
+        }
+    }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file == null) return;
+        const long maxFileSize = 5 * 1024 * 1024;
+        if (file.Size > maxFileSize) { NotificationService.Notify(NotificationSeverity.Warning, "Fichier trop volumineux (max 5 Mo)."); return; }
+        if (!file.ContentType.StartsWith("image/") && file.ContentType != "application/pdf") { NotificationService.Notify(NotificationSeverity.Warning, "Veuillez sélectionner un fichier image ou PDF."); return; }
+        try
+        {
+            using var stream = file.OpenReadStream(maxFileSize);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            var base64 = Convert.ToBase64String(ms.ToArray());
+            documentBase64 = base64;
+            documentPreview = file.ContentType == "application/pdf" ? "data:application/pdf;base64," + base64 : $"data:{file.ContentType};base64,{base64}";
+            existingDocumentPath = null;
+            await InvokeAsync(StateHasChanged);
+            ToastService.Notify(new(ToastType.Success, "Fichier sélectionné avec succès"));
+        }
+        catch (Exception ex) { NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = Localizer["Erreur"], Detail = ex.Message }); }
+    }
+
+    private void RemoveDocument()
+    {
+        documentBase64 = null; documentPreview = null; existingDocumentPath = null; existingDocumentPreview = null;
+        StateHasChanged();
+    }
+
+    private async Task TriggerFileInput() => await JSRuntime.InvokeVoidAsync("eval", "document.getElementById('fileInputDocument')?.click()");
+
+    private async Task LoadExistingDocumentPreviewAsync()
+    {
+        if (string.IsNullOrWhiteSpace(existingDocumentPath) || !EffectiveId.HasValue) return;
+        try
+        {
+            var baseUrl = Configuration.GetValue<string>("ApiSettings:BaseUrl") ?? "";
+            var url = $"{baseUrl.TrimEnd('/')}/paiements-tiers-depenses/{EffectiveId.Value}/document";
+            using var httpClient = new HttpClient();
+            if (!string.IsNullOrEmpty(AuthService.AccessToken))
+                httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", AuthService.AccessToken);
+            var response = await httpClient.GetAsync(url, _cts.Token);
+            if (!response.IsSuccessStatusCode) return;
+            var documentBytes = await response.Content.ReadAsByteArrayAsync(_cts.Token);
+            var contentType = "application/octet-stream";
+            if (documentBytes.Length >= 4)
+            {
+                if (documentBytes[0] == 0x25 && documentBytes[1] == 0x50 && documentBytes[2] == 0x44 && documentBytes[3] == 0x46) contentType = "application/pdf";
+                else if (documentBytes[0] == 0x89 && documentBytes[1] == 0x50 && documentBytes[2] == 0x4E && documentBytes[3] == 0x47) contentType = "image/png";
+                else if (documentBytes.Length >= 3 && documentBytes[0] == 0xFF && documentBytes[1] == 0xD8 && documentBytes[2] == 0xFF) contentType = "image/jpeg";
+            }
+            existingDocumentPreview = $"data:{contentType};base64,{Convert.ToBase64String(documentBytes)}";
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex) { Logger.LogError(ex, "Error loading document preview"); }
+    }
+
+    private async Task ShowImagePreview(string? imageUrl)
+    {
+        if (string.IsNullOrWhiteSpace(imageUrl)) return;
+        if (!imageUrl.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase)) { await OpenExistingDocumentInNewTab(); return; }
+        await DialogService.OpenAsync<ImagePreviewDialog>("Aperçu de l'image", new Dictionary<string, object> { { "ImageUrl", imageUrl } }, new DialogOptions { Width = "90%", Height = "90%", Resizable = true, Draggable = true, ShowClose = true });
+    }
+
+    private async Task OpenExistingDocumentInNewTab()
+    {
+        if (!string.IsNullOrWhiteSpace(existingDocumentPreview)) { await JSRuntime.InvokeVoidAsync("openDocumentInNewTab", existingDocumentPreview); return; }
+        if (string.IsNullOrWhiteSpace(existingDocumentPath) || !EffectiveId.HasValue) return;
+        var baseUrl = Configuration.GetValue<string>("ApiSettings:BaseUrl") ?? "";
+        var url = $"{baseUrl.TrimEnd('/')}/paiements-tiers-depenses/{EffectiveId.Value}/document";
+        using var httpClient = new HttpClient();
+        if (!string.IsNullOrEmpty(AuthService.AccessToken))
+            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", AuthService.AccessToken);
+        var response = await httpClient.GetAsync(url, _cts.Token);
+        if (!response.IsSuccessStatusCode) return;
+        var documentBytes = await response.Content.ReadAsByteArrayAsync(_cts.Token);
+        var contentType = response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream";
+        await JSRuntime.InvokeVoidAsync("openDocumentInNewTab", $"data:{contentType};base64,{Convert.ToBase64String(documentBytes)}");
+    }
+}

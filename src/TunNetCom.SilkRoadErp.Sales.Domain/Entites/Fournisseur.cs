@@ -20,6 +20,7 @@ public partial class Fournisseur
          bool constructeur,
          string? adresse,
          double? tauxRetenu,
+         bool exonereRetenueSource,
          string? ribCodeEtab,
          string? ribCodeAgence,
          string? ribNumeroCompte,
@@ -37,6 +38,7 @@ public partial class Fournisseur
         this.Constructeur = constructeur;
         this.Adresse = adresse;
         this.TauxRetenu = tauxRetenu;
+        this.ExonereRetenueSource = exonereRetenueSource;
         this.RibCodeEtab = ribCodeEtab;
         this.RibCodeAgence = ribCodeAgence;
         this.RibNumeroCompte = ribNumeroCompte;
@@ -55,6 +57,7 @@ public partial class Fournisseur
      bool constructeur,
      string? adresse,
      double? tauxRetenu,
+     bool exonereRetenueSource,
      string? ribCodeEtab,
      string? ribCodeAgence,
      string? ribNumeroCompte,
@@ -74,6 +77,7 @@ public partial class Fournisseur
             Constructeur = constructeur,
             Adresse = adresse,
             TauxRetenu = tauxRetenu,
+            ExonereRetenueSource = exonereRetenueSource,
             RibCodeEtab = ribCodeEtab,
             RibCodeAgence = ribCodeAgence,
             RibNumeroCompte = ribNumeroCompte,
@@ -107,6 +111,8 @@ public partial class Fournisseur
     public string? Adresse { get; set; }
 
     public double? TauxRetenu { get; set; }
+
+    public bool ExonereRetenueSource { get; set; }
 
     public string? RibCodeEtab { get; set; }
 

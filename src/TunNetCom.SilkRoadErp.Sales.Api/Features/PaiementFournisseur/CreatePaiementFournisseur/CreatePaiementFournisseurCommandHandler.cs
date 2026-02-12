@@ -21,13 +21,14 @@ public class CreatePaiementFournisseurCommandHandler(
             return Result.Fail("fournisseur_not_found");
         }
 
-        // Validate accounting year exists
-        var activeAccountingYear = await _context.AccountingYear
-            .FirstOrDefaultAsync(ay => ay.IsActive, cancellationToken);
+        // Resolve accounting year: use requested one if provided and exists, otherwise active
+        var accountingYear = command.AccountingYearId.HasValue
+            ? await _context.AccountingYear.FirstOrDefaultAsync(ay => ay.Id == command.AccountingYearId.Value, cancellationToken)
+            : await _context.AccountingYear.FirstOrDefaultAsync(ay => ay.IsActive, cancellationToken);
 
-        if (activeAccountingYear == null)
+        if (accountingYear == null)
         {
-            _logger.LogError("No active accounting year found");
+            _logger.LogError("Accounting year not found or no active accounting year");
             return Result.Fail("no_active_accounting_year");
         }
 
@@ -62,7 +63,7 @@ public class CreatePaiementFournisseurCommandHandler(
         {
             var factureIds = command.FactureFournisseurIds!.Distinct().ToList();
             var facturesExist = await _context.FactureFournisseur
-                .Where(f => factureIds.Contains(f.Id))
+                .Where(f => f.AccountingYearId == accountingYear.Id && factureIds.Contains(f.Id))
                 .Select(f => f.Id)
                 .ToListAsync(cancellationToken);
             
@@ -77,7 +78,7 @@ public class CreatePaiementFournisseurCommandHandler(
         {
             var bonDeReceptionIds = command.BonDeReceptionIds!.Distinct().ToList();
             var bonDeReceptionsExist = await _context.BonDeReception
-                .Where(b => bonDeReceptionIds.Contains(b.Id))
+                .Where(b => b.AccountingYearId == accountingYear.Id && bonDeReceptionIds.Contains(b.Id))
                 .Select(b => b.Id)
                 .ToListAsync(cancellationToken);
             
@@ -123,7 +124,7 @@ public class CreatePaiementFournisseurCommandHandler(
         var paiement = Domain.Entites.PaiementFournisseur.CreatePaiementFournisseur(
             command.NumeroTransactionBancaire,
             command.FournisseurId,
-            activeAccountingYear.Id,
+            accountingYear.Id,
             command.Montant,
             command.DatePaiement,
             methodePaiement,

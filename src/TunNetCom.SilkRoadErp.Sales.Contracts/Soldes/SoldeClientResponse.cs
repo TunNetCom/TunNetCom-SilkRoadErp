@@ -81,6 +81,15 @@ public class LigneBlSoldeClient
     public int QuantiteNonLivree { get; set; }
 }
 
+public class FactureRattacheeSolde
+{
+    [JsonPropertyName("numero")]
+    public int Numero { get; set; }
+
+    [JsonPropertyName("montantTtc")]
+    public decimal MontantTtc { get; set; }
+}
+
 public class PaiementSoldeClient
 {
     [JsonPropertyName("id")]
@@ -97,5 +106,17 @@ public class PaiementSoldeClient
 
     [JsonPropertyName("methodePaiement")]
     public string MethodePaiement { get; set; } = string.Empty;
+
+    [JsonPropertyName("numeroChequeTraite")]
+    public string? NumeroChequeTraite { get; set; }
+
+    [JsonPropertyName("banqueNom")]
+    public string? BanqueNom { get; set; }
+
+    [JsonPropertyName("dateEcheance")]
+    public DateTime? DateEcheance { get; set; }
+
+    [JsonPropertyName("factures")]
+    public List<FactureRattacheeSolde> Factures { get; set; } = new();
 }
 

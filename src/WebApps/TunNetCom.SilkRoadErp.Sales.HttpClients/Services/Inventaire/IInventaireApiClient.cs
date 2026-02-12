@@ -39,7 +39,7 @@ public interface IInventaireApiClient
         CancellationToken cancellationToken);
 
     Task<OneOf<List<HistoriqueAchatVenteResponse>, bool>> GetHistoriqueAchatVenteAsync(
-        string refProduit,
+        int productId,
         CancellationToken cancellationToken);
 }
 

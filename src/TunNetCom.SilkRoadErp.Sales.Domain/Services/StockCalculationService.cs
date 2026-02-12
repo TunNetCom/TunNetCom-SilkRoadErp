@@ -31,6 +31,7 @@ public class StockCalculationService : IStockCalculationService
                 StockInitial = 0,
                 TotalAchats = 0,
                 TotalVentes = 0,
+                TotalAvoirsClients = 0,
                 StockCalcule = 0,
                 StockDisponible = 0,
                 QteEnRetourFournisseur = 0,
@@ -61,10 +62,17 @@ public class StockCalculationService : IStockCalculationService
             .Where(l => l.RefProduit == refProduit && l.NumBlNavigation.AccountingYearId == accountingYearId)
             .SumAsync(l => (int?)l.QteLi, cancellationToken) ?? 0;
 
+        // Calculer les avoirs clients (retours clients) pour l'exercice en cours (tous statuts)
+        var totalAvoirsClients = await _context.LigneAvoirs
+            .IgnoreQueryFilters()
+            .Include(l => l.AvoirsNavigation)
+            .Where(l => l.RefProduit == refProduit && l.AvoirsNavigation.AccountingYearId == accountingYearId)
+            .SumAsync(l => (int?)l.QteLi, cancellationToken) ?? 0;
+
         // Calculer les quantités en retour fournisseur
         var retourFournisseurData = await CalculateRetourFournisseurDataAsync(refProduit, accountingYearId, cancellationToken);
 
-        var stockCalcule = stockInitial + totalAchats - totalVentes;
+        var stockCalcule = stockInitial + totalAchats - totalVentes + totalAvoirsClients;
         
         // Le stock disponible exclut les produits en retour fournisseur (non encore reçus)
         var stockDisponible = Math.Max(0, stockCalcule - retourFournisseurData.QteEnReparation);
@@ -73,8 +81,8 @@ public class StockCalculationService : IStockCalculationService
         var stockReel = stockCalcule - retourFournisseurData.QteEnReparation;
 
         _logger.LogInformation(
-            "Stock calculated for product {RefProduit}: Initial={StockInitial}, Achats={TotalAchats}, Ventes={TotalVentes}, Calculé={StockCalcule}, EnReparation={EnReparation}, Disponible={Disponible}", 
-            refProduit, stockInitial, totalAchats, totalVentes, stockCalcule, retourFournisseurData.QteEnReparation, stockDisponible);
+            "Stock calculated for product {RefProduit}: Initial={StockInitial}, Achats={TotalAchats}, Ventes={TotalVentes}, AvoirsClients={TotalAvoirsClients}, Calculé={StockCalcule}, EnReparation={EnReparation}, Disponible={Disponible}",
+            refProduit, stockInitial, totalAchats, totalVentes, totalAvoirsClients, stockCalcule, retourFournisseurData.QteEnReparation, stockDisponible);
 
         return new ProductStockResult
         {
@@ -82,6 +90,7 @@ public class StockCalculationService : IStockCalculationService
             StockInitial = stockInitial,
             TotalAchats = totalAchats,
             TotalVentes = totalVentes,
+            TotalAvoirsClients = totalAvoirsClients,
             StockCalcule = stockCalcule,
             StockDisponible = stockDisponible,
             QteEnRetourFournisseur = retourFournisseurData.QteEnRetourFournisseur,
@@ -131,6 +140,15 @@ public class StockCalculationService : IStockCalculationService
             .Select(g => new { RefProduit = g.Key, TotalVentes = g.Sum(l => l.QteLi) })
             .ToDictionaryAsync(x => x.RefProduit, x => x.TotalVentes, cancellationToken);
 
+        // Calculer les avoirs clients (retours clients) pour tous les produits (tous statuts)
+        var avoirsClients = await _context.LigneAvoirs
+            .IgnoreQueryFilters()
+            .Include(l => l.AvoirsNavigation)
+            .Where(l => refProduits.Contains(l.RefProduit) && l.AvoirsNavigation.AccountingYearId == accountingYearId)
+            .GroupBy(l => l.RefProduit)
+            .Select(g => new { RefProduit = g.Key, TotalAvoirsClients = g.Sum(l => l.QteLi) })
+            .ToDictionaryAsync(x => x.RefProduit, x => x.TotalAvoirsClients, cancellationToken);
+
         // Calculer les retours fournisseur pour tous les produits
         var retoursFournisseur = await CalculateRetourFournisseurDataBatchAsync(refProduits, accountingYearId, cancellationToken);
 
@@ -140,7 +158,8 @@ public class StockCalculationService : IStockCalculationService
             var stockInitial = stocksInitiaux.GetValueOrDefault(refProduit, 0);
             var totalAchats = achats.GetValueOrDefault(refProduit, 0);
             var totalVentes = ventes.GetValueOrDefault(refProduit, 0);
-            var stockCalcule = stockInitial + totalAchats - totalVentes;
+            var totalAvoirsClients = avoirsClients.GetValueOrDefault(refProduit, 0);
+            var stockCalcule = stockInitial + totalAchats - totalVentes + totalAvoirsClients;
             
             var retourData = retoursFournisseur.GetValueOrDefault(refProduit, new RetourFournisseurData());
             
@@ -154,6 +173,7 @@ public class StockCalculationService : IStockCalculationService
                 StockInitial = stockInitial,
                 TotalAchats = totalAchats,
                 TotalVentes = totalVentes,
+                TotalAvoirsClients = totalAvoirsClients,
                 StockCalcule = stockCalcule,
                 StockDisponible = stockDisponible,
                 QteEnRetourFournisseur = retourData.QteEnRetourFournisseur,

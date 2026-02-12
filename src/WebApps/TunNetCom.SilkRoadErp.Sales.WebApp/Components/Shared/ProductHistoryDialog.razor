@@ -1,172 +1,30 @@
-@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote
-@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote
-@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products
-@using TunNetCom.SilkRoadErp.Sales.Contracts
-@using TunNetCom.SilkRoadErp.Sales.Contracts.Common
-@using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses
-@using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNote.Responses
-@using TunNetCom.SilkRoadErp.Sales.Contracts.Products
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
-@using System.Globalization
 @using Radzen
 @using Radzen.Blazor
-@inject IDeliveryNoteApiClient deliveryNoteService
-@inject IReceiptNoteApiClient receiptNoteService
-@inject IProductsApiClient productsApiClient
 @inject DialogService DialogService
 
-<RadzenTabs>
-    <Tabs>
-        <RadzenTabsItem Text="Ventes">
-            <RadzenDataGrid Data="@deliveryNotePagedList?.Items" 
-                           TItem="DeliveryNoteDetailResponse" 
-                           AllowSorting="true" 
-                           AllowPaging="true" 
-                           PageSize="10"
-                           Count="@(deliveryNotePagedList?.TotalCount ?? 0)"
-                           LoadData="@LoadDeliveryNotesData">
-                    <EmptyTemplate>
-                        <p style="color: lightgrey; font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
-                    </EmptyTemplate>
-                    <Columns>
-                        <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.Provider)" Title="Provider Name" Width="150px"/>
-                        <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.Date)" Title="Delivery Date" Width="150px">
-                            <Template Context="item">
-                                @item.Date.ToString("dd/MM/yyyy", CultureInfo.GetCultureInfo("fr-FR"))
-                            </Template>
-                        </RadzenDataGridColumn>
-                        <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.Description)" Title="Description" Width="200px"/>
-                        <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.UnitPriceExcludingTax)" Title="Unit Price (Excl. Tax)" Width="150px">
-                            <Template Context="item">
-                                @item.UnitPriceExcludingTax.ToString(DecimalFormatConstants.FORMAT_N3, CultureInfo.GetCultureInfo("fr-FR"))
-                            </Template>
-                        </RadzenDataGridColumn>
-                        <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.DiscountPercentage)" Title="Discount (%)" Width="100px">
-                            <Template Context="item">
-                                @item.DiscountPercentage.ToString(DecimalFormatConstants.FORMAT_N2, CultureInfo.GetCultureInfo("fr-FR"))
-                            </Template>
-                        </RadzenDataGridColumn>
-                        <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.VatPercentage)" Title="VAT (%)" Width="100px">
-                            <Template Context="item">
-                                @item.VatPercentage.ToString(DecimalFormatConstants.FORMAT_N2, CultureInfo.GetCultureInfo("fr-FR"))
-                            </Template>
-                        </RadzenDataGridColumn>
-                        <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.NetTtcUnitaire)" Title="Net TTC Unitaire" Width="150px">
-                            <Template Context="item">
-                                @item.NetTtcUnitaire.ToString(DecimalFormatConstants.FORMAT_N3, CultureInfo.GetCultureInfo("fr-FR"))
-                            </Template>
-                        </RadzenDataGridColumn>
-                        <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.PrixHtFodec)" Title="Price HT Fodec" Width="150px">
-                            <Template Context="item">
-                                @(item.PrixHtFodec?.ToString(DecimalFormatConstants.FORMAT_N3, CultureInfo.GetCultureInfo("fr-FR")) ?? "-")
-                            </Template>
-                        </RadzenDataGridColumn>
-                    </Columns>
-                </RadzenDataGrid>
-        </RadzenTabsItem>
-        
-        <RadzenTabsItem Text="Achats">
-            <RadzenDataGrid Data="@receiptNotePagedList?.Items" 
-                           TItem="ReceiptNoteDetailResponse" 
-                           AllowSorting="true" 
-                           AllowPaging="true" 
-                           PageSize="10"
-                           Count="@(receiptNotePagedList?.TotalCount ?? 0)"
-                           LoadData="@LoadReceiptNotesData">
-                    <EmptyTemplate>
-                        <p style="color: lightgrey; font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
-                    </EmptyTemplate>
-                    <Columns>
-                        <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailResponse.Provider)" Title="Provider Name" Width="150px"/>
-                        <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailResponse.Date)" Title="Receipt Date" Width="150px">
-                            <Template Context="item">
-                                @item.Date.ToString("dd/MM/yyyy", CultureInfo.GetCultureInfo("fr-FR"))
-                            </Template>
-                        </RadzenDataGridColumn>
-                        <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailResponse.Description)" Title="Description" Width="200px"/>
-                        <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailResponse.UnitPriceExcludingTax)" Title="Unit Price (Excl. Tax)" Width="150px">
-                            <Template Context="item">
-                                @item.UnitPriceExcludingTax.ToString(DecimalFormatConstants.FORMAT_N3, CultureInfo.GetCultureInfo("fr-FR"))
-                            </Template>
-                        </RadzenDataGridColumn>
-                        <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailResponse.DiscountPercentage)" Title="Discount (%)" Width="100px">
-                            <Template Context="item">
-                                @item.DiscountPercentage.ToString(DecimalFormatConstants.FORMAT_N2, CultureInfo.GetCultureInfo("fr-FR"))
-                            </Template>
-                        </RadzenDataGridColumn>
-                        <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailResponse.VatPercentage)" Title="VAT (%)" Width="100px">
-                            <Template Context="item">
-                                @item.VatPercentage.ToString(DecimalFormatConstants.FORMAT_N2, CultureInfo.GetCultureInfo("fr-FR"))
-                            </Template>
-                        </RadzenDataGridColumn>
-                        <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailResponse.TotalExcludingTax)" Title="Total HT" Width="150px">
-                            <Template Context="item">
-                                @item.TotalExcludingTax.ToString(DecimalFormatConstants.FORMAT_N3, CultureInfo.GetCultureInfo("fr-FR"))
-                            </Template>
-                        </RadzenDataGridColumn>
-                        <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailResponse.TotalIncludingTax)" Title="Total TTC" Width="150px">
-                            <Template Context="item">
-                                @item.TotalIncludingTax.ToString(DecimalFormatConstants.FORMAT_N3, CultureInfo.GetCultureInfo("fr-FR"))
-                            </Template>
-                        </RadzenDataGridColumn>
-                    </Columns>
-                </RadzenDataGrid>
-        </RadzenTabsItem>
-        
-        <RadzenTabsItem Text="Prix du système">
-            @if (isLoadingProductPrice)
-            {
-                <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
-            }
-            else if (productPrice == null)
-            {
-                <p style="color: lightgrey; font-size: 24px; text-align: center; margin: 2rem;">Aucune information disponible.</p>
-            }
-            else
-            {
-                <RadzenStack Gap="1.5rem" Style="padding: 1rem;">
-                    <RadzenCard>
-                        <RadzenStack Gap="1rem">
-                            <RadzenText TextStyle="TextStyle.H6">Informations du produit</RadzenText>
-                            <RadzenStack Gap="0.5rem">
-                                <RadzenText><strong>Référence:</strong> @productPrice.Reference</RadzenText>
-                                <RadzenText><strong>Nom:</strong> @productPrice.Name</RadzenText>
-                            </RadzenStack>
-                        </RadzenStack>
-                    </RadzenCard>
-                    
-                    <RadzenCard>
-                        <RadzenStack Gap="1rem">
-                            <RadzenText TextStyle="TextStyle.H6">Prix du système</RadzenText>
-                            <RadzenStack Gap="0.75rem">
-                                <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Style="padding: 0.5rem 0; border-bottom: 1px solid #e0e0e0;">
-                                    <RadzenText><strong>Prix de vente (HT):</strong></RadzenText>
-                                    <RadzenText>@productPrice.Price.ToString(DecimalFormatConstants.FORMAT_N3, CultureInfo.GetCultureInfo("fr-FR"))</RadzenText>
-                                </RadzenStack>
-                                <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Style="padding: 0.5rem 0; border-bottom: 1px solid #e0e0e0;">
-                                    <RadzenText><strong>Prix d'achat:</strong></RadzenText>
-                                    <RadzenText>@productPrice.PurchasingPrice.ToString(DecimalFormatConstants.FORMAT_N3, CultureInfo.GetCultureInfo("fr-FR"))</RadzenText>
-                                </RadzenStack>
-                                <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Style="padding: 0.5rem 0; border-bottom: 1px solid #e0e0e0;">
-                                    <RadzenText><strong>Remise (%):</strong></RadzenText>
-                                    <RadzenText>@productPrice.DiscountPourcentage.ToString(DecimalFormatConstants.FORMAT_N2, CultureInfo.GetCultureInfo("fr-FR"))</RadzenText>
-                                </RadzenStack>
-                                <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Style="padding: 0.5rem 0; border-bottom: 1px solid #e0e0e0;">
-                                    <RadzenText><strong>Remise achat (%):</strong></RadzenText>
-                                    <RadzenText>@productPrice.DiscountPourcentageOfPurchasing.ToString(DecimalFormatConstants.FORMAT_N2, CultureInfo.GetCultureInfo("fr-FR"))</RadzenText>
-                                </RadzenStack>
-                                <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Style="padding: 0.5rem 0;">
-                                    <RadzenText><strong>TVA (%):</strong></RadzenText>
-                                    <RadzenText>@productPrice.VatRate.ToString(DecimalFormatConstants.FORMAT_N2, CultureInfo.GetCultureInfo("fr-FR"))</RadzenText>
-                                </RadzenStack>
-                            </RadzenStack>
-                        </RadzenStack>
-                    </RadzenCard>
-                </RadzenStack>
-            }
-        </RadzenTabsItem>
-    </Tabs>
-</RadzenTabs>
+<div style="min-width: 970px; width: fit-content; max-width: 100%;">
+    @if (Mode == HistoryMode.Vente)
+    {
+        <CurrentProductInfoCard />
+    }
+
+    @* Three tabs: Achats (default), Ventes, Prix du système *@
+    <RadzenTabs @bind-SelectedIndex="selectedTabIndex">
+        <Tabs>
+            <RadzenTabsItem Text="Achats" Icon="shopping_cart">
+                <PurchaseHistoryGrid ProductReference="@ProductReference" PageSize="7" />
+            </RadzenTabsItem>
+            <RadzenTabsItem Text="Ventes" Icon="sell">
+                <SalesHistoryGrid ProductReference="@ProductReference" PageSize="7" />
+            </RadzenTabsItem>
+            <RadzenTabsItem Text="Prix du système" Icon="price_check">
+                <ProductSystemPriceTab ProductReference="@ProductReference" />
+            </RadzenTabsItem>
+        </Tabs>
+    </RadzenTabs>
+</div>
 
 <style>
     .rz-datatable thead th {
@@ -178,120 +36,42 @@
 
 @if (ShowClose)
 {
-    <div style="margin-top: 20px;">
-        <RadzenButton Text="Close" Click="@(() => DialogService.Close())" />
+    <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
+        <RadzenButton Text="Fermer" Click="@(() => DialogService.Close())" />
     </div>
 }
 
 @code {
-    [Parameter] public string ProductReference { get; set; } = string.Empty;
-    [Parameter] public bool ShowClose { get; set; } = true;
-    private PagedList<DeliveryNoteDetailResponse>? deliveryNotePagedList;
-    private PagedList<ReceiptNoteDetailResponse>? receiptNotePagedList;
-    private ProductResponse? productPrice;
-    private bool isLoadingProductPrice = false;
+    /// <summary>
+    /// Default width when opening this dialog (single source of truth for all callers).
+    /// </summary>
+    public static string DefaultWidth { get; } = "1150px";
 
-    protected override async Task OnInitializedAsync()
-    {
-        // Data will be loaded when the grids call LoadData
-        await LoadProductPrice();
-    }
+    /// <summary>
+    /// Default height when opening this dialog (single source of truth for all callers).
+    /// </summary>
+    public static string DefaultHeight { get; } = "90%";
 
-    protected override async Task OnParametersSetAsync()
-    {
-        // Reset paged lists when ProductReference changes
-        deliveryNotePagedList = null;
-        receiptNotePagedList = null;
-        await LoadProductPrice();
-        StateHasChanged();
-    }
+    /// <summary>
+    /// The product reference to display history for.
+    /// </summary>
+    [Parameter] 
+    public string ProductReference { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// The mode determines what content is shown:
+    /// - Vente: Shows current product info card + Both tabs
+    /// - Achat: Shows both tabs without current product card
+    /// </summary>
+    [Parameter] 
+    public HistoryMode Mode { get; set; } = HistoryMode.Vente;
+    
+    /// <summary>
+    /// Whether to show the close button.
+    /// </summary>
+    [Parameter] 
+    public bool ShowClose { get; set; } = true;
 
-    private async Task LoadDeliveryNotesData(LoadDataArgs args)
-    {
-        if (string.IsNullOrWhiteSpace(ProductReference))
-        {
-            deliveryNotePagedList = new PagedList<DeliveryNoteDetailResponse>(new List<DeliveryNoteDetailResponse>(), 0, 1, 10);
-            return;
-        }
-
-        try
-        {
-            var pageSize = args.Top ?? 10;
-            var pageNumber = args.Skip.HasValue && pageSize > 0 ? (args.Skip.Value / pageSize) + 1 : 1;
-
-            var result = await deliveryNoteService.GetDeliveryNotesAsync(ProductReference, pageNumber, pageSize);
-            deliveryNotePagedList = result ?? new PagedList<DeliveryNoteDetailResponse>(new List<DeliveryNoteDetailResponse>(), 0, pageNumber, pageSize);
-        }
-        catch (HttpRequestException)
-        {
-            // Handle API errors (e.g., network issues, 500 errors)
-            deliveryNotePagedList = new PagedList<DeliveryNoteDetailResponse>(new List<DeliveryNoteDetailResponse>(), 0, 1, 10);
-        }
-        catch (Exception)
-        {
-            // Log other exceptions
-            deliveryNotePagedList = new PagedList<DeliveryNoteDetailResponse>(new List<DeliveryNoteDetailResponse>(), 0, 1, 10);
-        }
-    }
-
-    private async Task LoadReceiptNotesData(LoadDataArgs args)
-    {
-        if (string.IsNullOrWhiteSpace(ProductReference))
-        {
-            receiptNotePagedList = new PagedList<ReceiptNoteDetailResponse>(new List<ReceiptNoteDetailResponse>(), 0, 1, 10);
-            return;
-        }
-
-        try
-        {
-            var pageSize = args.Top ?? 10;
-            var pageNumber = args.Skip.HasValue && pageSize > 0 ? (args.Skip.Value / pageSize) + 1 : 1;
-
-            var result = await receiptNoteService.GetReceiptNotesByProductReferenceAsync(ProductReference, pageNumber, pageSize);
-            receiptNotePagedList = result ?? new PagedList<ReceiptNoteDetailResponse>(new List<ReceiptNoteDetailResponse>(), 0, pageNumber, pageSize);
-        }
-        catch (HttpRequestException)
-        {
-            // Handle API errors (e.g., network issues, 500 errors)
-            receiptNotePagedList = new PagedList<ReceiptNoteDetailResponse>(new List<ReceiptNoteDetailResponse>(), 0, 1, 10);
-        }
-        catch (Exception)
-        {
-            // Log other exceptions
-            receiptNotePagedList = new PagedList<ReceiptNoteDetailResponse>(new List<ReceiptNoteDetailResponse>(), 0, 1, 10);
-        }
-    }
-
-    private async Task LoadProductPrice()
-    {
-        if (string.IsNullOrWhiteSpace(ProductReference))
-        {
-            productPrice = null;
-            return;
-        }
-
-        isLoadingProductPrice = true;
-        try
-        {
-            var result = await productsApiClient.GetAsync(ProductReference, CancellationToken.None);
-            if (result.IsT0)
-            {
-                productPrice = result.AsT0;
-            }
-            else
-            {
-                productPrice = null;
-            }
-        }
-        catch (Exception)
-        {
-            // Log other exceptions
-            productPrice = null;
-        }
-        finally
-        {
-            isLoadingProductPrice = false;
-        }
-    }
+    /// <summary>Selected tab index: 0=Achats (default), 1=Ventes, 2=Prix du système.</summary>
+    private int selectedTabIndex = 0;
 }
-

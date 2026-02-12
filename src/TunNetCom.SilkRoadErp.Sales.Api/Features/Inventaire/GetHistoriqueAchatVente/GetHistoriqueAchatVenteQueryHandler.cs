@@ -17,7 +17,8 @@ public class GetHistoriqueAchatVenteQueryHandler(
             .IgnoreQueryFilters()
             .Include(l => l.NumBonRecNavigation)
                 .ThenInclude(br => br.IdFournisseurNavigation)
-            .Where(l => l.RefProduit == query.RefProduit)
+            .Include(l => l.RefProduitNavigation)
+            .Where(l => l.RefProduitNavigation.Id == query.ProductId)
             .Select(l => new HistoriqueAchatVenteResponse
             {
                 Date = l.NumBonRecNavigation.Date,
@@ -35,7 +36,8 @@ public class GetHistoriqueAchatVenteQueryHandler(
             .IgnoreQueryFilters()
             .Include(l => l.NumBlNavigation)
                 .ThenInclude(bl => bl.Client)
-            .Where(l => l.RefProduit == query.RefProduit)
+            .Include(l => l.RefProduitNavigation)
+            .Where(l => l.RefProduitNavigation.Id == query.ProductId)
             .Select(l => new HistoriqueAchatVenteResponse
             {
                 Date = l.NumBlNavigation.Date,
@@ -53,7 +55,7 @@ public class GetHistoriqueAchatVenteQueryHandler(
         historique.AddRange(ventes);
         historique = historique.OrderByDescending(h => h.Date).ToList();
 
-        _logger.LogInformation("Historique récupéré pour {RefProduit}: {Count} entrées", query.RefProduit, historique.Count);
+        _logger.LogInformation("Historique récupéré pour ProductId={ProductId}: {Count} entrées", query.ProductId, historique.Count);
         return Result.Ok(historique);
     }
 }

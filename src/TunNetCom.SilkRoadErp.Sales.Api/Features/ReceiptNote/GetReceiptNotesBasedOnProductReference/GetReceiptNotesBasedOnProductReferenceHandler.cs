@@ -1,10 +1,12 @@
 using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNote.Responses;
+using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.GetReceiptNotesBasedOnProductReference;
 
 public class GetReceiptNotesBasedOnProductReferenceHandler(
     SalesContext _context,
-    ILogger<GetReceiptNotesBasedOnProductReferenceHandler> _logger)
+    ILogger<GetReceiptNotesBasedOnProductReferenceHandler> _logger,
+    IAccountingYearFinancialParametersService _financialParametersService)
     : IRequestHandler<GetReceiptNotesBasedOnProductReferenceQuery, PagedList<ReceiptNoteDetailResponse>>
 {
     public async Task<PagedList<ReceiptNoteDetailResponse>> Handle(GetReceiptNotesBasedOnProductReferenceQuery request, CancellationToken cancellationToken)
@@ -13,6 +15,8 @@ public class GetReceiptNotesBasedOnProductReferenceHandler(
         {
             return new PagedList<ReceiptNoteDetailResponse>(new List<ReceiptNoteDetailResponse>(), 0, request.PageNumber, request.PageSize);
         }
+
+        var fodecPercentage = await _financialParametersService.GetPourcentageFodecAsync(0, cancellationToken);
 
         var receiptNotesQuery = _context.LigneBonReception
             .Include(ligne => ligne.NumBonRecNavigation)
@@ -34,6 +38,12 @@ public class GetReceiptNotesBasedOnProductReferenceHandler(
                 TotalExcludingTax = ligne.TotHt,
                 TotalIncludingTax = ligne.TotTtc,
                 Provider = ligne.NumBonRecNavigation.IdFournisseurNavigation.Nom,
+                FournisseurId = ligne.NumBonRecNavigation.IdFournisseur,
+                Constructeur = ligne.NumBonRecNavigation.IdFournisseurNavigation.Constructeur,
+                FodecPercentage = fodecPercentage,
+                PrixHtFodec = ligne.NumBonRecNavigation.IdFournisseurNavigation.Constructeur && ligne.TotHt > 0
+                    ? ligne.TotHt * (fodecPercentage / 100)
+                    : (decimal?)null,
                 Date = ligne.NumBonRecNavigation.Date
             });
 

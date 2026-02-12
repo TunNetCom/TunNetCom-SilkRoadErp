@@ -1,0 +1,163 @@
+@page "/tiers-depenses-fonctionnement/edit"
+@page "/tiers-depenses-fonctionnement/edit/{Id:int}"
+@using TunNetCom.SilkRoadErp.Sales.Contracts.TiersDepenseFonctionnement
+@using TunNetCom.SilkRoadErp.Sales.HttpClients
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.TiersDepenseFonctionnement
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@inject ITiersDepenseFonctionnementApiClient TiersDepenseService
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<SharedResource> Localizer
+@inject Radzen.NotificationService NotificationService
+
+<RadzenCard Style="padding: 20px; max-width: 900px; margin: auto;">
+    <RadzenTemplateForm Data="@model" Submit="@SubmitCallback">
+        <RadzenStack Gap="1rem" Style="margin-bottom: 1rem;">
+            <h3 style="margin: 0;">@(Id.HasValue ? "Modifier le tiers" : "Nouveau tiers dépenses")</h3>
+        </RadzenStack>
+
+        <RadzenRow>
+            <RadzenColumn Size="12" SizeSM="6">
+                <RadzenFormField Text="@Localizer["Nom"]">
+                    <ChildContent><RadzenTextBox @bind-Value="model.Nom" Style="width: 100%;" /></ChildContent>
+                </RadzenFormField>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeSM="6">
+                <RadzenFormField Text="Tél">
+                    <ChildContent><RadzenTextBox @bind-Value="model.Tel" Style="width: 100%;" /></ChildContent>
+                </RadzenFormField>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeSM="6">
+                <RadzenFormField Text="Mail">
+                    <ChildContent><RadzenTextBox @bind-Value="model.Mail" Style="width: 100%;" /></ChildContent>
+                </RadzenFormField>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeSM="6">
+                <RadzenFormField Text="Adresse">
+                    <ChildContent><RadzenTextBox @bind-Value="model.Adresse" Style="width: 100%;" /></ChildContent>
+                </RadzenFormField>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeSM="6">
+                <RadzenFormField Text="Matricule">
+                    <ChildContent><RadzenTextBox @bind-Value="model.Matricule" Style="width: 100%;" /></ChildContent>
+                </RadzenFormField>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeSM="6">
+                <RadzenFormField Text="Code">
+                    <ChildContent><RadzenTextBox @bind-Value="model.Code" Style="width: 100%;" /></ChildContent>
+                </RadzenFormField>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeSM="6">
+                <RadzenFormField Text="Code cat">
+                    <ChildContent><RadzenTextBox @bind-Value="model.CodeCat" Style="width: 100%;" /></ChildContent>
+                </RadzenFormField>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeSM="6">
+                <RadzenFormField Text="Étab. sec">
+                    <ChildContent><RadzenTextBox @bind-Value="model.EtbSec" Style="width: 100%;" /></ChildContent>
+                </RadzenFormField>
+            </RadzenColumn>
+        </RadzenRow>
+
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" Style="margin-top: 1.5rem;">
+            <RadzenButton ButtonType="Radzen.ButtonType.Submit" Text="@Localizer["save_label"]" Icon="save" />
+            <RadzenButton Text="@Localizer["cancel_label"]" ButtonStyle="ButtonStyle.Light" Icon="close" Click="@(async () => Cancel())" />
+        </RadzenStack>
+    </RadzenTemplateForm>
+</RadzenCard>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+    private TiersDepenseFormModel model = new();
+    private CancellationTokenSource _cts = new();
+    private EventCallback<TiersDepenseFormModel> SubmitCallback => EventCallback.Factory.Create<TiersDepenseFormModel>(this, HandleValidSubmit);
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id.HasValue && Id.Value > 0)
+        {
+            var result = await TiersDepenseService.GetByIdAsync(Id.Value, _cts.Token);
+            if (result.IsT0)
+            {
+                var r = result.AsT0;
+                model = new TiersDepenseFormModel
+                {
+                    Id = r.Id,
+                    Nom = r.Nom ?? "",
+                    Tel = r.Tel,
+                    Adresse = r.Adresse,
+                    Mail = r.Mail,
+                    Matricule = r.Matricule,
+                    Code = r.Code,
+                    CodeCat = r.CodeCat,
+                    EtbSec = r.EtbSec
+                };
+                return;
+            }
+            NavigationManager.NavigateTo("/tiers-depenses-fonctionnement");
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (model.Id == 0)
+        {
+            var createResult = await TiersDepenseService.CreateAsync(new CreateTiersDepenseFonctionnementRequest
+            {
+                Nom = model.Nom,
+                Tel = model.Tel,
+                Adresse = model.Adresse,
+                Mail = model.Mail,
+                Matricule = model.Matricule,
+                Code = model.Code,
+                CodeCat = model.CodeCat,
+                EtbSec = model.EtbSec
+            }, _cts.Token);
+            if (createResult.IsT0)
+            {
+                NotificationService.Notify(NotificationSeverity.Success, "Tiers créé avec succès.");
+                NavigationManager.NavigateTo("/tiers-depenses-fonctionnement");
+                return;
+            }
+            NotificationService.Notify(NotificationSeverity.Error, "Erreur lors de la création.");
+            return;
+        }
+        var updateResult = await TiersDepenseService.UpdateAsync(model.Id, new UpdateTiersDepenseFonctionnementRequest
+        {
+            Nom = model.Nom,
+            Tel = model.Tel,
+            Adresse = model.Adresse,
+            Mail = model.Mail,
+            Matricule = model.Matricule,
+            Code = model.Code,
+            CodeCat = model.CodeCat,
+            EtbSec = model.EtbSec
+        }, _cts.Token);
+        if (updateResult.IsT0 && updateResult.AsT0 == ResponseTypes.Success)
+        {
+            NotificationService.Notify(NotificationSeverity.Success, "Tiers mis à jour.");
+            NavigationManager.NavigateTo("/tiers-depenses-fonctionnement");
+            return;
+        }
+        NotificationService.Notify(NotificationSeverity.Error, "Erreur lors de la mise à jour.");
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/tiers-depenses-fonctionnement");
+    }
+
+    private class TiersDepenseFormModel
+    {
+        public int Id { get; set; }
+        public string Nom { get; set; } = "";
+        public string? Tel { get; set; }
+        public string? Adresse { get; set; }
+        public string? Mail { get; set; }
+        public string? Matricule { get; set; }
+        public string? Code { get; set; }
+        public string? CodeCat { get; set; }
+        public string? EtbSec { get; set; }
+    }
+}

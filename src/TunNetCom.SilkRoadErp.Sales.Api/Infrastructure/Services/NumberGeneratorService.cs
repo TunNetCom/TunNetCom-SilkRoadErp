@@ -1,7 +1,16 @@
+using Microsoft.EntityFrameworkCore;
+using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
+
 namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
 
 public interface INumberGeneratorService
 {
+    /// <summary>
+    /// Génère la prochaine référence certificat TEJ pour le mois donné. Format : {Mois}{XXX} (ex. mars → 3001, 3002).
+    /// La séquence est réinitialisée chaque mois.
+    /// </summary>
+    Task<string> GetNextTejCertificatRefAsync(int year, int month, CancellationToken cancellationToken = default);
+
     Task<int> GenerateFactureNumberAsync(int accountingYearId, CancellationToken cancellationToken = default);
     Task<int> GenerateFactureFournisseurNumberAsync(int accountingYearId, CancellationToken cancellationToken = default);
     Task<int> GenerateBonDeLivraisonNumberAsync(int accountingYearId, CancellationToken cancellationToken = default);
@@ -9,7 +18,9 @@ public interface INumberGeneratorService
     Task<int> GenerateAvoirNumberAsync(int accountingYearId, CancellationToken cancellationToken = default);
     Task<int> GenerateAvoirFournisseurNumberAsync(int accountingYearId, CancellationToken cancellationToken = default);
     Task<int> GenerateFactureAvoirFournisseurNumberAsync(int accountingYearId, CancellationToken cancellationToken = default);
+    Task<int> GenerateAvoirFinancierFournisseurNumAsync(int accountingYearId, CancellationToken cancellationToken = default);
     Task<int> GenerateRetourMarchandiseFournisseurNumberAsync(int accountingYearId, CancellationToken cancellationToken = default);
+    Task<int> GenerateFactureDepenseNumberAsync(int accountingYearId, CancellationToken cancellationToken = default);
 }
 
 public class NumberGeneratorService : INumberGeneratorService
@@ -21,6 +32,43 @@ public class NumberGeneratorService : INumberGeneratorService
     {
         _context = context;
         _logger = logger;
+    }
+
+    public async Task<string> GetNextTejCertificatRefAsync(int year, int month, CancellationToken cancellationToken = default)
+    {
+        if (month < 1 || month > 12)
+            throw new ArgumentOutOfRangeException(nameof(month), "Le mois doit être entre 1 et 12.");
+
+        const int maxRetries = 3;
+        for (var retry = 0; retry < maxRetries; retry++)
+        {
+            var row = await _context.TejCertificatSequence
+                .AsTracking()
+                .FirstOrDefaultAsync(s => s.Annee == year && s.Mois == month, cancellationToken);
+
+            if (row == null)
+            {
+                row = new TejCertificatSequence { Annee = year, Mois = month, DerniereSequence = 0 };
+                _context.TejCertificatSequence.Add(row);
+            }
+
+            row.DerniereSequence++;
+            var sequence = row.DerniereSequence;
+            var refCertif = month.ToString() + sequence.ToString("D3"); // ex. 3 + 001 = 3001, 12 + 001 = 12001
+
+            try
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+                _logger.LogInformation("Generated TEJ certificat ref: {Ref} for {Year}/{Month}", refCertif, year, month);
+                return refCertif;
+            }
+            catch (DbUpdateConcurrencyException) when (retry < maxRetries - 1)
+            {
+                _context.Entry(row).State = EntityState.Detached;
+            }
+        }
+
+        throw new InvalidOperationException("Impossible de générer la référence certificat TEJ après plusieurs tentatives.");
     }
 
     public async Task<int> GenerateFactureNumberAsync(int accountingYearId, CancellationToken cancellationToken = default)
@@ -184,6 +232,26 @@ public class NumberGeneratorService : INumberGeneratorService
         return newNum;
     }
 
+    public async Task<int> GenerateAvoirFinancierFournisseurNumAsync(int accountingYearId, CancellationToken cancellationToken = default)
+    {
+        var accountingYear = await _context.AccountingYear.FindAsync(new object[] { accountingYearId }, cancellationToken);
+        if (accountingYear == null)
+        {
+            throw new InvalidOperationException($"Accounting year with Id {accountingYearId} not found");
+        }
+
+        var year = accountingYear.Year;
+        var lastNum = await _context.AvoirFinancierFournisseurs
+            .IgnoreQueryFilters()
+            .MaxAsync(a => (int?)a.Num, cancellationToken) ?? 0;
+
+        var nextSequence = GetNextSequence(lastNum, year);
+        var newNum = year * 100000 + nextSequence;
+
+        _logger.LogInformation("Generated AvoirFinancierFournisseur number: {Num} for accounting year {Year}", newNum, year);
+        return newNum;
+    }
+
     public async Task<int> GenerateRetourMarchandiseFournisseurNumberAsync(int accountingYearId, CancellationToken cancellationToken = default)
     {
         var accountingYear = await _context.AccountingYear.FindAsync(new object[] { accountingYearId }, cancellationToken);
@@ -204,6 +272,29 @@ public class NumberGeneratorService : INumberGeneratorService
         var newNum = year * 100000 + nextSequence;
 
         _logger.LogInformation("Generated RetourMarchandiseFournisseur number: {Num} for accounting year {Year}", newNum, year);
+        return newNum;
+    }
+
+    public async Task<int> GenerateFactureDepenseNumberAsync(int accountingYearId, CancellationToken cancellationToken = default)
+    {
+        var accountingYear = await _context.AccountingYear.FindAsync(new object[] { accountingYearId }, cancellationToken);
+        if (accountingYear == null)
+        {
+            throw new InvalidOperationException($"Accounting year with Id {accountingYearId} not found");
+        }
+
+        var year = accountingYear.Year;
+        var lastNum = await _context.FactureDepense
+            .IgnoreQueryFilters()
+            .Where(f => f.AccountingYearId == accountingYearId)
+            .OrderByDescending(f => f.Num)
+            .Select(f => f.Num)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var nextSequence = GetNextSequence(lastNum, year);
+        var newNum = year * 100000 + nextSequence;
+
+        _logger.LogInformation("Generated FactureDepense number: {Num} for accounting year {Year}", newNum, year);
         return newNum;
     }
 

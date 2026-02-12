@@ -128,6 +128,10 @@
                                       Title="Numéro"
                                       Width="150px" />
                 <RadzenDataGridColumn TItem="ProviderInvoiceBaseInfo"
+                                      Property="@nameof(ProviderInvoiceBaseInfo.ProviderInvoiceNumber)"
+                                      Title="Numéro facture fournisseur"
+                                      Width="180px" />
+                <RadzenDataGridColumn TItem="ProviderInvoiceBaseInfo"
                                       Property="@nameof(ProviderInvoiceBaseInfo.ProviderName)"
                                       Title="@Localizer["Fournisseur"]"
                                       Width="200px" />
@@ -250,19 +254,16 @@
                 </RadzenDataGridColumn>
             </Columns>
         </RadzenDataGrid>
-        <RadzenCard class="summary-card" Variant="Variant.Outlined">
-            <RadzenStack Orientation="Radzen.Orientation.Horizontal"
-                         Gap="1.5rem"
-                         JustifyContent="JustifyContent.End"
-                         class="summary-stack">
-                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                    @Localizer["total_net"]: <strong>@totalNetAmount.FormatAmount()</strong>
-                </RadzenText>
-                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                    @Localizer["total_vat"]: <strong>@totalVatAmount.FormatAmount()</strong>
-                </RadzenText>
-            </RadzenStack>
-        </RadzenCard>
+        <InvoiceTotalsSummary TotalNet="totalNetAmount"
+                              TotalVat="totalVatAmount"
+                              TotalTtc="totalTtc"
+                              ShowDetailByRate="true"
+                              Base7="totalBase7"
+                              Base13="totalBase13"
+                              Base19="totalBase19"
+                              Vat7="totalVat7"
+                              Vat13="totalVat13"
+                              Vat19="totalVat19" />
     </div>
 </div>
 
@@ -461,6 +462,13 @@
     private int totalCount = 0;
     private decimal totalNetAmount = 0;
     private decimal totalVatAmount = 0;
+    private decimal totalTtc = 0;
+    private decimal totalBase7 = 0;
+    private decimal totalBase13 = 0;
+    private decimal totalBase19 = 0;
+    private decimal totalVat7 = 0;
+    private decimal totalVat13 = 0;
+    private decimal totalVat19 = 0;
     private int pageSize = GridPageSizeConstants.PageSize10;
     private SearchCriteria searchCriteria = new SearchCriteria();
     private List<ProviderResponse> _filteredProviders = new();
@@ -678,10 +686,8 @@
             invoicesList = response.Value;
             totalCount = response.ODataCount ?? response.Value.Count;
 
-            // Calculate totals from current page (for display)
-            // Note: For accurate totals across all pages, we'd need a separate aggregation endpoint
-            totalNetAmount = invoicesList.Sum(i => i.NetAmount);
-            totalVatAmount = invoicesList.Sum(i => i.VatAmount);
+            // Fetch exact totals (HT, TVA by rate, TTC) for the same filters from API
+            await LoadTotalsAsync();
 
             // Load retenue status for all invoices
             await LoadRetenueStatus();
@@ -693,9 +699,87 @@
             totalCount = 0;
             totalNetAmount = 0;
             totalVatAmount = 0;
+            totalTtc = 0;
+            totalBase7 = 0;
+            totalBase13 = 0;
+            totalBase19 = 0;
+            totalVat7 = 0;
+            totalVat13 = 0;
+            totalVat19 = 0;
         }
 
         await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadTotalsAsync()
+    {
+        try
+        {
+            var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
+                searchCriteria.PeriodFilter,
+                searchCriteria.StartDate,
+                searchCriteria.EndDate);
+
+            var queryParams = new List<string>();
+
+            if (startDate.HasValue)
+            {
+                queryParams.Add($"startDate={Uri.EscapeDataString(startDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+            }
+
+            if (endDate.HasValue)
+            {
+                queryParams.Add($"endDate={Uri.EscapeDataString(endDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+            }
+
+            if (searchCriteria.SelectedProviderId.HasValue)
+            {
+                queryParams.Add($"providerId={searchCriteria.SelectedProviderId.Value}");
+            }
+
+            if (searchCriteria.SelectedTagIds != null && searchCriteria.SelectedTagIds.Any())
+            {
+                foreach (var tagId in searchCriteria.SelectedTagIds)
+                {
+                    queryParams.Add($"tagIds={tagId}");
+                }
+            }
+
+            if (searchCriteria.Status.HasValue)
+            {
+                queryParams.Add($"status={searchCriteria.Status.Value}");
+            }
+
+            var baseUrl = Configuration.GetValue<string>("ApiSettings:BaseUrl")
+                ?? throw new InvalidOperationException("ApiSettings:BaseUrl configuration is missing");
+
+            var url = $"{baseUrl.TrimEnd('/')}/api/provider-invoices/totals";
+            if (queryParams.Any())
+            {
+                url += "?" + string.Join("&", queryParams);
+            }
+
+            var response = await HttpClient.GetAsync(url);
+            response.EnsureSuccessStatusCode();
+
+            var totals = await response.Content.ReadFromJsonAsync<ProviderInvoiceTotalsResponse>();
+            if (totals != null)
+            {
+                totalNetAmount = totals.TotalHT;
+                totalBase7 = totals.TotalBase7;
+                totalBase13 = totals.TotalBase13;
+                totalBase19 = totals.TotalBase19;
+                totalVat7 = totals.TotalVat7;
+                totalVat13 = totals.TotalVat13;
+                totalVat19 = totals.TotalVat19;
+                totalVatAmount = totals.TotalVat;
+                totalTtc = totals.TotalTTC;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading provider invoice totals");
+        }
     }
 
     private async Task LoadRetenueStatus()

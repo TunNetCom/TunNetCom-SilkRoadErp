@@ -67,9 +67,11 @@ public class PaiementFournisseurApiClient : IPaiementFournisseurApiClient
 
     public async Task<PagedList<PaiementFournisseurResponse>> GetPaiementsFournisseurAsync(
         int? fournisseurId,
-        int? accountingYearId,
+        IEnumerable<int>? accountingYearIds,
         DateTime? dateEcheanceFrom,
         DateTime? dateEcheanceTo,
+        DateTime? datePaiementFrom,
+        DateTime? datePaiementTo,
         decimal? montantMin,
         decimal? montantMax,
         bool? hasNumeroTransactionBancaire,
@@ -79,6 +81,19 @@ public class PaiementFournisseurApiClient : IPaiementFournisseurApiClient
         CancellationToken cancellationToken)
     {
         _logger.LogInformation("Fetching paiements fournisseur from API /paiement-fournisseur");
+        const int maxPageSize = 50;
+        if (pageNumber < 1)
+        {
+            pageNumber = 1;
+        }
+        if (pageSize < 1)
+        {
+            pageSize = 1;
+        }
+        if (pageSize > maxPageSize)
+        {
+            pageSize = maxPageSize;
+        }
         var queryString = $"/paiement-fournisseur?pageNumber={pageNumber}&pageSize={pageSize}";
 
         if (fournisseurId.HasValue)
@@ -86,9 +101,12 @@ public class PaiementFournisseurApiClient : IPaiementFournisseurApiClient
             queryString += $"&fournisseurId={fournisseurId.Value}";
         }
 
-        if (accountingYearId.HasValue)
+        if (accountingYearIds != null)
         {
-            queryString += $"&accountingYearId={accountingYearId.Value}";
+            foreach (var id in accountingYearIds)
+            {
+                queryString += $"&accountingYearIds={id}";
+            }
         }
 
         if (dateEcheanceFrom.HasValue)
@@ -99,6 +117,16 @@ public class PaiementFournisseurApiClient : IPaiementFournisseurApiClient
         if (dateEcheanceTo.HasValue)
         {
             queryString += $"&dateEcheanceTo={Uri.EscapeDataString(dateEcheanceTo.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}";
+        }
+
+        if (datePaiementFrom.HasValue)
+        {
+            queryString += $"&datePaiementFrom={Uri.EscapeDataString(datePaiementFrom.Value.ToString("yyyy-MM-dd"))}";
+        }
+
+        if (datePaiementTo.HasValue)
+        {
+            queryString += $"&datePaiementTo={Uri.EscapeDataString(datePaiementTo.Value.ToString("yyyy-MM-dd"))}";
         }
 
         if (montantMin.HasValue)

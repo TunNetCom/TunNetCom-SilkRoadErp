@@ -1,4 +1,4 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.UpdateProvider;
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Providers.UpdateProvider;
 
 public class UpdateProviderValidator : AbstractValidator<UpdateProviderCommand>
 {
@@ -10,7 +10,7 @@ public class UpdateProviderValidator : AbstractValidator<UpdateProviderCommand>
 
         _ = RuleFor(x => x.Tel)
             .NotEmpty().WithMessage("mobile_number_is_required")
-            .Matches(@"^\+?\d{10,15}$").WithMessage("mobile_number_must_be_heigher_than_10_and_less_than_15_numbers");
+            .Matches(@"^\+?\d{8,15}$").WithMessage("mobile_number_must_be_between_8_and_15_digits");
 
         _ = RuleFor(x => x.Fax)
            .MaximumLength(50).WithMessage("fax_must_be_less_than_50_characters");

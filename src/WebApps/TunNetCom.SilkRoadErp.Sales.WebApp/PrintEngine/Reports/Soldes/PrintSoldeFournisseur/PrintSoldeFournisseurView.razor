@@ -96,6 +96,8 @@
             <div class="label">Solde</div>
             <div class="value">@Model.Summary.Solde.FormatAmount(Model.DecimalPlaces) TND</div>
             <div class="label">Total factures: @Model.Summary.TotalFactures.FormatAmount(Model.DecimalPlaces)</div>
+            <div class="label">Total factures avoir: @Model.Summary.TotalFacturesAvoir.FormatAmount(Model.DecimalPlaces)</div>
+            <div class="label">Total avoirs financiers: @Model.Summary.TotalAvoirsFinanciers.FormatAmount(Model.DecimalPlaces)</div>
             <div class="label">Total paiements: @Model.Summary.TotalPaiements.FormatAmount(Model.DecimalPlaces)</div>
         </div>
     </div>
@@ -139,6 +141,7 @@
                 <th>Numéro</th>
                 <th>Date</th>
                 <th>Méthode</th>
+                <th>Facture(s)</th>
                 <th class="text-right">Montant</th>
             </tr>
         </thead>
@@ -151,6 +154,7 @@
                         <td>@payment.NumeroTransactionBancaire</td>
                         <td>@payment.DatePaiement.ToString("dd/MM/yyyy")</td>
                         <td>@payment.Methode</td>
+                        <td>@(payment.Factures?.Any() == true ? string.Join(", ", payment.Factures.Select(f => $"{f.Numero} ({f.MontantTtc.FormatAmount(Model.DecimalPlaces)} TND)")) : "-")</td>
                         <td class="text-right">@payment.Montant.FormatAmount(Model.DecimalPlaces) TND</td>
                     </tr>
                 }
@@ -158,7 +162,7 @@
             else
             {
                 <tr>
-                    <td colspan="4" style="text-align:center;">Aucun paiement</td>
+                    <td colspan="5" style="text-align:center;">Aucun paiement</td>
                 </tr>
             }
         </tbody>

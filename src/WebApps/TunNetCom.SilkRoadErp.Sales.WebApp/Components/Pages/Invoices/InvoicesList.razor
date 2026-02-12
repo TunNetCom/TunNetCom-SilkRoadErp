@@ -81,6 +81,20 @@
                           Style="margin-left: 8px;"
                           Title="Exporter vers Sage ERP"
                           AriaLabel="Exporter vers Sage ERP" />
+            <RadzenButton Icon="table_chart"
+                          ButtonStyle="ButtonStyle.Info"
+                          Click="@ExportToExcelAsync"
+                          class="action-button"
+                          Style="margin-left: 8px;"
+                          Title="Exporter vers Excel"
+                          AriaLabel="Exporter vers Excel" />
+            <RadzenButton Icon="picture_as_pdf"
+                          ButtonStyle="ButtonStyle.Warning"
+                          Click="@ExportToPdfAsync"
+                          class="action-button"
+                          Style="margin-left: 8px;"
+                          Title="Exporter vers PDF"
+                          AriaLabel="Exporter vers PDF" />
         </div>
     </div>
     <div class="list-card">
@@ -173,19 +187,16 @@
                 </RadzenDataGridColumn>
             </Columns>
         </RadzenDataGrid>
-        <RadzenCard class="summary-card" Variant="Variant.Outlined">
-            <RadzenStack Orientation="Radzen.Orientation.Horizontal"
-                         Gap="1.5rem"
-                         JustifyContent="JustifyContent.End"
-                         class="summary-stack">
-                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                    @Localizer["total_net"]: <strong>@totalNetAmount.FormatAmount()</strong>
-                </RadzenText>
-                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                    @Localizer["total_vat"]: <strong>@totalVatAmount.FormatAmount()</strong>
-                </RadzenText>
-            </RadzenStack>
-        </RadzenCard>
+        <InvoiceTotalsSummary TotalNet="totalNetAmount"
+                              TotalVat="totalVatAmount"
+                              TotalTtc="totalTtc"
+                              ShowDetailByRate="true"
+                              Base7="totalBase7"
+                              Base13="totalBase13"
+                              Base19="totalBase19"
+                              Vat7="totalVat7"
+                              Vat13="totalVat13"
+                              Vat19="totalVat19" />
     </div>
 </div>
 
@@ -385,6 +396,13 @@
     private int totalCount = 0;
     private decimal totalNetAmount = 0;
     private decimal totalVatAmount = 0;
+    private decimal totalTtc = 0;
+    private decimal totalVat7 = 0;
+    private decimal totalVat13 = 0;
+    private decimal totalVat19 = 0;
+    private decimal totalBase7 = 0;
+    private decimal totalBase13 = 0;
+    private decimal totalBase19 = 0;
     private int pageSize = GridPageSizeConstants.PageSize10;
     private SearchCriteria searchCriteria = new SearchCriteria();
     private List<CustomerResponse> _filteredCustomers = new();
@@ -534,48 +552,110 @@
 
         try
         {
-            _logger.LogInformation("Calling ODataService.QueryAsync for InvoiceBaseInfos");
+            _logger.LogInformation("Calling GetInvoicesList API");
             
-            // Add Status filter to args if selected
-            if (searchCriteria.Status.HasValue)
+            // Build query parameters
+            var queryParams = new List<string>();
+            
+            if (startDate.HasValue)
             {
-                var statusFilter = $"Statut eq {searchCriteria.Status.Value}";
-                if (!string.IsNullOrEmpty(args.Filter))
+                queryParams.Add($"startDate={Uri.EscapeDataString(startDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+            }
+            
+            if (endDate.HasValue)
+            {
+                queryParams.Add($"endDate={Uri.EscapeDataString(endDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+            }
+            
+            if (searchCriteria.SelectedCustomerId.HasValue)
+            {
+                queryParams.Add($"customerId={searchCriteria.SelectedCustomerId.Value}");
+            }
+            
+            if (searchCriteria.SelectedTagIds != null && searchCriteria.SelectedTagIds.Any())
+            {
+                foreach (var tagId in searchCriteria.SelectedTagIds)
                 {
-                    args.Filter = $"({args.Filter}) and ({statusFilter})";
-                }
-                else
-                {
-                    args.Filter = statusFilter;
+                    queryParams.Add($"tagIds={tagId}");
                 }
             }
-
-            var response = await ODataService.QueryAsync<InvoiceBaseInfo>(
-                entitySet: "InvoiceBaseInfos",
-                args: args,
-                startDate: startDate,
-                endDate: endDate,
-                customerId: searchCriteria.SelectedCustomerId,
-                tagIds: searchCriteria.SelectedTagIds,
-                cancellationToken: default);
-
-            invoicesList = response.Value;
-            totalCount = response.ODataCount ?? response.Value.Count;
-
-            // Calculate totals from current page (for display)
-            // Note: For accurate totals across all pages, we'd need a separate aggregation endpoint
-            totalNetAmount = invoicesList.Sum(i => i.NetAmount);
-            totalVatAmount = invoicesList.Sum(i => i.VatAmount);
+            
+            if (searchCriteria.Status.HasValue)
+            {
+                queryParams.Add($"status={searchCriteria.Status.Value}");
+            }
+            
+            var page = (args.Skip ?? 0) / pageSize + 1;
+            queryParams.Add($"page={page}");
+            queryParams.Add($"pageSize={pageSize}");
+            
+            // Handle sorting (default: by document number ascending)
+            if (!string.IsNullOrEmpty(args.OrderBy))
+            {
+                var sortParts = args.OrderBy.Split(' ');
+                var sortBy = sortParts[0];
+                var sortDescending = sortParts.Length > 1 && sortParts[1].ToLower() == "desc";
+                queryParams.Add($"sortBy={sortBy}");
+                queryParams.Add($"sortDescending={sortDescending}");
+            }
+            else
+            {
+                queryParams.Add("sortBy=Number");
+                queryParams.Add("sortDescending=false");
+            }
+            
+            var baseUrl = Configuration.GetValue<string>("ApiSettings:BaseUrl")
+                ?? throw new InvalidOperationException("ApiSettings:BaseUrl configuration is missing");
+            
+            var url = $"{baseUrl.TrimEnd('/')}/api/invoices/list";
+            if (queryParams.Any())
+            {
+                url += "?" + string.Join("&", queryParams);
+            }
+            
+            var response = await HttpClient.GetFromJsonAsync<InvoicesListResponse>(url);
+            
+            if (response != null)
+            {
+                invoicesList = response.Invoices;
+                totalCount = response.TotalCount;
+                totalNetAmount = response.Totals.TotalHT;
+                totalVatAmount = response.Totals.TotalVat;
+                totalTtc = response.Totals.TotalTTC;
+                totalVat7 = response.Totals.TotalVat7;
+                totalVat13 = response.Totals.TotalVat13;
+                totalVat19 = response.Totals.TotalVat19;
+                totalBase7 = response.Totals.TotalBase7;
+                totalBase13 = response.Totals.TotalBase13;
+                totalBase19 = response.Totals.TotalBase19;
+            }
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error loading invoices");
             invoicesList = new List<InvoiceBaseInfo>();
             totalCount = 0;
             totalNetAmount = 0;
             totalVatAmount = 0;
+            totalTtc = 0;
+            totalVat7 = 0;
+            totalVat13 = 0;
+            totalVat19 = 0;
+            totalBase7 = 0;
+            totalBase13 = 0;
+            totalBase19 = 0;
         }
 
         await InvokeAsync(StateHasChanged);
+    }
+    
+    public class InvoicesListResponse
+    {
+        public List<InvoiceBaseInfo> Invoices { get; set; } = new();
+        public int TotalCount { get; set; }
+        public int Page { get; set; }
+        public int PageSize { get; set; }
+        public InvoiceTotalsResponse Totals { get; set; } = new();
     }
 
     public class SearchCriteria
@@ -592,6 +672,200 @@
     {
         searchCriteria.SelectedTagIds = tagIds;
         await SearchInvoices();
+    }
+
+    private async Task ExportToExcelAsync()
+    {
+        try
+        {
+            _logger.LogInformation("ExportToExcelAsync called");
+
+            var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
+                searchCriteria.PeriodFilter,
+                searchCriteria.StartDate,
+                searchCriteria.EndDate);
+
+            var queryParams = new List<string>();
+
+            if (startDate.HasValue)
+            {
+                queryParams.Add($"startDate={Uri.EscapeDataString(startDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+            }
+
+            if (endDate.HasValue)
+            {
+                queryParams.Add($"endDate={Uri.EscapeDataString(endDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+            }
+
+            if (searchCriteria.SelectedCustomerId.HasValue)
+            {
+                queryParams.Add($"customerId={searchCriteria.SelectedCustomerId.Value}");
+            }
+
+            if (searchCriteria.SelectedTagIds != null && searchCriteria.SelectedTagIds.Any())
+            {
+                foreach (var tagId in searchCriteria.SelectedTagIds)
+                {
+                    queryParams.Add($"tagIds={tagId}");
+                }
+            }
+
+            if (searchCriteria.Status.HasValue)
+            {
+                queryParams.Add($"status={searchCriteria.Status.Value}");
+            }
+
+            // Add columns to export (include all visible columns)
+            var columnsToExport = new[] { "Number", "Date", "CustomerName", "NetAmount", "VatAmount" };
+            foreach (var column in columnsToExport)
+            {
+                queryParams.Add($"selectedColumns={Uri.EscapeDataString(column)}");
+            }
+
+            var baseUrl = Configuration.GetValue<string>("ApiSettings:BaseUrl")
+                ?? throw new InvalidOperationException("ApiSettings:BaseUrl configuration is missing");
+            
+            var url = $"{baseUrl.TrimEnd('/')}/api/invoices/export/excel";
+            if (queryParams.Any())
+            {
+                url += "?" + string.Join("&", queryParams);
+            }
+
+            var response = await HttpClient.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Erreur",
+                    Detail = "Erreur lors de l'export Excel"
+                });
+                return;
+            }
+
+            var fileBytes = await response.Content.ReadAsByteArrayAsync();
+            var fileName = response.Content.Headers.ContentDisposition?.FileName ?? $"Factures_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+            fileName = fileName.Trim('"');
+
+            await JS.InvokeVoidAsync("downloadFile", fileName, Convert.ToBase64String(fileBytes));
+            
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Succès",
+                Detail = "Export Excel réussi"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error exporting to Excel");
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Erreur",
+                Detail = $"Erreur lors de l'export: {ex.Message}"
+            });
+        }
+    }
+
+    private async Task ExportToPdfAsync()
+    {
+        try
+        {
+            _logger.LogInformation("ExportToPdfAsync called");
+
+            var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
+                searchCriteria.PeriodFilter,
+                searchCriteria.StartDate,
+                searchCriteria.EndDate);
+
+            var queryParams = new List<string>();
+
+            if (startDate.HasValue)
+            {
+                queryParams.Add($"startDate={Uri.EscapeDataString(startDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+            }
+
+            if (endDate.HasValue)
+            {
+                queryParams.Add($"endDate={Uri.EscapeDataString(endDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+            }
+
+            if (searchCriteria.SelectedCustomerId.HasValue)
+            {
+                queryParams.Add($"customerId={searchCriteria.SelectedCustomerId.Value}");
+            }
+
+            if (searchCriteria.SelectedTagIds != null && searchCriteria.SelectedTagIds.Any())
+            {
+                foreach (var tagId in searchCriteria.SelectedTagIds)
+                {
+                    queryParams.Add($"tagIds={tagId}");
+                }
+            }
+
+            if (searchCriteria.Status.HasValue)
+            {
+                queryParams.Add($"status={searchCriteria.Status.Value}");
+            }
+
+            // Add columns to export (include all visible columns)
+            var columnsToExport = new[] { "Number", "Date", "CustomerName", "NetAmount", "VatAmount" };
+            foreach (var column in columnsToExport)
+            {
+                queryParams.Add($"selectedColumns={Uri.EscapeDataString(column)}");
+            }
+
+            var baseUrl = Configuration.GetValue<string>("ApiSettings:BaseUrl")
+                ?? throw new InvalidOperationException("ApiSettings:BaseUrl configuration is missing");
+            
+            var url = $"{baseUrl.TrimEnd('/')}/api/invoices/export/pdf";
+            if (queryParams.Any())
+            {
+                url += "?" + string.Join("&", queryParams);
+            }
+
+            var pdfResult = await HttpClient.GetAsync(url);
+            if (!pdfResult.IsSuccessStatusCode)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Erreur",
+                    Detail = "Erreur lors de l'export PDF"
+                });
+                return;
+            }
+
+            var fileBytes = await pdfResult.Content.ReadAsByteArrayAsync();
+            var fileName = pdfResult.Content.Headers.ContentDisposition?.FileName ?? $"Factures_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+            fileName = fileName.Trim('"');
+
+            await DialogService.OpenAsync<PdfViewerDialog>(
+                Localizer["print_mode"],
+                new Dictionary<string, object>
+                {
+                    { "PdfBytes", fileBytes },
+                    { "FileName", fileName }
+                },
+                new DialogOptions()
+                {
+                    Width = "900px",
+                    Height = "800px",
+                    Resizable = true,
+                    Draggable = true
+                });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error exporting to PDF");
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Erreur",
+                Detail = $"Erreur lors de l'export: {ex.Message}"
+            });
+        }
     }
 
     private async Task ExportToSageErpAsync()

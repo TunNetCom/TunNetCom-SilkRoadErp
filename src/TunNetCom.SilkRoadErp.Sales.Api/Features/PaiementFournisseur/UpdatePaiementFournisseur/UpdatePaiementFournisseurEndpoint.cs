@@ -1,4 +1,5 @@
 using TunNetCom.SilkRoadErp.Sales.Contracts.PaiementFournisseur;
+using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Constants;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.PaiementFournisseur.UpdatePaiementFournisseur;
 
@@ -7,6 +8,7 @@ public class UpdatePaiementFournisseurEndpoint : ICarterModule
     public void AddRoutes(IEndpointRouteBuilder app)
     {
         _ = app.MapPut("/paiement-fournisseur/{id:int}", HandleUpdatePaiementFournisseurAsync)
+            .RequireAuthorization($"Permission:{Permissions.UpdatePaymentFournisseur}")
             .WithTags(EndpointTags.PaiementFournisseur);
     }
 
@@ -20,6 +22,7 @@ public class UpdatePaiementFournisseurEndpoint : ICarterModule
             id,
             request.NumeroTransactionBancaire,
             request.FournisseurId,
+            request.AccountingYearId,
             request.Montant,
             request.DatePaiement,
             request.MethodePaiement,

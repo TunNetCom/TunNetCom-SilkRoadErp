@@ -8,6 +8,7 @@
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Products
 @using TunNetCom.SilkRoadErp.Sales.Contracts.ProductFamilies
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 @using Radzen
 @using Radzen.Blazor
 @using BlazorBootstrap
@@ -38,10 +39,11 @@
             </div>
         </div>
 
-        <RadzenTextBox Placeholder="@Localizer["Search"]"
-                       @bind-Value="searchKeyword"
-                       Change="@(async (string value) => await productGrid.Reload())"
-                       Class="products-search" />
+        <input type="text"
+               placeholder="@Localizer["Search"]"
+               value="@searchKeyword"
+               @oninput="OnSearchInput"
+               class="products-search" />
 
         <RadzenCard Class="products-filters-card">
             <RadzenStack Gap="1rem">
@@ -228,11 +230,14 @@
                     </Template>
                 </RadzenDataGridColumn>
 
-                <RadzenDataGridColumn TItem="ProductResponse" Filterable="false" Sortable="false" Width="200px" TextAlign="TextAlign.Center">
+                <RadzenDataGridColumn TItem="ProductResponse" Filterable="false" Sortable="false" Width="260px" TextAlign="TextAlign.Center">
                     <Template Context="product">
                         <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Success" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter" Class="rz-my-1 rz-ms-1"
-                                      Click="@(() => EditProduct(product.Reference))"
+                                      Click="@(() => EditProduct(product))"
                                       Title="@Localizer["edit_button_label"]" />
+                        <RadzenButton Icon="trending_up" ButtonStyle="ButtonStyle.Info" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter" Class="rz-my-1 rz-ms-1"
+                                      Click="@(() => ShowHistoriqueAchatVente(product.Reference))"
+                                      Title="@Localizer["historique_achat_vente"]" />
                         <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter"
                                       Click="@(() => ConfirmDeleteProduct(product.Reference))"
                                       Title="@Localizer["delete_button_label"]" />
@@ -315,11 +320,17 @@
     .products-search {
         width: 100%;
         border-radius: var(--border-radius);
-        border: 1px solid var(--border-color);
+        border: 1px solid var(--rz-border-color, var(--border-color));
         padding: 0.75rem 1rem;
         margin-bottom: 1.25rem;
         font-size: 0.95rem;
+        background-color: var(--rz-base-background-color, var(--card-bg));
+        color: var(--rz-text-color, var(--text-color));
     }
+
+        .products-search::placeholder {
+            color: var(--rz-text-secondary-color, #5f6368);
+        }
 
         .products-search:focus {
             border-color: var(--primary-color);
@@ -574,6 +585,8 @@
     private string searchKeyword = string.Empty;
     private string currentProductRefeToDelete;
     private CancellationTokenSource cancellationTokenSource = new();
+    private CancellationTokenSource searchDebounceCts = new();
+    private const int SearchDebounceMs = 350;
     private int defaultPageSize = 10;
     private HashSet<string> selectedProducts = new();
     private List<SousFamilleProduitResponse> subFamilies = new();
@@ -668,6 +681,25 @@
         stockCalculeMax = null;
         await LoadSubFamilies();
         await productGrid.Reload();
+    }
+
+    private async Task OnSearchInput(ChangeEventArgs e)
+    {
+        searchKeyword = e.Value?.ToString() ?? string.Empty;
+        StateHasChanged();
+        searchDebounceCts.Cancel();
+        searchDebounceCts.Dispose();
+        searchDebounceCts = new CancellationTokenSource();
+        var token = searchDebounceCts.Token;
+        try
+        {
+            await Task.Delay(SearchDebounceMs, token);
+            await productGrid.Reload();
+        }
+        catch (OperationCanceledException)
+        {
+            // Debounce cancelled by new keystroke
+        }
     }
 
     private bool GetSelectedState(ProductResponse product)
@@ -828,9 +860,9 @@
         navigationManager.NavigateTo("/editproduct");
     }
 
-    private void EditProduct(string reference)
+    private void EditProduct(ProductResponse product)
     {
-        navigationManager.NavigateTo($"/editproduct/{reference}");
+        navigationManager.NavigateTo($"/editproduct/{product.Id}");
     }
 
     private async Task ConfirmDeleteProduct(string reference)
@@ -848,6 +880,20 @@
 
     }
 
+    private async Task ShowHistoriqueAchatVente(string refProduit)
+    {
+        await DialogService.OpenAsync<ProductHistoryDialog>($"{Localizer["history"]} {Localizer["article"]} {refProduit}",
+            new Dictionary<string, object> { { "ProductReference", refProduit } },
+            new DialogOptions
+            {
+                Resizable = true,
+                Draggable = true,
+                Width = ProductHistoryDialog.DefaultWidth,
+                Height = ProductHistoryDialog.DefaultHeight,
+                Style = "width: " + ProductHistoryDialog.DefaultWidth + "; min-width: " + ProductHistoryDialog.DefaultWidth
+            });
+    }
+
     void OnRowRender(RowRenderEventArgs<ProductResponse> args)
     {
 	    if (args.Data.StockCalcule.HasValue && args.Data.StockCalcule.Value < args.Data.QteLimit)
@@ -859,6 +905,8 @@
 
     public void Dispose()
 	    {
+	        searchDebounceCts?.Cancel();
+	        searchDebounceCts?.Dispose();
 	        cancellationTokenSource.Cancel();
 	        cancellationTokenSource.Dispose();
 	    }

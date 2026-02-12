@@ -44,6 +44,7 @@
 </RadzenStack>
 
 @code {
+    [Parameter] public int ProductId { get; set; }
     [Parameter] public string RefProduit { get; set; } = string.Empty;
     
     private List<HistoriqueAchatVenteResponse> historique = new();
@@ -56,10 +57,15 @@
 
     private async Task LoadHistorique()
     {
+        if (ProductId <= 0)
+        {
+            isLoading = false;
+            return;
+        }
         isLoading = true;
         try
         {
-            var result = await inventaireService.GetHistoriqueAchatVenteAsync(RefProduit, CancellationToken.None);
+            var result = await inventaireService.GetHistoriqueAchatVenteAsync(ProductId, CancellationToken.None);
             if (result.IsT0)
             {
                 historique = result.AsT0;

@@ -96,6 +96,12 @@ public partial class SalesContext : DbContext
 
     public virtual DbSet<Banque> Banque { get; set; }
 
+    public virtual DbSet<CompteBancaire> CompteBancaire { get; set; }
+
+    public virtual DbSet<BankTransactionImport> BankTransactionImport { get; set; }
+
+    public virtual DbSet<BankTransaction> BankTransaction { get; set; }
+
     public virtual DbSet<PaiementClient> PaiementClient { get; set; }
 
     public virtual DbSet<PaiementFournisseur> PaiementFournisseur { get; set; }
@@ -128,7 +134,19 @@ public partial class SalesContext : DbContext
 
     public virtual DbSet<RetenueSourceFournisseur> RetenueSourceFournisseur { get; set; }
 
+    public virtual DbSet<TejCertificatSequence> TejCertificatSequence { get; set; }
+
+    public virtual DbSet<TejCertificatFacture> TejCertificatFacture { get; set; }
+
     public virtual DbSet<Notification> Notification { get; set; }
+
+    public virtual DbSet<TiersDepenseFonctionnement> TiersDepenseFonctionnement { get; set; }
+
+    public virtual DbSet<FactureDepense> FactureDepense { get; set; }
+
+    public virtual DbSet<PaiementTiersDepense> PaiementTiersDepense { get; set; }
+
+    public virtual DbSet<PaiementTiersDepenseFactureDepense> PaiementTiersDepenseFactureDepense { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -20,6 +20,29 @@ public interface ISoldesApiClient
         int pageSize,
         int? accountingYearId = null,
         CancellationToken cancellationToken = default);
+
+    Task<PagedList<FournisseurSoldeProblemeResponse>> GetFournisseursAvecProblemesSoldeAsync(
+        int pageNumber,
+        int pageSize,
+        int? accountingYearId = null,
+        CancellationToken cancellationToken = default);
+
+    Task<(byte[] Content, string FileName)> ExportClientsAvecProblemesSoldeToPdfAsync(
+        int? accountingYearId = null,
+        CancellationToken cancellationToken = default);
+
+    Task<(byte[] Content, string FileName)> ExportClientsAvecProblemesSoldeToExcelAsync(
+        int? accountingYearId = null,
+        CancellationToken cancellationToken = default);
+
+    Task<Result<RestesALivrerParClientResponse>> GetRestesALivrerParClientAsync(
+        int? accountingYearId,
+        CancellationToken cancellationToken);
+
+    Task<Result<SoldeTiersDepenseResponse>> GetSoldeTiersDepenseAsync(
+        int tiersDepenseFonctionnementId,
+        int? accountingYearId,
+        CancellationToken cancellationToken);
 }
 
 

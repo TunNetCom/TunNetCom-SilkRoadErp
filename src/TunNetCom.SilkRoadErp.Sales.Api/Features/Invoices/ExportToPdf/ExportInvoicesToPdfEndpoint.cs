@@ -60,7 +60,11 @@ public class ExportInvoicesToPdfEndpoint : ICarterModule
 
             if (endDate.HasValue)
             {
-                var endDateInclusive = endDate.Value.Date.AddDays(1).AddTicks(-1);
+                // If endDate already has time component (not midnight), use it as-is
+                // Otherwise, set to end of day
+                var endDateInclusive = endDate.Value.TimeOfDay == TimeSpan.Zero 
+                    ? endDate.Value.Date.AddDays(1).AddTicks(-1) 
+                    : endDate.Value;
                 baseQuery = baseQuery.Where(x => x.f.Date <= endDateInclusive);
             }
 
@@ -158,13 +162,20 @@ public class ExportInvoicesToPdfEndpoint : ICarterModule
             var lines = await linesQuery.ToListAsync(cancellationToken);
 
             var totalNetAmount = lines.Sum(l => l.TotHt) + (timbre * invoiceList.Count);
+            
+            // Calculate VAT bases (using TotHt)
+            var totalBase7 = lines.Where(l => l.Tva == vatRate7).Sum(l => l.TotHt);
+            var totalBase13 = lines.Where(l => l.Tva == vatRate13).Sum(l => l.TotHt);
+            var totalBase19 = lines.Where(l => l.Tva == vatRate19).Sum(l => l.TotHt);
+            
+            // Calculate VAT amounts (using TotTtc - TotHt)
             var totalVat7 = lines.Where(l => l.Tva == vatRate7).Sum(l => l.TotTtc - l.TotHt);
             var totalVat13 = lines.Where(l => l.Tva == vatRate13).Sum(l => l.TotTtc - l.TotHt);
             var totalVat19 = lines.Where(l => l.Tva == vatRate19).Sum(l => l.TotTtc - l.TotHt);
             var totalVatAmount = totalVat7 + totalVat13 + totalVat19;
             var totalTtcAmount = totalNetAmount + totalVatAmount;
 
-            var fileBytes = await exportService.ExportToPdfAsync(invoiceList, columnsToExport, "Liste des Factures", decimalPlaces, totalNetAmount, totalVatAmount, totalTtcAmount, totalVat7, totalVat13, totalVat19, cancellationToken);
+            var fileBytes = await exportService.ExportToPdfAsync(invoiceList, columnsToExport, "Liste des Factures", decimalPlaces, totalNetAmount, totalVatAmount, totalTtcAmount, totalVat7, totalVat13, totalVat19, totalBase7, totalBase13, totalBase19, cancellationToken);
 
             var filename = $"Factures_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
 

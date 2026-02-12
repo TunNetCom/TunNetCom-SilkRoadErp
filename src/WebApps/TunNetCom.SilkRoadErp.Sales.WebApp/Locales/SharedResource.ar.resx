@@ -345,6 +345,18 @@
   <data name="current_month" xml:space="preserve">
     <value>الشهر الحالي</value>
   </data>
+  <data name="current_day" xml:space="preserve">
+    <value>يوم</value>
+  </data>
+  <data name="current_week" xml:space="preserve">
+    <value>أسبوع</value>
+  </data>
+  <data name="Tableau_de_bord" xml:space="preserve">
+    <value>لوحة التحكم</value>
+  </data>
+  <data name="Recap_ventes_achats" xml:space="preserve">
+    <value>ملخص المبيعات والمشتريات</value>
+  </data>
   <data name="last_month" xml:space="preserve">
     <value>الشهر السابق</value>
   </data>
@@ -359,6 +371,9 @@
   </data>
   <data name="select_invoice" xml:space="preserve">
     <value>اختر فاتورة</value>
+  </data>
+  <data name="print_invoice" xml:space="preserve">
+    <value>طباعة الفاتورة</value>
   </data>
   <data name="Select_Delivery_Car" xml:space="preserve">
     <value>اختر سيارة التوصيل</value>
@@ -657,6 +672,12 @@
   <data name="Paiements_Fournisseurs" xml:space="preserve">
     <value>مدفوعات الموردين</value>
   </data>
+  <data name="Liste" xml:space="preserve">
+    <value>قائمة</value>
+  </data>
+  <data name="Calendrier_Echeances" xml:space="preserve">
+    <value>تقويم الاستحقاقات</value>
+  </data>
   <data name="Soldes_Clients" xml:space="preserve">
     <value>أرصدة العملاء</value>
   </data>
@@ -713,6 +734,9 @@
   </data>
   <data name="Date_Echeance" xml:space="preserve">
     <value>تاريخ الاستحقاق</value>
+  </data>
+  <data name="Factures_Rattachees" xml:space="preserve">
+    <value>الفاتورة/الفواتير</value>
   </data>
   <data name="Facture_Optionnel" xml:space="preserve">
     <value>الفاتورة (اختياري)</value>
@@ -819,6 +843,9 @@
   <data name="Traite" xml:space="preserve">
     <value>سند</value>
   </data>
+  <data name="TPE" xml:space="preserve">
+    <value>TPE</value>
+  </data>
   <data name="Rechercher" xml:space="preserve">
     <value>بحث</value>
   </data>
@@ -923,6 +950,9 @@
   </data>
   <data name="Confirmation_Suppression_Banque" xml:space="preserve">
     <value>هل أنت متأكد من حذف هذا البنك؟</value>
+  </data>
+  <data name="Confirmation_Suppression_AvoirFinancier" xml:space="preserve">
+    <value>هل أنت متأكد من حذف الائتمان المالي رقم {0}؟</value>
   </data>
   <data name="Fonctionnalite_Non_Disponible" xml:space="preserve">
     <value>هذه الميزة غير متاحة بعد</value>
@@ -1190,5 +1220,104 @@
   </data>
   <data name="Close" xml:space="preserve">
     <value>إغلاق</value>
+  </data>
+  <data name="Export_Excel" xml:space="preserve">
+    <value>تصدير إلى Excel</value>
+  </data>
+  <data name="Export_Pdf" xml:space="preserve">
+    <value>تصدير إلى PDF</value>
+  </data>
+  <data name="Export_Excel_Success" xml:space="preserve">
+    <value>تم التصدير إلى Excel بنجاح</value>
+  </data>
+  <data name="Erreur_Export" xml:space="preserve">
+    <value>خطأ أثناء التصدير</value>
+  </data>
+  <data name="Cloture_Caisse" xml:space="preserve">
+    <value>إقفال الصندوق</value>
+  </data>
+  <data name="Date" xml:space="preserve">
+    <value>التاريخ</value>
+  </data>
+  <data name="Imprimer_PDF" xml:space="preserve">
+    <value>طباعة PDF</value>
+  </data>
+  <data name="Somme_Espece" xml:space="preserve">
+    <value>مجموع النقد</value>
+  </data>
+  <data name="Somme_Cheque" xml:space="preserve">
+    <value>مجموع الشيكات</value>
+  </data>
+  <data name="Somme_Traite" xml:space="preserve">
+    <value>مجموع السندات</value>
+  </data>
+  <data name="Somme_Virement" xml:space="preserve">
+    <value>مجموع التحويلات</value>
+  </data>
+  <data name="Somme_TPE" xml:space="preserve">
+    <value>مجموع TPE</value>
+  </data>
+  <data name="Total_Paiements" xml:space="preserve">
+    <value>إجمالي المدفوعات</value>
+  </data>
+  <data name="Total" xml:space="preserve">
+    <value>المجموع</value>
+  </data>
+  <data name="Afficher_Detail" xml:space="preserve">
+    <value>عرض التفاصيل</value>
+  </data>
+  <data name="Masquer_Detail" xml:space="preserve">
+    <value>إخفاء التفاصيل</value>
+  </data>
+  <data name="Avoirs" xml:space="preserve">
+    <value>الائتمانات</value>
+  </data>
+  <data name="Aucun_avoir_date" xml:space="preserve">
+    <value>لا توجد إشعارات دائنة لهذا التاريخ.</value>
+  </data>
+  <data name="Aucun_bl_date" xml:space="preserve">
+    <value>لا توجد أوامر تسليم لهذا التاريخ.</value>
+  </data>
+  <data name="Resultat_Cloture" xml:space="preserve">
+    <value>النتيجة (إجمالي أوامر التسليم - إجمالي الإشعارات الدائنة)</value>
+  </data>
+  <data name="Export_PDF_Reussi" xml:space="preserve">
+    <value>تم تصدير PDF بنجاح.</value>
+  </data>
+  <data name="Actualiser" xml:space="preserve">
+    <value>تحديث</value>
+  </data>
+  <data name="Ventes_nettes" xml:space="preserve">
+    <value>المبيعات الصافية</value>
+  </data>
+  <data name="Achats_nets" xml:space="preserve">
+    <value>المشتريات الصافية</value>
+  </data>
+  <data name="Resultat" xml:space="preserve">
+    <value>النتيجة</value>
+  </data>
+  <data name="HT" xml:space="preserve">
+    <value>بدون ض.م.ع</value>
+  </data>
+  <data name="Evolution_ventes_achats" xml:space="preserve">
+    <value>تطور المبيعات والمشتريات</value>
+  </data>
+  <data name="Alertes_soldes" xml:space="preserve">
+    <value>تنبيهات الأرصدة</value>
+  </data>
+  <data name="Aucune_donnee_evolution" xml:space="preserve">
+    <value>لا توجد بيانات تطور متاحة.</value>
+  </data>
+  <data name="Voir_tout" xml:space="preserve">
+    <value>عرض الكل</value>
+  </data>
+  <data name="Voir_recap_detaille" xml:space="preserve">
+    <value>عرض الملخص التفصيلي</value>
+  </data>
+  <data name="exonere_retenue_source" xml:space="preserve">
+    <value>معفى من الاقتطاع في المنبع</value>
+  </data>
+  <data name="tej_export_info_retenue" xml:space="preserve">
+    <value>عند التصدير إلى TEJ، يتم إرسال المبلغ قبل الاقتطاع؛ منصة TEJ تقوم بحساب الاقتطاع.</value>
   </data>
 </root>

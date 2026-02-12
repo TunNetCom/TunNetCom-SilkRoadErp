@@ -179,6 +179,17 @@
                                             }
                                         </Template>
                                     </RadzenDataGridColumn>
+                                    <RadzenDataGridColumn Title="@Localizer["actions_label"]" Width="80px" Sortable="false" Filterable="false" TextAlign="TextAlign.Center">
+                                        <Template Context="bl">
+                                            <RadzenButton Icon="edit"
+                                                          ButtonStyle="ButtonStyle.Primary"
+                                                          Variant="Variant.Flat"
+                                                          Size="ButtonSize.Small"
+                                                          Click="@(() => NavigationManager.NavigateTo($"/AddOrUpdateDeliveryNote/{bl.Numero}"))"
+                                                          Title="@Localizer["Edit"]"
+                                                          AriaLabel="@Localizer["Edit"]" />
+                                        </Template>
+                                    </RadzenDataGridColumn>
                                 </Columns>
                             </RadzenDataGrid>
                         </Template>
@@ -218,7 +229,11 @@
                                 PageSize="10"
                                 Density="Density.Compact">
                     <Columns>
-                        <RadzenDataGridColumn TItem="PaiementSoldeClient" Property="Numero" Title="@Localizer["Numero_Col"]" Width="150px" />
+                        <RadzenDataGridColumn TItem="PaiementSoldeClient" Title="@Localizer["Numero_Col"]" Width="150px">
+                            <Template Context="paiement">
+                                @(paiement.NumeroChequeTraite ?? paiement.NumeroTransactionBancaire ?? "-")
+                            </Template>
+                        </RadzenDataGridColumn>
                         <RadzenDataGridColumn TItem="PaiementSoldeClient" Property="DatePaiement" Title="@Localizer["Date_Paiement_Col"]" Width="150px">
                             <Template Context="paiement">
                                 @paiement.DatePaiement.ToString("dd/MM/yyyy")
@@ -230,6 +245,18 @@
                             </Template>
                         </RadzenDataGridColumn>
                         <RadzenDataGridColumn TItem="PaiementSoldeClient" Property="MethodePaiement" Title="@Localizer["Methode_Col"]" Width="120px" />
+                        <RadzenDataGridColumn TItem="PaiementSoldeClient" Title="@Localizer["Date_Echeance"]" Width="120px">
+                            <Template Context="paiement">
+                                @(paiement.DateEcheance.HasValue ? paiement.DateEcheance.Value.ToString("dd/MM/yyyy") : "-")
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="PaiementSoldeClient" Title="@Localizer["Factures_Rattachees"]" Width="220px">
+                            <Template Context="paiement">
+                                @(paiement.Factures?.Any() == true
+                                    ? string.Join(", ", paiement.Factures.Select(f => $"{f.Numero} ({f.MontantTtc.FormatAmount(decimalPlaces)} TND)"))
+                                    : "-")
+                            </Template>
+                        </RadzenDataGridColumn>
                     </Columns>
                 </RadzenDataGrid>
             </div>

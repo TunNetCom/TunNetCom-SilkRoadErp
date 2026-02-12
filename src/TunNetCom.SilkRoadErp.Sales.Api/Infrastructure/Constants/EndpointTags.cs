@@ -21,11 +21,17 @@ public static class EndpointTags
     public const string PaiementFournisseur = "PaiementFournisseur";
     public const string Soldes = "Soldes";
     public const string Banque = "Banque";
+    public const string CompteBancaire = "CompteBancaire";
     public const string Tags = "Tags";
     public const string DeliveryCars = "DeliveryCars";
     public const string Auth = "Authentication";
     public const string RetourMarchandiseFournisseur = "RetourMarchandiseFournisseur";
     public const string AccountingYears = "AccountingYears";
+    public const string TiersDepenseFonctionnement = "TiersDepenseFonctionnement";
+    public const string FactureDepense = "FactureDepense";
+    public const string PaiementTiersDepense = "PaiementTiersDepense";
+    public const string Dashboard = "Dashboard";
+    public const string Tiers = "Tiers";
 }
 
 

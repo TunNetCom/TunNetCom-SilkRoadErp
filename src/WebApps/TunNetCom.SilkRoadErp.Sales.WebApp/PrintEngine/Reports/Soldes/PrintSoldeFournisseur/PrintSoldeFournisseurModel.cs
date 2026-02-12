@@ -1,3 +1,4 @@
+using TunNetCom.SilkRoadErp.Sales.Contracts.Soldes;
 using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Soldes;
 
 namespace TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Soldes.PrintSoldeFournisseur;
@@ -27,6 +28,7 @@ public class PrintSoldeFournisseurSummary
     public decimal TotalFactures { get; set; }
     public decimal TotalBonsReceptionNonFactures { get; set; }
     public decimal TotalFacturesAvoir { get; set; }
+    public decimal TotalAvoirsFinanciers { get; set; }
     public decimal TotalPaiements { get; set; }
     public decimal Solde { get; set; }
 }
@@ -45,5 +47,6 @@ public class PrintSoldeFournisseurPayment
     public DateTime DatePaiement { get; set; }
     public decimal Montant { get; set; }
     public string Methode { get; set; } = string.Empty;
+    public List<FactureRattacheeSolde> Factures { get; set; } = new();
 }
 

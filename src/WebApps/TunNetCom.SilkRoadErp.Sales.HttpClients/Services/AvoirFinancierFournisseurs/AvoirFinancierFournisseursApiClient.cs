@@ -190,5 +190,78 @@ public class AvoirFinancierFournisseursApiClient : IAvoirFinancierFournisseursAp
 
         throw new Exception($"AvoirFinancierFournisseurs: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
     }
+
+    public async Task<Result> AttachAvoirFinancierToInvoiceAsync(int id, int numFactureFournisseur, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Attaching avoir financier {Id} to invoice {NumFactureFournisseur} via API", id, numFactureFournisseur);
+        var request = new AttachAvoirFinancierToInvoiceRequest { NumFactureFournisseur = numFactureFournisseur };
+        var response = await _httpClient.PutAsJsonAsync($"/avoir-financier-fournisseurs/{id}/attach", request, cancellationToken: cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.NoContent)
+        {
+            return Result.Ok();
+        }
+
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            var badRequest = await response.ReadJsonAsync<BadRequestResponse>();
+            return Result.Fail($"validation_error: {JsonConvert.SerializeObject(badRequest)}");
+        }
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return Result.Fail("avoir_financier_not_found");
+        }
+
+        throw new Exception($"AvoirFinancierFournisseurs Attach: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
+    }
+
+    public async Task<Result> DetachAvoirFinancierFromInvoiceAsync(int id, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Detaching avoir financier {Id} from invoice via API", id);
+        var response = await _httpClient.PostAsync($"/avoir-financier-fournisseurs/{id}/detach", null, cancellationToken: cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.NoContent)
+        {
+            return Result.Ok();
+        }
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return Result.Fail("avoir_financier_not_found");
+        }
+
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            var badRequest = await response.ReadJsonAsync<BadRequestResponse>();
+            return Result.Fail($"validation_error: {JsonConvert.SerializeObject(badRequest)}");
+        }
+
+        throw new Exception($"AvoirFinancierFournisseurs Detach: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
+    }
+
+    public async Task<Result> DeleteAvoirFinancierFournisseurAsync(int id, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Deleting avoir financier fournisseur {Id} via API", id);
+        var response = await _httpClient.DeleteAsync($"/avoir-financier-fournisseurs/{id}", cancellationToken: cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.NoContent)
+        {
+            return Result.Ok();
+        }
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return Result.Fail("avoir_financier_not_found");
+        }
+
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            var badRequest = await response.ReadJsonAsync<BadRequestResponse>();
+            return Result.Fail($"validation_error: {JsonConvert.SerializeObject(badRequest)}");
+        }
+
+        throw new Exception($"AvoirFinancierFournisseurs Delete: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
+    }
 }
 

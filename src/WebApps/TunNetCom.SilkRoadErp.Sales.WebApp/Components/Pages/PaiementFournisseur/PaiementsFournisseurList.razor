@@ -1,6 +1,8 @@
 @page "/paiements-fournisseur"
+@implements IDisposable
 @using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.Contracts.PaiementFournisseur
+@using TunNetCom.SilkRoadErp.Sales.Domain.Entites
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PaiementFournisseur
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AccountingYear
@@ -15,6 +17,7 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.PaiementFournisseur.PrintTraite
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.PaiementFournisseur
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.JSInterop
@@ -79,13 +82,15 @@
             </div>
             <div class="search-field">
                 <label>@Localizer["Exercice_Comptable_Filter"]</label>
-                <RadzenDropDown @bind-Value="@selectedAccountingYearId"
+                <RadzenDropDown @bind-Value="@selectedAccountingYearIds"
                                 Data="@accountingYears"
                                 TextProperty="Year"
                                 ValueProperty="Id"
-                                Placeholder="@Localizer["Tous_Exercices"]"
+                                Placeholder="@Localizer["Exercice_Comptable"]"
                                 AllowClear="true"
-                                Style="width: 200px;" />
+                                Multiple="true"
+                                Style="width: 220px;"
+                                Change="@OnExerciceFilterChange" />
             </div>
             <div class="search-field">
                 <label>Date Échéance Début</label>
@@ -170,6 +175,7 @@
                 <p style="font-size: 24px; text-align: center; margin: 2rem;">@Localizer["Aucun_Paiement"]</p>
             </EmptyTemplate>
             <Columns>
+                <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Property="AccountingYear" Title="@Localizer["Exercice_Comptable"]" Width="100px" />
                 <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Property="NumeroTransactionBancaire" Title="@Localizer["Numero_Col"]" Width="150px" Visible="false" />
                 <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Property="FournisseurNom" Title="@Localizer["providers"]" Width="200px" />
                 <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Property="Montant" Title="@Localizer["Montant_Col"]" Width="150px">
@@ -177,9 +183,9 @@
                         @paiement.Montant.FormatAmount(decimalPlaces) TND
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Property="DatePaiement" Title="@Localizer["Date_Paiement_Col"]" Width="150px">
+                <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Property="DateEcheance" Title="@Localizer["Date_Echeance"]" Width="150px">
                     <Template Context="paiement">
-                        @paiement.DatePaiement.ToString("dd/MM/yyyy")
+                        @(paiement.DateEcheance?.ToString("dd/MM/yyyy") ?? "-")
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Property="MethodePaiement" Title="@Localizer["Methode_Col"]" Width="120px" />
@@ -208,7 +214,7 @@
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="PaiementFournisseurResponse" Filterable="false" Sortable="false" Width="250px" TextAlign="TextAlign.Center">
                     <Template Context="paiement">
-                        @if (paiement.MethodePaiement == "Traite")
+                        @if (paiement.MethodePaiement == MethodePaiementConsts.Traite)
                         {
                             <RadzenButton Icon="print" ButtonStyle="ButtonStyle.Info" Variant="Variant.Outlined" Size="ButtonSize.Medium" Shade="Shade.Lighter"
                                           Click="@(() => PrintTraite(paiement.Id))"
@@ -302,7 +308,8 @@
     private int decimalPlaces = AmountHelper.DEFAULT_DECIMAL_PLACES;
     private bool isLoadingPaiements = false;
     private int? selectedFournisseurId;
-    private int? selectedAccountingYearId;
+    private List<int> selectedAccountingYearIds = new();
+    private List<GetAllAccountingYearsResponse> accountingYears = new();
     private DateTime? selectedDateEcheanceFrom;
     private DateTime? selectedDateEcheanceTo;
     private decimal? selectedMontantMin;
@@ -330,25 +337,36 @@
         new MoisOption { Text = "Novembre", Value = 11 },
         new MoisOption { Text = "Décembre", Value = 12 }
     };
-    private List<GetAllAccountingYearsResponse> accountingYears = new();
-    private CancellationTokenSource cancellationTokenSource = new();
     private const int _defaultPageSize = 10;
+    private const int _maxPageSize = 50;
+    private CancellationTokenSource _providersCts = new();
+    private CancellationTokenSource _paiementsCts = new();
+    private CancellationTokenSource _actionsCts = new();
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
         decimalPlaces = await DecimalFormatService.GetDecimalPlacesAsync();
-        await LoadAccountingYearsAsync();
-    }
-
-    async Task LoadAccountingYearsAsync()
-    {
         try
         {
-            accountingYears = await AccountingYearService.GetAllAccountingYearsAsync();
+            var activeTask = AccountingYearService.GetActiveAccountingYearAsync();
+            var allYearsTask = AccountingYearService.GetAllAccountingYearsAsync();
+            await Task.WhenAll(activeTask, allYearsTask);
+            var activeAccountingYear = await activeTask;
+            accountingYears = await allYearsTask;
+            // Par défaut : exercice en cours + exercice précédent
+            if (activeAccountingYear != null && accountingYears.Count > 0)
+            {
+                var previousYear = accountingYears.FirstOrDefault(ay => ay.Year == activeAccountingYear.Year - 1);
+                var defaultIds = new List<int> { activeAccountingYear.Id };
+                if (previousYear != null)
+                    defaultIds.Add(previousYear.Id);
+                selectedAccountingYearIds = defaultIds;
+            }
         }
         catch (Exception ex)
         {
+            if (IsCancellationRelated(ex)) return;
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Error,
@@ -360,20 +378,25 @@
 
     async Task LoadProviders(LoadDataArgs args)
     {
+        var skip = args.Skip ?? 0;
+        var top = args.Top ?? 20;
         var parameters = new QueryStringParameters
         {
-            PageNumber = 1,
-            PageSize = 10,
+            PageNumber = top > 0 ? (skip / top) + 1 : 1,
+            PageSize = top,
             SearchKeyword = args?.Filter ?? string.Empty
         };
 
         try
         {
-            var pagedProviders = await ProvidersService.GetPagedAsync(parameters, cancellationTokenSource.Token);
+            var token = ResetCts(ref _providersCts);
+            var pagedProviders = await ProvidersService.GetPagedAsync(parameters, token);
+
             _filteredProviders = pagedProviders.Items;
         }
         catch (Exception ex)
         {
+            if (IsCancellationRelated(ex)) return;
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Error,
@@ -387,57 +410,106 @@
     async Task LoadPaiementData(LoadDataArgs args)
     {
         isLoadingPaiements = true;
-        await Task.Yield();
 
         try
         {
             bool? hasNumeroTransactionBancaire = selectedReglementStatus.HasValue 
                 ? (selectedReglementStatus.Value == 1) 
                 : null;
+            var accountingYearIdsParam = (selectedAccountingYearIds != null && selectedAccountingYearIds.Count > 0) ? selectedAccountingYearIds : null;
+            var pageSize = args.Top ?? _defaultPageSize;
+            if (pageSize > _maxPageSize)
+                pageSize = _maxPageSize;
+            if (pageSize < 1)
+                pageSize = 1;
+            var pageNumber = ((args.Skip ?? 0) / pageSize) + 1;
+            var token = ResetCts(ref _paiementsCts);
 
             var result = await PaiementFournisseurService.GetPaiementsFournisseurAsync(
                 selectedFournisseurId,
-                selectedAccountingYearId,
+                accountingYearIdsParam,
                 selectedDateEcheanceFrom,
                 selectedDateEcheanceTo,
+                null,
+                null,
                 selectedMontantMin,
                 selectedMontantMax,
                 hasNumeroTransactionBancaire,
                 selectedMois,
-                (args.Skip.Value / _defaultPageSize) + 1,
-                args.Top ?? _defaultPageSize,
-                cancellationTokenSource.Token);
+                pageNumber,
+                pageSize,
+                token);
 
             paiements = result.Items;
             totalPaiements = result.TotalCount;
         }
         catch (Exception ex)
         {
-            NotificationService.Notify(new NotificationMessage
+            if (!IsCancellationRelated(ex))
             {
-                Severity = NotificationSeverity.Error,
-                Summary = Localizer["Erreur"],
-                Detail = $"{Localizer["Erreur_Chargement_Paiements"]}: {ex.Message}"
-            });
-            paiements = new List<PaiementFournisseurResponse>();
-            totalPaiements = 0;
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["Erreur"],
+                    Detail = $"{Localizer["Erreur_Chargement_Paiements"]}: {ex.Message}"
+                });
+                paiements = new List<PaiementFournisseurResponse>();
+                totalPaiements = 0;
+            }
+        }
+        finally
+        {
+            isLoadingPaiements = false;
         }
 
-        isLoadingPaiements = false;
-        await InvokeAsync(StateHasChanged);
+        try { await InvokeAsync(StateHasChanged); }
+        catch (Exception ex) when (IsCancellationRelated(ex)) { /* navigation/dispose */ }
     }
 
     async Task SearchPaiements()
     {
-        await paiementGrid.Reload();
+        if (paiementGrid != null)
+            await paiementGrid.Reload();
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    async Task OnExerciceFilterChange()
     {
-        if (firstRender)
-        {
+        if (paiementGrid != null)
             await paiementGrid.Reload();
+    }
+
+    private static CancellationToken ResetCts(ref CancellationTokenSource cts)
+    {
+        cts.Cancel();
+        cts.Dispose();
+        cts = new CancellationTokenSource();
+        return cts.Token;
+    }
+
+    /// <summary>
+    /// Indique si l'exception est liée à une annulation (navigation, circuit fermé, requête annulée, transport fermé).
+    /// </summary>
+    private static bool IsCancellationRelated(Exception? ex)
+    {
+        if (ex == null) return false;
+        if (ex is OperationCanceledException or TaskCanceledException) return true;
+        var msg = ex.Message ?? "";
+        if (ex is System.Net.Sockets.SocketException or System.IO.IOException)
+        {
+            if (msg.Contains("abandonnée", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("aborted", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("cancel", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("reset", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("Unable to read data", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("transport connection", StringComparison.OrdinalIgnoreCase))
+                return true;
         }
+        if (msg.Contains("abandonnée", StringComparison.OrdinalIgnoreCase) ||
+            msg.Contains("aborted", StringComparison.OrdinalIgnoreCase) ||
+            msg.Contains("Unable to read data", StringComparison.OrdinalIgnoreCase) ||
+            msg.Contains("transport connection", StringComparison.OrdinalIgnoreCase))
+            return true;
+        return IsCancellationRelated(ex.InnerException);
     }
 
     private void CreatePaiement()
@@ -445,9 +517,17 @@
         NavigationManager.NavigateTo("/paiement-fournisseur/add");
     }
 
-    private void EditPaiement(int id)
+    private async Task EditPaiement(int id)
     {
-        NavigationManager.NavigateTo($"/paiement-fournisseur/edit/{id}");
+        var result = await DialogService.OpenAsync<AddOrUpdatePaiementFournisseurDialog>(
+            Localizer["Modifier_Paiement"],
+            new Dictionary<string, object> { { "PaiementId", id } },
+            new DialogOptions { Width = "90vw", Height = "85vh", Resizable = true, Draggable = true });
+        if (result == true)
+        {
+            if (paiementGrid != null)
+                await paiementGrid.Reload();
+        }
     }
 
     async Task ConfirmDeletePaiement(int paiementId)
@@ -458,15 +538,24 @@
 
         if (confirmed == true)
         {
-            var result = await PaiementFournisseurService.DeletePaiementFournisseurAsync(paiementId, cancellationTokenSource.Token);
-            if (result.IsSuccess)
+            try
+            {
+                var result = await PaiementFournisseurService.DeletePaiementFournisseurAsync(paiementId, _actionsCts.Token);
+                if (result.IsSuccess)
             {
                 ToastService.Notify(new(ToastType.Success, Localizer["Paiement_Supprime"]));
-                await paiementGrid.Reload();
+                if (paiementGrid != null)
+                    await paiementGrid.Reload();
             }
             else
             {
                 ToastService.Notify(new(ToastType.Danger, $"{Localizer["Erreur_Suppression"]}: {result.Errors.FirstOrDefault()?.Message}"));
+            }
+            }
+            catch (Exception ex)
+            {
+                if (!IsCancellationRelated(ex))
+                    ToastService.Notify(new(ToastType.Danger, $"{Localizer["Erreur_Suppression"]}: {ex.Message}"));
             }
         }
     }
@@ -504,7 +593,7 @@
             // Générer le PDF
             var pdfResult = await PrintTraiteService.GenerateTraitePdfAsync(
                 paiementId,
-                cancellationTokenSource.Token);
+                _actionsCts.Token);
 
             if (pdfResult.IsFailed)
             {
@@ -531,10 +620,11 @@
                 IsDuplicata = false
             };
 
-            await PrintService.PrintAsync(pdfResult.Value, printOptions, cancellationTokenSource.Token);
+            await PrintService.PrintAsync(pdfResult.Value, printOptions, _actionsCts.Token);
         }
         catch (Exception ex)
         {
+            if (IsCancellationRelated(ex)) return;
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Error,
@@ -557,9 +647,12 @@
                 queryParams.Add($"fournisseurId={selectedFournisseurId.Value}");
             }
 
-            if (selectedAccountingYearId.HasValue)
+            if (selectedAccountingYearIds != null && selectedAccountingYearIds.Count > 0)
             {
-                queryParams.Add($"accountingYearId={selectedAccountingYearId.Value}");
+                foreach (var id in selectedAccountingYearIds)
+                {
+                    queryParams.Add($"accountingYearIds={id}");
+                }
             }
 
             if (selectedDateEcheanceFrom.HasValue)
@@ -643,6 +736,7 @@
         }
         catch (Exception ex)
         {
+            if (IsCancellationRelated(ex)) return;
             _logger.LogError(ex, "Error exporting to Excel");
             NotificationService.Notify(new NotificationMessage
             {
@@ -667,9 +761,12 @@
                 queryParams.Add($"fournisseurId={selectedFournisseurId.Value}");
             }
 
-            if (selectedAccountingYearId.HasValue)
+            if (selectedAccountingYearIds != null && selectedAccountingYearIds.Count > 0)
             {
-                queryParams.Add($"accountingYearId={selectedAccountingYearId.Value}");
+                foreach (var id in selectedAccountingYearIds)
+                {
+                    queryParams.Add($"accountingYearIds={id}");
+                }
             }
 
             if (selectedDateEcheanceFrom.HasValue)
@@ -753,6 +850,7 @@
         }
         catch (Exception ex)
         {
+            if (IsCancellationRelated(ex)) return;
             _logger.LogError(ex, "Error exporting to PDF");
             NotificationService.Notify(new NotificationMessage
             {
@@ -766,8 +864,12 @@
 
     public void Dispose()
     {
-        cancellationTokenSource.Cancel();
-        cancellationTokenSource.Dispose();
+        _providersCts.Cancel();
+        _providersCts.Dispose();
+        _paiementsCts.Cancel();
+        _paiementsCts.Dispose();
+        _actionsCts.Cancel();
+        _actionsCts.Dispose();
     }
 
     private class ReglementStatusOption

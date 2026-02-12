@@ -1,0 +1,102 @@
+@page "/tiers-depenses-fonctionnement"
+@implements IDisposable
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.TiersDepenseFonctionnement
+@using TunNetCom.SilkRoadErp.Sales.Contracts
+@using TunNetCom.SilkRoadErp.Sales.Contracts.TiersDepenseFonctionnement
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using Radzen
+@using Radzen.Blazor
+@inject ITiersDepenseFonctionnementApiClient TiersDepenseService
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<SharedResource> Localizer
+@inject Radzen.NotificationService NotificationService
+
+<div class="tiers-container">
+    <div class="tiers-card">
+        <div class="tiers-header">
+            <h3 class="tiers-title">Tiers dépenses de fonctionnement</h3>
+            <RadzenButton Icon="add" Text="Ajouter un tiers"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Click="@(() => NavigationManager.NavigateTo("/tiers-depenses-fonctionnement/edit"))"
+                          Class="btn-primary" />
+        </div>
+
+        <RadzenTextBox Placeholder="@Localizer["Search"]"
+                       @bind-Value="@searchKeyword"
+                       Change="@(async (string value) => await LoadData(new LoadDataArgs() { Filter = value }))"
+                       Class="tiers-search" />
+
+        <RadzenDataGrid TItem="TiersDepenseFonctionnementResponse"
+                        Data="@items"
+                        Count="@totalCount"
+                        LoadData="@LoadData"
+                        AllowPaging="true"
+                        PageSize="@PageSize"
+                        Density="Density.Compact"
+                        Class="tiers-grid">
+            <Columns>
+                <RadzenDataGridColumn TItem="TiersDepenseFonctionnementResponse" Property="Nom" Title="@Localizer["Nom"]" Width="200px" />
+                <RadzenDataGridColumn TItem="TiersDepenseFonctionnementResponse" Property="Tel" Title="Tél" Width="130px" />
+                <RadzenDataGridColumn TItem="TiersDepenseFonctionnementResponse" Property="Mail" Title="Mail" Width="180px" />
+                <RadzenDataGridColumn TItem="TiersDepenseFonctionnementResponse" Property="Adresse" Title="Adresse" Width="220px" />
+                <RadzenDataGridColumn TItem="TiersDepenseFonctionnementResponse" Filterable="false" Sortable="false" Width="120px" TextAlign="TextAlign.Center">
+                    <Template Context="tiers">
+                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Success" Variant="Variant.Outlined" Size="ButtonSize.Small"
+                                      Click="@(() => EditTiers(tiers.Id))"
+                                      Title="Modifier" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <p style="text-align: center; margin: 2rem;">Aucun tiers.</p>
+            </EmptyTemplate>
+        </RadzenDataGrid>
+    </div>
+</div>
+
+@code {
+    private const int PageSize = 10;
+    private string searchKeyword = string.Empty;
+    private IEnumerable<TiersDepenseFonctionnementResponse> items = new List<TiersDepenseFonctionnementResponse>();
+    private int totalCount;
+    private CancellationTokenSource _cts = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData(new LoadDataArgs { Skip = 0, Top = PageSize });
+    }
+
+    private async Task LoadData(LoadDataArgs args)
+    {
+        var queryParameters = new QueryStringParameters
+        {
+            PageNumber = (args.Skip ?? 0) / (args.Top ?? PageSize) + 1,
+            PageSize = args.Top ?? PageSize,
+            SearchKeyword = args.Filter ?? searchKeyword
+        };
+        var result = await TiersDepenseService.GetPagedAsync(queryParameters, _cts.Token);
+        items = result.Items;
+        totalCount = result.TotalCount;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void EditTiers(int id)
+    {
+        NavigationManager.NavigateTo($"/tiers-depenses-fonctionnement/edit/{id}");
+    }
+
+    public void Dispose()
+    {
+        _cts.Cancel();
+        _cts.Dispose();
+    }
+}
+
+<style>
+    .tiers-container { padding: 1.25rem; max-width: 1280px; margin: 1rem auto; }
+    .tiers-card { border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); padding: 1.5rem; }
+    .tiers-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
+    .tiers-title { font-weight: 600; margin: 0; font-size: 1.5rem; }
+    .tiers-search { width: 100%; margin-bottom: 1rem; }
+</style>

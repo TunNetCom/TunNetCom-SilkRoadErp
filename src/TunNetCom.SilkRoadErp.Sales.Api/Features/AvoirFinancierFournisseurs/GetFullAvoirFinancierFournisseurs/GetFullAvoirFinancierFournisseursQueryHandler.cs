@@ -14,8 +14,8 @@ public class GetFullAvoirFinancierFournisseursQueryHandler(
         var avoirFinancier = await _context.AvoirFinancierFournisseurs
             .AsNoTracking()
             .Where(a => a.Num == query.Num)
-            .Include(a => a.NumNavigation)
-                .ThenInclude(f => f.IdFournisseurNavigation)
+            .Include(a => a.NumFactureFournisseurNavigation)
+                .ThenInclude(f => f!.IdFournisseurNavigation)
             .Select(a => new FullAvoirFinancierFournisseursResponse
             {
                 Num = a.Num,
@@ -23,14 +23,14 @@ public class GetFullAvoirFinancierFournisseursQueryHandler(
                 Date = a.Date,
                 Description = a.Description,
                 TotTtc = a.TotTtc,
-                FactureFournisseur = new AvoirFinancierFournisseursFactureFournisseurResponse
+                FactureFournisseur = a.NumFactureFournisseurNavigation == null ? null : new AvoirFinancierFournisseursFactureFournisseurResponse
                 {
-                    Num = a.NumNavigation.Num,
-                    ProviderId = a.NumNavigation.IdFournisseur,
-                    ProviderName = a.NumNavigation.IdFournisseurNavigation.Nom,
-                    Date = a.NumNavigation.Date,
-                    DateFacturation = a.NumNavigation.DateFacturationFournisseur,
-                    ProviderInvoiceNumber = a.NumNavigation.NumFactureFournisseur,
+                    Num = a.NumFactureFournisseurNavigation.Num,
+                    ProviderId = a.NumFactureFournisseurNavigation.IdFournisseur,
+                    ProviderName = a.NumFactureFournisseurNavigation.IdFournisseurNavigation.Nom,
+                    Date = a.NumFactureFournisseurNavigation.Date,
+                    DateFacturation = a.NumFactureFournisseurNavigation.DateFacturationFournisseur,
+                    ProviderInvoiceNumber = a.NumFactureFournisseurNavigation.NumFactureFournisseur,
                     TotTTC = 0 // This would need to be calculated from lines if needed
                 }
             })

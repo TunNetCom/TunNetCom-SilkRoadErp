@@ -15,6 +15,7 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Services
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Providers
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Common
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Sorting
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Tags
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
 @inject NavigationManager NavigationManager
@@ -551,6 +552,9 @@
         try
         {
             var pageNumber = (args.Skip ?? 0) / pageSize + 1;
+            var (sortOrder, sortProperty) = args.Sorts != null && args.Sorts.Any()
+                ? (args.Sorts.First().SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending, args.Sorts.First().Property)
+                : (SortConstants.Ascending, nameof(AvoirFournisseurBaseInfo.NumAvoirChezFournisseur));
             var queryParams = new GetAvoirFournisseurQueryParams
             {
                 PageNumber = pageNumber,
@@ -559,8 +563,8 @@
                 StartDate = startDate,
                 EndDate = endDate,
                 SearchKeyword = args.Filter,
-                SortOrder = args.Sorts?.FirstOrDefault()?.SortOrder == SortOrder.Ascending ? "asc" : "desc",
-                SortProperty = args.Sorts?.FirstOrDefault()?.Property
+                SortOrder = sortOrder,
+                SortProperty = sortProperty
             };
 
             var response = await AvoirFournisseurService.GetAvoirFournisseurWithSummariesAsync(

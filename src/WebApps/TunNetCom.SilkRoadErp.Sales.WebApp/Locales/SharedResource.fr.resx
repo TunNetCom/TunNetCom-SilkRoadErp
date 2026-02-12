@@ -141,6 +141,12 @@
   <data name="Edit" xml:space="preserve">
     <value>Modifier</value>
   </data>
+  <data name="duplicate_quotation" xml:space="preserve">
+    <value>Dupliquer</value>
+  </data>
+  <data name="duplicate_quotation_success" xml:space="preserve">
+    <value>Devis dupliqué avec succès</value>
+  </data>
   <data name="View" xml:space="preserve">
     <value>Voir</value>
   </data>
@@ -206,6 +212,9 @@
   </data>
   <data name="date" xml:space="preserve">
     <value>Date</value>
+  </data>
+  <data name="date_livraison" xml:space="preserve">
+    <value>Date de livraison</value>
   </data>
   <data name="total_incl_tax" xml:space="preserve">
     <value>Total TTC</value>
@@ -345,6 +354,18 @@
   <data name="current_month" xml:space="preserve">
     <value>Mois actuel</value>
   </data>
+  <data name="current_day" xml:space="preserve">
+    <value>Jour</value>
+  </data>
+  <data name="current_week" xml:space="preserve">
+    <value>Semaine</value>
+  </data>
+  <data name="Tableau_de_bord" xml:space="preserve">
+    <value>Tableau de bord</value>
+  </data>
+  <data name="Recap_ventes_achats" xml:space="preserve">
+    <value>Récap ventes &amp; achats</value>
+  </data>
   <data name="last_month" xml:space="preserve">
     <value>Mois précédent</value>
   </data>
@@ -359,6 +380,9 @@
   </data>
   <data name="select_invoice" xml:space="preserve">
     <value>Selectionner une facture</value>
+  </data>
+  <data name="print_invoice" xml:space="preserve">
+    <value>Imprimer la facture</value>
   </data>
   <data name="Select_Delivery_Car" xml:space="preserve">
     <value>Sélectionner un véhicule de livraison</value>
@@ -380,6 +404,12 @@
   </data>
   <data name="Erreur_Impression_Solde" xml:space="preserve">
     <value>Impossible de générer le rapport de solde.</value>
+  </data>
+  <data name="Print_Restes_ALivrer" xml:space="preserve">
+    <value>Imprimer restes à livrer</value>
+  </data>
+  <data name="Erreur_Impression_Restes_ALivrer" xml:space="preserve">
+    <value>Impossible de générer le rapport des restes à livrer.</value>
   </data>
   <data name="Show_Only_Missing_Products" xml:space="preserve">
     <value>Afficher uniquement les produits manquants</value>
@@ -690,6 +720,12 @@
   <data name="Paiements_Fournisseurs" xml:space="preserve">
     <value>Paiements Fournisseurs</value>
   </data>
+  <data name="Liste" xml:space="preserve">
+    <value>Liste</value>
+  </data>
+  <data name="Calendrier_Echeances" xml:space="preserve">
+    <value>Calendrier des échéances</value>
+  </data>
   <data name="Soldes_Clients" xml:space="preserve">
     <value>Soldes Clients</value>
   </data>
@@ -746,6 +782,9 @@
   </data>
   <data name="Date_Echeance" xml:space="preserve">
     <value>Date d'échéance</value>
+  </data>
+  <data name="Factures_Rattachees" xml:space="preserve">
+    <value>Facture(s)</value>
   </data>
   <data name="Facture_Optionnel" xml:space="preserve">
     <value>Facture (optionnel)</value>
@@ -852,6 +891,9 @@
   <data name="Traite" xml:space="preserve">
     <value>Traite</value>
   </data>
+  <data name="TPE" xml:space="preserve">
+    <value>TPE</value>
+  </data>
   <data name="Rechercher" xml:space="preserve">
     <value>Rechercher</value>
   </data>
@@ -884,6 +926,57 @@
   </data>
   <data name="Nouveau_Paiement_Fournisseur" xml:space="preserve">
     <value>Nouveau paiement fournisseur</value>
+  </data>
+  <data name="Nouveau_Paiement_Tiers_Depenses" xml:space="preserve">
+    <value>Nouveau paiement tiers dépenses</value>
+  </data>
+  <data name="Select_Tiers" xml:space="preserve">
+    <value>Choisir un tiers</value>
+  </data>
+  <data name="Tiers_Depenses" xml:space="preserve">
+    <value>Tiers dépenses</value>
+  </data>
+  <data name="Facture_Depense_Optionnel" xml:space="preserve">
+    <value>Facture dépense (optionnel)</value>
+  </data>
+  <data name="Select_Facture_Depense" xml:space="preserve">
+    <value>Choisir une facture dépense</value>
+  </data>
+  <data name="Select_Tiers_Validation" xml:space="preserve">
+    <value>Veuillez sélectionner un tiers.</value>
+  </data>
+  <data name="Document_Photo_Facture" xml:space="preserve">
+    <value>Document / Photo</value>
+  </data>
+  <data name="Nouvelle_Facture_Depense" xml:space="preserve">
+    <value>Nouvelle facture dépense</value>
+  </data>
+  <data name="Modifier_Facture" xml:space="preserve">
+    <value>Modifier la facture</value>
+  </data>
+  <data name="Valider_Facture" xml:space="preserve">
+    <value>Valider la facture</value>
+  </data>
+  <data name="Facture_Depense_Creee" xml:space="preserve">
+    <value>Facture dépense créée.</value>
+  </data>
+  <data name="Facture_Mise_A_Jour" xml:space="preserve">
+    <value>Facture mise à jour.</value>
+  </data>
+  <data name="Facture_Validee" xml:space="preserve">
+    <value>Facture validée.</value>
+  </data>
+  <data name="Facture_Supprimee" xml:space="preserve">
+    <value>Facture supprimée.</value>
+  </data>
+  <data name="Facture_Has_Paiement" xml:space="preserve">
+    <value>Impossible de supprimer : cette facture est liée à un ou plusieurs paiements.</value>
+  </data>
+  <data name="Montant_Total" xml:space="preserve">
+    <value>Montant total</value>
+  </data>
+  <data name="Description_Optionnel" xml:space="preserve">
+    <value>Description (optionnel)</value>
   </data>
   <data name="Select_Provider_Validation" xml:space="preserve">
     <value>Veuillez sélectionner un fournisseur</value>
@@ -957,6 +1050,9 @@
   <data name="Confirmation_Suppression_Banque" xml:space="preserve">
     <value>Êtes-vous sûr de vouloir supprimer cette banque ?</value>
   </data>
+  <data name="Confirmation_Suppression_AvoirFinancier" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir supprimer l'avoir financier n°{0} ?</value>
+  </data>
   <data name="Fonctionnalite_Non_Disponible" xml:space="preserve">
     <value>Cette fonctionnalité n'est pas encore disponible</value>
   </data>
@@ -974,6 +1070,90 @@
   </data>
   <data name="Banque_Creee" xml:space="preserve">
     <value>Banque créée avec succès</value>
+  </data>
+  <data name="Comptes_Bancaires" xml:space="preserve">
+    <value>Comptes bancaires</value>
+  </data>
+  <data name="Ajouter_Compte_Bancaire" xml:space="preserve">
+    <value>Ajouter un compte bancaire</value>
+  </data>
+  <data name="Aucun_Compte_Bancaire" xml:space="preserve">
+    <value>Aucun compte bancaire trouvé.</value>
+  </data>
+  <data name="Modifier_Compte_Bancaire" xml:space="preserve">
+    <value>Modifier le compte bancaire</value>
+  </data>
+  <data name="Informations_Bancaires_Entreprise" xml:space="preserve">
+    <value>Informations Bancaires Entreprise</value>
+  </data>
+  <data name="Confirmation_Suppression_Compte_Bancaire" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir supprimer ce compte bancaire ?</value>
+  </data>
+  <data name="Compte_Bancaire_Supprime" xml:space="preserve">
+    <value>Compte bancaire supprimé avec succès</value>
+  </data>
+  <data name="Compte_Bancaire_Modifie" xml:space="preserve">
+    <value>Compte bancaire modifié avec succès</value>
+  </data>
+  <data name="Compte_Bancaire_Cree" xml:space="preserve">
+    <value>Compte bancaire créé avec succès</value>
+  </data>
+  <data name="Code_Etablissement" xml:space="preserve">
+    <value>Code Établissement</value>
+  </data>
+  <data name="Code_Agence" xml:space="preserve">
+    <value>Code Agence</value>
+  </data>
+  <data name="Numero_Compte" xml:space="preserve">
+    <value>Numéro de Compte</value>
+  </data>
+  <data name="Cle_RIB" xml:space="preserve">
+    <value>Clé RIB</value>
+  </data>
+  <data name="Libelle" xml:space="preserve">
+    <value>Libellé</value>
+  </data>
+  <data name="Champs_Requis" xml:space="preserve">
+    <value>Veuillez remplir tous les champs obligatoires.</value>
+  </data>
+  <data name="Releves_Bancaires" xml:space="preserve">
+    <value>Relevés bancaires</value>
+  </data>
+  <data name="Importer_Fichier" xml:space="preserve">
+    <value>Importer un fichier</value>
+  </data>
+  <data name="Select_Compte_Bancaire" xml:space="preserve">
+    <value>Sélectionner un compte bancaire</value>
+  </data>
+  <data name="Fichier" xml:space="preserve">
+    <value>Fichier</value>
+  </data>
+  <data name="Importer" xml:space="preserve">
+    <value>Importer</value>
+  </data>
+  <data name="Aucun_Import_Releve" xml:space="preserve">
+    <value>Aucun import de relevé.</value>
+  </data>
+  <data name="Date_Import" xml:space="preserve">
+    <value>Date d'import</value>
+  </data>
+  <data name="Nombre_Lignes" xml:space="preserve">
+    <value>Nombre de lignes</value>
+  </data>
+  <data name="Exporter_Sage" xml:space="preserve">
+    <value>Exporter vers Sage</value>
+  </data>
+  <data name="Import_Reussi" xml:space="preserve">
+    <value>Import réussi</value>
+  </data>
+  <data name="Lignes" xml:space="preserve">
+    <value>lignes</value>
+  </data>
+  <data name="Export_Sage_Reussi" xml:space="preserve">
+    <value>Export Sage réussi</value>
+  </data>
+  <data name="Compte_Bancaire" xml:space="preserve">
+    <value>Compte bancaire</value>
   </data>
   <data name="inventaires" xml:space="preserve">
     <value>Inventaires</value>
@@ -1239,6 +1419,9 @@
   <data name="retenue_source" xml:space="preserve">
     <value>Retenue à la source</value>
   </data>
+  <data name="exonere_retenue_source" xml:space="preserve">
+    <value>Exonéré de retenue à la source</value>
+  </data>
   <data name="num_tej" xml:space="preserve">
     <value>Numéro TEJ</value>
   </data>
@@ -1259,6 +1442,9 @@
   </data>
   <data name="upload_pdf_tej" xml:space="preserve">
     <value>Uploader le PDF TEJ</value>
+  </data>
+  <data name="tej_export_info_retenue" xml:space="preserve">
+    <value>Lors de l'export TEJ, le montant envoyé est le montant avant retenue ; la plateforme TEJ effectue le calcul de la retenue.</value>
   </data>
   <data name="seuil_non_atteint" xml:space="preserve">
     <value>Seuil non atteint</value>
@@ -1304,6 +1490,12 @@
   </data>
   <data name="Clients_Avec_Problemes_Solde" xml:space="preserve">
     <value>Clients avec problèmes de solde</value>
+  </data>
+  <data name="Fournisseurs_Avec_Problemes_Solde" xml:space="preserve">
+    <value>Fournisseurs avec problème de solde</value>
+  </data>
+  <data name="Total_Avoirs_Financiers" xml:space="preserve">
+    <value>Total avoirs financiers</value>
   </data>
   <data name="Quantites_Non_Livrees" xml:space="preserve">
     <value>Quantités non livrées</value>
@@ -1406,5 +1598,98 @@
   </data>
   <data name="Inactive" xml:space="preserve">
     <value>Inactif</value>
+  </data>
+  <data name="Export_Excel" xml:space="preserve">
+    <value>Exporter vers Excel</value>
+  </data>
+  <data name="Export_Pdf" xml:space="preserve">
+    <value>Exporter vers PDF</value>
+  </data>
+  <data name="Export_Excel_Success" xml:space="preserve">
+    <value>Export Excel réussi</value>
+  </data>
+  <data name="Erreur_Export" xml:space="preserve">
+    <value>Erreur lors de l'export</value>
+  </data>
+  <data name="Cloture_Caisse" xml:space="preserve">
+    <value>Clôture de caisse</value>
+  </data>
+  <data name="Date" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="Imprimer_PDF" xml:space="preserve">
+    <value>Imprimer PDF</value>
+  </data>
+  <data name="Somme_Espece" xml:space="preserve">
+    <value>Somme Espèce</value>
+  </data>
+  <data name="Somme_Cheque" xml:space="preserve">
+    <value>Somme Chèque</value>
+  </data>
+  <data name="Somme_Traite" xml:space="preserve">
+    <value>Somme Traite</value>
+  </data>
+  <data name="Somme_Virement" xml:space="preserve">
+    <value>Somme Virement</value>
+  </data>
+  <data name="Somme_TPE" xml:space="preserve">
+    <value>Somme TPE</value>
+  </data>
+  <data name="Total_Paiements" xml:space="preserve">
+    <value>Total Paiements</value>
+  </data>
+  <data name="Total" xml:space="preserve">
+    <value>Total</value>
+  </data>
+  <data name="Afficher_Detail" xml:space="preserve">
+    <value>Afficher le détail</value>
+  </data>
+  <data name="Masquer_Detail" xml:space="preserve">
+    <value>Masquer le détail</value>
+  </data>
+  <data name="Avoirs" xml:space="preserve">
+    <value>Avoirs</value>
+  </data>
+  <data name="Aucun_avoir_date" xml:space="preserve">
+    <value>Aucun avoir pour cette date.</value>
+  </data>
+  <data name="Aucun_bl_date" xml:space="preserve">
+    <value>Aucun bon de livraison pour cette date.</value>
+  </data>
+  <data name="Resultat_Cloture" xml:space="preserve">
+    <value>Résultat (Total BL - Total Avoirs)</value>
+  </data>
+  <data name="Export_PDF_Reussi" xml:space="preserve">
+    <value>Export PDF réussi.</value>
+  </data>
+  <data name="Actualiser" xml:space="preserve">
+    <value>Actualiser</value>
+  </data>
+  <data name="Ventes_nettes" xml:space="preserve">
+    <value>Ventes nettes</value>
+  </data>
+  <data name="Achats_nets" xml:space="preserve">
+    <value>Achats nets</value>
+  </data>
+  <data name="Resultat" xml:space="preserve">
+    <value>Résultat</value>
+  </data>
+  <data name="HT" xml:space="preserve">
+    <value>HT</value>
+  </data>
+  <data name="Evolution_ventes_achats" xml:space="preserve">
+    <value>Évolution ventes / achats</value>
+  </data>
+  <data name="Alertes_soldes" xml:space="preserve">
+    <value>Alertes soldes</value>
+  </data>
+  <data name="Aucune_donnee_evolution" xml:space="preserve">
+    <value>Aucune donnée d'évolution disponible.</value>
+  </data>
+  <data name="Voir_tout" xml:space="preserve">
+    <value>Voir tout</value>
+  </data>
+  <data name="Voir_recap_detaille" xml:space="preserve">
+    <value>Voir le récap détaillé</value>
   </data>
 </root>

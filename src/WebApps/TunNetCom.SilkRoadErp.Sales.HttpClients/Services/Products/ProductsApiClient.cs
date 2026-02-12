@@ -15,7 +15,7 @@ public class ProductsApiClient : IProductsApiClient
     {
         try
         {
-            var response = await _httpClient.GetAsync($"/products/{refe}", cancellationToken: cancellationToken);
+            var response = await _httpClient.GetAsync($"/products/{Uri.EscapeDataString(refe)}", cancellationToken: cancellationToken);
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 return await response.ReadJsonAsync<ProductResponse>();
@@ -25,6 +25,28 @@ public class ProductsApiClient : IProductsApiClient
                 return false;
             }
             throw new Exception($"Products/{refe}: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message, ex);
+            throw;
+        }
+    }
+
+    public async Task<OneOf<ProductResponse, bool>> GetByIdAsync(int id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync($"/products/{id}", cancellationToken: cancellationToken);
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                return await response.ReadJsonAsync<ProductResponse>();
+            }
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return false;
+            }
+            throw new Exception($"Products/{id}: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
         }
         catch (Exception ex)
         {
@@ -119,7 +141,7 @@ public class ProductsApiClient : IProductsApiClient
                     { "Accept", "application/problem+json" }
                 };
 
-            var response = await _httpClient.PutAsJsonAsync($"/products/{refe}", request, headers, cancellationToken);
+            var response = await _httpClient.PutAsJsonAsync($"/products/{Uri.EscapeDataString(refe)}", request, headers, cancellationToken);
             if (response.StatusCode == HttpStatusCode.NoContent)
             {
                 return ResponseTypes.Success;
@@ -133,6 +155,37 @@ public class ProductsApiClient : IProductsApiClient
                 return await response.ReadJsonAsync<BadRequestResponse>();
             }
             throw new Exception($"Products/{refe}: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message, ex);
+            throw;
+        }
+    }
+
+    public async Task<OneOf<ResponseTypes, BadRequestResponse>> UpdateByIdAsync(UpdateProductRequest request, int id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var headers = new Dictionary<string, string>()
+                {
+                    { "Accept", "application/problem+json" }
+                };
+
+            var response = await _httpClient.PutAsJsonAsync($"/products/{id}", request, headers, cancellationToken);
+            if (response.StatusCode == HttpStatusCode.NoContent)
+            {
+                return ResponseTypes.Success;
+            }
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return ResponseTypes.NotFound;
+            }
+            if (response.StatusCode == HttpStatusCode.BadRequest)
+            {
+                return await response.ReadJsonAsync<BadRequestResponse>();
+            }
+            throw new Exception($"Products/{id}: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
         }
         catch (Exception ex)
         {

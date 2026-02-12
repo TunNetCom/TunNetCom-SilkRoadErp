@@ -9,10 +9,12 @@
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Customers
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Invoice
 @using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Responses
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Sorting
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Banque
 @using TunNetCom.SilkRoadErp.Sales.Domain.Entites
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
 @using Radzen.Blazor
 @using Radzen
 @inject IStringLocalizer<SharedResource> Localizer
@@ -25,6 +27,7 @@
 @inject ToastService ToastService
 @inject Radzen.NotificationService NotificationService
 @inject DialogService DialogService
+@inject IDecimalFormatService DecimalFormatService
 
 <RadzenStack Gap="1.5rem">
     <RadzenFormField Text="@Localizer["Numero"]" class="rz-col-12 rz-md-6">
@@ -58,7 +61,7 @@
     </RadzenFormField>
 
     <RadzenFormField Text="@($"{Localizer["Montant"]} *")" class="rz-col-12 rz-md-6">
-        <RadzenNumeric @bind-Value="paiement.Montant" Min="0" Format="@AmountHelper.FORMAT_N2" Style="width: 100%;" />
+        <RadzenNumeric @bind-Value="paiement.Montant" Min="0" Format="@amountFormat" Style="width: 100%;" />
     </RadzenFormField>
 
     <RadzenFormField Text="@($"{Localizer["Date_Paiement"]} *")" class="rz-col-12 rz-md-6">
@@ -76,7 +79,7 @@
                         Change="@OnMethodePaiementChanged" />
     </RadzenFormField>
 
-    @if (selectedMethodePaiement == "Cheque" || selectedMethodePaiement == "Traite")
+    @if (selectedMethodePaiement == MethodePaiementConsts.Cheque || selectedMethodePaiement == MethodePaiementConsts.Traite)
     {
         <RadzenFormField Text="@Localizer["Numero_Cheque_Traite"]" class="rz-col-12 rz-md-6">
             <RadzenTextBox @bind-Value="paiement.NumeroChequeTraite" Placeholder="@Localizer["Numero"]" />
@@ -99,7 +102,7 @@
             </RadzenStack>
         </RadzenFormField>
 
-        @if (selectedMethodePaiement == "Traite")
+        @if (selectedMethodePaiement == MethodePaiementConsts.Traite)
         {
             <RadzenFormField Text="@Localizer["Date_Echeance"]" class="rz-col-12 rz-md-6">
                 <RadzenDatePicker @bind-Value="paiement.DateEcheance" DateFormat="dd/MM/yyyy" ShowTime="false" Style="width: 100%;" />
@@ -167,6 +170,7 @@
     private List<GetDeliveryNoteBaseInfos> _filteredDeliveryNotes = new();
     private List<BanqueResponse> banques = new();
     private CancellationTokenSource cancellationTokenSource = new();
+    private string amountFormat = AmountHelper.FORMAT_N3;
     private List<int> selectedFactureIds = new();
     private List<int> selectedBonDeLivraisonIds = new();
 
@@ -180,11 +184,12 @@
 
     protected override async Task OnInitializedAsync()
     {
+        amountFormat = await DecimalFormatService.GetDecimalFormatAsync();
         methodePaiementOptions = new()
         {
-            new MethodePaiementOption { Text = Localizer["Espece"], Value = "Espece" },
-            new MethodePaiementOption { Text = Localizer["Cheque"], Value = "Cheque" },
-            new MethodePaiementOption { Text = Localizer["Traite"], Value = "Traite" }
+            new MethodePaiementOption { Text = Localizer["Espece"], Value = MethodePaiementConsts.Espece },
+            new MethodePaiementOption { Text = Localizer["Cheque"], Value = MethodePaiementConsts.Cheque },
+            new MethodePaiementOption { Text = Localizer["Traite"], Value = MethodePaiementConsts.Traite }
         };
         
         // Pré-remplir les valeurs
@@ -259,7 +264,7 @@
         var parameters = new QueryStringParameters
         {
             PageNumber = 1,
-            PageSize = 10,
+            PageSize = 5,
             SearchKeyword = args?.Filter ?? string.Empty
         };
 
@@ -346,8 +351,8 @@
                 customerId: clientId,
                 invoiceId: null,
                 isInvoiced: null,
-                sortOrder: null,
-                sortProperty: null,
+                sortOrder: SortConstants.Ascending,
+                sortProperty: nameof(GetDeliveryNoteBaseInfos.Number),
                 pageNumber: 1,
                 pageSize: 50,
                 searchKeyword: null,
@@ -387,7 +392,7 @@
         if (value is string methode)
         {
             paiement.MethodePaiement = methode;
-            if (methode != "Cheque" && methode != "Traite")
+            if (methode != MethodePaiementConsts.Cheque && methode != MethodePaiementConsts.Traite)
             {
                 paiement.NumeroChequeTraite = null;
                 paiement.BanqueId = null;

@@ -21,116 +21,131 @@
 @inject ILogger<AddOrUpdateAvoirFinancierFournisseurs> logger
 @inject NavigationManager NavigationManager
 
-<style>
-    .avoir-financier-container {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-        margin-bottom: 20px;
-    }
-
-    .avoir-financier-form {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-    }
-
-    .form-row {
-        display: flex;
-        gap: 20px;
-        align-items: center;
-        flex-wrap: wrap;
-    }
-</style>
-
 @if (isLoading)
 {
     <RadzenProgressBarCircular ProgressBarStyle="ProgressBarStyle.Primary" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
 }
 else
 {
-    <div class="avoir-financier-container">
-        <div class="avoir-financier-form">
-            <div class="form-row">
-                <RadzenLabel Text="Numéro avoir financier" />
-                <RadzenTextBox @bind-Value="avoirFinancierNumber" Style="width: 150px;" ReadOnly="true" />
-
-                <RadzenLabel Text="@Localizer["date"]" />
-                <RadzenDatePicker @bind-Value="avoirFinancierDate" Style="width: 200px;" DateFormat="d MMMM yyyy" ShowTime="false" />
-
-                <RadzenLabel Text="Numéro sur page" />
-                <RadzenNumeric @bind-Value="numSurPage" Style="width: 150px;" />
+    <div class="avoir-financier-form-container">
+        <div class="avoir-financier-form-card">
+            <div class="avoir-financier-form-header">
+                <h3>@(isEditMode ? "Modifier l'avoir financier fournisseur" : "Nouvel avoir financier fournisseur")</h3>
+                <RadzenButton Icon="arrow_back"
+                              Text="@Localizer["Retour"]"
+                              ButtonStyle="ButtonStyle.Secondary"
+                              Variant="Variant.Outlined"
+                              Click="@(() => NavigationManager.NavigateTo("/avoir-financier-fournisseurs"))" />
             </div>
 
-            <div class="form-row">
-                <RadzenLabel Text="Fournisseur" />
-                <RadzenDropDownDataGrid AllowClear="true"
-                                        IsLoading="@isLoadingProviders"
-                                        @bind-Value="@selectedFournisseurId"
-                                        LoadData="@LoadProviders"
-                                        AllowFiltering="true"
-                                        Style="width: 350px;"
-                                        Data="@_filteredProviders"
-                                        TextProperty="@nameof(ProviderResponse.Nom)"
-                                        ValueProperty="@nameof(ProviderResponse.Id)"
-                                        Placeholder="Sélectionner un fournisseur"
-                                        Change="@OnFournisseurChanged"
-                                        Disabled="@isEditMode">
-                    <Columns>
-                        <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Id)" Title="ID" Width="80px" />
-                        <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Nom)" Title="@Localizer["name"]" Width="220px" />
-                    </Columns>
-                </RadzenDropDownDataGrid>
+            <RadzenStack Gap="1.5rem">
+                <RadzenFormField Text="Numéro avoir financier" class="rz-col-12 rz-md-6">
+                    <RadzenTextBox @bind-Value="avoirFinancierNumber" Style="width: 100%;" ReadOnly="true" />
+                </RadzenFormField>
 
-                <RadzenLabel Text="Facture fournisseur *" />
-                <RadzenDropDownDataGrid AllowClear="false"
-                                        IsLoading="@isLoadingInvoices"
-                                        @bind-Value="@selectedFactureFournisseurNum"
-                                        LoadData="@LoadInvoices"
-                                        AllowFiltering="true"
-                                        Style="width: 350px;"
-                                        Data="@_filteredInvoices"
-                                        TextProperty="@nameof(ProviderInvoiceResponse.ProviderInvoiceNumber)"
-                                        ValueProperty="@nameof(ProviderInvoiceResponse.Num)"
-                                        Placeholder="Sélectionner une facture fournisseur"
-                                        Disabled="@(!selectedFournisseurId.HasValue || isEditMode)">
-                    <Columns>
-                        <RadzenDropDownDataGridColumn Property="@nameof(ProviderInvoiceResponse.ProviderInvoiceNumber)" Title="Numéro" Width="120px" />
-                        <RadzenDropDownDataGridColumn Property="@nameof(ProviderInvoiceResponse.Date)" Title="@Localizer["date"]" Width="100px" FormatString="{0:d MMM yyyy}" />
+                <RadzenFormField Text="@Localizer["date"]" class="rz-col-12 rz-md-6">
+                    <RadzenDatePicker @bind-Value="avoirFinancierDate" Style="width: 100%;" DateFormat="d MMMM yyyy" ShowTime="false" />
+                </RadzenFormField>
+
+                <RadzenFormField Text="Numéro sur page" class="rz-col-12 rz-md-6">
+                    <RadzenNumeric @bind-Value="numSurPage" Style="width: 100%;" />
+                </RadzenFormField>
+
+                <RadzenFormField Text="Fournisseur" class="rz-col-12 rz-md-6">
+                    <RadzenDropDownDataGrid AllowClear="true"
+                                            IsLoading="@isLoadingProviders"
+                                            @bind-Value="@selectedFournisseurId"
+                                            LoadData="@LoadProviders"
+                                            AllowFiltering="true"
+                                            Style="width: 100%;"
+                                            Data="@_filteredProviders"
+                                            TextProperty="@nameof(ProviderResponse.Nom)"
+                                            ValueProperty="@nameof(ProviderResponse.Id)"
+                                            Placeholder="Sélectionner un fournisseur"
+                                            Change="@OnFournisseurChanged"
+                                            Disabled="@isEditMode">
+                        <Columns>
+                            <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Id)" Title="ID" Width="80px" />
+                            <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Nom)" Title="@Localizer["name"]" Width="220px" />
+                        </Columns>
+                    </RadzenDropDownDataGrid>
+                </RadzenFormField>
+
+                <RadzenFormField Text="Facture fournisseur *" class="rz-col-12 rz-md-6">
+                    <RadzenDropDownDataGrid AllowClear="false"
+                                            IsLoading="@isLoadingInvoices"
+                                            @bind-Value="@selectedFactureFournisseurNum"
+                                            LoadData="@LoadInvoices"
+                                            AllowFiltering="true"
+                                            Style="width: 100%;"
+                                            Data="@_filteredInvoices"
+                                            TextProperty="@nameof(ProviderInvoiceResponse.ProviderInvoiceNumber)"
+                                            ValueProperty="@nameof(ProviderInvoiceResponse.Num)"
+                                            Placeholder="Sélectionner une facture fournisseur"
+                                            Disabled="@(!selectedFournisseurId.HasValue || isEditMode)">
+                        <Columns>
+                            <RadzenDropDownDataGridColumn Property="@nameof(ProviderInvoiceResponse.ProviderInvoiceNumber)" Title="Numéro" Width="120px" />
+                            <RadzenDropDownDataGridColumn Property="@nameof(ProviderInvoiceResponse.Date)" Title="@Localizer["date"]" Width="100px" FormatString="{0:d MMM yyyy}" />
                         <RadzenDropDownDataGridColumn Property="@nameof(ProviderInvoiceResponse.TotTTC)" Title="Total TTC" Width="120px">
                             <Template Context="item">
-                                @item.TotTTC.FormatAmount()
+                                @AmountHelper.FormatAmount(Convert.ToDecimal((item as ProviderInvoiceResponse)?.TotTTC ?? 0))
                             </Template>
                         </RadzenDropDownDataGridColumn>
-                    </Columns>
-                </RadzenDropDownDataGrid>
-            </div>
+                        </Columns>
+                    </RadzenDropDownDataGrid>
+                </RadzenFormField>
 
-            <div class="form-row">
-                <RadzenLabel Text="Description" />
-                <RadzenTextArea @bind-Value="description" Style="width: 100%;" Rows="3" Placeholder="Description (optionnel)" />
-            </div>
+                <RadzenFormField Text="Description" class="rz-col-12">
+                    <RadzenTextArea @bind-Value="description" Style="width: 100%;" Rows="3" Placeholder="Description (optionnel)" />
+                </RadzenFormField>
 
-            <div class="form-row">
-                <RadzenLabel Text="Total TTC *" />
-                <RadzenNumeric @bind-Value="totTtc" Style="width: 200px;" FormatString="F2" />
-            </div>
+                <RadzenFormField Text="Total TTC *" class="rz-col-12 rz-md-6">
+                    <RadzenNumeric @bind-Value="totTtc" Style="width: 100%;" FormatString="F2" />
+                </RadzenFormField>
 
-        </div>
-
-        <div style="display: flex; gap: 10px; margin-top: 20px;">
-            <RadzenButton Text="Enregistrer" 
-                          Icon="save" 
-                          ButtonStyle="ButtonStyle.Primary" 
-                          Click="@SaveAvoirFinancierFournisseurs"
-                          IsBusy="@isSaving" />
-            <RadzenButton Text="Annuler" 
-                          Icon="cancel" 
-                          ButtonStyle="ButtonStyle.Light" 
-                          Click="@(() => NavigationManager.NavigateTo("/avoir-financier-fournisseurs"))" />
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" class="rz-col-12">
+                    <RadzenButton Text="Enregistrer"
+                                 Icon="save"
+                                 ButtonStyle="ButtonStyle.Primary"
+                                 Click="@SaveAvoirFinancierFournisseurs"
+                                 IsBusy="@isSaving" />
+                    <RadzenButton Text="Annuler"
+                                 Icon="cancel"
+                                 ButtonStyle="ButtonStyle.Light"
+                                 Click="@(() => NavigationManager.NavigateTo("/avoir-financier-fournisseurs"))" />
+                </RadzenStack>
+            </RadzenStack>
         </div>
     </div>
 }
+
+<style>
+    .avoir-financier-form-container {
+        padding: 0;
+        margin: 0;
+    }
+
+    .avoir-financier-form-card {
+        background: transparent;
+        border-radius: 0;
+        box-shadow: none;
+        padding: 1rem;
+    }
+
+    .avoir-financier-form-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--rz-base-300, #e0e0e0);
+    }
+
+    .avoir-financier-form-header h3 {
+        margin: 0;
+        font-size: 1.25rem;
+    }
+</style>
 
 @code {
     [Parameter] public string? num { get; set; }
@@ -242,37 +257,6 @@ else
             if (result.IsT0)
             {
                 _filteredInvoices = result.AsT0.Invoices.Items;
-                
-                // In edit mode, filter out invoices that already have an avoir financier (except the current one)
-                if (isEditMode && int.TryParse(num, out var currentNum))
-                {
-                    // Get all invoices that already have an avoir financier
-                    var invoicesWithAvoir = await avoirFinancierFournisseursApiClient.GetAvoirFinancierFournisseursWithSummariesAsync(
-                        selectedFournisseurId, null, null, null, 1, 1000, null, null, null, _cancellationTokenSource.Token);
-                    
-                    var excludedNums = invoicesWithAvoir.AvoirFinancierFournisseurs.Items
-                        .Where(a => a.Num != currentNum)
-                        .Select(a => a.NumFactureFournisseur)
-                        .ToList();
-                    
-                    _filteredInvoices = _filteredInvoices
-                        .Where(i => !excludedNums.Contains(i.Num))
-                        .ToList();
-                }
-                else
-                {
-                    // In create mode, filter out invoices that already have an avoir financier
-                    var invoicesWithAvoir = await avoirFinancierFournisseursApiClient.GetAvoirFinancierFournisseursWithSummariesAsync(
-                        selectedFournisseurId, null, null, null, 1, 1000, null, null, null, _cancellationTokenSource.Token);
-                    
-                    var excludedNums = invoicesWithAvoir.AvoirFinancierFournisseurs.Items
-                        .Select(a => a.NumFactureFournisseur)
-                        .ToList();
-                    
-                    _filteredInvoices = _filteredInvoices
-                        .Where(i => !excludedNums.Contains(i.Num))
-                        .ToList();
-                }
             }
             else
             {
@@ -316,11 +300,9 @@ else
                     numSurPage = data.NumSurPage;
                     description = data.Description;
                     totTtc = data.TotTtc;
-                    selectedFactureFournisseurNum = data.FactureFournisseur.Num;
-                    selectedFournisseurId = data.FactureFournisseur.ProviderId;
-
-                    // Load invoices for the selected provider
+                    selectedFournisseurId = data.FactureFournisseur?.ProviderId;
                     await LoadInvoices(null);
+                    selectedFactureFournisseurNum = data.FactureFournisseur?.Num;
                 }
             }
         }

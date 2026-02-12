@@ -1,0 +1,513 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:vc="http://www.w3.org/2007/XMLSchema-versioning" elementFormDefault="qualified" attributeFormDefault="unqualified" vc:minVersion="1.1">
+	<xs:include schemaLocation="TEJISOPaysDevises.xsd"/>
+	<xs:include schemaLocation="TEJRSCodesOperations_v1.0.xsd"/>
+	<xs:element name="DeclarationsRS">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="Declarant" type="TypeMatriculeFiscal">
+					<xs:annotation>
+						<xs:documentation>Références déclarant. Le typeIdentifiant doit être égale à "1" et le déclarant doit être identifié par un matricule fiscal</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="ReferenceDeclaration" type="TypeReferenceDeclaration">
+					<xs:annotation>
+						<xs:documentation>Références déclaration</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="AjouterCertificats" minOccurs="0" maxOccurs="1">
+					<xs:annotation>
+						<xs:documentation>Liste des certificats de payements à ajouter</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:sequence maxOccurs="unbounded">
+							<xs:element name="Certificat" type="TypeCertificat"/>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="ModifierCertificats" minOccurs="0" maxOccurs="1">
+					<xs:annotation>
+						<xs:documentation>Liste des certificats de payements à modifier</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:sequence maxOccurs="unbounded">
+							<xs:element name="Certificat" type="TypeCertificat"/>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="AnnulerCertificats" minOccurs="0" maxOccurs="1">
+					<xs:annotation>
+						<xs:documentation>Liste des certificats de payements à annuler</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:sequence maxOccurs="unbounded">
+							<xs:element name="Certificat" type="TypeAnnulerCertificat"/>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+			<xs:attribute name="VersionSchema" type="xs:string" use="required" fixed="1.0">
+				<xs:annotation>
+					<xs:documentation>Prend la valeur 1.0 qui est la version du schéma XSD</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+		</xs:complexType>
+	</xs:element>
+	<xs:simpleType name="TypeIDTaxpayer" final="restriction">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="1"/>
+			<xs:enumeration value="2"/>
+			<xs:enumeration value="3"/>
+			<xs:enumeration value="4"/>
+			<xs:enumeration value="5"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="TypeActeDepot" final="restriction">
+		<xs:annotation>
+			<xs:documentation> 0 : Initiale, 1 : Rectificative</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="0"/>
+			<xs:enumeration value="1"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="TypeActeOperation" final="restriction">
+		<xs:annotation>
+			<xs:documentation> N : Nouvelle, M : Modification d'une operation déjaà déclarée, S : Annulation d'une operation déjà déclarée</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="N"/>
+			<xs:enumeration value="M"/>
+			<xs:enumeration value="S"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="TypePeriodes" final="restriction">
+		<xs:annotation>
+			<xs:documentation> Liste des périodes déclaratives (Mois, ...)</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:minLength value="2"/>
+			<xs:maxLength value="2"/>
+			<xs:enumeration value="01"/>
+			<xs:enumeration value="02"/>
+			<xs:enumeration value="03"/>
+			<xs:enumeration value="04"/>
+			<xs:enumeration value="05"/>
+			<xs:enumeration value="06"/>
+			<xs:enumeration value="07"/>
+			<xs:enumeration value="08"/>
+			<xs:enumeration value="09"/>
+			<xs:enumeration value="10"/>
+			<xs:enumeration value="11"/>
+			<xs:enumeration value="12"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="TypeTauxTVA" final="restriction">
+		<xs:annotation>
+			<xs:documentation> Liste des taux de TVA applicables</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:decimal">
+			<xs:enumeration value="7.0"/>
+			<xs:enumeration value="19.0"/>
+			<xs:enumeration value="13.0"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="TypeCategoriePersonne" final="restriction">
+		<xs:annotation>
+			<xs:documentation> Catégorie Personne : PP : Personne Physique (Patentée ou non), PM : Personne Morale patentée</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="PP"/>
+			<xs:enumeration value="PM"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="TypeReferenceDeclaration">
+		<xs:annotation>
+			<xs:documentation>Références de dépôt du fichier XML composée du code acte et de la période à déclarer</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="ActeDepot" type="TypeActeDepot">
+				<xs:annotation>
+					<xs:documentation>Acte de dépôt : Initial, Réctificatition</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="AnneeDepot">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="4"/>
+						<xs:maxLength value="4"/>
+						<xs:pattern value="[2][0][0-9]{2}"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="MoisDepot" type="TypePeriodes">
+				<xs:annotation>
+					<xs:documentation>Période : Composée de l'année et du Mois. Elles doivent correspondre aux dates de paiements</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="TypeCertificat">
+		<xs:sequence>
+			<xs:element name="Beneficiaire" type="TypeTaxpayer">
+				<xs:annotation>
+					<xs:documentation>Identification du bénéficiaire</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="DatePayement">
+				<xs:annotation>
+					<xs:documentation>Date du payement sous le format DD/MM/YYYY</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:token">
+						<xs:pattern value="((31/(0[13578]|1[02])/((19|20)\d{2}))|((0[1-9]|[12]\d|30)/(0[13456789]|1[012])/((19|20)\d{2}))|((0[1-9]|1\d|2[0-8])/02/((19|20)\d{2}))|(29/02/(19|20)((0[048]|[2468][048]|[13579][26]))))"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Ref_certif_chez_declarant" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>Référence certificat attribuée par le déclarant</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="ListeOperations">
+				<xs:annotation>
+					<xs:documentation>Liste des opérations objets du payement</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:sequence maxOccurs="unbounded">
+						<xs:element name="Operation" type="TypeOperation"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="TotalPayement">
+				<xs:annotation>
+					<xs:documentation>Total payement</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="TotalMontantHT" type="xs:integer" minOccurs="1" maxOccurs="1"/>
+						<xs:element name="TotalMontantTVA" type="xs:integer" minOccurs="1" maxOccurs="1"/>
+						<xs:element name="TotalMontantTTC" type="xs:integer" minOccurs="1" maxOccurs="1"/>
+						<xs:element name="TotalMontantRS" type="xs:integer" minOccurs="1" maxOccurs="1"/>
+						<xs:element name="TotalTaxes" type="TotalMontantTaxeType" minOccurs="0" maxOccurs="1"/>
+						<xs:element name="TotalMontantNetServi" type="xs:integer" minOccurs="1" maxOccurs="1"/>
+						<xs:element name="TotalDevise" type="totalMntDeviseType" minOccurs="0" maxOccurs="1"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="TypeAnnulerCertificat">
+		<xs:sequence>
+			<xs:element name="Ref_certif_chez_declarant" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>Référence certificat attribuée par le déclarant</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="TypeOperation">
+		<xs:sequence>
+			<xs:element name="AnneeFacturation">
+				<xs:annotation>
+					<xs:documentation>Année facturation</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:minLength value="4"/>
+						<xs:maxLength value="4"/>
+						<xs:pattern value="[2][0][0-9]{2}"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="CNPC" type="TypeTorF" minOccurs="1" maxOccurs="1">
+				<xs:annotation>
+					<xs:documentation>Convention de non double imposition</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="P_Charge" type="TypeTorF" minOccurs="1" maxOccurs="1">
+				<xs:annotation>
+					<xs:documentation>Prise en charge</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="MontantHT" type="xs:integer" minOccurs="1" maxOccurs="1">
+				<xs:annotation>
+					<xs:documentation>Montant Hors Taxe en millimes sans partie décimale</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="TauxRS" minOccurs="1" maxOccurs="1">
+				<xs:annotation>
+					<xs:documentation>Taux RS appliqué, Sous la forme de 5 chiffres avec une partie décimale de 2 chiffres et spérée dyu point décimal (999.99)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:minInclusive value="0"/>
+						<xs:maxInclusive value="100"/>
+						<xs:totalDigits value="5"/>
+						<xs:fractionDigits value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="TauxTVA" minOccurs="0" maxOccurs="1">
+				<xs:annotation>
+					<xs:documentation>Taux TVA appliqué</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:minInclusive value="0"/>
+						<xs:maxInclusive value="100"/>
+						<xs:fractionDigits value="2"/>
+						<xs:totalDigits value="5"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="MontantTVA" type="xs:integer" minOccurs="0" maxOccurs="1">
+				<xs:annotation>
+					<xs:documentation>Montant TVA arrondi en millimes</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="MontantTTC" type="xs:integer" minOccurs="1" maxOccurs="1">
+				<xs:annotation>
+					<xs:documentation>Montant TTC arrondi en millimes</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="MontantRS" minOccurs="1" maxOccurs="1">
+				<xs:annotation>
+					<xs:documentation>Montant de la retenue à la source arrondi en millimes</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:pattern value="[\-+]?[0-9]+"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="TaxeAdditionnelle" type="taxeType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="MontantNetServi" type="xs:integer" minOccurs="1" maxOccurs="1">
+				<xs:annotation>
+					<xs:documentation>Montant net servi en millimes. Sans partie décimale.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Devise" type="TypeMontantDevise" minOccurs="0" maxOccurs="1">
+				<xs:annotation>
+					<xs:documentation>Element à utiliser dans le cas où le payement a été réalisé en devise</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="IdTypeOperation" type="TypeCodesOperations" use="required">
+			<xs:annotation>
+				<xs:documentation>Nature opération selon la codification établie par l'administration fiscale</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="taxeType">
+		<xs:simpleContent>
+			<xs:extension base="xs:decimal">
+				<xs:attribute name="Code" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Codification des taxes sous forme de RSTVA100, RSTVA25...</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="Taux" type="xs:decimal" use="optional">
+					<xs:annotation>
+						<xs:documentation>Taux de la taxe </xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:simpleType name="rateRSTVAType">
+		<xs:restriction base="xs:decimal">
+			<xs:minInclusive value="0"/>
+			<xs:maxInclusive value="100"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="TypeTorF" final="restriction">
+		<xs:annotation>
+			<xs:documentation> 0 : non , 1 : oui</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:integer">
+			<xs:enumeration value="0"/>
+			<xs:enumeration value="1"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="TypeTaxpayer">
+		<xs:sequence>
+			<xs:element name="IdTaxpayer">
+				<xs:complexType>
+					<xs:choice minOccurs="1" maxOccurs="1">
+						<xs:element name="MatriculeFiscal" type="TypeMatriculeFiscal"/>
+						<xs:element name="CIN" type="TypeCIN"/>
+						<xs:element name="Passeport" type="TypePasseport"/>
+						<xs:element name="CarteSejour" type="TypeCarteSejour"/>
+						<xs:element name="AutreIdentifiantFiscal" type="TypeAutreIdentifiant"/>
+					</xs:choice>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="Resident" type="TypeTorF" default="1"/>
+			<xs:element name="NometprenonOuRaisonsociale" type="xs:string"/>
+			<xs:element name="Adresse" type="xs:string"/>
+			<xs:element name="Activite" type="xs:string" minOccurs="0"/>
+			<xs:element name="InfosContact" type="TypeAdresseContact" minOccurs="1"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="TypeMontantDevise">
+		<xs:sequence>
+			<xs:element name="CodeDevise" type="TypeCodeDevise">
+				<xs:annotation>
+					<xs:documentation>Code normalisé de la devise de paiement</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="TauxChange" type="xs:decimal">
+				<xs:annotation>
+					<xs:documentation>Taux de change appliqué lors du paiement</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="MontantRSDevise" type="xs:decimal">
+				<xs:annotation>
+					<xs:documentation>Montant de la retenue à la source  en devises</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="MontantTTCDevise" type="xs:decimal">
+				<xs:annotation>
+					<xs:documentation>Montant TTC en devises</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="MontantNetServiDevise" type="xs:decimal">
+				<xs:annotation>
+					<xs:documentation>Montant Net servis en devises</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="TotalMontantTaxeType">
+		<xs:sequence>
+			<xs:element name="TotalTaxeAdditionnelle" minOccurs="0" maxOccurs="unbounded">
+				<xs:complexType>
+					<xs:attribute name="Code" type="xs:string"/>
+					<xs:attribute name="Montant" type="xs:decimal"/>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="totalMntDeviseType">
+		<xs:sequence>
+			<xs:element name="TotalMontantDevise" minOccurs="0" maxOccurs="unbounded">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="TotalMontantRS" type="xs:decimal">
+							<xs:annotation>
+								<xs:documentation>Total Montant de la retenue à la source  en devises</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name="TotalMontantTTC" type="xs:decimal">
+							<xs:annotation>
+								<xs:documentation>Total Montant TTC en devises</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name="TotalMontantNetServi" type="xs:decimal">
+							<xs:annotation>
+								<xs:documentation>Total Montant Net servis en devises</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+					</xs:sequence>
+					<xs:attribute name="Code" type="TypeCodeDevise" use="required"/>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="TypeMatriculeFiscal">
+		<xs:sequence>
+			<xs:element name="TypeIdentifiant" type="TypeIDTaxpayer" fixed="1">
+				<xs:annotation>
+					<xs:documentation>Prend la valeur "1"</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Identifiant">
+				<xs:annotation>
+					<xs:documentation>Matricule fiscal sous la forme 7 chiffres concaténés avec une lettre alphabétique</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:pattern value="\d{7}[A-Z]"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="CategorieContribuable" type="TypeCategoriePersonne">
+				<xs:annotation>
+					<xs:documentation>PM : Persionne Morale, PP : Personne Physique patentée</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="TypeCIN">
+		<xs:sequence>
+			<xs:element name="TypeIdentifiant" type="TypeIDTaxpayer" fixed="2"/>
+			<xs:element name="Identifiant">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:length value="8"/>
+						<xs:pattern value="\d{8}"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="DateNaissance">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:pattern value="(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/([12][0-9]{3})"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="CategorieContribuable" type="TypeCategoriePersonne" fixed="PP"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="TypePasseport">
+		<xs:sequence>
+			<xs:element name="TypeIdentifiant" type="TypeIDTaxpayer" fixed="3"/>
+			<xs:element name="Identifiant" type="xs:string"/>
+			<xs:element name="DateNaissance">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:pattern value="(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/([12][0-9]{3})"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Pays" type="TypeCodesPays"/>
+			<xs:element name="CategorieContribuable" type="TypeCategoriePersonne" fixed="PP"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="TypeCarteSejour">
+		<xs:sequence>
+			<xs:element name="TypeIdentifiant" type="TypeIDTaxpayer" fixed="4"/>
+			<xs:element name="Identifiant" type="xs:string"/>
+			<xs:element name="DateNaissance">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:pattern value="(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/([12][0-9]{3})"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="Pays" type="TypeCodesPays"/>
+			<xs:element name="CategorieContribuable" type="TypeCategoriePersonne" fixed="PP"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="TypeAutreIdentifiant">
+		<xs:sequence>
+			<xs:element name="TypeIdentifiant" type="TypeIDTaxpayer" fixed="5"/>
+			<xs:element name="Identifiant" type="xs:string"/>
+			<xs:element name="Pays" type="TypeCodesPays"/>
+			<xs:element name="CategorieContribuable" type="TypeCategoriePersonne"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="TypeAdresseContact">
+		<xs:sequence>
+			<xs:element name="AdresseMail">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:pattern value="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="NumTel" type="xs:string"/>
+		</xs:sequence>
+	</xs:complexType>
+</xs:schema>

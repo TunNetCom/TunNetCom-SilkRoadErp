@@ -13,6 +13,9 @@ public class LigneInventaireResponse
     [JsonPropertyName("refProduit")]
     public string RefProduit { get; set; } = string.Empty;
 
+    [JsonPropertyName("idProduit")]
+    public int IdProduit { get; set; }
+
     [JsonPropertyName("nomProduit")]
     public string NomProduit { get; set; } = string.Empty;
 

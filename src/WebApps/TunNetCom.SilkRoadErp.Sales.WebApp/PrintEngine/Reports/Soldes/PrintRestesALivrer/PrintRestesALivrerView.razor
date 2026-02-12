@@ -1,0 +1,130 @@
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Soldes.PrintRestesALivrer
+
+@code {
+    [Parameter] public PrintRestesALivrerModel Model { get; set; } = null!;
+}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            margin: 20px;
+            color: #222;
+        }
+
+        h2 {
+            margin-bottom: 4px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 24px;
+            border-bottom: 2px solid #444;
+            padding-bottom: 4px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 6px 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f5f5f5;
+            font-size: 11px;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .solde-negatif {
+            color: #f44336;
+            font-weight: bold;
+        }
+
+        .solde-positif {
+            color: #4caf50;
+            font-weight: bold;
+        }
+
+        .client-block {
+            margin-bottom: 20px;
+        }
+
+        .client-name {
+            font-weight: bold;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .footer {
+            margin-top: 32px;
+            font-size: 10px;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <h2>Restes à livrer par client</h2>
+    <div>Généré le @Model.GeneratedAt.ToString("dd/MM/yyyy HH:mm")</div>
+
+    @if (Model.Clients.Any())
+    {
+        @foreach (var client in Model.Clients)
+        {
+            <div class="section-title client-block">
+                <span class="client-name">@client.ClientNom</span>
+                <span> — Reste à payer: </span>
+                <span class="@(client.Solde < 0 ? "solde-negatif" : "solde-positif")">@client.Solde.FormatAmount(Model.DecimalPlaces) TND</span>
+            </div>
+            @if (client.Lignes.Any())
+            {
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Réf. produit</th>
+                            <th>Désignation</th>
+                            <th class="text-right">Quantité restante</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var line in client.Lignes)
+                        {
+                            <tr>
+                                <td>@line.RefProduit</td>
+                                <td>@line.Designation</td>
+                                <td class="text-right">@line.QuantiteRestante</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <p>Aucun produit en reste à livrer pour ce client.</p>
+            }
+        }
+    }
+    else
+    {
+        <p>Aucun client avec problème de solde ou restes à livrer.</p>
+    }
+
+    <div class="footer">
+        Société @Model.Company.Name — @Model.Company.Adresse — Tel: @Model.Company.Tel — MF: @Model.Company.Matricule
+    </div>
+</body>
+</html>

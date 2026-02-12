@@ -6,6 +6,7 @@
 @using TunNetCom.SilkRoadErp.Sales.Contracts.AvoirFournisseur
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Providers
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Common
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Sorting
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.FactureAvoirFournisseur
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AvoirFournisseur
@@ -445,7 +446,7 @@
         isLoadingFactureAvoir = true;
         try
         {
-            // Extract sorting information from LoadDataArgs
+            // Extract sorting information from LoadDataArgs (default: by document number ascending)
             string? sortProperty = null;
             string? sortOrder = null;
             if (args.Sorts != null && args.Sorts.Any())
@@ -455,7 +456,12 @@
                 sortProperty = sort.Property == nameof(FactureAvoirFournisseurBaseInfo.StatutLibelle) 
                     ? nameof(FactureAvoirFournisseurBaseInfo.Statut) 
                     : sort.Property;
-                sortOrder = sort.SortOrder == SortOrder.Ascending ? "asc" : "desc";
+                sortOrder = sort.SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending;
+            }
+            else
+            {
+                sortProperty = nameof(FactureAvoirFournisseurBaseInfo.Id);
+                sortOrder = SortConstants.Ascending;
             }
 
             var pageNumber = (args.Skip ?? 0) / _defaultPageSize + 1;
@@ -511,8 +517,8 @@
             var avoirsResult = await avoirFournisseurService.GetAvoirFournisseurWithSummariesAsync(
                 fournisseurId: null,
                 numFactureAvoirFournisseur: factureAvoirId,
-                sortOrder: null,
-                sortProperty: null,
+                sortOrder: SortConstants.Ascending,
+                sortProperty: nameof(AvoirFournisseurBaseInfo.NumAvoirChezFournisseur),
                 pageNumber: 1,
                 pageSize: 1000,
                 searchKeyword: null,
@@ -550,14 +556,19 @@
         isLoadingUninvoicedAvoirs = true;
         try
         {
-            // Extract sorting information from LoadDataArgs
+            // Extract sorting information from LoadDataArgs (default: by document number ascending)
             string? sortProperty = null;
             string? sortOrder = null;
             if (args.Sorts != null && args.Sorts.Any())
             {
                 var sort = args.Sorts.First();
                 sortProperty = sort.Property;
-                sortOrder = sort.SortOrder == SortOrder.Ascending ? "asc" : "desc";
+                sortOrder = sort.SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending;
+            }
+            else
+            {
+                sortProperty = nameof(AvoirFournisseurBaseInfo.NumAvoirChezFournisseur);
+                sortOrder = SortConstants.Ascending;
             }
 
             var pageNumber = (args.Skip ?? 0) / _defaultPageSize + 1;

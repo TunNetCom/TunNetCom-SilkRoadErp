@@ -23,6 +23,7 @@ public class ExportProviderInvoiceToTejXmlEndpoint : ICarterModule
     public static async Task<Results<FileContentHttpResult, BadRequest<string>, NotFound<string>, StatusCodeHttpResult>> HandleExportToTejXmlAsync(
         [FromServices] SalesContext context,
         [FromServices] TejXmlExportService exportService,
+        [FromServices] INumberGeneratorService numberGeneratorService,
         [FromServices] IMediator mediator,
         [FromServices] ILogger<ExportProviderInvoiceToTejXmlEndpoint> logger,
         [FromServices] IActiveAccountingYearService activeAccountingYearService,
@@ -43,11 +44,15 @@ public class ExportProviderInvoiceToTejXmlEndpoint : ICarterModule
             }
             var appParams = appParamsResult.Value;
 
-            // Get invoice with related data
+            // Get invoice with related data (avoirs et avoirs financiers pour montant avant retenue et ref TEJ)
             var factureFournisseur = await context.FactureFournisseur
                 .Include(f => f.IdFournisseurNavigation)
                 .Include(f => f.BonDeReception)
                     .ThenInclude(br => br.LigneBonReception)
+                .Include(f => f.FactureAvoirFournisseur)
+                    .ThenInclude(fav => fav.AvoirFournisseur)
+                        .ThenInclude(a => a.LigneAvoirFournisseur)
+                .Include(f => f.AvoirFinancierFournisseurs)
                 .FirstOrDefaultAsync(f => f.Num == invoiceNumber, cancellationToken);
 
             if (factureFournisseur == null)
@@ -62,22 +67,60 @@ public class ExportProviderInvoiceToTejXmlEndpoint : ICarterModule
                 return TypedResults.BadRequest($"Fournisseur introuvable pour la facture {invoiceNumber}.");
             }
 
-            // Calculate TTC
-            var montantTTC = factureFournisseur.BonDeReception
+            if (factureFournisseur.IdFournisseurNavigation.ExonereRetenueSource)
+            {
+                logger.LogWarning("TEJ export not applicable: provider is exempt from withholding tax for invoice {InvoiceNumber}", invoiceNumber);
+                return TypedResults.BadRequest("Le fournisseur est exonéré de retenue à la source ; l'export TEJ n'est pas applicable.");
+            }
+
+            // Montant TTC brut (somme des lignes BR)
+            var montantTTCBrut = factureFournisseur.BonDeReception
                 .SelectMany(br => br.LigneBonReception)
                 .Sum(l => l.TotTtc);
+
+            // Montant final avant retenue = TTC - avoirs financiers - factures avoir (la plateforme TEJ fait le calcul de retenue)
+            var totalAvoirsFinanciers = factureFournisseur.AvoirFinancierFournisseurs?.Sum(a => a.TotTtc) ?? 0;
+            var totalFacturesAvoir = factureFournisseur.FactureAvoirFournisseur?
+                .SelectMany(fav => fav.AvoirFournisseur)
+                .SelectMany(a => a.LigneAvoirFournisseur)
+                .Sum(l => l.TotTtc) ?? 0;
+            var montantAvantRetenue = montantTTCBrut - totalAvoirsFinanciers - totalFacturesAvoir;
 
             // Get seuil from financial parameters service
             var seuilRetenueSource = await financialParametersService.GetSeuilRetenueSourceAsync(1000, cancellationToken);
 
-            // Validate threshold
-            if (montantTTC < seuilRetenueSource)
+            // Validate threshold (sur le montant avant retenue)
+            if (montantAvantRetenue < seuilRetenueSource)
             {
                 logger.LogWarning(
-                    "Montant TTC {MontantTTC} is below threshold {Seuil} for Invoice {InvoiceNumber}",
-                    montantTTC, seuilRetenueSource, invoiceNumber);
+                    "Montant avant retenue {MontantAvantRetenue} is below threshold {Seuil} for Invoice {InvoiceNumber}",
+                    montantAvantRetenue, seuilRetenueSource, invoiceNumber);
                 return TypedResults.BadRequest(
-                    $"Le montant TTC ({montantTTC:F2}) doit être supérieur ou égal au seuil ({seuilRetenueSource:F2}) pour pouvoir exporter en XML TEJ.");
+                    $"Le montant avant retenue ({montantAvantRetenue:F2}) doit être supérieur ou égal au seuil ({seuilRetenueSource:F2}) pour pouvoir exporter en XML TEJ.");
+            }
+
+            // Référence certificat TEJ : attribuée une fois à la facture (par Id), réutilisée à chaque export
+            var factureId = factureFournisseur.Id;
+            var existingAttribution = await context.TejCertificatFacture
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.FactureFournisseurId == factureId, cancellationToken);
+
+            string refCertifTej;
+            if (existingAttribution != null)
+            {
+                refCertifTej = existingAttribution.RefCertif;
+            }
+            else
+            {
+                var year = factureFournisseur.Date.Year;
+                var month = factureFournisseur.Date.Month;
+                refCertifTej = await numberGeneratorService.GetNextTejCertificatRefAsync(year, month, cancellationToken);
+                context.TejCertificatFacture.Add(new TejCertificatFacture
+                {
+                    FactureFournisseurId = factureId,
+                    RefCertif = refCertifTej
+                });
+                await context.SaveChangesAsync(cancellationToken);
             }
 
             // Get active accounting year ID
@@ -120,16 +163,69 @@ public class ExportProviderInvoiceToTejXmlEndpoint : ICarterModule
                 return TypedResults.BadRequest($"Le matricule fiscal du fournisseur n'est pas configuré pour la facture {invoiceNumber}.");
             }
 
-            // Generate XML
+            // TEJ export requires provider email and phone (format XXXXXXXX = 8 digits)
+            var provider = factureFournisseur.IdFournisseurNavigation;
+            if (string.IsNullOrWhiteSpace(provider.Mail))
+            {
+                logger.LogWarning("Provider Mail missing for invoice {InvoiceNumber}, TEJ export blocked", invoiceNumber);
+                return TypedResults.BadRequest(
+                    "L'export TEJ exige l'adresse e-mail du fournisseur. Veuillez renseigner l'e-mail du fournisseur avant d'exporter.");
+            }
+            var telDigitsOnly = new string((provider.Tel ?? "").Where(char.IsDigit).ToArray());
+            if (telDigitsOnly.Length != 8)
+            {
+                logger.LogWarning("Provider Tel not in format XXXXXXXX (8 digits) for invoice {InvoiceNumber}, TEJ export blocked", invoiceNumber);
+                return TypedResults.BadRequest(
+                    "L'export TEJ exige le téléphone du fournisseur au format XXXXXXXX (8 chiffres). Veuillez corriger le numéro du fournisseur.");
+            }
+
+            // Normalize and validate beneficiaire (provider) matricule fiscal: 7 digits + 1 letter (CCT pattern)
+            var providerMatriculeNormalise = TryNormalizeMatriculeFiscal(factureFournisseur.IdFournisseurNavigation.Matricule.Trim());
+            if (providerMatriculeNormalise is null)
+            {
+                logger.LogWarning("Provider Matricule format invalid for invoice {InvoiceNumber}: expected 7 digits + 1 letter", invoiceNumber);
+                return TypedResults.BadRequest(
+                    "Le matricule fiscal du fournisseur doit être au format 7 chiffres et une lettre clé (ex. 0001238L).");
+            }
+
+            // Normalize matricule fiscal for filename (7 digits + 1 letter)
+            var matriculeNormaliseResult = TryNormalizeMatriculeFiscal(systeme.MatriculeFiscale.Trim());
+            if (matriculeNormaliseResult is null)
+            {
+                logger.LogWarning("MatriculeFiscale format invalid: expected 7 digits + 1 letter, got {Value}", systeme.MatriculeFiscale);
+                return TypedResults.BadRequest(
+                    "Le matricule fiscal de l'entreprise doit être au format 7 chiffres et une lettre clé (ex. 0001238L).");
+            }
+
+            // Generate XML : montant avant retenue + ref F+AV+AF ; la plateforme TEJ effectue le calcul de retenue
             var xmlBytes = exportService.ExportProviderInvoiceToTejXml(
                 factureFournisseur,
                 factureFournisseur.IdFournisseurNavigation,
                 systeme,
                 appParams,
-                financialParams);
+                financialParams,
+                montantAvantRetenue: montantAvantRetenue,
+                refCertifChezDeclarant: refCertifTej,
+                normalizedDeclarantMatricule: matriculeNormaliseResult,
+                normalizedBeneficiaireMatricule: providerMatriculeNormalise,
+                beneficiaireTel8Digits: telDigitsOnly);
 
-            // Generate filename
-            var filename = $"Facture_Fournisseur_{invoiceNumber}_TEJ_{DateTime.Now:yyyyMMdd_HHmmss}.xml";
+            // Validate against TEJ XSD when schema is available
+            var validationErrors = TejXsdValidator.Validate(xmlBytes)
+                .Where(e => !e.Contains("introuvable", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            if (validationErrors.Count > 0)
+            {
+                logger.LogWarning("TEJ XSD validation failed for invoice {InvoiceNumber}: {Errors}", invoiceNumber, string.Join("; ", validationErrors));
+                return TypedResults.BadRequest(
+                    "Le fichier XML n'est pas conforme au schéma TEJ: " + string.Join("; ", validationErrors));
+            }
+
+            // Generate filename per regulatory format: [MATRICULEFISCAL]-[EXERCICE]-[mois]-[code acte].xml
+            var exercice = factureFournisseur.Date.Year;
+            var mois = factureFournisseur.Date.Month.ToString("D2");
+            const string codeActe = "0"; // 0 = déclaration initiale
+            var filename = $"{matriculeNormaliseResult}-{exercice}-{mois}-{codeActe}.xml";
 
             logger.LogInformation("TEJ XML export completed successfully for invoice {InvoiceNumber}", invoiceNumber);
 
@@ -143,6 +239,33 @@ public class ExportProviderInvoiceToTejXmlEndpoint : ICarterModule
             logger.LogError(ex, "Error exporting invoice {InvoiceNumber} to TEJ XML format", invoiceNumber);
             return TypedResults.StatusCode(500);
         }
+    }
+
+    /// <summary>
+    /// Normalizes matricule fiscal to regulatory format: 7 digits + 1 letter (8 characters).
+    /// Removes non-alphanumeric characters, pads numeric part with leading zeros, takes first letter as key.
+    /// </summary>
+    /// <returns>Normalized string (e.g. "0001238L") or null if format is invalid (no letter or empty).</returns>
+    private static string? TryNormalizeMatriculeFiscal(string matriculeFiscale)
+    {
+        if (string.IsNullOrWhiteSpace(matriculeFiscale))
+            return null;
+
+        var cleaned = new string(matriculeFiscale.Where(c => char.IsLetterOrDigit(c)).ToArray());
+        if (cleaned.Length == 0)
+            return null;
+
+        var digits = new string(cleaned.Where(char.IsDigit).Take(7).ToArray());
+        var letterPart = new string(cleaned.Where(char.IsLetter).ToArray());
+        if (letterPart.Length == 0)
+            return null;
+
+        var digitsPadded = digits.PadLeft(7, '0');
+        var letter = letterPart[0];
+        if (!char.IsLetter(letter))
+            return null;
+
+        return digitsPadded + char.ToUpperInvariant(letter);
     }
 }
 

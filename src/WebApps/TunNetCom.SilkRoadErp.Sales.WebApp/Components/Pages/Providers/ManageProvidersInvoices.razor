@@ -116,7 +116,7 @@
             </RadzenButton>
             @{
                 var selectedInvoice = SelectedInvoices?.FirstOrDefault();
-                var canExportTej = selectedInvoice != null && selectedInvoice.Invoice.TotTTC >= _seuilRetenueSource;
+                var canExportTej = selectedInvoice != null && selectedInvoice.Invoice.TotTTC >= _seuilRetenueSource && !SelectedProviderExonereRetenue;
             }
             <RadzenButton ButtonStyle="ButtonStyle.Light"
                           Size="ButtonSize.Small"
@@ -215,6 +215,13 @@
                                     <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailsResponse.Num)"
                                                           Title="@Localizer["number"]"
                                                           Width="140px" />
+                                    <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailsResponse.DateLivraison)"
+                                                          Title="@Localizer["date_livraison"]"
+                                                          FormatString="{0:d}"
+                                                          Width="120px" />
+                                    <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailsResponse.NumBonFournisseur)"
+                                                          Title="Numéro bon fournisseur"
+                                                          Width="180px" />
                                     <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailsResponse.TotHTva)"
                                                           Title="@Localizer["total_ex_tax"]"
                                                           Width="140px">
@@ -274,7 +281,7 @@
                         <RadzenDataGridColumn Title="@Localizer["retenue_status"]"
                                               Width="120px">
                             <Template Context="invoiceWithBRs">
-                                @if (invoiceWithBRs.Invoice.TotTTC >= _seuilRetenueSource)
+                                @if (!SelectedProviderExonereRetenue && invoiceWithBRs.Invoice.TotTTC >= _seuilRetenueSource)
                                 {
                                     @if (invoiceWithBRs.Invoice.HasRetenueSource)
                                     {
@@ -285,45 +292,64 @@
                                         <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="@Localizer["retenue_not_exists"]" />
                                     }
                                 }
+                                @if (SelectedProviderExonereRetenue)
+                                {
+                                    <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="@Localizer["exonere_retenue_source"]" />
+                                }
                             </Template>
                         </RadzenDataGridColumn>
                         <RadzenDataGridColumn Title="@Localizer["retenue_action"]"
                                               Width="120px">
                             <Template Context="invoiceWithBRs">
-                                @if (invoiceWithBRs.Invoice.TotTTC >= _seuilRetenueSource)
+                                @if (!SelectedProviderExonereRetenue && invoiceWithBRs.Invoice.TotTTC >= _seuilRetenueSource)
                                 {
                                     <RadzenButton Icon="@(invoiceWithBRs.Invoice.HasRetenueSource ? "edit" : "add")" 
                                                   ButtonStyle="ButtonStyle.Info" 
                                                   Size="ButtonSize.Small"
                                                   Title="@Localizer["retenue_source"]"
-                                                  Click="@(() => OpenRetenueDialog(invoiceWithBRs.Invoice.Num, invoiceWithBRs.Invoice.TotTTC))" />
+                                                  Click="@(() => OpenRetenueDialog(invoiceWithBRs.Invoice))" />
                                 }
                             </Template>
                         </RadzenDataGridColumn>
                         <RadzenDataGridColumn Title="Facture avoir / Avoir financier"
-                                              Width="180px">
+                                              Width="280px">
                             <Template Context="invoiceWithBRs">
-                                <RadzenButton Icon="link" 
-                                              ButtonStyle="ButtonStyle.Secondary" 
-                                              Size="ButtonSize.Small"
-                                              Title="Rattacher facture avoir ou avoir financier"
-                                              Click="@(() => OpenAttachDialog(invoiceWithBRs.Invoice.Num, invoiceWithBRs.Invoice.ProviderId))" />
+                                <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                                    @if (invoiceWithBRs.Invoice.AvoirsFinanciers?.Any() == true)
+                                    {
+                                        <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
+                                            @foreach (var af in invoiceWithBRs.Invoice.AvoirsFinanciers)
+                                            {
+                                                <RadzenBadge BadgeStyle="BadgeStyle.Info" 
+                                                            Text="@($"N°{af.Num} {af.TotTtc.FormatAmount()}")" 
+                                                            Style="font-size: 0.75rem;" />
+                                            }
+                                        </div>
+                                    }
+                                    @if (invoiceWithBRs.Invoice.FacturesAvoir?.Any() == true)
+                                    {
+                                        <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
+                                            @foreach (var fa in invoiceWithBRs.Invoice.FacturesAvoir)
+                                            {
+                                                <RadzenBadge BadgeStyle="BadgeStyle.Success" 
+                                                            Text="@($"FA N°{fa.NumFactureAvoirFourSurPage} {fa.TotTtc.FormatAmount()}")" 
+                                                            Style="font-size: 0.75rem;" />
+                                            }
+                                        </div>
+                                    }
+                                    <RadzenButton Icon="link" 
+                                                  ButtonStyle="ButtonStyle.Secondary" 
+                                                  Size="ButtonSize.Small"
+                                                  Title="Rattacher facture avoir ou avoir financier"
+                                                  Click="@(() => OpenAttachDialog(invoiceWithBRs.Invoice.Num, invoiceWithBRs.Invoice.ProviderId, invoiceWithBRs.Invoice.Id))" />
+                                </div>
                             </Template>
                         </RadzenDataGridColumn>
                     </Columns>
                 </RadzenDataGrid>
-                <!-- Invoice Summary -->
-                <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e0e0e0; flex-wrap: wrap;">
-                    <span style="font-size: 0.85rem; color: #666;">
-                        @Localizer["total_net"]: <strong style="color: #333;">@_invoicesList?.TotalNetAmount.FormatAmount()</strong>
-                    </span>
-                    <span style="font-size: 0.85rem; color: #666;">
-                        @Localizer["total_gross"]: <strong style="color: #333;">@_invoicesList?.TotalGrossAmount.FormatAmount()</strong>
-                    </span>
-                    <span style="font-size: 0.85rem; color: #666;">
-                        @Localizer["total_vat"]: <strong style="color: #333;">@_invoicesList?.TotalVATAmount.FormatAmount()</strong>
-                    </span>
-                </div>
+                <InvoiceTotalsSummary TotalNet="_invoicesList?.TotalNetAmount ?? 0"
+                                      TotalVat="_invoicesList?.TotalVATAmount ?? 0"
+                                      TotalTtc="_invoicesList?.TotalGrossAmount ?? 0" />
             </RadzenCard>
         </RadzenColumn>
     </RadzenRow>
@@ -373,6 +399,13 @@
                         <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailsResponse.Num)"
                                               Title="@Localizer["number"]"
                                               Width="140px" />
+                        <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailsResponse.DateLivraison)"
+                                              Title="@Localizer["date_livraison"]"
+                                              FormatString="{0:d}"
+                                              Width="120px" />
+                        <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailsResponse.NumBonFournisseur)"
+                                              Title="Numéro bon fournisseur"
+                                              Width="180px" />
                         <RadzenDataGridColumn Property="@nameof(ReceiptNoteDetailsResponse.TotHTva)"
                                               Title="@Localizer["total_ex_tax"]"
                                               Width="140px">
@@ -389,18 +422,9 @@
                         </RadzenDataGridColumn>
                     </Columns>
                 </RadzenDataGrid>
-                <!-- Uninvoiced Receipt Notes Summary -->
-                <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e0e0e0; flex-wrap: wrap;">
-                    <span style="font-size: 0.85rem; color: #666;">
-                        @Localizer["total_net"]: <strong style="color: #333;">@_uninvoicedReceiptNotesWithSummary?.TotalNetAmount.FormatAmount()</strong>
-                    </span>
-                    <span style="font-size: 0.85rem; color: #666;">
-                        @Localizer["total_gross"]: <strong style="color: #333;">@_uninvoicedReceiptNotesWithSummary?.TotalGrossAmount.FormatAmount()</strong>
-                    </span>
-                    <span style="font-size: 0.85rem; color: #666;">
-                        @Localizer["total_vat"]: <strong style="color: #333;">@_uninvoicedReceiptNotesWithSummary?.TotalVATAmount.FormatAmount()</strong>
-                    </span>
-                </div>
+                <InvoiceTotalsSummary TotalNet="_uninvoicedReceiptNotesWithSummary?.TotalNetAmount ?? 0"
+                                      TotalVat="_uninvoicedReceiptNotesWithSummary?.TotalVATAmount ?? 0"
+                                      TotalTtc="_uninvoicedReceiptNotesWithSummary?.TotalGrossAmount ?? 0" />
             </RadzenCard>
         </RadzenColumn>
     </RadzenRow>
@@ -519,6 +543,7 @@
     bool isLoadingInvoices = false;
     bool isLoadingUninvoicedDeliveryNotes = false;
     private IList<ProviderResponse> _providersList = new List<ProviderResponse>();
+    private bool SelectedProviderExonereRetenue => _providersList?.FirstOrDefault(p => p.Id == SelectedProviderId)?.ExonereRetenueSource ?? false;
     private IList<ReceiptNoteDetailsResponse> _selectedReceiptNotesIdsToDetach = new List<ReceiptNoteDetailsResponse>();
     private IList<ReceiptNoteDetailsResponse> _selectedReceiptNotesToAttach { get; set; } = new List<ReceiptNoteDetailsResponse>();
     private CancellationTokenSource _cancellationTokenSource = new();
@@ -647,6 +672,11 @@
             _sortProperty = sort.Property;
             _sortOrder = sort.SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending;
         }
+        else
+        {
+            _sortProperty = "Num";
+            _sortOrder = SortConstants.Ascending;
+        }
         var parameters = new QueryStringParameters
             {
                 PageNumber = (args.Skip.Value / _defaultPageSize) + 1,
@@ -684,6 +714,11 @@
             var sort = args.Sorts.First();
             _sortProperty = sort.Property;
             _sortOrder = sort.SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending;
+        }
+        else
+        {
+            _sortProperty = "Num";
+            _sortOrder = SortConstants.Ascending;
         }
         var query = new QueryStringParameters
 			{
@@ -795,8 +830,13 @@
         args.Expandable = true;
     }
 
-    private async Task OpenRetenueDialog(int numFactureFournisseur, decimal montantTTC)
+    private async Task OpenRetenueDialog(ProviderInvoiceResponse invoice)
     {
+        var numFactureFournisseur = invoice.Num;
+        var totalAvoirsFinanciers = invoice.AvoirsFinanciers?.Sum(af => af.TotTtc) ?? 0;
+        var totalFacturesAvoir = invoice.TotalFacturesAvoir;
+        var montantTTC = invoice.TotTTC - totalAvoirsFinanciers - totalFacturesAvoir;
+
         try
         {
             // Check if retenue already exists
@@ -910,7 +950,7 @@
         }
     }
 
-    private async Task OpenAttachDialog(int invoiceNum, int providerId)
+    private async Task OpenAttachDialog(int invoiceNum, int providerId, int invoiceId)
     {
         try
         {
@@ -927,7 +967,8 @@
                 new Dictionary<string, object>
                 {
                     { "InvoiceNum", invoiceNum },
-                    { "ProviderId", providerId }
+                    { "ProviderId", providerId },
+                    { "InvoiceId", invoiceId }
                 },
                 dialogOptions);
 

@@ -79,7 +79,7 @@ public class ProviderInvoiceBaseInfosController : ODataController
 
             // Group and calculate in memory to avoid SQL conversion issues
             var providerInvoiceQuery = invoicesData
-                .GroupBy(x => new { x.ff.Num, x.ff.Date, x.ff.IdFournisseur, x.ff.Statut, x.f.Nom })
+                .GroupBy(x => new { x.ff.Num, x.ff.Date, x.ff.IdFournisseur, x.ff.Statut, x.ff.NumFactureFournisseur, x.f.Nom })
                 .Select(g => new ProviderInvoiceBaseInfo
                 {
                     Number = g.Key.Num,
@@ -89,7 +89,8 @@ public class ProviderInvoiceBaseInfosController : ODataController
                     NetAmount = g.Where(x => x.lbr != null).Sum(x => x.lbr!.TotHt),
                     VatAmount = g.Where(x => x.lbr != null).Sum(x => x.lbr!.TotTtc) - g.Where(x => x.lbr != null).Sum(x => x.lbr!.TotHt),
                     Statut = (int)g.Key.Statut,
-                    StatutLibelle = g.Key.Statut.ToString()
+                    StatutLibelle = g.Key.Statut.ToString(),
+                    ProviderInvoiceNumber = g.Key.NumFactureFournisseur
                 })
                 .AsQueryable();
 

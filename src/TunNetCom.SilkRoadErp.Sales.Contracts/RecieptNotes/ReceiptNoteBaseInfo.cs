@@ -30,5 +30,8 @@ public class ReceiptNoteBaseInfo
 
     [JsonPropertyName("statutLibelle")]
     public string StatutLibelle { get; set; } = string.Empty;
+
+    [JsonPropertyName("supplierReceiptNumber")]
+    public long SupplierReceiptNumber { get; set; }
 }
 

@@ -1,9 +1,11 @@
+using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
 using TunNetCom.SilkRoadErp.Sales.Contracts.AvoirFinancierFournisseurs;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.AvoirFinancierFournisseurs.CreateAvoirFinancierFournisseurs;
 
 public class CreateAvoirFinancierFournisseursCommandHandler(
     SalesContext _context,
+    INumberGeneratorService _numberGeneratorService,
     ILogger<CreateAvoirFinancierFournisseursCommandHandler> _logger)
     : IRequestHandler<CreateAvoirFinancierFournisseursCommand, Result<int>>
 {
@@ -11,7 +13,6 @@ public class CreateAvoirFinancierFournisseursCommandHandler(
     {
         _logger.LogInformation("CreateAvoirFinancierFournisseursCommand called with NumFactureFournisseur {NumFactureFournisseur}", command.NumFactureFournisseur);
 
-        // Verify that the facture fournisseur exists
         var factureFournisseur = await _context.FactureFournisseur
             .FirstOrDefaultAsync(f => f.Num == command.NumFactureFournisseur, cancellationToken);
 
@@ -21,19 +22,12 @@ public class CreateAvoirFinancierFournisseursCommandHandler(
             return Result.Fail("facture_fournisseur_not_found");
         }
 
-        // Verify that the facture fournisseur doesn't already have an avoir financier (one-to-one relationship)
-        var existingAvoirFinancier = await _context.AvoirFinancierFournisseurs
-            .FirstOrDefaultAsync(a => a.Num == command.NumFactureFournisseur, cancellationToken);
-
-        if (existingAvoirFinancier != null)
-        {
-            _logger.LogWarning("FactureFournisseur with Num {Num} already has an avoir financier", command.NumFactureFournisseur);
-            return Result.Fail("avoir_financier_already_exists");
-        }
+        var num = await _numberGeneratorService.GenerateAvoirFinancierFournisseurNumAsync(factureFournisseur.AccountingYearId, cancellationToken);
 
         var avoirFinancier = new Domain.Entites.AvoirFinancierFournisseurs
         {
-            Num = command.NumFactureFournisseur,
+            Num = num,
+            NumFactureFournisseur = command.NumFactureFournisseur,
             NumSurPage = command.NumSurPage,
             Date = command.Date,
             Description = command.Description,

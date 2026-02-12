@@ -9,8 +9,9 @@ public class GetPaiementsClientQueryHandler(
 {
     public async Task<Result<PagedList<PaiementClientResponse>>> Handle(GetPaiementsClientQuery query, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Fetching PaiementsClient with filters ClientId={ClientId}, AccountingYearId={AccountingYearId}, DateEcheanceFrom={DateEcheanceFrom}, DateEcheanceTo={DateEcheanceTo}, MontantMin={MontantMin}, MontantMax={MontantMax}, HasNumeroTransactionBancaire={HasNumeroTransactionBancaire}", 
-            query.ClientId, query.AccountingYearId, query.DateEcheanceFrom, query.DateEcheanceTo, query.MontantMin, query.MontantMax, query.HasNumeroTransactionBancaire);
+        var accountingYearIdsList = query.AccountingYearIds?.ToList();
+        _logger.LogInformation("Fetching PaiementsClient with filters ClientId={ClientId}, AccountingYearIds={AccountingYearIds}, DatePaiementFrom={DatePaiementFrom}, DatePaiementTo={DatePaiementTo}, DateEcheanceFrom={DateEcheanceFrom}, DateEcheanceTo={DateEcheanceTo}, MontantMin={MontantMin}, MontantMax={MontantMax}, HasNumeroTransactionBancaire={HasNumeroTransactionBancaire}",
+            query.ClientId, accountingYearIdsList != null ? string.Join(",", accountingYearIdsList) : null, query.DatePaiementFrom, query.DatePaiementTo, query.DateEcheanceFrom, query.DateEcheanceTo, query.MontantMin, query.MontantMax, query.HasNumeroTransactionBancaire);
 
         var paiementsQuery = _context.PaiementClient
             .AsNoTracking()
@@ -21,9 +22,20 @@ public class GetPaiementsClientQueryHandler(
             paiementsQuery = paiementsQuery.Where(p => p.ClientId == query.ClientId.Value);
         }
 
-        if (query.AccountingYearId.HasValue)
+        if (accountingYearIdsList != null && accountingYearIdsList.Count > 0)
         {
-            paiementsQuery = paiementsQuery.Where(p => p.AccountingYearId == query.AccountingYearId.Value);
+            paiementsQuery = paiementsQuery.Where(p => accountingYearIdsList.Contains(p.AccountingYearId));
+        }
+
+        if (query.DatePaiementFrom.HasValue)
+        {
+            paiementsQuery = paiementsQuery.Where(p => p.DatePaiement >= query.DatePaiementFrom.Value);
+        }
+
+        if (query.DatePaiementTo.HasValue)
+        {
+            var endDateInclusive = query.DatePaiementTo.Value.Date.AddDays(1).AddTicks(-1);
+            paiementsQuery = paiementsQuery.Where(p => p.DatePaiement <= endDateInclusive);
         }
 
         if (query.DateEcheanceFrom.HasValue)
@@ -66,6 +78,7 @@ public class GetPaiementsClientQueryHandler(
                 ClientId = p.ClientId,
                 ClientNom = p.Client.Nom,
                 AccountingYearId = p.AccountingYearId,
+                AccountingYear = p.AccountingYear.Year,
                 Montant = p.Montant,
                 DatePaiement = p.DatePaiement,
                 MethodePaiement = p.MethodePaiement.ToString(),

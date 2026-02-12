@@ -18,7 +18,9 @@ public class GetPaiementsClientEndpoint : ICarterModule
     {
         var query = new GetPaiementsClientQuery(
             queryParams.ClientId,
-            queryParams.AccountingYearId,
+            queryParams.AccountingYearIds,
+            queryParams.DatePaiementFrom,
+            queryParams.DatePaiementTo,
             queryParams.DateEcheanceFrom,
             queryParams.DateEcheanceTo,
             queryParams.MontantMin,
@@ -42,7 +44,9 @@ public class GetPaiementsClientEndpoint : ICarterModule
 public class GetPaiementsClientQueryParams : QueryStringParameters
 {
     public int? ClientId { get; set; }
-    public int? AccountingYearId { get; set; }
+    public int[]? AccountingYearIds { get; set; }
+    public DateTime? DatePaiementFrom { get; set; }
+    public DateTime? DatePaiementTo { get; set; }
     public DateTime? DateEcheanceFrom { get; set; }
     public DateTime? DateEcheanceTo { get; set; }
     public decimal? MontantMin { get; set; }

@@ -1,3 +1,4 @@
+using TunNetCom.SilkRoadErp.Sales.Contracts.Soldes;
 using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Soldes;
 
 namespace TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Soldes.PrintSoldeClient;
@@ -66,5 +67,9 @@ public class PrintSoldeClientPayment
     public DateTime DatePaiement { get; set; }
     public decimal Montant { get; set; }
     public string Methode { get; set; } = string.Empty;
+    public string? NumeroChequeTraite { get; set; }
+    public string? BanqueNom { get; set; }
+    public DateTime? DateEcheance { get; set; }
+    public List<FactureRattacheeSolde> Factures { get; set; } = new();
 }
 

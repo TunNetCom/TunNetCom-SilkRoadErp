@@ -41,6 +41,12 @@ public class CreateRetenueSourceFournisseurCommandHandler(
             return Result.Fail(EntityNotFound.Error());
         }
 
+        if (factureFournisseur.IdFournisseurNavigation?.ExonereRetenueSource == true)
+        {
+            _logger.LogWarning("Cannot create RetenueSourceFournisseur: provider {ProviderId} is exempt from withholding tax", factureFournisseur.IdFournisseur);
+            return Result.Fail("fournisseur_exonere_retenue_source");
+        }
+
         // Check if retenue already exists
         var retenueExists = await _context.RetenueSourceFournisseur
             .AnyAsync(r => r.NumFactureFournisseur == command.NumFactureFournisseur, cancellationToken);
@@ -56,6 +62,17 @@ public class CreateRetenueSourceFournisseurCommandHandler(
             .SelectMany(br => br.LigneBonReception)
             .Sum(l => l.TotTtc);
 
+        // Soustraire les avoirs financiers et les factures avoir fournisseur (avoirs normaux) rattachés à cette facture
+        var totalAvoirsFinanciers = await _context.AvoirFinancierFournisseurs
+            .Where(a => a.NumFactureFournisseur == command.NumFactureFournisseur)
+            .SumAsync(a => a.TotTtc, cancellationToken);
+        var totalFacturesAvoir = await _context.FactureAvoirFournisseur
+            .Where(fa => fa.FactureFournisseurId == factureFournisseur.Id)
+            .SelectMany(fa => fa.AvoirFournisseur)
+            .SelectMany(a => a.LigneAvoirFournisseur)
+            .SumAsync(l => l.TotTtc, cancellationToken);
+        var montantTTCApresAvoirs = montantTTC - totalAvoirsFinanciers - totalFacturesAvoir;
+
         // Get active accounting year ID
         var activeAccountingYearId = await _activeAccountingYearService.GetActiveAccountingYearIdAsync(cancellationToken);
         if (!activeAccountingYearId.HasValue)
@@ -67,22 +84,22 @@ public class CreateRetenueSourceFournisseurCommandHandler(
         // Get timbre from financial parameters service
         var timbre = await _financialParametersService.GetTimbreAsync(appParams.Timbre, cancellationToken);
 
-        // Calculate montant TTC with timbre for threshold validation
-        var montantTTCAvecTimbre = montantTTC + timbre;
+        // Montant avant retenue = facture TTC - avoirs financiers + timbre
+        var montantTTCAvecTimbre = montantTTCApresAvoirs + timbre;
 
         // Get seuil from financial parameters service (migrated to AccountingYear)
         var seuilRetenueSource = await _financialParametersService.GetSeuilRetenueSourceAsync(1000, cancellationToken);
 
-        // Validate threshold (on the full TTC amount including timbre)
+        // Validate threshold (montant après déduction des avoirs financiers + timbre)
         if (montantTTCAvecTimbre < seuilRetenueSource)
         {
-            _logger.LogWarning("Montant TTC {MontantTTC} is below threshold {Seuil} for FactureFournisseur {NumFactureFournisseur}",
+            _logger.LogWarning("Montant TTC après avoirs {MontantTTC} is below threshold {Seuil} for FactureFournisseur {NumFactureFournisseur}",
                 montantTTCAvecTimbre, seuilRetenueSource, command.NumFactureFournisseur);
             return Result.Fail($"seuil_non_atteint: Le montant TTC ({montantTTCAvecTimbre}) doit être supérieur ou égal au seuil ({seuilRetenueSource})");
         }
 
-        // Calculate montant TTC without timbre (retenue is calculated on amount without timbre)
-        var montantTTCHorsTimbre = montantTTC;
+        // Base pour le calcul de la retenue = montant TTC après avoirs (sans timbre)
+        var montantTTCHorsTimbre = montantTTCApresAvoirs;
 
         // Get taux retenu: use supplier's rate if defined, otherwise use accounting year rate
         var pourcentageRetenu = await _financialParametersService.GetPourcentageRetenuAsync(appParams.PourcentageRetenu, cancellationToken);
@@ -90,7 +107,7 @@ public class CreateRetenueSourceFournisseurCommandHandler(
         _logger.LogInformation("Using taux retenu {TauxRetenu} for FactureFournisseur {NumFactureFournisseur} (from supplier: {FromSupplier})",
             tauxRetenu, command.NumFactureFournisseur, factureFournisseur.IdFournisseurNavigation.TauxRetenu.HasValue ? "Yes" : "No (app params)");
 
-        // Calculate montant après retenue (on amount without timbre)
+        // Calculate montant après retenue (on amount after avoirs, without timbre)
         var montantApresRetenuSansTimbre = montantTTCHorsTimbre * (1 - (decimal)tauxRetenu / 100);
 
         // Add timbre after retenue calculation
@@ -123,7 +140,7 @@ public class CreateRetenueSourceFournisseurCommandHandler(
         {
             NumFactureFournisseur = command.NumFactureFournisseur,
             NumTej = command.NumTej,
-            MontantAvantRetenu = montantTTCAvecTimbre, // Montant TTC avec timbre (montant de la facture)
+            MontantAvantRetenu = montantTTCAvecTimbre, // Montant TTC - avoirs financiers + timbre
             TauxRetenu = tauxRetenu,
             MontantApresRetenu = montantApresRetenuAvecTimbre,
             PdfStoragePath = pdfStoragePath,

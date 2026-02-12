@@ -1,0 +1,175 @@
+@using Radzen
+@using Radzen.Blazor
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using System.Globalization
+@implements IDisposable
+@inject ICurrentProductStateService StateService
+
+<div class="current-product-card">
+@if (StateService.State != null)
+{
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal" 
+                 Gap="1.25rem" 
+                 JustifyContent="JustifyContent.SpaceBetween"
+                 AlignItems="AlignItems.Center"
+                 Wrap="FlexWrap.Wrap">
+        
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.6rem" AlignItems="AlignItems.Center">
+            <RadzenIcon Icon="inventory_2" class="cp-icon" />
+            <div>
+                <div class="cp-kicker">Produit actuel</div>
+                <div class="cp-title">@StateService.State.ProductReference</div>
+            </div>
+        </RadzenStack>
+
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.85rem" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap">
+            <div class="cp-metric">
+                <div class="cp-label">Prix unit. HT</div>
+                <div class="cp-value">@StateService.State.UnitPriceHt.ToString(AmountHelper.FORMAT_N3, CultureInfo.GetCultureInfo("fr-FR"))</div>
+            </div>
+            <div class="cp-divider"></div>
+            <div class="cp-metric">
+                <div class="cp-label">Remise</div>
+                <div class="cp-value">@StateService.State.DiscountPercentage.ToString(AmountHelper.FORMAT_N2, CultureInfo.GetCultureInfo("fr-FR"))%</div>
+            </div>
+            <div class="cp-divider"></div>
+            <div class="cp-metric">
+                <div class="cp-label">TVA</div>
+                <div class="cp-value">@StateService.State.VatPercentage.ToString(AmountHelper.FORMAT_N2, CultureInfo.GetCultureInfo("fr-FR"))%</div>
+            </div>
+            <div class="cp-divider"></div>
+            <div class="cp-metric">
+                <div class="cp-label">Total HT</div>
+                <div class="cp-value">@StateService.State.TotalHt.ToString(AmountHelper.FORMAT_N3, CultureInfo.GetCultureInfo("fr-FR"))</div>
+            </div>
+            <div class="cp-divider"></div>
+            <div class="cp-metric cp-metric-total">
+                <div class="cp-label cp-label-total">Total TTC</div>
+                <div class="cp-value cp-value-total">@StateService.State.TotalTtc.ToString(AmountHelper.FORMAT_N3, CultureInfo.GetCultureInfo("fr-FR"))</div>
+            </div>
+        </RadzenStack>
+    </RadzenStack>
+}
+else
+{
+    <div class="cp-empty">
+        <RadzenIcon Icon="info" class="cp-empty-icon" />
+        <span>Aucun produit sélectionné</span>
+    </div>
+}
+</div>
+
+<style>
+    .current-product-card {
+        background: linear-gradient(
+            180deg,
+            var(--rz-panel-background-color, #ffffff) 0%,
+            var(--rz-base-background-color, #f8fafc) 100%
+        );
+        border: 1px solid var(--rz-border-color, rgba(148, 163, 184, 0.45));
+        border-radius: 10px;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+        margin-bottom: 0.9rem;
+        padding: 0.65rem 0.85rem;
+    }
+
+    .cp-icon {
+        font-size: 1.05rem;
+        color: var(--rz-primary, #1b6ec2);
+    }
+
+    .cp-kicker {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #64748b;
+        letter-spacing: 0.01em;
+        text-transform: uppercase;
+    }
+
+    .cp-title {
+        font-size: 0.95rem;
+        font-weight: 750;
+        color: var(--rz-text-color, #0f172a);
+    }
+
+    .cp-metric {
+        text-align: center;
+        padding: 0 0.45rem;
+        min-width: 92px;
+    }
+
+    .cp-label {
+        font-size: 0.68rem;
+        color: var(--rz-text-secondary-color, #64748b);
+        font-weight: 600;
+    }
+
+    .cp-value {
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: var(--rz-text-color, #0f172a);
+    }
+
+    .cp-subvalue {
+        margin-top: 0.05rem;
+        font-size: 0.74rem;
+        font-weight: 700;
+        color: var(--rz-text-secondary-color, #64748b);
+    }
+
+    .cp-divider {
+        border-left: 1px solid var(--rz-border-color, rgba(148, 163, 184, 0.55));
+        height: 28px;
+    }
+
+    .cp-metric-total {
+        background: rgba(27, 110, 194, 0.10);
+        background: color-mix(in srgb, var(--rz-primary, #1b6ec2) 10%, transparent);
+        border: 1px solid rgba(27, 110, 194, 0.25);
+        border: 1px solid color-mix(in srgb, var(--rz-primary, #1b6ec2) 25%, transparent);
+        border-radius: 8px;
+        padding: 0.28rem 0.6rem;
+        min-width: 100px;
+    }
+
+    .cp-label-total {
+        color: var(--rz-text-color, #1e293b);
+    }
+
+    .cp-value-total {
+        font-size: 0.98rem;
+        font-weight: 800;
+    }
+
+    .cp-empty {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        color: var(--rz-text-secondary-color, #64748b);
+        font-size: 0.92rem;
+        font-weight: 600;
+    }
+
+    .cp-empty-icon {
+        font-size: 1.15rem;
+        color: var(--rz-text-tertiary-color, #94a3b8);
+    }
+</style>
+
+@code {
+    protected override void OnInitialized()
+    {
+        StateService.OnStateChanged += HandleStateChanged;
+    }
+
+    private void HandleStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        StateService.OnStateChanged -= HandleStateChanged;
+    }
+}

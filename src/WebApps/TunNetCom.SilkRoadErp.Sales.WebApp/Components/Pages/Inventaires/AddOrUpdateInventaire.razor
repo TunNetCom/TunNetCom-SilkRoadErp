@@ -62,6 +62,8 @@
                                Localizer="@Localizer"
                                GetProductReference="@(item => item.ProductReference)"
                                SetProductReference="@((item, value) => item.ProductReference = value)"
+                               GetProductId="@(item => item.ProductId)"
+                               SetProductId="@((item, value) => item.ProductId = value)"
                                GetProductDescription="@(item => item.Description)"
                                SetProductDescription="@((item, value) => item.Description = value)"
                                ProductTextProperty="ProductReferenceAndDescription"
@@ -175,6 +177,7 @@
                 p => new InventaireLineWrapper
                 {
                     ProductReference = p.Reference,
+                    ProductId = p.Id,
                     Description = p.Name,
                     UnitPriceExcludingTax = p.Price,
                     Quantity = 1
@@ -214,6 +217,7 @@
                 resultList.Add(new InventaireLineWrapper
                 {
                     ProductReference = currentOrder.ProductReference,
+                    ProductId = currentOrder.ProductId,
                     Description = currentOrder.Description,
                     UnitPriceExcludingTax = currentOrder.UnitPriceExcludingTax,
                     Quantity = 1
@@ -313,10 +317,10 @@
         totalTtc = ttc;
     }
 
-    private async Task ShowHistorique(string refProduit)
+    private async Task ShowHistorique((int ProductId, string ProductReference) args)
     {
         await DialogService.OpenAsync("Historique Achat/Vente", typeof(HistoriqueAchatVenteModal),
-            new Dictionary<string, object> { { "RefProduit", refProduit } },
+            new Dictionary<string, object> { { "ProductId", args.ProductId }, { "RefProduit", args.ProductReference } },
             new DialogOptions { Width = "900px", Height = "600px" });
     }
 

@@ -44,8 +44,9 @@ public class GetAvoirsWithSummariesQueryHandler(
         }
         if (request.EndDate.HasValue)
         {
-            _logger.LogInformation("Applying end date filter: {endDate}", request.EndDate);
-            baseQuery = baseQuery.Where(x => x.a.Date <= request.EndDate.Value);
+            var endDateInclusive = request.EndDate.Value.Date.AddDays(1).AddTicks(-1);
+            _logger.LogInformation("Applying end date filter (inclusive): {endDate} -> {endDateInclusive}", request.EndDate, endDateInclusive);
+            baseQuery = baseQuery.Where(x => x.a.Date <= endDateInclusive);
         }
 
         // Apply search keyword

@@ -1,10 +1,11 @@
-@page "/editproduct/{Refe?}"
+@page "/editproduct/{Id:int?}"
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Products
 @using Radzen.Blazor
 @using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProductSubFamilies
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Services
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using System.ComponentModel.DataAnnotations
@@ -23,11 +24,15 @@
 <RadzenCard Style="padding: 20px; max-width: 900px; margin: 2rem auto;">
     <RadzenTemplateForm Data="@productModel" Submit="@OnSubmit">
         <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center" Style="margin-bottom: 1rem;">
-            <h3 style="margin: 0;">@(string.IsNullOrEmpty(Refe) ? Localizer["add_product"] : Localizer["edit_product"])</h3>
-            @if (!string.IsNullOrEmpty(Refe))
+            <h3 style="margin: 0;">@(Id == null ? Localizer["add_product"] : Localizer["edit_product"])</h3>
+            @if (Id.HasValue)
             {
-                <RadzenButton Icon="history" Text="Historique" Click="@ShowAuditLog" 
-                              ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" />
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem">
+                    <RadzenButton Icon="history" Text="Historique" Click="@ShowAuditLog" 
+                                  ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" />
+                    <RadzenButton Icon="trending_up" Text="@Localizer["historique_achat_vente"]" Click="@ShowHistoriqueAchatVente" 
+                                  ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" />
+                </RadzenStack>
             }
         </RadzenStack>
 
@@ -37,7 +42,7 @@
                 <RadzenFormField Text="@Localizer["product_refe"]">
                     <Start><RadzenIcon Icon="class" /></Start>
                     <ChildContent>
-                        <RadzenTextBox @bind-Value="productModel.Reference" Name="@nameof(ProductModel.Reference)" Style="width: 100%;" Disabled="@(!string.IsNullOrEmpty(Refe))" />
+                        <RadzenTextBox @bind-Value="productModel.Reference" Name="@nameof(ProductModel.Reference)" Style="width: 100%;" Disabled="@(Id.HasValue)" />
                     </ChildContent>
                     <Helper>
                         <RadzenRequiredValidator Component="Reference" Text="@Localizer["required_field"]" />
@@ -51,7 +56,7 @@
                     </ChildContent>
                     <Helper>
                         <RadzenRequiredValidator Component="Name" Text="@Localizer["required_field"]" />
-                        <RadzenLengthValidator Component="Name" Max="100" Text="@string.Format(Localizer["max_length"], 100)" />
+                        <RadzenLengthValidator Component="Name" Max="300" Text="@string.Format(Localizer["max_length"], 300)" />
                     </Helper>
                 </RadzenFormField>
 
@@ -270,7 +275,7 @@
 </RadzenCard>
 
 @code {
-    [Parameter] public string? Refe { get; set; }
+    [Parameter] public int? Id { get; set; }
     private ProductModel productModel = new();
     private bool isSubmitting = false;
     private CancellationTokenSource cancellationTokenSource = new();
@@ -289,12 +294,14 @@
     // Product Model Definition
     public class ProductModel
     {
+        public int Id { get; set; }
+
         [Required(ErrorMessage = "Reference is required")]
         [StringLength(50, ErrorMessage = "Reference cannot exceed 50 characters")]
         public string Reference { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Name is required")]
-        [StringLength(100, ErrorMessage = "Name cannot exceed 100 characters")]
+        [StringLength(300, ErrorMessage = "Name cannot exceed 300 characters")]
         public string Name { get; set; } = string.Empty;
 
         [Range(0, int.MaxValue, ErrorMessage = "Limit quantity must be positive")]
@@ -342,16 +349,17 @@
             // Ignorer l'erreur, on continuera sans les sous-familles
         }
         
-        if (string.IsNullOrEmpty(Refe)) return;
+        if (!Id.HasValue) return;
 
         try
         {
-            var productResult = await ProductService.GetAsync(Refe, cancellationTokenSource.Token);
+            var productResult = await ProductService.GetByIdAsync(Id.Value, cancellationTokenSource.Token);
             if (productResult.IsT0)
             {
                 var product = productResult.AsT0;
                 productModel = new ProductModel
                 {
+                    Id = product.Id,
                     Reference = product.Reference,
                     Name = product.Name,
                     QteLimit = product.QteLimit,
@@ -398,7 +406,7 @@
             isSubmitting = true;
             StateHasChanged();
 
-            if (string.IsNullOrEmpty(Refe))
+            if (!Id.HasValue)
             {
                 var createResult = await ProductService.CreateAsync(new CreateProductRequest
                 {
@@ -429,7 +437,7 @@
                 return;
             }
 
-            var updateResult = await ProductService.UpdateAsync(new UpdateProductRequest
+            var updateResult = await ProductService.UpdateByIdAsync(new UpdateProductRequest
             {
                 Refe = model.Reference,
                 Nom = model.Name,
@@ -444,7 +452,7 @@
                 Image1Base64 = model.Image1Base64,
                 Image2Base64 = model.Image2Base64,
                 Image3Base64 = model.Image3Base64
-            }, model.Reference, cancellationTokenSource.Token);
+            }, productModel.Id, cancellationTokenSource.Token);
 
             if (updateResult.IsT0)
             {
@@ -508,7 +516,7 @@
             new Dictionary<string, object> 
             { 
                 { "EntityName", "Product" }, 
-                { "EntityId", Refe ?? string.Empty } 
+                { "EntityId", Id.HasValue ? Id.Value.ToString() : string.Empty } 
             },
             new DialogOptions() 
             { 
@@ -516,6 +524,20 @@
                 Height = "600px",
                 Resizable = true, 
                 Draggable = true 
+            });
+    }
+
+    private async Task ShowHistoriqueAchatVente()
+    {
+        await DialogService.OpenAsync<ProductHistoryDialog>($"{Localizer["history"]} {Localizer["article"]} {productModel.Reference}",
+            new Dictionary<string, object> { { "ProductReference", productModel.Reference } },
+            new DialogOptions
+            {
+                Resizable = true,
+                Draggable = true,
+                Width = ProductHistoryDialog.DefaultWidth,
+                Height = ProductHistoryDialog.DefaultHeight,
+                Style = "width: " + ProductHistoryDialog.DefaultWidth + "; min-width: " + ProductHistoryDialog.DefaultWidth
             });
     }
 

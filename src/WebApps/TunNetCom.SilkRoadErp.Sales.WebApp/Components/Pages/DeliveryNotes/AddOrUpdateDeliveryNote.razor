@@ -20,11 +20,16 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.DeliveryNotes.PrintDeliveryNote
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Invoices.PrintInvoiceWithDetails
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PrintHistory
+@using static TunNetCom.SilkRoadErp.Sales.Domain.Entites.DocumentTypes
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Tags
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
+@using TunNetCom.SilkRoadErp.Sales.Contracts.InstallationTechnician.Requests
 @using TunNetCom.SilkRoadErp.Sales.Contracts.InstallationTechnician.Responses
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.InstallationTechnician
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
 @using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryCar
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryCar
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.PrintHistory
@@ -35,6 +40,7 @@
 @inject ITagsApiClient TagsService
 @inject IInstallationTechnicianApiClient TechnicianService
 @inject IDeliveryCarApiClient DeliveryCarService
+@inject ODataService ODataService
 
 @inject IStringLocalizer<SharedResource> Localizer
 @inject ToastService toastService
@@ -49,6 +55,8 @@
 @inject DialogService DialogService
 @inject IPaiementClientApiClient PaiementClientService
 @inject PrintDeliveryNoteService PrintDeliveryNoteService
+@inject PrintFullInvoiceService PrintFullInvoiceService
+@inject IPrintHistoryClient PrintHistoryClient
 @inject IPrintService PrintService
 @inject ITagsApiClient TagsService
 @inject AuthenticationStateProvider AuthenticationStateProvider
@@ -257,52 +265,65 @@ else
             </RadzenDropDownDataGrid>
 
             <RadzenLabel Text="Installateur" />
-            <RadzenDropDownDataGrid AllowClear="true"
-                                    IsLoading="@isLoadingTechnicians"
-                                    @bind-Value="@selectedTechnicianId"
-                                    LoadData="@LoadTechnicians"
-                                    AllowFiltering="true"
-                                    Disabled="@isReadOnly"
-                                    Style="width: 350px;"
-                                    Data="@_filteredTechnicians"
-                                    TextProperty="@nameof(InstallationTechnicianBaseInfo.Nom)"
-                                    ValueProperty="@nameof(InstallationTechnicianBaseInfo.Id)"
-                                    Placeholder="Sélectionner un installateur">
-                <Template Context="technician">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        @if (!string.IsNullOrEmpty(technician.Photo))
-                        {
-                            <img src="@technician.Photo" alt="@technician.Nom" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;" />
-                        }
-                        else
-                        {
-                            <div style="width: 20px; height: 20px; border-radius: 50%; background-color: #e0e0e0; display: flex; align-items: center; justify-content: center;">
-                                <RadzenIcon Icon="person" Style="font-size: 12px;" />
-                            </div>
-                        }
-                        <span>@technician.Nom</span>
-                    </div>
-                </Template>
-                <ValueTemplate Context="technician">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        @if (!string.IsNullOrEmpty(technician?.Photo))
-                        {
-                            <img src="@technician.Photo" alt="@technician.Nom" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;" />
-                        }
-                        else
-                        {
-                            <div style="width: 20px; height: 20px; border-radius: 50%; background-color: #e0e0e0; display: flex; align-items: center; justify-content: center;">
-                                <RadzenIcon Icon="person" Style="font-size: 12px;" />
-                            </div>
-                        }
-                        <span>@technician?.Nom</span>
-                    </div>
-                </ValueTemplate>
-                <Columns>
-                    <RadzenDropDownDataGridColumn Property="@nameof(InstallationTechnicianBaseInfo.Id)" Title="ID" Width="80px" />
-                    <RadzenDropDownDataGridColumn Property="@nameof(InstallationTechnicianBaseInfo.Nom)" Title="Nom" Width="220px" />
-                </Columns>
-            </RadzenDropDownDataGrid>
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" AlignItems="Radzen.AlignItems.Center">
+                <RadzenDropDownDataGrid AllowClear="true"
+                                        IsLoading="@isLoadingTechnicians"
+                                        @bind-Value="@selectedTechnicianId"
+                                        LoadData="@LoadTechnicians"
+                                        AllowFiltering="true"
+                                        Count="@techniciansCount"
+                                        PageSize="15"
+                                        Disabled="@isReadOnly"
+                                        Style="width: 350px;"
+                                        Data="@_filteredTechnicians"
+                                        TextProperty="@nameof(InstallationTechnicianResponse.Nom)"
+                                        ValueProperty="@nameof(InstallationTechnicianResponse.Id)"
+                                        Placeholder="Sélectionner un installateur">
+                    <Template Context="technician">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            @if (!string.IsNullOrEmpty(technician.Photo))
+                            {
+                                <img src="@technician.Photo" alt="@technician.Nom" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;" />
+                            }
+                            else
+                            {
+                                <div style="width: 20px; height: 20px; border-radius: 50%; background-color: #e0e0e0; display: flex; align-items: center; justify-content: center;">
+                                    <RadzenIcon Icon="person" Style="font-size: 12px;" />
+                                </div>
+                            }
+                            <span>@technician.Nom @(string.IsNullOrEmpty(technician.Tel) ? "" : $"({technician.Tel})")</span>
+                        </div>
+                    </Template>
+                    <ValueTemplate Context="technician">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            @if (!string.IsNullOrEmpty(technician?.Photo))
+                            {
+                                <img src="@technician.Photo" alt="@technician.Nom" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;" />
+                            }
+                            else
+                            {
+                                <div style="width: 20px; height: 20px; border-radius: 50%; background-color: #e0e0e0; display: flex; align-items: center; justify-content: center;">
+                                    <RadzenIcon Icon="person" Style="font-size: 12px;" />
+                                </div>
+                            }
+                            <span>@technician?.Nom</span>
+                        </div>
+                    </ValueTemplate>
+                    <Columns>
+                        <RadzenDropDownDataGridColumn Property="@nameof(InstallationTechnicianResponse.Id)" Title="ID" Width="80px" />
+                        <RadzenDropDownDataGridColumn Property="@nameof(InstallationTechnicianResponse.Nom)" Title="Nom" Width="180px" />
+                        <RadzenDropDownDataGridColumn Property="@nameof(InstallationTechnicianResponse.Tel)" Title="Téléphone" Width="120px" />
+                    </Columns>
+                </RadzenDropDownDataGrid>
+                <RadzenButton Icon="add"
+                              ButtonStyle="ButtonStyle.Success"
+                              Variant="Variant.Flat"
+                              Size="ButtonSize.Medium"
+                              Disabled="@isReadOnly"
+                              Click="@CreateNewInstallationTechnician"
+                              Title="Ajouter un installateur"
+                              AriaLabel="Ajouter un installateur" />
+            </RadzenStack>
 
             <RadzenLabel Text="@Localizer["Delivery_Car"]" />
             <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" AlignItems="Radzen.AlignItems.Center">
@@ -366,6 +387,16 @@ else
                               Click="@CreateNewInvoice"
                               Title="@Localizer["create_new_invoice"]"
                               AriaLabel="@Localizer["create_new_invoice"]" />
+                <RadzenButton Icon="get_app" 
+                              ButtonStyle="ButtonStyle.Light" 
+                              Variant="Variant.Flat"
+                              Size="ButtonSize.Medium"
+                              Disabled="@(isReadOnly || !_selectedInvoiceId.HasValue)"
+                              Click="@PrintSelectedInvoice"
+                              Title="@Localizer["print_invoice"]"
+                              AriaLabel="@Localizer["print_invoice"]">
+                    <span style="font-size: 0.85rem;">@Localizer["print_invoice"]</span>
+                </RadzenButton>
             </RadzenStack>
         </div>
     </div>
@@ -391,6 +422,7 @@ else
                    TotalHt="@totalHt"
                    TotalVat="@totalVat"
                    TotalTtc="@totalTtc"
+                   AutoDetectConstructorProviderFromReceiptHistory="true"
                    Localizer="@Localizer"
                    GetProductReference="@(item => item.ProductReference)"
                    SetProductReference="@((item, value) => item.ProductReference = value)"
@@ -431,7 +463,8 @@ else
     private CancellationTokenSource _cancellationTokenSource = new();
     private List<CustomerResponse> _filteredCustomers { get; set; } = new();
     private List<InvoiceResponse> _filteredInvoices { get; set; } = new();
-    private List<InstallationTechnicianBaseInfo> _filteredTechnicians { get; set; } = new();
+    private List<InstallationTechnicianResponse> _filteredTechnicians { get; set; } = new();
+    private int techniciansCount = 0;
     private List<DeliveryCarResponse> _filteredDeliveryCars { get; set; } = new();
     private bool isLoading = true;
     bool isLoadingCustomers = false;
@@ -726,6 +759,25 @@ else
                     totalVat = deliveryNoteRequest.TotalVat;
                     totalTtc = deliveryNoteRequest.TotalAmount;
 
+                    // S'assurer que le client sélectionné est présent dans _filteredCustomers pour l'affichage du dropdown
+                    if (selectedCustomerId.HasValue && !_filteredCustomers.Any(c => c.Id == selectedCustomerId.Value))
+                    {
+                        try
+                        {
+                            var customer = await customersApiClient.GetCustomerByIdAsync(
+                                selectedCustomerId.Value,
+                                _cancellationTokenSource.Token);
+                            if (customer != null)
+                            {
+                                _filteredCustomers.Add(customer);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.LogWarning(ex, "Failed to load customer {CustomerId} for delivery note from quotation", selectedCustomerId.Value);
+                        }
+                    }
+
                     // Convertir les DeliveryNoteItemRequest en DeliveryNoteDetailResponse
                     orders = deliveryNoteRequest.Items?.Select(item => new DeliveryNoteDetailResponse
                     {
@@ -818,6 +870,27 @@ else
                         {
                             logger.LogWarning(ex, "Failed to load customer {CustomerId} for delivery note", selectedCustomerId.Value);
                             // Ne pas bloquer le chargement du BL si le client ne peut pas être chargé
+                        }
+                    }
+
+                    // S'assurer que l'installateur sélectionné est présent dans _filteredTechnicians
+                    if (selectedTechnicianId.HasValue &&
+                        !_filteredTechnicians.Any(t => t.Id == selectedTechnicianId.Value))
+                    {
+                        try
+                        {
+                            var technician = await TechnicianService.GetInstallationTechnicianByIdAsync(
+                                selectedTechnicianId.Value,
+                                _cancellationTokenSource.Token);
+
+                            if (technician != null)
+                            {
+                                _filteredTechnicians.Insert(0, technician);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.LogWarning(ex, "Failed to load technician {TechnicianId} for delivery note", selectedTechnicianId.Value);
                         }
                     }
                     
@@ -1007,15 +1080,17 @@ else
 
         try
         {
-            _filteredTechnicians = await TechnicianService.GetInstallationTechniciansBaseInfosAsync(_cancellationTokenSource.Token);
-            
-            // Apply filter if provided
-            if (!string.IsNullOrEmpty(args?.Filter))
-            {
-                _filteredTechnicians = _filteredTechnicians
-                    .Where(t => t.Nom.Contains(args.Filter, StringComparison.OrdinalIgnoreCase))
-                    .ToList();
-            }
+            var effectiveArgs = args ?? new LoadDataArgs { Skip = 0, Top = 15 };
+            if (!effectiveArgs.Top.HasValue || effectiveArgs.Top.Value <= 0)
+                effectiveArgs = new LoadDataArgs { Skip = effectiveArgs.Skip ?? 0, Top = 15, Filter = effectiveArgs.Filter };
+
+            var response = await ODataService.QueryAsync<InstallationTechnicianResponse>(
+                entitySet: "InstallationTechnicianBaseInfos",
+                args: effectiveArgs,
+                cancellationToken: _cancellationTokenSource.Token);
+
+            _filteredTechnicians = response.Value ?? new List<InstallationTechnicianResponse>();
+            techniciansCount = response.ODataCount ?? _filteredTechnicians.Count;
         }
         catch (Exception ex)
         {
@@ -1025,7 +1100,8 @@ else
                 Summary = "Erreur",
                 Detail = $"Erreur lors du chargement des installateurs: {ex.Message}"
             });
-            _filteredTechnicians = new List<InstallationTechnicianBaseInfo>();
+            _filteredTechnicians = new List<InstallationTechnicianResponse>();
+            techniciansCount = 0;
         }
 
         isLoadingTechnicians = false;
@@ -1138,6 +1214,82 @@ else
         }
     }
 
+    async Task CreateNewInstallationTechnician()
+    {
+        var result = await DialogService.OpenAsync<CreateInstallationTechnicianDialog>(
+            "Ajouter un installateur",
+            new Dictionary<string, object>(),
+            new DialogOptions()
+            {
+                Width = "500px",
+                Resizable = false,
+                Draggable = true
+            });
+
+        if (result is CreateInstallationTechnicianDialogResult dialogResult)
+        {
+            await CreateInstallationTechnicianWithData(dialogResult);
+        }
+    }
+
+    async Task CreateInstallationTechnicianWithData(CreateInstallationTechnicianDialogResult data)
+    {
+        isLoadingTechnicians = true;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            var request = new CreateInstallationTechnicianRequest
+            {
+                Nom = data.Nom,
+                Tel = data.Tel,
+                Tel2 = data.Tel2,
+                Tel3 = data.Tel3,
+                Email = data.Email,
+                Description = data.Description
+            };
+
+            var newId = await TechnicianService.CreateInstallationTechnicianAsync(request, _cancellationTokenSource.Token);
+
+            if (newId > 0)
+            {
+                // Recharger avec filtre sur le nom pour inclure le nouvel installateur et le sélectionner
+                await LoadTechnicians(new LoadDataArgs { Filter = data.Nom, Skip = 0, Top = 15 });
+                selectedTechnicianId = newId;
+
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = Localizer["success"],
+                    Detail = $"Installateur créé avec succès : {data.Nom}"
+                });
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = "Échec de la création de l'installateur"
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Erreur lors de la création de l'installateur : {ex.Message}"
+            });
+        }
+        finally
+        {
+            isLoadingTechnicians = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
     async Task LoadCustomerInvoices(LoadDataArgs args)
     {
         if (!selectedCustomerId.HasValue)
@@ -1163,7 +1315,7 @@ else
         }
         else
         {
-            // Default: sort by Date descending to get the latest invoices first (most recent first)
+            // Default: sort by date descending (most recent first)
             sortProperty = nameof(InvoiceResponse.Date);
             sortOrder = SortConstants.Descending;
         }
@@ -1171,7 +1323,7 @@ else
         var parameters = new QueryStringParameters
         {
             PageNumber = 1,
-            PageSize = 5, // Get only the last 5 invoices
+            PageSize = 8, // Get only the last 8 invoices
             SearchKeyword = args?.Filter,
             SortProprety = sortProperty,
             SortOrder = sortOrder
@@ -1451,6 +1603,71 @@ else
         }
     }
 
+    private async Task PrintSelectedInvoice()
+    {
+        if (!_selectedInvoiceId.HasValue || _selectedInvoiceId.Value <= 0)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = Localizer["warning"],
+                Detail = Localizer["select_invoice"]
+            });
+            return;
+        }
+
+        bool isDuplicata = false;
+        try
+        {
+            var existingHistory = await PrintHistoryClient.GetPrintHistoryByDocumentAsync(Facture, _selectedInvoiceId.Value, _cancellationTokenSource.Token);
+            isDuplicata = existingHistory.Any();
+        }
+        catch
+        {
+            // If we can't check, assume it's not a duplicata
+        }
+
+        var pdfResult = await PrintFullInvoiceService
+            .GenerateInvoicePdfAsync(_selectedInvoiceId.Value, cancellationToken: _cancellationTokenSource.Token, isDuplicata: isDuplicata, includeHeader: true);
+
+        if (pdfResult.IsSuccess)
+        {
+            var fileName = $"Facture {_selectedInvoiceId.Value}.pdf";
+            var invoiceNum = _selectedInvoiceId.Value;
+            Func<bool, Task<Result<byte[]>>> regeneratePdf = async (includeHeader) =>
+                await PrintFullInvoiceService.GenerateInvoicePdfAsync(
+                    invoiceNum,
+                    _cancellationTokenSource.Token,
+                    isDuplicata: isDuplicata,
+                    includeHeader: includeHeader);
+
+            await DialogService.OpenAsync<PdfViewerDialog>(
+                Localizer["print_mode"],
+                new Dictionary<string, object>
+                {
+                    { "PdfBytes", pdfResult.Value },
+                    { "FileName", fileName },
+                    { "RegeneratePdfAsync", regeneratePdf }
+                },
+                new DialogOptions()
+                {
+                    Width = "800px",
+                    Height = "700px",
+                    Resizable = true,
+                    Draggable = true
+                });
+        }
+        else
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Échec de la génération du PDF: {pdfResult.Errors.FirstOrDefault()?.Message ?? "Unknown error"}"
+            });
+        }
+    }
+
     private async Task ShowPrintHistory()
     {
         if (string.IsNullOrEmpty(deliveryNoteNumber) || !int.TryParse(deliveryNoteNumber, out var deliveryNoteNum))
@@ -1549,22 +1766,25 @@ else
     }
 
 
-    public async Task ShowDialog(string ProductReference)
+    public async Task ShowDialog((int ProductId, string ProductReference) args)
     {
         await LoadStateAsync();
 
-        await DialogService.OpenAsync<ProductHistoryDialog>($"{Localizer["history"]} {Localizer["article"]} {ProductReference}",
-            new Dictionary<string, object>() { { "ProductReference", ProductReference } },
+        await DialogService.OpenAsync<ProductHistoryDialog>($"{Localizer["history"]} {Localizer["article"]} {args.ProductReference}",
+            new Dictionary<string, object>() 
+            { 
+                { "ProductReference", args.ProductReference },
+                { "Mode", HistoryMode.Vente }
+            },
             new DialogOptions()
             {
                 Resizable = true,
                 Draggable = true,
                 Resize = OnResize,
                 Drag = OnDrag,
-                Width = Settings != null ? Settings.Width : "700px",
-                Height = Settings != null ? Settings.Height : "512px",
-                Left = Settings != null ? Settings.Left : null,
-                Top = Settings != null ? Settings.Top : null
+                Width = ProductHistoryDialog.DefaultWidth,
+                Height = ProductHistoryDialog.DefaultHeight,
+                Style = "width: " + ProductHistoryDialog.DefaultWidth + "; min-width: " + ProductHistoryDialog.DefaultWidth
             });
 
         await SaveStateAsync();

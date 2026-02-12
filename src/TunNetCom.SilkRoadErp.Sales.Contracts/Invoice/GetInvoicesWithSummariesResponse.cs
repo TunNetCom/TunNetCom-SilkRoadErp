@@ -26,6 +26,9 @@ public class InvoiceBaseInfo
     [JsonPropertyName("customerName")]
     public string? CustomerName { get; set; }
 
+    [JsonPropertyName("customerCode")]
+    public string? CustomerCode { get; set; }
+
     [JsonPropertyName("netAmount")]
     public decimal NetAmount { get; set; }
 

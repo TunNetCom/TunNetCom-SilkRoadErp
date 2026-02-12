@@ -12,15 +12,16 @@
 @using Radzen.Blazor
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
-@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Tags
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
 @inject NavigationManager NavigationManager
-@inject ODataService ODataService
 @inject ITagsApiClient TagsService
+@inject HttpClient HttpClient
+@inject IConfiguration Configuration
 @inject Radzen.NotificationService NotificationService
 @inject DialogService DialogService
 @using TunNetCom.SilkRoadErp.Sales.Domain.Entites
+@using Microsoft.Extensions.Configuration
 
 
 <div class="delivery-notes-list-container">
@@ -111,6 +112,10 @@
                                       Property="@nameof(ReceiptNoteBaseInfo.Number)"
                                       Title="Numéro"
                                       Width="150px" />
+                <RadzenDataGridColumn TItem="ReceiptNoteBaseInfo"
+                                      Property="@nameof(ReceiptNoteBaseInfo.SupplierReceiptNumber)"
+                                      Title="Numéro bon fournisseur"
+                                      Width="180px" />
                 <RadzenDataGridColumn TItem="ReceiptNoteBaseInfo"
                                       Property="@nameof(ReceiptNoteBaseInfo.Date)"
                                       Title="@Localizer["date"]"
@@ -542,39 +547,75 @@
 
         try
         {
-            _logger.LogInformation("Calling ODataService.QueryAsync for ReceiptNoteBaseInfos");
+            _logger.LogInformation("Calling GetReceiptNotesList API");
             
-            // Add Status filter to args if selected
-            if (searchCriteria.Status.HasValue)
+            var queryParams = new List<string>();
+            
+            if (startDate.HasValue)
             {
-                var statusFilter = $"Statut eq {searchCriteria.Status.Value}";
-                if (!string.IsNullOrEmpty(args.Filter))
+                queryParams.Add($"startDate={Uri.EscapeDataString(startDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+            }
+            
+            if (endDate.HasValue)
+            {
+                queryParams.Add($"endDate={Uri.EscapeDataString(endDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+            }
+            
+            if (searchCriteria.SelectedProviderId.HasValue)
+            {
+                queryParams.Add($"providerId={searchCriteria.SelectedProviderId.Value}");
+            }
+            
+            if (searchCriteria.SelectedTagIds != null && searchCriteria.SelectedTagIds.Any())
+            {
+                foreach (var tagId in searchCriteria.SelectedTagIds)
                 {
-                    args.Filter = $"({args.Filter}) and ({statusFilter})";
-                }
-                else
-                {
-                    args.Filter = statusFilter;
+                    queryParams.Add($"tagIds={tagId}");
                 }
             }
-
-            var response = await ODataService.QueryAsync<ReceiptNoteBaseInfo>(
-                entitySet: "ReceiptNoteBaseInfos",
-                args: args,
-                startDate: startDate,
-                endDate: endDate,
-                providerId: searchCriteria.SelectedProviderId,
-                tagIds: searchCriteria.SelectedTagIds,
-                cancellationToken: default);
-
-            receiptNotesList = response.Value;
-            totalCount = response.ODataCount ?? response.Value.Count;
-
-            // Calculate totals from current page (for display)
-            // Note: For accurate totals across all pages, we'd need a separate aggregation endpoint
-            totalGrossAmount = receiptNotesList.Sum(r => r.GrossAmount);
-            totalVatAmount = receiptNotesList.Sum(r => r.VatAmount);
-            totalNetAmount = receiptNotesList.Sum(r => r.NetAmount);
+            
+            if (searchCriteria.Status.HasValue)
+            {
+                queryParams.Add($"status={searchCriteria.Status.Value}");
+            }
+            
+            var page = (args.Skip ?? 0) / pageSize + 1;
+            queryParams.Add($"page={page}");
+            queryParams.Add($"pageSize={pageSize}");
+            
+            if (!string.IsNullOrEmpty(args.OrderBy))
+            {
+                var sortParts = args.OrderBy.Split(' ');
+                var sortBy = sortParts[0];
+                var sortDescending = sortParts.Length > 1 && sortParts[1].ToLower() == "desc";
+                queryParams.Add($"sortBy={sortBy}");
+                queryParams.Add($"sortDescending={sortDescending}");
+            }
+            else
+            {
+                queryParams.Add("sortBy=Number");
+                queryParams.Add("sortDescending=false");
+            }
+            
+            var baseUrl = Configuration.GetValue<string>("ApiSettings:BaseUrl")
+                ?? throw new InvalidOperationException("ApiSettings:BaseUrl configuration is missing");
+            
+            var url = $"{baseUrl.TrimEnd('/')}/api/receipt-notes/list";
+            if (queryParams.Any())
+            {
+                url += "?" + string.Join("&", queryParams);
+            }
+            
+            var response = await HttpClient.GetFromJsonAsync<ReceiptNotesListResponse>(url);
+            
+            if (response != null)
+            {
+                receiptNotesList = response.ReceiptNotes;
+                totalCount = response.TotalCount;
+                totalGrossAmount = response.Totals.TotalGrossAmount;
+                totalVatAmount = response.Totals.TotalVatAmount;
+                totalNetAmount = response.Totals.TotalNetAmount;
+            }
         }
         catch (Exception ex)
         {

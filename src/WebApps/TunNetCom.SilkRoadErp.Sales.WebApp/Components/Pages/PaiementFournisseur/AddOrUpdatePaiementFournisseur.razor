@@ -12,6 +12,7 @@
 @using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice
 @using TunNetCom.SilkRoadErp.Sales.Contracts.RecieptNotes
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Banque
+@using TunNetCom.SilkRoadErp.Sales.Domain.Entites
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Services
@@ -37,13 +38,16 @@
 
 <div class="paiement-form-container">
     <div class="paiement-form-card">
-        <div class="paiement-form-header">
-            <h3>@(IsEditMode ? Localizer["Modifier_Paiement"] : Localizer["Nouveau_Paiement_Fournisseur"])</h3>
-            <RadzenButton Icon="arrow_back" Text="@Localizer["Retour"]"
-                          ButtonStyle="ButtonStyle.Secondary"
-                          Click="GoBack"
-                          Variant="Variant.Outlined" />
-        </div>
+        @if (!PaiementId.HasValue)
+        {
+            <div class="paiement-form-header">
+                <h3>@(IsEditMode ? Localizer["Modifier_Paiement"] : Localizer["Nouveau_Paiement_Fournisseur"])</h3>
+                <RadzenButton Icon="arrow_back" Text="@Localizer["Retour"]"
+                              ButtonStyle="ButtonStyle.Secondary"
+                              Click="GoBack"
+                              Variant="Variant.Outlined" />
+            </div>
+        }
 
         <RadzenStack Gap="1.5rem">
             <RadzenFormField Text="@Localizer["Numero"]" class="rz-col-12 rz-md-6">
@@ -71,9 +75,13 @@
             </RadzenFormField>
 
             <RadzenFormField Text="@($"{Localizer["Exercice_Comptable"]} *")" class="rz-col-12 rz-md-6">
-                <RadzenTextBox Value="@(activeAccountingYear?.Year.ToString() ?? Localizer["Chargement"])" 
-                               ReadOnly="true" 
-                               Style="width: 100%;" />
+                <RadzenDropDown @bind-Value="paiement.AccountingYearId"
+                                Data="@accountingYears"
+                                TextProperty="Year"
+                                ValueProperty="Id"
+                                Placeholder="@Localizer["Exercice_Comptable"]"
+                                AllowClear="false"
+                                Style="width: 100%;" />
             </RadzenFormField>
 
             <RadzenFormField Text="@($"{Localizer["Montant"]} *")" class="rz-col-12 rz-md-6">
@@ -95,7 +103,7 @@
                                 Change="@OnMethodePaiementChangedAsync" />
             </RadzenFormField>
 
-            @if (selectedMethodePaiement == "Cheque" || selectedMethodePaiement == "Traite")
+            @if (selectedMethodePaiement == MethodePaiementConsts.Cheque || selectedMethodePaiement == MethodePaiementConsts.Traite)
             {
                 <RadzenFormField Text="@Localizer["Numero_Cheque_Traite"]" class="rz-col-12 rz-md-6">
                     <RadzenTextBox @bind-Value="paiement.NumeroChequeTraite" Placeholder="@Localizer["Numero"]" />
@@ -118,7 +126,7 @@
                     </RadzenStack>
                 </RadzenFormField>
 
-                @if (selectedMethodePaiement == "Traite")
+                @if (selectedMethodePaiement == MethodePaiementConsts.Traite)
                 {
                     <RadzenFormField Text="@Localizer["Date_Echeance"]" class="rz-col-12 rz-md-6">
                         <RadzenDatePicker @bind-Value="paiement.DateEcheance" DateFormat="dd/MM/yyyy" ShowTime="false" Style="width: 100%;" />
@@ -126,7 +134,7 @@
                 }
             }
 
-            @if (selectedMethodePaiement == "Traite" || selectedMethodePaiement == "Virement")
+            @if (selectedMethodePaiement == MethodePaiementConsts.Traite || selectedMethodePaiement == MethodePaiementConsts.Virement)
             {
                 <RadzenFormField Text="@Localizer["RIB_Code_Etablissement"]" class="rz-col-12 rz-md-3">
                     <RadzenTextBox @bind-Value="paiement.RibCodeEtab" Placeholder="@Localizer["Code_Etab"]" MaxLength="10" />
@@ -233,7 +241,7 @@
                                 Style="width: 100%;" />
             </RadzenFormField>
 
-            @if (selectedMethodePaiement == "Cheque" || selectedMethodePaiement == "Traite" || selectedMethodePaiement == "Virement")
+            @if (selectedMethodePaiement == MethodePaiementConsts.Cheque || selectedMethodePaiement == MethodePaiementConsts.Traite || selectedMethodePaiement == MethodePaiementConsts.Virement || selectedMethodePaiement == MethodePaiementConsts.Tpe)
             {
                 <RadzenFormField Text="@Localizer["Document_Paiement"]" class="rz-col-12">
                     <RadzenCard Style="padding: 1rem;">
@@ -340,7 +348,7 @@
             }
 
             <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" JustifyContent="Radzen.JustifyContent.End" class="rz-col-12">
-                <RadzenButton Text="@Localizer["Annuler"]" ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Outlined" Click="GoBack" />
+                <RadzenButton Text="@Localizer["Annuler"]" ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Outlined" Click="@CancelOrGoBack" />
                 <RadzenButton Text="@(IsEditMode ? Localizer["Modifier"] : Localizer["Creer"])" 
                               ButtonStyle="ButtonStyle.Primary" 
                               Click="@SavePaiement"
@@ -381,14 +389,19 @@
 
 @code {
     [Parameter] public int? Id { get; set; }
-    
-    private bool IsEditMode => Id.HasValue;
+    [Parameter] public int? PaiementId { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private int? EffectiveId => PaiementId ?? Id;
+    private bool IsEditMode => EffectiveId.HasValue;
     private bool isLoadingProviders = false;
     private bool isLoadingInvoices = false;
     private bool isLoadingReceiptNotes = false;
     private bool isSaving = false;
     private CreatePaiementFournisseurRequest paiement = new();
     private GetActiveAccountingYearResponse? activeAccountingYear;
+    private List<GetAllAccountingYearsResponse> accountingYears = new();
     private string? selectedMethodePaiement;
     private List<ProviderResponse> _filteredProviders = new();
     private List<ProviderInvoiceResponse> _filteredInvoices = new();
@@ -442,27 +455,48 @@
         {
             methodePaiementOptions = new()
             {
-                new MethodePaiementOption { Text = Localizer["Espece"], Value = "Espece" },
-                new MethodePaiementOption { Text = Localizer["Cheque"], Value = "Cheque" },
-                new MethodePaiementOption { Text = Localizer["Traite"], Value = "Traite" },
-                new MethodePaiementOption { Text = Localizer["Virement"], Value = "Virement" }
+                new MethodePaiementOption { Text = Localizer["Espece"], Value = MethodePaiementConsts.Espece },
+                new MethodePaiementOption { Text = Localizer["Cheque"], Value = MethodePaiementConsts.Cheque },
+                new MethodePaiementOption { Text = Localizer["Traite"], Value = MethodePaiementConsts.Traite },
+                new MethodePaiementOption { Text = Localizer["Virement"], Value = MethodePaiementConsts.Virement },
+                new MethodePaiementOption { Text = Localizer["TPE"], Value = MethodePaiementConsts.Tpe }
             };
             
             await LoadActiveAccountingYearAsync();
+            await LoadAccountingYearsAsync();
             await LoadBanquesAsync();
             
-            if (IsEditMode && Id.HasValue)
+            if (IsEditMode && EffectiveId.HasValue)
             {
-                await LoadPaiementAsync(Id.Value);
+                await LoadPaiementAsync(EffectiveId.Value);
             }
             else
             {
+                if (activeAccountingYear != null)
+                    paiement.AccountingYearId = activeAccountingYear.Id;
                 paiement.DatePaiement = DateTime.Now;
             }
         }
         catch (Exception ex)
         {
             throw;
+        }
+    }
+
+    async Task LoadAccountingYearsAsync()
+    {
+        try
+        {
+            accountingYears = await AccountingYearService.GetAllAccountingYearsAsync();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = $"{Localizer["Erreur_Chargement_Accounting_Year"]}: {ex.Message}"
+            });
         }
     }
 
@@ -521,6 +555,7 @@
                 {
                     NumeroTransactionBancaire = paiementResponse.NumeroTransactionBancaire,
                     FournisseurId = paiementResponse.FournisseurId,
+                    AccountingYearId = paiementResponse.AccountingYearId,
                     Montant = paiementResponse.Montant,
                     DatePaiement = paiementResponse.DatePaiement,
                     MethodePaiement = paiementResponse.MethodePaiement,
@@ -570,7 +605,10 @@
                     Summary = Localizer["Erreur"],
                     Detail = Localizer["Erreur_Chargement_Paiement"]
                 });
-                NavigationManager.NavigateTo("/paiements-fournisseur");
+                if (OnCancel.HasDelegate)
+                    await OnCancel.InvokeAsync();
+                else
+                    NavigationManager.NavigateTo("/paiements-fournisseur");
             }
         }
         catch (Exception ex)
@@ -582,6 +620,14 @@
                 Detail = $"{Localizer["Erreur_Chargement"]}: {ex.Message}"
             });
         }
+    }
+
+    async Task CancelOrGoBack()
+    {
+        if (OnCancel.HasDelegate)
+            await OnCancel.InvokeAsync();
+        else
+            GoBack();
     }
 
     async Task LoadProviders(LoadDataArgs args)
@@ -622,7 +668,7 @@
             await LoadReceiptNotesForProvider(providerId);
             
             // Auto-fill RIB from provider if method is Traite or Virement
-            if (selectedMethodePaiement == "Traite" || selectedMethodePaiement == "Virement")
+            if (selectedMethodePaiement == MethodePaiementConsts.Traite || selectedMethodePaiement == MethodePaiementConsts.Virement)
             {
                 await FillRibFromProvider(providerId);
             }
@@ -783,20 +829,20 @@
         {
             selectedMethodePaiement = methode;
             paiement.MethodePaiement = methode;
-            if (methode != "Cheque" && methode != "Traite")
+            if (methode != MethodePaiementConsts.Cheque && methode != MethodePaiementConsts.Traite)
             {
                 paiement.NumeroChequeTraite = null;
                 paiement.BanqueId = null;
                 paiement.DateEcheance = null;
             }
-            if (methode != "Traite" && methode != "Virement")
+            if (methode != MethodePaiementConsts.Traite && methode != MethodePaiementConsts.Virement)
             {
                 paiement.RibCodeEtab = null;
                 paiement.RibCodeAgence = null;
                 paiement.RibNumeroCompte = null;
                 paiement.RibCle = null;
             }
-            else if ((methode == "Traite" || methode == "Virement") && paiement.FournisseurId > 0)
+            else if ((methode == MethodePaiementConsts.Traite || methode == MethodePaiementConsts.Virement) && paiement.FournisseurId > 0)
             {
                 // Auto-fill RIB from provider when method changes to Traite or Virement
                 await FillRibFromProvider(paiement.FournisseurId);
@@ -849,7 +895,7 @@
             return;
         }
 
-        if (activeAccountingYear == null)
+        if (!paiement.AccountingYearId.HasValue)
         {
             NotificationService.Notify(new NotificationMessage
             {
@@ -874,7 +920,7 @@
         isSaving = true;
         try
         {
-            if (IsEditMode && Id.HasValue)
+            if (IsEditMode && EffectiveId.HasValue)
             {
                 // Validate exclusivity
                 if (selectedFactureFournisseurIds.Count > 0 && selectedBonDeReceptionIds.Count > 0)
@@ -893,6 +939,7 @@
                 {
                     NumeroTransactionBancaire = paiement.NumeroTransactionBancaire,
                     FournisseurId = paiement.FournisseurId,
+                    AccountingYearId = paiement.AccountingYearId,
                     Montant = paiement.Montant,
                     DatePaiement = paiement.DatePaiement,
                     MethodePaiement = paiement.MethodePaiement,
@@ -910,11 +957,14 @@
                     DocumentBase64 = documentBase64
                 };
 
-                var result = await PaiementFournisseurService.UpdatePaiementFournisseurAsync(Id.Value, updateRequest, cancellationTokenSource.Token);
+                var result = await PaiementFournisseurService.UpdatePaiementFournisseurAsync(EffectiveId!.Value, updateRequest, cancellationTokenSource.Token);
                 if (result.IsSuccess)
                 {
                     ToastService.Notify(new(ToastType.Success, Localizer["Paiement_Modifie"]));
-                    NavigationManager.NavigateTo("/paiements-fournisseur");
+                    if (OnSaved.HasDelegate)
+                        await OnSaved.InvokeAsync();
+                    else
+                        NavigationManager.NavigateTo("/paiements-fournisseur");
                 }
                 else
                 {
@@ -945,7 +995,10 @@
                 if (result.IsT0)
                 {
                     ToastService.Notify(new(ToastType.Success, Localizer["Paiement_Cree"]));
-                    NavigationManager.NavigateTo("/paiements-fournisseur");
+                    if (OnSaved.HasDelegate)
+                        await OnSaved.InvokeAsync();
+                    else
+                        NavigationManager.NavigateTo("/paiements-fournisseur");
                 }
                 else
                 {
@@ -1118,14 +1171,14 @@
 
     private async Task LoadExistingDocumentPreviewAsync()
     {
-        if (!string.IsNullOrWhiteSpace(existingDocumentPath) && Id.HasValue)
+        if (!string.IsNullOrWhiteSpace(existingDocumentPath) && EffectiveId.HasValue)
         {
             try
             {
                 var baseUrl = Configuration.GetValue<string>("ApiSettings:BaseUrl")
                     ?? throw new InvalidOperationException("ApiSettings:BaseUrl configuration is missing");
                 
-                var url = $"{baseUrl.TrimEnd('/')}/paiement-fournisseur/{Id.Value}/document";
+                var url = $"{baseUrl.TrimEnd('/')}/paiement-fournisseur/{EffectiveId.Value}/document";
                 
                 // Create HttpClient with authentication
                 using var httpClient = new HttpClient();
@@ -1220,13 +1273,13 @@
             // Use blob URL for better browser compatibility
             await JSRuntime.InvokeVoidAsync("openDocumentInNewTab", existingDocumentPreview);
         }
-        else if (!string.IsNullOrWhiteSpace(existingDocumentPath) && Id.HasValue)
+        else if (!string.IsNullOrWhiteSpace(existingDocumentPath) && EffectiveId.HasValue)
         {
             // Fallback: load and open
             var baseUrl = Configuration.GetValue<string>("ApiSettings:BaseUrl")
                 ?? throw new InvalidOperationException("ApiSettings:BaseUrl configuration is missing");
             
-            var url = $"{baseUrl.TrimEnd('/')}/paiement-fournisseur/{Id.Value}/document";
+            var url = $"{baseUrl.TrimEnd('/')}/paiement-fournisseur/{EffectiveId.Value}/document";
             
             // Create HttpClient with authentication
             using var httpClient = new HttpClient();

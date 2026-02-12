@@ -13,6 +13,7 @@ public record CreateProviderCommand
     bool Constructeur,
     string? Adresse,
     double? TauxRetenu,
+    bool ExonereRetenueSource,
     string? RibCodeEtab,
     string? RibCodeAgence,
     string? RibNumeroCompte,

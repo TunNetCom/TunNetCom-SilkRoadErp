@@ -5,18 +5,42 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Services
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Soldes.PrintRestesALivrer
 @using Radzen.Blazor
 @using Radzen
 @inject NavigationManager NavigationManager
+@inject PrintRestesALivrerService PrintRestesALivrerService
 @inject IStringLocalizer<SharedResource> Localizer
 @inject ISoldesApiClient SoldesService
 @inject Radzen.NotificationService NotificationService
+@inject Radzen.DialogService DialogService
 @inject IDecimalFormatService DecimalFormatService
+@inject IJSRuntime JS
 
 <div class="clients-problemes-container">
     <div class="clients-problemes-card">
         <div class="clients-problemes-header">
             <h3 class="clients-problemes-title">@Localizer["Clients_Avec_Problemes_Solde"]</h3>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <RadzenButton Icon="print"
+                              ButtonStyle="ButtonStyle.Secondary"
+                              Click="@PrintRestesALivrerAsync"
+                              Title="@Localizer["Print_Restes_ALivrer"]"
+                              AriaLabel="@Localizer["Print_Restes_ALivrer"]"
+                              class="action-button" />
+                <RadzenButton Icon="table_chart"
+                              ButtonStyle="ButtonStyle.Info"
+                              Click="@ExportToExcelAsync"
+                              Title="@Localizer["Export_Excel"]"
+                              AriaLabel="@Localizer["Export_Excel"]"
+                              class="action-button" />
+                <RadzenButton Icon="picture_as_pdf"
+                              ButtonStyle="ButtonStyle.Warning"
+                              Click="@ExportToPdfAsync"
+                              Title="@Localizer["Export_Pdf"]"
+                              AriaLabel="@Localizer["Export_Pdf"]"
+                              class="action-button" />
+            </div>
         </div>
 
         <RadzenDataGrid @ref="clientsGrid"
@@ -30,6 +54,7 @@
                         FilterPopupRenderMode="PopupRenderMode.OnDemand"
                         FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
                         PageSize="@defaultPageSize"
+                        PageSizeOptions="@GridPageSizeConstants.PageSizeOptions"
                         Density="Density.Compact"
                         Class="clients-problemes-grid"
                         IsLoading="@isLoading"
@@ -102,6 +127,11 @@
 
     .clients-problemes-header {
         margin-bottom: 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
     }
 
     .clients-problemes-title {
@@ -145,7 +175,7 @@
     private RadzenDataGrid<ClientSoldeProblemeResponse>? clientsGrid;
     private IEnumerable<ClientSoldeProblemeResponse> clients = new List<ClientSoldeProblemeResponse>();
     private int totalCount = 0;
-    private int defaultPageSize = 10;
+    private int defaultPageSize = GridPageSizeConstants.PageSize100;
     private bool isLoading = false;
     private CancellationTokenSource cancellationTokenSource = new();
     private int decimalPlaces = AmountHelper.DEFAULT_DECIMAL_PLACES;
@@ -198,6 +228,116 @@
     {
         // Navigate to solde client page with clientId as query parameter
         NavigationManager.NavigateTo($"/soldes-client?clientId={clientId}");
+    }
+
+    private async Task ExportToExcelAsync()
+    {
+        try
+        {
+            var (content, fileName) = await SoldesService.ExportClientsAvecProblemesSoldeToExcelAsync(null, cancellationTokenSource.Token);
+            await JS.InvokeVoidAsync("downloadFile", fileName, Convert.ToBase64String(content), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = Localizer["Success"],
+                Detail = Localizer["Export_Excel_Success"] ?? "Export Excel réussi"
+            });
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = $"{Localizer["Erreur_Export"] ?? "Erreur lors de l'export"}: {ex.Message}"
+            });
+        }
+    }
+
+    private async Task ExportToPdfAsync()
+    {
+        try
+        {
+            var (content, fileName) = await SoldesService.ExportClientsAvecProblemesSoldeToPdfAsync(null, cancellationTokenSource.Token);
+            await DialogService.OpenAsync<PdfViewerDialog>(
+                Localizer["Export_Pdf"] ?? "Exporter vers PDF",
+                new Dictionary<string, object>
+                {
+                    { "PdfBytes", content },
+                    { "FileName", fileName }
+                },
+                new DialogOptions
+                {
+                    Width = "900px",
+                    Height = "800px",
+                    Resizable = true,
+                    Draggable = true
+                });
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = $"{Localizer["Erreur_Export"] ?? "Erreur lors de l'export"}: {ex.Message}"
+            });
+        }
+    }
+
+    private async Task PrintRestesALivrerAsync()
+    {
+        try
+        {
+            var result = await SoldesService.GetRestesALivrerParClientAsync(null, cancellationTokenSource.Token);
+            if (result.IsFailed)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["Erreur"],
+                    Detail = Localizer["Erreur_Impression_Restes_ALivrer"] ?? "Impossible de générer le rapport des restes à livrer."
+                });
+                return;
+            }
+
+            var pdfResult = await PrintRestesALivrerService.GeneratePdfAsync(result.Value, decimalPlaces, cancellationTokenSource.Token);
+            if (pdfResult.IsFailed)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["Erreur"],
+                    Detail = Localizer["Erreur_Impression_Restes_ALivrer"] ?? "Impossible de générer le rapport des restes à livrer."
+                });
+                return;
+            }
+
+            var fileName = $"RestesALivrer_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+            await DialogService.OpenAsync<PdfViewerDialog>(
+                Localizer["Print_Restes_ALivrer"] ?? "Imprimer restes à livrer",
+                new Dictionary<string, object>
+                {
+                    { "PdfBytes", pdfResult.Value },
+                    { "FileName", fileName }
+                },
+                new DialogOptions
+                {
+                    Width = "900px",
+                    Height = "800px",
+                    Resizable = true,
+                    Draggable = true
+                });
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = $"{Localizer["Erreur_Impression_Restes_ALivrer"] ?? "Impossible de générer le rapport des restes à livrer."}: {ex.Message}"
+            });
+        }
     }
 
     public void Dispose()

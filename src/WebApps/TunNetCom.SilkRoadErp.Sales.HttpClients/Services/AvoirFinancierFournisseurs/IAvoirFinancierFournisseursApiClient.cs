@@ -34,5 +34,11 @@ public interface IAvoirFinancierFournisseursApiClient
         CancellationToken cancellationToken);
 
     Task<Result> ValidateAvoirFinancierFournisseursAsync(List<int> ids, CancellationToken cancellationToken);
+
+    Task<Result> AttachAvoirFinancierToInvoiceAsync(int id, int numFactureFournisseur, CancellationToken cancellationToken);
+
+    Task<Result> DetachAvoirFinancierFromInvoiceAsync(int id, CancellationToken cancellationToken);
+
+    Task<Result> DeleteAvoirFinancierFournisseurAsync(int id, CancellationToken cancellationToken);
 }
 

@@ -1,0 +1,101 @@
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Products
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using System.Globalization
+@using Radzen
+@using Radzen.Blazor
+@inject IProductsApiClient ProductsApiClient
+
+@if (IsLoading)
+{
+    <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+}
+else if (ProductPrice == null)
+{
+    <p style="color: #6c757d; font-size: 1rem; text-align: center; margin: 2rem;">Aucune information disponible.</p>
+}
+else
+{
+    <RadzenStack Gap="1rem" Style="padding: 0.5rem 0;">
+        <RadzenCard Variant="Variant.Outlined">
+            <RadzenStack Gap="0.75rem">
+                <RadzenText TextStyle="TextStyle.Subtitle1" Style="margin: 0;">Informations du produit</RadzenText>
+                <RadzenStack Gap="0.5rem">
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Style="padding: 0.25rem 0; border-bottom: 1px solid #e0e0e0;">
+                        <RadzenText Style="color: #555;">Référence</RadzenText>
+                        <RadzenText Style="font-weight: 600;">@ProductPrice.Reference</RadzenText>
+                    </RadzenStack>
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Style="padding: 0.25rem 0;">
+                        <RadzenText Style="color: #555;">Nom</RadzenText>
+                        <RadzenText Style="font-weight: 600;">@ProductPrice.Name</RadzenText>
+                    </RadzenStack>
+                </RadzenStack>
+            </RadzenStack>
+        </RadzenCard>
+        
+        <RadzenCard Variant="Variant.Outlined">
+            <RadzenStack Gap="0.75rem">
+                <RadzenText TextStyle="TextStyle.Subtitle1" Style="margin: 0;">Prix du système</RadzenText>
+                <RadzenStack Gap="0.5rem">
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Style="padding: 0.35rem 0; border-bottom: 1px solid #e0e0e0;">
+                        <RadzenText Style="color: #555;">Prix de vente (HT)</RadzenText>
+                        <RadzenText Style="font-weight: 600;">@ProductPrice.Price.ToString(AmountHelper.FORMAT_N3, CultureInfo.GetCultureInfo("fr-FR"))</RadzenText>
+                    </RadzenStack>
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Style="padding: 0.35rem 0; border-bottom: 1px solid #e0e0e0;">
+                        <RadzenText Style="color: #555;">Prix d'achat</RadzenText>
+                        <RadzenText Style="font-weight: 600;">@ProductPrice.PurchasingPrice.ToString(AmountHelper.FORMAT_N3, CultureInfo.GetCultureInfo("fr-FR"))</RadzenText>
+                    </RadzenStack>
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Style="padding: 0.35rem 0; border-bottom: 1px solid #e0e0e0;">
+                        <RadzenText Style="color: #555;">Remise (%)</RadzenText>
+                        <RadzenText Style="font-weight: 600;">@ProductPrice.DiscountPourcentage.ToString(AmountHelper.FORMAT_N2, CultureInfo.GetCultureInfo("fr-FR"))</RadzenText>
+                    </RadzenStack>
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Style="padding: 0.35rem 0; border-bottom: 1px solid #e0e0e0;">
+                        <RadzenText Style="color: #555;">Remise achat (%)</RadzenText>
+                        <RadzenText Style="font-weight: 600;">@ProductPrice.DiscountPourcentageOfPurchasing.ToString(AmountHelper.FORMAT_N2, CultureInfo.GetCultureInfo("fr-FR"))</RadzenText>
+                    </RadzenStack>
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Style="padding: 0.35rem 0;">
+                        <RadzenText Style="color: #555;">TVA (%)</RadzenText>
+                        <RadzenText Style="font-weight: 600;">@ProductPrice.VatRate.ToString(AmountHelper.FORMAT_N2, CultureInfo.GetCultureInfo("fr-FR"))</RadzenText>
+                    </RadzenStack>
+                </RadzenStack>
+            </RadzenStack>
+        </RadzenCard>
+    </RadzenStack>
+}
+
+@code {
+    [Parameter] public string ProductReference { get; set; } = string.Empty;
+
+    private ProductResponse? ProductPrice { get; set; }
+    private bool IsLoading { get; set; } = true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadProductPrice();
+    }
+
+    private async Task LoadProductPrice()
+    {
+        if (string.IsNullOrWhiteSpace(ProductReference))
+        {
+            ProductPrice = null;
+            IsLoading = false;
+            return;
+        }
+
+        IsLoading = true;
+        try
+        {
+            var result = await ProductsApiClient.GetAsync(ProductReference, CancellationToken.None);
+            ProductPrice = result.IsT0 ? result.AsT0 : null;
+        }
+        catch
+        {
+            ProductPrice = null;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+}

@@ -11,6 +11,7 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.Inventaires
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Services
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ReceiptNote
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Products
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
 @typeparam TItem where TItem : class, ILineItem
@@ -18,6 +19,8 @@
 @inject DialogService DialogService
 @inject IDecimalFormatService DecimalFormatService
 @inject IProductsApiClient ProductsApiClient
+@inject ICurrentProductStateService CurrentProductStateService
+@inject IReceiptNoteApiClient ReceiptNoteApiClient
 
 <div id="@componentId">
 <RadzenDataGrid @ref="ordersGrid" 
@@ -272,7 +275,7 @@
                                       ButtonStyle="ButtonStyle.Light" 
                                       Variant="Variant.Flat"
                                       Size="ButtonSize.Small" 
-                                      Click="@(() => OnShowPriceHistory.InvokeAsync(GetProductReference(order)))" 
+                                      Click="@(() => ShowPriceHistoryWithState(order))" 
                                       Title="@Localizer["price_history"]" />
                     }
                 </div>
@@ -306,14 +309,13 @@
             <RadzenDataGridColumn Width="120px" 
                                   Title="@Localizer["vat_percentage"]">
                 <Template Context="order">
-                    <RadzenNumeric TValue="double"
-                                   Value="order.VatPercentage"
+                    <RadzenDropDown TValue="double"
+                                   Data="@VatRatesForDropdown"
+                                   Value="@order.VatPercentage"
+                                   ValueProperty="Value"
+                                   TextProperty="Text"
                                    Change="@(args => OnVatChanged(order, args))"
                                    Style="width:100%;"
-                                   Min="0"
-                                   Max="@((decimal)MaxVatPercentage)"
-                                   Step="0.01"
-                                   Format="@vatFormat"
                                    Name="Vat"
                                    Disabled="@IsReadOnly"/>
                 </Template>
@@ -357,19 +359,6 @@
                         {
                             @inventaireItem.DernierPrixAchat.FormatAmount()
                         }
-                    }
-                </Template>
-            </RadzenDataGridColumn>
-        }
-
-        @* FODEC column - only shown for ReceiptNoteDetailResponse when provider is constructor *@
-        @if (typeof(TItem) == typeof(ReceiptNoteDetailResponse))
-        {
-            <RadzenDataGridColumn Width="120px" Title="FODEC HT">
-                <Template Context="order">
-                    @{
-                        var receiptNoteItem = order as ReceiptNoteDetailResponse;
-                        @(receiptNoteItem?.PrixHtFodec?.FormatAmount() ?? "-")
                     }
                 </Template>
             </RadzenDataGridColumn>
@@ -533,7 +522,7 @@
     [Parameter] public Func<TItem, List<TItem>> GetProductList { get; set; }
     [Parameter] public int ProductCount { get; set; }
     [Parameter] public GetAppParametersResponse AppParameters { get; set; }
-    [Parameter] public EventCallback<string> OnShowPriceHistory { get; set; }
+    [Parameter] public EventCallback<(int ProductId, string ProductReference)> OnShowPriceHistory { get; set; }
     [Parameter] public bool ShowPriceHistoryDialog { get; set; } = true;
     [Parameter] public bool ShowPrintButton { get; set; } = true;
     [Parameter] public bool ShowSaveButton { get; set; } = true;
@@ -545,11 +534,16 @@
     [Parameter] public decimal TotalHt { get; set; }
     [Parameter] public decimal TotalVat { get; set; }
     [Parameter] public decimal TotalTtc { get; set; }
+    [Parameter] public decimal TotalFodec { get; set; } = 0;
+    [Parameter] public bool IsConstructorProvider { get; set; } = false;
+    [Parameter] public bool AutoDetectConstructorProviderFromReceiptHistory { get; set; } = false;
     [Parameter] public IStringLocalizer<SharedResource> Localizer { get; set; }
     
     // Product-related properties accessors
     [Parameter] public Func<TItem, string> GetProductReference { get; set; }
     [Parameter] public Action<TItem, string> SetProductReference { get; set; }
+    [Parameter] public Func<TItem, int>? GetProductId { get; set; }
+    [Parameter] public Action<TItem, int>? SetProductId { get; set; }
     [Parameter] public Func<TItem, string> GetProductDescription { get; set; }
     [Parameter] public Action<TItem, string> SetProductDescription { get; set; }
     [Parameter] public string ProductTextProperty { get; set; } = "ProductReferenceAndDescription";
@@ -577,6 +571,40 @@
     private string discountFormat = AmountHelper.FORMAT_N2;
     private string vatFormat = AmountHelper.FORMAT_N2;
     private int decimalPlaces = AmountHelper.DEFAULT_DECIMAL_PLACES;
+    private readonly Dictionary<string, ProductReceiptConstructorInfo> _receiptConstructorCache = new(StringComparer.OrdinalIgnoreCase);
+
+    private sealed record ProductReceiptConstructorInfo(bool IsConstructor, string SupplierName);
+
+    private const double VatRateTolerance = 0.001;
+
+    private IReadOnlyList<VatRateOption> VatRatesForDropdown => GetVatRatesFromAppParameters();
+
+    private IReadOnlyList<VatRateOption> GetVatRatesFromAppParameters()
+    {
+        if (AppParameters == null)
+        {
+            return new[]
+            {
+                new VatRateOption(VatRateConstants.DefaultVatRate0),
+                new VatRateOption(VatRateConstants.DefaultVatRate7),
+                new VatRateOption(VatRateConstants.DefaultVatRate13),
+                new VatRateOption(VatRateConstants.DefaultVatRate19)
+            };
+        }
+        var rates = new[] { (double)AppParameters.VatRate0, (double)AppParameters.VatRate7, (double)AppParameters.VatRate13, (double)AppParameters.VatRate19 };
+        return rates.Distinct().OrderBy(r => r).Select(r => new VatRateOption(r)).ToList();
+    }
+
+    private double GetDefaultVatRate19() => (double)(AppParameters?.VatRate19 ?? (decimal)VatRateConstants.DefaultVatRate19);
+
+    private double GetEffectiveVatFromArticle(double articleVat)
+    {
+        var rate7 = AppParameters != null ? (double)AppParameters.VatRate7 : VatRateConstants.DefaultVatRate7;
+        var rate19 = AppParameters != null ? (double)AppParameters.VatRate19 : VatRateConstants.DefaultVatRate19;
+        if (Math.Abs(articleVat - rate7) < VatRateTolerance || Math.Abs(articleVat - rate19) < VatRateTolerance)
+            return articleVat;
+        return GetDefaultVatRate19();
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -586,6 +614,15 @@
         // Discount and VAT percentages typically use 2 decimal places
         discountFormat = AmountHelper.FORMAT_N2;
         vatFormat = AmountHelper.FORMAT_N2;
+    }
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        if (typeof(TItem) == typeof(DeliveryNoteDetailResponse))
+        {
+            showDeliveredQuantityColumn = Items?.Any(item => item is DeliveryNoteDetailResponse dn && dn.HasPartialDelivery) ?? false;
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -638,6 +675,7 @@
             }
             
             LineItemCalculator.CalculateTotals(order);
+            UpdateCurrentProductState(order);
             await NotifyItemsChanged();
         }
     }
@@ -648,6 +686,7 @@
         {
             order.UnitPriceExcludingTax = price;
             LineItemCalculator.CalculateTotals(order);
+            UpdateCurrentProductState(order);
             await NotifyItemsChanged();
         }
     }
@@ -667,25 +706,19 @@
             }
             order.DiscountPercentage = discount;
             LineItemCalculator.CalculateTotals(order);
+            UpdateCurrentProductState(order);
             await NotifyItemsChanged();
         }
     }
 
     private async Task OnVatChanged(TItem order, object value)
     {
-        if (value != null && double.TryParse(value.ToString(), out double vat))
+        double vat = value is double d ? d : (value != null && double.TryParse(value.ToString(), out double parsed) ? parsed : -1);
+        if (vat >= 0)
         {
-            // Limit VAT to MaxVatPercentage
-            if (vat > MaxVatPercentage)
-            {
-                vat = MaxVatPercentage;
-            }
-            if (vat < 0)
-            {
-                vat = 0;
-            }
             order.VatPercentage = vat;
             LineItemCalculator.CalculateTotals(order);
+            UpdateCurrentProductState(order);
             await NotifyItemsChanged();
         }
     }
@@ -831,6 +864,10 @@
                 {
                     SetProductReference(order, productReference);
                 }
+                if (SetProductId != null && GetProductId != null)
+                {
+                    SetProductId(order, GetProductId(selectedProduct));
+                }
                 order.UnitPriceExcludingTax = selectedProduct.UnitPriceExcludingTax;
                 
                 // Restore preserved quantity for inventaire
@@ -850,9 +887,8 @@
                     ? selectedProduct.DiscountPercentage 
                     : (double)(AppParameters?.DiscountPercentage ?? 0);
                 
-                // Always use AppParameters.VatAmount as default VAT value from Systeme entity
-                // Only use product VAT if it's explicitly set and different from default
-                order.VatPercentage = (double)(AppParameters?.VatAmount ?? 0);
+                // If article VAT matches current accounting year rate 7 or 19 use it, otherwise use exercise rate 19
+                order.VatPercentage = GetEffectiveVatFromArticle(selectedProduct.VatPercentage);
                 
                 // For inventaire, don't calculate totals here - let OnProductSelectedHandler do it
                 // after updating the quantity with quantiteTheorique
@@ -897,6 +933,102 @@
             await ItemsChanged.InvokeAsync(Items);
         }
         await InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>
+    /// Updates the current product state service and invokes the price history callback.
+    /// This enables reactive updates in the ProductHistoryDialog.
+    /// </summary>
+    private async Task ShowPriceHistoryWithState(TItem order)
+    {
+        var productRef = GetProductReference?.Invoke(order) ?? string.Empty;
+        var productDesc = GetProductDescription?.Invoke(order) ?? string.Empty;
+        
+        if (!string.IsNullOrEmpty(productRef))
+        {
+            var receiptInfo = await GetReceiptConstructorInfoAsync(productRef);
+            var isConstructorEffective = IsConstructorProvider || (receiptInfo?.IsConstructor ?? false);
+
+            // Update the state service with current line item values
+            var state = new CurrentProductState(
+                ProductReference: productRef,
+                ProductName: productDesc,
+                UnitPriceHt: order.UnitPriceExcludingTax,
+                TotalHt: order.TotalExcludingTax,
+                TotalTtc: order.TotalIncludingTax,
+                DiscountPercentage: order.DiscountPercentage,
+                VatPercentage: order.VatPercentage,
+                IsConstructorProvider: isConstructorEffective,
+                FodecPercentage: isConstructorEffective ? (AppParameters?.PourcentageFodec ?? 0) : 0,
+                Quantity: order.Quantity
+            );
+            CurrentProductStateService.UpdateState(state);
+            
+            // Invoke the callback to open the dialog
+            if (OnShowPriceHistory.HasDelegate)
+            {
+                var productId = GetProductId?.Invoke(order) ?? 0;
+                await OnShowPriceHistory.InvokeAsync((productId, productRef));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Updates the current product state in the state service.
+    /// Called when line item values change to keep the dialog reactive.
+    /// </summary>
+    private void UpdateCurrentProductState(TItem order)
+    {
+        var productRef = GetProductReference?.Invoke(order) ?? string.Empty;
+        var productDesc = GetProductDescription?.Invoke(order) ?? string.Empty;
+        
+        // Only update if there's a product selected and the state service has a matching product
+        if (!string.IsNullOrEmpty(productRef) && 
+            CurrentProductStateService.State?.ProductReference == productRef)
+        {
+            var isConstructorEffective = CurrentProductStateService.State.IsConstructorProvider;
+            var state = new CurrentProductState(
+                ProductReference: productRef,
+                ProductName: productDesc,
+                UnitPriceHt: order.UnitPriceExcludingTax,
+                TotalHt: order.TotalExcludingTax,
+                TotalTtc: order.TotalIncludingTax,
+                DiscountPercentage: order.DiscountPercentage,
+                VatPercentage: order.VatPercentage,
+                IsConstructorProvider: isConstructorEffective,
+                FodecPercentage: isConstructorEffective ? (AppParameters?.PourcentageFodec ?? 0) : 0,
+                Quantity: order.Quantity
+            );
+            CurrentProductStateService.UpdateState(state);
+        }
+    }
+
+    private async Task<ProductReceiptConstructorInfo?> GetReceiptConstructorInfoAsync(string productRef)
+    {
+        if (!AutoDetectConstructorProviderFromReceiptHistory || string.IsNullOrWhiteSpace(productRef))
+        {
+            return null;
+        }
+
+        if (_receiptConstructorCache.TryGetValue(productRef, out var cached))
+        {
+            return cached;
+        }
+
+        try
+        {
+            var result = await ReceiptNoteApiClient.GetReceiptNotesByProductReferenceAsync(productRef, 1, 1);
+            var first = result?.Items?.FirstOrDefault();
+            var info = new ProductReceiptConstructorInfo(first?.Constructeur ?? false, first?.Provider ?? string.Empty);
+            _receiptConstructorCache[productRef] = info;
+            return info;
+        }
+        catch
+        {
+            var info = new ProductReceiptConstructorInfo(false, string.Empty);
+            _receiptConstructorCache[productRef] = info;
+            return info;
+        }
     }
 
     private async Task OpenDiscountDialog()
@@ -1067,7 +1199,7 @@
                 var product = productResult.AsT0;
                 item.UnitPriceExcludingTax = product.PurchasingPrice;
                 item.DiscountPercentage = product.DiscountPourcentageOfPurchasing;
-                item.VatPercentage = product.VatRate;
+                item.VatPercentage = GetEffectiveVatFromArticle(product.VatRate);
                 LineItemCalculator.CalculateTotals(item);
             }
         }
@@ -1080,7 +1212,7 @@
                 var purchaseInfo = purchaseInfoResult.AsT0;
                 item.UnitPriceExcludingTax = purchaseInfo.PrixHt;
                 item.DiscountPercentage = purchaseInfo.Remise;
-                item.VatPercentage = purchaseInfo.Tva;
+                item.VatPercentage = GetEffectiveVatFromArticle(purchaseInfo.Tva);
                 LineItemCalculator.CalculateTotals(item);
             }
             else
@@ -1092,7 +1224,7 @@
                     var product = productResult.AsT0;
                     item.UnitPriceExcludingTax = product.PurchasingPrice;
                     item.DiscountPercentage = product.DiscountPourcentageOfPurchasing;
-                    item.VatPercentage = product.VatRate;
+                    item.VatPercentage = GetEffectiveVatFromArticle(product.VatRate);
                     LineItemCalculator.CalculateTotals(item);
                 }
             }
@@ -1123,13 +1255,13 @@
             if (AppParameters != null)
             {
                 order.DiscountPercentage = (double)AppParameters.DiscountPercentage;
-                order.VatPercentage = (double)AppParameters.VatAmount;
+                order.VatPercentage = GetDefaultVatRate19();
             }
             else
             {
-                // Fallback to 0 if AppParameters is not loaded yet
+                // Fallback when AppParameters (current accounting year) is not loaded yet
                 order.DiscountPercentage = 0;
-                order.VatPercentage = 0;
+                order.VatPercentage = VatRateConstants.DefaultVatRate19;
             }
             
             if (Items == null)
@@ -1287,5 +1419,15 @@
             await OnDeleteItem.InvokeAsync(order);
         }
     }
-}
 
+    private sealed class VatRateOption
+    {
+        public double Value { get; }
+        public string Text => $"{Value} %";
+
+        public VatRateOption(double value)
+        {
+            Value = value;
+        }
+    }
+}

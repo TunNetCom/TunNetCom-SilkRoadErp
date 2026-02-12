@@ -1,0 +1,231 @@
+@page "/paiements-tiers-depenses"
+@implements IDisposable
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PaiementTiersDepense
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.TiersDepenseFonctionnement
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AccountingYear
+@using TunNetCom.SilkRoadErp.Sales.Contracts.PaiementTiersDepense
+@using TunNetCom.SilkRoadErp.Sales.Contracts.TiersDepenseFonctionnement
+@using TunNetCom.SilkRoadErp.Sales.Contracts
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
+@using Radzen
+@using Radzen.Blazor
+@inject IPaiementTiersDepenseApiClient PaiementTiersDepenseService
+@inject ITiersDepenseFonctionnementApiClient TiersDepenseService
+@inject IAccountingYearApiClient AccountingYearService
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<SharedResource> Localizer
+@inject Radzen.NotificationService NotificationService
+@inject ToastService ToastService
+@inject DialogService DialogService
+@inject IDecimalFormatService DecimalFormatService
+
+<div class="paiements-container">
+    <div class="paiements-card">
+        <div class="paiements-header">
+            <h3 class="paiements-title">Paiements tiers dépenses</h3>
+            <RadzenButton Icon="add" Text="Nouveau paiement"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Click="@(() => NavigationManager.NavigateTo("/paiements-tiers-depenses/add"))"
+                          Class="btn-primary" />
+        </div>
+
+        <div class="filters">
+            <div class="search-field">
+                <label>@Localizer["Tiers_Depenses"]</label>
+                <RadzenDropDownDataGrid AllowClear="true"
+                                        IsLoading="@isLoadingTiers"
+                                        @bind-Value="selectedTiersId"
+                                        LoadData="@LoadTiers"
+                                        AllowFiltering="true"
+                                        Style="width: 280px;"
+                                        Data="@_filteredTiers"
+                                        TextProperty="Nom"
+                                        ValueProperty="Id"
+                                        Placeholder="@Localizer["Select_Tiers"]"
+                                        Change="@OnFilterChange">
+                    <Columns>
+                        <RadzenDropDownDataGridColumn Property="Id" Title="ID" Width="80px" />
+                        <RadzenDropDownDataGridColumn Property="Nom" Title="@Localizer["Nom"]" Width="220px" />
+                    </Columns>
+                </RadzenDropDownDataGrid>
+            </div>
+            <RadzenDropDown @bind-Value="selectedAccountingYearId"
+                            Data="@accountingYears"
+                            TextProperty="Year"
+                            ValueProperty="Id"
+                            Placeholder="Exercice"
+                            AllowClear="true"
+                            Style="width: 180px;"
+                            Change="@OnFilterChange" />
+            <RadzenButton Text="Rechercher" Icon="search" Click="@LoadData" />
+        </div>
+
+        <RadzenDataGrid TItem="PaiementTiersDepenseResponse"
+                        @ref="paiementGrid"
+                        Data="@items"
+                        AllowPaging="true"
+                        PageSize="10"
+                        Density="Density.Compact"
+                        Class="paiements-grid">
+            <Columns>
+                <RadzenDataGridColumn TItem="PaiementTiersDepenseResponse" Property="TiersDepenseFonctionnementNom" Title="Tiers" Width="180px" />
+                <RadzenDataGridColumn TItem="PaiementTiersDepenseResponse" Property="DatePaiement" Title="Date" Width="110px">
+                    <Template Context="p">@p.DatePaiement.ToString("dd/MM/yyyy")</Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="PaiementTiersDepenseResponse" Property="Montant" Title="Montant" Width="120px">
+                    <Template Context="p">@p.Montant.FormatAmount(decimalPlaces) TND</Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="PaiementTiersDepenseResponse" Property="MethodePaiement" Title="Méthode" Width="120px" />
+                <RadzenDataGridColumn TItem="PaiementTiersDepenseResponse" Title="Document" Width="100px" Sortable="false" Filterable="false" TextAlign="TextAlign.Center">
+                    <Template Context="p">
+                        @if (p.HasDocument)
+                        {
+                            <RadzenButton Icon="attachment" ButtonStyle="ButtonStyle.Light" Variant="Variant.Outlined" Size="ButtonSize.Small"
+                                          Click="@(() => ViewDocument(p.Id))"
+                                          Title="Voir le document" />
+                        }
+                        else
+                        {
+                            <span style="color: #999;">-</span>
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="PaiementTiersDepenseResponse" Title="Tags" Width="250px" Sortable="false" Filterable="false">
+                    <Template Context="p">
+                        <TagSelector DocumentType="PaiementTiersDepense" DocumentId="@p.Id" SaveOnChange="true" />
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="PaiementTiersDepenseResponse" Title="Actions" Filterable="false" Sortable="false" Width="120px" TextAlign="TextAlign.Center">
+                    <Template Context="p">
+                        <div style="display: flex; gap: 6px; justify-content: center; align-items: center;">
+                            <RadzenButton Icon="edit" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Success" Variant="Variant.Outlined"
+                                          Click="@(() => EditPaiement(p.Id))" Title="@Localizer["Modifier"]" />
+                            <RadzenButton Icon="delete" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Outlined"
+                                          Click="@(() => ConfirmDeletePaiement(p.Id))"
+                                          Title="@Localizer["Supprimer"]" />
+                        </div>
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <p style="text-align: center; margin: 2rem;">Aucun paiement.</p>
+            </EmptyTemplate>
+        </RadzenDataGrid>
+    </div>
+</div>
+
+@code {
+    private List<PaiementTiersDepenseResponse> items = new();
+    private List<TiersDepenseFonctionnementResponse> _filteredTiers = new();
+    private List<GetAllAccountingYearsResponse> accountingYears = new();
+    private int? selectedTiersId;
+    private int? selectedAccountingYearId;
+    private int pageNumber = 1;
+    private const int pageSize = 10;
+    private int decimalPlaces = 2;
+    private bool isLoadingTiers;
+    private CancellationTokenSource _cts = new();
+    private RadzenDataGrid<PaiementTiersDepenseResponse>? paiementGrid;
+
+    protected override async Task OnInitializedAsync()
+    {
+        decimalPlaces = await DecimalFormatService.GetDecimalPlacesAsync();
+        await LoadAccountingYears();
+        await LoadData();
+    }
+
+    private async Task LoadTiers(LoadDataArgs args)
+    {
+        isLoadingTiers = true;
+        var parameters = new QueryStringParameters
+        {
+            PageNumber = args.Skip.HasValue && args.Top.HasValue && args.Top.Value > 0 ? (args.Skip.Value / args.Top.Value) + 1 : 1,
+            PageSize = args.Top.HasValue && args.Top.Value > 0 ? args.Top.Value : 20,
+            SearchKeyword = args.Filter ?? string.Empty
+        };
+        try
+        {
+            var result = await TiersDepenseService.GetPagedAsync(parameters, _cts.Token);
+            _filteredTiers = result.Items?.ToList() ?? new();
+        }
+        catch { _filteredTiers = new(); }
+        isLoadingTiers = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadAccountingYears()
+    {
+        var result = await AccountingYearService.GetAllAccountingYearsAsync(_cts.Token);
+        accountingYears = result ?? new();
+    }
+
+    private async Task OnFilterChange()
+    {
+        pageNumber = 1;
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        var result = await PaiementTiersDepenseService.GetPagedAsync(
+            selectedTiersId, selectedAccountingYearId, null, null, pageNumber, pageSize, _cts.Token);
+        items = result.Items?.ToList() ?? new();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void EditPaiement(int id)
+    {
+        NavigationManager.NavigateTo($"/paiements-tiers-depenses/edit/{id}");
+    }
+
+    private void ViewDocument(int paiementId)
+    {
+        var documentUrl = $"/api/paiements-tiers-depenses/{paiementId}/document";
+        NavigationManager.NavigateTo(documentUrl, forceLoad: true);
+    }
+
+    private async Task ConfirmDeletePaiement(int paiementId)
+    {
+        bool? confirmed = await DialogService.Confirm(Localizer["Confirmation_Suppression"] ?? "Confirmer la suppression", Localizer["Confirmation_Suppression_Titre"] ?? "Supprimer ce paiement ?", new ConfirmOptions { OkButtonText = Localizer["Oui"] ?? "Oui", CancelButtonText = Localizer["Non"] ?? "Non" });
+        if (confirmed != true) return;
+        try
+        {
+            var result = await PaiementTiersDepenseService.DeleteAsync(paiementId, _cts.Token);
+            if (result.IsSuccess)
+            {
+                ToastService.Notify(new(ToastType.Success, Localizer["Paiement_Supprime"] ?? "Paiement supprimé."));
+                await LoadData();
+                if (paiementGrid != null) await paiementGrid.Reload();
+            }
+            else
+            {
+                var msg = result.Errors.FirstOrDefault()?.Message ?? Localizer["Erreur_Suppression"] ?? "Erreur lors de la suppression.";
+                ToastService.Notify(new(ToastType.Danger, msg));
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.Notify(new(ToastType.Danger, ex.Message));
+        }
+    }
+
+    public void Dispose()
+    {
+        _cts.Cancel();
+        _cts.Dispose();
+    }
+}
+
+<style>
+    .paiements-container { padding: 1.25rem; max-width: 1200px; margin: 1rem auto; }
+    .paiements-card { border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); padding: 1.5rem; }
+    .paiements-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    .paiements-title { font-weight: 600; margin: 0; font-size: 1.5rem; }
+    .filters { display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
+    .search-field { display: flex; flex-direction: column; gap: 0.25rem; }
+    .search-field label { font-weight: 500; font-size: 0.875rem; }
+</style>

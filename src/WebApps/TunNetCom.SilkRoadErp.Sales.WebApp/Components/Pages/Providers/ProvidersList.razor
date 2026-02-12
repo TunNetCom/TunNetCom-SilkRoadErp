@@ -6,6 +6,7 @@
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Providers
 @using Radzen
 @using Radzen.Blazor
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tiers
 @using TunNetCom.NotFoundModal
 @using TunNetCom.DeleteModal
 @using Microsoft.JSInterop
@@ -14,6 +15,7 @@
 @inject DialogService DialogService
 @inject IJSRuntime JSRuntime
 @inject IProvidersApiClient providerService
+@inject ITiersApiClient TiersService
 @inject NavigationManager navigationManager
 @inject IStringLocalizer<SharedResource> Localizer
 @inject Radzen.NotificationService NotificationService
@@ -22,10 +24,17 @@
     <div class="providers-card">
         <div class="providers-header">
             <h3 class="providers-title">@Localizer["providers"]</h3>
-            <RadzenButton Icon="add" Text="@Localizer["add_provider"]"
-                          ButtonStyle="ButtonStyle.Primary"
-                          Click="CreateProvider"
-                          Class="btn-primary" />
+            <div style="display: flex; gap: 8px;">
+                <RadzenButton Icon="contacts"
+                              ButtonStyle="ButtonStyle.Light"
+                              Click="@ExportTiersToTxtAsync"
+                              Title="Exporter Tiers (Clients + Fournisseurs)"
+                              AriaLabel="Exporter Tiers" />
+                <RadzenButton Icon="add" Text="@Localizer["add_provider"]"
+                              ButtonStyle="ButtonStyle.Primary"
+                              Click="CreateProvider"
+                              Class="btn-primary" />
+            </div>
         </div>
 
         <RadzenTextBox Placeholder="@Localizer["Search"]"
@@ -63,6 +72,11 @@
                 <RadzenDataGridColumn TItem="ProviderResponse" Property="Mail" Title="@Localizer["provider_email"]" Width="@EmailColumnWidth">
                     <Template Context="provider">
                         <span class="grid-cell">@provider.Mail</span>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ProviderResponse" Property="ExonereRetenueSource" Title="@Localizer["exonere_retenue_source"]" Width="140px">
+                    <Template Context="provider">
+                        <span class="grid-cell">@(provider.ExonereRetenueSource ? Localizer["Oui"] : Localizer["Non"])</span>
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="ProviderResponse" Filterable="false" Sortable="false" Width="@ActionsColumnWidth" TextAlign="TextAlign.Center">
@@ -386,5 +400,28 @@
     private void EditProvider(int id)
     {
         navigationManager.NavigateTo($"/editprovider/{id}");
+    }
+
+    private async Task ExportTiersToTxtAsync()
+    {
+        try
+        {
+            var fileBytes = await TiersService.ExportTiersToTxtAsync("fournisseur", default);
+            var fileName = $"Fournisseurs_{DateTime.Now:yyyyMMdd_HHmmss}.txt";
+
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileName, Convert.ToBase64String(fileBytes));
+            
+            ShowNotification(
+                NotificationSeverity.Success,
+                "Succès",
+                "Export Fournisseurs réussi");
+        }
+        catch (Exception ex)
+        {
+            ShowNotification(
+                NotificationSeverity.Error,
+                "Erreur",
+                $"Erreur lors de l'export Fournisseurs: {ex.Message}");
+        }
     }
 }

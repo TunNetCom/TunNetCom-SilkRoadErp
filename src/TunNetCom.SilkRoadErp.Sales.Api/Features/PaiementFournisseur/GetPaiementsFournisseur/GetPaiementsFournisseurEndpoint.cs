@@ -1,5 +1,6 @@
 using TunNetCom.SilkRoadErp.Sales.Contracts.PaiementFournisseur;
 using TunNetCom.SilkRoadErp.Sales.Contracts;
+using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Constants;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.PaiementFournisseur.GetPaiementsFournisseur;
 
@@ -8,6 +9,8 @@ public class GetPaiementsFournisseurEndpoint : ICarterModule
     public void AddRoutes(IEndpointRouteBuilder app)
     {
         _ = app.MapGet("/paiement-fournisseur", HandleGetPaiementsFournisseurAsync)
+            .RequireAuthorization($"Permission:{Permissions.ViewPaymentsFournisseur}")
+            .RequireRateLimiting("paiement-fournisseur")
             .WithTags(EndpointTags.PaiementFournisseur);
     }
 
@@ -18,9 +21,11 @@ public class GetPaiementsFournisseurEndpoint : ICarterModule
     {
         var query = new GetPaiementsFournisseurQuery(
             queryParams.FournisseurId,
-            queryParams.AccountingYearId,
+            queryParams.AccountingYearIds,
             queryParams.DateEcheanceFrom,
             queryParams.DateEcheanceTo,
+            queryParams.DatePaiementFrom,
+            queryParams.DatePaiementTo,
             queryParams.MontantMin,
             queryParams.MontantMax,
             queryParams.HasNumeroTransactionBancaire,
@@ -37,9 +42,11 @@ public class GetPaiementsFournisseurEndpoint : ICarterModule
 public class GetPaiementsFournisseurQueryParams : QueryStringParameters
 {
     public int? FournisseurId { get; set; }
-    public int? AccountingYearId { get; set; }
+    public int[]? AccountingYearIds { get; set; }
     public DateTime? DateEcheanceFrom { get; set; }
     public DateTime? DateEcheanceTo { get; set; }
+    public DateTime? DatePaiementFrom { get; set; }
+    public DateTime? DatePaiementTo { get; set; }
     public decimal? MontantMin { get; set; }
     public decimal? MontantMax { get; set; }
     public bool? HasNumeroTransactionBancaire { get; set; }

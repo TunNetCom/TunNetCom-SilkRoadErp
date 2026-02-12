@@ -20,6 +20,7 @@ public class GetProductByRefQueryHandler(
         _logger.LogEntityFetchedById(nameof(Produit), getProductByRefQuery.Refe);
         var productResponse = new ProductResponse
         {
+            Id = product.Id,
             DiscountPourcentageOfPurchasing = product.RemiseAchat,
             DiscountPourcentage = product.Remise,
             Name = product.Nom,

@@ -1,4 +1,5 @@
 using TunNetCom.SilkRoadErp.Sales.Api.Features.AppParameters.GetAppParameters;
+using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;
 using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderInvoice.GetProvidersInvoices;
@@ -66,6 +67,52 @@ public class GetProvidersInvoicesQueryHandler(
             query.PageSize,
             cancellationToken);
 
+        var invoiceNums = pagedResult.Items.Select(i => i.Num).ToList();
+        var invoiceIds = pagedResult.Items.Select(i => i.Id).ToList();
+
+        var avoirsByInvoice = await _context.AvoirFinancierFournisseurs
+            .AsNoTracking()
+            .Where(a => a.NumFactureFournisseur != null && invoiceNums.Contains(a.NumFactureFournisseur.Value))
+            .Select(a => new { a.NumFactureFournisseur!.Value, Avoir = new AvoirFinancierSummary { Id = a.Id, Num = a.Num, Date = a.Date, TotTtc = a.TotTtc, Description = a.Description } })
+            .ToListAsync(cancellationToken);
+        var avoirsGrouped = avoirsByInvoice.GroupBy(x => x.Value).ToDictionary(g => g.Key, g => g.Select(x => x.Avoir).ToList());
+
+        // Total et liste des factures avoir fournisseur (avoirs normaux) rattachées à chaque facture (par FactureFournisseurId = Id)
+        var facturesAvoirTotals = await _context.FactureAvoirFournisseur
+            .AsNoTracking()
+            .Where(fa => fa.FactureFournisseurId != null && invoiceIds.Contains(fa.FactureFournisseurId.Value))
+            .Select(fa => new { fa.FactureFournisseurId, Total = fa.AvoirFournisseur.SelectMany(a => a.LigneAvoirFournisseur).Sum(l => l.TotTtc) })
+            .ToListAsync(cancellationToken);
+        var facturesAvoirByInvoiceId = facturesAvoirTotals
+            .GroupBy(x => x.FactureFournisseurId!.Value)
+            .ToDictionary(g => g.Key, g => g.Sum(x => x.Total));
+
+        var facturesAvoirList = await _context.FactureAvoirFournisseur
+            .AsNoTracking()
+            .Where(fa => fa.FactureFournisseurId != null && invoiceIds.Contains(fa.FactureFournisseurId.Value))
+            .Select(fa => new
+            {
+                fa.FactureFournisseurId,
+                Summary = new FactureAvoirSummary
+                {
+                    Id = fa.Id,
+                    NumFactureAvoirFourSurPage = fa.NumFactureAvoirFourSurPage,
+                    Date = fa.Date,
+                    TotTtc = fa.AvoirFournisseur.SelectMany(a => a.LigneAvoirFournisseur).Sum(l => l.TotTtc)
+                }
+            })
+            .ToListAsync(cancellationToken);
+        var facturesAvoirGrouped = facturesAvoirList
+            .GroupBy(x => x.FactureFournisseurId!.Value)
+            .ToDictionary(g => g.Key, g => g.Select(x => x.Summary).ToList());
+
+        foreach (var invoice in pagedResult.Items)
+        {
+            invoice.AvoirsFinanciers = avoirsGrouped.TryGetValue(invoice.Num, out var list) ? list : new List<AvoirFinancierSummary>();
+            invoice.TotalFacturesAvoir = facturesAvoirByInvoiceId.TryGetValue(invoice.Id, out var totalFa) ? totalFa : 0;
+            invoice.FacturesAvoir = facturesAvoirGrouped.TryGetValue(invoice.Id, out var facturesAvoir) ? facturesAvoir : new List<FactureAvoirSummary>();
+        }
+
         var totalGrossAmount = await invoiceQuery.SumAsync(r => r.TotHTva, cancellationToken);
         var totalNetAmount = await invoiceQuery.SumAsync(r => r.TotTTC, cancellationToken);
         var totalVATAmount = await invoiceQuery.SumAsync(r => r.TotTTC - r.TotHTva, cancellationToken);
@@ -76,11 +123,12 @@ public class GetProvidersInvoicesQueryHandler(
             query.PageNumber,
             query.PageSize);
 
+        // TotalNetAmount = HT (hors taxes), TotalGrossAmount = TTC (toutes taxes comprises)
         var result = new GetProviderInvoicesWithSummary
         {
             Invoices = pagedResult,
-            TotalGrossAmount = totalGrossAmount,
-            TotalNetAmount = totalNetAmount,
+            TotalGrossAmount = totalNetAmount,
+            TotalNetAmount = totalGrossAmount,
             TotalVATAmount = totalVATAmount
         };
 

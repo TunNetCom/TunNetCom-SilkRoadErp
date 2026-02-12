@@ -23,8 +23,11 @@
 @inject Radzen.NotificationService NotificationService
 @inject DialogService DialogService
 @inject IInvoicesApiClient InvoicesService
+@inject IJSRuntime JS
 @using TunNetCom.SilkRoadErp.Sales.Domain.Entites
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Sorting
 
 
 <div class="delivery-notes-list-container">
@@ -58,10 +61,12 @@
                                     @bind-Value="@searchCriteria.SelectedTechnicianId"
                                     LoadData="@LoadTechnicians"
                                     AllowFiltering="true"
+                                    Count="@techniciansCount"
+                                    PageSize="15"
                                     class="w-100 search-input"
                                     Data="@_filteredTechnicians"
-                                    TextProperty="@nameof(InstallationTechnicianBaseInfo.Nom)"
-                                    ValueProperty="@nameof(InstallationTechnicianBaseInfo.Id)"
+                                    TextProperty="@nameof(InstallationTechnicianResponse.Nom)"
+                                    ValueProperty="@nameof(InstallationTechnicianResponse.Id)"
                                     Placeholder="Sélectionner un installateur">
                 <Template Context="technician">
                     <div style="display: flex; align-items: center; gap: 8px;">
@@ -75,7 +80,7 @@
                                 <RadzenIcon Icon="person" Style="font-size: 10px;" />
                             </div>
                         }
-                        <span>@technician.Nom</span>
+                        <span>@technician.Nom @(string.IsNullOrEmpty(technician.Tel) ? "" : $"({technician.Tel})")</span>
                     </div>
                 </Template>
                 <ValueTemplate Context="technician">
@@ -94,8 +99,9 @@
                     </div>
                 </ValueTemplate>
                 <Columns>
-                    <RadzenDropDownDataGridColumn Property="@nameof(InstallationTechnicianBaseInfo.Id)" Title="ID" Width="80px" />
-                    <RadzenDropDownDataGridColumn Property="@nameof(InstallationTechnicianBaseInfo.Nom)" Title="Nom" Width="220px" />
+                    <RadzenDropDownDataGridColumn Property="@nameof(InstallationTechnicianResponse.Id)" Title="ID" Width="80px" />
+                    <RadzenDropDownDataGridColumn Property="@nameof(InstallationTechnicianResponse.Nom)" Title="Nom" Width="180px" />
+                    <RadzenDropDownDataGridColumn Property="@nameof(InstallationTechnicianResponse.Tel)" Title="Téléphone" Width="120px" />
                 </Columns>
             </RadzenDropDownDataGrid>
         </div>
@@ -127,6 +133,20 @@
                           Title="Valider la sélection"
                           AriaLabel="Valider la sélection"
                           class="action-button" />
+            <RadzenButton Icon="table_chart"
+                          ButtonStyle="ButtonStyle.Info"
+                          Click="@ExportToExcelAsync"
+                          class="action-button"
+                          Style="margin-left: 8px;"
+                          Title="Exporter vers Excel"
+                          AriaLabel="Exporter vers Excel" />
+            <RadzenButton Icon="picture_as_pdf"
+                          ButtonStyle="ButtonStyle.Warning"
+                          Click="@ExportToPdfAsync"
+                          class="action-button"
+                          Style="margin-left: 8px;"
+                          Title="Exporter vers PDF"
+                          AriaLabel="Exporter vers PDF" />
         </div>
     </div>
     <div class="list-card">
@@ -143,7 +163,8 @@
                         PageSize="@pageSize"
                         PageSizeOptions="@GridPageSizeConstants.PageSizeOptions"
                         Count="@totalCount"
-                        AllowColumnResize="true">
+                        AllowColumnResize="true"
+                        Loading="@_isLoadingList">
             <EmptyTemplate>
                 <p style="font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
             </EmptyTemplate>
@@ -472,7 +493,11 @@
     private int pageSize = GridPageSizeConstants.PageSize10;
     private SearchCriteria searchCriteria = new SearchCriteria();
     private List<CustomerResponse> _filteredCustomers = new();
-    private List<InstallationTechnicianBaseInfo> _filteredTechnicians = new();
+    private List<InstallationTechnicianResponse> _filteredTechnicians = new();
+    private int techniciansCount = 0;
+    private string? _lastSortProperty;
+    private string? _lastSortOrder;
+    private bool _isLoadingList;
 
     protected override async Task OnInitializedAsync()
     {
@@ -523,19 +548,23 @@
     {
         try
         {
-            _filteredTechnicians = await TechnicianService.GetInstallationTechniciansBaseInfosAsync(default);
-            
-            // Apply filter if provided
-            if (!string.IsNullOrEmpty(args?.Filter))
-            {
-                _filteredTechnicians = _filteredTechnicians
-                    .Where(t => t.Nom.Contains(args.Filter, StringComparison.OrdinalIgnoreCase))
-                    .ToList();
-            }
+            var effectiveArgs = args ?? new LoadDataArgs { Skip = 0, Top = 15 };
+            if (!effectiveArgs.Top.HasValue || effectiveArgs.Top.Value <= 0)
+                effectiveArgs = new LoadDataArgs { Skip = effectiveArgs.Skip ?? 0, Top = 15, Filter = effectiveArgs.Filter };
+
+            var response = await ODataService.QueryAsync<InstallationTechnicianResponse>(
+                entitySet: "InstallationTechnicianBaseInfos",
+                args: effectiveArgs,
+                cancellationToken: default);
+
+            _filteredTechnicians = response.Value ?? new List<InstallationTechnicianResponse>();
+            techniciansCount = response.ODataCount ?? _filteredTechnicians.Count;
         }
         catch (Exception ex)
         {
-            _filteredTechnicians = new List<InstallationTechnicianBaseInfo>();
+            _logger.LogError(ex, "Error loading technicians: {Message}", ex.Message);
+            _filteredTechnicians = new List<InstallationTechnicianResponse>();
+            techniciansCount = 0;
         }
 
         await InvokeAsync(StateHasChanged);
@@ -637,11 +666,17 @@
     private async Task Callback(LoadDataArgs args)
     {
         _logger.LogInformation("DeliveryNotesList.Callback called with Skip: {Skip}, Top: {Top}", args.Skip, args.Top);
-        
+        _isLoadingList = true;
         // Update pageSize if Top is provided
-        if (args.Top.HasValue)
+        if (args.Top.HasValue && args.Top.Value > 0)
         {
             pageSize = args.Top.Value;
+        }
+        
+        // Ensure pageSize is valid
+        if (pageSize <= 0)
+        {
+            pageSize = GridPageSizeConstants.PageSize10;
         }
         
         var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
@@ -656,17 +691,25 @@
             _logger.LogInformation("Calling DeliveryNoteService.GetDeliveryNotesWithSummariesAsync");
             
             // Calculate page number from Skip and pageSize
-            var pageNumber = (args.Skip ?? 0) / pageSize + 1;
+            var skip = args.Skip ?? 0;
+            var pageNumber = skip / pageSize + 1;
             
-            // Determine sort order and property from args
+            // Determine sort order and property from args (default: by document number ascending)
             string? sortOrder = null;
             string? sortProperty = null;
             if (args.Sorts != null && args.Sorts.Any())
             {
                 var firstSort = args.Sorts.First();
-                sortOrder = firstSort.SortOrder == SortOrder.Ascending ? "asc" : "desc";
+                sortOrder = firstSort.SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending;
                 sortProperty = firstSort.Property;
             }
+            else
+            {
+                sortProperty = nameof(GetDeliveryNoteBaseInfos.Number);
+                sortOrder = SortConstants.Ascending;
+            }
+            _lastSortProperty = sortProperty;
+            _lastSortOrder = sortOrder;
 
             // Determine isInvoiced from InvoiceStatus filter
             bool? isInvoiced = null;
@@ -717,6 +760,10 @@
                 Summary = Localizer["Error"], 
                 Detail = $"Erreur lors du chargement des données: {ex.Message}" 
             });
+        }
+        finally
+        {
+            _isLoadingList = false;
         }
 
         await InvokeAsync(StateHasChanged);
@@ -786,6 +833,108 @@
         {
             // Optionnel : recharger la liste des BL
             await SearchDeliveryNotes();
+        }
+    }
+
+    private async Task ExportToExcelAsync()
+    {
+        try
+        {
+            _logger.LogInformation("ExportToExcelAsync called for delivery notes");
+
+            var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
+                searchCriteria.PeriodFilter,
+                searchCriteria.StartDate,
+                searchCriteria.EndDate);
+
+            var columnsToExport = new[] { "Number", "Date", "CustomerName", "NetAmount", "VatAmount" };
+            var orderBy = !string.IsNullOrEmpty(_lastSortProperty) && _lastSortOrder != null
+                ? $"{_lastSortProperty} {(_lastSortOrder == SortConstants.Ascending ? SortConstants.Ascending : SortConstants.Descending)}"
+                : null;
+
+            var (content, fileName) = await DeliveryNoteService.ExportDeliveryNotesToExcelAsync(
+                startDate,
+                endDate,
+                searchCriteria.SelectedCustomerId,
+                searchCriteria.SelectedTechnicianId,
+                searchCriteria.SelectedTagIds?.Any() == true ? searchCriteria.SelectedTagIds : null,
+                searchCriteria.Status,
+                columnsToExport,
+                orderBy,
+                default);
+
+            await JS.InvokeVoidAsync("downloadFile", fileName, Convert.ToBase64String(content));
+
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = Localizer["Success"],
+                Detail = "Export Excel réussi"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error exporting delivery notes to Excel");
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Error"],
+                Detail = $"Erreur lors de l'export: {ex.Message}"
+            });
+        }
+    }
+
+    private async Task ExportToPdfAsync()
+    {
+        try
+        {
+            _logger.LogInformation("ExportToPdfAsync called for delivery notes");
+
+            var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
+                searchCriteria.PeriodFilter,
+                searchCriteria.StartDate,
+                searchCriteria.EndDate);
+
+            var columnsToExport = new[] { "Number", "Date", "CustomerName", "NetAmount", "VatAmount" };
+            var orderBy = !string.IsNullOrEmpty(_lastSortProperty) && _lastSortOrder != null
+                ? $"{_lastSortProperty} {(_lastSortOrder == SortConstants.Ascending ? SortConstants.Ascending : SortConstants.Descending)}"
+                : null;
+
+            var (content, fileName) = await DeliveryNoteService.ExportDeliveryNotesToPdfAsync(
+                startDate,
+                endDate,
+                searchCriteria.SelectedCustomerId,
+                searchCriteria.SelectedTechnicianId,
+                searchCriteria.SelectedTagIds?.Any() == true ? searchCriteria.SelectedTagIds : null,
+                searchCriteria.Status,
+                columnsToExport,
+                orderBy,
+                default);
+
+            await DialogService.OpenAsync<PdfViewerDialog>(
+                Localizer["print_mode"],
+                new Dictionary<string, object>
+                {
+                    { "PdfBytes", content },
+                    { "FileName", fileName }
+                },
+                new DialogOptions()
+                {
+                    Width = "900px",
+                    Height = "800px",
+                    Resizable = true,
+                    Draggable = true
+                });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error exporting delivery notes to PDF");
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Error"],
+                Detail = $"Erreur lors de l'export: {ex.Message}"
+            });
         }
     }
 }

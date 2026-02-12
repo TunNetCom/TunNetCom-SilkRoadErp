@@ -1,9 +1,5 @@
 using Carter;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using TunNetCom.SilkRoadErp.Sales.Api.Features.AppParameters.GetAppParameters;
-using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;
-using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ProviderInvoices.GetProviderInvoiceTotals;
 
@@ -18,10 +14,8 @@ public class GetProviderInvoiceTotalsEndpoint : ICarterModule
     }
 
     public static async Task<Results<Ok<ProviderInvoiceTotalsResponse>, StatusCodeHttpResult>> HandleGetTotalsAsync(
-        [FromServices] SalesContext context,
         [FromServices] IMediator mediator,
         [FromServices] ILogger<GetProviderInvoiceTotalsEndpoint> logger,
-        [FromServices] IAccountingYearFinancialParametersService financialParametersService,
         [FromQuery] DateTime? startDate = null,
         [FromQuery] DateTime? endDate = null,
         [FromQuery] int? providerId = null,
@@ -35,75 +29,7 @@ public class GetProviderInvoiceTotalsEndpoint : ICarterModule
                 "GetProviderInvoiceTotalsEndpoint called with startDate: {StartDate}, endDate: {EndDate}, providerId: {ProviderId}, tagIds: {TagIds}, status: {Status}",
                 startDate, endDate, providerId, tagIds != null ? string.Join(",", tagIds) : "null", status);
 
-            // Get financial parameters from service
-            var appParams = await mediator.Send(new GetAppParametersQuery(), cancellationToken);
-            var vatRate7 = (int)await financialParametersService.GetVatRate7Async(appParams.Value.VatRate7, cancellationToken);
-            var vatRate13 = (int)await financialParametersService.GetVatRate13Async(appParams.Value.VatRate13, cancellationToken);
-            var vatRate19 = (int)await financialParametersService.GetVatRate19Async(appParams.Value.VatRate19, cancellationToken);
-
-            // Build base query for provider invoices
-            var invoiceQuery = context.FactureFournisseur.AsQueryable();
-
-            if (startDate.HasValue)
-            {
-                invoiceQuery = invoiceQuery.Where(ff => ff.Date >= startDate.Value);
-            }
-
-            if (endDate.HasValue)
-            {
-                var endDateInclusive = endDate.Value.Date.AddDays(1).AddTicks(-1);
-                invoiceQuery = invoiceQuery.Where(ff => ff.Date <= endDateInclusive);
-            }
-
-            if (providerId.HasValue)
-            {
-                invoiceQuery = invoiceQuery.Where(ff => ff.IdFournisseur == providerId.Value);
-            }
-
-            if (status.HasValue)
-            {
-                invoiceQuery = invoiceQuery.Where(ff => (int)ff.Statut == status.Value);
-            }
-
-            if (tagIds != null && tagIds.Any())
-            {
-                invoiceQuery = invoiceQuery.Where(ff => context.DocumentTag
-                    .Any(dt => dt.DocumentType == "FactureFournisseur"
-                        && dt.DocumentId == ff.Num
-                        && tagIds.Contains(dt.TagId)));
-            }
-
-            // Get all invoice numbers matching the criteria
-            var invoiceNumbers = await invoiceQuery.Select(ff => ff.Num).ToListAsync(cancellationToken);
-
-            // Calculate totals from receipt note lines
-            var linesQuery = from br in context.BonDeReception
-                            where br.NumFactureFournisseur.HasValue && invoiceNumbers.Contains(br.NumFactureFournisseur.Value)
-                            join line in context.LigneBonReception on br.Id equals line.BonDeReceptionId
-                            select new { line.TotHt, line.TotTtc, Tva = (int)line.Tva };
-
-            var lines = await linesQuery.ToListAsync(cancellationToken);
-
-            var totalHT = lines.Sum(l => l.TotHt);
-            var totalVat7 = lines.Where(l => l.Tva == vatRate7).Sum(l => l.TotTtc - l.TotHt);
-            var totalVat13 = lines.Where(l => l.Tva == vatRate13).Sum(l => l.TotTtc - l.TotHt);
-            var totalVat19 = lines.Where(l => l.Tva == vatRate19).Sum(l => l.TotTtc - l.TotHt);
-            var totalVat = totalVat7 + totalVat13 + totalVat19;
-            var totalTTC = totalHT + totalVat;
-
-            var response = new ProviderInvoiceTotalsResponse
-            {
-                TotalHT = totalHT,
-                TotalVat7 = totalVat7,
-                TotalVat13 = totalVat13,
-                TotalVat19 = totalVat19,
-                TotalVat = totalVat,
-                TotalTTC = totalTTC
-            };
-
-            logger.LogInformation("Provider invoice totals calculated: HT={TotalHT}, TVA7={TotalVat7}, TVA13={TotalVat13}, TVA19={TotalVat19}, TTC={TotalTTC}",
-                response.TotalHT, response.TotalVat7, response.TotalVat13, response.TotalVat19, response.TotalTTC);
-
+            var response = await mediator.Send(new GetProviderInvoiceTotalsQuery(startDate, endDate, providerId, tagIds, status), cancellationToken);
             return TypedResults.Ok(response);
         }
         catch (Exception ex)

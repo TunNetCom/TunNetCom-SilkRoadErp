@@ -14,7 +14,9 @@ public interface IPaiementClientApiClient
 
     Task<PagedList<PaiementClientResponse>> GetPaiementsClientAsync(
         int? clientId,
-        int? accountingYearId,
+        IEnumerable<int>? accountingYearIds,
+        DateTime? datePaiementFrom,
+        DateTime? datePaiementTo,
         DateTime? dateEcheanceFrom,
         DateTime? dateEcheanceTo,
         decimal? montantMin,

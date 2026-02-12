@@ -21,6 +21,7 @@ public class GetProviderQueryHandler(SalesContext _context, ILogger<GetProviderQ
                 Constructeur = t.Constructeur,
                 Adresse = t.Adresse,
                 TauxRetenu = t.TauxRetenu,
+                ExonereRetenueSource = t.ExonereRetenueSource,
                 RibCodeEtab = t.RibCodeEtab,
                 RibCodeAgence = t.RibCodeAgence,
                 RibNumeroCompte = t.RibNumeroCompte,

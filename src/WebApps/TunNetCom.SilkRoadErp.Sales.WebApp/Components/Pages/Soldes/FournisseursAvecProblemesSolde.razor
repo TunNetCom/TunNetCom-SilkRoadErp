@@ -1,0 +1,214 @@
+@page "/soldes-fournisseurs-problemes"
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Soldes
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Soldes
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using Radzen.Blazor
+@using Radzen
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<SharedResource> Localizer
+@inject ISoldesApiClient SoldesService
+@inject Radzen.NotificationService NotificationService
+@inject IDecimalFormatService DecimalFormatService
+
+<div class="fournisseurs-problemes-container">
+    <div class="fournisseurs-problemes-card">
+        <div class="fournisseurs-problemes-header">
+            <h3 class="fournisseurs-problemes-title">@Localizer["Fournisseurs_Avec_Problemes_Solde"]</h3>
+        </div>
+
+        <RadzenDataGrid @ref="fournisseursGrid"
+                        TItem="FournisseurSoldeProblemeResponse"
+                        Data="@fournisseurs"
+                        Count="@totalCount"
+                        LoadData="@LoadFournisseursData"
+                        AllowFiltering="true"
+                        AllowPaging="true"
+                        AllowSorting="true"
+                        FilterPopupRenderMode="PopupRenderMode.OnDemand"
+                        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                        PageSize="@defaultPageSize"
+                        PageSizeOptions="@GridPageSizeConstants.PageSizeOptions"
+                        Density="Density.Compact"
+                        Class="fournisseurs-problemes-grid"
+                        IsLoading="@isLoading"
+                        ShowPagingSummary="true"
+                        Responsive="true">
+            <EmptyTemplate>
+                <p style="font-size: 24px; text-align: center; margin: 2rem;">@Localizer["no_records_to_display"]</p>
+            </EmptyTemplate>
+            <Columns>
+                <RadzenDataGridColumn TItem="FournisseurSoldeProblemeResponse" Property="FournisseurNom" Title="@Localizer["Nom"]" Width="200px">
+                    <Template Context="item">
+                        <span class="grid-cell fournisseur-name" @onclick="@(() => NavigateToSolde(item.FournisseurId))" style="cursor: pointer; color: #1a73e8; text-decoration: underline;">
+                            @item.FournisseurNom
+                        </span>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="FournisseurSoldeProblemeResponse" Property="Solde" Title="@Localizer["Solde"]" Width="150px">
+                    <Template Context="item">
+                        <span class="grid-cell @(item.Solde < 0 ? "solde-negatif" : "solde-positif")">
+                            @item.Solde.FormatAmount(decimalPlaces) TND
+                        </span>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="FournisseurSoldeProblemeResponse" Property="TotalFactures" Title="@Localizer["Total_Factures"]" Width="150px">
+                    <Template Context="item">
+                        <span class="grid-cell">
+                            @item.TotalFactures.FormatAmount(decimalPlaces) TND
+                        </span>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="FournisseurSoldeProblemeResponse" Property="TotalFacturesAvoir" Title="@Localizer["Total_Factures_Avoir"]" Width="150px">
+                    <Template Context="item">
+                        <span class="grid-cell">
+                            @item.TotalFacturesAvoir.FormatAmount(decimalPlaces) TND
+                        </span>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="FournisseurSoldeProblemeResponse" Property="TotalAvoirsFinanciers" Title="@Localizer["Total_Avoirs_Financiers"]" Width="150px">
+                    <Template Context="item">
+                        <span class="grid-cell">
+                            @item.TotalAvoirsFinanciers.FormatAmount(decimalPlaces) TND
+                        </span>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="FournisseurSoldeProblemeResponse" Property="TotalPaiements" Title="@Localizer["Total_Paiements"]" Width="150px">
+                    <Template Context="item">
+                        <span class="grid-cell">
+                            @item.TotalPaiements.FormatAmount(decimalPlaces) TND
+                        </span>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="FournisseurSoldeProblemeResponse" Property="DateDernierDocument" Title="@Localizer["Date_Dernier_Document"]" Width="180px">
+                    <Template Context="item">
+                        <span class="grid-cell">
+                            @(item.DateDernierDocument?.ToString("dd/MM/yyyy") ?? "-")
+                        </span>
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    </div>
+</div>
+
+<style>
+    .fournisseurs-problemes-container {
+        padding: 0.25rem 1.25rem 1.25rem 1.25rem;
+        max-width: 1400px;
+        margin: 0.25rem auto 1rem auto;
+    }
+
+    .fournisseurs-problemes-card {
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        padding: 0.75rem 1.5rem 1.5rem 1.5rem;
+        border: none;
+    }
+
+    .fournisseurs-problemes-header {
+        margin-bottom: 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .fournisseurs-problemes-title {
+        font-weight: 600;
+        margin: 0;
+        font-size: 2rem;
+        line-height: 1.2;
+    }
+
+    .fournisseurs-problemes-grid {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .grid-cell {
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+
+    .fournisseur-name:hover {
+        color: #135ab6 !important;
+    }
+
+    .solde-positif {
+        color: #4caf50;
+        font-weight: 600;
+    }
+
+    .solde-negatif {
+        color: #f44336;
+        font-weight: 600;
+    }
+</style>
+
+@code {
+    private RadzenDataGrid<FournisseurSoldeProblemeResponse>? fournisseursGrid;
+    private IEnumerable<FournisseurSoldeProblemeResponse> fournisseurs = new List<FournisseurSoldeProblemeResponse>();
+    private int totalCount = 0;
+    private int defaultPageSize = GridPageSizeConstants.PageSize100;
+    private bool isLoading = false;
+    private CancellationTokenSource cancellationTokenSource = new();
+    private int decimalPlaces = AmountHelper.DEFAULT_DECIMAL_PLACES;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        decimalPlaces = await DecimalFormatService.GetDecimalPlacesAsync();
+
+        await LoadFournisseursData(new LoadDataArgs { Skip = 0, Top = defaultPageSize });
+    }
+
+    async Task LoadFournisseursData(LoadDataArgs args)
+    {
+        isLoading = true;
+        try
+        {
+            var pageNumber = (args.Skip ?? 0) / (args.Top ?? defaultPageSize) + 1;
+            var pageSize = args.Top ?? defaultPageSize;
+
+            var result = await SoldesService.GetFournisseursAvecProblemesSoldeAsync(
+                pageNumber,
+                pageSize,
+                null,
+                cancellationTokenSource.Token);
+
+            fournisseurs = result.Items;
+            totalCount = result.TotalCount;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = $"{Localizer["Erreur_Chargement_Providers"] ?? "Erreur chargement"}: {ex.Message}"
+            });
+            fournisseurs = new List<FournisseurSoldeProblemeResponse>();
+            totalCount = 0;
+        }
+        finally
+        {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    void NavigateToSolde(int fournisseurId)
+    {
+        NavigationManager.NavigateTo($"/soldes-fournisseur?fournisseurId={fournisseurId}");
+    }
+
+    public void Dispose()
+    {
+        cancellationTokenSource.Cancel();
+        cancellationTokenSource.Dispose();
+    }
+}

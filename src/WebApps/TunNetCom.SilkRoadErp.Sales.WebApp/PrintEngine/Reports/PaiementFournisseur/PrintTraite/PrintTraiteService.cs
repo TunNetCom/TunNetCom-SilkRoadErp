@@ -2,6 +2,7 @@ using TunNetCom.SilkRoadErp.Sales.Contracts.AppParameters;
 using TunNetCom.SilkRoadErp.Sales.Contracts.PaiementFournisseur;
 using TunNetCom.SilkRoadErp.Sales.Contracts.Providers;
 using TunNetCom.SilkRoadErp.Sales.Contracts.Banque;
+using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 using TunNetCom.SilkRoadErp.Sales.Domain.Services;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PaiementFournisseur;
@@ -39,7 +40,7 @@ public class PrintTraiteService(
         var paiement = paiementResult.Value;
 
         // Vérifier que c'est bien une Traite
-        if (paiement.MethodePaiement != "Traite")
+        if (paiement.MethodePaiement != MethodePaiementConsts.Traite)
         {
             _logger.LogWarning("PaiementFournisseur {PaiementId} is not a Traite (MethodePaiement: {MethodePaiement})", 
                 paiementId, paiement.MethodePaiement);

@@ -1,0 +1,160 @@
+VT    02012570719000     VENTE MDISES 19%                   1001         0001                                               FRE 0001 STE KSONTINI AUTO                        0,000        33,535
+VT    02012543670019     TVA COLLECTEE 19%                  1001         0001                                               FRE 0001 STE KSONTINI AUTO                        0,000         6,372
+VT    02012543710000     DROIT DE TIMBRE                    1001         0001                                               FRE 0001 STE KSONTINI AUTO                        0,000         1,000
+VT    02012541100000     CLIENTS                            1001         0001                              C598             FRE 0001 STE KSONTINI AUTO                       40,907         0,000
+VT    02012570719000     VENTE MDISES 19%                   1002         0002                                               FRE 0002 MR SANDLI ABDERAZEK                      0,000        96,615
+VT    02012543670019     TVA COLLECTEE 19%                  1002         0002                                               FRE 0002 MR SANDLI ABDERAZEK                      0,000        18,357
+VT    02012543710000     DROIT DE TIMBRE                    1002         0002                                               FRE 0002 MR SANDLI ABDERAZEK                      0,000         1,000
+VT    0201254321011      RET 1% REGIME FORFETAIRE           1002         0002                                               FRE 0002 MR SANDLI ABDERAZEK                      0,000         1,150
+VT    02012541100000     CLIENTS                            1002         0002                              C204             FRE 0002 MR SANDLI ABDERAZEK                    117,122         0,000
+VT    02012570719000     VENTE MDISES 19%                   1003         0003                                               FRE 0003 MR BOUKCHIBA BASSEM                      0,000        61,498
+VT    02012543670019     TVA COLLECTEE 19%                  1003         0003                                               FRE 0003 MR BOUKCHIBA BASSEM                      0,000        11,685
+VT    02012543710000     DROIT DE TIMBRE                    1003         0003                                               FRE 0003 MR BOUKCHIBA BASSEM                      0,000         1,000
+VT    0201254321011      RET 1% REGIME FORFETAIRE           1003         0003                                               FRE 0003 MR BOUKCHIBA BASSEM                      0,000         0,732
+VT    02012541100000     CLIENTS                            1003         0003                              C502             FRE 0003 MR BOUKCHIBA BASSEM                     74,915         0,000
+VT    03012570719000     VENTE MDISES 19%                   1004         0004                                               FRE 0004 MR BEN CHEIKH AHMED                      0,000        26,500
+VT    03012543670019     TVA COLLECTEE 19%                  1004         0004                                               FRE 0004 MR BEN CHEIKH AHMED                      0,000         5,035
+VT    03012543710000     DROIT DE TIMBRE                    1004         0004                                               FRE 0004 MR BEN CHEIKH AHMED                      0,000         1,000
+VT    0301254321011      RET 1% REGIME FORFETAIRE           1004         0004                                               FRE 0004 MR BEN CHEIKH AHMED                      0,000         0,315
+VT    03012541100000     CLIENTS                            1004         0004                              C431             FRE 0004 MR BEN CHEIKH AHMED                     32,850         0,000
+VT    03012570719000     VENTE MDISES 19%                   1005         0005                                               FRE 0005 STE KIRAM SUARL                          0,000      1625,505
+VT    03012543670019     TVA COLLECTEE 19%                  1005         0005                                               FRE 0005 STE KIRAM SUARL                          0,000       308,846
+VT    03012543710000     DROIT DE TIMBRE                    1005         0005                                               FRE 0005 STE KIRAM SUARL                          0,000         1,000
+VT    03012541100000     CLIENTS                            1005         0005                              C448             FRE 0005 STE KIRAM SUARL                       1935,351         0,000
+VT    03012570719000     VENTE MDISES 19%                   1006         0006                                               FRE 0006 MR KHALIL LEHWAG                         0,000       257,450
+VT    03012543670019     TVA COLLECTEE 19%                  1006         0006                                               FRE 0006 MR KHALIL LEHWAG                         0,000        48,916
+VT    03012543710000     DROIT DE TIMBRE                    1006         0006                                               FRE 0006 MR KHALIL LEHWAG                         0,000         1,000
+VT    0301254321011      RET 1% REGIME FORFETAIRE           1006         0006                                               FRE 0006 MR KHALIL LEHWAG                         0,000         3,064
+VT    03012541100000     CLIENTS                            1006         0006                              C532             FRE 0006 MR KHALIL LEHWAG                       310,430         0,000
+VT    03012570719000     VENTE MDISES 19%                   1007         0007                                               FRE 0007 STE COMPTOIRE AUTO ET QUIN               0,000       562,772
+VT    03012543670019     TVA COLLECTEE 19%                  1007         0007                                               FRE 0007 STE COMPTOIRE AUTO ET QUIN               0,000       106,927
+VT    03012543710000     DROIT DE TIMBRE                    1007         0007                                               FRE 0007 STE COMPTOIRE AUTO ET QUIN               0,000         1,000
+VT    03012541100000     CLIENTS                            1007         0007                              C024             FRE 0007 STE COMPTOIRE AUTO ET QUIN             670,699         0,000
+VT    03012570719000     VENTE MDISES 19%                   1008         0008                                               FRE 0008 MR MOKHTAR                               0,000       124,816
+VT    03012543670019     TVA COLLECTEE 19%                  1008         0008                                               FRE 0008 MR MOKHTAR                               0,000        23,715
+VT    03012543710000     DROIT DE TIMBRE                    1008         0008                                               FRE 0008 MR MOKHTAR                               0,000         1,000
+VT    03012541100000     CLIENTS                            1008         0008                              C012             FRE 0008 MR MOKHTAR                             149,531         0,000
+VT    03012570719000     VENTE MDISES 19%                   1009         0009                                               FRE 0009 MR EZZEDINE AL GABSI                     0,000       813,058
+VT    03012543670019     TVA COLLECTEE 19%                  1009         0009                                               FRE 0009 MR EZZEDINE AL GABSI                     0,000       154,481
+VT    03012543710000     DROIT DE TIMBRE                    1009         0009                                               FRE 0009 MR EZZEDINE AL GABSI                     0,000         1,000
+VT    03012541100000     CLIENTS                            1009         0009                              C115             FRE 0009 MR EZZEDINE AL GABSI                   968,539         0,000
+VT    03012570719000     VENTE MDISES 19%                   1010         0010                                               FRE 0010 MR OUSSAMA HAMZA                         0,000       132,800
+VT    03012543670019     TVA COLLECTEE 19%                  1010         0010                                               FRE 0010 MR OUSSAMA HAMZA                         0,000        25,232
+VT    03012543710000     DROIT DE TIMBRE                    1010         0010                                               FRE 0010 MR OUSSAMA HAMZA                         0,000         1,000
+VT    0301254321011      RET 1% REGIME FORFETAIRE           1010         0010                                               FRE 0010 MR OUSSAMA HAMZA                         0,000         1,580
+VT    03012541100000     CLIENTS                            1010         0010                              C436             FRE 0010 MR OUSSAMA HAMZA                       160,612         0,000
+VT    03012570719000     VENTE MDISES 19%                   1011         0011                                               FRE 0011 STE AYED ET FILS                         0,000       174,747
+VT    03012543670019     TVA COLLECTEE 19%                  1011         0011                                               FRE 0011 STE AYED ET FILS                         0,000        33,202
+VT    03012543710000     DROIT DE TIMBRE                    1011         0011                                               FRE 0011 STE AYED ET FILS                         0,000         1,000
+VT    03012541100000     CLIENTS                            1011         0011                              C287             FRE 0011 STE AYED ET FILS                       208,949         0,000
+VT    06012570719000     VENTE MDISES 19%                   1012         0012                                               FRE 0012 JAMIL RAI                                0,000        51,750
+VT    06012543670019     TVA COLLECTEE 19%                  1012         0012                                               FRE 0012 JAMIL RAI                                0,000         9,833
+VT    06012543710000     DROIT DE TIMBRE                    1012         0012                                               FRE 0012 JAMIL RAI                                0,000         1,000
+VT    0601254321011      RET 1% REGIME FORFETAIRE           1012         0012                                               FRE 0012 JAMIL RAI                                0,000         0,616
+VT    06012541100000     CLIENTS                            1012         0012                              C123             FRE 0012 JAMIL RAI                               63,199         0,000
+VT    06012570719000     VENTE MDISES 19%                   1013         0013                                               FRE 0013 MR ABD EL KADER ESSID                    0,000        89,700
+VT    06012543670019     TVA COLLECTEE 19%                  1013         0013                                               FRE 0013 MR ABD EL KADER ESSID                    0,000        17,043
+VT    06012543710000     DROIT DE TIMBRE                    1013         0013                                               FRE 0013 MR ABD EL KADER ESSID                    0,000         1,000
+VT    06012541100000     CLIENTS                            1013         0013                              C101             FRE 0013 MR ABD EL KADER ESSID                  107,743         0,000
+VT    06012570719000     VENTE MDISES 19%                   1014         0014                                               FRE 0014 MME HALIMA BEN ZOUITINE                  0,000       528,485
+VT    06012543670019     TVA COLLECTEE 19%                  1014         0014                                               FRE 0014 MME HALIMA BEN ZOUITINE                  0,000       100,412
+VT    06012543710000     DROIT DE TIMBRE                    1014         0014                                               FRE 0014 MME HALIMA BEN ZOUITINE                  0,000         1,000
+VT    0601254321011      RET 1% REGIME FORFETAIRE           1014         0014                                               FRE 0014 MME HALIMA BEN ZOUITINE                  0,000         6,289
+VT    06012541100000     CLIENTS                            1014         0014                              C422             FRE 0014 MME HALIMA BEN ZOUITINE                636,186         0,000
+VT    06012570719000     VENTE MDISES 19%                   1015         0015                                               FRE 0015 MR BOUKCHIBA BASSEM                      0,000        28,518
+VT    06012543670019     TVA COLLECTEE 19%                  1015         0015                                               FRE 0015 MR BOUKCHIBA BASSEM                      0,000         5,418
+VT    06012543710000     DROIT DE TIMBRE                    1015         0015                                               FRE 0015 MR BOUKCHIBA BASSEM                      0,000         1,000
+VT    0601254321011      RET 1% REGIME FORFETAIRE           1015         0015                                               FRE 0015 MR BOUKCHIBA BASSEM                      0,000         0,339
+VT    06012541100000     CLIENTS                            1015         0015                              C502             FRE 0015 MR BOUKCHIBA BASSEM                     35,275         0,000
+VT    07012570719000     VENTE MDISES 19%                   1016         0016                                               FRE 0016 STE COMPTOIRE AUTO ET QUIN               0,000       113,568
+VT    07012543670019     TVA COLLECTEE 19%                  1016         0016                                               FRE 0016 STE COMPTOIRE AUTO ET QUIN               0,000        21,578
+VT    07012543710000     DROIT DE TIMBRE                    1016         0016                                               FRE 0016 STE COMPTOIRE AUTO ET QUIN               0,000         1,000
+VT    07012541100000     CLIENTS                            1016         0016                              C024             FRE 0016 STE COMPTOIRE AUTO ET QUIN             136,146         0,000
+VT    07012570719000     VENTE MDISES 19%                   1017         0017                                               FRE 0017 RAFIKA ZOUAOUI                           0,000       180,711
+VT    07012543670019     TVA COLLECTEE 19%                  1017         0017                                               FRE 0017 RAFIKA ZOUAOUI                           0,000        34,335
+VT    07012543710000     DROIT DE TIMBRE                    1017         0017                                               FRE 0017 RAFIKA ZOUAOUI                           0,000         1,000
+VT    0701254321011      RET 1% REGIME FORFETAIRE           1017         0017                                               FRE 0017 RAFIKA ZOUAOUI                           0,000         2,150
+VT    07012541100000     CLIENTS                            1017         0017                              C075             FRE 0017 RAFIKA ZOUAOUI                         218,196         0,000
+VT    07012570719000     VENTE MDISES 19%                   1018         0018                                               FRE 0018 MR MED B ABDELKADER                      0,000       280,750
+VT    07012543670019     TVA COLLECTEE 19%                  1018         0018                                               FRE 0018 MR MED B ABDELKADER                      0,000        53,343
+VT    07012543710000     DROIT DE TIMBRE                    1018         0018                                               FRE 0018 MR MED B ABDELKADER                      0,000         1,000
+VT    07012541100000     CLIENTS                            1018         0018                              C173             FRE 0018 MR MED B ABDELKADER                    335,093         0,000
+VT    07012570719000     VENTE MDISES 19%                   1019         0019                                               FRE 0019 MR KHALIL LEHWAG                         0,000       239,448
+VT    07012543670019     TVA COLLECTEE 19%                  1019         0019                                               FRE 0019 MR KHALIL LEHWAG                         0,000        45,495
+VT    07012543710000     DROIT DE TIMBRE                    1019         0019                                               FRE 0019 MR KHALIL LEHWAG                         0,000         1,000
+VT    0701254321011      RET 1% REGIME FORFETAIRE           1019         0019                                               FRE 0019 MR KHALIL LEHWAG                         0,000         2,849
+VT    07012541100000     CLIENTS                            1019         0019                              C532             FRE 0019 MR KHALIL LEHWAG                       288,792         0,000
+VT    07012570719000     VENTE MDISES 19%                   1020         0020                                               FRE 0020 STE KIRAM SUARL                          0,000       332,073
+VT    07012543670019     TVA COLLECTEE 19%                  1020         0020                                               FRE 0020 STE KIRAM SUARL                          0,000        63,094
+VT    07012543710000     DROIT DE TIMBRE                    1020         0020                                               FRE 0020 STE KIRAM SUARL                          0,000         1,000
+VT    07012541100000     CLIENTS                            1020         0020                              C448             FRE 0020 STE KIRAM SUARL                        396,167         0,000
+VT    07012570719000     VENTE MDISES 19%                   1021         0021                                               FRE 0021 MR OUSSAMA HAMZA                         0,000       130,284
+VT    07012543670019     TVA COLLECTEE 19%                  1021         0021                                               FRE 0021 MR OUSSAMA HAMZA                         0,000        24,754
+VT    07012543710000     DROIT DE TIMBRE                    1021         0021                                               FRE 0021 MR OUSSAMA HAMZA                         0,000         1,000
+VT    0701254321011      RET 1% REGIME FORFETAIRE           1021         0021                                               FRE 0021 MR OUSSAMA HAMZA                         0,000         1,550
+VT    07012541100000     CLIENTS                            1021         0021                              C436             FRE 0021 MR OUSSAMA HAMZA                       157,588         0,000
+VT    07012570719000     VENTE MDISES 19%                   1091         0091                                               FRE 0091 MR LAGHA GHAZI BEN MASOUD                0,000      5484,540
+VT    07012543670019     TVA COLLECTEE 19%                  1091         0091                                               FRE 0091 MR LAGHA GHAZI BEN MASOUD                0,000      1042,063
+VT    07012543710000     DROIT DE TIMBRE                    1091         0091                                               FRE 0091 MR LAGHA GHAZI BEN MASOUD                0,000         1,000
+VT    07012541100000     CLIENTS                            1091         0091                              C237             FRE 0091 MR LAGHA GHAZI BEN MASOUD             6527,603         0,000
+VT    08012570719000     VENTE MDISES 19%                   1022         0022                                               FRE 0022 HAMZA BELHADJ                            0,000       350,517
+VT    08012543670019     TVA COLLECTEE 19%                  1022         0022                                               FRE 0022 HAMZA BELHADJ                            0,000        66,598
+VT    08012543710000     DROIT DE TIMBRE                    1022         0022                                               FRE 0022 HAMZA BELHADJ                            0,000         1,000
+VT    0801254321011      RET 1% REGIME FORFETAIRE           1022         0022                                               FRE 0022 HAMZA BELHADJ                            0,000         4,171
+VT    08012541100000     CLIENTS                            1022         0022                              C535             FRE 0022 HAMZA BELHADJ                          422,286         0,000
+VT    09012570719000     VENTE MDISES 19%                   1023         0023                                               FRE 0023 MR ABD EL KADER ESSID                    0,000        92,500
+VT    09012543670019     TVA COLLECTEE 19%                  1023         0023                                               FRE 0023 MR ABD EL KADER ESSID                    0,000        17,575
+VT    09012543710000     DROIT DE TIMBRE                    1023         0023                                               FRE 0023 MR ABD EL KADER ESSID                    0,000         1,000
+VT    09012541100000     CLIENTS                            1023         0023                              C101             FRE 0023 MR ABD EL KADER ESSID                  111,075         0,000
+VT    09012570719000     VENTE MDISES 19%                   1024         0024                                               FRE 0024 MR BEN ZID WISSEM BEN                    0,000      2309,473
+VT    09012543670019     TVA COLLECTEE 19%                  1024         0024                                               FRE 0024 MR BEN ZID WISSEM BEN                    0,000       438,800
+VT    09012543710000     DROIT DE TIMBRE                    1024         0024                                               FRE 0024 MR BEN ZID WISSEM BEN                    0,000         1,000
+VT    09012541100000     CLIENTS                            1024         0024                              C487             FRE 0024 MR BEN ZID WISSEM BEN                 2749,273         0,000
+VT    09012570719000     VENTE MDISES 19%                   1025         0025                                               FRE 0025 MR BOUKCHIBA BASSEM                      0,000        51,847
+VT    09012543670019     TVA COLLECTEE 19%                  1025         0025                                               FRE 0025 MR BOUKCHIBA BASSEM                      0,000         9,851
+VT    09012543710000     DROIT DE TIMBRE                    1025         0025                                               FRE 0025 MR BOUKCHIBA BASSEM                      0,000         1,000
+VT    0901254321011      RET 1% REGIME FORFETAIRE           1025         0025                                               FRE 0025 MR BOUKCHIBA BASSEM                      0,000         0,617
+VT    09012541100000     CLIENTS                            1025         0025                              C502             FRE 0025 MR BOUKCHIBA BASSEM                     63,315         0,000
+VT    10012570719000     VENTE MDISES 19%                   1026         0026                                               FRE 0026 STE KIRAM SUARL                          0,000       508,440
+VT    10012543670019     TVA COLLECTEE 19%                  1026         0026                                               FRE 0026 STE KIRAM SUARL                          0,000        96,604
+VT    10012543710000     DROIT DE TIMBRE                    1026         0026                                               FRE 0026 STE KIRAM SUARL                          0,000         1,000
+VT    10012541100000     CLIENTS                            1026         0026                              C448             FRE 0026 STE KIRAM SUARL                        606,044         0,000
+VT    10012570719000     VENTE MDISES 19%                   1027         0027                                               FRE 0027 RAFIKA ZOUAOUI                           0,000       325,920
+VT    10012543670019     TVA COLLECTEE 19%                  1027         0027                                               FRE 0027 RAFIKA ZOUAOUI                           0,000        61,925
+VT    10012543710000     DROIT DE TIMBRE                    1027         0027                                               FRE 0027 RAFIKA ZOUAOUI                           0,000         1,000
+VT    1001254321011      RET 1% REGIME FORFETAIRE           1027         0027                                               FRE 0027 RAFIKA ZOUAOUI                           0,000         3,878
+VT    10012541100000     CLIENTS                            1027         0027                              C075             FRE 0027 RAFIKA ZOUAOUI                         392,723         0,000
+VT    10012570719000     VENTE MDISES 19%                   1028         0028                                               FRE 0028 MR KHALIL LEHWAG                         0,000        52,630
+VT    10012543670019     TVA COLLECTEE 19%                  1028         0028                                               FRE 0028 MR KHALIL LEHWAG                         0,000        10,000
+VT    10012543710000     DROIT DE TIMBRE                    1028         0028                                               FRE 0028 MR KHALIL LEHWAG                         0,000         1,000
+VT    1001254321011      RET 1% REGIME FORFETAIRE           1028         0028                                               FRE 0028 MR KHALIL LEHWAG                         0,000         0,626
+VT    10012541100000     CLIENTS                            1028         0028                              C532             FRE 0028 MR KHALIL LEHWAG                        64,256         0,000
+VT    10012570719000     VENTE MDISES 19%                   1029         0029                                               FRE 0029 MR MOKHTAR                               0,000        85,736
+VT    10012543670019     TVA COLLECTEE 19%                  1029         0029                                               FRE 0029 MR MOKHTAR                               0,000        16,290
+VT    10012543710000     DROIT DE TIMBRE                    1029         0029                                               FRE 0029 MR MOKHTAR                               0,000         1,000
+VT    10012541100000     CLIENTS                            1029         0029                              C012             FRE 0029 MR MOKHTAR                             103,026         0,000
+VT    10012570719000     VENTE MDISES 19%                   1030         0030                                               FRE 0030 SLIM BACCAR                              0,000       247,000
+VT    10012543670019     TVA COLLECTEE 19%                  1030         0030                                               FRE 0030 SLIM BACCAR                              0,000        46,930
+VT    10012543710000     DROIT DE TIMBRE                    1030         0030                                               FRE 0030 SLIM BACCAR                              0,000         1,000
+VT    1001254321011      RET 1% REGIME FORFETAIRE           1030         0030                                               FRE 0030 SLIM BACCAR                              0,000         2,939
+VT    10012541100000     CLIENTS                            1030         0030                              C557             FRE 0030 SLIM BACCAR                            297,869         0,000
+VT    10012570719000     VENTE MDISES 19%                   1031         0031                                               FRE 0031 STE AYED ET FILS                         0,000       263,097
+VT    10012543670019     TVA COLLECTEE 19%                  1031         0031                                               FRE 0031 STE AYED ET FILS                         0,000        49,988
+VT    10012543710000     DROIT DE TIMBRE                    1031         0031                                               FRE 0031 STE AYED ET FILS                         0,000         1,000
+VT    10012541100000     CLIENTS                            1031         0031                              C287             FRE 0031 STE AYED ET FILS                       314,085         0,000
+VT    10012570719000     VENTE MDISES 19%                   1032         0032                                               FRE 0032 STE COMPTOIRE AUTO ET QUIN               0,000        38,784
+VT    10012543670019     TVA COLLECTEE 19%                  1032         0032                                               FRE 0032 STE COMPTOIRE AUTO ET QUIN               0,000         7,369
+VT    10012543710000     DROIT DE TIMBRE                    1032         0032                                               FRE 0032 STE COMPTOIRE AUTO ET QUIN               0,000         1,000
+VT    10012541100000     CLIENTS                            1032         0032                              C024             FRE 0032 STE COMPTOIRE AUTO ET QUIN              47,153         0,000
+VT    10012570719000     VENTE MDISES 19%                   1033         0033                                               FRE 0033 MR EZZEDINE AL GABSI                     0,000       620,160
+VT    10012543670019     TVA COLLECTEE 19%                  1033         0033                                               FRE 0033 MR EZZEDINE AL GABSI                     0,000       117,830
+VT    10012543710000     DROIT DE TIMBRE                    1033         0033                                               FRE 0033 MR EZZEDINE AL GABSI                     0,000         1,000
+VT    10012541100000     CLIENTS                            1033         0033                              C115             FRE 0033 MR EZZEDINE AL GABSI                   738,990         0,000
+VT    10012570719000     VENTE MDISES 19%                   1035         0035                                               FRE 0035 STE KSONTINI AUTO                        0,000       111,103
+VT    10012543670019     TVA COLLECTEE 19%                  1035         0035                                               FRE 0035 STE KSONTINI AUTO                        0,000        21,109
+VT    10012543710000     DROIT DE TIMBRE                    1035         0035                                               FRE 0035 STE KSONTINI AUTO                        0,000         1,000
+VT    10012541100000     CLIENTS                            1035         0035                              C598             FRE 0035 STE KSONTINI AUTO                      133,212         0,000
+VT    10012570719000     VENTE MDISES 19%                   1034         0034                                               FRE 0034 MR NOURDDINE ABDELWAHEB                  0,000       408,150
+VT    10012543670019     TVA COLLECTEE 19%                  1034         0034                                               FRE 0034 MR NOURDDINE ABDELWAHEB                  0,000        77,549
+VT    10012543710000     DROIT DE TIMBRE                    1034         0034                                               FRE 0034 MR NOURDDINE ABDELWAHEB                  0,000         1,000
+VT    10012541100000     CLIENTS                            1034         0034                              C197             FRE 0034 MR NOURDDINE ABDELWAHEB                486,699         0,000

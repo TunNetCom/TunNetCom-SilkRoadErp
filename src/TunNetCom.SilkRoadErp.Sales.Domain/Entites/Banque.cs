@@ -30,5 +30,9 @@ public partial class Banque
     public virtual ICollection<PaiementClient> PaiementClient { get; set; } = new List<PaiementClient>();
 
     public virtual ICollection<PaiementFournisseur> PaiementFournisseur { get; set; } = new List<PaiementFournisseur>();
+
+    public virtual ICollection<PaiementTiersDepense> PaiementTiersDepense { get; set; } = new List<PaiementTiersDepense>();
+
+    public virtual ICollection<CompteBancaire> CompteBancaire { get; set; } = new List<CompteBancaire>();
 }
 
