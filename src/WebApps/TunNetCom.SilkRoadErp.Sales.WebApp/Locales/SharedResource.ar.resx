@@ -621,6 +621,9 @@
   <data name="Manage_Invoices" xml:space="preserve">
     <value>إدارة الفواتير</value>
   </data>
+  <data name="Devis" xml:space="preserve">
+    <value>عرض سعر</value>
+  </data>
   <data name="Delivery_Note" xml:space="preserve">
     <value>بوليصة التسليم</value>
   </data>
@@ -641,6 +644,9 @@
   </data>
   <data name="Articles" xml:space="preserve">
     <value>المقالات</value>
+  </data>
+  <data name="Acces_Rapide" xml:space="preserve">
+    <value>وصول سريع</value>
   </data>
   <data name="Silk_Road_ERP" xml:space="preserve">
     <value>نظام إدارة طريق الحرير</value>

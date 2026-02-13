@@ -639,6 +639,9 @@
   <data name="Manage_Invoices" xml:space="preserve">
     <value>Manage Invoices</value>
   </data>
+  <data name="Devis" xml:space="preserve">
+    <value>Quotation</value>
+  </data>
   <data name="Delivery_Note" xml:space="preserve">
     <value>Delivery Note</value>
   </data>
@@ -683,6 +686,9 @@
   </data>
   <data name="Articles" xml:space="preserve">
     <value>Articles</value>
+  </data>
+  <data name="Acces_Rapide" xml:space="preserve">
+    <value>Quick access</value>
   </data>
   <data name="Silk_Road_ERP" xml:space="preserve">
     <value>Silk Road ERP</value>

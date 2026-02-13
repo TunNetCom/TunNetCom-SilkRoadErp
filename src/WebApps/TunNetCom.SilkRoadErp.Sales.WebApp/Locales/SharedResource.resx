@@ -598,6 +598,9 @@
   <data name="Manage_Invoices" xml:space="preserve">
     <value>Gestion Factures</value>
   </data>
+  <data name="Devis" xml:space="preserve">
+    <value>Quotation</value>
+  </data>
   <data name="Delivery_Note" xml:space="preserve">
     <value />
   </data>
@@ -903,6 +906,9 @@
   </data>
   <data name="Acces_Refuse_Factures_Depenses" xml:space="preserve">
     <value>Vous n'avez pas les droits pour accéder aux factures dépenses.</value>
+  </data>
+  <data name="Acces_Rapide" xml:space="preserve">
+    <value>Quick access</value>
   </data>
   <data name="Facture_Depense_Optionnel" xml:space="preserve">
     <value>Facture dépense (optionnel)</value>
