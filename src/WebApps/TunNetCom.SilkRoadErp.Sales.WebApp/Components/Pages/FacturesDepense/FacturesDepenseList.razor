@@ -5,6 +5,7 @@
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.TiersDepenseFonctionnement
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AccountingYear
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.RetenueSourceFactureDepense
 @using TunNetCom.SilkRoadErp.Sales.Contracts
 @using TunNetCom.SilkRoadErp.Sales.Contracts.FactureDepense
 @using TunNetCom.SilkRoadErp.Sales.Contracts.TiersDepenseFonctionnement
@@ -25,6 +26,7 @@
 @inject DialogService DialogService
 @inject IDecimalFormatService DecimalFormatService
 @inject IAppParametersClient AppParametersClient
+@inject IRetenueSourceFactureDepenseApiClient RetenueSourceFactureDepenseClient
 @inject HttpClient HttpClient
 @inject IConfiguration Configuration
 @inject IJSRuntime JS
@@ -87,6 +89,37 @@
                     <Template Context="f">@f.MontantTotal.FormatAmount(decimalPlaces) TND</Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="FactureDepenseSummaryItem" Property="Statut" Title="Statut" Width="100px" />
+                <RadzenDataGridColumn TItem="FactureDepenseSummaryItem" Title="@Localizer["retenue_status"]" Width="120px">
+                    <Template Context="f">
+                        @if (!f.ExonereRetenueSource && f.MontantTotal >= _seuilRetenueSource)
+                        {
+                            @if (f.HasRetenueSource)
+                            {
+                                <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="@Localizer["retenue_exists"]" />
+                            }
+                            else
+                            {
+                                <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="@Localizer["retenue_not_exists"]" />
+                            }
+                        }
+                        @if (f.ExonereRetenueSource)
+                        {
+                            <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="@Localizer["exonere_retenue_source"]" />
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="FactureDepenseSummaryItem" Title="@Localizer["retenue_action"]" Width="100px">
+                    <Template Context="f">
+                        @if (!f.ExonereRetenueSource && f.MontantTotal >= _seuilRetenueSource)
+                        {
+                            <RadzenButton Icon="@(f.HasRetenueSource ? "edit" : "add")"
+                                          ButtonStyle="ButtonStyle.Info"
+                                          Size="ButtonSize.Small"
+                                          Title="@Localizer["retenue_source"]"
+                                          Click="@(() => OpenRetenueDialog(f))" />
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="FactureDepenseSummaryItem" Title="Document" Width="100px" Sortable="false" Filterable="false" TextAlign="TextAlign.Center">
                     <Template Context="f">
                         @if (f.HasDocument)
@@ -145,6 +178,7 @@
     private CancellationTokenSource _cts = new();
     private RadzenDataGrid<FactureDepenseSummaryItem>? factureGrid;
     private decimal _seuilRetenueSource = 1000;
+    private double _tauxRetenu = 10;
 
     protected override async Task OnInitializedAsync()
     {
@@ -158,16 +192,19 @@
     {
         try
         {
+            var activeAccountingYear = await AccountingYearService.GetActiveAccountingYearAsync(_cts.Token);
             var appParamsResult = await AppParametersClient.GetAppParametersAsync(_cts.Token);
             if (appParamsResult.IsT0)
             {
                 var appParams = appParamsResult.AsT0;
                 _seuilRetenueSource = appParams.SeuilRetenueSource;
+                _tauxRetenu = activeAccountingYear?.PourcentageRetenu ?? appParams.PourcentageRetenu;
             }
         }
         catch
         {
             _seuilRetenueSource = 1000;
+            _tauxRetenu = 10;
         }
     }
 
@@ -237,6 +274,96 @@
     {
         var documentUrl = $"/api/factures-depenses/{factureId}/document";
         NavigationManager.NavigateTo(documentUrl, forceLoad: true);
+    }
+
+    private async Task OpenRetenueDialog(FactureDepenseSummaryItem f)
+    {
+        var factureDepenseId = f.Id;
+        var montantTTC = f.MontantTotal;
+
+        try
+        {
+            var existingRetenueResult = await RetenueSourceFactureDepenseClient.GetRetenueSourceFactureDepenseAsync(factureDepenseId, _cts.Token);
+            var isEditMode = existingRetenueResult.IsSuccess;
+            var existingNumTej = isEditMode ? existingRetenueResult.Value?.NumTej : null;
+
+            string? existingPdfBase64 = null;
+            if (isEditMode && existingRetenueResult.Value?.HasPdf == true)
+            {
+                try
+                {
+                    var pdfResult = await RetenueSourceFactureDepenseClient.GetRetenueSourceFactureDepensePdfAsync(factureDepenseId, _cts.Token);
+                    if (pdfResult.IsSuccess)
+                    {
+                        existingPdfBase64 = Convert.ToBase64String(pdfResult.Value);
+                    }
+                }
+                catch { /* ignore */ }
+            }
+
+            var dialogOptions = new DialogOptions { Width = "500px", Resizable = true, Draggable = true };
+
+            var result = await DialogService.OpenAsync<RetenueSourceDialog>(
+                Localizer["retenue_source"],
+                new Dictionary<string, object>
+                {
+                    { "NumFacture", f.Num },
+                    { "MontantTTC", montantTTC },
+                    { "TauxRetenu", _tauxRetenu },
+                    { "SeuilRetenueSource", _seuilRetenueSource },
+                    { "Timbre", 0m },
+                    { "ExistingNumTej", existingNumTej },
+                    { "IsEditMode", isEditMode },
+                    { "ExistingPdfBase64", existingPdfBase64 }
+                },
+                dialogOptions);
+
+            if (result is RetenueSourceDialog.RetenueSourceDialogResult dialogResult)
+            {
+                if (isEditMode)
+                {
+                    var updateResult = await RetenueSourceFactureDepenseClient.UpdateRetenueSourceFactureDepenseAsync(factureDepenseId,
+                        new TunNetCom.SilkRoadErp.Sales.Contracts.RetenueSourceFactureDepense.UpdateRetenueSourceFactureDepenseRequest
+                        {
+                            NumTej = dialogResult.NumTej ?? string.Empty,
+                            PdfContent = dialogResult.PdfContent
+                        }, _cts.Token);
+                    if (updateResult.IsSuccess)
+                    {
+                        ToastService.Notify(new(ToastType.Success, Localizer["retenue_source"] + " " + (Localizer["updated_with_success"] ?? "mis à jour.")));
+                    }
+                    else
+                    {
+                        ToastService.Notify(new(ToastType.Danger, updateResult.Errors.FirstOrDefault()?.Message ?? Localizer["Unexpected_Error"] ?? "Erreur"));
+                    }
+                }
+                else
+                {
+                    var createResult = await RetenueSourceFactureDepenseClient.CreateRetenueSourceFactureDepenseAsync(
+                        new TunNetCom.SilkRoadErp.Sales.Contracts.RetenueSourceFactureDepense.CreateRetenueSourceFactureDepenseRequest
+                        {
+                            FactureDepenseId = factureDepenseId,
+                            NumTej = dialogResult.NumTej ?? string.Empty,
+                            PdfContent = dialogResult.PdfContent
+                        }, _cts.Token);
+                    if (createResult.IsT0)
+                    {
+                        ToastService.Notify(new(ToastType.Success, Localizer["retenue_source"] + " " + (Localizer["created_with_success"] ?? "créé.")));
+                    }
+                    else
+                    {
+                        var badRequest = createResult.AsT1;
+                        ToastService.Notify(new(ToastType.Danger, badRequest.Detail ?? "Erreur lors de la création"));
+                    }
+                }
+                await LoadData();
+                if (factureGrid != null) await factureGrid.Reload();
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.Notify(new(ToastType.Danger, ex.Message));
+        }
     }
 
     private async Task ExportToTejXmlAsync(int id)

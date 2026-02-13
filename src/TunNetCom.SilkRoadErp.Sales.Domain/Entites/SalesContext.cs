@@ -150,6 +150,8 @@ public partial class SalesContext : DbContext
 
     public virtual DbSet<PaiementTiersDepenseFactureDepense> PaiementTiersDepenseFactureDepense { get; set; }
 
+    public virtual DbSet<RetenueSourceFactureDepense> RetenueSourceFactureDepense { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(FactureConfiguration).Assembly);
