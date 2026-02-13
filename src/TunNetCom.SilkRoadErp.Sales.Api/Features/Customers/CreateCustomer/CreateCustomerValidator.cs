@@ -1,4 +1,4 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.CreateCustomer;
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Customers.CreateCustomer;
 
 public class CreateCustomerValidator : AbstractValidator<CreateCustomerCommand>
 {
@@ -29,6 +29,7 @@ public class CreateCustomerValidator : AbstractValidator<CreateCustomerCommand>
 
         _ = RuleFor(x => x.Mail)
             .MaximumLength(50).WithMessage("mail_must_be_less_than_50_characters")
-            .EmailAddress().WithMessage("mail_must_be_a_valid_email_address");
+            .EmailAddress().WithMessage("mail_must_be_a_valid_email_address")
+            .When(x => !string.IsNullOrEmpty(x.Mail));
     }
 }

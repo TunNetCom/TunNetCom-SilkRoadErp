@@ -107,14 +107,26 @@ public class CustomersApiClient : ICustomersApiClient
         return pagedClients;
     }
 
-    public async Task<OneOf<CreateCustomerRequest, BadRequestResponse>> CreateAsync(
+    public async Task<OneOf<int, BadRequestResponse>> CreateAsync(
         CreateCustomerRequest request,
         CancellationToken cancellationToken)
     {
         var response = await _httpClient.PostAsJsonAsync($"/customers", request, cancellationToken: cancellationToken);
         if (response.StatusCode == HttpStatusCode.Created)
         {
-            return await response.ReadJsonAsync<CreateCustomerRequest>();
+            var location = response.Headers.Location;
+            if (location != null)
+            {
+                var path = location.IsAbsoluteUri ? location.AbsolutePath : (location.OriginalString ?? location.ToString());
+                var segments = path.TrimEnd('/').Split('/');
+                var lastSegment = segments.LastOrDefault(s => !string.IsNullOrEmpty(s));
+                if (lastSegment != null && int.TryParse(lastSegment, out var id))
+                {
+                    return id;
+                }
+            }
+            _logger.LogWarning("Create customer succeeded but Location header is missing or invalid");
+            throw new Exception("Customers: Create succeeded but could not extract new customer ID from response");
         }
         if (response.StatusCode == HttpStatusCode.BadRequest)
         {

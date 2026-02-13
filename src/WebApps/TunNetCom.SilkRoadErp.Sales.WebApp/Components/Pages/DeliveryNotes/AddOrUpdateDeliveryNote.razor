@@ -248,22 +248,32 @@ else
             <RadzenDatePicker @bind-Value="deliveryNoteDate" Name="DeliveryNoteDate" Style="width: 200px;" DateFormat="d MMMM yyyy" ShowTime="false" Disabled="@isReadOnly" />
 
             <RadzenLabel Text="@Localizer["customer"]" />
-            <RadzenDropDownDataGrid AllowClear="true"
-                                    IsLoading="@isLoadingCustomers"
-                                    @bind-Value="@selectedCustomerId"
-                                    LoadData="@LoadCustomers"
-                                    AllowFiltering="true"
-                                    Style="width: 350px;"
-                                    Data="@_filteredCustomers"
-                                    TextProperty="@nameof(CustomerResponse.Name)"
-                                    ValueProperty="@nameof(CustomerResponse.Id)"
-                                    Placeholder="@Localizer["select_customer"]"
-                                    Disabled="@isReadOnly">
-                <Columns>
-                    <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Id)" Title="ID" Width="80px" />
-                    <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Name)" Title="@Localizer["name"]" Width="220px" />
-                </Columns>
-            </RadzenDropDownDataGrid>
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" AlignItems="Radzen.AlignItems.Center">
+                <RadzenDropDownDataGrid AllowClear="true"
+                                        IsLoading="@isLoadingCustomers"
+                                        @bind-Value="@selectedCustomerId"
+                                        LoadData="@LoadCustomers"
+                                        AllowFiltering="true"
+                                        Style="width: 350px;"
+                                        Data="@_filteredCustomers"
+                                        TextProperty="@nameof(CustomerResponse.Name)"
+                                        ValueProperty="@nameof(CustomerResponse.Id)"
+                                        Placeholder="@Localizer["select_customer"]"
+                                        Disabled="@isReadOnly">
+                    <Columns>
+                        <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Id)" Title="ID" Width="80px" />
+                        <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Name)" Title="@Localizer["name"]" Width="220px" />
+                    </Columns>
+                </RadzenDropDownDataGrid>
+                <RadzenButton Icon="add"
+                              ButtonStyle="ButtonStyle.Success"
+                              Variant="Variant.Flat"
+                              Size="ButtonSize.Medium"
+                              Disabled="@isReadOnly"
+                              Click="@CreateNewCustomer"
+                              Title="@Localizer["AddClient"]"
+                              AriaLabel="@Localizer["AddClient"]" />
+            </RadzenStack>
 
             <RadzenLabel Text="Installateur" />
             <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" AlignItems="Radzen.AlignItems.Center">
@@ -1205,6 +1215,38 @@ else
 
         isLoadingDeliveryCars = false;
         await InvokeAsync(StateHasChanged);
+    }
+
+    async Task CreateNewCustomer()
+    {
+        var result = await DialogService.OpenAsync<AddOrUpdateCustomerDialog>(
+            Localizer["AddClient"],
+            new Dictionary<string, object>(),
+            new DialogOptions
+            {
+                Width = "600px",
+                Resizable = true,
+                Draggable = true
+            });
+
+        if (result is int newCustomerId)
+        {
+            await LoadCustomers(new LoadDataArgs());
+            selectedCustomerId = newCustomerId;
+
+            var customer = await customersApiClient.GetCustomerByIdAsync(newCustomerId, _cancellationTokenSource.Token);
+            if (customer != null && !_filteredCustomers.Any(c => c.Id == customer.Id))
+            {
+                _filteredCustomers.Add(customer);
+            }
+
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = Localizer["success"],
+                Detail = $"{Localizer["customer"]} {Localizer["created_with_success"]}"
+            });
+        }
     }
 
     async Task CreateNewDeliveryCar()
