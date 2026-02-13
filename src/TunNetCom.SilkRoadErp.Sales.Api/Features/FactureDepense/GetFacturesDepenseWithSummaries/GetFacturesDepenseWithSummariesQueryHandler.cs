@@ -53,7 +53,7 @@ public class GetFacturesDepenseWithSummariesQueryHandler(SalesContext _context, 
                 Statut = f.Statut.ToString(),
                 HasDocument = !string.IsNullOrEmpty(f.DocumentStoragePath),
                 ExonereRetenueSource = f.IdTiersDepenseFonctionnementNavigation.ExonereRetenueSource,
-                HasRetenueSource = _context.RetenueSourceFactureDepense.Any(r => r.FactureDepenseId == f.Id)
+                HasRetenueSource = _context.RetenueSourceFactureDepense.Any(r => r.FactureDepenseId == f.Id && r.AccountingYearId == f.AccountingYearId)
             })
             .ToListAsync(cancellationToken);
 

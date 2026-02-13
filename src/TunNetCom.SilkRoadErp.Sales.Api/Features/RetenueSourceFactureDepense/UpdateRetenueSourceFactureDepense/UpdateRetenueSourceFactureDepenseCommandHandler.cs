@@ -13,8 +13,13 @@ public class UpdateRetenueSourceFactureDepenseCommandHandler(
 {
     public async Task<Result> Handle(UpdateRetenueSourceFactureDepenseCommand command, CancellationToken cancellationToken)
     {
+        var factureAccountingYearId = await _context.FactureDepense
+            .Where(f => f.Id == command.FactureDepenseId)
+            .Select(f => f.AccountingYearId)
+            .FirstOrDefaultAsync(cancellationToken);
+
         var retenue = await _context.RetenueSourceFactureDepense
-            .FirstOrDefaultAsync(r => r.FactureDepenseId == command.FactureDepenseId, cancellationToken);
+            .FirstOrDefaultAsync(r => r.FactureDepenseId == command.FactureDepenseId && r.AccountingYearId == factureAccountingYearId, cancellationToken);
 
         if (retenue == null)
         {

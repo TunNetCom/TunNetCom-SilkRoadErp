@@ -200,6 +200,11 @@
                 _seuilRetenueSource = appParams.SeuilRetenueSource;
                 _tauxRetenu = activeAccountingYear?.PourcentageRetenu ?? appParams.PourcentageRetenu;
             }
+            // Filtrer par défaut sur l'exercice en cours
+            if (activeAccountingYear != null && !selectedAccountingYearId.HasValue)
+            {
+                selectedAccountingYearId = activeAccountingYear.Id;
+            }
         }
         catch
         {

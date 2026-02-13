@@ -13,9 +13,14 @@ public class GetRetenueSourceFactureDepensePdfQueryHandler(
 {
     public async Task<Result<byte[]>> Handle(GetRetenueSourceFactureDepensePdfQuery query, CancellationToken cancellationToken)
     {
+        var factureAccountingYearId = await _context.FactureDepense
+            .Where(f => f.Id == query.FactureDepenseId)
+            .Select(f => f.AccountingYearId)
+            .FirstOrDefaultAsync(cancellationToken);
+
         var retenue = await _context.RetenueSourceFactureDepense
             .AsNoTracking()
-            .FirstOrDefaultAsync(r => r.FactureDepenseId == query.FactureDepenseId, cancellationToken);
+            .FirstOrDefaultAsync(r => r.FactureDepenseId == query.FactureDepenseId && r.AccountingYearId == factureAccountingYearId, cancellationToken);
 
         if (retenue == null)
         {

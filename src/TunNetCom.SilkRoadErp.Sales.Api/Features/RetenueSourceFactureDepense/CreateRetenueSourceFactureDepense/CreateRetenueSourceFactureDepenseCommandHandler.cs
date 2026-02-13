@@ -35,8 +35,10 @@ public class CreateRetenueSourceFactureDepenseCommandHandler(
             return Result.Fail("tiers_exonere_retenue_source");
         }
 
+        var accountingYearId = factureDepense.AccountingYearId;
+
         var retenueExists = await _context.RetenueSourceFactureDepense
-            .AnyAsync(r => r.FactureDepenseId == command.FactureDepenseId, cancellationToken);
+            .AnyAsync(r => r.FactureDepenseId == command.FactureDepenseId && r.AccountingYearId == accountingYearId, cancellationToken);
 
         if (retenueExists)
         {
@@ -96,7 +98,7 @@ public class CreateRetenueSourceFactureDepenseCommandHandler(
             MontantApresRetenu = montantApresRetenu,
             PdfStoragePath = pdfStoragePath,
             DateCreation = DateTime.UtcNow,
-            AccountingYearId = activeAccountingYearId.Value
+            AccountingYearId = accountingYearId
         };
 
         _context.RetenueSourceFactureDepense.Add(retenue);
