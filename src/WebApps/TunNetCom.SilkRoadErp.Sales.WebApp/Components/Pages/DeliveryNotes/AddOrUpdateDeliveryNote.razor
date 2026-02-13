@@ -1520,6 +1520,17 @@ else
                 // Recharger la liste des factures
                 await LoadCustomerInvoices(new LoadDataArgs());
                 
+                // S'assurer que la nouvelle facture est dans _filteredInvoices pour l'affichage du dropdown
+                if (!_filteredInvoices.Any(i => i.Number == invoiceNumber))
+                {
+                    _filteredInvoices.Insert(0, new InvoiceResponse
+                    {
+                        Number = invoiceNumber,
+                        Date = invoiceDate,
+                        TotalIncludingTaxAmount = 0
+                    });
+                }
+                
                 // Sélectionner automatiquement la nouvelle facture
                 _selectedInvoiceId = invoiceNumber;
                 
