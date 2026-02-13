@@ -1,0 +1,474 @@
+@page "/factures-tej"
+@implements IDisposable
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice
+@using TunNetCom.SilkRoadErp.Sales.Contracts.FactureDepense
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Tej
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.FactureDepense
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.TiersDepenseFonctionnement
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AccountingYear
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Providers
+@using TunNetCom.SilkRoadErp.Sales.Contracts.AccountingYear
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Providers
+@using TunNetCom.SilkRoadErp.Sales.Contracts.TiersDepenseFonctionnement
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
+@using Radzen
+@using Radzen.Blazor
+@inject IFactureDepenseApiClient FactureDepenseService
+@inject ITiersDepenseFonctionnementApiClient TiersDepenseService
+@inject IAccountingYearApiClient AccountingYearService
+@inject IProvidersApiClient ProvidersService
+@inject ODataService ODataService
+@inject IHttpClientFactory HttpClientFactory
+@inject IConfiguration Configuration
+@inject IStringLocalizer<SharedResource> Localizer
+@inject ToastService ToastService
+@inject DialogService DialogService
+@inject IDecimalFormatService DecimalFormatService
+@inject IJSRuntime JS
+
+<div class="tej-combined-container">
+    <div class="tej-filters">
+        <PeriodFilter @bind-SelectedPeriod="searchCriteria.PeriodFilter"
+                     @bind-StartDate="searchCriteria.StartDate"
+                     @bind-EndDate="searchCriteria.EndDate"
+                     OnPeriodChanged="@OnFilterChanged" />
+        <div class="search-field">
+            <label>@Localizer["Fournisseur"]</label>
+            <RadzenDropDownDataGrid AllowClear="true"
+                                    Value="@searchCriteria.SelectedProviderId"
+                                    ValueChanged="EventCallback.Factory.Create<int?>(this, OnProviderChanged)"
+                                    LoadData="@LoadProviders"
+                                    AllowFiltering="true"
+                                    Style="width: 200px;"
+                                    Data="@_filteredProviders"
+                                    TextProperty="Nom"
+                                    ValueProperty="Id"
+                                    Placeholder="@Localizer["Select_Tiers"]" />
+        </div>
+        <div class="search-field">
+            <label>@Localizer["Tiers_Depenses"]</label>
+            <RadzenDropDownDataGrid AllowClear="true"
+                                    IsLoading="@isLoadingTiers"
+                                    @bind-Value="searchCriteria.SelectedTiersId"
+                                    LoadData="@LoadTiers"
+                                    AllowFiltering="true"
+                                    Style="width: 200px;"
+                                    Data="@_filteredTiers"
+                                    TextProperty="Nom"
+                                    ValueProperty="Id"
+                                    Placeholder="@Localizer["Select_Tiers"]"
+                                    Change="@OnFilterChanged" />
+        </div>
+        <RadzenDropDown @bind-Value="searchCriteria.SelectedAccountingYearId"
+                        Data="@accountingYears"
+                        TextProperty="Year"
+                        ValueProperty="Id"
+                        Placeholder="Exercice"
+                        AllowClear="true"
+                        Style="width: 150px;"
+                        Change="@OnFilterChanged" />
+        <RadzenButton Text="Rechercher" Icon="search" Click="@LoadAllData" />
+        <RadzenButton Icon="file_download"
+                      Text="@(Localizer["tej_export_all"] ?? "Exporter tout en TEJ")"
+                      ButtonStyle="ButtonStyle.Info"
+                      Click="@ExportAllToTejAsync"
+                      Style="margin-left: auto;" />
+    </div>
+
+    <div class="tej-grids-row">
+        <div class="tej-grid-column">
+            <h3>@(Localizer["Factures_Fournisseur"] ?? "Factures fournisseur")</h3>
+            <RadzenDataGrid @ref="providerGridRef"
+                            TItem="ProviderInvoiceBaseInfo"
+                            Data="@providerInvoicesList"
+                            LoadData="@LoadProviderInvoices"
+                            AllowPaging="true"
+                            PageSize="10"
+                            Count="@providerInvoicesTotalCount"
+                            Density="Density.Compact">
+                <Columns>
+                    <RadzenDataGridColumn TItem="ProviderInvoiceBaseInfo" Property="Number" Title="N°" Width="80px" />
+                    <RadzenDataGridColumn TItem="ProviderInvoiceBaseInfo" Property="ProviderName" Title="@Localizer["Fournisseur"]" Width="150px" />
+                    <RadzenDataGridColumn TItem="ProviderInvoiceBaseInfo" Property="Date" Title="@Localizer["date"]" Width="110px" FormatString="{0:dd/MM/yyyy}" />
+                    <RadzenDataGridColumn TItem="ProviderInvoiceBaseInfo" Property="NetAmount" Title="HT" Width="100px">
+                        <Template Context="item">@item.NetAmount.FormatAmount(decimalPlaces) TND</Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="ProviderInvoiceBaseInfo" Property="VatAmount" Title="TVA" Width="100px">
+                        <Template Context="item">@item.VatAmount.FormatAmount(decimalPlaces) TND</Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="ProviderInvoiceBaseInfo" Title="TTC" Width="100px">
+                        <Template Context="item">@((item.NetAmount + item.VatAmount).FormatAmount(decimalPlaces)) TND</Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+                <EmptyTemplate>
+                    <p style="text-align: center; padding: 1rem;">@(Localizer["no_data"] ?? "Aucune donnée.")</p>
+                </EmptyTemplate>
+            </RadzenDataGrid>
+        </div>
+        <div class="tej-grid-column">
+            <h3>@(Localizer["Factures_Depense"] ?? "Factures dépense")</h3>
+            <RadzenDataGrid @ref="depenseGridRef"
+                            TItem="FactureDepenseSummaryItem"
+                            Data="@factureDepenseList"
+                            LoadData="@LoadFacturesDepenseData"
+                            AllowPaging="true"
+                            PageSize="10"
+                            Count="@factureDepenseTotalCount"
+                            Density="Density.Compact">
+                <Columns>
+                    <RadzenDataGridColumn TItem="FactureDepenseSummaryItem" Property="Num" Title="N°" Width="80px" />
+                    <RadzenDataGridColumn TItem="FactureDepenseSummaryItem" Property="TiersDepenseFonctionnementNom" Title="Tiers" Width="150px" />
+                    <RadzenDataGridColumn TItem="FactureDepenseSummaryItem" Property="Date" Title="@Localizer["date"]" Width="110px">
+                        <Template Context="f">@f.Date.ToString("dd/MM/yyyy")</Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="FactureDepenseSummaryItem" Property="MontantTotal" Title="Montant TTC" Width="100px">
+                        <Template Context="f">@f.MontantTotal.FormatAmount(decimalPlaces) TND</Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+                <EmptyTemplate>
+                    <p style="text-align: center; padding: 1rem;">@(Localizer["no_data"] ?? "Aucune donnée.")</p>
+                </EmptyTemplate>
+            </RadzenDataGrid>
+        </div>
+    </div>
+
+    <div class="tej-recap-bar">
+        <span class="tej-recap-label">Total HT:</span>
+        <span class="tej-recap-value">@totalHT.FormatAmount(decimalPlaces) TND</span>
+        <span class="tej-recap-sep">|</span>
+        <span class="tej-recap-label">Total TVA:</span>
+        <span class="tej-recap-value">@totalTVA.FormatAmount(decimalPlaces) TND</span>
+        <span class="tej-recap-sep">|</span>
+        <span class="tej-recap-label">Total TTC:</span>
+        <span class="tej-recap-value tej-recap-ttc">@totalTTC.FormatAmount(decimalPlaces) TND</span>
+    </div>
+</div>
+
+@code {
+    private RadzenDataGrid<ProviderInvoiceBaseInfo>? providerGridRef;
+    private RadzenDataGrid<FactureDepenseSummaryItem>? depenseGridRef;
+    private List<ProviderInvoiceBaseInfo> providerInvoicesList = new();
+    private List<FactureDepenseSummaryItem> factureDepenseList = new();
+    private List<ProviderResponse> _filteredProviders = new();
+    private List<TiersDepenseFonctionnementResponse> _filteredTiers = new();
+    private List<GetAllAccountingYearsResponse> accountingYears = new();
+    private int providerInvoicesTotalCount;
+    private int factureDepenseTotalCount;
+    private decimal totalHT;
+    private decimal totalTVA;
+    private decimal totalTTC;
+    private int decimalPlaces = 2;
+    private bool isLoadingTiers;
+    private int providerPageSize = 10;
+    private int depensePageSize = 10;
+    private readonly SearchCriteria searchCriteria = new();
+    private readonly CancellationTokenSource _cts = new();
+
+    private class SearchCriteria
+    {
+        public string PeriodFilter { get; set; } = "CurrentMonth";
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public int? SelectedProviderId { get; set; }
+        public int? SelectedTiersId { get; set; }
+        public int? SelectedAccountingYearId { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        decimalPlaces = await DecimalFormatService.GetDecimalPlacesAsync();
+        await LoadAccountingYears();
+        var (start, end) = PeriodFilterHelper.GetDateRangeFromPeriod(searchCriteria.PeriodFilter, searchCriteria.StartDate, searchCriteria.EndDate);
+        searchCriteria.StartDate = start;
+        searchCriteria.EndDate = end;
+        var activeYear = await AccountingYearService.GetActiveAccountingYearAsync(_cts.Token);
+        if (activeYear != null && !searchCriteria.SelectedAccountingYearId.HasValue)
+            searchCriteria.SelectedAccountingYearId = activeYear.Id;
+        await LoadAllData();
+    }
+
+    private async Task LoadAccountingYears()
+    {
+        var result = await AccountingYearService.GetAllAccountingYearsAsync(_cts.Token);
+        accountingYears = result ?? new();
+    }
+
+    private async Task LoadProviders(LoadDataArgs args)
+    {
+        var parameters = new QueryStringParameters
+        {
+            PageNumber = 1,
+            PageSize = 20,
+            SearchKeyword = args.Filter ?? string.Empty
+        };
+        try
+        {
+            var result = await ProvidersService.GetPagedAsync(parameters, _cts.Token);
+            _filteredProviders = result.Items?.ToList() ?? new();
+        }
+        catch { _filteredProviders = new(); }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadTiers(LoadDataArgs args)
+    {
+        isLoadingTiers = true;
+        var parameters = new QueryStringParameters
+        {
+            PageNumber = args.Skip.HasValue && args.Top.HasValue && args.Top.Value > 0 ? (args.Skip.Value / args.Top.Value) + 1 : 1,
+            PageSize = args.Top.HasValue && args.Top.Value > 0 ? args.Top.Value : 20,
+            SearchKeyword = args.Filter ?? string.Empty
+        };
+        try
+        {
+            var result = await TiersDepenseService.GetPagedAsync(parameters, _cts.Token);
+            _filteredTiers = result.Items?.ToList() ?? new();
+        }
+        catch { _filteredTiers = new(); }
+        isLoadingTiers = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnFilterChanged()
+    {
+        await LoadAllData();
+    }
+
+    private async Task OnProviderChanged(int? value)
+    {
+        searchCriteria.SelectedProviderId = value;
+        await LoadAllData();
+    }
+
+    private async Task LoadProviderInvoices(LoadDataArgs args)
+    {
+        if (args.Top.HasValue) providerPageSize = args.Top.Value;
+        var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(searchCriteria.PeriodFilter, searchCriteria.StartDate, searchCriteria.EndDate);
+        try
+        {
+            var response = await ODataService.QueryAsync<ProviderInvoiceBaseInfo>(
+                entitySet: "ProviderInvoiceBaseInfos",
+                args: args,
+                startDate: startDate,
+                endDate: endDate,
+                providerId: searchCriteria.SelectedProviderId,
+                cancellationToken: _cts.Token);
+            providerInvoicesList = response.Value ?? new();
+            providerInvoicesTotalCount = response.ODataCount ?? providerInvoicesList.Count;
+        }
+        catch
+        {
+            providerInvoicesList = new();
+            providerInvoicesTotalCount = 0;
+        }
+        await LoadTotalsAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadFacturesDepenseData(LoadDataArgs args)
+    {
+        if (args.Top.HasValue) depensePageSize = args.Top.Value;
+        var pageNumber = args.Skip.HasValue && args.Top.HasValue && args.Top.Value > 0 ? (args.Skip.Value / args.Top.Value) + 1 : 1;
+        var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(searchCriteria.PeriodFilter, searchCriteria.StartDate, searchCriteria.EndDate);
+        try
+        {
+            var result = await FactureDepenseService.GetWithSummariesAsync(
+                pageNumber, depensePageSize,
+                searchCriteria.SelectedTiersId,
+                searchCriteria.SelectedAccountingYearId,
+                null,
+                startDate,
+                endDate,
+                _cts.Token);
+            factureDepenseList = result.Items ?? new();
+            factureDepenseTotalCount = result.TotalCount;
+        }
+        catch
+        {
+            factureDepenseList = new();
+            factureDepenseTotalCount = 0;
+        }
+        await LoadTotalsAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private HttpClient GetApiClient() => HttpClientFactory.CreateClient("SalesApi");
+
+    private async Task LoadTotalsAsync()
+    {
+        var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(searchCriteria.PeriodFilter, searchCriteria.StartDate, searchCriteria.EndDate);
+        var client = GetApiClient();
+        decimal provHT = 0, provTVA = 0, provTTC = 0;
+        decimal depHT = 0, depTVA = 0, depTTC = 0;
+
+        try
+        {
+            var queryParams = new List<string>();
+            if (startDate.HasValue) queryParams.Add($"startDate={Uri.EscapeDataString(startDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+            if (endDate.HasValue) queryParams.Add($"endDate={Uri.EscapeDataString(endDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+            if (searchCriteria.SelectedProviderId.HasValue) queryParams.Add($"providerId={searchCriteria.SelectedProviderId.Value}");
+            var providerUrl = "api/provider-invoices/totals" + (queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "");
+            var provResp = await client.GetAsync(providerUrl);
+            if (provResp.IsSuccessStatusCode)
+            {
+                var pt = await provResp.Content.ReadFromJsonAsync<ProviderInvoiceTotalsResponse>();
+                if (pt != null) { provHT = pt.TotalHT; provTVA = pt.TotalVat; provTTC = pt.TotalTTC; }
+            }
+        }
+        catch { }
+
+        try
+        {
+            var depParams = new List<string>();
+            if (searchCriteria.SelectedAccountingYearId.HasValue) depParams.Add($"accountingYearId={searchCriteria.SelectedAccountingYearId.Value}");
+            if (startDate.HasValue) depParams.Add($"startDate={Uri.EscapeDataString(startDate.Value.ToString("yyyy-MM-dd"))}");
+            if (endDate.HasValue) depParams.Add($"endDate={Uri.EscapeDataString(endDate.Value.ToString("yyyy-MM-dd"))}");
+            if (searchCriteria.SelectedTiersId.HasValue) depParams.Add($"tiersDepenseFonctionnementId={searchCriteria.SelectedTiersId.Value}");
+            var depUrl = "api/factures-depenses/totals" + (depParams.Count > 0 ? "?" + string.Join("&", depParams) : "");
+            var depResp = await client.GetAsync(depUrl);
+            if (depResp.IsSuccessStatusCode)
+            {
+                var dt = await depResp.Content.ReadFromJsonAsync<FactureDepenseTotalsResponse>();
+                if (dt != null) { depHT = dt.TotalHT; depTVA = dt.TotalTVA; depTTC = dt.TotalTTC; }
+            }
+        }
+        catch { }
+
+        totalHT = provHT + depHT;
+        totalTVA = provTVA + depTVA;
+        totalTTC = provTTC + depTTC;
+    }
+
+    private async Task<List<int>> FetchAllProviderInvoiceNumbersAsync()
+    {
+        var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(searchCriteria.PeriodFilter, searchCriteria.StartDate, searchCriteria.EndDate);
+        try
+        {
+            var args = new LoadDataArgs { Skip = 0, Top = 9999 };
+            var response = await ODataService.QueryAsync<ProviderInvoiceBaseInfo>(
+                entitySet: "ProviderInvoiceBaseInfos",
+                args: args,
+                startDate: startDate,
+                endDate: endDate,
+                providerId: searchCriteria.SelectedProviderId,
+                cancellationToken: _cts.Token);
+            return (response.Value ?? new()).Select(i => i.Number).ToList();
+        }
+        catch { return new(); }
+    }
+
+    private async Task<List<int>> FetchAllFactureDepenseIdsAsync()
+    {
+        var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(searchCriteria.PeriodFilter, searchCriteria.StartDate, searchCriteria.EndDate);
+        try
+        {
+            var result = await FactureDepenseService.GetWithSummariesAsync(
+                1, 9999,
+                searchCriteria.SelectedTiersId,
+                searchCriteria.SelectedAccountingYearId,
+                null,
+                startDate,
+                endDate,
+                _cts.Token);
+            return (result.Items ?? new()).Select(f => f.Id).ToList();
+        }
+        catch { return new(); }
+    }
+
+    private async Task LoadAllData()
+    {
+        await LoadProviderInvoices(new LoadDataArgs { Skip = 0, Top = providerPageSize });
+        if (depenseGridRef != null)
+            await LoadFacturesDepenseData(new LoadDataArgs { Skip = 0, Top = depensePageSize });
+        else
+        {
+            await LoadFacturesDepenseData(new LoadDataArgs { Skip = 0, Top = 10 });
+        }
+        await LoadTotalsAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ExportAllToTejAsync()
+    {
+        var result = await DialogService.OpenAsync<ActeDepotChoiceDialog>(
+            Localizer["tej_acte_depot_title"] ?? "Type de déclaration TEJ",
+            new Dictionary<string, object>(),
+            new DialogOptions { Width = "400px" });
+
+        if (result == null) return;
+
+        var acteDepot = result.ToString() ?? "0";
+        var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(searchCriteria.PeriodFilter, searchCriteria.StartDate, searchCriteria.EndDate);
+        var anneeDepot = startDate?.Year ?? DateTime.Today.Year;
+        var moisDepot = startDate?.Month ?? DateTime.Today.Month;
+
+        var providerNumbers = await FetchAllProviderInvoiceNumbersAsync();
+        var depenseIds = await FetchAllFactureDepenseIdsAsync();
+
+        if (providerNumbers.Count == 0 && depenseIds.Count == 0)
+        {
+            ToastService.Notify(new(ToastType.Warning, Localizer["tej_no_invoices_to_export"] ?? "Aucune facture à exporter. Appliquez des filtres et rechargez les données."));
+            return;
+        }
+
+        try
+        {
+            var client = GetApiClient();
+            var url = "api/tej/export-all";
+            var request = new ExportAllToTejXmlRequest
+            {
+                ProviderInvoiceNumbers = providerNumbers,
+                FactureDepenseIds = depenseIds,
+                ActeDepot = acteDepot,
+                AnneeDepot = anneeDepot,
+                MoisDepot = moisDepot
+            };
+
+            var response = await client.PostAsJsonAsync(url, request);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var err = await response.Content.ReadAsStringAsync();
+                ToastService.Notify(new(ToastType.Danger, response.StatusCode == System.Net.HttpStatusCode.BadRequest ? err : (Localizer["Erreur_Export_TEJ"] ?? "Erreur lors de l'export TEJ.")));
+                return;
+            }
+
+            var fileBytes = await response.Content.ReadAsByteArrayAsync();
+            var fileName = response.Content.Headers.ContentDisposition?.FileName?.Trim('"')
+                ?? $"TEJ_Export_{anneeDepot}_{moisDepot:D2}_{acteDepot}.xml";
+            var base64 = Convert.ToBase64String(fileBytes);
+            await JS.InvokeVoidAsync("downloadFile", fileName, base64, "application/xml; charset=utf-8");
+            ToastService.Notify(new(ToastType.Success, Localizer["Export_TEJ_Success"] ?? "Export TEJ réussi."));
+        }
+        catch (Exception ex)
+        {
+            ToastService.Notify(new(ToastType.Danger, ex.Message));
+        }
+    }
+
+    public void Dispose()
+    {
+        _cts.Cancel();
+        _cts.Dispose();
+    }
+}
+
+<style>
+    .tej-combined-container { padding: 1rem; max-width: 1400px; margin: 0 auto; }
+    .tej-filters { display: flex; gap: 1rem; align-items: flex-end; margin-bottom: 1rem; flex-wrap: wrap; }
+    .tej-filters .search-field { display: flex; flex-direction: column; gap: 0.25rem; }
+    .tej-filters .search-field label { font-size: 0.875rem; font-weight: 500; }
+    .tej-grids-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; min-height: 400px; }
+    .tej-grid-column { display: flex; flex-direction: column; gap: 0.5rem; }
+    .tej-grid-column h3 { font-size: 1.1rem; margin: 0 0 0.5rem 0; }
+    .tej-recap-bar { margin-top: 1rem; padding: 1rem; background: var(--rz-base-100, #f9fafb); border-radius: 8px; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; font-size: 0.95rem; }
+    .tej-recap-label { font-weight: 500; color: var(--rz-text-secondary-color, #6b7280); }
+    .tej-recap-value { font-weight: 600; }
+    .tej-recap-ttc { font-size: 1.05rem; }
+    .tej-recap-sep { color: var(--rz-base-400, #9ca3af); }
+    @@media (max-width: 900px) { .tej-grids-row { grid-template-columns: 1fr; } }
+</style>

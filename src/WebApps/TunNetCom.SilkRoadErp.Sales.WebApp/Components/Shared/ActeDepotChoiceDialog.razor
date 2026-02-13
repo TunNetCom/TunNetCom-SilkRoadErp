@@ -1,0 +1,58 @@
+@using Radzen
+@using Radzen.Blazor
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@inject DialogService DialogService
+@inject IStringLocalizer<SharedResource> Localizer
+
+<RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
+    <RadzenText TextStyle="TextStyle.Body1">
+        @(Localizer["tej_acte_depot_choice"] ?? "Choisir le type de déclaration TEJ :")
+    </RadzenText>
+    <RadzenRadioButtonList @bind-Value="SelectedActeDepot"
+                           Data="@acteDepotOptions"
+                           TextProperty="Label"
+                           ValueProperty="Value"
+                           Name="ActeDepot" />
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End">
+        <RadzenButton Text="@(Localizer["Cancel"] ?? "Annuler")"
+                      ButtonStyle="ButtonStyle.Light"
+                      Click="@Cancel" />
+        <RadzenButton Text="@(Localizer["Ok"] ?? "Valider")"
+                      ButtonStyle="ButtonStyle.Primary"
+                      Click="@Confirm" />
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    [Parameter] public string DefaultActeDepot { get; set; } = "0";
+
+    private string SelectedActeDepot { get; set; } = "0";
+
+    private readonly List<ActeDepotOption> acteDepotOptions = new()
+    {
+        new ActeDepotOption { Value = "0", Label = "Déclaration initiale" },
+        new ActeDepotOption { Value = "1", Label = "Déclaration rectificative" }
+    };
+
+    protected override void OnInitialized()
+    {
+        SelectedActeDepot = DefaultActeDepot == "1" ? "1" : "0";
+    }
+
+    private void Cancel()
+    {
+        DialogService.Close(null);
+    }
+
+    private void Confirm()
+    {
+        DialogService.Close(SelectedActeDepot);
+    }
+
+    private class ActeDepotOption
+    {
+        public string Value { get; set; } = string.Empty;
+        public string Label { get; set; } = string.Empty;
+    }
+}

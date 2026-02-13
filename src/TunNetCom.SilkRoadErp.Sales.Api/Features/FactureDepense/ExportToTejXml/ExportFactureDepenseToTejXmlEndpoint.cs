@@ -30,6 +30,7 @@ public class ExportFactureDepenseToTejXmlEndpoint : ICarterModule
         [FromServices] IActiveAccountingYearService activeAccountingYearService,
         [FromServices] IAccountingYearFinancialParametersService financialParametersService,
         int id,
+        [FromQuery] string? acteDepot = "0",
         CancellationToken cancellationToken = default)
     {
         try
@@ -160,6 +161,8 @@ public class ExportFactureDepenseToTejXmlEndpoint : ICarterModule
                     "Le matricule fiscal de l'entreprise doit être au format 7 chiffres et une lettre clé (ex. 0001238L).");
             }
 
+            var acteDepotValue = acteDepot == "1" ? "1" : "0";
+
             var xmlBytes = exportService.ExportFactureDepenseToTejXml(
                 factureDepense,
                 tiers,
@@ -169,7 +172,8 @@ public class ExportFactureDepenseToTejXmlEndpoint : ICarterModule
                 refCertifChezDeclarant: refCertifTej,
                 normalizedDeclarantMatricule: matriculeNormaliseResult,
                 normalizedBeneficiaireMatricule: tiersMatriculeNormalise,
-                beneficiaireTel8Digits: telDigitsOnly);
+                beneficiaireTel8Digits: telDigitsOnly,
+                acteDepot: acteDepotValue);
 
             var validationErrors = TejXsdValidator.Validate(xmlBytes)
                 .Where(e => !e.Contains("introuvable", StringComparison.OrdinalIgnoreCase))
@@ -183,8 +187,7 @@ public class ExportFactureDepenseToTejXmlEndpoint : ICarterModule
 
             var exercice = factureDepense.Date.Year;
             var mois = factureDepense.Date.Month.ToString("D2");
-            const string codeActe = "0";
-            var filename = $"{matriculeNormaliseResult}-{exercice}-{mois}-{codeActe}.xml";
+            var filename = $"{matriculeNormaliseResult}-{exercice}-{mois}-{acteDepotValue}.xml";
 
             logger.LogInformation("TEJ XML export completed successfully for FactureDepense Id {Id}", id);
 

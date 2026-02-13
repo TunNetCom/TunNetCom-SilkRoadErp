@@ -26,6 +26,7 @@ public class TejXmlExportService
     /// <param name="normalizedDeclarantMatricule">Matricule fiscal déclarant normalisé (7 chiffres + 1 lettre, sans /). Si fourni, utilisé pour Declarant/Identifiant.</param>
     /// <param name="normalizedBeneficiaireMatricule">Matricule fiscal bénéficiaire normalisé (7 chiffres + 1 lettre). Si fourni, utilisé pour IdTaxpayer/Identifiant.</param>
     /// <param name="beneficiaireTel8Digits">Téléphone bénéficiaire au format XXXXXXXX (8 chiffres) pour TEJ. Si fourni, utilisé pour NumTel.</param>
+    /// <param name="acteDepot">Acte de dépôt : "0" (initiale) ou "1" (rectificative).</param>
     public byte[] ExportProviderInvoiceToTejXml(
         FactureFournisseur factureFournisseur,
         Fournisseur fournisseur,
@@ -36,7 +37,8 @@ public class TejXmlExportService
         string? refCertifChezDeclarant = null,
         string? normalizedDeclarantMatricule = null,
         string? normalizedBeneficiaireMatricule = null,
-        string? beneficiaireTel8Digits = null)
+        string? beneficiaireTel8Digits = null,
+        string acteDepot = "0")
     {
         try
         {
@@ -96,7 +98,7 @@ public class TejXmlExportService
                     ),
                     // ReferenceDeclaration
                     new XElement("ReferenceDeclaration",
-                        new XElement("ActeDepot", "0"),
+                        new XElement("ActeDepot", acteDepot),
                         new XElement("AnneeDepot", factureFournisseur.Date.Year),
                         new XElement("MoisDepot", factureFournisseur.Date.Month.ToString("D2"))
                     ),
@@ -171,6 +173,7 @@ public class TejXmlExportService
     /// Exporte une facture dépense au format XML TEJ.
     /// Montant TTC = MontantTotal ; taux TVA dérivé des lignes (7/13/19%) ou 19% par défaut.
     /// </summary>
+    /// <param name="acteDepot">Acte de dépôt : "0" (initiale) ou "1" (rectificative).</param>
     public byte[] ExportFactureDepenseToTejXml(
         FactureDepense factureDepense,
         TiersDepenseFonctionnement tiers,
@@ -180,7 +183,8 @@ public class TejXmlExportService
         string? refCertifChezDeclarant = null,
         string? normalizedDeclarantMatricule = null,
         string? normalizedBeneficiaireMatricule = null,
-        string? beneficiaireTel8Digits = null)
+        string? beneficiaireTel8Digits = null,
+        string acteDepot = "0")
     {
         try
         {
@@ -217,7 +221,7 @@ public class TejXmlExportService
                         new XElement("CategorieContribuable", NormalizeCategorieContribuable(declarantCategorie))
                     ),
                     new XElement("ReferenceDeclaration",
-                        new XElement("ActeDepot", "0"),
+                        new XElement("ActeDepot", acteDepot),
                         new XElement("AnneeDepot", factureDepense.Date.Year),
                         new XElement("MoisDepot", factureDepense.Date.Month.ToString("D2"))
                     ),
@@ -279,6 +283,247 @@ public class TejXmlExportService
             _logger.LogError(ex, "Error generating TEJ XML for FactureDepense {Num}", factureDepense.Num);
             throw;
         }
+    }
+
+    /// <summary>
+    /// Exporte plusieurs factures fournisseur et dépenses en un seul fichier XML TEJ.
+    /// Un seul document DeclarationsRS avec plusieurs Certificat sous AjouterCertificats.
+    /// </summary>
+    /// <param name="providerItems">Factures fournisseur avec données pré-calculées (montant avant retenue, ref TEJ, etc.).</param>
+    /// <param name="depenseItems">Factures dépense avec tiers et données pré-calculées.</param>
+    /// <param name="anneeDepot">Année de dépôt pour ReferenceDeclaration (ex. période sélectionnée).</param>
+    /// <param name="moisDepot">Mois de dépôt pour ReferenceDeclaration (01-12).</param>
+    public byte[] ExportMultipleToTejXml(
+        IEnumerable<ProviderInvoiceTejItem> providerItems,
+        IEnumerable<FactureDepenseTejItem> depenseItems,
+        Systeme systeme,
+        GetAppParametersResponse appParams,
+        AccountingYearFinancialParameters financialParams,
+        string normalizedDeclarantMatricule,
+        string acteDepot,
+        int anneeDepot,
+        int moisDepot)
+    {
+        try
+        {
+            var (declarantTypeIdentifiant, _, declarantCategorie) =
+                ExtractIdentifiantInfo(systeme.MatriculeFiscale, systeme.CodeCategorie);
+            var declarantIdentifiant = normalizedDeclarantMatricule;
+
+            var certificats = new List<XElement>();
+
+            foreach (var item in providerItems)
+            {
+                var cert = BuildCertificatForProviderInvoice(
+                    item.FactureFournisseur,
+                    item.Fournisseur,
+                    financialParams,
+                    item.MontantAvantRetenue,
+                    item.RefCertif,
+                    item.NormalizedBeneficiaireMatricule,
+                    item.BeneficiaireTel8Digits);
+                certificats.Add(cert);
+            }
+
+            foreach (var item in depenseItems)
+            {
+                var cert = BuildCertificatForFactureDepense(
+                    item.FactureDepense,
+                    item.Tiers,
+                    financialParams,
+                    item.RefCertif,
+                    item.NormalizedBeneficiaireMatricule,
+                    item.BeneficiaireTel8Digits);
+                certificats.Add(cert);
+            }
+
+            if (certificats.Count == 0)
+            {
+                _logger.LogWarning("ExportMultipleToTejXml called with no eligible invoices");
+                throw new InvalidOperationException("Aucune facture à exporter.");
+            }
+
+            var doc = new XDocument(
+                new XDeclaration("1.0", "UTF-8", null),
+                new XElement("DeclarationsRS",
+                    new XAttribute("VersionSchema", "1.0"),
+                    new XElement("Declarant",
+                        new XElement("TypeIdentifiant", declarantTypeIdentifiant),
+                        new XElement("Identifiant", declarantIdentifiant),
+                        new XElement("CategorieContribuable", NormalizeCategorieContribuable(declarantCategorie))
+                    ),
+                    new XElement("ReferenceDeclaration",
+                        new XElement("ActeDepot", acteDepot),
+                        new XElement("AnneeDepot", anneeDepot),
+                        new XElement("MoisDepot", moisDepot.ToString("D2"))
+                    ),
+                    new XElement("AjouterCertificats", certificats.Cast<object>().ToArray())
+                )
+            );
+
+            using var ms = new MemoryStream();
+            doc.Save(ms);
+            var bytes = ms.ToArray();
+            return RemoveStandaloneFromPrologue(bytes);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating TEJ XML for multiple invoices");
+            throw;
+        }
+    }
+
+    private XElement BuildCertificatForProviderInvoice(
+        FactureFournisseur factureFournisseur,
+        Fournisseur fournisseur,
+        AccountingYearFinancialParameters financialParams,
+        decimal? montantAvantRetenue,
+        string refCertif,
+        string? normalizedBeneficiaireMatricule,
+        string? beneficiaireTel8Digits)
+    {
+        var montantTTC = montantAvantRetenue ?? factureFournisseur.BonDeReception
+            .SelectMany(br => br.LigneBonReception)
+            .Sum(l => l.TotTtc);
+
+        var tauxTVA = DetermineVatRate(factureFournisseur, financialParams);
+        var tauxRS = financialParams.PourcentageRetenu;
+
+        long montantTTCMillimes = TejCalculations.ToMillimesLong(montantTTC);
+        long montantHTMillimes;
+        long montantTVAMillimes;
+        if (montantAvantRetenue.HasValue)
+        {
+            (montantHTMillimes, montantTVAMillimes, montantTTCMillimes) = TejCalculations.DeriveHtTvaTtcForTej(montantTTCMillimes, tauxTVA);
+        }
+        else
+        {
+            var montantHT = factureFournisseur.BonDeReception
+                .SelectMany(br => br.LigneBonReception)
+                .Sum(l => l.TotHt);
+            montantHTMillimes = TejCalculations.ToMillimesLong(montantHT);
+            montantTVAMillimes = TejCalculations.ComputeMontantTvaMillimes(montantHTMillimes, tauxTVA);
+            montantTTCMillimes = montantHTMillimes + montantTVAMillimes;
+        }
+
+        var montantRSMillimes = TejCalculations.ComputeMontantRsMillimes(montantTTCMillimes, (decimal)tauxRS);
+        var montantNetServiMillimes = TejCalculations.ComputeMontantNetServiMillimes(montantTTCMillimes, montantRSMillimes);
+
+        var (beneficiaireTypeIdentifiant, _, beneficiaireCategorie) =
+            ExtractIdentifiantInfo(fournisseur.Matricule, fournisseur.CodeCat);
+        var beneficiaireIdentifiant = normalizedBeneficiaireMatricule ?? fournisseur.Matricule?.Trim() ?? "";
+
+        return new XElement("Certificat",
+            new XElement("Beneficiaire",
+                new XElement("IdTaxpayer",
+                    new XElement("MatriculeFiscal",
+                        new XElement("TypeIdentifiant", beneficiaireTypeIdentifiant),
+                        new XElement("Identifiant", beneficiaireIdentifiant),
+                        new XElement("CategorieContribuable", NormalizeCategorieContribuable(beneficiaireCategorie))
+                    )
+                ),
+                new XElement("Resident", "1"),
+                new XElement("NometprenonOuRaisonsociale", SanitizeTejTextField(fournisseur.Nom)),
+                new XElement("Adresse", SanitizeTejTextField(fournisseur.Adresse)),
+                new XElement("Activite", ""),
+                new XElement("InfosContact",
+                    new XElement("AdresseMail", EnsureNonEmptyEmail(SanitizeTejTextField(fournisseur.Mail))),
+                    new XElement("NumTel", !string.IsNullOrEmpty(beneficiaireTel8Digits) ? beneficiaireTel8Digits : SanitizeTejTextField(fournisseur.Tel))
+                )
+            ),
+            new XElement("DatePayement", factureFournisseur.Date.ToString("dd/MM/yyyy")),
+            new XElement("Ref_certif_chez_declarant", SanitizeTejTextField(refCertif)),
+            new XElement("ListeOperations",
+                new XElement("Operation",
+                    new XAttribute("IdTypeOperation", "RS7_000002"),
+                    new XElement("AnneeFacturation", factureFournisseur.Date.Year),
+                    new XElement("CNPC", "0"),
+                    new XElement("P_Charge", "0"),
+                    new XElement("MontantHT", montantHTMillimes),
+                    new XElement("TauxRS", tauxRS.ToString("F2")),
+                    new XElement("TauxTVA", tauxTVA.ToString("F2")),
+                    new XElement("MontantTVA", montantTVAMillimes),
+                    new XElement("MontantTTC", montantTTCMillimes),
+                    new XElement("MontantRS", montantRSMillimes),
+                    new XElement("MontantNetServi", montantNetServiMillimes)
+                )
+            ),
+            new XElement("TotalPayement",
+                new XElement("TotalMontantHT", montantHTMillimes),
+                new XElement("TotalMontantTVA", montantTVAMillimes),
+                new XElement("TotalMontantTTC", montantTTCMillimes),
+                new XElement("TotalMontantRS", montantRSMillimes),
+                new XElement("TotalMontantNetServi", montantNetServiMillimes)
+            )
+        );
+    }
+
+    private XElement BuildCertificatForFactureDepense(
+        FactureDepense factureDepense,
+        TiersDepenseFonctionnement tiers,
+        AccountingYearFinancialParameters financialParams,
+        string refCertif,
+        string? normalizedBeneficiaireMatricule,
+        string? beneficiaireTel8Digits)
+    {
+        var montantTTC = factureDepense.MontantTotal;
+        var tauxTVA = DetermineVatRateForFactureDepense(factureDepense, financialParams);
+        var tauxRS = financialParams.PourcentageRetenu;
+
+        long montantTTCMillimes = TejCalculations.ToMillimesLong(montantTTC);
+        var (montantHTMillimes, montantTVAMillimes, _) = TejCalculations.DeriveHtTvaTtcForTej(montantTTCMillimes, tauxTVA);
+        montantTTCMillimes = montantHTMillimes + montantTVAMillimes;
+
+        var montantRSMillimes = TejCalculations.ComputeMontantRsMillimes(montantTTCMillimes, (decimal)tauxRS);
+        var montantNetServiMillimes = TejCalculations.ComputeMontantNetServiMillimes(montantTTCMillimes, montantRSMillimes);
+
+        var (beneficiaireTypeIdentifiant, _, beneficiaireCategorie) =
+            ExtractIdentifiantInfo(tiers.Matricule, tiers.CodeCat);
+        var beneficiaireIdentifiant = normalizedBeneficiaireMatricule ?? tiers.Matricule?.Trim() ?? "";
+
+        return new XElement("Certificat",
+            new XElement("Beneficiaire",
+                new XElement("IdTaxpayer",
+                    new XElement("MatriculeFiscal",
+                        new XElement("TypeIdentifiant", beneficiaireTypeIdentifiant),
+                        new XElement("Identifiant", beneficiaireIdentifiant),
+                        new XElement("CategorieContribuable", NormalizeCategorieContribuable(beneficiaireCategorie))
+                    )
+                ),
+                new XElement("Resident", "1"),
+                new XElement("NometprenonOuRaisonsociale", SanitizeTejTextField(tiers.Nom)),
+                new XElement("Adresse", SanitizeTejTextField(tiers.Adresse)),
+                new XElement("Activite", ""),
+                new XElement("InfosContact",
+                    new XElement("AdresseMail", EnsureNonEmptyEmail(SanitizeTejTextField(tiers.Mail))),
+                    new XElement("NumTel", !string.IsNullOrEmpty(beneficiaireTel8Digits) ? beneficiaireTel8Digits : SanitizeTejTextField(tiers.Tel))
+                )
+            ),
+            new XElement("DatePayement", factureDepense.Date.ToString("dd/MM/yyyy")),
+            new XElement("Ref_certif_chez_declarant", SanitizeTejTextField(refCertif)),
+            new XElement("ListeOperations",
+                new XElement("Operation",
+                    new XAttribute("IdTypeOperation", "RS7_000002"),
+                    new XElement("AnneeFacturation", factureDepense.Date.Year),
+                    new XElement("CNPC", "0"),
+                    new XElement("P_Charge", "0"),
+                    new XElement("MontantHT", montantHTMillimes),
+                    new XElement("TauxRS", tauxRS.ToString("F2")),
+                    new XElement("TauxTVA", tauxTVA.ToString("F2")),
+                    new XElement("MontantTVA", montantTVAMillimes),
+                    new XElement("MontantTTC", montantTTCMillimes),
+                    new XElement("MontantRS", montantRSMillimes),
+                    new XElement("MontantNetServi", montantNetServiMillimes)
+                )
+            ),
+            new XElement("TotalPayement",
+                new XElement("TotalMontantHT", montantHTMillimes),
+                new XElement("TotalMontantTVA", montantTVAMillimes),
+                new XElement("TotalMontantTTC", montantTTCMillimes),
+                new XElement("TotalMontantRS", montantRSMillimes),
+                new XElement("TotalMontantNetServi", montantNetServiMillimes)
+            )
+        );
     }
 
     private decimal DetermineVatRateForFactureDepense(FactureDepense factureDepense, AccountingYearFinancialParameters financialParams)

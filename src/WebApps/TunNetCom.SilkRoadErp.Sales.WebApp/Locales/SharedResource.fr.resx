@@ -1506,6 +1506,24 @@
   <data name="tej_export_info_retenue" xml:space="preserve">
     <value>Lors de l'export TEJ, le montant envoyé est le montant avant retenue ; la plateforme TEJ effectue le calcul de la retenue.</value>
   </data>
+  <data name="tej_acte_depot_choice" xml:space="preserve">
+    <value>Choisir le type de déclaration TEJ :</value>
+  </data>
+  <data name="tej_acte_depot_title" xml:space="preserve">
+    <value>Type de déclaration TEJ</value>
+  </data>
+  <data name="tej_export_all" xml:space="preserve">
+    <value>Exporter tout en TEJ</value>
+  </data>
+  <data name="tej_no_invoices_to_export" xml:space="preserve">
+    <value>Aucune facture à exporter. Appliquez des filtres et rechargez les données.</value>
+  </data>
+  <data name="Factures_Fournisseur" xml:space="preserve">
+    <value>Factures fournisseur</value>
+  </data>
+  <data name="Factures_Depense" xml:space="preserve">
+    <value>Factures dépense</value>
+  </data>
   <data name="seuil_non_atteint" xml:space="preserve">
     <value>Seuil non atteint</value>
   </data>
