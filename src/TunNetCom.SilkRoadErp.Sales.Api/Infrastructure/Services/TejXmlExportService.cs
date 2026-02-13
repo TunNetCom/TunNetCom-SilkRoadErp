@@ -168,6 +168,131 @@ public class TejXmlExportService
     }
 
     /// <summary>
+    /// Exporte une facture dépense au format XML TEJ.
+    /// Montant TTC = MontantTotal ; taux TVA dérivé des lignes (7/13/19%) ou 19% par défaut.
+    /// </summary>
+    public byte[] ExportFactureDepenseToTejXml(
+        FactureDepense factureDepense,
+        TiersDepenseFonctionnement tiers,
+        Systeme systeme,
+        GetAppParametersResponse appParams,
+        AccountingYearFinancialParameters financialParams,
+        string? refCertifChezDeclarant = null,
+        string? normalizedDeclarantMatricule = null,
+        string? normalizedBeneficiaireMatricule = null,
+        string? beneficiaireTel8Digits = null)
+    {
+        try
+        {
+            var montantTTC = factureDepense.MontantTotal;
+            var tauxTVA = DetermineVatRateForFactureDepense(factureDepense, financialParams);
+            var tauxRS = financialParams.PourcentageRetenu;
+
+            long montantTTCMillimes = TejCalculations.ToMillimesLong(montantTTC);
+            var (montantHTMillimes, montantTVAMillimes, _) = TejCalculations.DeriveHtTvaTtcForTej(montantTTCMillimes, tauxTVA);
+            montantTTCMillimes = montantHTMillimes + montantTVAMillimes;
+
+            var montantRSMillimes = TejCalculations.ComputeMontantRsMillimes(montantTTCMillimes, (decimal)tauxRS);
+            var montantNetServiMillimes = TejCalculations.ComputeMontantNetServiMillimes(montantTTCMillimes, montantRSMillimes);
+
+            var refCertif = !string.IsNullOrWhiteSpace(refCertifChezDeclarant)
+                ? refCertifChezDeclarant
+                : $"FD{factureDepense.Num}";
+
+            var (declarantTypeIdentifiant, _, declarantCategorie) =
+                ExtractIdentifiantInfo(systeme.MatriculeFiscale, systeme.CodeCategorie);
+            var declarantIdentifiant = normalizedDeclarantMatricule ?? systeme.MatriculeFiscale?.Replace("/", string.Empty).Trim() ?? "";
+
+            var (beneficiaireTypeIdentifiant, _, beneficiaireCategorie) =
+                ExtractIdentifiantInfo(tiers.Matricule, tiers.CodeCat);
+            var beneficiaireIdentifiant = normalizedBeneficiaireMatricule ?? tiers.Matricule?.Trim() ?? "";
+
+            var doc = new XDocument(
+                new XDeclaration("1.0", "UTF-8", null),
+                new XElement("DeclarationsRS",
+                    new XAttribute("VersionSchema", "1.0"),
+                    new XElement("Declarant",
+                        new XElement("TypeIdentifiant", declarantTypeIdentifiant),
+                        new XElement("Identifiant", declarantIdentifiant ?? ""),
+                        new XElement("CategorieContribuable", NormalizeCategorieContribuable(declarantCategorie))
+                    ),
+                    new XElement("ReferenceDeclaration",
+                        new XElement("ActeDepot", "0"),
+                        new XElement("AnneeDepot", factureDepense.Date.Year),
+                        new XElement("MoisDepot", factureDepense.Date.Month.ToString("D2"))
+                    ),
+                    new XElement("AjouterCertificats",
+                        new XElement("Certificat",
+                            new XElement("Beneficiaire",
+                                new XElement("IdTaxpayer",
+                                    new XElement("MatriculeFiscal",
+                                        new XElement("TypeIdentifiant", beneficiaireTypeIdentifiant),
+                                        new XElement("Identifiant", beneficiaireIdentifiant),
+                                        new XElement("CategorieContribuable", NormalizeCategorieContribuable(beneficiaireCategorie))
+                                    )
+                                ),
+                                new XElement("Resident", "1"),
+                                new XElement("NometprenonOuRaisonsociale", SanitizeTejTextField(tiers.Nom)),
+                                new XElement("Adresse", SanitizeTejTextField(tiers.Adresse)),
+                                new XElement("Activite", ""),
+                                new XElement("InfosContact",
+                                    new XElement("AdresseMail", EnsureNonEmptyEmail(SanitizeTejTextField(tiers.Mail))),
+                                    new XElement("NumTel", !string.IsNullOrEmpty(beneficiaireTel8Digits) ? beneficiaireTel8Digits : SanitizeTejTextField(tiers.Tel))
+                                )
+                            ),
+                            new XElement("DatePayement", factureDepense.Date.ToString("dd/MM/yyyy")),
+                            new XElement("Ref_certif_chez_declarant", SanitizeTejTextField(refCertif)),
+                            new XElement("ListeOperations",
+                                new XElement("Operation",
+                                    new XAttribute("IdTypeOperation", "RS7_000002"),
+                                    new XElement("AnneeFacturation", factureDepense.Date.Year),
+                                    new XElement("CNPC", "0"),
+                                    new XElement("P_Charge", "0"),
+                                    new XElement("MontantHT", montantHTMillimes),
+                                    new XElement("TauxRS", tauxRS.ToString("F2")),
+                                    new XElement("TauxTVA", tauxTVA.ToString("F2")),
+                                    new XElement("MontantTVA", montantTVAMillimes),
+                                    new XElement("MontantTTC", montantTTCMillimes),
+                                    new XElement("MontantRS", montantRSMillimes),
+                                    new XElement("MontantNetServi", montantNetServiMillimes)
+                                )
+                            ),
+                            new XElement("TotalPayement",
+                                new XElement("TotalMontantHT", montantHTMillimes),
+                                new XElement("TotalMontantTVA", montantTVAMillimes),
+                                new XElement("TotalMontantTTC", montantTTCMillimes),
+                                new XElement("TotalMontantRS", montantRSMillimes),
+                                new XElement("TotalMontantNetServi", montantNetServiMillimes)
+                            )
+                        )
+                    )
+                )
+            );
+
+            using var ms = new MemoryStream();
+            doc.Save(ms);
+            var bytes = ms.ToArray();
+            return RemoveStandaloneFromPrologue(bytes);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating TEJ XML for FactureDepense {Num}", factureDepense.Num);
+            throw;
+        }
+    }
+
+    private decimal DetermineVatRateForFactureDepense(FactureDepense factureDepense, AccountingYearFinancialParameters financialParams)
+    {
+        if (factureDepense.BaseHT19 > 0 || factureDepense.MontantTVA19 > 0)
+            return financialParams.VatRate19;
+        if (factureDepense.BaseHT13 > 0 || factureDepense.MontantTVA13 > 0)
+            return financialParams.VatRate13;
+        if (factureDepense.BaseHT7 > 0 || factureDepense.MontantTVA7 > 0)
+            return financialParams.VatRate7;
+        return Math.Max(Math.Max(financialParams.VatRate19, financialParams.VatRate13), financialParams.VatRate7);
+    }
+
+    /// <summary>
     /// Extracts TypeIdentifiant, Identifiant, and CategorieContribuable from a matricule string
     /// </summary>
     private (int TypeIdentifiant, string? Identifiant, string? CategorieContribuable) ExtractIdentifiantInfo(

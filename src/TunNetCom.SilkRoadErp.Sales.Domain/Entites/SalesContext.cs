@@ -138,6 +138,8 @@ public partial class SalesContext : DbContext
 
     public virtual DbSet<TejCertificatFacture> TejCertificatFacture { get; set; }
 
+    public virtual DbSet<TejCertificatFactureDepense> TejCertificatFactureDepense { get; set; }
+
     public virtual DbSet<Notification> Notification { get; set; }
 
     public virtual DbSet<TiersDepenseFonctionnement> TiersDepenseFonctionnement { get; set; }

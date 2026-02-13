@@ -18,7 +18,8 @@ public class CreateTiersDepenseFonctionnementEndpoint : ICarterModule
                 request.Code,
                 request.CodeCat,
                 request.EtbSec,
-                request.Mail);
+                request.Mail,
+                request.ExonereRetenueSource);
             var result = await mediator.Send(command, cancellationToken);
             if (result.IsFailed)
                 return Results.BadRequest(result.Errors);

@@ -51,7 +51,8 @@ public class GetFacturesDepenseWithSummariesQueryHandler(SalesContext _context, 
                 Description = f.Description,
                 MontantTotal = f.MontantTotal,
                 Statut = f.Statut.ToString(),
-                HasDocument = !string.IsNullOrEmpty(f.DocumentStoragePath)
+                HasDocument = !string.IsNullOrEmpty(f.DocumentStoragePath),
+                ExonereRetenueSource = f.IdTiersDepenseFonctionnementNavigation.ExonereRetenueSource
             })
             .ToListAsync(cancellationToken);
 

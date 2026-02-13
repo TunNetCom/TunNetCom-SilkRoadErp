@@ -25,4 +25,7 @@ public class CreateTiersDepenseFonctionnementRequest
 
     [JsonPropertyName("mail")]
     public string? Mail { get; set; }
+
+    [JsonPropertyName("exonereRetenueSource")]
+    public bool ExonereRetenueSource { get; set; }
 }

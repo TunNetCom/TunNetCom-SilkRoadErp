@@ -4,6 +4,7 @@
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.FactureDepense
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.TiersDepenseFonctionnement
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AccountingYear
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AppParameters
 @using TunNetCom.SilkRoadErp.Sales.Contracts
 @using TunNetCom.SilkRoadErp.Sales.Contracts.FactureDepense
 @using TunNetCom.SilkRoadErp.Sales.Contracts.TiersDepenseFonctionnement
@@ -23,6 +24,10 @@
 @inject ToastService ToastService
 @inject DialogService DialogService
 @inject IDecimalFormatService DecimalFormatService
+@inject IAppParametersClient AppParametersClient
+@inject HttpClient HttpClient
+@inject IConfiguration Configuration
+@inject IJSRuntime JS
 
 <div class="factures-container">
     <div class="factures-card">
@@ -101,11 +106,17 @@
                         <TagSelector DocumentType="FactureDepense" DocumentId="@f.Id" SaveOnChange="true" />
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="FactureDepenseSummaryItem" Title="Actions" Filterable="false" Sortable="false" Width="120px" TextAlign="TextAlign.Center">
+                <RadzenDataGridColumn TItem="FactureDepenseSummaryItem" Title="Actions" Filterable="false" Sortable="false" Width="180px" TextAlign="TextAlign.Center">
                     <Template Context="f">
-                        <div style="display: flex; gap: 6px; justify-content: center; align-items: center;">
+                        <div style="display: flex; gap: 6px; justify-content: center; align-items: center; flex-wrap: wrap;">
                             <RadzenButton Icon="edit" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Success" Variant="Variant.Outlined"
                                           Click="@(() => EditFacture(f.Id))" Title="@Localizer["Modifier"]" />
+                            @if (f.MontantTotal >= _seuilRetenueSource && !f.ExonereRetenueSource)
+                            {
+                                <RadzenButton Icon="file_download" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Info" Variant="Variant.Outlined"
+                                              Click="@(() => ExportToTejXmlAsync(f.Id))"
+                                              Title="Exporter en XML TEJ" />
+                            }
                             <RadzenButton Icon="delete" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Outlined"
                                           Click="@(() => ConfirmDeleteFacture(f.Id))"
                                           Title="@Localizer["Supprimer"]" />
@@ -133,12 +144,31 @@
     private bool isLoadingTiers;
     private CancellationTokenSource _cts = new();
     private RadzenDataGrid<FactureDepenseSummaryItem>? factureGrid;
+    private decimal _seuilRetenueSource = 1000;
 
     protected override async Task OnInitializedAsync()
     {
         decimalPlaces = await DecimalFormatService.GetDecimalPlacesAsync();
+        await LoadAppParameters();
         await LoadAccountingYears();
         await LoadData();
+    }
+
+    private async Task LoadAppParameters()
+    {
+        try
+        {
+            var appParamsResult = await AppParametersClient.GetAppParametersAsync(_cts.Token);
+            if (appParamsResult.IsT0)
+            {
+                var appParams = appParamsResult.AsT0;
+                _seuilRetenueSource = appParams.SeuilRetenueSource;
+            }
+        }
+        catch
+        {
+            _seuilRetenueSource = 1000;
+        }
     }
 
     private async Task LoadTiers(LoadDataArgs args)
@@ -207,6 +237,41 @@
     {
         var documentUrl = $"/api/factures-depenses/{factureId}/document";
         NavigationManager.NavigateTo(documentUrl, forceLoad: true);
+    }
+
+    private async Task ExportToTejXmlAsync(int id)
+    {
+        try
+        {
+            var baseUrl = Configuration.GetValue<string>("ApiSettings:BaseUrl")
+                ?? throw new InvalidOperationException("ApiSettings:BaseUrl configuration is missing");
+            var url = $"{baseUrl.TrimEnd('/')}/api/factures-depenses/{id}/export/tej-xml";
+            var response = await HttpClient.GetAsync(url);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                ToastService.Notify(new(ToastType.Danger,
+                    response.StatusCode == System.Net.HttpStatusCode.BadRequest
+                        ? errorContent
+                        : (Localizer["Erreur_Export_TEJ"] ?? "Erreur lors de l'export en XML TEJ. Veuillez réessayer.")));
+                return;
+            }
+
+            var fileBytes = await response.Content.ReadAsByteArrayAsync();
+            var fileName = response.Content.Headers.ContentDisposition?.FileName
+                ?? $"Facture_Depense_{id}_TEJ_{DateTime.Now:yyyyMMdd_HHmmss}.xml";
+            fileName = fileName.Trim('"');
+
+            var base64String = Convert.ToBase64String(fileBytes);
+            await JS.InvokeVoidAsync("downloadFile", fileName, base64String, "application/xml; charset=utf-8");
+
+            ToastService.Notify(new(ToastType.Success, Localizer["Export_TEJ_Success"] ?? "Export en XML TEJ réussi."));
+        }
+        catch (Exception ex)
+        {
+            ToastService.Notify(new(ToastType.Danger, ex.Message));
+        }
     }
 
     private async Task ConfirmDeleteFacture(int factureId)

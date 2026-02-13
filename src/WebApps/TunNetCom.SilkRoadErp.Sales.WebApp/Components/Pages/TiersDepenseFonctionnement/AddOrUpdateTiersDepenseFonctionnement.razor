@@ -52,6 +52,9 @@
                 <RadzenFormField Text="@Localizer["Adresse"]" class="rz-col-12">
                     <RadzenTextBox @bind-Value="model.Adresse" Style="width: 100%;" />
                 </RadzenFormField>
+                <RadzenFormField Text="@Localizer["exonere_retenue_source"]" class="rz-col-12 rz-md-6">
+                    <RadzenSwitch @bind-Value="model.ExonereRetenueSource" TValue="bool" />
+                </RadzenFormField>
 
                 <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" JustifyContent="Radzen.JustifyContent.End" class="rz-col-12">
                     <RadzenButton Text="@Localizer["Annuler"]" ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Outlined" Click="Cancel" />
@@ -94,7 +97,8 @@
                     Matricule = r.Matricule,
                     Code = r.Code,
                     CodeCat = r.CodeCat,
-                    EtbSec = r.EtbSec
+                    EtbSec = r.EtbSec,
+                    ExonereRetenueSource = r.ExonereRetenueSource
                 };
                 return;
             }
@@ -117,7 +121,8 @@
                     Matricule = model.Matricule,
                     Code = model.Code,
                     CodeCat = model.CodeCat,
-                    EtbSec = model.EtbSec
+                    EtbSec = model.EtbSec,
+                    ExonereRetenueSource = model.ExonereRetenueSource
                 }, _cts.Token);
                 if (createResult.IsT0)
                 {
@@ -137,7 +142,8 @@
                 Matricule = model.Matricule,
                 Code = model.Code,
                 CodeCat = model.CodeCat,
-                EtbSec = model.EtbSec
+                EtbSec = model.EtbSec,
+                ExonereRetenueSource = model.ExonereRetenueSource
             }, _cts.Token);
             if (updateResult.IsT0 && updateResult.AsT0 == ResponseTypes.Success)
             {
@@ -173,5 +179,6 @@
         public string? Code { get; set; }
         public string? CodeCat { get; set; }
         public string? EtbSec { get; set; }
+        public bool ExonereRetenueSource { get; set; }
     }
 }

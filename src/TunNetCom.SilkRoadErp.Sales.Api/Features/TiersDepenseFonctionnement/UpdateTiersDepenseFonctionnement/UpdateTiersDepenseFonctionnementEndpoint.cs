@@ -20,7 +20,8 @@ public class UpdateTiersDepenseFonctionnementEndpoint : ICarterModule
                 request.Code,
                 request.CodeCat,
                 request.EtbSec,
-                request.Mail);
+                request.Mail,
+                request.ExonereRetenueSource);
             var result = await mediator.Send(command, cancellationToken);
             if (result.IsFailed)
                 return result.IsEntityNotFound() ? Results.NotFound() : Results.BadRequest(result.Errors);

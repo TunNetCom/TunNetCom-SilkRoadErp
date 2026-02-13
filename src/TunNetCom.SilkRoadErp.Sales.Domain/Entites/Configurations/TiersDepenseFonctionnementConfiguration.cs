@@ -42,6 +42,10 @@ public class TiersDepenseFonctionnementConfiguration : IEntityTypeConfiguration<
         entity.Property(e => e.Mail)
             .HasMaxLength(200);
 
+        entity.Property(e => e.ExonereRetenueSource)
+            .IsRequired()
+            .HasDefaultValue(false);
+
         entity.HasMany(d => d.FactureDepense)
             .WithOne(p => p.IdTiersDepenseFonctionnementNavigation)
             .HasForeignKey(d => d.IdTiersDepenseFonctionnement)

@@ -9,4 +9,5 @@ public record UpdateTiersDepenseFonctionnementCommand(
     string? Code,
     string? CodeCat,
     string? EtbSec,
-    string? Mail) : IRequest<Result>;
+    string? Mail,
+    bool ExonereRetenueSource = false) : IRequest<Result>;

@@ -21,7 +21,8 @@ public class GetTiersDepenseFonctionnementQueryHandler(SalesContext _context, IL
                 Code = t.Code,
                 CodeCat = t.CodeCat,
                 EtbSec = t.EtbSec,
-                Mail = t.Mail
+                Mail = t.Mail,
+                ExonereRetenueSource = t.ExonereRetenueSource
             });
 
         if (!string.IsNullOrWhiteSpace(query.SearchKeyword))
