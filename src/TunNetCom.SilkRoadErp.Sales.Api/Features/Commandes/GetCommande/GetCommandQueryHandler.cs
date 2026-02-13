@@ -1,4 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.Commande;
+using TunNetCom.SilkRoadErp.Sales.Contracts.Commande;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Commandes.GetCommandes;
 
@@ -61,7 +61,9 @@ public class GetFullOrderQueryHandler(
                     ItemDescription = lc.DesignationLi,
                     ItemQuantity = lc.QteLi,
                     UnitPriceExcludingTax = lc.PrixHt,
+                    Discount = (decimal)lc.Remise,
                     TotalExcludingTax = lc.TotHt,
+                    VatRate = (decimal)lc.Tva,
                     TotalIncludingTax = lc.TotTtc
                 }).ToList()
             })
