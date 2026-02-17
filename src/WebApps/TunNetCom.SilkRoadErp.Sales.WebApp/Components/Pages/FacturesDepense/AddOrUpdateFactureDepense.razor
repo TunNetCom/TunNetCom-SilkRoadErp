@@ -65,7 +65,25 @@
                 <RadzenTextBox @bind-Value="model.Description" Placeholder="@Localizer["Description_Optionnel"]" Style="width: 100%;" MaxLength="500" />
             </RadzenFormField>
 
-            <RadzenFormField Text="@($"{Localizer["Montant_Total"]} (TND) *")" class="rz-col-12 rz-md-6">
+            <RadzenCard Style="padding: 1rem; border-radius: 8px; border: 1px solid var(--rz-base-300); margin-bottom: 0;" class="rz-col-12">
+                <h4 style="margin: 0 0 1rem 0;">Lignes TVA (0%, 7%, 13%, 19%)</h4>
+                <RadzenStack Gap="1rem">
+                    @foreach (var ligne in model.LignesTVA)
+                    {
+                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" Wrap="Radzen.FlexWrap.Wrap">
+                            <span style="min-width: 60px; font-weight: 500;">@(ligne.TauxTVA)%</span>
+                            <RadzenFormField Text="@Localizer["Montant_HT"]" class="flex-grow-1" Style="min-width: 140px;">
+                                <RadzenNumeric @bind-Value="ligne.BaseHT" Min="0" Format="@AmountHelper.FORMAT_N3" Style="width: 100%;" @bind-Value:after="StateHasChanged" />
+                            </RadzenFormField>
+                            <RadzenFormField Text="@Localizer["Montant_TVA"]" class="flex-grow-1" Style="min-width: 140px;">
+                                <RadzenNumeric @bind-Value="ligne.MontantTVA" Min="0" Format="@AmountHelper.FORMAT_N3" Style="width: 100%;" @bind-Value:after="StateHasChanged" />
+                            </RadzenFormField>
+                        </RadzenStack>
+                    }
+                </RadzenStack>
+            </RadzenCard>
+
+            <RadzenFormField Text="@($"{Localizer["Montant_TTC"]} (TND) *")" class="rz-col-12 rz-md-6">
                 <RadzenNumeric @bind-Value="model.MontantTotal" Min="0" Format="@AmountHelper.FORMAT_N3" Style="width: 100%;" />
             </RadzenFormField>
 
@@ -191,6 +209,13 @@
         public int IdTiersDepenseFonctionnement { get; set; }
         public DateTime Date { get; set; } = DateTime.Today;
         public string Description { get; set; } = "";
+        public List<FactureDepenseLigneTvaDto> LignesTVA { get; set; } = new()
+        {
+            new() { TauxTVA = 0, BaseHT = 0, MontantTVA = 0 },
+            new() { TauxTVA = 7, BaseHT = 0, MontantTVA = 0 },
+            new() { TauxTVA = 13, BaseHT = 0, MontantTVA = 0 },
+            new() { TauxTVA = 19, BaseHT = 0, MontantTVA = 0 }
+        };
         public decimal MontantTotal { get; set; }
         public string Statut { get; set; } = "";
     }
@@ -209,6 +234,13 @@
                     IdTiersDepenseFonctionnement = r.IdTiersDepenseFonctionnement,
                     Date = r.Date,
                     Description = r.Description ?? "",
+                    LignesTVA = r.LignesTVA?.Count >= 4 ? r.LignesTVA : new List<FactureDepenseLigneTvaDto>
+                    {
+                        new() { TauxTVA = 0, BaseHT = 0, MontantTVA = 0 },
+                        new() { TauxTVA = 7, BaseHT = 0, MontantTVA = 0 },
+                        new() { TauxTVA = 13, BaseHT = 0, MontantTVA = 0 },
+                        new() { TauxTVA = 19, BaseHT = 0, MontantTVA = 0 }
+                    },
                     MontantTotal = r.MontantTotal,
                     Statut = r.Statut ?? ""
                 };
@@ -257,6 +289,11 @@
             NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Warning, Summary = Localizer["Validation"], Detail = Localizer["Select_Tiers_Validation"] ?? "Veuillez sélectionner un tiers." });
             return;
         }
+        if (model.MontantTotal <= 0)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Warning, Summary = Localizer["Validation"], Detail = Localizer["Montant_TTC"] + " doit être supérieur à 0." });
+            return;
+        }
 
         isSaving = true;
         try
@@ -269,6 +306,7 @@
                     Date = model.Date,
                     Description = model.Description,
                     MontantTotal = model.MontantTotal,
+                    LignesTVA = model.LignesTVA,
                     AccountingYearId = null,
                     DocumentBase64 = documentBase64
                 }, _cts.Token);
@@ -291,6 +329,7 @@
                 Date = model.Date,
                 Description = model.Description,
                 MontantTotal = model.MontantTotal,
+                LignesTVA = model.LignesTVA,
                 DocumentBase64 = documentBase64
             }, _cts.Token);
             if (updateResult.IsT0 && updateResult.AsT0 == ResponseTypes.Success)

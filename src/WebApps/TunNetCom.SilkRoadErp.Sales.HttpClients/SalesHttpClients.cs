@@ -30,6 +30,7 @@ using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PrintHistory;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProductFamilies;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProductSubFamilies;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.RetenueSourceClient;
+using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.RetenueSourceFactureDepense;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.RetenueSourceFournisseur;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Notifications;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryCar;
@@ -212,6 +213,10 @@ public static class SalesHttpClients
         _ = AddClient<IFactureDepenseApiClient, FactureDepenseApiClient>(factureDepense =>
         {
             factureDepense.BaseAddress = new Uri(baseUrl);
+        });
+        _ = AddClient<IRetenueSourceFactureDepenseApiClient, RetenueSourceFactureDepenseApiClient>(retenueSourceFactureDepense =>
+        {
+            retenueSourceFactureDepense.BaseAddress = new Uri(baseUrl);
         });
         _ = AddClient<IPaiementTiersDepenseApiClient, PaiementTiersDepenseApiClient>(paiementTiersDepense =>
         {

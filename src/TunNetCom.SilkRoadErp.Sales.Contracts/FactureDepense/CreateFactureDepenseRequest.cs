@@ -14,6 +14,9 @@ public class CreateFactureDepenseRequest
     [JsonPropertyName("montantTotal")]
     public decimal MontantTotal { get; set; }
 
+    [JsonPropertyName("lignesTVA")]
+    public List<FactureDepenseLigneTvaDto> LignesTVA { get; set; } = new();
+
     [JsonPropertyName("accountingYearId")]
     public int? AccountingYearId { get; set; }
 

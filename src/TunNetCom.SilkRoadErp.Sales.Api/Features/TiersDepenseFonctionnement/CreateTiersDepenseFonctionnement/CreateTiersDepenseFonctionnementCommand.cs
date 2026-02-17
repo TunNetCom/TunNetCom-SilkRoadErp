@@ -10,4 +10,5 @@ public record CreateTiersDepenseFonctionnementCommand(
     string? Code,
     string? CodeCat,
     string? EtbSec,
-    string? Mail) : IRequest<Result<int>>;
+    string? Mail,
+    bool ExonereRetenueSource = false) : IRequest<Result<int>>;

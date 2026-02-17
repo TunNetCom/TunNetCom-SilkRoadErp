@@ -84,7 +84,6 @@
         try
         {
             compteBancaires = await CompteBancaireService.GetCompteBancairesAsync(cancellationTokenSource.Token);
-            await compteBancaireGrid.Reload();
         }
         catch (Exception)
         {

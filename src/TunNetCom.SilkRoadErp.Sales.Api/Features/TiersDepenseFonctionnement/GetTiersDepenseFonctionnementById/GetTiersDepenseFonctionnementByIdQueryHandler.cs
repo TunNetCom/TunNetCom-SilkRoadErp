@@ -22,7 +22,8 @@ public class GetTiersDepenseFonctionnementByIdQueryHandler(SalesContext _context
                 Code = t.Code,
                 CodeCat = t.CodeCat,
                 EtbSec = t.EtbSec,
-                Mail = t.Mail
+                Mail = t.Mail,
+                ExonereRetenueSource = t.ExonereRetenueSource
             })
             .FirstOrDefaultAsync(cancellationToken);
 

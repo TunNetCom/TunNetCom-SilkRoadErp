@@ -70,6 +70,16 @@ public class GetPaiementsClientQueryHandler(
             }
         }
 
+        if (query.BonDeLivraisonId.HasValue)
+        {
+            paiementsQuery = paiementsQuery.Where(p => p.BonDeLivraisons.Any(b => b.BonDeLivraisonId == query.BonDeLivraisonId.Value));
+        }
+
+        if (query.FactureId.HasValue)
+        {
+            paiementsQuery = paiementsQuery.Where(p => p.Factures.Any(f => f.FactureId == query.FactureId.Value));
+        }
+
         var paiements = paiementsQuery
             .Select(p => new PaiementClientResponse
             {

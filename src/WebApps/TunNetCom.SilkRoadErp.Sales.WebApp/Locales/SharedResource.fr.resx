@@ -645,6 +645,9 @@
   <data name="Manage_Invoices" xml:space="preserve">
     <value>Gestion Factures</value>
   </data>
+  <data name="Devis" xml:space="preserve">
+    <value>Devis</value>
+  </data>
   <data name="Delivery_Note" xml:space="preserve">
     <value>Bon de livraison</value>
   </data>
@@ -798,6 +801,21 @@
   <data name="Select_Bon_Livraison" xml:space="preserve">
     <value>Sélectionner un bon de livraison</value>
   </data>
+  <data name="Rattacher_A" xml:space="preserve">
+    <value>Rattacher à</value>
+  </data>
+  <data name="Rattacher_Facture" xml:space="preserve">
+    <value>Rattacher à la facture</value>
+  </data>
+  <data name="Rattacher_BL" xml:space="preserve">
+    <value>Rattacher au BL</value>
+  </data>
+  <data name="Paiements" xml:space="preserve">
+    <value>Paiements</value>
+  </data>
+  <data name="Reste_A_Payer" xml:space="preserve">
+    <value>Reste à payer</value>
+  </data>
   <data name="Commentaire_Optionnel" xml:space="preserve">
     <value>Commentaire (optionnel)</value>
   </data>
@@ -933,8 +951,35 @@
   <data name="Select_Tiers" xml:space="preserve">
     <value>Choisir un tiers</value>
   </data>
+  <data name="Modifier_Tiers" xml:space="preserve">
+    <value>Modifier le tiers</value>
+  </data>
+  <data name="Nouveau_Tiers_Depenses" xml:space="preserve">
+    <value>Nouveau tiers dépenses</value>
+  </data>
+  <data name="Informations_Generales" xml:space="preserve">
+    <value>Informations générales</value>
+  </data>
+  <data name="Informations_Generales_Desc" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Coordonnees" xml:space="preserve">
+    <value>Coordonnées</value>
+  </data>
+  <data name="Coordonnees_Desc" xml:space="preserve">
+    <value />
+  </data>
   <data name="Tiers_Depenses" xml:space="preserve">
     <value>Tiers dépenses</value>
+  </data>
+  <data name="Acces_Refuse_Creer_Tiers" xml:space="preserve">
+    <value>Vous n'avez pas les droits pour créer ou modifier des tiers dépenses.</value>
+  </data>
+  <data name="Acces_Refuse_Factures_Depenses" xml:space="preserve">
+    <value>Vous n'avez pas les droits pour accéder aux factures dépenses.</value>
+  </data>
+  <data name="Acces_Rapide" xml:space="preserve">
+    <value>Accès rapide</value>
   </data>
   <data name="Facture_Depense_Optionnel" xml:space="preserve">
     <value>Facture dépense (optionnel)</value>
@@ -974,6 +1019,21 @@
   </data>
   <data name="Montant_Total" xml:space="preserve">
     <value>Montant total</value>
+  </data>
+  <data name="Montant_HT" xml:space="preserve">
+    <value>Montant HT</value>
+  </data>
+  <data name="Taux_TVA" xml:space="preserve">
+    <value>Taux TVA</value>
+  </data>
+  <data name="Montant_TVA" xml:space="preserve">
+    <value>Montant TVA</value>
+  </data>
+  <data name="Montant_TTC" xml:space="preserve">
+    <value>Montant TTC</value>
+  </data>
+  <data name="Sans_TVA" xml:space="preserve">
+    <value>Sans TVA (0%)</value>
   </data>
   <data name="Description_Optionnel" xml:space="preserve">
     <value>Description (optionnel)</value>
@@ -1445,6 +1505,24 @@
   </data>
   <data name="tej_export_info_retenue" xml:space="preserve">
     <value>Lors de l'export TEJ, le montant envoyé est le montant avant retenue ; la plateforme TEJ effectue le calcul de la retenue.</value>
+  </data>
+  <data name="tej_acte_depot_choice" xml:space="preserve">
+    <value>Choisir le type de déclaration TEJ :</value>
+  </data>
+  <data name="tej_acte_depot_title" xml:space="preserve">
+    <value>Type de déclaration TEJ</value>
+  </data>
+  <data name="tej_export_all" xml:space="preserve">
+    <value>Exporter tout en TEJ</value>
+  </data>
+  <data name="tej_no_invoices_to_export" xml:space="preserve">
+    <value>Aucune facture à exporter. Appliquez des filtres et rechargez les données.</value>
+  </data>
+  <data name="Factures_Fournisseur" xml:space="preserve">
+    <value>Factures fournisseur</value>
+  </data>
+  <data name="Factures_Depense" xml:space="preserve">
+    <value>Factures dépense</value>
   </data>
   <data name="seuil_non_atteint" xml:space="preserve">
     <value>Seuil non atteint</value>

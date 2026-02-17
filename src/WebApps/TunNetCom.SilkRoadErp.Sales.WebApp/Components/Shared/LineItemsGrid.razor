@@ -581,18 +581,36 @@
 
     private IReadOnlyList<VatRateOption> GetVatRatesFromAppParameters()
     {
+        List<double> rates;
         if (AppParameters == null)
         {
-            return new[]
+            rates = new List<double>
             {
-                new VatRateOption(VatRateConstants.DefaultVatRate0),
-                new VatRateOption(VatRateConstants.DefaultVatRate7),
-                new VatRateOption(VatRateConstants.DefaultVatRate13),
-                new VatRateOption(VatRateConstants.DefaultVatRate19)
+                VatRateConstants.DefaultVatRate0,
+                VatRateConstants.DefaultVatRate7,
+                VatRateConstants.DefaultVatRate13,
+                VatRateConstants.DefaultVatRate19
             };
         }
-        var rates = new[] { (double)AppParameters.VatRate0, (double)AppParameters.VatRate7, (double)AppParameters.VatRate13, (double)AppParameters.VatRate19 };
-        return rates.Distinct().OrderBy(r => r).Select(r => new VatRateOption(r)).ToList();
+        else
+        {
+            rates = new[] { (double)AppParameters.VatRate0, (double)AppParameters.VatRate7, (double)AppParameters.VatRate13, (double)AppParameters.VatRate19 }.Distinct().ToList();
+        }
+
+        // Add VAT rates from loaded items that aren't already in the list (for edit mode with custom rates)
+        if (Items != null && Items.Any())
+        {
+            foreach (var item in Items)
+            {
+                var vat = item.VatPercentage;
+                if (vat >= 0 && vat <= 100 && !rates.Any(r => Math.Abs(r - vat) < VatRateTolerance))
+                {
+                    rates.Add(vat);
+                }
+            }
+        }
+
+        return rates.OrderBy(r => r).Select(r => new VatRateOption(r)).ToList();
     }
 
     private double GetDefaultVatRate19() => (double)(AppParameters?.VatRate19 ?? (decimal)VatRateConstants.DefaultVatRate19);

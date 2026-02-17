@@ -1,8 +1,216 @@
 @page "/"
+@using Microsoft.Extensions.Localization
+@using Microsoft.AspNetCore.Components.Routing
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@inject IStringLocalizer<SharedResource> Localizer
 
 <PageTitle>Home</PageTitle>
 
-<h1>Home</h1>
+<RadzenStack Gap="2rem">
+    <RadzenText TextStyle="TextStyle.H5" Class="quick-access-title">@Localizer["Acces_Rapide"]</RadzenText>
 
-Welcome to Silk Road Erp. 
+    <RadzenStack Gap="1.25rem">
+        <div class="quick-access-section section-delivery">
+            <div class="quick-access-section-header">
+                <RadzenIcon Icon="local_shipping" Class="section-icon" />
+                <RadzenText TextStyle="TextStyle.Subtitle1">@Localizer["Delivery_Note"]</RadzenText>
+            </div>
+            <RadzenRow Gap="1rem">
+                <RadzenColumn Size="12" SizeMD="6">
+                    <NavLink href="/delivery-notes" class="quick-access-tile">
+                        <RadzenCard Variant="Variant.Outlined" class="quick-access-card">
+                            <span class="quick-access-tile-content">
+                                <RadzenIcon Icon="list_alt" class="tile-icon" />
+                                <RadzenText TextStyle="TextStyle.Subtitle2">@Localizer["Liste"]</RadzenText>
+                            </span>
+                        </RadzenCard>
+                    </NavLink>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="6">
+                    <NavLink href="/AddOrUpdateDeliveryNote" class="quick-access-tile">
+                        <RadzenCard Variant="Variant.Outlined" class="quick-access-card">
+                            <span class="quick-access-tile-content">
+                                <RadzenIcon Icon="add_circle_outline" class="tile-icon" />
+                                <RadzenText TextStyle="TextStyle.Subtitle2">@Localizer["Nouveau"]</RadzenText>
+                            </span>
+                        </RadzenCard>
+                    </NavLink>
+                </RadzenColumn>
+            </RadzenRow>
+        </div>
 
+        <div class="quick-access-section section-quotation">
+            <div class="quick-access-section-header">
+                <RadzenIcon Icon="description" Class="section-icon" />
+                <RadzenText TextStyle="TextStyle.Subtitle1">@Localizer["Devis"]</RadzenText>
+            </div>
+            <RadzenRow Gap="1rem">
+                <RadzenColumn Size="12" SizeMD="6">
+                    <NavLink href="/quotations" class="quick-access-tile">
+                        <RadzenCard Variant="Variant.Outlined" class="quick-access-card">
+                            <span class="quick-access-tile-content">
+                                <RadzenIcon Icon="list_alt" class="tile-icon" />
+                                <RadzenText TextStyle="TextStyle.Subtitle2">@Localizer["Liste"]</RadzenText>
+                            </span>
+                        </RadzenCard>
+                    </NavLink>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="6">
+                    <NavLink href="/AddOrUpdateQuotation" class="quick-access-tile">
+                        <RadzenCard Variant="Variant.Outlined" class="quick-access-card">
+                            <span class="quick-access-tile-content">
+                                <RadzenIcon Icon="add_circle_outline" class="tile-icon" />
+                                <RadzenText TextStyle="TextStyle.Subtitle2">@Localizer["Nouveau"]</RadzenText>
+                            </span>
+                        </RadzenCard>
+                    </NavLink>
+                </RadzenColumn>
+            </RadzenRow>
+        </div>
+
+        <div class="quick-access-section section-articles">
+            <div class="quick-access-section-header">
+                <RadzenIcon Icon="inventory_2" Class="section-icon" />
+                <RadzenText TextStyle="TextStyle.Subtitle1">@Localizer["Articles"]</RadzenText>
+            </div>
+            <RadzenRow Gap="1rem">
+                <RadzenColumn Size="12" SizeMD="6">
+                    <NavLink href="/products_list" class="quick-access-tile">
+                        <RadzenCard Variant="Variant.Outlined" class="quick-access-card">
+                            <span class="quick-access-tile-content">
+                                <RadzenIcon Icon="list_alt" class="tile-icon" />
+                                <RadzenText TextStyle="TextStyle.Subtitle2">@Localizer["Liste"]</RadzenText>
+                            </span>
+                        </RadzenCard>
+                    </NavLink>
+                </RadzenColumn>
+            </RadzenRow>
+        </div>
+
+        <div class="quick-access-section section-receipt">
+            <div class="quick-access-section-header">
+                <RadzenIcon Icon="assignment" Class="section-icon" />
+                <RadzenText TextStyle="TextStyle.Subtitle1">@Localizer["Receipt_Note"]</RadzenText>
+            </div>
+            <RadzenRow Gap="1rem">
+                <RadzenColumn Size="12" SizeMD="6">
+                    <NavLink href="/reciption_notes" class="quick-access-tile">
+                        <RadzenCard Variant="Variant.Outlined" class="quick-access-card">
+                            <span class="quick-access-tile-content">
+                                <RadzenIcon Icon="list_alt" class="tile-icon" />
+                                <RadzenText TextStyle="TextStyle.Subtitle2">@Localizer["Liste"]</RadzenText>
+                            </span>
+                        </RadzenCard>
+                    </NavLink>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="6">
+                    <NavLink href="/add_or_update_reciption_notes" class="quick-access-tile">
+                        <RadzenCard Variant="Variant.Outlined" class="quick-access-card">
+                            <span class="quick-access-tile-content">
+                                <RadzenIcon Icon="add_circle_outline" class="tile-icon" />
+                                <RadzenText TextStyle="TextStyle.Subtitle2">@Localizer["Nouveau"]</RadzenText>
+                            </span>
+                        </RadzenCard>
+                    </NavLink>
+                </RadzenColumn>
+            </RadzenRow>
+        </div>
+    </RadzenStack>
+</RadzenStack>
+
+<style>
+    .quick-access-title {
+        font-weight: 600;
+        letter-spacing: -0.02em;
+    }
+
+    .quick-access-section {
+        padding: 1rem 1.25rem;
+        border-radius: 12px;
+        border-left: 4px solid;
+        background: var(--rz-base-background-color);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        transition: box-shadow 0.25s ease;
+    }
+
+    .quick-access-section:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .quick-access-section.section-delivery {
+        border-left-color: var(--rz-success, #22c55e);
+    }
+
+    .quick-access-section.section-quotation {
+        border-left-color: var(--rz-primary, #3b82f6);
+    }
+
+    .quick-access-section.section-articles {
+        border-left-color: var(--rz-warning, #f59e0b);
+    }
+
+    .quick-access-section.section-receipt {
+        border-left-color: var(--rz-info, #06b6d4);
+    }
+
+    .quick-access-section-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .quick-access-section-header .section-icon {
+        font-size: 1.25rem;
+        opacity: 0.9;
+    }
+
+    .section-delivery .quick-access-section-header .section-icon {
+        color: var(--rz-success, #22c55e);
+    }
+
+    .section-quotation .quick-access-section-header .section-icon {
+        color: var(--rz-primary, #3b82f6);
+    }
+
+    .section-articles .quick-access-section-header .section-icon {
+        color: var(--rz-warning, #f59e0b);
+    }
+
+    .section-receipt .quick-access-section-header .section-icon {
+        color: var(--rz-info, #06b6d4);
+    }
+
+    .quick-access-tile {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+    }
+
+    .quick-access-tile .quick-access-card {
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+        min-height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+    }
+
+    .quick-access-tile-content {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .quick-access-tile .tile-icon {
+        font-size: 1.25rem;
+        color: var(--rz-primary);
+    }
+
+    .quick-access-tile:hover .quick-access-card {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+        background-color: var(--rz-base-hover-background-color, rgba(0, 0, 0, 0.04));
+    }
+</style>

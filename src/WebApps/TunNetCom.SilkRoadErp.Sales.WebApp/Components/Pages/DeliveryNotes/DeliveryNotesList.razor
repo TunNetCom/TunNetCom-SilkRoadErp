@@ -819,7 +819,8 @@
             {
                 { "DeliveryNoteId", item.Id },
                 { "CustomerId", item.CustomerId.Value },
-                { "InvoiceId", invoiceId }
+                { "InvoiceId", invoiceId },
+                { "SuggestedAmount", item.NetAmount }
             },
             new DialogOptions
             {

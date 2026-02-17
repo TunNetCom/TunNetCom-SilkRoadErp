@@ -14,8 +14,13 @@ public static class BadRequestResponseExtensions
 {
     public static List<string> ToErrorsList(this BadRequestResponse badRequestResponse)
     {
-        return badRequestResponse.errors.FirstOrDefault().Value
-            .Select(t => t)
-            .ToList();
+        if (badRequestResponse?.errors == null || badRequestResponse.errors.Count == 0)
+            return new List<string>();
+
+        var first = badRequestResponse.errors.FirstOrDefault();
+        if (first.Value == null || first.Value.Length == 0)
+            return new List<string>();
+
+        return first.Value.ToList();
     }
 }

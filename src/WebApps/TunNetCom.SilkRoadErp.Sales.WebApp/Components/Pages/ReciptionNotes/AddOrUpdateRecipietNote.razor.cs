@@ -50,6 +50,7 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
     private GetActiveAccountingYearResponse? activeAccountingYear;
     private int? receiptNoteAccountingYearId; // Track the receipt note's accounting year
     private int? _selectedProviderId;
+    private int? _numFactureFournisseur;
     int? selectedProviderId
     {
         get => _selectedProviderId;
@@ -106,7 +107,7 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
                 NumBonFournisseur = numBonFournisseur,
                 DateLivraison = dateLivraison,
                 IdFournisseur = _selectedProviderId.Value,
-                NumFactureFournisseur = null,
+                NumFactureFournisseur = _numFactureFournisseur,
                 ReceiptNoteLines = orders.Select(o => new ReceiptNoteLineRequest(
                     ProductRef: o.ProductReference,
                     ProductDescription: o.Description,
@@ -236,6 +237,7 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
             totalVat = 0;
             totalTtc = 0;
             receiptNoteAccountingYearId = null; // New receipt note will be in active year
+            _numFactureFournisseur = null;
             return;
         }
 
@@ -255,6 +257,7 @@ public partial class AddOrUpdateRecipietNote : ComponentBase
                     dateLivraison = receiptNote.Value.DateLivraison;
                     selectedProviderId = receiptNote.Value.IdFournisseur;
                     receiptNoteAccountingYearId = receiptNote.Value.AccountingYearId;
+                    _numFactureFournisseur = receiptNote.Value.NumFactureFournisseur;
 
                     // Ensure the selected provider is loaded in _filteredProviders for FODEC calculation
                     if (selectedProviderId.HasValue && !_filteredProviders.Any(p => p.Id == selectedProviderId.Value))

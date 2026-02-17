@@ -249,7 +249,7 @@
             do
             {
                 paiementsPage = await PaiementClientService.GetPaiementsClientAsync(
-                    null, null, dateStart, dateEnd, null, null, null, null, null,
+                    null, null, null, null, dateStart, dateEnd, null, null, null, null, null,
                     page, MaxPageSize, _cts.Token);
                 paiementsAll.AddRange(paiementsPage.Items ?? new List<PaiementClientResponse>());
                 page++;

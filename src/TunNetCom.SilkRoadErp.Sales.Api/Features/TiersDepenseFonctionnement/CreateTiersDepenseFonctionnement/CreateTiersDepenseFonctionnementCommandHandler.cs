@@ -18,7 +18,8 @@ public class CreateTiersDepenseFonctionnementCommandHandler(SalesContext _contex
             command.Code,
             command.CodeCat,
             command.EtbSec,
-            command.Mail);
+            command.Mail,
+            command.ExonereRetenueSource);
 
         _context.TiersDepenseFonctionnement.Add(entity);
         await _context.SaveChangesAsync(cancellationToken);

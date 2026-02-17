@@ -309,8 +309,8 @@ public class DeliveryNoteApiClient(HttpClient _httpClient) : IDeliveryNoteApiCli
         int pageSize,
         CancellationToken cancellationToken = default)
     {
-        var queryParams = $"?PageNumber={pageNumber}&PageSize={pageSize}";
-        var response = await _httpClient.GetAsync($"/deliveryNoteHistory/{Uri.EscapeDataString(productReference)}{queryParams}", cancellationToken);
+        var queryParams = $"?productReference={Uri.EscapeDataString(productReference)}&PageNumber={pageNumber}&PageSize={pageSize}";
+        var response = await _httpClient.GetAsync($"/deliveryNoteHistory{queryParams}", cancellationToken);
         _ = response.EnsureSuccessStatusCode();
 
         // Deserialize the response

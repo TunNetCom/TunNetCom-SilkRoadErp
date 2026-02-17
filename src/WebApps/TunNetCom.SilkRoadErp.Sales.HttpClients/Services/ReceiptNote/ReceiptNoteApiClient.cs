@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.CreateReceiptNote;
 using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Request;
 using TunNetCom.SilkRoadErp.Sales.Contracts.ReceiptNoteLine.Response;
@@ -235,8 +235,8 @@ class ReceiptNoteApiClient : IReceiptNoteApiClient
     {
         try
         {
-            var queryParams = $"?PageNumber={pageNumber}&PageSize={pageSize}";
-            var response = await _httpClient.GetAsync($"/receiptNoteHistory/{Uri.EscapeDataString(productReference)}{queryParams}", cancellationToken);
+            var queryParams = $"?productReference={Uri.EscapeDataString(productReference)}&PageNumber={pageNumber}&PageSize={pageSize}";
+            var response = await _httpClient.GetAsync($"/receiptNoteHistory{queryParams}", cancellationToken);
 
             if (response.StatusCode == HttpStatusCode.NotFound)
             {

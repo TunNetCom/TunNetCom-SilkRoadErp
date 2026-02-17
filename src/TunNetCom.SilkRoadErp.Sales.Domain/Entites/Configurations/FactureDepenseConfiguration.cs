@@ -40,6 +40,31 @@ public class FactureDepenseConfiguration : IEntityTypeConfiguration<FactureDepen
             .HasColumnType("decimal(18, 3)")
             .IsRequired();
 
+        entity.Property(e => e.BaseHT0)
+            .HasColumnType("decimal(18, 3)")
+            .HasDefaultValue(0);
+        entity.Property(e => e.MontantTVA0)
+            .HasColumnType("decimal(18, 3)")
+            .HasDefaultValue(0);
+        entity.Property(e => e.BaseHT7)
+            .HasColumnType("decimal(18, 3)")
+            .HasDefaultValue(0);
+        entity.Property(e => e.MontantTVA7)
+            .HasColumnType("decimal(18, 3)")
+            .HasDefaultValue(0);
+        entity.Property(e => e.BaseHT13)
+            .HasColumnType("decimal(18, 3)")
+            .HasDefaultValue(0);
+        entity.Property(e => e.MontantTVA13)
+            .HasColumnType("decimal(18, 3)")
+            .HasDefaultValue(0);
+        entity.Property(e => e.BaseHT19)
+            .HasColumnType("decimal(18, 3)")
+            .HasDefaultValue(0);
+        entity.Property(e => e.MontantTVA19)
+            .HasColumnType("decimal(18, 3)")
+            .HasDefaultValue(0);
+
         entity.Property(e => e.AccountingYearId)
             .IsRequired();
 

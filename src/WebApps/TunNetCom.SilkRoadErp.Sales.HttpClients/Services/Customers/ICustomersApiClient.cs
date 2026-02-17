@@ -19,7 +19,7 @@ public interface ICustomersApiClient
         QueryStringParameters queryParameters,
         CancellationToken cancellationToken);
 
-    Task<OneOf<CreateCustomerRequest, BadRequestResponse>> CreateAsync(
+    Task<OneOf<int, BadRequestResponse>> CreateAsync(
         CreateCustomerRequest request,
         CancellationToken cancellationToken);
 

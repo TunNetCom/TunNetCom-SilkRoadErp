@@ -6,9 +6,9 @@ public class GetReceiptNotesBasedOnProductReferenceEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        _ = app.MapGet("/receiptNoteHistory/{productReference}", async (
+        _ = app.MapGet("/receiptNoteHistory", async (
                 IMediator mediator,
-                string productReference,
+                [FromQuery] string? productReference,
                 [AsParameters] QueryStringParameters paginationQueryParams,
                 HttpContext httpContext,
                 CancellationToken cancellationToken) =>

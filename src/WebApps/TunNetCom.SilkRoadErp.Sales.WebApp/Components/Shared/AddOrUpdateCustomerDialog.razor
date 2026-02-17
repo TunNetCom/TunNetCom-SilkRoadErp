@@ -1,0 +1,187 @@
+@using Radzen
+@using Radzen.Blazor
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Customers
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@inject DialogService DialogService
+@inject ICustomersApiClient CustomersService
+@inject IStringLocalizer<SharedResource> Localizer
+
+<RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
+    <RadzenText TextStyle="TextStyle.Body1">
+        @Localizer["AddClient"]
+    </RadzenText>
+
+    <RadzenRow>
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+                <RadzenLabel Text="@Localizer["customer_name"]" />
+                <RadzenTextBox @bind-Value="Name"
+                              Placeholder="@Localizer["customer_name"]"
+                              MaxLength="50"
+                              Style="width: 100%;" />
+            </RadzenStack>
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+                <RadzenLabel Text="@Localizer["customer_phone"]" />
+                <RadzenTextBox @bind-Value="Tel"
+                              Placeholder="@Localizer["customer_phone"]"
+                              MaxLength="50"
+                              Style="width: 100%;" />
+            </RadzenStack>
+        </RadzenColumn>
+    </RadzenRow>
+
+    <RadzenRow>
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+                <RadzenLabel Text="@($"{Localizer["customer_email"]} (optionnel)")" />
+                <RadzenTextBox @bind-Value="Mail"
+                              Placeholder="@Localizer["customer_email"]"
+                              MaxLength="200"
+                              Style="width: 100%;" />
+            </RadzenStack>
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+                <RadzenLabel Text="@Localizer["customer_matricule"]" />
+                <RadzenTextBox @bind-Value="Matricule"
+                              Placeholder="@Localizer["customer_matricule"]"
+                              MaxLength="50"
+                              Style="width: 100%;" />
+            </RadzenStack>
+        </RadzenColumn>
+    </RadzenRow>
+
+    <RadzenRow>
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+                <RadzenLabel Text="@Localizer["customer_address"]" />
+                <RadzenTextBox @bind-Value="Adresse"
+                              Placeholder="@Localizer["customer_address"]"
+                              MaxLength="200"
+                              Style="width: 100%;" />
+            </RadzenStack>
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+                <RadzenLabel Text="@Localizer["Code"]" />
+                <RadzenTextBox @bind-Value="Code"
+                              Placeholder="@Localizer["Code"]"
+                              MaxLength="50"
+                              Style="width: 100%;" />
+            </RadzenStack>
+        </RadzenColumn>
+    </RadzenRow>
+
+    <RadzenRow>
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+                <RadzenLabel Text="@Localizer["CodeCat"]" />
+                <RadzenTextBox @bind-Value="CodeCat"
+                              Placeholder="@Localizer["CodeCat"]"
+                              MaxLength="50"
+                              Style="width: 100%;" />
+            </RadzenStack>
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+                <RadzenLabel Text="@Localizer["EtbSec"]" />
+                <RadzenTextBox @bind-Value="EtbSec"
+                              Placeholder="@Localizer["EtbSec"]"
+                              MaxLength="50"
+                              Style="width: 100%;" />
+            </RadzenStack>
+        </RadzenColumn>
+    </RadzenRow>
+
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End" Style="margin-top: 1rem;">
+        <RadzenButton Text="@Localizer["Cancel"]"
+                      ButtonStyle="ButtonStyle.Light"
+                      Click="@(() => DialogService.Close())"
+                      Disabled="@isSaving" />
+        <RadzenButton Text="@Localizer["save_label"]"
+                      Icon="save"
+                      ButtonStyle="ButtonStyle.Success"
+                      Click="@OnSave"
+                      Disabled="@(string.IsNullOrWhiteSpace(Name) || isSaving)" />
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    private string Name { get; set; } = string.Empty;
+    private string? Tel { get; set; }
+    private string? Adresse { get; set; }
+    private string? Matricule { get; set; }
+    private string? Code { get; set; }
+    private string? CodeCat { get; set; }
+    private string? EtbSec { get; set; }
+    private string? Mail { get; set; }
+    private bool isSaving = false;
+
+    private async Task OnSave()
+    {
+        if (string.IsNullOrWhiteSpace(Name))
+        {
+            return;
+        }
+
+        isSaving = true;
+        StateHasChanged();
+
+        try
+        {
+            var request = new CreateCustomerRequest
+            {
+                Nom = Name.Trim(),
+                Tel = Tel?.Trim() ?? string.Empty,
+                Adresse = Adresse?.Trim() ?? string.Empty,
+                Matricule = Matricule?.Trim() ?? string.Empty,
+                Code = Code?.Trim() ?? string.Empty,
+                CodeCat = CodeCat?.Trim() ?? string.Empty,
+                EtbSec = EtbSec?.Trim() ?? string.Empty,
+                Mail = Mail?.Trim() ?? string.Empty
+            };
+
+            var result = await CustomersService.CreateAsync(request, CancellationToken.None);
+
+            if (result.IsT0)
+            {
+                var newCustomerId = result.AsT0;
+                DialogService.Close(newCustomerId);
+            }
+            else
+            {
+                await ShowErrorsDialog(result.AsT1.ToErrorsList());
+            }
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ShowErrorsDialog(List<string> errorList)
+    {
+        await DialogService.OpenAsync(
+            Localizer["error"],
+            ds => @<div style="padding:10px;">
+                <ul style="margin:0; padding-left: 20px;">
+                    @foreach (var error in errorList)
+                    {
+                        <li>@error</li>
+                    }
+                </ul>
+            </div>,
+            new DialogOptions
+            {
+                CloseDialogOnOverlayClick = true,
+                Draggable = true,
+                Resizable = true
+            });
+    }
+}

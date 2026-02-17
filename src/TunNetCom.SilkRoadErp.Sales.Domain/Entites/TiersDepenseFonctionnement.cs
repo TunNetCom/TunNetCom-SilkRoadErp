@@ -21,7 +21,8 @@ public partial class TiersDepenseFonctionnement
         string? code,
         string? codeCat,
         string? etbSec,
-        string? mail)
+        string? mail,
+        bool exonereRetenueSource = false)
     {
         return new TiersDepenseFonctionnement
         {
@@ -32,7 +33,8 @@ public partial class TiersDepenseFonctionnement
             Code = code,
             CodeCat = codeCat,
             EtbSec = etbSec,
-            Mail = mail
+            Mail = mail,
+            ExonereRetenueSource = exonereRetenueSource
         };
     }
 
@@ -44,7 +46,8 @@ public partial class TiersDepenseFonctionnement
         string? code,
         string? codeCat,
         string? etbSec,
-        string? mail)
+        string? mail,
+        bool exonereRetenueSource = false)
     {
         Nom = nom;
         Tel = tel;
@@ -54,6 +57,7 @@ public partial class TiersDepenseFonctionnement
         CodeCat = codeCat;
         EtbSec = etbSec;
         Mail = mail;
+        ExonereRetenueSource = exonereRetenueSource;
     }
 
     public int Id { get; private set; }
@@ -73,6 +77,8 @@ public partial class TiersDepenseFonctionnement
     public string? EtbSec { get; private set; }
 
     public string? Mail { get; private set; }
+
+    public bool ExonereRetenueSource { get; private set; }
 
     public virtual ICollection<FactureDepense> FactureDepense { get; set; } = new List<FactureDepense>();
 

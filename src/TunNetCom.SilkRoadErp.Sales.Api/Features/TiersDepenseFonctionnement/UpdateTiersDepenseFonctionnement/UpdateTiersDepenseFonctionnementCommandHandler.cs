@@ -22,7 +22,8 @@ public class UpdateTiersDepenseFonctionnementCommandHandler(SalesContext _contex
             command.Code,
             command.CodeCat,
             command.EtbSec,
-            command.Mail);
+            command.Mail,
+            command.ExonereRetenueSource);
         await _context.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("TiersDepenseFonctionnement updated: Id {Id}", command.Id);
         return Result.Ok();

@@ -37,4 +37,10 @@ public class FactureDepenseSummaryItem
 
     [JsonPropertyName("hasDocument")]
     public bool HasDocument { get; set; }
+
+    [JsonPropertyName("exonereRetenueSource")]
+    public bool ExonereRetenueSource { get; set; }
+
+    [JsonPropertyName("hasRetenueSource")]
+    public bool HasRetenueSource { get; set; }
 }

@@ -111,6 +111,13 @@ builder.Services.AddHttpClient<IAuthService, AuthService>(client =>
     client.BaseAddress = new Uri(baseUrl);
 });
 
+// Add named HttpClient for raw API calls (totals, export TEJ, etc.) with auth
+builder.Services.AddHttpClient("SalesApi", client =>
+{
+    client.BaseAddress = new Uri(baseUrl);
+    client.Timeout = TimeSpan.FromMinutes(2);
+}).AddHttpMessageHandler<AuthHttpClientHandler>();
+
 builder.Services.AddPrintEngine(builder.Configuration);
 builder.Services.AddLocalization();
 builder.Services.AddControllers();

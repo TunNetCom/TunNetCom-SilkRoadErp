@@ -29,6 +29,7 @@ public class ExportProviderInvoiceToTejXmlEndpoint : ICarterModule
         [FromServices] IActiveAccountingYearService activeAccountingYearService,
         [FromServices] IAccountingYearFinancialParametersService financialParametersService,
         int invoiceNumber,
+        [FromQuery] string? acteDepot = "0",
         CancellationToken cancellationToken = default)
     {
         try
@@ -197,6 +198,8 @@ public class ExportProviderInvoiceToTejXmlEndpoint : ICarterModule
                     "Le matricule fiscal de l'entreprise doit être au format 7 chiffres et une lettre clé (ex. 0001238L).");
             }
 
+            var acteDepotValue = acteDepot == "1" ? "1" : "0";
+
             // Generate XML : montant avant retenue + ref F+AV+AF ; la plateforme TEJ effectue le calcul de retenue
             var xmlBytes = exportService.ExportProviderInvoiceToTejXml(
                 factureFournisseur,
@@ -208,7 +211,8 @@ public class ExportProviderInvoiceToTejXmlEndpoint : ICarterModule
                 refCertifChezDeclarant: refCertifTej,
                 normalizedDeclarantMatricule: matriculeNormaliseResult,
                 normalizedBeneficiaireMatricule: providerMatriculeNormalise,
-                beneficiaireTel8Digits: telDigitsOnly);
+                beneficiaireTel8Digits: telDigitsOnly,
+                acteDepot: acteDepotValue);
 
             // Validate against TEJ XSD when schema is available
             var validationErrors = TejXsdValidator.Validate(xmlBytes)
@@ -224,8 +228,7 @@ public class ExportProviderInvoiceToTejXmlEndpoint : ICarterModule
             // Generate filename per regulatory format: [MATRICULEFISCAL]-[EXERCICE]-[mois]-[code acte].xml
             var exercice = factureFournisseur.Date.Year;
             var mois = factureFournisseur.Date.Month.ToString("D2");
-            const string codeActe = "0"; // 0 = déclaration initiale
-            var filename = $"{matriculeNormaliseResult}-{exercice}-{mois}-{codeActe}.xml";
+            var filename = $"{matriculeNormaliseResult}-{exercice}-{mois}-{acteDepotValue}.xml";
 
             logger.LogInformation("TEJ XML export completed successfully for invoice {InvoiceNumber}", invoiceNumber);
 
