@@ -1,5 +1,6 @@
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Inventaire
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Common
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Products
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Inventaire
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products
 @using Microsoft.Extensions.Localization
@@ -12,6 +13,24 @@
 
 <RadzenStack Gap="1.5rem">
     <h3>@Localizer["historique_achat_vente"] - @RefProduit</h3>
+
+    @if (productInfo != null)
+    {
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1.5rem" Wrap="Radzen.FlexWrap.Wrap">
+            <RadzenStack Gap="0.25rem">
+                <span style="font-size: 0.75rem; color: var(--rz-text-secondary-color); font-weight: 600;">@Localizer["product_prixAchat"]</span>
+                <span style="font-weight: 700;">@productInfo.PurchasingPrice.ToString(DecimalFormatConstants.FORMAT_N3)</span>
+            </RadzenStack>
+            <RadzenStack Gap="0.25rem">
+                <span style="font-size: 0.75rem; color: var(--rz-text-secondary-color); font-weight: 600;">@Localizer["product_prix"]</span>
+                <span style="font-weight: 700;">@productInfo.Price.ToString(DecimalFormatConstants.FORMAT_N3)</span>
+            </RadzenStack>
+            <RadzenStack Gap="0.25rem">
+                <span style="font-size: 0.75rem; color: var(--rz-text-secondary-color); font-weight: 600;">@Localizer["Taux_TVA"]</span>
+                <span style="font-weight: 700;">@productInfo.VatRate.ToString("N2") %</span>
+            </RadzenStack>
+        </RadzenStack>
+    }
     
     @if (isLoading)
     {
@@ -50,6 +69,7 @@
     [Parameter] public string RefProduit { get; set; } = string.Empty;
     
     private List<HistoriqueAchatVenteResponse> historique = new();
+    private ProductResponse? productInfo;
     private bool isLoading = true;
 
     protected override async Task OnInitializedAsync()
@@ -67,12 +87,29 @@
                 var productResult = await productService.GetAsync(RefProduit, CancellationToken.None);
                 if (productResult.IsT0)
                 {
-                    productIdToUse = productResult.AsT0.Id;
+                    var product = productResult.AsT0;
+                    productInfo = product;
+                    productIdToUse = product.Id;
                 }
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error loading product by ref for historique");
+            }
+        }
+        else if (productIdToUse > 0 && productInfo == null)
+        {
+            try
+            {
+                var productResult = await productService.GetByIdAsync(productIdToUse, CancellationToken.None);
+                if (productResult.IsT0)
+                {
+                    productInfo = productResult.AsT0;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error loading product by id for historique header");
             }
         }
         if (productIdToUse <= 0)

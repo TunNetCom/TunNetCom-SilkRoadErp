@@ -538,7 +538,7 @@
     <value>Nom de l'article</value>
   </data>
   <data name="product_prix" xml:space="preserve">
-    <value>Prix article</value>
+    <value>Prix vente</value>
   </data>
   <data name="product_prixAchat" xml:space="preserve">
     <value>Prix d'achat</value>
