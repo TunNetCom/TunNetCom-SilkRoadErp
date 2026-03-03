@@ -35,16 +35,20 @@ var razorBuilder = builder.Services.AddRazorComponents()
 builder.Services.Configure<Microsoft.AspNetCore.SignalR.HubOptions>(options =>
 {
     options.MaximumReceiveMessageSize = 8 * 1024 * 1024; // 8MB
+    // SignalR defaults: KeepAliveInterval 15s, ClientTimeoutInterval 30s.
+    // If GET /accountingYear/active is called every 1-2s, circuits may be reconnecting.
+    // Ensure load balancer/reverse proxy idle timeout > ClientTimeoutInterval (e.g. 60s+).
 });
 
-// Configure circuit options
-if (builder.Environment.IsDevelopment())
+// Configure circuit options (all environments: retention; development: detailed errors)
+// DisconnectedCircuitRetentionPeriod: how long disconnected circuit state is retained (default 3 min). Allows reconnect without full re-init.
+razorBuilder.AddCircuitOptions(options =>
 {
-    razorBuilder.AddCircuitOptions(options =>
-    {
+    options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(3);
+    options.DisconnectedCircuitMaxRetained = 100;
+    if (builder.Environment.IsDevelopment())
         options.DetailedErrors = true;
-    });
-}
+});
 
 var baseUrl = builder.Configuration.GetValue<string>("ApiSettings:BaseUrl")
     ?? throw new ArgumentNullException("Sales base url was null!");

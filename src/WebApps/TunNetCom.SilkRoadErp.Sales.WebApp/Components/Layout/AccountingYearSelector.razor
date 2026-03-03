@@ -1,6 +1,7 @@
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AccountingYear
 @inject IAccountingYearApiClient AccountingYearApiClient
 @inject ToastService ToastService
+@inject ILogger<AccountingYearSelector> Logger
 @implements IDisposable
 
 <RadzenDropDown @bind-Value="@selectedYearId" 
@@ -22,6 +23,7 @@
 </RadzenDropDown>
 
 @code {
+    private readonly string _instanceId = Guid.NewGuid().ToString("N")[..8];
     private List<GetAllAccountingYearsResponse> accountingYears = new();
     private int? selectedYearId;
     private GetActiveAccountingYearResponse? activeYear;
@@ -29,11 +31,15 @@
 
     protected override async Task OnInitializedAsync()
     {
+        Logger.LogInformation(
+            "AccountingYearSelector OnInitializedAsync | InstanceId: {InstanceId} | Timestamp: {Timestamp:O}",
+            _instanceId,
+            DateTime.UtcNow);
         await LoadAccountingYearsAsync();
         await LoadActiveYearAsync();
-        
+
         // Refresh every 30 seconds
-        refreshTimer = new System.Threading.Timer(async _ => 
+        refreshTimer = new System.Threading.Timer(async _ =>
         {
             await InvokeAsync(async () => await RefreshAsync());
         }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
@@ -104,6 +110,10 @@
 
     private async Task RefreshAsync()
     {
+        Logger.LogInformation(
+            "AccountingYearSelector RefreshAsync (30s timer) | InstanceId: {InstanceId} | Timestamp: {Timestamp:O}",
+            _instanceId,
+            DateTime.UtcNow);
         await LoadActiveYearAsync();
         await InvokeAsync(StateHasChanged);
     }
