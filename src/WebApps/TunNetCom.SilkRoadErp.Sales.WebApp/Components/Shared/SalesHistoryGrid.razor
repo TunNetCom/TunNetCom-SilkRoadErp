@@ -35,6 +35,7 @@
                 @(item.Date == default || item.Date.Year < 1900 ? "XX/XX/XXXX" : item.Date.ToString("dd/MM/yyyy", CultureInfo.GetCultureInfo("fr-FR")))
             </Template>
         </RadzenDataGridColumn>
+        <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.Quantity)" Title="Quantité" Width="90px" TextAlign="TextAlign.Right"/>
         <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.Description)" Title="Description" Width="200px"/>
         <RadzenDataGridColumn Property="@nameof(DeliveryNoteDetailResponse.UnitPriceExcludingTax)" Title="Prix unitaire (HT)" Width="150px">
             <Template Context="item">
