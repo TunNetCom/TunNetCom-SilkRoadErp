@@ -1,4 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.Products;
+using TunNetCom.SilkRoadErp.Sales.Contracts.Products;
 
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products;
 
@@ -48,5 +48,17 @@ public interface IProductsApiClient
 
     Task<OneOf<GetDernieresInfosAchatResponse, bool>> GetDernieresInfosAchatAsync(
         string refProduit,
+        CancellationToken cancellationToken = default);
+
+    Task<ProductImportPreviewResponse> GetProductImportPreviewAsync(
+        Stream fileStream,
+        string fileName,
+        int sheetIndex = 0,
+        CancellationToken cancellationToken = default);
+
+    Task<ProductImportResultResponse> ImportProductsFromExcelAsync(
+        Stream fileStream,
+        string fileName,
+        ProductImportMappingRequest mapping,
         CancellationToken cancellationToken = default);
 }

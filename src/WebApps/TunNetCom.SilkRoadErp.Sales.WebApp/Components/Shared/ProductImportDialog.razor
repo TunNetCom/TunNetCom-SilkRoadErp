@@ -1,0 +1,270 @@
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Products
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using Radzen
+@using Radzen.Blazor
+@inject IProductsApiClient ProductService
+@inject IStringLocalizer<SharedResource> Localizer
+@inject DialogService DialogService
+@inject ToastService ToastService
+
+<div style="min-width: 700px; max-width: 95vw;">
+    @if (Step == 1)
+    {
+        <RadzenCard>
+            <h4>@Localizer["Import_Produits"]</h4>
+            <p class="rz-color-secondary">@Localizer["Import_Produits_Select_File"]</p>
+            <RadzenFormField Text="@Localizer["Fichier"]">
+                <InputFile OnChange="OnFileSelected" accept=".xlsx,.xls" class="rz-file-upload" />
+                @if (!string.IsNullOrEmpty(SelectedFileName))
+                {
+                    <RadzenLabel Text="@SelectedFileName" class="rz-mt-1" />
+                }
+            </RadzenFormField>
+            @if (IsLoadingPreview)
+            {
+                <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Style="margin: 1rem 0;" />
+            }
+        </RadzenCard>
+    }
+    else if (Step == 2 && PreviewData != null)
+    {
+        <RadzenCard>
+            <h4>@Localizer["Import_Produits_Mapping"]</h4>
+            <p class="rz-color-secondary">@Localizer["Import_Produits_Mapping_Help"]</p>
+
+            <RadzenRow>
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenFormField Text="@Localizer["Import_Col_Reference"]" Required="true">
+                        <RadzenDropDown @bind-Value="MappingReferenceColumn"
+                                        Data="@ColumnOptions"
+                                        ValueProperty="Value"
+                                        TextProperty="Text"
+                                        Placeholder="@Localizer["Select"]"
+                                        Style="width: 100%;"
+                                        AllowClear="false" />
+                    </RadzenFormField>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenFormField Text="@Localizer["Import_Col_Prix_Brut"]" Required="true">
+                        <RadzenDropDown @bind-Value="MappingPrixBrutColumn"
+                                        Data="@ColumnOptions"
+                                        ValueProperty="Value"
+                                        TextProperty="Text"
+                                        Placeholder="@Localizer["Select"]"
+                                        Style="width: 100%;"
+                                        AllowClear="false" />
+                    </RadzenFormField>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenFormField Text="@Localizer["Import_Col_Nom"]">
+                        <RadzenDropDown @bind-Value="MappingNameColumn"
+                                        Data="@OptionalColumnOptions"
+                                        ValueProperty="Value"
+                                        TextProperty="Text"
+                                        Placeholder="@Localizer["Non_mappe"]"
+                                        Style="width: 100%;"
+                                        AllowClear="true" />
+                    </RadzenFormField>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenFormField Text="@Localizer["Import_Col_Societe"]">
+                        <RadzenDropDown @bind-Value="MappingSocieteColumn"
+                                        Data="@OptionalColumnOptions"
+                                        ValueProperty="Value"
+                                        TextProperty="Text"
+                                        Placeholder="@Localizer["Non_mappe"]"
+                                        Style="width: 100%;"
+                                        AllowClear="true" />
+                    </RadzenFormField>
+                </RadzenColumn>
+            </RadzenRow>
+
+            <h5 class="rz-mt-3">@Localizer["Apercu"]</h5>
+            <div style="max-height: 300px; overflow: auto;">
+                @if (PreviewData.Rows.Count > 0)
+                {
+                    <table class="rz-datatable rz-datatable-sm" style="width: 100%;">
+                        <thead>
+                            <tr>
+                                @foreach (var header in PreviewData.Headers)
+                                {
+                                    if (string.IsNullOrEmpty(header)) { continue; }
+                                    <th style="padding: 0.5rem; text-align: left;">@header</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in PreviewData.Rows)
+                            {
+                                <tr>
+                                    @foreach (var header in PreviewData.Headers)
+                                    {
+                                        if (string.IsNullOrEmpty(header)) { continue; }
+                                        <td style="padding: 0.5rem;">@GetPreviewCellValue(row, header)</td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <p class="rz-color-secondary">@Localizer["no_records_to_display"]</p>
+                }
+            </div>
+
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" Style="margin-top: 1rem;">
+                <RadzenButton Text="@Localizer["Import_Produits_Back"]" ButtonStyle="ButtonStyle.Secondary" Click="@(() => Step = 1)" />
+                <RadzenButton Text="@Localizer["Import_Produits_Run"]" Icon="upload" ButtonStyle="ButtonStyle.Primary"
+                              Click="RunImport" IsBusy="@IsImporting"
+                              Disabled="@(string.IsNullOrEmpty(MappingReferenceColumn) || string.IsNullOrEmpty(MappingPrixBrutColumn))" />
+            </RadzenStack>
+        </RadzenCard>
+    }
+    else if (Step == 3 && ImportResult != null)
+    {
+        <RadzenCard>
+            <h4>@Localizer["Import_Produits_Result"]</h4>
+            <RadzenStack Gap="0.5rem">
+                <p><strong>@Localizer["Import_Produits_Created"]:</strong> @ImportResult.CreatedCount</p>
+                <p><strong>@Localizer["Import_Produits_Updated"]:</strong> @ImportResult.UpdatedCount</p>
+                @if (ImportResult.ErrorCount > 0)
+                {
+                    <p><strong>@Localizer["Import_Produits_Errors"]:</strong> @ImportResult.ErrorCount</p>
+                    <ul style="max-height: 200px; overflow: auto;">
+                        @foreach (var err in ImportResult.Errors)
+                        {
+                            <li>@err</li>
+                        }
+                    </ul>
+                }
+            </RadzenStack>
+            <div style="margin-top: 1rem;">
+                <RadzenButton Text="@Localizer["Fermer"]" ButtonStyle="ButtonStyle.Primary" Click="CloseDialog" />
+            </div>
+        </RadzenCard>
+    }
+</div>
+
+@code {
+    public const string DefaultWidth = "900px";
+    public const string DefaultHeight = "85%";
+
+    [Parameter] public EventCallback<bool> OnImportCompleted { get; set; }
+
+    private int Step = 1;
+    private byte[]? _fileContent;
+    private string _fileName = "";
+    private string SelectedFileName = "";
+    private ProductImportPreviewResponse? PreviewData;
+    private bool IsLoadingPreview;
+    private bool IsImporting;
+
+    private string MappingReferenceColumn = "";
+    private string? MappingNameColumn;
+    private string MappingPrixBrutColumn = "";
+    private string? MappingSocieteColumn;
+
+    private ProductImportResultResponse? ImportResult;
+    private List<SelectItem> ColumnOptions = new();
+    private List<SelectItem> OptionalColumnOptions = new();
+
+    private sealed class SelectItem
+    {
+        public string Value { get; set; } = "";
+        public string Text { get; set; } = "";
+    }
+
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
+    {
+        if (e.FileCount == 0) return;
+        SelectedFileName = e.File.Name;
+        IsLoadingPreview = true;
+        try
+        {
+            await using var stream = e.File.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            _fileContent = ms.ToArray();
+            _fileName = e.File.Name;
+
+            await using var streamForPreview = new MemoryStream(_fileContent);
+            PreviewData = await ProductService.GetProductImportPreviewAsync(streamForPreview, _fileName, 0);
+            ColumnOptions = PreviewData.Headers
+                .Where(h => !string.IsNullOrEmpty(h))
+                .Select(h => new SelectItem { Value = h!, Text = h! })
+                .ToList();
+            OptionalColumnOptions = new List<SelectItem> { new SelectItem { Value = "", Text = Localizer["Non_mappe"].Value ?? "Non mappé" } };
+            OptionalColumnOptions.AddRange(ColumnOptions);
+            if (ColumnOptions.Count > 0)
+            {
+                MappingReferenceColumn = ColumnOptions[0].Value;
+                MappingPrixBrutColumn = ColumnOptions.Count > 1 ? ColumnOptions[1].Value : ColumnOptions[0].Value;
+            }
+            Step = 2;
+        }
+        catch (Exception ex)
+        {
+            ToastService.Notify(new(ToastType.Danger, ex.Message));
+        }
+        finally
+        {
+            IsLoadingPreview = false;
+        }
+    }
+
+    private async Task RunImport()
+    {
+        if (_fileContent == null || string.IsNullOrEmpty(MappingReferenceColumn) || string.IsNullOrEmpty(MappingPrixBrutColumn))
+            return;
+        IsImporting = true;
+        try
+        {
+            await using var stream = new MemoryStream(_fileContent);
+            var mapping = new ProductImportMappingRequest
+            {
+                ReferenceColumn = MappingReferenceColumn,
+                PrixBrutColumn = MappingPrixBrutColumn,
+                NameColumn = string.IsNullOrEmpty(MappingNameColumn) ? null : MappingNameColumn,
+                SocieteColumn = string.IsNullOrEmpty(MappingSocieteColumn) ? null : MappingSocieteColumn,
+                SheetIndex = 0
+            };
+            ImportResult = await ProductService.ImportProductsFromExcelAsync(stream, _fileName, mapping);
+            Step = 3;
+            var total = ImportResult.CreatedCount + ImportResult.UpdatedCount;
+            if (total > 0)
+            {
+                ToastService.Notify(new(ToastType.Success, Localizer["Import_Reussi"].Value + $" {total} produits."));
+                await OnImportCompleted.InvokeAsync(true);
+            }
+            if (ImportResult.ErrorCount > 0)
+            {
+                ToastService.Notify(new(ToastType.Warning, $"{ImportResult.ErrorCount} erreur(s)."));
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.Notify(new(ToastType.Danger, ex.Message));
+        }
+        finally
+        {
+            IsImporting = false;
+        }
+    }
+
+    private void CloseDialog()
+    {
+        DialogService.Close(true);
+    }
+
+    private static string GetPreviewCellValue(IReadOnlyDictionary<string, object?> row, string header)
+    {
+        if (row == null) return "";
+        if (!row.TryGetValue(header, out var val) || val == null) return "";
+        if (val is System.Text.Json.JsonElement je)
+            return je.ValueKind == System.Text.Json.JsonValueKind.Number ? je.GetRawText() : je.GetString() ?? "";
+        return val.ToString() ?? "";
+    }
+}

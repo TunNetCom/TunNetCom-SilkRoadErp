@@ -1,4 +1,4 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products;
+namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products;
 
 public class ProductsApiClient : IProductsApiClient
 {
@@ -292,4 +292,26 @@ public class ProductsApiClient : IProductsApiClient
         }
     }
 
+    public async Task<ProductImportPreviewResponse> GetProductImportPreviewAsync(Stream fileStream, string fileName, int sheetIndex = 0, CancellationToken cancellationToken = default)
+    {
+        using var content = new MultipartFormDataContent();
+        content.Add(new StreamContent(fileStream), "file", fileName);
+        var url = $"/api/products/import/preview?sheetIndex={sheetIndex}";
+        var response = await _httpClient.PostAsync(url, content, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<ProductImportPreviewResponse>(cancellationToken);
+        return result ?? new ProductImportPreviewResponse();
+    }
+
+    public async Task<ProductImportResultResponse> ImportProductsFromExcelAsync(Stream fileStream, string fileName, ProductImportMappingRequest mapping, CancellationToken cancellationToken = default)
+    {
+        using var content = new MultipartFormDataContent();
+        content.Add(new StreamContent(fileStream), "file", fileName);
+        var mappingJson = System.Text.Json.JsonSerializer.Serialize(mapping);
+        content.Add(new StringContent(mappingJson), "mapping");
+        var response = await _httpClient.PostAsync("/api/products/import", content, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<ProductImportResultResponse>(cancellationToken);
+        return result ?? new ProductImportResultResponse();
+    }
 }

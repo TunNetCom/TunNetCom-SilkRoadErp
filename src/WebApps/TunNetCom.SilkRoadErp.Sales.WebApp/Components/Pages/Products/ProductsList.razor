@@ -36,6 +36,10 @@
                               ButtonStyle="ButtonStyle.Primary"
                               Click="@CreateProduct"
                               Class="btn-primary" />
+                <RadzenButton Icon="upload" Text="@Localizer["Import_Produits"]"
+                              ButtonStyle="ButtonStyle.Secondary"
+                              Click="@ShowImportDialog"
+                              Class="btn-secondary" />
             </div>
         </div>
 
@@ -892,6 +896,25 @@
                 Height = ProductHistoryDialog.DefaultHeight,
                 Style = "width: " + ProductHistoryDialog.DefaultWidth + "; min-width: " + ProductHistoryDialog.DefaultWidth
             });
+    }
+
+    private async Task ShowImportDialog()
+    {
+        await DialogService.OpenAsync<ProductImportDialog>(Localizer["Import_Produits"].Value ?? "Importer produits",
+            new Dictionary<string, object> { { "OnImportCompleted", EventCallback.Factory.Create<bool>(this, OnProductImportCompleted) } },
+            new DialogOptions
+            {
+                Resizable = true,
+                Draggable = true,
+                Width = ProductImportDialog.DefaultWidth,
+                Height = ProductImportDialog.DefaultHeight,
+                Style = "width: " + ProductImportDialog.DefaultWidth + "; min-width: " + ProductImportDialog.DefaultWidth
+            });
+    }
+
+    private async Task OnProductImportCompleted(bool _)
+    {
+        await productGrid.Reload();
     }
 
     void OnRowRender(RowRenderEventArgs<ProductResponse> args)

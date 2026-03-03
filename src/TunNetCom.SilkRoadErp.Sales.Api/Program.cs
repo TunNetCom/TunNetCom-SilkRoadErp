@@ -222,6 +222,9 @@ builder.Services.AddScoped<ISoldeClientCalculationService, SoldeClientCalculatio
 builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.SageErpExportService>();
 builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.BankStatement.IBankStatementFileParser, TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.BankStatement.BankStatementFileParser>();
 
+// Register ProductPriceListExcelParser for product import
+builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.ProductImport.IProductPriceListExcelParser, TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.ProductImport.ProductPriceListExcelParser>();
+
 // Register TejXmlExportService
 builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.TejXmlExportService>();
 

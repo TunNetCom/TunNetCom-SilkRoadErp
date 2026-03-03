@@ -1206,6 +1206,57 @@
   <data name="Import_Reussi" xml:space="preserve">
     <value>Import réussi</value>
   </data>
+  <data name="Import_Produits" xml:space="preserve">
+    <value>Importer produits</value>
+  </data>
+  <data name="Import_Produits_Select_File" xml:space="preserve">
+    <value>Choisissez un fichier Excel (.xlsx) contenant la liste des prix.</value>
+  </data>
+  <data name="Import_Produits_Mapping" xml:space="preserve">
+    <value>Mapping des colonnes</value>
+  </data>
+  <data name="Import_Produits_Mapping_Help" xml:space="preserve">
+    <value>Associez chaque champ à une colonne du fichier.</value>
+  </data>
+  <data name="Import_Col_Reference" xml:space="preserve">
+    <value>Référence produit</value>
+  </data>
+  <data name="Import_Col_Prix_Brut" xml:space="preserve">
+    <value>Prix brut</value>
+  </data>
+  <data name="Import_Col_Nom" xml:space="preserve">
+    <value>Désignation / Nom</value>
+  </data>
+  <data name="Import_Col_Societe" xml:space="preserve">
+    <value>Société (ST / SD)</value>
+  </data>
+  <data name="Non_mappe" xml:space="preserve">
+    <value>Non mappé</value>
+  </data>
+  <data name="Apercu" xml:space="preserve">
+    <value>Aperçu</value>
+  </data>
+  <data name="Import_Produits_Back" xml:space="preserve">
+    <value>Retour</value>
+  </data>
+  <data name="Import_Produits_Run" xml:space="preserve">
+    <value>Lancer l'import</value>
+  </data>
+  <data name="Import_Produits_Result" xml:space="preserve">
+    <value>Résultat de l'import</value>
+  </data>
+  <data name="Import_Produits_Created" xml:space="preserve">
+    <value>Créés</value>
+  </data>
+  <data name="Import_Produits_Updated" xml:space="preserve">
+    <value>Mis à jour</value>
+  </data>
+  <data name="Import_Produits_Errors" xml:space="preserve">
+    <value>Erreurs</value>
+  </data>
+  <data name="Select" xml:space="preserve">
+    <value>Choisir</value>
+  </data>
   <data name="Lignes" xml:space="preserve">
     <value>lignes</value>
   </data>
