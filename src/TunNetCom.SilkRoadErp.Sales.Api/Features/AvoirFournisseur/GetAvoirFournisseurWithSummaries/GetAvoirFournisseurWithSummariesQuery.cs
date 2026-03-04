@@ -12,6 +12,7 @@ public record GetAvoirFournisseurWithSummariesQuery(
     string? SearchKeyword,
     DateTime? StartDate,
     DateTime? EndDate,
-    int? Status
+    int? Status,
+    bool? OnlyUninvoiced
 ) : IRequest<GetAvoirFournisseurWithSummariesResponse>;
 

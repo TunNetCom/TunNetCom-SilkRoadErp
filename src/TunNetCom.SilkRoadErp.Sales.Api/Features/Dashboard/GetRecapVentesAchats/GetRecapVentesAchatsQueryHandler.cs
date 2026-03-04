@@ -47,7 +47,7 @@ public class GetRecapVentesAchatsQueryHandler(IMediator mediator, ILogger<GetRec
         response.AchatsFacturesFournisseurs = MapFromProviderTotals(providerTotals);
 
         // 5) Avoirs fournisseur
-        var avoirFournisseurResponse = await mediator.Send(new GetAvoirFournisseurWithSummariesQuery(1, 1, null, null, null, null, null, startDate, endDateInclusive, null), cancellationToken);
+        var avoirFournisseurResponse = await mediator.Send(new GetAvoirFournisseurWithSummariesQuery(1, 1, null, null, null, null, null, startDate, endDateInclusive, null, null), cancellationToken);
         response.AchatsAvoirsFournisseur = new RecapTotalsSectionDto
         {
             TotalHT = avoirFournisseurResponse.TotalNetAmount,

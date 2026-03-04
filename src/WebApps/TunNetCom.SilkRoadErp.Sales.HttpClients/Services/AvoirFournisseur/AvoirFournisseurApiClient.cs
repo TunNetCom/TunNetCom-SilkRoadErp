@@ -28,18 +28,25 @@ public class AvoirFournisseurApiClient : IAvoirFournisseurApiClient
                 var segments = locationPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
                 if (segments.Length >= 2 && int.TryParse(segments[segments.Length - 1], out var avoirNum))
                 {
+                    _logger.LogInformation("AvoirFournisseur created successfully. Status={StatusCode}, Id={Id}", response.StatusCode, avoirNum);
                     return avoirNum;
                 }
             }
+            var location = response.Headers.Location?.ToString() ?? "null";
+            _logger.LogError("AvoirFournisseur create: Unable to extract id from Location header: {Location}", location);
             throw new Exception($"AvoirFournisseur: Unable to extract avoir number from Location header: {response.Headers.Location}");
         }
 
         if (response.StatusCode == HttpStatusCode.BadRequest)
         {
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+            _logger.LogWarning("AvoirFournisseur create BadRequest. Status={StatusCode}, Content={Content}", response.StatusCode, body);
             return await response.ReadJsonAsync<BadRequestResponse>();
         }
 
-        throw new Exception($"AvoirFournisseur: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
+        var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+        _logger.LogError("AvoirFournisseur create unexpected response. Status={StatusCode}, Content={Content}", response.StatusCode, errorContent);
+        throw new Exception($"AvoirFournisseur: Unexpected response. Status Code: {response.StatusCode}. Content: {errorContent}");
     }
 
     public async Task<Result<AvoirFournisseurResponse>> GetAvoirFournisseurAsync(
@@ -97,7 +104,8 @@ public class AvoirFournisseurApiClient : IAvoirFournisseurApiClient
         DateTime? startDate,
         DateTime? endDate,
         CancellationToken cancellationToken,
-        int? status = null)
+        int? status = null,
+        bool onlyUninvoiced = false)
     {
         _logger.LogInformation("Fetching avoir fournisseurs with summaries from API /avoir-fournisseur/summaries");
         var queryString = $"/avoir-fournisseur/summaries?pageNumber={pageNumber}&pageSize={pageSize}";
@@ -115,6 +123,11 @@ public class AvoirFournisseurApiClient : IAvoirFournisseurApiClient
         if (numFactureAvoirFournisseur.HasValue)
         {
             queryString += $"&numFactureAvoirFournisseur={numFactureAvoirFournisseur.Value}";
+        }
+
+        if (onlyUninvoiced)
+        {
+            queryString += "&onlyUninvoiced=true";
         }
 
         if (!string.IsNullOrEmpty(sortOrder))
@@ -142,12 +155,25 @@ public class AvoirFournisseurApiClient : IAvoirFournisseurApiClient
             queryString += $"&endDate={endDate.Value:yyyy-MM-dd}";
         }
 
-        var response = await _httpClient.GetAsync(queryString, cancellationToken: cancellationToken);
-        response.EnsureSuccessStatusCode();
+        try
+        {
+            var response = await _httpClient.GetAsync(queryString, cancellationToken: cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                var body = await response.Content.ReadAsStringAsync(cancellationToken);
+                _logger.LogWarning("AvoirFournisseur summaries error. Url={Url}, Status={StatusCode}, Content={Content}", queryString, response.StatusCode, body);
+                response.EnsureSuccessStatusCode();
+            }
 
-        var responseContent = await response.Content.ReadAsStringAsync();
-        var result = JsonConvert.DeserializeObject<GetAvoirFournisseurWithSummariesResponse>(responseContent);
-        return result!;
+            var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+            var result = JsonConvert.DeserializeObject<GetAvoirFournisseurWithSummariesResponse>(responseContent);
+            return result!;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "AvoirFournisseur GetAvoirFournisseurWithSummariesAsync failed. Url={Url}", queryString);
+            throw;
+        }
     }
 
     public async Task<Result> UpdateAvoirFournisseurAsync(
@@ -160,21 +186,27 @@ public class AvoirFournisseurApiClient : IAvoirFournisseurApiClient
 
         if (response.StatusCode == HttpStatusCode.NoContent)
         {
+            _logger.LogInformation("AvoirFournisseur updated successfully. Id={Id}, Status={StatusCode}", id, response.StatusCode);
             return Result.Ok();
         }
 
         if (response.StatusCode == HttpStatusCode.NotFound)
         {
+            _logger.LogWarning("AvoirFournisseur update not found. Id={Id}", id);
             return Result.Fail("avoir_fournisseur_not_found");
         }
 
         if (response.StatusCode == HttpStatusCode.BadRequest)
         {
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+            _logger.LogWarning("AvoirFournisseur update BadRequest. Id={Id}, Status={StatusCode}, Content={Content}", id, response.StatusCode, body);
             var badRequest = await response.ReadJsonAsync<BadRequestResponse>();
             return Result.Fail($"validation_error: {JsonConvert.SerializeObject(badRequest)}");
         }
 
-        throw new Exception($"AvoirFournisseur: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
+        var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+        _logger.LogError("AvoirFournisseur update unexpected response. Id={Id}, Status={StatusCode}, Content={Content}", id, response.StatusCode, errorContent);
+        throw new Exception($"AvoirFournisseur: Unexpected response. Status Code: {response.StatusCode}. Content: {errorContent}");
     }
 
     public async Task<Result> ValidateAvoirFournisseursAsync(List<int> ids, CancellationToken cancellationToken)

@@ -20,6 +20,7 @@
 @inject IStringLocalizer<SharedResource> Localizer
 @inject Radzen.NotificationService NotificationService
 @inject DialogService DialogService
+@inject ILogger<ManageFactureAvoirFournisseur> Logger
 
 <div style="padding: 0.5rem 1.5rem 1.5rem 1.5rem; min-height: 100vh;">
     <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
@@ -572,9 +573,12 @@
             }
 
             var pageNumber = (args.Skip ?? 0) / _defaultPageSize + 1;
+            Logger.LogInformation(
+                "LoadUninvoicedAvoirs: fournisseurId={FournisseurId}, pageNumber={PageNumber}, pageSize={PageSize}, onlyUninvoiced=true",
+                SelectedProviderId, pageNumber, _defaultPageSize);
             var avoirsResult = await avoirFournisseurService.GetAvoirFournisseurWithSummariesAsync(
                 fournisseurId: SelectedProviderId,
-                numFactureAvoirFournisseur: null, // Only uninvoiced (not linked to a facture avoir)
+                numFactureAvoirFournisseur: null,
                 sortOrder: sortOrder,
                 sortProperty: sortProperty,
                 pageNumber: pageNumber,
@@ -582,20 +586,19 @@
                 searchKeyword: args.Filter,
                 startDate: null,
                 endDate: null,
-                _cancellationTokenSource.Token);
-
-            // Filter to only show uninvoiced avoirs (NumFactureAvoirFournisseur is null)
-            avoirsResult.AvoirFournisseurs.Items = avoirsResult.AvoirFournisseurs.Items
-                .Where(a => !a.NumFactureAvoirFournisseur.HasValue)
-                .ToList();
-            // Note: The TotalCount should be recalculated on the server side with the filter
-            // For now, we keep the filtered count, but ideally the API should support filtering by NumFactureAvoirFournisseur = null
-            avoirsResult.AvoirFournisseurs.TotalCount = avoirsResult.AvoirFournisseurs.Items.Count;
+                _cancellationTokenSource.Token,
+                onlyUninvoiced: true);
 
             _uninvoicedAvoirsWithSummary = avoirsResult;
+            Logger.LogInformation(
+                "LoadUninvoicedAvoirs result: TotalCount={TotalCount}, ItemsCount={ItemsCount}, FirstId={FirstId}",
+                avoirsResult.AvoirFournisseurs.TotalCount,
+                avoirsResult.AvoirFournisseurs.Items.Count,
+                avoirsResult.AvoirFournisseurs.Items.FirstOrDefault()?.Id);
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "LoadUninvoicedAvoirs failed: {Message}", ex.Message);
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Error,

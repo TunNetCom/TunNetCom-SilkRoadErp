@@ -107,7 +107,7 @@ public class UpdateAvoirFournisseurCommandHandler(
         }
 
         await _context.SaveChangesAsync(cancellationToken);
-        _logger.LogInformation("AvoirFournisseur with Id {Id} updated successfully", avoirFournisseur.Id);
+        _logger.LogInformation("AvoirFournisseur updated successfully. Id={Id}, LinesCount={LinesCount}", avoirFournisseur.Id, command.Lines.Count);
         return Result.Ok();
     }
 }

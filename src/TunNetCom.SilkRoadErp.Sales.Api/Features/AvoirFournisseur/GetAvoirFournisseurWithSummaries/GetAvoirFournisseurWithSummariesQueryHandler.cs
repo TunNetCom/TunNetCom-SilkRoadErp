@@ -15,6 +15,9 @@ public class GetAvoirFournisseurWithSummariesQueryHandler(
         GetAvoirFournisseurWithSummariesQuery request,
         CancellationToken cancellationToken)
     {
+        _logger.LogInformation(
+            "GetAvoirFournisseurWithSummaries: FournisseurId={FournisseurId}, NumFactureAvoirFournisseur={NumFactureAvoirFournisseur}, OnlyUninvoiced={OnlyUninvoiced}, PageNumber={PageNumber}, PageSize={PageSize}",
+            request.FournisseurId, request.NumFactureAvoirFournisseur, request.OnlyUninvoiced, request.PageNumber, request.PageSize);
         _logger.LogPaginationRequest(nameof(AvoirFournisseur), request.PageNumber, request.PageSize);
 
         // Build base query with filters to avoid loading all data
@@ -34,6 +37,12 @@ public class GetAvoirFournisseurWithSummariesQueryHandler(
         {
             // request.NumFactureAvoirFournisseur contains the Id of FactureAvoirFournisseur
             baseQuery = baseQuery.Where(x => x.a.FactureAvoirFournisseurId == request.NumFactureAvoirFournisseur.Value);
+        }
+
+        if (request.OnlyUninvoiced == true)
+        {
+            _logger.LogInformation("Applying only uninvoiced filter (FactureAvoirFournisseurId == null)");
+            baseQuery = baseQuery.Where(x => x.a.FactureAvoirFournisseurId == null);
         }
 
         // Apply Status filter
@@ -165,6 +174,9 @@ public class GetAvoirFournisseurWithSummariesQueryHandler(
         };
 
         _logger.LogEntitiesFetched(nameof(AvoirFournisseur), pagedAvoirFournisseurs.Items.Count);
+        _logger.LogInformation(
+            "GetAvoirFournisseurWithSummaries result: TotalCount={TotalCount}, ItemsCount={ItemsCount}",
+            totalCount, pagedAvoirFournisseurs.Items.Count);
         return response;
     }
 }

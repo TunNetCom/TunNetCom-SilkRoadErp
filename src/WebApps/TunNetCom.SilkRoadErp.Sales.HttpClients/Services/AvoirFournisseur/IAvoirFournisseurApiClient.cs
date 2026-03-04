@@ -27,7 +27,8 @@ public interface IAvoirFournisseurApiClient
         DateTime? startDate,
         DateTime? endDate,
         CancellationToken cancellationToken,
-        int? status = null);
+        int? status = null,
+        bool onlyUninvoiced = false);
 
     Task<Result> UpdateAvoirFournisseurAsync(
         int num,

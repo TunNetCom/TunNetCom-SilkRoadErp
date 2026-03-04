@@ -28,6 +28,7 @@
 @inject IAppParametersClient appParametersClient
 @inject ILogger<AddOrUpdateAvoirFournisseur> logger
 @inject DialogService DialogService
+@inject NavigationManager NavigationManager
 
 <style>
     .header-actions {
@@ -267,6 +268,7 @@ else
                 
                 if (updateResponse.IsSuccess)
                 {
+                    logger.LogInformation("Avoir fournisseur updated successfully. Id={Id}", avoirFournisseurId);
                     NotificationService.Notify(new NotificationMessage
                     {
                         Severity = NotificationSeverity.Success,
@@ -276,6 +278,7 @@ else
                 }
                 else
                 {
+                    logger.LogWarning("Avoir fournisseur update failed. Id={Id}, Errors={Errors}", avoirFournisseurId, string.Join("; ", updateResponse.Errors.Select(e => e.Message)));
                     NotificationService.Notify(new NotificationMessage
                     {
                         Severity = NotificationSeverity.Error,
@@ -291,10 +294,8 @@ else
                 if (createResponse.IsT0)
                 {
                     var newAvoirFournisseurId = createResponse.AsT0;
-                    // NumAvoirChezFournisseur is already set from user input, no need to fetch
-                    
-                    await FetchAvoirFournisseur();
-                    
+                    logger.LogInformation("Avoir fournisseur created successfully. Id={Id}", newAvoirFournisseurId);
+                    NavigationManager.NavigateTo($"/AddOrUpdateAvoirFournisseur/{newAvoirFournisseurId}");
                     NotificationService.Notify(new NotificationMessage
                     {
                         Severity = NotificationSeverity.Success,
@@ -308,6 +309,7 @@ else
                     var errorMessage = badRequest.errors?.Any() == true
                         ? string.Join(", ", badRequest.errors.SelectMany(e => e.Value))
                         : (badRequest.Detail ?? "Échec de la création");
+                    logger.LogWarning("Avoir fournisseur create failed: {Error}", errorMessage);
                     NotificationService.Notify(new NotificationMessage
                     {
                         Severity = NotificationSeverity.Error,

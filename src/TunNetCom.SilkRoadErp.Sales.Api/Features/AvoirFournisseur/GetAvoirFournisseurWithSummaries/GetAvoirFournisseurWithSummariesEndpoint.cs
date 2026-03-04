@@ -23,7 +23,8 @@ public class GetAvoirFournisseurWithSummariesEndpoint : ICarterModule
                     SearchKeyword: queryParams.SearchKeyword,
                     StartDate: queryParams.StartDate,
                     EndDate: queryParams.EndDate,
-                    Status: queryParams.Status
+                    Status: queryParams.Status,
+                    OnlyUninvoiced: queryParams.OnlyUninvoiced
                 );
 
                 var response = await mediator.Send(query, cancellationToken);

@@ -12,7 +12,7 @@ public class CreateAvoirFournisseurCommandHandler(
 {
     public async Task<Result<int>> Handle(CreateAvoirFournisseurCommand command, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("CreateAvoirFournisseurCommand called with FournisseurId {FournisseurId} and Date {Date}", command.FournisseurId, command.Date);
+        _logger.LogInformation("CreateAvoirFournisseurCommand called with FournisseurId {FournisseurId}, Date {Date}, LinesCount {LinesCount}", command.FournisseurId, command.Date, command.Lines?.Count ?? 0);
 
         if (command.FournisseurId.HasValue)
         {
@@ -93,7 +93,7 @@ public class CreateAvoirFournisseurCommandHandler(
         }
 
         await _context.SaveChangesAsync(cancellationToken);
-        _logger.LogInformation("AvoirFournisseur created successfully with Id {Id}", avoirFournisseur.Id);
+        _logger.LogInformation("AvoirFournisseur created successfully. Id={Id}, LinesCount={LinesCount}", avoirFournisseur.Id, command.Lines.Count);
         return Result.Ok(avoirFournisseur.Id);
     }
 }
