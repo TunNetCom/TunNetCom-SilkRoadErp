@@ -17,6 +17,9 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.Avoirs
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Customers
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Common
+@using TunNetCom.SilkRoadErp.Sales.Domain.Entites
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Avoirs
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure
 
 @inject IStringLocalizer<SharedResource> Localizer
 @inject Radzen.NotificationService NotificationService
@@ -27,6 +30,8 @@
 @inject IAppParametersClient appParametersClient
 @inject ILogger<AddOrUpdateAvoir> logger
 @inject DialogService DialogService
+@inject PrintAvoirService PrintAvoirService
+@inject IPrintService PrintServiceInfra
 
 <style>
     .header-actions {
@@ -140,6 +145,16 @@ else
                     <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Name)" Title="@Localizer["name"]" Width="220px" />
                 </Columns>
             </RadzenDropDownDataGrid>
+            @if (IsAvoirSaved)
+            {
+                <RadzenButton Icon="print"
+                              Text="Imprimer"
+                              ButtonStyle="ButtonStyle.Light"
+                              Size="ButtonSize.Medium"
+                              Click="@OnPrintAvoir"
+                              Title="Imprimer l'avoir client"
+                              Style="margin-left: 8px;" />
+            }
         </div>
     </div>
 
@@ -189,6 +204,8 @@ else
     DateTime avoirDate = DateTime.Now;
     private GetAppParametersResponse getAppParametersResponse;
     private int? selectedCustomerId;
+
+    private bool IsAvoirSaved => !string.IsNullOrEmpty(avoirNumber) && int.TryParse(avoirNumber, out var n) && n > 0;
 
     protected override async Task OnInitializedAsync()
     {
@@ -521,6 +538,58 @@ else
     private void UpdateTotals()
     {
         LineItemCalculator.UpdateTotals(orders, out totalHt, out totalVat, out totalTtc);
+    }
+
+    private async Task OnPrintAvoir()
+    {
+        if (!int.TryParse(avoirNumber, out var avoirNum) || avoirNum <= 0) return;
+        await PrintAvoirAsync(avoirNum);
+    }
+
+    private async Task PrintAvoirAsync(int avoirNum)
+    {
+        try
+        {
+            var pdfResult = await PrintAvoirService.GenerateAvoirPdfAsync(avoirNum, _cancellationTokenSource.Token);
+
+            if (pdfResult.IsSuccess)
+            {
+                var printOptions = new PrintOptions
+                {
+                    Mode = PrintMode.Download,
+                    FileName = $"AvoirClient_{avoirNum}.pdf",
+                    DocumentType = DocumentTypes.Avoirs,
+                    DocumentId = avoirNum
+                };
+
+                await PrintServiceInfra.PrintAsync(pdfResult.Value, printOptions, _cancellationTokenSource.Token);
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = Localizer["success"],
+                    Detail = "L'avoir client a été généré avec succès."
+                });
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = pdfResult.Errors.FirstOrDefault()?.Message ?? "Erreur lors de la génération du PDF."
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error printing avoir client {Num}", avoirNum);
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Erreur lors de l'impression: {ex.Message}"
+            });
+        }
     }
 
     public async Task ShowDialog((int ProductId, string ProductReference) args)

@@ -23,6 +23,10 @@
 @inject Radzen.NotificationService NotificationService
 @inject DialogService DialogService
 @using TunNetCom.SilkRoadErp.Sales.Domain.Entites
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Avoirs
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure
+@inject PrintAvoirService PrintAvoirService
+@inject IPrintService PrintServiceInfra
 
 <div class="invoices-list-container">
     <div class="search-header">
@@ -158,10 +162,18 @@
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="AvoirBaseInfo"
                                       Title="@Localizer["actions_label"]"
-                                      Width="100px"
+                                      Width="140px"
                                       Sortable="false"
                                       Filterable="false">
                     <Template Context="item">
+                        <RadzenButton Icon="print"
+                                      ButtonStyle="ButtonStyle.Secondary"
+                                      Variant="Variant.Flat"
+                                      Size="ButtonSize.Small"
+                                      Click="@(() => PrintAvoirAsync(item.Num))"
+                                      Title="Imprimer"
+                                      AriaLabel="Imprimer"
+                                      Style="margin-right: 4px;" />
                         <RadzenButton Icon="edit"
                                       ButtonStyle="ButtonStyle.Primary"
                                       Variant="Variant.Flat"
@@ -606,6 +618,52 @@
     private void EditAvoir(int num)
     {
         NavigationManager.NavigateTo($"/AddOrUpdateAvoir/{num}");
+    }
+
+    private async Task PrintAvoirAsync(int avoirNum)
+    {
+        try
+        {
+            var pdfResult = await PrintAvoirService.GenerateAvoirPdfAsync(avoirNum, default);
+
+            if (pdfResult.IsSuccess)
+            {
+                var printOptions = new PrintOptions
+                {
+                    Mode = PrintMode.Download,
+                    FileName = $"AvoirClient_{avoirNum}.pdf",
+                    DocumentType = DocumentTypes.Avoirs,
+                    DocumentId = avoirNum
+                };
+
+                await PrintServiceInfra.PrintAsync(pdfResult.Value, printOptions, default);
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = Localizer["Success"],
+                    Detail = "L'avoir client a été généré avec succès."
+                });
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["Error"],
+                    Detail = pdfResult.Errors.FirstOrDefault()?.Message ?? "Erreur lors de la génération du PDF."
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error printing avoir client {Num}", avoirNum);
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Error"],
+                Detail = $"Erreur lors de l'impression: {ex.Message}"
+            });
+        }
     }
 
     private string GetStatusStyle(int statut)
