@@ -64,8 +64,18 @@ public class CreateFactureAvoirFournisseurCommandHandler(
             return Result.Fail("no_active_accounting_year");
         }
 
+        // Generate number when not provided (0) so the facture avoir always has a valid display number
+        var numFactureAvoirFourSurPage = command.NumFactureAvoirFourSurPage;
+        if (numFactureAvoirFourSurPage <= 0)
+        {
+            numFactureAvoirFourSurPage = await _numberGeneratorService.GenerateFactureAvoirFournisseurNumberAsync(
+                activeAccountingYear.Id,
+                cancellationToken);
+            _logger.LogInformation("Generated NumFactureAvoirFourSurPage: {Num}", numFactureAvoirFourSurPage);
+        }
+
         var factureAvoirFournisseur = Domain.Entites.FactureAvoirFournisseur.CreateFactureAvoirFournisseur(
-            command.NumFactureAvoirFourSurPage, // NumFactureAvoirFourSurPage
+            numFactureAvoirFourSurPage,
             command.IdFournisseur,
             command.Date,
             command.FactureFournisseurId,

@@ -12,6 +12,9 @@
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.AvoirFournisseur
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.Domain.Entites
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.FactureAvoirFournisseur
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure
 
 @inject IProvidersApiClient providersService
 @inject IFactureAvoirFournisseurApiClient factureAvoirFournisseurService
@@ -21,6 +24,8 @@
 @inject Radzen.NotificationService NotificationService
 @inject DialogService DialogService
 @inject ILogger<ManageFactureAvoirFournisseur> Logger
+@inject PrintFactureAvoirFournisseurService PrintFactureAvoirFournisseurService
+@inject IPrintService PrintServiceInfra
 
 <div style="padding: 0.5rem 1.5rem 1.5rem 1.5rem; min-height: 100vh;">
     <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
@@ -200,6 +205,20 @@
                             <Template Context="factureAvoirWithAvoirs">
                                 <RadzenBadge BadgeStyle="@(factureAvoirWithAvoirs.FactureAvoir.Statut == 1 ? BadgeStyle.Success : BadgeStyle.Light)" 
                                              Text="@factureAvoirWithAvoirs.FactureAvoir.StatutLibelle" />
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn Title=""
+                                              Width="80px"
+                                              Sortable="false"
+                                              Filterable="false">
+                            <Template Context="factureAvoirWithAvoirs">
+                                <RadzenButton Icon="print"
+                                              ButtonStyle="ButtonStyle.Light"
+                                              Variant="Variant.Flat"
+                                              Size="ButtonSize.Small"
+                                              Click="@(() => PrintFactureAvoirFournisseurAsync(factureAvoirWithAvoirs.FactureAvoir.Id))"
+                                              Title="Imprimer la facture avoir"
+                                              AriaLabel="Imprimer" />
                             </Template>
                         </RadzenDataGridColumn>
                     </Columns>
@@ -865,6 +884,56 @@
     {
         // Make row expandable
         args.Expandable = true;
+    }
+
+    private async Task PrintFactureAvoirFournisseurAsync(int factureAvoirId)
+    {
+        try
+        {
+            var pdfResult = await PrintFactureAvoirFournisseurService.GenerateFactureAvoirFournisseurPdfAsync(
+                factureAvoirId,
+                _cancellationTokenSource.Token);
+
+            if (pdfResult.IsSuccess)
+            {
+                var item = _factureAvoirWithAvoirs.FirstOrDefault(x => x.FactureAvoir.Id == factureAvoirId);
+                var numLabel = item != null ? item.FactureAvoir.NumFactureAvoirFourSurPage.ToString() : factureAvoirId.ToString();
+                var printOptions = new PrintOptions
+                {
+                    Mode = PrintMode.Download,
+                    FileName = $"FactureAvoirFournisseur_{numLabel}.pdf",
+                    DocumentType = DocumentTypes.FactureAvoirFournisseur,
+                    DocumentId = factureAvoirId
+                };
+
+                await PrintServiceInfra.PrintAsync(pdfResult.Value, printOptions, _cancellationTokenSource.Token);
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = Localizer["success"],
+                    Detail = "La facture avoir fournisseur a été générée avec succès."
+                });
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = pdfResult.Errors.FirstOrDefault()?.Message ?? "Erreur lors de la génération du PDF."
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error printing facture avoir fournisseur {Id}", factureAvoirId);
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Erreur lors de l'impression: {ex.Message}"
+            });
+        }
     }
     #endregion
 }

@@ -13,6 +13,8 @@ using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.PaiementClient.Prin
 using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.ClotureCaisse;
 using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.PaiementFournisseur.PrintTraite;
 using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.RetourMarchandiseFournisseur;
+using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.AvoirFournisseur;
+using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.FactureAvoirFournisseur;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PrintHistory;
 
 namespace TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure;
@@ -35,6 +37,8 @@ public static class PrintEngineStartupExtensions
         _ = services.AddScoped<PrintPaiementsClientListService>();
         _ = services.AddScoped<PrintClotureCaisseService>();
         _ = services.AddScoped<PrintRetourFournisseurService>();
+        _ = services.AddScoped<PrintAvoirFournisseurService>();
+        _ = services.AddScoped<PrintFactureAvoirFournisseurService>();
         _ = services.AddScoped(typeof(IPrintPdfService<,>), typeof(PrintPdfPlayWrightService<,>));
 
         // Register printing services

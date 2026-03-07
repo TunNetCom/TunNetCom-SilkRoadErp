@@ -21,6 +21,12 @@
 @inject NavigationManager NavigationManager
 @inject ITagsApiClient TagsService
 @inject DialogService DialogService
+@inject Radzen.NotificationService NotificationService
+@using TunNetCom.SilkRoadErp.Sales.Domain.Entites
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.FactureAvoirFournisseur
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure
+@inject PrintFactureAvoirFournisseurService PrintFactureAvoirFournisseurService
+@inject IPrintService PrintServiceInfra
 
 <div class="invoices-list-container">
     <div class="search-header">
@@ -123,10 +129,18 @@
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="FactureAvoirFournisseurBaseInfo"
                                       Title="@Localizer["actions_label"]"
-                                      Width="100px"
+                                      Width="140px"
                                       Sortable="false"
                                       Filterable="false">
                     <Template Context="item">
+                        <RadzenButton Icon="print"
+                                      ButtonStyle="ButtonStyle.Secondary"
+                                      Variant="Variant.Flat"
+                                      Size="ButtonSize.Small"
+                                      Click="@(() => PrintFactureAvoirFournisseurAsync(item.Id))"
+                                      Title="Imprimer"
+                                      AriaLabel="Imprimer"
+                                      Style="margin-right: 4px;" />
                         <RadzenButton Icon="edit"
                                       ButtonStyle="ButtonStyle.Primary"
                                       Variant="Variant.Flat"
@@ -480,6 +494,54 @@
         {
             // Reload data after successful update
             await Callback(new LoadDataArgs { Skip = 0, Top = pageSize });
+        }
+    }
+
+    private async Task PrintFactureAvoirFournisseurAsync(int id)
+    {
+        try
+        {
+            var pdfResult = await PrintFactureAvoirFournisseurService.GenerateFactureAvoirFournisseurPdfAsync(id, default);
+
+            if (pdfResult.IsSuccess)
+            {
+                var item = facturesAvoirFournisseurList.FirstOrDefault(x => x.Id == id);
+                var numLabel = item != null ? item.NumFactureAvoirFourSurPage.ToString() : id.ToString();
+                var printOptions = new PrintOptions
+                {
+                    Mode = PrintMode.Download,
+                    FileName = $"FactureAvoirFournisseur_{numLabel}.pdf",
+                    DocumentType = DocumentTypes.FactureAvoirFournisseur,
+                    DocumentId = id
+                };
+
+                await PrintServiceInfra.PrintAsync(pdfResult.Value, printOptions, default);
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = Localizer["Success"],
+                    Detail = "La facture avoir fournisseur a été générée avec succès."
+                });
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["Erreur"],
+                    Detail = pdfResult.Errors.FirstOrDefault()?.Message ?? "Erreur lors de la génération du PDF."
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error printing facture avoir fournisseur {Id}", id);
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = $"Erreur lors de l'impression: {ex.Message}"
+            });
         }
     }
 }

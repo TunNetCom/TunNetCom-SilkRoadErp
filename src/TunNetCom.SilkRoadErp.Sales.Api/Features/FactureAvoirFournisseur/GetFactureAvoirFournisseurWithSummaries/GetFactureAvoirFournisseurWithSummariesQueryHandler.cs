@@ -1,10 +1,12 @@
+using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
 using TunNetCom.SilkRoadErp.Sales.Contracts.FactureAvoirFournisseur;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.FactureAvoirFournisseur.GetFactureAvoirFournisseurWithSummaries;
 
 public class GetFactureAvoirFournisseurWithSummariesQueryHandler(
     SalesContext _context,
-    ILogger<GetFactureAvoirFournisseurWithSummariesQueryHandler> _logger)
+    ILogger<GetFactureAvoirFournisseurWithSummariesQueryHandler> _logger,
+    INumberGeneratorService _numberGeneratorService)
     : IRequestHandler<GetFactureAvoirFournisseurWithSummariesQuery, GetFactureAvoirFournisseurWithSummariesResponse>
 {
     private const string _idColumnName = nameof(FactureAvoirFournisseurBaseInfo.Id);
@@ -127,6 +129,17 @@ public class GetFactureAvoirFournisseurWithSummariesQueryHandler(
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
             .ToListAsync(cancellationToken);
+
+        // Backfill NumFactureAvoirFourSurPage when it is 0 (existing records created before auto-generation)
+        foreach (var x in factureAvoirData.Where(x => x.f.NumFactureAvoirFourSurPage <= 0))
+        {
+            var generatedNum = await _numberGeneratorService.GenerateFactureAvoirFournisseurNumberAsync(
+                x.f.AccountingYearId,
+                cancellationToken);
+            x.f.NumFactureAvoirFourSurPage = generatedNum;
+            _logger.LogInformation("Backfilled NumFactureAvoirFourSurPage for FactureAvoirFournisseur Id={Id} with {Num}", x.f.Id, generatedNum);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
 
         // Map to DTO in memory to avoid SQL conversion issues with Statut enum (like InvoiceBaseInfosController)
         var items = factureAvoirData

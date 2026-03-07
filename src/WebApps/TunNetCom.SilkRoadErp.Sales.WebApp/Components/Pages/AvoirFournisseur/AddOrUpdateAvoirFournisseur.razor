@@ -18,6 +18,9 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.AvoirFournisseur
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Providers
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Common
+@using TunNetCom.SilkRoadErp.Sales.Domain.Entites
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.AvoirFournisseur
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure
 
 @inject IStringLocalizer<SharedResource> Localizer
 @inject Radzen.NotificationService NotificationService
@@ -29,6 +32,8 @@
 @inject ILogger<AddOrUpdateAvoirFournisseur> logger
 @inject DialogService DialogService
 @inject NavigationManager NavigationManager
+@inject PrintAvoirFournisseurService PrintAvoirFournisseurService
+@inject IPrintService PrintServiceInfra
 
 <style>
     .header-actions {
@@ -142,6 +147,16 @@ else
                     <RadzenDropDownDataGridColumn Property="@nameof(ProviderResponse.Nom)" Title="@Localizer["name"]" Width="220px" />
                 </Columns>
             </RadzenDropDownDataGrid>
+            @if (IsAvoirFournisseurSaved)
+            {
+                <RadzenButton Icon="print"
+                              Text="Imprimer"
+                              ButtonStyle="ButtonStyle.Light"
+                              Size="ButtonSize.Medium"
+                              Click="@OnPrintAvoirFournisseur"
+                              Title="Imprimer l'avoir fournisseur"
+                              Style="margin-left: 8px;" />
+            }
         </div>
     </div>
 
@@ -191,6 +206,8 @@ else
     DateTime avoirFournisseurDate = DateTime.Now;
     private GetAppParametersResponse getAppParametersResponse;
     private int? selectedFournisseurId;
+
+    private bool IsAvoirFournisseurSaved => !string.IsNullOrEmpty(id) && int.TryParse(id, out var parsedId) && parsedId > 0;
 
     protected override async Task OnInitializedAsync()
     {
@@ -333,6 +350,58 @@ else
         {
             isLoading = false;
             StateHasChanged();
+        }
+    }
+
+    private async Task OnPrintAvoirFournisseur()
+    {
+        if (!int.TryParse(id, out var avoirId) || avoirId <= 0) return;
+        await PrintAvoirFournisseurAsync(avoirId);
+    }
+
+    private async Task PrintAvoirFournisseurAsync(int avoirFournisseurId)
+    {
+        try
+        {
+            var pdfResult = await PrintAvoirFournisseurService.GenerateAvoirFournisseurPdfAsync(avoirFournisseurId, _cancellationTokenSource.Token);
+
+            if (pdfResult.IsSuccess)
+            {
+                var printOptions = new PrintOptions
+                {
+                    Mode = PrintMode.Download,
+                    FileName = $"AvoirFournisseur_{avoirFournisseurId}.pdf",
+                    DocumentType = DocumentTypes.AvoirFournisseur,
+                    DocumentId = avoirFournisseurId
+                };
+
+                await PrintServiceInfra.PrintAsync(pdfResult.Value, printOptions, _cancellationTokenSource.Token);
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = Localizer["success"],
+                    Detail = "L'avoir fournisseur a été généré avec succès."
+                });
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["error"],
+                    Detail = pdfResult.Errors.FirstOrDefault()?.Message ?? "Erreur lors de la génération du PDF."
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error printing avoir fournisseur {Id}", avoirFournisseurId);
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["error"],
+                Detail = $"Erreur lors de l'impression: {ex.Message}"
+            });
         }
     }
 
