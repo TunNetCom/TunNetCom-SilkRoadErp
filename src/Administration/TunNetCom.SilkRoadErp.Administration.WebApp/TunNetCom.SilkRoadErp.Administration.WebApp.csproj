@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <PackageReference Include="Radzen.Blazor" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TunNetCom.SilkRoadErp.Administration.HttpClients\TunNetCom.SilkRoadErp.Administration.HttpClients.csproj" />
+    <ProjectReference Include="..\TunNetCom.SilkRoadErp.Administration.Contracts\TunNetCom.SilkRoadErp.Administration.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

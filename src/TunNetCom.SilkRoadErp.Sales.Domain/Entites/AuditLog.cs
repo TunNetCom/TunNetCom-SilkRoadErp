@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using TunNetCom.SilkRoadErp.SharedKernel.Tenancy;
 
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
@@ -10,7 +11,7 @@ public enum AuditAction
     Deleted = 3
 }
 
-public class AuditLog
+public class AuditLog : ITenantEntity
 {
     private AuditLog()
     {
@@ -46,6 +47,8 @@ public class AuditLog
     }
 
     public long Id { get; private set; }
+
+    public string TenantId { get; set; } = TenantConstants.DefaultTenantId;
 
     public string EntityName { get; private set; } = null!;
 

@@ -2,10 +2,11 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using TunNetCom.SilkRoadErp.SharedKernel.Tenancy;
 
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
-public partial class FamilleProduit
+public partial class FamilleProduit : ITenantEntity
 {
     private FamilleProduit()
     {
@@ -31,6 +32,8 @@ public partial class FamilleProduit
     }
 
     public int Id { get; private set; }
+
+    public string TenantId { get; set; } = TenantConstants.DefaultTenantId;
 
     public string Nom { get; private set; } = null!;
 

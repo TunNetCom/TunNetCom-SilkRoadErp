@@ -1,10 +1,11 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using TunNetCom.SilkRoadErp.SharedKernel.Tenancy;
 
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
-public class Role
+public class Role : ITenantEntity
 {
     private Role()
     {
@@ -37,6 +38,10 @@ public class Role
     }
 
     public int Id { get; private set; }
+
+    public string TenantId { get; set; } = TenantConstants.DefaultTenantId;
+
+    public string? ExternalGroupId { get; private set; }
 
     public string Name { get; private set; } = null!;
 

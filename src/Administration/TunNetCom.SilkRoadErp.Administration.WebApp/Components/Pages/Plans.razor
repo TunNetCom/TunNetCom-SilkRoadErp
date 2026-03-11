@@ -1,0 +1,230 @@
+@page "/plans"
+@inject IAdminApiClient AdminApi
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+
+<PageTitle>Plans</PageTitle>
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" class="rz-mb-4">
+    <RadzenStack>
+        <RadzenText TextStyle="TextStyle.H3" class="rz-mb-0">Subscription Plans</RadzenText>
+        <RadzenText TextStyle="TextStyle.Body2" class="rz-color-secondary">Define pricing tiers, usage limits, and trial periods for tenants.</RadzenText>
+    </RadzenStack>
+    <RadzenButton Text="New Plan" Icon="add" ButtonStyle="ButtonStyle.Primary" Click="@OpenCreate" />
+</RadzenStack>
+
+@if (_loading)
+{
+    <RadzenProgressBarCircular ShowValue="true" Mode="ProgressBarMode.Indeterminate" />
+}
+else if (_error is not null)
+{
+    <RadzenAlert AlertStyle="AlertStyle.Danger" Shade="Shade.Lighter" Text="@_error" />
+}
+else
+{
+    <RadzenDataGrid Data="@_plans" TItem="PlanDto" AllowSorting="true" AllowFiltering="true" AllowPaging="true" PageSize="10">
+        <Columns>
+            <RadzenDataGridColumn TItem="PlanDto" Property="Name" Title="Plan Name" />
+            <RadzenDataGridColumn TItem="PlanDto" Property="Description" Title="Description" />
+            <RadzenDataGridColumn TItem="PlanDto" Title="Monthly" Width="110px" TextAlign="TextAlign.Right">
+                <Template Context="plan">
+                    @plan.MonthlyPrice.ToString("N2") <small>TND</small>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="PlanDto" Title="Yearly" Width="110px" TextAlign="TextAlign.Right">
+                <Template Context="plan">
+                    @plan.YearlyPrice.ToString("N2") <small>TND</small>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="PlanDto" Property="MaxUsers" Title="Max Users" Width="100px" TextAlign="TextAlign.Center" />
+            <RadzenDataGridColumn TItem="PlanDto" Title="Storage" Width="100px" TextAlign="TextAlign.Right">
+                <Template Context="plan">
+                    @FormatStorage(plan.MaxStorageBytes)
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="PlanDto" Property="TrialDays" Title="Trial" Width="80px" TextAlign="TextAlign.Center">
+                <Template Context="plan">
+                    @plan.TrialDays<small>d</small>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="PlanDto" Property="ApiRateLimitPerMinute" Title="Rate Limit" Width="100px" TextAlign="TextAlign.Center">
+                <Template Context="plan">
+                    @plan.ApiRateLimitPerMinute<small>/min</small>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="PlanDto" Title="Actions" Width="180px" Sortable="false" Filterable="false">
+                <Template Context="plan">
+                    <RadzenButton Text="Edit" Icon="edit" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" Click="@(() => OpenEdit(plan))" class="rz-mr-1" />
+                    <RadzenButton Text="Deactivate" Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click="@(() => DeletePlan(plan))" />
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+}
+
+@code {
+    private List<PlanDto> _plans = new();
+    private bool _loading = true;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync() => await LoadData();
+
+    private async Task LoadData()
+    {
+        _loading = true; _error = null;
+        try { _plans = (await AdminApi.GetPlansAsync())?.ToList() ?? []; }
+        catch (Exception ex) { _error = $"Failed to load plans: {ex.Message}"; }
+        finally { _loading = false; }
+    }
+
+    private async Task OpenCreate()
+    {
+        var m = new PlanModel();
+        var result = await DialogService.OpenAsync("New Plan", ds => PlanForm(m, ds));
+        if (result is true)
+        {
+            try
+            {
+                await AdminApi.CreatePlanAsync(new CreatePlanDto(
+                    m.Name, m.Description, m.MaxUsers, (long)(m.StorageGB * 1_073_741_824m),
+                    m.MonthlyPrice, m.YearlyPrice, m.ApiRateLimitPerMinute, m.TrialDays));
+                NotificationService.Notify(NotificationSeverity.Success, "Plan created");
+                await LoadData();
+            }
+            catch (Exception ex) { NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message); }
+        }
+    }
+
+    private async Task OpenEdit(PlanDto plan)
+    {
+        var m = new PlanModel
+        {
+            Name = plan.Name, Description = plan.Description ?? "", MaxUsers = plan.MaxUsers,
+            StorageGB = Math.Round((decimal)plan.MaxStorageBytes / 1_073_741_824m, 2),
+            MonthlyPrice = plan.MonthlyPrice, YearlyPrice = plan.YearlyPrice,
+            ApiRateLimitPerMinute = plan.ApiRateLimitPerMinute, TrialDays = plan.TrialDays
+        };
+        var result = await DialogService.OpenAsync($"Edit Plan: {plan.Name}", ds => PlanForm(m, ds));
+        if (result is true)
+        {
+            try
+            {
+                await AdminApi.UpdatePlanAsync(plan.Id, new UpdatePlanDto(
+                    m.Name, m.Description, m.MaxUsers, (long)(m.StorageGB * 1_073_741_824m),
+                    m.MonthlyPrice, m.YearlyPrice, m.ApiRateLimitPerMinute, m.TrialDays));
+                NotificationService.Notify(NotificationSeverity.Success, "Plan updated");
+                await LoadData();
+            }
+            catch (Exception ex) { NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message); }
+        }
+    }
+
+    private async Task DeletePlan(PlanDto plan)
+    {
+        var confirmed = await DialogService.Confirm(
+            $"Deactivate plan '{plan.Name}'? Existing subscribers will keep their plan until it expires.",
+            "Confirm Deactivation",
+            new ConfirmOptions { OkButtonText = "Deactivate", CancelButtonText = "Cancel" });
+        if (confirmed != true) return;
+        try
+        {
+            await AdminApi.DeletePlanAsync(plan.Id);
+            NotificationService.Notify(NotificationSeverity.Success, "Plan deactivated");
+            await LoadData();
+        }
+        catch (Exception ex) { NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message); }
+    }
+
+    private static string FormatStorage(long bytes)
+    {
+        if (bytes >= 1_073_741_824) return $"{bytes / 1_073_741_824.0:N1} GB";
+        if (bytes >= 1_048_576) return $"{bytes / 1_048_576.0:N0} MB";
+        return $"{bytes:N0} B";
+    }
+
+    private RenderFragment PlanForm(PlanModel m, DialogService ds) =>
+        @<RadzenStack Gap="1.25rem" class="rz-p-4" Style="min-width:520px">
+            <RadzenText TextStyle="TextStyle.Subtitle2" class="rz-mb-0">Plan Identity</RadzenText>
+
+            <RadzenFormField Text="Plan Name *" Variant="Variant.Outlined">
+                <ChildContent><RadzenTextBox @bind-Value="m.Name" Placeholder="e.g. Starter, Professional, Enterprise" /></ChildContent>
+            </RadzenFormField>
+
+            <RadzenFormField Text="Description" Variant="Variant.Outlined">
+                <ChildContent><RadzenTextArea @bind-Value="m.Description" Placeholder="What does this plan include?" Rows="2" /></ChildContent>
+            </RadzenFormField>
+
+            <RadzenText TextStyle="TextStyle.Subtitle2" class="rz-mb-0 rz-mt-2">Pricing</RadzenText>
+
+            <RadzenRow Gap="1rem">
+                <RadzenColumn Size="6">
+                    <RadzenFormField Text="Monthly Price (TND) *" Variant="Variant.Outlined" Style="width:100%">
+                        <ChildContent><RadzenNumeric TValue="decimal" @bind-Value="m.MonthlyPrice" Min="0" Placeholder="0.00" /></ChildContent>
+                    </RadzenFormField>
+                </RadzenColumn>
+                <RadzenColumn Size="6">
+                    <RadzenFormField Text="Yearly Price (TND) *" Variant="Variant.Outlined" Style="width:100%">
+                        <ChildContent><RadzenNumeric TValue="decimal" @bind-Value="m.YearlyPrice" Min="0" Placeholder="0.00" /></ChildContent>
+                        <Helper>
+                            @if (m.MonthlyPrice > 0)
+                            {
+                                var equiv = m.MonthlyPrice * 12;
+                                <RadzenText TextStyle="TextStyle.Caption" class="rz-color-secondary">
+                                    12-month equivalent: @equiv.ToString("N2") TND
+                                </RadzenText>
+                            }
+                        </Helper>
+                    </RadzenFormField>
+                </RadzenColumn>
+            </RadzenRow>
+
+            <RadzenText TextStyle="TextStyle.Subtitle2" class="rz-mb-0 rz-mt-2">Usage Limits</RadzenText>
+
+            <RadzenRow Gap="1rem">
+                <RadzenColumn Size="6">
+                    <RadzenFormField Text="Max Users *" Variant="Variant.Outlined" Style="width:100%">
+                        <ChildContent><RadzenNumeric TValue="int" @bind-Value="m.MaxUsers" Min="1" Placeholder="e.g. 5" /></ChildContent>
+                    </RadzenFormField>
+                </RadzenColumn>
+                <RadzenColumn Size="6">
+                    <RadzenFormField Text="Storage (GB) *" Variant="Variant.Outlined" Style="width:100%">
+                        <ChildContent><RadzenNumeric TValue="decimal" @bind-Value="m.StorageGB" Min="0.1m" Placeholder="e.g. 10" /></ChildContent>
+                    </RadzenFormField>
+                </RadzenColumn>
+            </RadzenRow>
+
+            <RadzenRow Gap="1rem">
+                <RadzenColumn Size="6">
+                    <RadzenFormField Text="API Rate Limit (req/min)" Variant="Variant.Outlined" Style="width:100%">
+                        <ChildContent><RadzenNumeric TValue="int" @bind-Value="m.ApiRateLimitPerMinute" Min="1" Placeholder="500" /></ChildContent>
+                    </RadzenFormField>
+                </RadzenColumn>
+                <RadzenColumn Size="6">
+                    <RadzenFormField Text="Trial Period (days)" Variant="Variant.Outlined" Style="width:100%">
+                        <ChildContent><RadzenNumeric TValue="int" @bind-Value="m.TrialDays" Min="0" Placeholder="14" /></ChildContent>
+                        <Helper>
+                            <RadzenText TextStyle="TextStyle.Caption" class="rz-color-secondary">Set to 0 for no trial.</RadzenText>
+                        </Helper>
+                    </RadzenFormField>
+                </RadzenColumn>
+            </RadzenRow>
+
+            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem" class="rz-mt-2">
+                <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="@(() => ds.Close(false))" />
+                <RadzenButton Text="Save" Icon="save" ButtonStyle="ButtonStyle.Primary" Click="@(() => ds.Close(true))" />
+            </RadzenStack>
+        </RadzenStack>;
+
+    private class PlanModel
+    {
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public int MaxUsers { get; set; } = 5;
+        public decimal StorageGB { get; set; } = 10;
+        public decimal MonthlyPrice { get; set; }
+        public decimal YearlyPrice { get; set; }
+        public int ApiRateLimitPerMinute { get; set; } = 500;
+        public int TrialDays { get; set; } = 14;
+    }
+}

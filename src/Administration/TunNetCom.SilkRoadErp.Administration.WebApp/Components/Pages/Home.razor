@@ -1,0 +1,43 @@
+@page "/"
+
+<PageTitle>Administration Dashboard</PageTitle>
+
+<RadzenText TextStyle="TextStyle.H3">Administration Dashboard</RadzenText>
+<RadzenText TextStyle="TextStyle.Body1" class="rz-mb-4">Manage tenants, subscription plans, and ERP modules for SilkRoad ERP.</RadzenText>
+
+<RadzenRow Gap="1rem">
+    <RadzenColumn Size="4">
+        <RadzenCard>
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" class="rz-mb-2">
+                <RadzenIcon Icon="people" Style="font-size:1.5rem" />
+                <RadzenText TextStyle="TextStyle.H6" class="rz-mb-0">Tenants</RadzenText>
+            </RadzenStack>
+            <RadzenText TextStyle="TextStyle.Body2">Register new tenants, manage lifecycle (block, unblock, deactivate), and configure tenant settings.</RadzenText>
+            <RadzenButton Text="Manage Tenants" Icon="arrow_forward" ButtonStyle="ButtonStyle.Primary" class="rz-mt-2" Click="@(() => Navigation.NavigateTo("/tenants"))" />
+        </RadzenCard>
+    </RadzenColumn>
+    <RadzenColumn Size="4">
+        <RadzenCard>
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" class="rz-mb-2">
+                <RadzenIcon Icon="payments" Style="font-size:1.5rem" />
+                <RadzenText TextStyle="TextStyle.H6" class="rz-mb-0">Subscription Plans</RadzenText>
+            </RadzenStack>
+            <RadzenText TextStyle="TextStyle.Body2">Create and manage pricing tiers with usage limits, storage quotas, trial periods, and API rate limits.</RadzenText>
+            <RadzenButton Text="Manage Plans" Icon="arrow_forward" ButtonStyle="ButtonStyle.Primary" class="rz-mt-2" Click="@(() => Navigation.NavigateTo("/plans"))" />
+        </RadzenCard>
+    </RadzenColumn>
+    <RadzenColumn Size="4">
+        <RadzenCard>
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" class="rz-mb-2">
+                <RadzenIcon Icon="widgets" Style="font-size:1.5rem" />
+                <RadzenText TextStyle="TextStyle.H6" class="rz-mb-0">Modules & Features</RadzenText>
+            </RadzenStack>
+            <RadzenText TextStyle="TextStyle.Body2">Define bounded contexts (Sales, Purchasing, Finance...) and their features that can be toggled per plan or tenant.</RadzenText>
+            <RadzenButton Text="Manage Modules" Icon="arrow_forward" ButtonStyle="ButtonStyle.Primary" class="rz-mt-2" Click="@(() => Navigation.NavigateTo("/bounded-contexts"))" />
+        </RadzenCard>
+    </RadzenColumn>
+</RadzenRow>
+
+@code {
+    [Inject] private NavigationManager Navigation { get; set; } = null!;
+}

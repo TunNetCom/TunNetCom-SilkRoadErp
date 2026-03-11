@@ -1,9 +1,10 @@
 #nullable enable
 using System.Collections.Generic;
+using TunNetCom.SilkRoadErp.SharedKernel.Tenancy;
 
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
-public partial class CompteBancaire
+public partial class CompteBancaire : ITenantEntity
 {
     private CompteBancaire()
     {
@@ -45,6 +46,8 @@ public partial class CompteBancaire
     }
 
     public int Id { get; private set; }
+
+    public string TenantId { get; set; } = TenantConstants.DefaultTenantId;
 
     public int BanqueId { get; private set; }
 

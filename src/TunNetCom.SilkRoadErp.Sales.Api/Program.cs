@@ -1,8 +1,15 @@
 using Serilog.Sinks.Grafana.Loki;
 using Microsoft.AspNetCore.HttpOverrides;
 using System.Security.Claims;
+using TunNetCom.SilkRoadErp.SharedKernel.Tenancy;
+using TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy;
+using TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy.Middleware;
+using TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy.EfCore;
+using TunNetCom.SilkRoadErp.Infrastructure.Caching;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var deploymentMode = builder.Configuration.GetValue<DeploymentMode>("Deployment:Mode");
 
 var lokiUrl = builder.Configuration["Loki:ServerUrl"];
 // Configure Serilog
@@ -45,7 +52,8 @@ builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(optio
 // Add HttpContextAccessor for accessing current user in services
 builder.Services.AddHttpContextAccessor();
 
-builder.Services.AddMemoryCache();
+builder.Services.AddMultiTenancy(builder.Configuration);
+builder.Services.AddTenantCaching(builder.Configuration);
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
@@ -60,11 +68,12 @@ builder.Services.AddDbContext<SalesContext>((serviceProvider, options) =>
         builder.Configuration.GetConnectionString("DefaultConnection"),
         sqlServerOptions => sqlServerOptions.MigrationsAssembly("TunNetCom.SilkRoadErp.Sales.Domain"));
     
-    // Add audit interceptor
     var auditInterceptor = serviceProvider.GetRequiredService<AuditSaveChangesInterceptor>();
     options.AddInterceptors(auditInterceptor);
     
-    // Add active accounting year query interceptor to ensure AsyncLocal is set before queries
+    var tenantInterceptor = serviceProvider.GetRequiredService<TenantSaveChangesInterceptor>();
+    options.AddInterceptors(tenantInterceptor);
+    
     var activeYearInterceptor = serviceProvider.GetRequiredService<TunNetCom.SilkRoadErp.Sales.Domain.Entites.Interceptors.ActiveAccountingYearQueryInterceptor>();
     options.AddInterceptors(activeYearInterceptor);
 });
@@ -396,7 +405,11 @@ app.UseSerilogRequestLogging();
 // Use the exception handler
 app.ConfigureExceptionHandler();
 
-// Use ActiveAccountingYearMiddleware to cache the active accounting year at the start of each request
+if (deploymentMode == DeploymentMode.MultiTenant)
+{
+    app.UseMiddleware<TenantResolutionMiddleware>();
+}
+
 app.UseMiddleware<ActiveAccountingYearMiddleware>();
 
 app.UseStaticFiles();

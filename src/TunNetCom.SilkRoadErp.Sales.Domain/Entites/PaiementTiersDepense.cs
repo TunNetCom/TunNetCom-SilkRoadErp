@@ -1,13 +1,14 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using TunNetCom.SilkRoadErp.SharedKernel.Tenancy;
 
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 /// <summary>
 /// Paiement pour un tiers dépenses de fonctionnement.
 /// </summary>
-public partial class PaiementTiersDepense : IAccountingYearEntity
+public partial class PaiementTiersDepense : IAccountingYearEntity, ITenantEntity
 {
     private PaiementTiersDepense()
     {
@@ -103,6 +104,8 @@ public partial class PaiementTiersDepense : IAccountingYearEntity
     }
 
     public int Id { get; private set; }
+
+    public string TenantId { get; set; } = TenantConstants.DefaultTenantId;
 
     public string? NumeroTransactionBancaire { get; private set; }
 

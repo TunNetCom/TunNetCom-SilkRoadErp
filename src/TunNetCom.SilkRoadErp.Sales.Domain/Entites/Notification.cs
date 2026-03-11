@@ -1,9 +1,10 @@
 #nullable enable
 using System;
+using TunNetCom.SilkRoadErp.SharedKernel.Tenancy;
 
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
-public class Notification
+public class Notification : ITenantEntity
 {
     private Notification()
     {
@@ -40,6 +41,8 @@ public class Notification
     }
 
     public int Id { get; private set; }
+
+    public string TenantId { get; set; } = TenantConstants.DefaultTenantId;
 
     public NotificationType Type { get; private set; }
 

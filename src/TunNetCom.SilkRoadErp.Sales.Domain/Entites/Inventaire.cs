@@ -1,10 +1,11 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using TunNetCom.SilkRoadErp.SharedKernel.Tenancy;
 
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
-public partial class Inventaire : IAccountingYearEntity
+public partial class Inventaire : IAccountingYearEntity, ITenantEntity
 {
     private Inventaire()
     {
@@ -53,6 +54,8 @@ public partial class Inventaire : IAccountingYearEntity
     }
 
     public int Id { get; private set; }
+
+    public string TenantId { get; set; } = TenantConstants.DefaultTenantId;
 
     public int Num { get; private set; }
 

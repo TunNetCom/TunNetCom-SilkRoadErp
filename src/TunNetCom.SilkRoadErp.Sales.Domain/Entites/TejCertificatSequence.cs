@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using TunNetCom.SilkRoadErp.SharedKernel.Tenancy;
 
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
@@ -8,8 +9,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 /// Format généré : {Mois}{XXX} (ex. mars → 3001, 3002 ; janvier → 1001, 1002).
 /// La séquence est réinitialisée chaque mois.
 /// </summary>
-public class TejCertificatSequence
+public class TejCertificatSequence : ITenantEntity
 {
+    public string TenantId { get; set; } = TenantConstants.DefaultTenantId;
+
     public int Annee { get; set; }
     public int Mois { get; set; }
     public int DerniereSequence { get; set; }

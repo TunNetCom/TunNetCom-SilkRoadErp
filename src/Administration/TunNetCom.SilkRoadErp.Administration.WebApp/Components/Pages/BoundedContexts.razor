@@ -1,0 +1,234 @@
+@page "/bounded-contexts"
+@inject IAdminApiClient AdminApi
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+@inject NavigationManager Navigation
+
+<PageTitle>Modules</PageTitle>
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" class="rz-mb-4">
+    <RadzenStack>
+        <RadzenText TextStyle="TextStyle.H3" class="rz-mb-0">Modules (Bounded Contexts)</RadzenText>
+        <RadzenText TextStyle="TextStyle.Body2" class="rz-color-secondary">Each module maps to a domain boundary in SilkRoad ERP (e.g. Sales, Purchasing, Finance).</RadzenText>
+    </RadzenStack>
+    <RadzenButton Text="New Module" Icon="add" ButtonStyle="ButtonStyle.Primary" Click="@OpenCreate" />
+</RadzenStack>
+
+@if (_loading)
+{
+    <RadzenProgressBarCircular ShowValue="true" Mode="ProgressBarMode.Indeterminate" />
+}
+else if (_error is not null)
+{
+    <RadzenAlert AlertStyle="AlertStyle.Danger" Shade="Shade.Lighter" Text="@_error" />
+}
+else
+{
+    <RadzenDataGrid Data="@_contexts" TItem="BoundedContextSummaryDto" AllowSorting="true" AllowFiltering="true" AllowPaging="true" PageSize="10">
+        <Columns>
+            <RadzenDataGridColumn TItem="BoundedContextSummaryDto" Title="" Width="50px" Sortable="false" Filterable="false">
+                <Template Context="bc">
+                    @if (!string.IsNullOrEmpty(bc.Icon))
+                    {
+                        <RadzenIcon Icon="@bc.Icon" Style="font-size:1.3rem" />
+                    }
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="BoundedContextSummaryDto" Property="Key" Title="Key" Width="140px">
+                <Template Context="bc">
+                    <code>@bc.Key</code>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="BoundedContextSummaryDto" Property="Name" Title="Name" />
+            <RadzenDataGridColumn TItem="BoundedContextSummaryDto" Property="Description" Title="Description" />
+            <RadzenDataGridColumn TItem="BoundedContextSummaryDto" Title="Type" Width="90px" Sortable="false" Filterable="false">
+                <Template Context="bc">
+                    @if (bc.IsCore)
+                    {
+                        <RadzenBadge Text="Core" BadgeStyle="BadgeStyle.Primary" />
+                    }
+                    else
+                    {
+                        <RadzenBadge Text="Optional" BadgeStyle="BadgeStyle.Light" />
+                    }
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="BoundedContextSummaryDto" Property="DisplayOrder" Title="Order" Width="80px" />
+            <RadzenDataGridColumn TItem="BoundedContextSummaryDto" Property="FeaturesCount" Title="Features" Width="90px" />
+            <RadzenDataGridColumn TItem="BoundedContextSummaryDto" Title="Actions" Width="300px" Sortable="false" Filterable="false">
+                <Template Context="bc">
+                    <RadzenButton Text="Features" Icon="list" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Click="@(() => Navigation.NavigateTo($"/bounded-contexts/{bc.Id}/features"))" class="rz-mr-1" />
+                    <RadzenButton Text="Edit" Icon="edit" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" Click="@(() => OpenEdit(bc))" class="rz-mr-1" />
+                    <RadzenButton Text="Delete" Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click="@(() => DeleteBc(bc))" />
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+}
+
+@code {
+    private List<BoundedContextSummaryDto> _contexts = new();
+    private bool _loading = true;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync() => await LoadData();
+
+    private async Task LoadData()
+    {
+        _loading = true; _error = null;
+        try { _contexts = (await AdminApi.GetBoundedContextsAsync())?.ToList() ?? []; }
+        catch (Exception ex) { _error = $"Failed to load: {ex.Message}"; }
+        finally { _loading = false; }
+    }
+
+    private async Task OpenCreate()
+    {
+        var m = new BcModel();
+        var result = await DialogService.OpenAsync("New Module", ds => BcForm(m, ds, isCreate: true));
+        if (result is true)
+        {
+            try
+            {
+                await AdminApi.CreateBoundedContextAsync(new CreateBoundedContextDto(m.Key, m.Name, m.Description, m.Icon, m.IsCore, m.DisplayOrder));
+                NotificationService.Notify(NotificationSeverity.Success, "Module created");
+                await LoadData();
+            }
+            catch (Exception ex) { NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message); }
+        }
+    }
+
+    private async Task OpenEdit(BoundedContextSummaryDto bc)
+    {
+        var m = new BcModel
+        {
+            Key = bc.Key, Name = bc.Name, Description = bc.Description ?? "",
+            Icon = bc.Icon ?? "", IsCore = bc.IsCore, DisplayOrder = bc.DisplayOrder
+        };
+        var result = await DialogService.OpenAsync($"Edit: {bc.Name}", ds => BcForm(m, ds, isCreate: false));
+        if (result is true)
+        {
+            try
+            {
+                await AdminApi.UpdateBoundedContextAsync(bc.Id, new UpdateBoundedContextDto(m.Name, m.Description, m.Icon, m.IsCore, m.DisplayOrder));
+                NotificationService.Notify(NotificationSeverity.Success, "Module updated");
+                await LoadData();
+            }
+            catch (Exception ex) { NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message); }
+        }
+    }
+
+    private async Task DeleteBc(BoundedContextSummaryDto bc)
+    {
+        var confirmed = await DialogService.Confirm(
+            $"Delete module '{bc.Name}' ({bc.Key})? This cannot be undone if no plans or tenants reference it.",
+            "Confirm Delete",
+            new ConfirmOptions { OkButtonText = "Delete", CancelButtonText = "Cancel" });
+        if (confirmed != true) return;
+        try
+        {
+            await AdminApi.DeleteBoundedContextAsync(bc.Id);
+            NotificationService.Notify(NotificationSeverity.Success, "Module deleted");
+            await LoadData();
+        }
+        catch (Exception ex) { NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message); }
+    }
+
+    private RenderFragment BcForm(BcModel m, DialogService ds, bool isCreate) =>
+        @<RadzenStack Gap="1.25rem" class="rz-p-4" Style="min-width:500px">
+            <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-mb-0 rz-color-secondary">
+                A module represents a bounded context in the ERP domain (e.g. <strong>Sales</strong>, <strong>Purchasing</strong>, <strong>Finance</strong>).
+            </RadzenText>
+
+            @if (isCreate)
+            {
+                <RadzenFormField Text="Key *" Variant="Variant.Outlined">
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="m.Key" Placeholder="e.g. Sales, Purchasing, Finance" />
+                    </ChildContent>
+                    <Helper>
+                        <RadzenText TextStyle="TextStyle.Caption">Unique identifier. Use PascalCase, no spaces. Cannot be changed after creation.</RadzenText>
+                    </Helper>
+                </RadzenFormField>
+            }
+            else
+            {
+                <RadzenFormField Text="Key" Variant="Variant.Outlined">
+                    <ChildContent>
+                        <RadzenTextBox Value="@m.Key" ReadOnly="true" Style="opacity:0.6" />
+                    </ChildContent>
+                    <Helper>
+                        <RadzenText TextStyle="TextStyle.Caption">Read-only after creation.</RadzenText>
+                    </Helper>
+                </RadzenFormField>
+            }
+
+            <RadzenFormField Text="Display Name *" Variant="Variant.Outlined">
+                <ChildContent>
+                    <RadzenTextBox @bind-Value="m.Name" Placeholder="e.g. Sales & Distribution" />
+                </ChildContent>
+                <Helper>
+                    <RadzenText TextStyle="TextStyle.Caption">Human-readable name shown in the UI.</RadzenText>
+                </Helper>
+            </RadzenFormField>
+
+            <RadzenFormField Text="Description" Variant="Variant.Outlined">
+                <ChildContent>
+                    <RadzenTextArea @bind-Value="m.Description" Placeholder="Brief description of what this module covers..." Rows="2" />
+                </ChildContent>
+            </RadzenFormField>
+
+            <RadzenRow Gap="1rem">
+                <RadzenColumn Size="6">
+                    <RadzenFormField Text="Material Icon" Variant="Variant.Outlined" Style="width:100%">
+                        <ChildContent>
+                            <RadzenTextBox @bind-Value="m.Icon" Placeholder="e.g. point_of_sale" />
+                        </ChildContent>
+                        <Helper>
+                            <RadzenText TextStyle="TextStyle.Caption">
+                                <a href="https://fonts.google.com/icons" target="_blank">Browse icons</a>
+                            </RadzenText>
+                        </Helper>
+                    </RadzenFormField>
+                </RadzenColumn>
+                <RadzenColumn Size="6">
+                    <RadzenFormField Text="Display Order" Variant="Variant.Outlined" Style="width:100%">
+                        <ChildContent>
+                            <RadzenNumeric TValue="int" @bind-Value="m.DisplayOrder" Min="0" Placeholder="0" />
+                        </ChildContent>
+                        <Helper>
+                            <RadzenText TextStyle="TextStyle.Caption">Lower values appear first.</RadzenText>
+                        </Helper>
+                    </RadzenFormField>
+                </RadzenColumn>
+            </RadzenRow>
+
+            @if (!string.IsNullOrWhiteSpace(m.Icon))
+            {
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                    <RadzenText TextStyle="TextStyle.Caption" class="rz-color-secondary">Preview:</RadzenText>
+                    <RadzenIcon Icon="@m.Icon" Style="font-size:1.5rem" />
+                </RadzenStack>
+            }
+
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                <RadzenCheckBox @bind-Value="m.IsCore" />
+                <RadzenLabel Text="Core Module" />
+                <RadzenText TextStyle="TextStyle.Caption" class="rz-color-secondary rz-ml-2">Core modules are always enabled for every tenant.</RadzenText>
+            </RadzenStack>
+
+            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem" class="rz-mt-2">
+                <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="@(() => ds.Close(false))" />
+                <RadzenButton Text="Save" Icon="save" ButtonStyle="ButtonStyle.Primary" Click="@(() => ds.Close(true))" />
+            </RadzenStack>
+        </RadzenStack>;
+
+    private class BcModel
+    {
+        public string Key { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Icon { get; set; } = "";
+        public bool IsCore { get; set; }
+        public int DisplayOrder { get; set; }
+    }
+}

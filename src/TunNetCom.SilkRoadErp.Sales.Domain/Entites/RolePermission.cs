@@ -1,9 +1,10 @@
 #nullable enable
 using System;
+using TunNetCom.SilkRoadErp.SharedKernel.Tenancy;
 
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
-public class RolePermission
+public class RolePermission : ITenantEntity
 {
     private RolePermission()
     {
@@ -20,6 +21,8 @@ public class RolePermission
     }
 
     public int RoleId { get; private set; }
+
+    public string TenantId { get; set; } = TenantConstants.DefaultTenantId;
 
     public int PermissionId { get; private set; }
 

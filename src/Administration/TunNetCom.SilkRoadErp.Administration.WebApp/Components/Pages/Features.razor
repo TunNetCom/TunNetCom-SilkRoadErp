@@ -1,0 +1,209 @@
+@page "/bounded-contexts/{BoundedContextId:int}/features"
+@inject IAdminApiClient AdminApi
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+@inject NavigationManager Navigation
+
+<PageTitle>Features - @_bcName</PageTitle>
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" class="rz-mb-2">
+    <RadzenButton Icon="arrow_back" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" Click="@(() => Navigation.NavigateTo("/bounded-contexts"))" />
+    <RadzenStack Gap="0">
+        <RadzenText TextStyle="TextStyle.H3" class="rz-mb-0">@(_bcName) Features</RadzenText>
+        @if (!string.IsNullOrEmpty(_bcKey))
+        {
+            <RadzenText TextStyle="TextStyle.Body2" class="rz-color-secondary">
+                Module <code>@_bcKey</code> &mdash; feature keys are prefixed with <code>@(_bcKey).</code>
+            </RadzenText>
+        }
+    </RadzenStack>
+</RadzenStack>
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.End" class="rz-mb-4">
+    <RadzenButton Text="New Feature" Icon="add" ButtonStyle="ButtonStyle.Primary" Click="@OpenCreate" />
+</RadzenStack>
+
+@if (_loading)
+{
+    <RadzenProgressBarCircular ShowValue="true" Mode="ProgressBarMode.Indeterminate" />
+}
+else if (_error is not null)
+{
+    <RadzenAlert AlertStyle="AlertStyle.Danger" Shade="Shade.Lighter" Text="@_error" />
+}
+else
+{
+    <RadzenDataGrid Data="@_features" TItem="FeatureSummaryDto" AllowSorting="true" AllowFiltering="true" AllowPaging="true" PageSize="15">
+        <Columns>
+            <RadzenDataGridColumn TItem="FeatureSummaryDto" Property="Key" Title="Key" Width="220px">
+                <Template Context="f">
+                    <code>@f.Key</code>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="FeatureSummaryDto" Property="Name" Title="Name" />
+            <RadzenDataGridColumn TItem="FeatureSummaryDto" Property="Description" Title="Description" />
+            <RadzenDataGridColumn TItem="FeatureSummaryDto" Title="Type" Width="90px" Sortable="false" Filterable="false">
+                <Template Context="f">
+                    @if (f.IsCore)
+                    {
+                        <RadzenBadge Text="Core" BadgeStyle="BadgeStyle.Primary" />
+                    }
+                    else
+                    {
+                        <RadzenBadge Text="Optional" BadgeStyle="BadgeStyle.Light" />
+                    }
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="FeatureSummaryDto" Title="Actions" Width="180px" Sortable="false" Filterable="false">
+                <Template Context="f">
+                    <RadzenButton Text="Edit" Icon="edit" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" Click="@(() => OpenEdit(f))" class="rz-mr-1" />
+                    <RadzenButton Text="Delete" Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click="@(() => DeleteFeature(f))" />
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+}
+
+@code {
+    [Parameter] public int BoundedContextId { get; set; }
+
+    private List<FeatureSummaryDto> _features = new();
+    private bool _loading = true;
+    private string? _error;
+    private string _bcName = "";
+    private string _bcKey = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var bc = await AdminApi.GetBoundedContextAsync(BoundedContextId);
+        if (bc is not null)
+        {
+            _bcName = bc.Name;
+            _bcKey = bc.Key;
+        }
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _loading = true; _error = null;
+        try { _features = (await AdminApi.GetFeaturesAsync(BoundedContextId))?.ToList() ?? []; }
+        catch (Exception ex) { _error = $"Failed to load: {ex.Message}"; }
+        finally { _loading = false; }
+    }
+
+    private async Task OpenCreate()
+    {
+        var m = new FeatureModel();
+        var result = await DialogService.OpenAsync("New Feature", ds => FeatureForm(m, ds, isCreate: true));
+        if (result is true)
+        {
+            var fullKey = string.IsNullOrEmpty(_bcKey) ? m.KeySuffix : $"{_bcKey}.{m.KeySuffix}";
+            try
+            {
+                await AdminApi.CreateFeatureAsync(BoundedContextId, new CreateFeatureDto(fullKey, m.Name, m.Description, m.IsCore));
+                NotificationService.Notify(NotificationSeverity.Success, "Feature created");
+                await LoadData();
+            }
+            catch (Exception ex) { NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message); }
+        }
+    }
+
+    private async Task OpenEdit(FeatureSummaryDto f)
+    {
+        var m = new FeatureModel { KeySuffix = f.Key, Name = f.Name, Description = f.Description ?? "", IsCore = f.IsCore };
+        var result = await DialogService.OpenAsync($"Edit: {f.Name}", ds => FeatureForm(m, ds, isCreate: false));
+        if (result is true)
+        {
+            try
+            {
+                await AdminApi.UpdateFeatureAsync(BoundedContextId, f.Id, new UpdateFeatureDto(m.Name, m.Description, m.IsCore));
+                NotificationService.Notify(NotificationSeverity.Success, "Feature updated");
+                await LoadData();
+            }
+            catch (Exception ex) { NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message); }
+        }
+    }
+
+    private async Task DeleteFeature(FeatureSummaryDto f)
+    {
+        var confirmed = await DialogService.Confirm(
+            $"Delete feature '{f.Name}' ({f.Key})? This cannot be undone if no plans reference it.",
+            "Confirm Delete",
+            new ConfirmOptions { OkButtonText = "Delete", CancelButtonText = "Cancel" });
+        if (confirmed != true) return;
+        try
+        {
+            await AdminApi.DeleteFeatureAsync(BoundedContextId, f.Id);
+            NotificationService.Notify(NotificationSeverity.Success, "Feature deleted");
+            await LoadData();
+        }
+        catch (Exception ex) { NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message); }
+    }
+
+    private RenderFragment FeatureForm(FeatureModel m, DialogService ds, bool isCreate) =>
+        @<RadzenStack Gap="1.25rem" class="rz-p-4" Style="min-width:480px">
+            <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-mb-0 rz-color-secondary">
+                A feature is a capability within the <strong>@_bcName</strong> module that can be toggled per plan or tenant.
+            </RadzenText>
+
+            @if (isCreate)
+            {
+                <RadzenFormField Text="Key Suffix *" Variant="Variant.Outlined">
+                    <Start>
+                        <RadzenText TextStyle="TextStyle.Body2" class="rz-color-secondary rz-mr-1" Style="white-space:nowrap">@(_bcKey).</RadzenText>
+                    </Start>
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="m.KeySuffix" Placeholder="e.g. Customers, Invoicing" />
+                    </ChildContent>
+                    <Helper>
+                        <RadzenText TextStyle="TextStyle.Caption">
+                            Full key will be <strong>@(_bcKey).@(string.IsNullOrEmpty(m.KeySuffix) ? "..." : m.KeySuffix)</strong>. Use PascalCase.
+                        </RadzenText>
+                    </Helper>
+                </RadzenFormField>
+            }
+            else
+            {
+                <RadzenFormField Text="Key" Variant="Variant.Outlined">
+                    <ChildContent>
+                        <RadzenTextBox Value="@m.KeySuffix" ReadOnly="true" Style="opacity:0.6" />
+                    </ChildContent>
+                    <Helper>
+                        <RadzenText TextStyle="TextStyle.Caption">Read-only after creation.</RadzenText>
+                    </Helper>
+                </RadzenFormField>
+            }
+
+            <RadzenFormField Text="Display Name *" Variant="Variant.Outlined">
+                <ChildContent>
+                    <RadzenTextBox @bind-Value="m.Name" Placeholder="e.g. Customer Management" />
+                </ChildContent>
+            </RadzenFormField>
+
+            <RadzenFormField Text="Description" Variant="Variant.Outlined">
+                <ChildContent>
+                    <RadzenTextArea @bind-Value="m.Description" Placeholder="What does this feature provide?" Rows="2" />
+                </ChildContent>
+            </RadzenFormField>
+
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                <RadzenCheckBox @bind-Value="m.IsCore" />
+                <RadzenLabel Text="Core Feature" />
+                <RadzenText TextStyle="TextStyle.Caption" class="rz-color-secondary rz-ml-2">Core features are always enabled and cannot be toggled off.</RadzenText>
+            </RadzenStack>
+
+            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem" class="rz-mt-2">
+                <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="@(() => ds.Close(false))" />
+                <RadzenButton Text="Save" Icon="save" ButtonStyle="ButtonStyle.Primary" Click="@(() => ds.Close(true))" />
+            </RadzenStack>
+        </RadzenStack>;
+
+    private class FeatureModel
+    {
+        public string KeySuffix { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public bool IsCore { get; set; }
+    }
+}

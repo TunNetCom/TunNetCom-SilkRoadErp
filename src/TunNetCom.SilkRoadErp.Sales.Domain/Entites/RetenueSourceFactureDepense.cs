@@ -1,11 +1,14 @@
 #nullable enable
 using System;
+using TunNetCom.SilkRoadErp.SharedKernel.Tenancy;
 
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
-public class RetenueSourceFactureDepense : IAccountingYearEntity
+public class RetenueSourceFactureDepense : IAccountingYearEntity, ITenantEntity
 {
     public int Id { get; set; }
+
+    public string TenantId { get; set; } = TenantConstants.DefaultTenantId;
 
     public int FactureDepenseId { get; set; }
 

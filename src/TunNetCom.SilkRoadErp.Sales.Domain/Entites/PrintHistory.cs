@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using TunNetCom.SilkRoadErp.SharedKernel.Tenancy;
 
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
@@ -9,7 +10,7 @@ public enum PrintModeEnum
     DirectPrint = 2
 }
 
-public class PrintHistory
+public class PrintHistory : ITenantEntity
 {
     private PrintHistory()
     {
@@ -47,6 +48,8 @@ public class PrintHistory
     }
 
     public long Id { get; private set; }
+
+    public string TenantId { get; set; } = TenantConstants.DefaultTenantId;
 
     public string DocumentType { get; private set; } = null!;
 

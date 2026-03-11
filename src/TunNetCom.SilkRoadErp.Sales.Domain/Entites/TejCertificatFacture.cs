@@ -1,11 +1,15 @@
+using TunNetCom.SilkRoadErp.SharedKernel.Tenancy;
+
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 /// <summary>
 /// Attribution de la référence certificat TEJ à une facture fournisseur.
 /// Une fois attribuée, la même ref est réutilisée pour tous les exports TEJ de cette facture.
 /// </summary>
-public class TejCertificatFacture
+public class TejCertificatFacture : ITenantEntity
 {
+    public string TenantId { get; set; } = TenantConstants.DefaultTenantId;
+
     /// <summary>Id de la facture fournisseur (clé).</summary>
     public int FactureFournisseurId { get; set; }
 

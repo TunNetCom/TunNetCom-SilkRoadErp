@@ -2,12 +2,15 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using TunNetCom.SilkRoadErp.SharedKernel.Tenancy;
 
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
-public partial class FactureFournisseur : IAccountingYearEntity
+public partial class FactureFournisseur : IAccountingYearEntity, ITenantEntity
 {
     public int Id { get; set; }
+
+    public string TenantId { get; set; } = TenantConstants.DefaultTenantId;
 
     public int Num { get; set; }
 

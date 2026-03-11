@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Cryptography;
+using TunNetCom.SilkRoadErp.SharedKernel.Tenancy;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
 
@@ -9,20 +10,20 @@ public class JwtTokenService : IJwtTokenService
     private readonly SymmetricSecurityKey _key;
     private readonly string _issuer;
     private readonly string _audience;
+    private readonly ITenantContext _tenantContext;
     
-    // Default to 240 minutes (4 hours) if not configured
     private const int DefaultAccessTokenExpirationMinutes = 240;
 
-    public JwtTokenService(IConfiguration configuration)
+    public JwtTokenService(IConfiguration configuration, ITenantContext tenantContext)
     {
         _configuration = configuration;
+        _tenantContext = tenantContext;
         var secretKey = _configuration["JwtSettings:SecretKey"] 
             ?? throw new InvalidOperationException("JWT SecretKey is not configured");
         _key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
         _issuer = _configuration["JwtSettings:Issuer"] ?? "SilkRoadErp";
         _audience = _configuration["JwtSettings:Audience"] ?? "SilkRoadErp";
         
-        // Read from configuration with default fallback
         AccessTokenExpirationMinutes = _configuration.GetValue<int>("JwtSettings:AccessTokenExpirationMinutes", DefaultAccessTokenExpirationMinutes);
     }
 
@@ -38,6 +39,11 @@ public class JwtTokenService : IJwtTokenService
             new Claim(ClaimTypes.Email, user.Email),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
+
+        if (_tenantContext.IsMultiTenant)
+        {
+            claims.Add(new Claim("tenant_id", _tenantContext.TenantId));
+        }
 
         // Add roles
         foreach (var role in roles)

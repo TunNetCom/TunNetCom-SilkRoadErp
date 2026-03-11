@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.Extensions.Options;
+using TunNetCom.SilkRoadErp.SharedKernel.Tenancy;
 using TunNetCom.SilkRoadErp.Sales.WebApp.Services;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote;
@@ -83,9 +85,35 @@ builder.Services.AddCascadingAuthenticationState();
 // Register AuthHttpClientHandler as scoped (required for IJSRuntime)
 builder.Services.AddScoped<AuthHttpClientHandler>();
 
+builder.Services.Configure<DeploymentOptions>(builder.Configuration.GetSection(DeploymentOptions.SectionName));
+var deploymentMode = builder.Configuration.GetValue<DeploymentMode>("Deployment:Mode");
+
+if (deploymentMode == DeploymentMode.MultiTenant)
+{
+    builder.Services.AddScoped<ITenantContext, BlazorTenantContext>();
+    builder.Services.AddScoped<TenantDelegatingHandler>();
+}
+else
+{
+    builder.Services.AddSingleton<ITenantContext>(sp =>
+    {
+        var options = sp.GetRequiredService<IOptions<DeploymentOptions>>();
+        return new BlazorTenantContext(
+            sp.GetRequiredService<IHttpContextAccessor>(),
+            options);
+    });
+}
+
 // Add Sales HttpClients (this registers all clients with their implementations)
 // Then configure them with the auth handler
-builder.Services.AddSalesHttpClients(baseUrl, builder => builder.AddHttpMessageHandler<AuthHttpClientHandler>());
+builder.Services.AddSalesHttpClients(baseUrl, httpClientBuilder =>
+{
+    httpClientBuilder.AddHttpMessageHandler<AuthHttpClientHandler>();
+    if (deploymentMode == DeploymentMode.MultiTenant)
+    {
+        httpClientBuilder.AddHttpMessageHandler<TenantDelegatingHandler>();
+    }
+});
 
 // Add OData service with auth handler
 builder.Services.AddHttpClient<ODataService>(client =>

@@ -2,10 +2,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using TunNetCom.SilkRoadErp.SharedKernel.Tenancy;
 
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
-public partial class RetourMarchandiseFournisseur : IAccountingYearEntity
+public partial class RetourMarchandiseFournisseur : IAccountingYearEntity, ITenantEntity
 {
     public static RetourMarchandiseFournisseur CreateRetourMarchandiseFournisseur(
         int num,
@@ -118,6 +119,8 @@ public partial class RetourMarchandiseFournisseur : IAccountingYearEntity
     }
 
     public int Id { get; set; }
+
+    public string TenantId { get; set; } = TenantConstants.DefaultTenantId;
 
     public int Num { get; set; }
 

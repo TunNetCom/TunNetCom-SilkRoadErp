@@ -2,10 +2,11 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using TunNetCom.SilkRoadErp.SharedKernel.Tenancy;
 
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
-public partial class Fournisseur
+public partial class Fournisseur : ITenantEntity
 {
     public void UpdateProvider(
          string nom,
@@ -87,6 +88,8 @@ public partial class Fournisseur
 
 
     public int Id { get; set; }
+
+    public string TenantId { get; set; } = TenantConstants.DefaultTenantId;
 
     public string Nom { get; set; } = null!;
 

@@ -2,10 +2,11 @@
 using System;
 using System.Collections.Generic;
 using TunNetCom.SilkRoadErp.Sales.Domain.Services;
+using TunNetCom.SilkRoadErp.SharedKernel.Tenancy;
 
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
-public partial class LigneRetourMarchandiseFournisseur
+public partial class LigneRetourMarchandiseFournisseur : ITenantEntity
 {
     public static LigneRetourMarchandiseFournisseur CreateRetourLine(
         int retourMarchandiseFournisseurId,
@@ -73,6 +74,8 @@ public partial class LigneRetourMarchandiseFournisseur
     public bool EstEntierementRecue => QteRecue >= QteLi;
 
     public int IdLigne { get; set; }
+
+    public string TenantId { get; set; } = TenantConstants.DefaultTenantId;
 
     public int RetourMarchandiseFournisseurId { get; set; }
 

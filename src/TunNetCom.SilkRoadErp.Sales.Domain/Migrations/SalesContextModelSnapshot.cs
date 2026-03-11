@@ -49,6 +49,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("decimal(18, 3)")
                         .HasColumnName("SeuilRetenueSource");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<decimal?>("Timbre")
                         .HasColumnType("decimal(18, 3)")
                         .HasColumnName("Timbre");
@@ -123,6 +127,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("OldValues");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("Timestamp")
                         .HasColumnType("datetime2")
                         .HasColumnName("Timestamp");
@@ -185,6 +193,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Property<int>("NumSurPage")
                         .HasColumnType("int");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<decimal>("TotTtc")
                         .HasColumnType("decimal(18, 3)")
                         .HasColumnName("tot_ttc");
@@ -232,6 +244,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id")
                         .HasName("PK_dbo.AvoirFournisseur");
 
@@ -274,6 +290,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id")
                         .HasName("PK_dbo.Avoirs");
@@ -344,6 +364,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("SageLibelle");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("BankTransactionImportId");
@@ -374,6 +398,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("datetime2")
                         .HasColumnName("ImportedAt");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CompteBancaireId");
@@ -395,6 +423,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)")
                         .HasColumnName("Nom");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -450,6 +482,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Property<TimeOnly>("TempBl")
                         .HasColumnType("time")
                         .HasColumnName("temp_bl");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("TotHTva")
                         .HasColumnType("decimal(18, 3)")
@@ -522,6 +558,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<decimal>("TotHTva")
                         .HasColumnType("decimal(18, 3)")
                         .HasColumnName("tot_H_tva");
@@ -590,6 +630,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("tel");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id")
                         .HasName("PK_dbo.Client");
 
@@ -616,6 +660,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Num")
                         .HasName("PK_dbo.Commandes");
@@ -667,6 +715,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("nvarchar(20)")
                         .HasColumnName("NumeroCompte");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("BanqueId");
@@ -694,6 +746,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("Owner");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id")
                         .HasName("PK_dbo.DeliveryCar");
@@ -725,6 +781,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("TotHTva")
                         .HasColumnType("decimal(18, 3)")
@@ -769,6 +829,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("int")
                         .HasColumnName("TagId");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id")
                         .HasName("PK_dbo.DocumentTag");
 
@@ -810,6 +874,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("numCheque");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id")
                         .HasName("PK_dbo.EcheanceDesFournisseurs");
 
@@ -844,6 +912,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id")
                         .HasName("PK_dbo.Facture");
@@ -894,6 +966,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id")
                         .HasName("PK_dbo.FactureAvoirClient");
 
@@ -941,6 +1017,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id")
                         .HasName("PK_dbo.FactureAvoirFournisseur");
@@ -1031,6 +1111,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AccountingYearId");
@@ -1082,6 +1166,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id")
                         .HasName("PK_dbo.FactureFournisseur");
 
@@ -1110,6 +1198,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("nom");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id")
                         .HasName("PK_dbo.FamilleProduit");
@@ -1207,6 +1299,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("tel");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id")
                         .HasName("PK_dbo.Fournisseur");
 
@@ -1257,6 +1353,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("Tel3");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id")
                         .HasName("PK_InstallationTechnician");
 
@@ -1295,6 +1395,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Property<int>("Statut")
                         .HasColumnType("int")
                         .HasColumnName("Statut");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id")
                         .HasName("PK_dbo.Inventaire");
@@ -1344,6 +1448,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Property<double>("Remise")
                         .HasColumnType("float")
                         .HasColumnName("remise");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("TotHt")
                         .HasColumnType("decimal(18, 3)")
@@ -1401,6 +1509,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Property<double>("Remise")
                         .HasColumnType("float")
                         .HasColumnName("remise");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("TotHt")
                         .HasColumnType("decimal(18, 3)")
@@ -1464,6 +1576,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("float")
                         .HasColumnName("remise");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<decimal>("TotHt")
                         .HasColumnType("decimal(18, 3)")
                         .HasColumnName("tot_HT");
@@ -1522,6 +1638,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("float")
                         .HasColumnName("remise");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<decimal>("TotHt")
                         .HasColumnType("decimal(18, 3)")
                         .HasColumnName("tot_HT");
@@ -1578,6 +1698,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Property<double>("Remise")
                         .HasColumnType("float")
                         .HasColumnName("remise");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("TotHt")
                         .HasColumnType("decimal(18, 3)")
@@ -1636,6 +1760,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Property<double>("Remise")
                         .HasColumnType("float")
                         .HasColumnName("remise");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("TotHt")
                         .HasColumnType("decimal(18, 3)")
@@ -1697,6 +1825,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("RefProduit");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id")
                         .HasName("PK_dbo.LigneInventaire");
 
@@ -1756,6 +1888,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Property<int>("RetourMarchandiseFournisseurId")
                         .HasColumnType("int")
                         .HasColumnName("RetourMarchandiseFournisseurId");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("TotHt")
                         .HasColumnType("decimal(18, 3)")
@@ -1821,6 +1957,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("RelatedEntityType");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -1915,6 +2055,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("NumeroTransactionBancaire");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AccountingYearId")
@@ -1949,6 +2093,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("int")
                         .HasColumnName("BonDeLivraisonId");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("PaiementClientId", "BonDeLivraisonId");
 
                     b.HasIndex("BonDeLivraisonId");
@@ -1965,6 +2113,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Property<int>("FactureId")
                         .HasColumnType("int")
                         .HasColumnName("FactureId");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("PaiementClientId", "FactureId");
 
@@ -2059,6 +2211,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("nvarchar(20)")
                         .HasColumnName("RibNumeroCompte");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AccountingYearId")
@@ -2095,6 +2251,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("int")
                         .HasColumnName("BonDeReceptionId");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("PaiementFournisseurId", "BonDeReceptionId");
 
                     b.HasIndex("BonDeReceptionId");
@@ -2111,6 +2271,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Property<int>("FactureFournisseurId")
                         .HasColumnType("int")
                         .HasColumnName("FactureFournisseurId");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("PaiementFournisseurId", "FactureFournisseurId");
 
@@ -2185,6 +2349,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("TiersDepenseFonctionnementId")
                         .HasColumnType("int");
 
@@ -2216,6 +2384,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
 
                     b.Property<int>("FactureDepenseId")
                         .HasColumnType("int");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("PaiementTiersDepenseId", "FactureDepenseId");
 
@@ -2310,6 +2482,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("nvarchar(255)")
                         .HasColumnName("PrinterName");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int?>("UserId")
                         .HasColumnType("int")
                         .HasColumnName("UserId");
@@ -2397,6 +2573,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("int")
                         .HasColumnName("SousFamilleProduitId");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<double>("Tva")
                         .HasColumnType("float")
                         .HasColumnName("TVA");
@@ -2433,6 +2613,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Property<int>("RetourMarchandiseFournisseurId")
                         .HasColumnType("int")
                         .HasColumnName("RetourMarchandiseFournisseurId");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Utilisateur")
                         .IsRequired()
@@ -2475,6 +2659,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Property<DateTime?>("RevokedAt")
                         .HasColumnType("datetime2")
                         .HasColumnName("RevokedAt");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Token")
                         .IsRequired()
@@ -2537,6 +2725,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("float")
                         .HasColumnName("TauxRetenu");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id")
                         .HasName("PK_dbo.RetenueSourceClient");
 
@@ -2588,6 +2780,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Property<double>("TauxRetenu")
                         .HasColumnType("float")
                         .HasColumnName("TauxRetenu");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id")
                         .HasName("PK_RetenueSourceFactureDepense");
@@ -2641,6 +2837,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("float")
                         .HasColumnName("TauxRetenu");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id")
                         .HasName("PK_dbo.RetenueSourceFournisseur");
 
@@ -2685,6 +2885,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("Statut");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<decimal>("TotHTva")
                         .HasColumnType("decimal(18, 3)")
                         .HasColumnName("tot_H_tva");
@@ -2725,11 +2929,18 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("nvarchar(500)")
                         .HasColumnName("Description");
 
+                    b.Property<string>("ExternalGroupId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("Name");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2")
@@ -2758,6 +2969,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("datetime2")
                         .HasColumnName("CreatedAt");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("RoleId", "PermissionId")
                         .HasName("PK_RolePermission");
 
@@ -2784,6 +2999,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("nom");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id")
                         .HasName("PK_dbo.SousFamilleProduit");
@@ -2889,6 +3108,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("tel");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id")
                         .HasName("PK_dbo.Systeme");
 
@@ -2920,6 +3143,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("Name");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id")
                         .HasName("PK_dbo.Tag");
 
@@ -2942,6 +3169,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("RefCertif");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("FactureFournisseurId")
                         .HasName("PK_TejCertificatFacture");
 
@@ -2959,6 +3190,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("RefCertif");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("FactureDepenseId")
                         .HasName("PK_TejCertificatFactureDepense");
@@ -2985,6 +3220,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("rowversion")
                         .HasColumnName("RowVersion");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Annee", "Mois")
                         .HasName("PK_TejCertificatSequence");
@@ -3038,6 +3277,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
 
                     b.ToTable("TiersDepenseFonctionnement", (string)null);
@@ -3056,6 +3299,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Property<decimal>("Montant")
                         .HasColumnType("decimal(18, 3)")
                         .HasColumnName("montant");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Type")
                         .HasColumnType("int")
@@ -3108,6 +3355,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                         .HasColumnType("nvarchar(500)")
                         .HasColumnName("PasswordHash");
 
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2")
                         .HasColumnName("UpdatedAt");
@@ -3143,6 +3394,10 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2")
                         .HasColumnName("CreatedAt");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("UserId", "RoleId")
                         .HasName("PK_UserRole");

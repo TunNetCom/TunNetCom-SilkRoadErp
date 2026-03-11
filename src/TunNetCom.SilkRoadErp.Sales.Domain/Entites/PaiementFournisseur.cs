@@ -1,10 +1,11 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using TunNetCom.SilkRoadErp.SharedKernel.Tenancy;
 
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
-public partial class PaiementFournisseur : IAccountingYearEntity
+public partial class PaiementFournisseur : IAccountingYearEntity, ITenantEntity
 {
     private PaiementFournisseur()
     {
@@ -113,6 +114,8 @@ public partial class PaiementFournisseur : IAccountingYearEntity
     }
 
     public int Id { get; private set; }
+
+    public string TenantId { get; set; } = TenantConstants.DefaultTenantId;
 
     public string? NumeroTransactionBancaire { get; private set; }
 

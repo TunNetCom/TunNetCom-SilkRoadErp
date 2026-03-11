@@ -1,5 +1,6 @@
 #nullable enable
 using System.Collections.Generic;
+using TunNetCom.SilkRoadErp.SharedKernel.Tenancy;
 
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
@@ -7,7 +8,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 /// Tiers dédié aux dépenses de fonctionnement (non stockables).
 /// Aucun lien avec BonDeReception, Commandes, Produit ou Inventaire.
 /// </summary>
-public partial class TiersDepenseFonctionnement
+public partial class TiersDepenseFonctionnement : ITenantEntity
 {
     private TiersDepenseFonctionnement()
     {
@@ -61,6 +62,8 @@ public partial class TiersDepenseFonctionnement
     }
 
     public int Id { get; private set; }
+
+    public string TenantId { get; set; } = TenantConstants.DefaultTenantId;
 
     public string Nom { get; private set; } = null!;
 

@@ -1,9 +1,10 @@
 #nullable enable
 using System;
+using TunNetCom.SilkRoadErp.SharedKernel.Tenancy;
 
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
-public class PaiementClientBonDeLivraison
+public class PaiementClientBonDeLivraison : ITenantEntity
 {
     private PaiementClientBonDeLivraison()
     {
@@ -19,6 +20,8 @@ public class PaiementClientBonDeLivraison
     }
 
     public int PaiementClientId { get; private set; }
+
+    public string TenantId { get; set; } = TenantConstants.DefaultTenantId;
 
     public int BonDeLivraisonId { get; private set; }
 

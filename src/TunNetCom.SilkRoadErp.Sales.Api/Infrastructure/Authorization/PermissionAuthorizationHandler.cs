@@ -1,21 +1,27 @@
+using TunNetCom.SilkRoadErp.SharedKernel.Features;
+
 namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Authorization;
 
 public class PermissionAuthorizationHandler : AuthorizationHandler<PermissionRequirement>
 {
     private readonly SalesContext _context;
     private readonly ILogger<PermissionAuthorizationHandler> _logger;
+    private readonly IFeatureGate _featureGate;
 
-    public PermissionAuthorizationHandler(SalesContext context, ILogger<PermissionAuthorizationHandler> logger)
+    public PermissionAuthorizationHandler(
+        SalesContext context,
+        ILogger<PermissionAuthorizationHandler> logger,
+        IFeatureGate featureGate)
     {
         _context = context;
         _logger = logger;
+        _featureGate = featureGate;
     }
 
     protected override async Task HandleRequirementAsync(
         AuthorizationHandlerContext context,
         PermissionRequirement requirement)
     {
-        // Check if user is authenticated
         var isAuthenticated = context.User.Identity?.IsAuthenticated ?? false;
         if (!isAuthenticated)
         {
@@ -23,7 +29,17 @@ public class PermissionAuthorizationHandler : AuthorizationHandler<PermissionReq
             return;
         }
 
-        // Get user ID from claims
+        if (_featureGate.IsMultiTenant)
+        {
+            var featureKey = _featureGate.GetFeatureForPermission(requirement.Permission);
+            if (featureKey is not null && !_featureGate.IsFeatureEnabled(featureKey))
+            {
+                _logger.LogWarning("Feature '{Feature}' not enabled for tenant, permission '{Permission}' blocked",
+                    featureKey, requirement.Permission);
+                return;
+            }
+        }
+
         var userIdClaim = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
         if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
         {
@@ -31,7 +47,6 @@ public class PermissionAuthorizationHandler : AuthorizationHandler<PermissionReq
             return;
         }
 
-        // Check if user has the required permission through their roles
         var hasPermission = await _context.User
             .Where(u => u.Id == userId && u.IsActive)
             .SelectMany(u => u.UserRoles)

@@ -6,14 +6,15 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using TunNetCom.SilkRoadErp.Sales.Domain.Entites.Configurations;
+using TunNetCom.SilkRoadErp.SharedKernel.Tenancy;
 #nullable enable
 
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 public partial class SalesContext : DbContext
 {
-    // Variable AsyncLocal pour stocker l'ID de l'exercice actif de manière thread-safe avec async/await
-    // Cette valeur sera mise à jour par le middleware au début de chaque requête HTTP
+    private readonly ITenantContext? _tenantContext;
+
     private static readonly AsyncLocal<int?> _activeAccountingYearId = new();
 
     public static void SetActiveAccountingYearId(int? yearId)
@@ -29,6 +30,12 @@ public partial class SalesContext : DbContext
     public SalesContext(DbContextOptions<SalesContext> options)
         : base(options)
     {
+    }
+
+    public SalesContext(DbContextOptions<SalesContext> options, ITenantContext tenantContext)
+        : base(options)
+    {
+        _tenantContext = tenantContext;
     }
 
     public virtual DbSet<AvoirFinancierFournisseurs> AvoirFinancierFournisseurs { get; set; }
@@ -156,11 +163,29 @@ public partial class SalesContext : DbContext
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(FactureConfiguration).Assembly);
 
-        // Désactivé : Les Global Query Filters ne peuvent pas utiliser des appels de méthode non traduisibles en SQL
-        // On utilise maintenant l'extension method FilterByActiveAccountingYear() dans les requêtes
-        // ConfigureAccountingYearFilters(modelBuilder);
+        if (_tenantContext is { IsMultiTenant: true })
+        {
+            ApplyTenantQueryFilters(modelBuilder);
+        }
 
         OnModelCreatingPartial(modelBuilder);
+    }
+
+    private void ApplyTenantQueryFilters(ModelBuilder modelBuilder)
+    {
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            if (!typeof(ITenantEntity).IsAssignableFrom(entityType.ClrType))
+                continue;
+
+            var parameter = Expression.Parameter(entityType.ClrType, "e");
+            var tenantProperty = Expression.Property(parameter, nameof(ITenantEntity.TenantId));
+            var tenantContextExpr = Expression.Constant(_tenantContext);
+            var currentTenantId = Expression.Property(tenantContextExpr, nameof(ITenantContext.TenantId));
+            var filter = Expression.Lambda(Expression.Equal(tenantProperty, currentTenantId), parameter);
+
+            entityType.SetQueryFilter(filter);
+        }
     }
 
     private void ConfigureAccountingYearFilters(ModelBuilder modelBuilder)

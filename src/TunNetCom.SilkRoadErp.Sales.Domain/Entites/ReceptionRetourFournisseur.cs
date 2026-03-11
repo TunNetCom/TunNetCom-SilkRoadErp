@@ -1,12 +1,13 @@
 #nullable enable
 using System;
+using TunNetCom.SilkRoadErp.SharedKernel.Tenancy;
 
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 /// <summary>
 /// Entité de traçabilité des réceptions après réparation
 /// </summary>
-public partial class ReceptionRetourFournisseur
+public partial class ReceptionRetourFournisseur : ITenantEntity
 {
     public static ReceptionRetourFournisseur Create(
         int retourMarchandiseFournisseurId,
@@ -24,6 +25,8 @@ public partial class ReceptionRetourFournisseur
     }
 
     public int Id { get; set; }
+
+    public string TenantId { get; set; } = TenantConstants.DefaultTenantId;
 
     public int RetourMarchandiseFournisseurId { get; set; }
 

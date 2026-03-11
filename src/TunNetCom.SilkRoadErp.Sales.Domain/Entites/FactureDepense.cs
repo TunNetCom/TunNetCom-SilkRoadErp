@@ -1,13 +1,14 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using TunNetCom.SilkRoadErp.SharedKernel.Tenancy;
 
 namespace TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 /// <summary>
 /// Facture de dépense avec 4 lignes TVA (0%, 7%, 13%, 19%). Saisie simple de BaseHT et MontantTVA par taux.
 /// </summary>
-public partial class FactureDepense : IAccountingYearEntity
+public partial class FactureDepense : IAccountingYearEntity, ITenantEntity
 {
     private FactureDepense()
     {
@@ -89,6 +90,8 @@ public partial class FactureDepense : IAccountingYearEntity
     }
 
     public int Id { get; private set; }
+
+    public string TenantId { get; set; } = TenantConstants.DefaultTenantId;
 
     public int Num { get; private set; }
 
