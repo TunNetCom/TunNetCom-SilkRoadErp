@@ -15,6 +15,7 @@ public interface IAdminApiClient
     Task DeleteTenantAsync(string id, CancellationToken ct = default);
     Task BlockTenantAsync(string id, string reason, CancellationToken ct = default);
     Task UnblockTenantAsync(string id, CancellationToken ct = default);
+    Task StartProvisioningAsync(string tenantId, string connectionId, CancellationToken ct = default);
 
     // Plans
     Task<IReadOnlyList<PlanDto>> GetPlansAsync(CancellationToken ct = default);
@@ -89,6 +90,12 @@ public sealed class AdminApiClient : IAdminApiClient
     public async Task UnblockTenantAsync(string id, CancellationToken ct = default)
     {
         var response = await _http.PostAsJsonAsync($"/tenants/{id}/unblock", new { }, ct);
+        response.EnsureSuccessStatusCode();
+    }
+
+    public async Task StartProvisioningAsync(string tenantId, string connectionId, CancellationToken ct = default)
+    {
+        var response = await _http.PostAsJsonAsync($"/tenants/{tenantId}/provision", new { connectionId }, ct);
         response.EnsureSuccessStatusCode();
     }
 

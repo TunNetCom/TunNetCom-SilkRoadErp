@@ -10,6 +10,7 @@ public record PlanDto(
     decimal YearlyPrice,
     int ApiRateLimitPerMinute,
     int TrialDays,
+    bool IsActive,
     IReadOnlyList<PlanBoundedContextDto> BoundedContexts);
 
 public record PlanBoundedContextDto(
@@ -26,7 +27,8 @@ public record CreatePlanDto(
     decimal MonthlyPrice,
     decimal YearlyPrice,
     int ApiRateLimitPerMinute,
-    int TrialDays);
+    int TrialDays,
+    bool IsActive);
 
 public record UpdatePlanDto(
     string Name,
@@ -36,4 +38,5 @@ public record UpdatePlanDto(
     decimal MonthlyPrice,
     decimal YearlyPrice,
     int ApiRateLimitPerMinute,
-    int TrialDays);
+    int TrialDays,
+    bool IsActive);

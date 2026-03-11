@@ -14,13 +14,13 @@ public class PlansModule : ICarterModule
         group.MapGet("/", async (AdminContext db) =>
         {
             var plans = await db.Plans
-                .Where(p => p.IsActive)
                 .Include(p => p.PlanBoundedContexts)
                     .ThenInclude(pbc => pbc.BoundedContext)
                 .Include(p => p.PlanBoundedContexts)
                     .ThenInclude(pbc => pbc.PlanFeatures)
                     .ThenInclude(pf => pf.Feature)
                 .OrderBy(p => p.DisplayOrder)
+                .ThenBy(p => p.Name)
                 .ToListAsync();
 
             return Results.Ok(plans.Select(ToPlanDto).ToList());
@@ -51,7 +51,7 @@ public class PlansModule : ICarterModule
                 YearlyPrice = request.YearlyPrice,
                 ApiRateLimitPerMinute = request.ApiRateLimitPerMinute,
                 TrialDays = request.TrialDays,
-                IsActive = true
+                IsActive = request.IsActive
             };
             db.Plans.Add(plan);
             await db.SaveChangesAsync();
@@ -71,6 +71,7 @@ public class PlansModule : ICarterModule
             plan.YearlyPrice = request.YearlyPrice;
             plan.ApiRateLimitPerMinute = request.ApiRateLimitPerMinute;
             plan.TrialDays = request.TrialDays;
+            plan.IsActive = request.IsActive;
             await db.SaveChangesAsync();
 
             await db.Entry(plan).Collection(p => p.PlanBoundedContexts).LoadAsync();
@@ -98,6 +99,7 @@ public class PlansModule : ICarterModule
         p.YearlyPrice,
         p.ApiRateLimitPerMinute,
         p.TrialDays,
+        p.IsActive,
         p.PlanBoundedContexts.Select(pbc => new PlanBoundedContextDto(
             pbc.BoundedContext?.Key ?? "",
             pbc.BoundedContext?.Name ?? "",

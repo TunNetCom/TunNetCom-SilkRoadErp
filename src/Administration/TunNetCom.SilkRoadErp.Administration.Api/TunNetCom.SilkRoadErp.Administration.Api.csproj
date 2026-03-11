@@ -24,8 +24,8 @@
     <ProjectReference Include="..\TunNetCom.SilkRoadErp.Administration.Contracts\TunNetCom.SilkRoadErp.Administration.Contracts.csproj" />
     <ProjectReference Include="..\TunNetCom.SilkRoadErp.Administration.Domain\TunNetCom.SilkRoadErp.Administration.Domain.csproj" />
     <ProjectReference Include="..\..\SharedKernel\TunNetCom.SilkRoadErp.SharedKernel\TunNetCom.SilkRoadErp.SharedKernel.csproj" />
-    <ProjectReference Include="..\..\Infrastructure\TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy\TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy.csproj" />
-    <ProjectReference Include="..\..\Infrastructure\TunNetCom.SilkRoadErp.Infrastructure.Caching\TunNetCom.SilkRoadErp.Infrastructure.Caching.csproj" />
+    <ProjectReference Include="..\..\SharedKernel\Infrastructure\TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy\TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy.csproj" />
+    <ProjectReference Include="..\..\SharedKernel\Infrastructure\TunNetCom.SilkRoadErp.Infrastructure.Caching\TunNetCom.SilkRoadErp.Infrastructure.Caching.csproj" />
   </ItemGroup>
 
 </Project>

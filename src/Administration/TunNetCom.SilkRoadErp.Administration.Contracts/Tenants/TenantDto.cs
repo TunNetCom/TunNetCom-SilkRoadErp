@@ -29,7 +29,8 @@ public record CreateTenantDto(
     string AdminPassword,
     int? PlanId,
     string? Currency,
-    string? Language);
+    string? Language,
+    IReadOnlyList<int>? BoundedContextIds);
 
 public record UpdateTenantDto(
     string Name,

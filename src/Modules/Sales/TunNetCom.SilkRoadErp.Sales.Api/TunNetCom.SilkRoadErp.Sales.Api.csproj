@@ -1,0 +1,79 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <UserSecretsId>3ba6570d-6f14-4999-9bba-5ee5c8997fb4</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Logs\**" />
+    <Content Remove="Logs\**" />
+    <EmbeddedResource Remove="Logs\**" />
+    <None Remove="Logs\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Carter" />
+    <PackageReference Include="FluentResults" />
+    <PackageReference Include="FluentValidation" />
+    <PackageReference Include="FluentValidation.AspNetCore" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+    <PackageReference Include="Mapster" />
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.OpenApi" />
+    <PackageReference Include="Newtonsoft.Json" />
+    <PackageReference Include="Scalar.AspNetCore" />
+    <PackageReference Include="Serilog" />
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="Serilog.Sinks.File" />
+    <PackageReference Include="Serilog.Sinks.Grafana.Loki" />
+    <PackageReference Include="Swashbuckle.AspNetCore" />
+    <PackageReference Include="Swashbuckle.AspNetCore.Annotations" />
+    <PackageReference Include="Microsoft.AspNetCore.OData" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+    <PackageReference Include="BCrypt.Net-Next" />
+    <PackageReference Include="Quartz" />
+    <PackageReference Include="Quartz.AspNetCore" />
+    <PackageReference Include="EPPlus" />
+    <PackageReference Include="Microsoft.Playwright" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.console">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TunNetCom.SilkRoadErp.Sales.Contracts\TunNetCom.SilkRoadErp.Sales.Contracts.csproj" />
+    <ProjectReference Include="..\TunNetCom.SilkRoadErp.Sales.Domain\TunNetCom.SilkRoadErp.Sales.Domain.csproj" />
+    <ProjectReference Include="..\..\..\SharedKernel\Infrastructure\TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy\TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy.csproj" />
+    <ProjectReference Include="..\..\..\SharedKernel\Infrastructure\TunNetCom.SilkRoadErp.Infrastructure.Caching\TunNetCom.SilkRoadErp.Infrastructure.Caching.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Features\AppParameters\InitOrUpdateAppParameters\" />
+    <Folder Include="Features\ProviderReceiptNoteLine\GetReceiptNoteLine\" />
+    <Folder Include="Features\ProviderReceiptNoteLine\DeleteReceiptNotes\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="Data\SeedData\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Update="Schemas\*.xsd">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>

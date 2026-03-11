@@ -1,6 +1,6 @@
 using Radzen;
 using TunNetCom.SilkRoadErp.Administration.HttpClients;
-using TunNetCom.SilkRoadErp.Administration.WebApp.Components;
+using TunNetCom.SilkRoadErp.TenantSetup.WebApp.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 

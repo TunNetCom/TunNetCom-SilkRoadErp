@@ -1,5 +1,7 @@
 using Carter;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using TunNetCom.SilkRoadErp.Administration.Api.Infrastructure.Provisioning;
 using TunNetCom.SilkRoadErp.Administration.Contracts.Tenants;
 using TunNetCom.SilkRoadErp.Administration.Domain.Entities;
 using TunNetCom.SilkRoadErp.Administration.Domain.Enums;
@@ -121,6 +123,35 @@ public class TenantsModule : ICarterModule
                     .Select(tbc => tbc.BoundedContextId)
             });
         });
+
+        group.MapPost("/{id}/provision", async (string id, StartProvisioningRequest request, AdminContext db, IServiceScopeFactory scopeFactory) =>
+        {
+            var tenant = await db.Tenants.FindAsync(id);
+            if (tenant is null) return Results.NotFound();
+
+            if (tenant.Status != TenantStatus.Provisioning)
+                return Results.BadRequest(new { error = "Tenant is not in Provisioning state." });
+
+            if (string.IsNullOrWhiteSpace(request.ConnectionId))
+                return Results.BadRequest(new { error = "ConnectionId is required." });
+
+            var connectionId = request.ConnectionId;
+            _ = Task.Run(async () =>
+            {
+                await using var scope = scopeFactory.CreateAsyncScope();
+                var provisioning = scope.ServiceProvider.GetRequiredService<TenantProvisioningService>();
+                try
+                {
+                    await provisioning.ProvisionAsync(id, connectionId);
+                }
+                catch
+                {
+                    // Logged inside ProvisioningService; client gets failure via SignalR
+                }
+            });
+
+            return Results.Accepted($"/tenants/{id}/provision", new { message = "Provisioning started" });
+        });
     }
 }
 
@@ -132,3 +163,5 @@ public record CreateTenantRequest(
     string? SchemaName);
 
 public record BlockTenantRequest(string Reason);
+
+public record StartProvisioningRequest(string ConnectionId);

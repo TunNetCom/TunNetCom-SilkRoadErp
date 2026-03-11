@@ -54,6 +54,23 @@ public class RegistrationModule : ICarterModule
             };
             db.CustomerAccounts.Add(customerAccount);
 
+            if (request.BoundedContextIds is { Count: > 0 } bcIds)
+            {
+                var validIds = await db.BoundedContexts
+                    .Where(bc => bcIds.Contains(bc.Id))
+                    .Select(bc => bc.Id)
+                    .ToListAsync();
+                foreach (var bcId in validIds)
+                {
+                    db.TenantBoundedContexts.Add(new TenantBoundedContext
+                    {
+                        TenantId = tenant.Id,
+                        BoundedContextId = bcId,
+                        IsEnabled = true
+                    });
+                }
+            }
+
             await db.SaveChangesAsync();
 
             return Results.Accepted($"/tenants/{tenant.Id}", new { tenantId = tenant.Id });
@@ -69,4 +86,5 @@ public record RegisterTenantRequest(
     string AdminPassword,
     int? PlanId,
     string? Currency,
-    string? Language);
+    string? Language,
+    IReadOnlyList<int>? BoundedContextIds);

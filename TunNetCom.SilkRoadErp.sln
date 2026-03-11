@@ -1,25 +1,30 @@
-﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
 VisualStudioVersion = 18.0.11018.127
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TunNetCom.SilkRoadErp.Sales.Api", "src\TunNetCom.SilkRoadErp.Sales.Api\TunNetCom.SilkRoadErp.Sales.Api.csproj", "{94A92B37-3A57-4B4C-B5F1-858C874A0DBD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TunNetCom.SilkRoadErp.Sales.Api", "src\Modules\Sales\TunNetCom.SilkRoadErp.Sales.Api\TunNetCom.SilkRoadErp.Sales.Api.csproj", "{94A92B37-3A57-4B4C-B5F1-858C874A0DBD}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TunNetCom.SilkRoadErp.Sales.Domain", "src\TunNetCom.SilkRoadErp.Sales.Domain\TunNetCom.SilkRoadErp.Sales.Domain.csproj", "{2856D8C7-B3EB-432C-8B96-207E2609DE01}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TunNetCom.SilkRoadErp.Sales.Domain", "src\Modules\Sales\TunNetCom.SilkRoadErp.Sales.Domain\TunNetCom.SilkRoadErp.Sales.Domain.csproj", "{2856D8C7-B3EB-432C-8B96-207E2609DE01}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{C3AF9A58-F96B-4044-9025-363AFE51391A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{5A07AFCE-8427-4F5A-9003-32EBCAA17175}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TunNetCom.SilkRoadErp.Sales.WebApp", "src\WebApps\TunNetCom.SilkRoadErp.Sales.WebApp\TunNetCom.SilkRoadErp.Sales.WebApp.csproj", "{EC7BB35D-1121-4EC4-8148-C8466CB86513}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Modules", "Modules", "{E8E8E8E8-8888-8888-8888-888888888888}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TunNetCom.SilkRoadErp.Sales.Contracts", "src\TunNetCom.SilkRoadErp.Sales.Contracts\TunNetCom.SilkRoadErp.Sales.Contracts.csproj", "{9A62E0CA-E191-4D40-8F49-145FA13E6DDB}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Sales", "Sales", "{F9F9F9F9-9999-9999-9999-999999999999}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TunNetCom.SilkRoadErp.Sales.UnitTests", "test\TunNetCom.SilkRoadErp.Sales.UnitTests\TunNetCom.SilkRoadErp.Sales.UnitTests.csproj", "{1B179D22-49E5-4F17-A746-18C518313E39}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Modules", "Modules", "{A0A0A0A0-A0A0-A0A0-A0A0-A0A0A0A0A0A0}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "WebApps", "WebApps", "{750EB057-7692-4776-8B56-5B4446AA0561}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Sales", "Sales", "{B1B1B1B1-B1B1-B1B1-B1B1-B1B1B1B1B1B1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TunNetCom.SilkRoadErp.Sales.HttpClients", "src\WebApps\TunNetCom.SilkRoadErp.Sales.HttpClients\TunNetCom.SilkRoadErp.Sales.HttpClients.csproj", "{A06A883D-73EC-40DD-AA67-A202CAA5F9DF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TunNetCom.SilkRoadErp.Sales.WebApp", "src\Modules\Sales\TunNetCom.SilkRoadErp.Sales.WebApp\TunNetCom.SilkRoadErp.Sales.WebApp.csproj", "{EC7BB35D-1121-4EC4-8148-C8466CB86513}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TunNetCom.SilkRoadErp.Sales.Contracts", "src\Modules\Sales\TunNetCom.SilkRoadErp.Sales.Contracts\TunNetCom.SilkRoadErp.Sales.Contracts.csproj", "{9A62E0CA-E191-4D40-8F49-145FA13E6DDB}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TunNetCom.SilkRoadErp.Sales.UnitTests", "test\Modules\Sales\TunNetCom.SilkRoadErp.Sales.UnitTests\TunNetCom.SilkRoadErp.Sales.UnitTests.csproj", "{1B179D22-49E5-4F17-A746-18C518313E39}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TunNetCom.SilkRoadErp.Sales.HttpClients", "src\Modules\Sales\TunNetCom.SilkRoadErp.Sales.HttpClients\TunNetCom.SilkRoadErp.Sales.HttpClients.csproj", "{A06A883D-73EC-40DD-AA67-A202CAA5F9DF}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SharedKernel", "SharedKernel", "{40DDBBCB-6FE2-CDA5-27FA-EB41DA00CD8D}"
 EndProject
@@ -27,9 +32,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TunNetCom.SilkRoadErp.Share
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infrastructure", "Infrastructure", "{E7FBF537-6E36-89AB-8E60-50FC035F648F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TunNetCom.SilkRoadErp.Infrastructure.Caching", "src\Infrastructure\TunNetCom.SilkRoadErp.Infrastructure.Caching\TunNetCom.SilkRoadErp.Infrastructure.Caching.csproj", "{598A2ECB-29AC-4345-B5E6-D8AB927D4289}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TunNetCom.SilkRoadErp.Infrastructure.Caching", "src\SharedKernel\Infrastructure\TunNetCom.SilkRoadErp.Infrastructure.Caching\TunNetCom.SilkRoadErp.Infrastructure.Caching.csproj", "{598A2ECB-29AC-4345-B5E6-D8AB927D4289}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy", "src\Infrastructure\TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy\TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy.csproj", "{42DB2176-3046-4BE6-A4C0-428400328E7E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy", "src\SharedKernel\Infrastructure\TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy\TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy.csproj", "{42DB2176-3046-4BE6-A4C0-428400328E7E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Administration", "Administration", "{664B3E25-5563-535D-25E7-37744944AB23}"
 EndProject
@@ -42,6 +47,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TunNetCom.SilkRoadErp.Administration.HttpClients", "src\Administration\TunNetCom.SilkRoadErp.Administration.HttpClients\TunNetCom.SilkRoadErp.Administration.HttpClients.csproj", "{E6BABA48-28E9-4089-9DBB-815C5439C806}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TunNetCom.SilkRoadErp.Administration.WebApp", "src\Administration\TunNetCom.SilkRoadErp.Administration.WebApp\TunNetCom.SilkRoadErp.Administration.WebApp.csproj", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TunNetCom.SilkRoadErp.TenantSetup.WebApp", "src\Administration\TunNetCom.SilkRoadErp.TenantSetup.WebApp\TunNetCom.SilkRoadErp.TenantSetup.WebApp.csproj", "{B2C3D4E5-F6A7-8901-BCDE-F12345678901}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy.Tests", "test\TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy.Tests\TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy.Tests.csproj", "{79870529-EED6-485F-A4EE-E6BB039AF204}"
 EndProject
@@ -223,6 +230,18 @@ Global
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|x64.Build.0 = Release|Any CPU
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|x86.ActiveCfg = Release|Any CPU
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|x86.Build.0 = Release|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Debug|x64.Build.0 = Debug|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Debug|x86.Build.0 = Debug|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Release|x64.ActiveCfg = Release|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Release|x64.Build.0 = Release|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Release|x86.ActiveCfg = Release|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Release|x86.Build.0 = Release|Any CPU
 		{79870529-EED6-485F-A4EE-E6BB039AF204}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{79870529-EED6-485F-A4EE-E6BB039AF204}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{79870529-EED6-485F-A4EE-E6BB039AF204}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -240,16 +259,19 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{94A92B37-3A57-4B4C-B5F1-858C874A0DBD} = {C3AF9A58-F96B-4044-9025-363AFE51391A}
-		{2856D8C7-B3EB-432C-8B96-207E2609DE01} = {C3AF9A58-F96B-4044-9025-363AFE51391A}
-		{EC7BB35D-1121-4EC4-8148-C8466CB86513} = {750EB057-7692-4776-8B56-5B4446AA0561}
-		{9A62E0CA-E191-4D40-8F49-145FA13E6DDB} = {C3AF9A58-F96B-4044-9025-363AFE51391A}
-		{1B179D22-49E5-4F17-A746-18C518313E39} = {5A07AFCE-8427-4F5A-9003-32EBCAA17175}
-		{750EB057-7692-4776-8B56-5B4446AA0561} = {C3AF9A58-F96B-4044-9025-363AFE51391A}
-		{A06A883D-73EC-40DD-AA67-A202CAA5F9DF} = {750EB057-7692-4776-8B56-5B4446AA0561}
+		{94A92B37-3A57-4B4C-B5F1-858C874A0DBD} = {F9F9F9F9-9999-9999-9999-999999999999}
+		{2856D8C7-B3EB-432C-8B96-207E2609DE01} = {F9F9F9F9-9999-9999-9999-999999999999}
+		{E8E8E8E8-8888-8888-8888-888888888888} = {C3AF9A58-F96B-4044-9025-363AFE51391A}
+		{F9F9F9F9-9999-9999-9999-999999999999} = {E8E8E8E8-8888-8888-8888-888888888888}
+		{A0A0A0A0-A0A0-A0A0-A0A0-A0A0A0A0A0A0} = {5A07AFCE-8427-4F5A-9003-32EBCAA17175}
+		{B1B1B1B1-B1B1-B1B1-B1B1-B1B1B1B1B1B1} = {A0A0A0A0-A0A0-A0A0-A0A0-A0A0A0A0A0A0}
+		{EC7BB35D-1121-4EC4-8148-C8466CB86513} = {F9F9F9F9-9999-9999-9999-999999999999}
+		{9A62E0CA-E191-4D40-8F49-145FA13E6DDB} = {F9F9F9F9-9999-9999-9999-999999999999}
+		{1B179D22-49E5-4F17-A746-18C518313E39} = {B1B1B1B1-B1B1-B1B1-B1B1-B1B1B1B1B1B1}
+		{A06A883D-73EC-40DD-AA67-A202CAA5F9DF} = {F9F9F9F9-9999-9999-9999-999999999999}
 		{40DDBBCB-6FE2-CDA5-27FA-EB41DA00CD8D} = {C3AF9A58-F96B-4044-9025-363AFE51391A}
 		{129AA0AD-3EC2-4426-8B27-81F4617420DF} = {40DDBBCB-6FE2-CDA5-27FA-EB41DA00CD8D}
-		{E7FBF537-6E36-89AB-8E60-50FC035F648F} = {C3AF9A58-F96B-4044-9025-363AFE51391A}
+		{E7FBF537-6E36-89AB-8E60-50FC035F648F} = {40DDBBCB-6FE2-CDA5-27FA-EB41DA00CD8D}
 		{598A2ECB-29AC-4345-B5E6-D8AB927D4289} = {E7FBF537-6E36-89AB-8E60-50FC035F648F}
 		{42DB2176-3046-4BE6-A4C0-428400328E7E} = {E7FBF537-6E36-89AB-8E60-50FC035F648F}
 		{664B3E25-5563-535D-25E7-37744944AB23} = {C3AF9A58-F96B-4044-9025-363AFE51391A}
@@ -258,6 +280,7 @@ Global
 		{1259A7EF-6DA3-4D4A-B3C4-11F66C2DF204} = {664B3E25-5563-535D-25E7-37744944AB23}
 		{E6BABA48-28E9-4089-9DBB-815C5439C806} = {664B3E25-5563-535D-25E7-37744944AB23}
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890} = {664B3E25-5563-535D-25E7-37744944AB23}
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901} = {664B3E25-5563-535D-25E7-37744944AB23}
 		{79870529-EED6-485F-A4EE-E6BB039AF204} = {5A07AFCE-8427-4F5A-9003-32EBCAA17175}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution

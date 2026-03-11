@@ -1,6 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
+  <PropertyGroup>
+    <RootNamespace>TunNetCom.SilkRoadErp.TenantSetup.WebApp</RootNamespace>
+  </PropertyGroup>
+
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
     <PackageReference Include="Microsoft.Extensions.Localization" />
     <PackageReference Include="Radzen.Blazor" />
   </ItemGroup>

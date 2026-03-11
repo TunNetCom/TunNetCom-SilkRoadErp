@@ -27,6 +27,18 @@ else
         <Columns>
             <RadzenDataGridColumn TItem="PlanDto" Property="Name" Title="Plan Name" />
             <RadzenDataGridColumn TItem="PlanDto" Property="Description" Title="Description" />
+            <RadzenDataGridColumn TItem="PlanDto" Title="Active" Width="90px" Sortable="true">
+                <Template Context="plan">
+                    @if (plan.IsActive)
+                    {
+                        <RadzenBadge Text="Active" BadgeStyle="BadgeStyle.Success" />
+                    }
+                    else
+                    {
+                        <RadzenBadge Text="Inactive" BadgeStyle="BadgeStyle.Light" />
+                    }
+                </Template>
+            </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="PlanDto" Title="Monthly" Width="110px" TextAlign="TextAlign.Right">
                 <Template Context="plan">
                     @plan.MonthlyPrice.ToString("N2") <small>TND</small>
@@ -88,7 +100,7 @@ else
             {
                 await AdminApi.CreatePlanAsync(new CreatePlanDto(
                     m.Name, m.Description, m.MaxUsers, (long)(m.StorageGB * 1_073_741_824m),
-                    m.MonthlyPrice, m.YearlyPrice, m.ApiRateLimitPerMinute, m.TrialDays));
+                    m.MonthlyPrice, m.YearlyPrice, m.ApiRateLimitPerMinute, m.TrialDays, m.IsActive));
                 NotificationService.Notify(NotificationSeverity.Success, "Plan created");
                 await LoadData();
             }
@@ -103,7 +115,8 @@ else
             Name = plan.Name, Description = plan.Description ?? "", MaxUsers = plan.MaxUsers,
             StorageGB = Math.Round((decimal)plan.MaxStorageBytes / 1_073_741_824m, 2),
             MonthlyPrice = plan.MonthlyPrice, YearlyPrice = plan.YearlyPrice,
-            ApiRateLimitPerMinute = plan.ApiRateLimitPerMinute, TrialDays = plan.TrialDays
+            ApiRateLimitPerMinute = plan.ApiRateLimitPerMinute, TrialDays = plan.TrialDays,
+            IsActive = plan.IsActive
         };
         var result = await DialogService.OpenAsync($"Edit Plan: {plan.Name}", ds => PlanForm(m, ds));
         if (result is true)
@@ -112,7 +125,7 @@ else
             {
                 await AdminApi.UpdatePlanAsync(plan.Id, new UpdatePlanDto(
                     m.Name, m.Description, m.MaxUsers, (long)(m.StorageGB * 1_073_741_824m),
-                    m.MonthlyPrice, m.YearlyPrice, m.ApiRateLimitPerMinute, m.TrialDays));
+                    m.MonthlyPrice, m.YearlyPrice, m.ApiRateLimitPerMinute, m.TrialDays, m.IsActive));
                 NotificationService.Notify(NotificationSeverity.Success, "Plan updated");
                 await LoadData();
             }
@@ -210,6 +223,11 @@ else
                 </RadzenColumn>
             </RadzenRow>
 
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" class="rz-mt-2">
+                <RadzenCheckBox @bind-Value="m.IsActive" />
+                <RadzenLabel Text="Active (plan is available for new tenants)" />
+            </RadzenStack>
+
             <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem" class="rz-mt-2">
                 <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="@(() => ds.Close(false))" />
                 <RadzenButton Text="Save" Icon="save" ButtonStyle="ButtonStyle.Primary" Click="@(() => ds.Close(true))" />
@@ -226,5 +244,6 @@ else
         public decimal YearlyPrice { get; set; }
         public int ApiRateLimitPerMinute { get; set; } = 500;
         public int TrialDays { get; set; } = 14;
+        public bool IsActive { get; set; } = true;
     }
 }

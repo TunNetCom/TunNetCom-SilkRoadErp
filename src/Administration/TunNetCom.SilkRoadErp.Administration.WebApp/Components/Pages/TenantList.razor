@@ -135,7 +135,7 @@ else
             {
                 await AdminApi.RegisterTenantAsync(new CreateTenantDto(
                     model.Identifier, model.CompanyName, model.AdminName, model.AdminEmail, model.AdminPassword,
-                    null, null, null));
+                    null, null, null, null));
                 NotificationService.Notify(NotificationSeverity.Success, "Tenant registered", "Provisioning will start automatically.");
                 await LoadData();
             }

@@ -23,8 +23,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\SharedKernel\TunNetCom.SilkRoadErp.SharedKernel\TunNetCom.SilkRoadErp.SharedKernel.csproj" />
-    <ProjectReference Include="..\..\src\Infrastructure\TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy\TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy.csproj" />
-    <ProjectReference Include="..\..\src\Infrastructure\TunNetCom.SilkRoadErp.Infrastructure.Caching\TunNetCom.SilkRoadErp.Infrastructure.Caching.csproj" />
+    <ProjectReference Include="..\..\src\SharedKernel\Infrastructure\TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy\TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy.csproj" />
+    <ProjectReference Include="..\..\src\SharedKernel\Infrastructure\TunNetCom.SilkRoadErp.Infrastructure.Caching\TunNetCom.SilkRoadErp.Infrastructure.Caching.csproj" />
   </ItemGroup>
 
 </Project>
