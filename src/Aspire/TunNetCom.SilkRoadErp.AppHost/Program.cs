@@ -1,6 +1,9 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
-var sql = builder.AddSqlServer("sql")
+// Fixed SQL Server sa password so it stays the same across restarts; connection strings and health checks always match.
+// Override via Parameters__SqlPassword in env or user secrets if needed. Must meet SQL Server policy (8+ chars, upper, lower, digit, symbol).
+var sqlPassword = builder.AddParameter("SqlPassword", "SilkRoad_SqlDev123!", secret: true);
+var sql = builder.AddSqlServer("sql", password: sqlPassword)
     .WithLifetime(ContainerLifetime.Persistent)
     .WithDataVolume();
 
