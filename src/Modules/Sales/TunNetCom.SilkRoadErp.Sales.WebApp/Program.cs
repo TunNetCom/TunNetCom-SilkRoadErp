@@ -25,15 +25,14 @@ using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags;
 using TunNetCom.SilkRoadErp.Sales.WebApp.Services.Recap;
 using TunNetCom.SilkRoadErp.Sales.WebApp.Services.Dashboard;
 
-// Force ports before any host configuration (Visual Studio / AppHost may inject 5001 otherwise)
+// Prefer Aspire-assigned URLs over config so we don't force 5005/5006 when running under AppHost (avoids port conflict / slow startup then shutdown)
 var aspireUrls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
 if (string.IsNullOrEmpty(aspireUrls) || aspireUrls.Contains("5001"))
     Environment.SetEnvironmentVariable("ASPNETCORE_URLS", "https://localhost:5005;http://localhost:5006");
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Ensure Kestrel uses our ports
-var urls = builder.Configuration["Urls"] ?? Environment.GetEnvironmentVariable("ASPNETCORE_URLS") ?? "";
+var urls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS") ?? builder.Configuration["Urls"] ?? "";
 if (string.IsNullOrWhiteSpace(urls) || urls.Contains("5001"))
     urls = "https://localhost:5005;http://localhost:5006";
 builder.WebHost.UseUrls(urls);
