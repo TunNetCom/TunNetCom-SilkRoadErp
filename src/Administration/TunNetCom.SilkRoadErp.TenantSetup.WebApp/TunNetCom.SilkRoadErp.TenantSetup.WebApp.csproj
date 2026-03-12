@@ -13,6 +13,7 @@
   <ItemGroup>
     <ProjectReference Include="..\TunNetCom.SilkRoadErp.Administration.HttpClients\TunNetCom.SilkRoadErp.Administration.HttpClients.csproj" />
     <ProjectReference Include="..\TunNetCom.SilkRoadErp.Administration.Contracts\TunNetCom.SilkRoadErp.Administration.Contracts.csproj" />
+    <ProjectReference Include="..\..\Aspire\TunNetCom.SilkRoadErp.ServiceDefaults\TunNetCom.SilkRoadErp.ServiceDefaults.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -9,6 +9,8 @@ using TunNetCom.SilkRoadErp.Infrastructure.Caching;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.AddServiceDefaults();
+
 var deploymentMode = builder.Configuration.GetValue<DeploymentMode>("Deployment:Mode");
 
 var lokiUrl = builder.Configuration["Loki:ServerUrl"];
@@ -427,6 +429,8 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.MapCarter();
+
+app.MapDefaultEndpoints();
 
 try
 {

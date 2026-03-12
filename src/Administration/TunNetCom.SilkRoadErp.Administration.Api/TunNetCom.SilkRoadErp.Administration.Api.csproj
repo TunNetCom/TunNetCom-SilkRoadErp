@@ -26,6 +26,7 @@
     <ProjectReference Include="..\..\SharedKernel\TunNetCom.SilkRoadErp.SharedKernel\TunNetCom.SilkRoadErp.SharedKernel.csproj" />
     <ProjectReference Include="..\..\SharedKernel\Infrastructure\TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy\TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy.csproj" />
     <ProjectReference Include="..\..\SharedKernel\Infrastructure\TunNetCom.SilkRoadErp.Infrastructure.Caching\TunNetCom.SilkRoadErp.Infrastructure.Caching.csproj" />
+    <ProjectReference Include="..\..\Aspire\TunNetCom.SilkRoadErp.ServiceDefaults\TunNetCom.SilkRoadErp.ServiceDefaults.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Sdk Name="Aspire.AppHost.Sdk" Version="13.1.2" />
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsAspireHost>true</IsAspireHost>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.AppHost" />
+    <PackageReference Include="Aspire.Hosting.SqlServer" />
+    <PackageReference Include="Aspire.Hosting.Redis" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Modules\Sales\TunNetCom.SilkRoadErp.Sales.Api\TunNetCom.SilkRoadErp.Sales.Api.csproj" />
+    <ProjectReference Include="..\..\Modules\Sales\TunNetCom.SilkRoadErp.Sales.WebApp\TunNetCom.SilkRoadErp.Sales.WebApp.csproj" />
+    <ProjectReference Include="..\..\Administration\TunNetCom.SilkRoadErp.Administration.Api\TunNetCom.SilkRoadErp.Administration.Api.csproj" />
+    <ProjectReference Include="..\..\Administration\TunNetCom.SilkRoadErp.Administration.WebApp\TunNetCom.SilkRoadErp.Administration.WebApp.csproj" />
+    <ProjectReference Include="..\..\Administration\TunNetCom.SilkRoadErp.TenantSetup.WebApp\TunNetCom.SilkRoadErp.TenantSetup.WebApp.csproj" />
+  </ItemGroup>
+
+</Project>

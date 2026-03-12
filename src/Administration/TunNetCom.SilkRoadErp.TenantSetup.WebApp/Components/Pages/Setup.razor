@@ -266,7 +266,7 @@ else if (_phase == Phase.Failed)
         _phase = Phase.Connecting;
         StateHasChanged();
 
-        var baseUrl = Configuration["AdminApi:BaseUrl"]?.TrimEnd('/') ?? "https://localhost:5001";
+        var baseUrl = Configuration["AdminApi:BaseUrl"]?.TrimEnd('/') ?? "https://localhost:5011";
         var hubUrl = $"{baseUrl}/hubs/provisioning";
 
         HubConnection? connection = null;

@@ -25,7 +25,20 @@ using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags;
 using TunNetCom.SilkRoadErp.Sales.WebApp.Services.Recap;
 using TunNetCom.SilkRoadErp.Sales.WebApp.Services.Dashboard;
 
+// Force ports before any host configuration (Visual Studio / AppHost may inject 5001 otherwise)
+var aspireUrls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
+if (string.IsNullOrEmpty(aspireUrls) || aspireUrls.Contains("5001"))
+    Environment.SetEnvironmentVariable("ASPNETCORE_URLS", "https://localhost:5005;http://localhost:5006");
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Ensure Kestrel uses our ports
+var urls = builder.Configuration["Urls"] ?? Environment.GetEnvironmentVariable("ASPNETCORE_URLS") ?? "";
+if (string.IsNullOrWhiteSpace(urls) || urls.Contains("5001"))
+    urls = "https://localhost:5005;http://localhost:5006";
+builder.WebHost.UseUrls(urls);
+
+builder.AddServiceDefaults();
 
 // Add services to the container.
 var razorBuilder = builder.Services.AddRazorComponents()
@@ -189,5 +202,7 @@ app.MapControllers();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+app.MapDefaultEndpoints();
 
 app.Run();
