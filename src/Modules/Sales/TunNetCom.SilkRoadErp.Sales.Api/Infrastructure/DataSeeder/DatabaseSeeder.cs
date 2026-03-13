@@ -49,6 +49,9 @@ public class DatabaseSeeder
                 }
             }
 
+            // Seed auth first so Admin user and roles exist before any other seed (avoids 401 when persisting)
+            await SeedAuthAsync(context);
+
             await SeedAccountingYearAsync(context);
             await SeedClientsAsync(context);
             await SeedFournisseursAsync(context);
@@ -58,7 +61,6 @@ public class DatabaseSeeder
             await SeedProduitsAsync(context);
             await SeedBanquesAsync(context);
             await SeedInstallationTechniciansAsync(context);
-            await SeedAuthAsync(context);
 
             _logger.LogInformation("=== SEEDING DE LA BASE DE DONNÉES TERMINÉ AVEC SUCCÈS ===");
         }

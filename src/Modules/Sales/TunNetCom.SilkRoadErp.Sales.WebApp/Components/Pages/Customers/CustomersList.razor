@@ -10,6 +10,7 @@
 @using TunNetCom.DeleteModal
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Sorting
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.Providers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 @inject NavigationManager navigationManager
 @inject IStringLocalizer<SharedResource> Localizer
 @inject ICustomersApiClient customerService
@@ -214,11 +215,12 @@
 
     async Task LoadCustomerData(LoadDataArgs args)
     {
+        var paging = PaginationHelper.FromLoadDataArgs(args, _defaultPageSize);
 
         var parameters = new QueryStringParameters
             {
-                PageNumber = (args.Skip.Value / _defaultPageSize) + 1,
-                PageSize = args.Top ?? 10,
+                PageNumber = paging.PageNumber,
+                PageSize = paging.PageSize,
                 SearchKeyword = searchKeyword ?? args.Filter,
             };
 
@@ -226,8 +228,8 @@
         await Task.Yield();
 
         var result = await customerService.GetAsync(parameters, cancellationTokenSource.Token);
-        customers = result.Items;
-        totalCustomers = result.TotalCount;
+        customers = result?.Items ?? new List<CustomerResponse>();
+        totalCustomers = result?.TotalCount ?? 0;
 
         isLoadingCustomers = false;
         await InvokeAsync(StateHasChanged);

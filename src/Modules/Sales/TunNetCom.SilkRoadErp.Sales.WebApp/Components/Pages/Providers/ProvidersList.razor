@@ -11,6 +11,7 @@
 @using TunNetCom.DeleteModal
 @using Microsoft.JSInterop
 @using System.Text.Json
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
 
 @inject DialogService DialogService
 @inject IJSRuntime JSRuntime
@@ -234,16 +235,18 @@
 
     private async Task LoadData(LoadDataArgs args)
     {
+        var paging = PaginationHelper.FromLoadDataArgs(args, PageSize);
+
         var queryParameters = new QueryStringParameters
             {
-                PageNumber = (args.Skip ?? 0) / (args.Top ?? PageSize) + 1,
-                PageSize = args.Top ?? PageSize,
+                PageNumber = paging.PageNumber,
+                PageSize = paging.PageSize,
                 SearchKeyword = args.Filter
             };
 
         var result = await providerService.GetPagedAsync(queryParameters, cancellationTokenSource.Token);
-        providers = result.Items;
-        totalCount = result.TotalCount;
+        providers = result?.Items ?? new List<ProviderResponse>();
+        totalCount = result?.TotalCount ?? 0;
         await InvokeAsync(StateHasChanged);
     }
 
@@ -258,8 +261,8 @@
             };
 
         var result = await providerService.GetPagedAsync(queryParameters, cancellationTokenSource.Token);
-        providers = result.Items;
-        totalCount = result.TotalCount;
+        providers = result?.Items ?? new List<ProviderResponse>();
+        totalCount = result?.TotalCount ?? 0;
         await InvokeAsync(StateHasChanged);
     }
 

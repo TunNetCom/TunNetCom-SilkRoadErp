@@ -100,6 +100,17 @@ public async Task<IResult> CreateInvoice(...) { }
 | `/api/auth/refresh` | POST | Refresh access token using refresh token |
 | `/api/auth/logout` | POST | Revoke refresh token |
 
+### Default seeded users (Sales API)
+
+After database seed (run at API startup), the following users exist. Use these to log in and avoid 401 when persisting.
+
+| Username | Password    | Role    |
+|----------|-------------|---------|
+| **admin** | **Admin123!** | Admin   |
+| Nieze    | Manager123! | Manager |
+
+Username is case-sensitive: use **admin** (lowercase), not Admin.
+
 ---
 
 ## Frontend (Blazor Server WebApp)
