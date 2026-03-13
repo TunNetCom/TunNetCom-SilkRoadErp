@@ -73,8 +73,8 @@ stages:
     - script: |
         set -e
         echo "🐳 Building API Docker image..."
-        docker build --no-cache --progress=plain --target api \
-          -t $(dockerRepository):$(apiTag) -f Dockerfile .
+        docker build --no-cache --progress=plain \
+          -t $(dockerRepository):$(apiTag) -f src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.Api/Dockerfile .
         echo "✅ API image built successfully"
       displayName: 'Build API Docker Image'
 
@@ -95,8 +95,8 @@ stages:
     - script: |
         set -e
         echo "🐳 Building WebApp Docker image..."
-        docker build --no-cache --progress=plain --target webapp \
-          -t $(dockerRepository):$(webappTag) -f Dockerfile .
+        docker build --no-cache --progress=plain \
+          -t $(dockerRepository):$(webappTag) -f src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.WebApp/Dockerfile .
         echo "✅ WebApp image built successfully"
       displayName: 'Build WebApp Docker Image'
 
