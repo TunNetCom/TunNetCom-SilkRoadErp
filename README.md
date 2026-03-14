@@ -6,26 +6,39 @@ SilkRoadErp is a multi-tenant ERP solution built with .NET Aspire. It provides m
 
 The solution is orchestrated by **Aspire AppHost** and runs the following services:
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                        Aspire AppHost (Orchestrator)                      │
-└─────────────────────────────────────────────────────────────────────────┘
-                    │
-    ┌──────────────┼──────────────┬──────────────┬──────────────┐
-    ▼              ▼              ▼              ▼              ▼
-┌─────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────┐  ┌─────────┐
-│ sales-api│  │ admin-api│  │sales-web │  │ admin-webapp │  │tenant-   │
-│         │  │          │  │   app    │  │              │  │  webapp  │
-└────┬────┘  └────┬─────┘  └────┬─────┘  └──────┬───────┘  └────┬─────┘
-     │            │             │               │               │
-     ▼            ▼             └───────────────┼───────────────┘
-┌─────────┐  ┌─────────┐                        │
-│salesdb  │  │admindb  │                   HTTP API
-│(SQL)    │  │(SQL)    │
-└─────────┘  └─────────┘
-     │
-     ├── Redis (caching)
-     └── Loki + Grafana (logging, monitoring)
+```mermaid
+flowchart TB
+    subgraph AppHost["Aspire AppHost (Orchestrator)"]
+        HOST[AppHost]
+    end
+
+    subgraph Services["Services"]
+        SA[sales-api]
+        AA[admin-api]
+        SW[sales-web]
+        AW[admin-webapp]
+        TW[tenant-webapp]
+    end
+
+    subgraph Data["Data Layer"]
+        SALESDB[(salesdb SQL)]
+        ADMINDB[(admindb SQL)]
+        REDIS[(Redis)]
+    end
+
+    subgraph Observability["Observability"]
+        LOKI[Grafana Loki]
+        GRAFANA[Grafana]
+    end
+
+    HOST --> SA & AA & SW & AW & TW
+    SA --> SALESDB
+    SA --> REDIS
+    AA --> ADMINDB
+    SW & AW & TW --> SA
+    SW & AW & TW --> AA
+    SA & AA --> LOKI
+    LOKI --> GRAFANA
 ```
 
 ### Services
@@ -47,31 +60,47 @@ The solution is orchestrated by **Aspire AppHost** and runs the following servic
 
 ## Project Structure
 
+```mermaid
+flowchart TD
+    subgraph src[src]
+        subgraph Aspire
+            AH[AppHost - Orchestrator]
+            SD[ServiceDefaults]
+        end
+        subgraph Modules
+            subgraph Sales
+                SAPI[Sales.Api]
+                SDOM[Sales.Domain]
+                SCT[Sales.Contracts]
+                SHC[Sales.HttpClients]
+                SWA[Sales.WebApp]
+            end
+        end
+        subgraph Administration
+            AAPI[Administration.Api]
+            ADOM[Administration.Domain]
+            ACT[Administration.Contracts]
+            AHC[Administration.HttpClients]
+            AWA[Administration.WebApp]
+            TWA[TenantSetup.WebApp]
+        end
+        subgraph SharedKernel
+            SK[SharedKernel]
+            subgraph Infra[Infrastructure]
+                CACHE[Caching]
+                MT[MultiTenancy]
+            end
+        end
+    end
 ```
-src/
-├── Aspire/
-│   ├── TunNetCom.SilkRoadErp.AppHost/        # Orchestrator (run this to start all services)
-│   └── TunNetCom.SilkRoadErp.ServiceDefaults/
-├── Modules/
-│   └── Sales/
-│       ├── TunNetCom.SilkRoadErp.Sales.Api/       # Sales REST API
-│       ├── TunNetCom.SilkRoadErp.Sales.Domain/   # Entities, DbContext, domain logic
-│       ├── TunNetCom.SilkRoadErp.Sales.Contracts/# DTOs, requests, responses
-│       ├── TunNetCom.SilkRoadErp.Sales.HttpClients/  # Typed HTTP clients for Sales API
-│       └── TunNetCom.SilkRoadErp.Sales.WebApp/       # Blazor Server sales UI
-├── Administration/
-│   ├── TunNetCom.SilkRoadErp.Administration.Api/
-│   ├── TunNetCom.SilkRoadErp.Administration.Domain/
-│   ├── TunNetCom.SilkRoadErp.Administration.Contracts/
-│   ├── TunNetCom.SilkRoadErp.Administration.HttpClients/
-│   ├── TunNetCom.SilkRoadErp.Administration.WebApp/
-│   └── TunNetCom.SilkRoadErp.TenantSetup.WebApp/
-└── SharedKernel/
-    ├── TunNetCom.SilkRoadErp.SharedKernel/
-    └── Infrastructure/
-        ├── TunNetCom.SilkRoadErp.Infrastructure.Caching/
-        └── TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy/
-```
+
+| Path | Description |
+|------|-------------|
+| `Aspire/AppHost` | Orchestrator — run this to start all services |
+| `Aspire/ServiceDefaults` | Shared service configuration |
+| `Modules/Sales/*` | Sales REST API, domain, contracts, HTTP clients, Blazor UI |
+| `Administration/*` | Administration and tenant APIs and web apps |
+| `SharedKernel/` | Shared kernel, caching, and multi-tenancy infrastructure |
 
 ### Sales Module
 
@@ -96,6 +125,15 @@ It uses **multi-tenancy** (per-tenant data isolation) and **accounting year** sc
 | Orchestration | Aspire AppHost |
 
 ## Getting Started
+
+```mermaid
+flowchart LR
+    A[Prerequisites] --> B[Run AppHost]
+    B --> C[Aspire Dashboard]
+    C --> D[All Services]
+    D --> E[salesdb + admindb]
+    D --> F[Redis + Loki + Grafana]
+```
 
 ### Prerequisites
 
