@@ -11,7 +11,7 @@ resource "azurerm_subnet" "data_private_endpoints" {
   virtual_network_name = azurerm_virtual_network.data.name
   address_prefixes     = ["10.2.2.0/26"]
 
-  private_endpoint_network_policies_enabled = false
+  private_endpoint_network_policies = "Disabled"
 }
 
 resource "azurerm_mssql_server" "main" {

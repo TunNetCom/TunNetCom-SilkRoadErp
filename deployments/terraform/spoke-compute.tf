@@ -55,7 +55,7 @@ resource "azurerm_kubernetes_cluster" "main" {
     os_disk_size_gb     = 30
     vnet_subnet_id      = azurerm_subnet.aks_system.id
     type                = "VirtualMachineScaleSets"
-    enable_auto_scaling = false
+    auto_scaling_enabled = false
   }
 
   identity {
@@ -80,9 +80,9 @@ resource "azurerm_kubernetes_cluster_node_pool" "user" {
   node_count            = var.aks_node_count
   os_disk_size_gb       = 128
   vnet_subnet_id        = azurerm_subnet.aks_nodes.id
-  enable_auto_scaling   = true
-  min_count            = 1
-  max_count            = 5
+  auto_scaling_enabled = true
+  min_count           = 1
+  max_count           = 5
 }
 
 resource "azurerm_private_dns_zone_virtual_network_link" "compute_sql" {
