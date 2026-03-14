@@ -44,29 +44,25 @@ parameters:
   default: 300
 - name: artifactName
   type: string
-  default: ''
+  default: ' '  # Use space as sentinel; empty string can cause "Unexpected value ''" in template expansion
 - name: artifactDownloadPath
   type: string
   default: '$(Pipeline.Workspace)'
-- name: pool
-  type: object
-  default: null
 
 jobs:
 - job: DeployJob
   displayName: K8s Deployment
-  pool: ${{ parameters.pool }}
   steps:
 
   # --------------------------------------------------
   # -1. Optional: Download pipeline artifact (for CI+CD flows)
   # --------------------------------------------------
-  - ${{ if ne(parameters.artifactName, '') }}:
-    - task: DownloadPipelineArtifact@2
-      displayName: 'Download K8s Manifests'
-      inputs:
-        artifactName: ${{ parameters.artifactName }}
-        path: $(Pipeline.Workspace)
+  - task: DownloadPipelineArtifact@2
+    displayName: 'Download K8s Manifests'
+    condition: and(succeeded(), ne('${{ parameters.artifactName }}', ' '))
+    inputs:
+      artifactName: ${{ parameters.artifactName }}
+      path: $(Pipeline.Workspace)
 
   # --------------------------------------------------
   # 0. Check Cluster Access
