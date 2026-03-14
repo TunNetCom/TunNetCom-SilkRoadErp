@@ -119,7 +119,8 @@ stages:
     - script: |
         set -e
         mkdir -p $(Build.ArtifactStagingDirectory)/deployments
-        cp -v src/deployments/*.yaml $(Build.ArtifactStagingDirectory)/deployments/
+        # Deployment YAML files are in deployments/k8s/
+        cp -v deployments/k8s/*.yaml $(Build.ArtifactStagingDirectory)/deployments/
         echo "✅ Deployment files copied"
       displayName: 'Prepare Deployment Artifacts'
 
