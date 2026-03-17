@@ -70,6 +70,7 @@
     <PackageVersion Include="FluentAssertions" Version="8.2.0" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+    <PackageVersion Include="Testcontainers.MsSql" Version="4.10.0" />
     <!-- Playwright -->
     <PackageVersion Include="Microsoft.Playwright" Version="1.51.0" />
     <!-- Quartz.NET for background jobs -->

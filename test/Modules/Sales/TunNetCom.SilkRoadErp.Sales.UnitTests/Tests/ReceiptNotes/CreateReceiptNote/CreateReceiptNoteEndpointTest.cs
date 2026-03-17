@@ -1,79 +1,75 @@
-﻿//using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.CreateReceiptNote;
-//using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.ResultExtensions;
-//using TunNetCom.SilkRoadErp.Sales.Contracts.RecieptNotes;
+using FluentAssertions;
+using MediatR;
+using Microsoft.AspNetCore.Http.HttpResults;
+using TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.CreateReceiptNote;
+using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.ResultExtensions;
+using TunNetCom.SilkRoadErp.Sales.Contracts.RecieptNotes;
 
-//namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes
-//{
-//    public class CreateReceiptNoteEndpointTests
-//    {
-//        private readonly Mock<IMediator> _mediatorMock;
-//        private readonly CreateReceiptNoteEndpoint _endpoint;
-//        public CreateReceiptNoteEndpointTests()
-//        {
-//            _mediatorMock = new Mock<IMediator>();
-//            _endpoint = new CreateReceiptNoteEndpoint();
-//        }
-//        private static async Task<object> InvokeEndpoint(
-//            CreateReceiptNoteRequest request,
-//            Mock<IMediator> mediatorMock)
-//        {
-//            var createCommand = new CreateReceiptNoteCommand(
-//                request.Num,
-//                request.NumBonFournisseur,
-//                request.DateLivraison,
-//                request.IdFournisseur,
-//                request.Date,
-//                request.NumFactureFournisseur);
-//            var result = await mediatorMock.Object.Send(createCommand, CancellationToken.None);
-//            if (result.IsFailed)
-//                return result.ToValidationProblem();
-//            return TypedResults.Created($"/receiptnotes/{result.Value}", request);
-//        }
-//        [Fact]
-//        public async Task Handle_ValidCommand_ReturnsCreated()
-//        {
-//            // Arrange
-//            var request = new CreateReceiptNoteRequest
-//            {
-//                Num = 1,
-//                NumBonFournisseur = 123456,
-//                DateLivraison = DateTime.UtcNow,
-//                IdFournisseur = 5,
-//                Date = DateTime.UtcNow,
-//                NumFactureFournisseur = null
-//            };
-//            _ = _mediatorMock
-//                .Setup(m => m.Send(It.IsAny<CreateReceiptNoteCommand>(), It.IsAny<CancellationToken>()))
-//                .ReturnsAsync(Result.Ok(1)); 
-//            // Act
-//            var result = await InvokeEndpoint(request, _mediatorMock);
-//            // Assert
-//            var createdResult = Assert.IsType<Created<CreateReceiptNoteRequest>>(result);
-//            Assert.Equal($"/receiptnotes/1", createdResult.Location);
-//            Assert.Equal(request, createdResult.Value);
-//        }
+namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.ReceiptNotes.CreateReceiptNote;
 
-//        [Fact]
-//        public async Task Handle_InvalidCommand_ReturnsValidationProblem()
-//        {
-//            // Arrange
-//            var request = new CreateReceiptNoteRequest
-//            {
-//                Num = 0,  // Supposons invalide
-//                NumBonFournisseur = 0,
-//                DateLivraison = default,
-//                IdFournisseur = -1,
-//                Date = default,
-//                NumFactureFournisseur = null
-//            };
-//            var failedResult = Result.Fail("Validation error");
-//            _ = _mediatorMock
-//                .Setup(m => m.Send(It.IsAny<CreateReceiptNoteCommand>(), It.IsAny<CancellationToken>()))
-//                .ReturnsAsync(failedResult);
-//            // Act
-//            var result = await InvokeEndpoint(request, _mediatorMock);
-//            // Assert
-//            _ = Assert.IsType<ValidationProblem>(result);
-//        }
-//    }
-//}
+public class CreateReceiptNoteEndpointTest
+{
+    private static async Task<Results<Created<CreateReceiptNoteRequest>, ValidationProblem>> InvokeEndpoint(
+        IMediator mediator,
+        CreateReceiptNoteRequest request,
+        CancellationToken cancellationToken)
+    {
+        var createCommand = new CreateReceiptNoteCommand(
+            request.NumBonFournisseur,
+            request.DateLivraison,
+            request.IdFournisseur,
+            request.Date,
+            request.NumFactureFournisseur);
+        var result = await mediator.Send(createCommand, cancellationToken);
+        if (result.IsFailed)
+            return result.ToValidationProblem();
+        return TypedResults.Created($"/receiptnotes/{result.Value}", request);
+    }
+
+    [Fact]
+    public async Task Handle_ValidCommand_ReturnsCreated()
+    {
+        var mediatorMock = new Mock<IMediator>();
+        var request = new CreateReceiptNoteRequest
+        {
+            NumBonFournisseur = 123456,
+            DateLivraison = DateTime.UtcNow,
+            IdFournisseur = 5,
+            Date = DateTime.UtcNow,
+            NumFactureFournisseur = null
+        };
+        _ = mediatorMock
+            .Setup(m => m.Send(It.IsAny<CreateReceiptNoteCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Ok(123));
+
+        var result = await InvokeEndpoint(mediatorMock.Object, request, CancellationToken.None);
+
+        _ = result.Result.Should().BeOfType<Created<CreateReceiptNoteRequest>>();
+        var createdResult = result.Result as Created<CreateReceiptNoteRequest>;
+        _ = createdResult.Should().NotBeNull();
+        createdResult!.Location.Should().Be("/receiptnotes/123");
+        createdResult.Value.Should().BeEquivalentTo(request);
+    }
+
+    [Fact]
+    public async Task Handle_InvalidCommand_ReturnsValidationProblem()
+    {
+        var mediatorMock = new Mock<IMediator>();
+        var request = new CreateReceiptNoteRequest
+        {
+            NumBonFournisseur = 0,
+            DateLivraison = default,
+            IdFournisseur = -1,
+            Date = default,
+            NumFactureFournisseur = null
+        };
+        var failedResult = Result.Fail("not_found");
+        _ = mediatorMock
+            .Setup(m => m.Send(It.IsAny<CreateReceiptNoteCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(failedResult);
+
+        var result = await InvokeEndpoint(mediatorMock.Object, request, CancellationToken.None);
+
+        _ = result.Result.Should().BeOfType<ValidationProblem>();
+    }
+}
