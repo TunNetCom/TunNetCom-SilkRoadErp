@@ -10,6 +10,7 @@
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Tags
 @using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using Microsoft.JSInterop
 @inject IInventaireApiClient inventaireService
 @inject IAccountingYearApiClient accountingYearService
 @inject ITagsApiClient TagsService
@@ -17,15 +18,23 @@
 @inject NavigationManager NavigationManager
 @inject DialogService DialogService
 @inject ToastService ToastService
+@inject IJSRuntime JS
 
 <div class="inventaires-container">
     <div class="inventaires-card">
         <div class="inventaires-header">
             <h3 class="inventaires-title">@Localizer["inventaires"]</h3>
-            <RadzenButton Icon="add" Text="@Localizer["add_inventaire"]"
-                          ButtonStyle="ButtonStyle.Primary"
-                          Click="@CreateInventaire"
-                          Class="btn-primary" />
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                <RadzenButton Icon="table_chart" Text="@Localizer["Export_Excel"]"
+                              ButtonStyle="ButtonStyle.Success"
+                              Variant="Variant.Outlined"
+                              Click="@ExportToExcelAsync"
+                              Class="btn-export" />
+                <RadzenButton Icon="add" Text="@Localizer["add_inventaire"]"
+                              ButtonStyle="ButtonStyle.Primary"
+                              Click="@CreateInventaire"
+                              Class="btn-primary" />
+            </div>
         </div>
 
         <RadzenTextBox Placeholder="@Localizer["Search"]"
@@ -229,6 +238,33 @@
         finally
         {
             isLoadingInventaires = false;
+        }
+    }
+
+    private async Task ExportToExcelAsync()
+    {
+        var ids = inventaires.Select(i => i.Id).ToList();
+        if (ids.Count == 0)
+        {
+            ToastService.Notify(new(ToastType.Warning, Localizer["inventaires_export_excel_page_vide"]));
+            return;
+        }
+
+        try
+        {
+            var fileBytes = await inventaireService.ExportLignesExcelAsync(ids, CancellationToken.None);
+            var fileName = $"Inventaires_Lignes_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+            await JS.InvokeVoidAsync(
+                "downloadFile",
+                fileName,
+                Convert.ToBase64String(fileBytes),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            ToastService.Notify(new(ToastType.Success, Localizer["Export_Excel_Success"]));
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Error exporting inventaires to Excel");
+            ToastService.Notify(new(ToastType.Danger, Localizer["Erreur_Export"]));
         }
     }
 

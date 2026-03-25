@@ -1,6 +1,7 @@
 using Newtonsoft.Json;
 using TunNetCom.SilkRoadErp.Sales.Contracts;
 using TunNetCom.SilkRoadErp.Sales.Contracts.Inventaire;
+using TunNetCom.SilkRoadErp.Sales.HttpClients;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services;
 
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Inventaire;
@@ -223,6 +224,30 @@ public class InventaireApiClient : IInventaireApiClient
             _logger.LogError(ex.Message, ex);
             throw;
         }
+    }
+
+    public async Task<byte[]> ExportLignesExcelAsync(IReadOnlyList<int> inventaireIds, CancellationToken cancellationToken)
+    {
+        var request = new ExportInventairesLignesExcelRequest
+        {
+            InventaireIds = inventaireIds.ToList()
+        };
+        var response = await _httpClient.PostAsJsonAsync(
+            "/inventaires/export/lignes/excel",
+            request,
+            cancellationToken: cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            var content = await response.Content.ReadAsStringAsync(cancellationToken);
+            _logger.LogError(
+                "Export inventaires lignes Excel failed. Status: {Status}, Body: {Body}",
+                response.StatusCode,
+                content);
+            throw new HttpRequestException(
+                $"Export inventaire Excel failed: {(int)response.StatusCode}. {content}");
+        }
+
+        return await response.Content.ReadAsByteArrayAsync(cancellationToken);
     }
 }
 

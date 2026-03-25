@@ -1173,6 +1173,9 @@
   <data name="add_inventaire" xml:space="preserve">
     <value>Create inventory</value>
   </data>
+  <data name="inventaires_export_excel_page_vide" xml:space="preserve">
+    <value>No inventories on this page to export.</value>
+  </data>
   <data name="date_inventaire" xml:space="preserve">
     <value>Inventory date</value>
   </data>

@@ -41,5 +41,9 @@ public interface IInventaireApiClient
     Task<OneOf<List<HistoriqueAchatVenteResponse>, bool>> GetHistoriqueAchatVenteAsync(
         int productId,
         CancellationToken cancellationToken);
+
+    Task<byte[]> ExportLignesExcelAsync(
+        IReadOnlyList<int> inventaireIds,
+        CancellationToken cancellationToken);
 }
 
