@@ -28,7 +28,8 @@ public class ExcelExportService
         decimal? totalVat19 = null,
         decimal? totalBase7 = null,
         decimal? totalBase13 = null,
-        decimal? totalBase19 = null)
+        decimal? totalBase19 = null,
+        bool appendVatRecapSection = true)
     {
         using var package = new ExcelPackage();
         var worksheet = package.Workbook.Worksheets.Add(sheetName);
@@ -167,8 +168,8 @@ public class ExcelExportService
                 rowIndex++;
             }
             
-            // Récapitulatif TVA section - Always show when we have totals
-            if (totalNetAmount.HasValue || totalVatAmount.HasValue || totalTtcAmount.HasValue)
+            // Récapitulatif TVA section - invoice-style exports; skip for simple net-total-only sheets
+            if (appendVatRecapSection && (totalNetAmount.HasValue || totalVatAmount.HasValue || totalTtcAmount.HasValue))
             {
                 var headerCell = worksheet.Cells[rowIndex, 1];
                 headerCell.Value = "Récapitulatif TVA:";

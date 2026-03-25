@@ -85,11 +85,15 @@ public class ExportInventairesLignesToExcelEndpoint : ICarterModule
 
             logger.LogInformation("Export inventaires lignes Excel: {Count} lignes pour {IdCount} inventaire(s)", rows.Count, ids.Length);
 
+            var totalMontantHt = rows.Sum(r => r.MontantLigne);
+
             var fileBytes = exportService.ExportToExcel(
                 rows,
                 columns,
                 "Lignes inventaire",
-                decimalPlaces);
+                decimalPlaces,
+                totalNetAmount: totalMontantHt,
+                appendVatRecapSection: false);
 
             var filename = $"Inventaires_Lignes_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
 
