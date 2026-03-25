@@ -15,7 +15,8 @@ public class ProductsApiClient : IProductsApiClient
     {
         try
         {
-            var response = await _httpClient.GetAsync($"/products/{Uri.EscapeDataString(refe)}", cancellationToken: cancellationToken);
+            // Use an explicit "by reference" endpoint to avoid route ambiguity when the reference is numeric.
+            var response = await _httpClient.GetAsync($"/products/by-ref/{Uri.EscapeDataString(refe)}", cancellationToken: cancellationToken);
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 return await response.ReadJsonAsync<ProductResponse>();
