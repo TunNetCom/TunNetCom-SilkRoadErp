@@ -29,6 +29,7 @@
 @inject DialogService DialogService
 @inject IDecimalFormatService DecimalFormatService
 @inject IJSRuntime JS
+@inject IAuthService AuthService
 
 <div class="tej-combined-container">
     <div class="tej-filters">
@@ -296,7 +297,15 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    private HttpClient GetApiClient() => HttpClientFactory.CreateClient("SalesApi");
+    private HttpClient GetApiClient() 
+    {
+        var client = HttpClientFactory.CreateClient("SalesApi");
+        if (!string.IsNullOrEmpty(AuthService.AccessToken))
+        {
+            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", AuthService.AccessToken);
+        }
+        return client;
+    }
 
     private async Task LoadTotalsAsync()
     {

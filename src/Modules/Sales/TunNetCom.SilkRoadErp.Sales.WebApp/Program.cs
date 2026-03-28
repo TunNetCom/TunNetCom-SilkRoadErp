@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using TunNetCom.SilkRoadErp.Sales.HttpClients;
 using Microsoft.Extensions.Options;
 using TunNetCom.SilkRoadErp.SharedKernel.Tenancy;
 using TunNetCom.SilkRoadErp.Sales.WebApp.Services;
@@ -117,37 +119,64 @@ else
 }
 
 // Add Sales HttpClients (this registers all clients with their implementations)
-// Then configure them with the auth handler
-builder.Services.AddSalesHttpClients(baseUrl, httpClientBuilder =>
-{
-    httpClientBuilder.AddHttpMessageHandler<AuthHttpClientHandler>();
+// We utilize manual component-scoped DI to construct the implementations and attach tokens, skipping HttpClientFactory root evaluation.
+builder.Services.AddSalesHttpClients(baseUrl, null, (sp, request) => {
+    var authService = sp.GetService<IAuthService>();
+    if (authService != null && !string.IsNullOrEmpty(authService.AccessToken))
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authService.AccessToken);
+        
     if (deploymentMode == DeploymentMode.MultiTenant)
     {
-        httpClientBuilder.AddHttpMessageHandler<TenantDelegatingHandler>();
+        var tenantContext = sp.GetService<ITenantContext>();
+        if (tenantContext != null && !string.IsNullOrEmpty(tenantContext.TenantId))
+            request.Headers.Add("X-Tenant-ID", tenantContext.TenantId);
     }
 });
 
-// Add OData service with auth handler
-builder.Services.AddHttpClient<ODataService>(client =>
+// Register underlying factory configurations for these specific clients
+builder.Services.TryAddSingleton<SocketsHttpHandler>(sp => new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.FromMinutes(2) });
+
+// Add OData service securely mapped to Blazor circuit scope
+builder.Services.AddScoped<ODataService>(sp =>
 {
-    client.BaseAddress = new Uri(baseUrl);
-    client.Timeout = TimeSpan.FromMinutes(5); // Increase timeout for large requests
-})
-.AddHttpMessageHandler<AuthHttpClientHandler>();
+    var socketsHandler = sp.GetRequiredService<SocketsHttpHandler>();
+    var authHandler = new TunNetCom.SilkRoadErp.Sales.HttpClients.DynamicAuthHandler(request => {
+        var authService = sp.GetService<TunNetCom.SilkRoadErp.Sales.WebApp.Services.IAuthService>();
+        if (authService != null && !string.IsNullOrEmpty(authService.AccessToken))
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authService.AccessToken);
+    }, socketsHandler);
+    
+    var client = new HttpClient(authHandler, disposeHandler: false) { BaseAddress = new Uri(baseUrl), Timeout = TimeSpan.FromMinutes(5) };
+    return Microsoft.Extensions.DependencyInjection.ActivatorUtilities.CreateInstance<ODataService>(sp, client);
+});
 
 // Recap Ventes/Achats service (calls /api/invoices/totals, /api/provider-invoices/totals + API clients)
-builder.Services.AddHttpClient<IRecapVentesAchatsService, RecapVentesAchatsService>(client =>
+builder.Services.AddScoped<IRecapVentesAchatsService, RecapVentesAchatsService>(sp =>
 {
-    client.BaseAddress = new Uri(baseUrl);
-})
-.AddHttpMessageHandler<AuthHttpClientHandler>();
+    var socketsHandler = sp.GetRequiredService<SocketsHttpHandler>();
+    var authHandler = new TunNetCom.SilkRoadErp.Sales.HttpClients.DynamicAuthHandler(request => {
+        var authService = sp.GetService<TunNetCom.SilkRoadErp.Sales.WebApp.Services.IAuthService>();
+        if (authService != null && !string.IsNullOrEmpty(authService.AccessToken))
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authService.AccessToken);
+    }, socketsHandler);
+    
+    var client = new HttpClient(authHandler, disposeHandler: false) { BaseAddress = new Uri(baseUrl) };
+    return Microsoft.Extensions.DependencyInjection.ActivatorUtilities.CreateInstance<RecapVentesAchatsService>(sp, client);
+});
 
 // Dashboard evolution (ventes/achats by month for chart)
-builder.Services.AddHttpClient<IDashboardEvolutionService, DashboardEvolutionService>(client =>
+builder.Services.AddScoped<IDashboardEvolutionService, DashboardEvolutionService>(sp =>
 {
-    client.BaseAddress = new Uri(baseUrl);
-})
-.AddHttpMessageHandler<AuthHttpClientHandler>();
+    var socketsHandler = sp.GetRequiredService<SocketsHttpHandler>();
+    var authHandler = new TunNetCom.SilkRoadErp.Sales.HttpClients.DynamicAuthHandler(request => {
+        var authService = sp.GetService<TunNetCom.SilkRoadErp.Sales.WebApp.Services.IAuthService>();
+        if (authService != null && !string.IsNullOrEmpty(authService.AccessToken))
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authService.AccessToken);
+    }, socketsHandler);
+    
+    var client = new HttpClient(authHandler, disposeHandler: false) { BaseAddress = new Uri(baseUrl) };
+    return Microsoft.Extensions.DependencyInjection.ActivatorUtilities.CreateInstance<DashboardEvolutionService>(sp, client);
+});
 
 // Add HttpClient for auth endpoints
 builder.Services.AddHttpClient<IAuthService, AuthService>(client =>
@@ -155,12 +184,14 @@ builder.Services.AddHttpClient<IAuthService, AuthService>(client =>
     client.BaseAddress = new Uri(baseUrl);
 });
 
-// Add named HttpClient for raw API calls (totals, export TEJ, etc.) with auth
+// Add named HttpClient for raw API calls (totals, export TEJ, etc.)
+// Note: Authentication must be injected manually by the component resolving this client
+// because IHttpClientFactory evaluates in the root scope and cannot securely access circuit-scoped tokens.
 builder.Services.AddHttpClient("SalesApi", client =>
 {
     client.BaseAddress = new Uri(baseUrl);
     client.Timeout = TimeSpan.FromMinutes(2);
-}).AddHttpMessageHandler<AuthHttpClientHandler>();
+});
 
 builder.Services.AddPrintEngine(builder.Configuration);
 builder.Services.AddLocalization();
