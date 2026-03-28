@@ -41,27 +41,65 @@ using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PaiementTiersDepense;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tiers;
 
 
+namespace TunNetCom.SilkRoadErp.Sales.HttpClients;
+
+public class DynamicAuthHandler : System.Net.Http.DelegatingHandler
+{
+    private readonly Action<System.Net.Http.HttpRequestMessage> _configureRequest;
+    
+    public DynamicAuthHandler(Action<System.Net.Http.HttpRequestMessage> configureRequest, System.Net.Http.HttpMessageHandler innerHandler) 
+        : base(innerHandler)
+    {
+        _configureRequest = configureRequest;
+    }
+
+    protected override System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage> SendAsync(System.Net.Http.HttpRequestMessage request, System.Threading.CancellationToken cancellationToken)
+    {
+        _configureRequest(request);
+        return base.SendAsync(request, cancellationToken);
+    }
+    
+    protected override System.Net.Http.HttpResponseMessage Send(System.Net.Http.HttpRequestMessage request, System.Threading.CancellationToken cancellationToken)
+    {
+        _configureRequest(request);
+        return base.Send(request, cancellationToken);
+    }
+}
+
 public static class SalesHttpClients
 {
-    /// <summary>
-    /// setting up communication with api backend
-    /// this is a method extension  that adds HTTP clients to your app's dependency injection (DI) system
-    /// It's called in Program.cs of your WebApp project to configure how your Blazor app talks to the API.
-    /// </summary>
-    /// <param name="services"></param>
-    /// <param name="baseUrl"></param>
-    public static void AddSalesHttpClients(this IServiceCollection services, string baseUrl, Action<IHttpClientBuilder>? configureBuilder = null)
+
+    public static void AddSalesHttpClients(this IServiceCollection services, string baseUrl, Action<IHttpClientBuilder>? configureBuilder = null, Action<IServiceProvider, System.Net.Http.HttpRequestMessage>? configureClientAuth = null)
     {
+        // Register a singleton SocketsHttpHandler for optimal connection pooling
+        Microsoft.Extensions.DependencyInjection.Extensions.ServiceCollectionDescriptorExtensions.TryAddSingleton<System.Net.Http.SocketsHttpHandler>(services, sp => new System.Net.Http.SocketsHttpHandler
+        {
+            PooledConnectionLifetime = TimeSpan.FromMinutes(2)
+        });
+
         // Helper to configure client with optional builder configuration
-        IHttpClientBuilder AddClient<TInterface, TImplementation>(Action<HttpClient> configureClient) 
+        IServiceCollection AddClient<TInterface, TImplementation>(Action<HttpClient> configureClient) 
             where TInterface : class 
             where TImplementation : class, TInterface
         {
-            var builder = services.AddHttpClient<TInterface, TImplementation>(configureClient);
-            // Configure timeout for large requests (images, etc.) - 5 minutes
-            builder.ConfigureHttpClient(client => client.Timeout = TimeSpan.FromMinutes(5));
-            configureBuilder?.Invoke(builder);
-            return builder;
+            // Map the Interface resolution directly to the Blazor Circuit Scope explicitly
+            services.AddScoped<TInterface>(sp => {
+                var socketsHandler = sp.GetRequiredService<System.Net.Http.SocketsHttpHandler>();
+                
+                // Construct a dynamic handler that evaluates the token ON EVERY REQUEST safely inside this exact scope
+                Action<System.Net.Http.HttpRequestMessage> dynamicConfigurator = request => {
+                    configureClientAuth?.Invoke(sp, request);
+                };
+                
+                var dynamicHandler = new DynamicAuthHandler(dynamicConfigurator, socketsHandler);
+                var client = new HttpClient(dynamicHandler, disposeHandler: false);
+                client.Timeout = TimeSpan.FromMinutes(5);
+                configureClient(client);
+                
+                // Construct the generated Refit/NSwag API client safely inside our Circuit Scope
+                return Microsoft.Extensions.DependencyInjection.ActivatorUtilities.CreateInstance<TImplementation>(sp, client);
+            });
+            return services;
         }
         
         _ = AddClient<ICustomersApiClient, CustomersApiClient>(client =>

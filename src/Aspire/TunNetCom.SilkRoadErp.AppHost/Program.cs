@@ -38,18 +38,18 @@ builder.AddProject<Projects.TunNetCom_SilkRoadErp_Sales_WebApp>("sales-webapp")
     .WithExternalHttpEndpoints()
     .WithReference(salesApi)
     .WaitFor(salesApi)
-    .WithEnvironment("ApiSettings__BaseUrl", salesApi.GetEndpoint("http"));
+    .WithEnvironment("ApiSettings__BaseUrl", salesApi.GetEndpoint("https"));
 
 builder.AddProject<Projects.TunNetCom_SilkRoadErp_Administration_WebApp>("admin-webapp")
     .WithExternalHttpEndpoints()
     .WithReference(adminApi)
     .WaitFor(adminApi)
-    .WithEnvironment("AdminApi__BaseUrl", adminApi.GetEndpoint("http"));
+    .WithEnvironment("AdminApi__BaseUrl", adminApi.GetEndpoint("https"));
 
 builder.AddProject<Projects.TunNetCom_SilkRoadErp_TenantSetup_WebApp>("tenant-webapp")
     .WithExternalHttpEndpoints()
     .WithReference(adminApi)
     .WaitFor(adminApi)
-    .WithEnvironment("AdminApi__BaseUrl", adminApi.GetEndpoint("http"));
+    .WithEnvironment("AdminApi__BaseUrl", adminApi.GetEndpoint("https"));
 
 builder.Build().Run();
