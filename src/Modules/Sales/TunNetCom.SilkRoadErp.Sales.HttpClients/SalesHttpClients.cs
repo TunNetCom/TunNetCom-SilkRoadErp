@@ -40,229 +40,77 @@ using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.FactureDepense;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.PaiementTiersDepense;
 using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tiers;
 
-
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients;
-
-public class DynamicAuthHandler : System.Net.Http.DelegatingHandler
-{
-    private readonly Action<System.Net.Http.HttpRequestMessage> _configureRequest;
-    
-    public DynamicAuthHandler(Action<System.Net.Http.HttpRequestMessage> configureRequest, System.Net.Http.HttpMessageHandler innerHandler) 
-        : base(innerHandler)
-    {
-        _configureRequest = configureRequest;
-    }
-
-    protected override System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage> SendAsync(System.Net.Http.HttpRequestMessage request, System.Threading.CancellationToken cancellationToken)
-    {
-        _configureRequest(request);
-        return base.SendAsync(request, cancellationToken);
-    }
-    
-    protected override System.Net.Http.HttpResponseMessage Send(System.Net.Http.HttpRequestMessage request, System.Threading.CancellationToken cancellationToken)
-    {
-        _configureRequest(request);
-        return base.Send(request, cancellationToken);
-    }
-}
 
 public static class SalesHttpClients
 {
-
-    public static void AddSalesHttpClients(this IServiceCollection services, string baseUrl, Action<IHttpClientBuilder>? configureBuilder = null, Action<IServiceProvider, System.Net.Http.HttpRequestMessage>? configureClientAuth = null)
+    /// <summary>
+    /// Registers all Sales API typed clients using IHttpClientFactory best practices.
+    /// Each client is registered via AddHttpClient so that DelegatingHandlers
+    /// (e.g. AuthHttpClientHandler, TenantDelegatingHandler) attached via
+    /// <paramref name="configureBuilder"/> are properly resolved from the circuit scope.
+    /// </summary>
+    public static void AddSalesHttpClients(
+        this IServiceCollection services,
+        string baseUrl,
+        Action<IHttpClientBuilder>? configureBuilder = null)
     {
-        // Register a singleton SocketsHttpHandler for optimal connection pooling
-        Microsoft.Extensions.DependencyInjection.Extensions.ServiceCollectionDescriptorExtensions.TryAddSingleton<System.Net.Http.SocketsHttpHandler>(services, sp => new System.Net.Http.SocketsHttpHandler
-        {
-            PooledConnectionLifetime = TimeSpan.FromMinutes(2)
-        });
-
-        // Helper to configure client with optional builder configuration
-        IServiceCollection AddClient<TInterface, TImplementation>(Action<HttpClient> configureClient) 
-            where TInterface : class 
+        // Local helper: registers one typed client and applies the shared builder config
+        void AddClient<TInterface, TImplementation>(string? baseAddress = null)
+            where TInterface : class
             where TImplementation : class, TInterface
         {
-            // Map the Interface resolution directly to the Blazor Circuit Scope explicitly
-            services.AddScoped<TInterface>(sp => {
-                var socketsHandler = sp.GetRequiredService<System.Net.Http.SocketsHttpHandler>();
-                
-                // Construct a dynamic handler that evaluates the token ON EVERY REQUEST safely inside this exact scope
-                Action<System.Net.Http.HttpRequestMessage> dynamicConfigurator = request => {
-                    configureClientAuth?.Invoke(sp, request);
-                };
-                
-                var dynamicHandler = new DynamicAuthHandler(dynamicConfigurator, socketsHandler);
-                var client = new HttpClient(dynamicHandler, disposeHandler: false);
+            var builder = services.AddHttpClient<TInterface, TImplementation>(client =>
+            {
+                client.BaseAddress = new Uri(baseAddress ?? baseUrl);
                 client.Timeout = TimeSpan.FromMinutes(5);
-                configureClient(client);
-                
-                // Construct the generated Refit/NSwag API client safely inside our Circuit Scope
-                return Microsoft.Extensions.DependencyInjection.ActivatorUtilities.CreateInstance<TImplementation>(sp, client);
             });
-            return services;
+
+            configureBuilder?.Invoke(builder);
         }
-        
-        _ = AddClient<ICustomersApiClient, CustomersApiClient>(client =>
-        {
-            client.BaseAddress = new Uri(baseUrl);
-        });
 
-        _ = AddClient<IDeliveryNoteApiClient, DeliveryNoteApiClient>(deliverynote =>
-        {
-            deliverynote.BaseAddress = new Uri(baseUrl);
-        });
+        AddClient<ICustomersApiClient, CustomersApiClient>();
+        AddClient<IDeliveryNoteApiClient, DeliveryNoteApiClient>();
+        AddClient<IInvoicesApiClient, InvoicesApiClient>();
+        AddClient<IInventaireApiClient, InventaireApiClient>();
+        AddClient<IProductsApiClient, ProductsApiClient>();
+        AddClient<IReceiptNoteApiClient, ReceiptNoteApiClient>();
+        AddClient<IProviderInvoiceApiClient, ProviderInvoiceApiClient>();
+        AddClient<IOrderApiClient, OrderApiClient>();
+        AddClient<IAccountingYearApiClient, AccountingYearApiClient>();
+        AddClient<IQuotationApiClient, QuotationApiClient>();
+        AddClient<IAvoirsApiClient, AvoirsApiClient>();
+        AddClient<IAvoirFournisseurApiClient, AvoirFournisseurApiClient>();
+        AddClient<IFactureAvoirFournisseurApiClient, FactureAvoirFournisseurApiClient>();
+        AddClient<IAvoirFinancierFournisseursApiClient, AvoirFinancierFournisseursApiClient>();
+        AddClient<IPaiementClientApiClient, PaiementClientApiClient>();
+        AddClient<IPaiementFournisseurApiClient, PaiementFournisseurApiClient>();
+        AddClient<IBanqueApiClient, BanqueApiClient>();
+        AddClient<ICompteBancaireApiClient, CompteBancaireApiClient>();
+        AddClient<IBankTransactionsApiClient, BankTransactionsApiClient>();
+        AddClient<ISoldesApiClient, SoldesApiClient>();
+        AddClient<ITagsApiClient, TagsApiClient>();
+        AddClient<IInstallationTechnicianApiClient, InstallationTechnicianApiClient>();
+        AddClient<IAuditLogsClient, AuditLogsClient>();
+        AddClient<IUsersClient, UsersClient>();
+        AddClient<IPrintHistoryClient, PrintHistoryClient>();
+        AddClient<IProductFamiliesApiClient, ProductFamiliesApiClient>();
+        AddClient<IProductSubFamiliesApiClient, ProductSubFamiliesApiClient>();
+        AddClient<IRetenueSourceClientApiClient, RetenueSourceClientApiClient>();
+        AddClient<IRetenueSourceFournisseurApiClient, RetenueSourceFournisseurApiClient>();
+        AddClient<IRetenueSourceFactureDepenseApiClient, RetenueSourceFactureDepenseApiClient>();
+        AddClient<INotificationApiClient, NotificationApiClient>();
+        AddClient<IDeliveryCarApiClient, DeliveryCarApiClient>();
+        AddClient<IRetourMarchandiseFournisseurApiClient, RetourMarchandiseFournisseurApiClient>();
+        AddClient<ITiersDepenseFonctionnementApiClient, TiersDepenseFonctionnementApiClient>();
+        AddClient<IFactureDepenseApiClient, FactureDepenseApiClient>();
+        AddClient<IPaiementTiersDepenseApiClient, PaiementTiersDepenseApiClient>();
+        AddClient<ITiersApiClient, TiersApiClient>();
 
-        _ = AddClient<IInvoicesApiClient, InvoicesApiClient>(invoice =>
-        {
-            invoice.BaseAddress = new Uri(baseUrl);
-        });
+        // ProvidersApiClient uses a slightly different base path
+        AddClient<IProvidersApiClient, ProvidersApiClient>($"{baseUrl}/providers/");
 
-        _ = AddClient<IInventaireApiClient, InventaireApiClient>(inventaire =>
-        {
-            inventaire.BaseAddress = new Uri(baseUrl);
-        });
-
-        _ = AddClient<IProductsApiClient, ProductsApiClient>(product =>
-        {
-            product.BaseAddress = new Uri(baseUrl);
-        });
-
-        _ = AddClient<IProvidersApiClient, ProvidersApiClient>(provider =>
-        {
-            provider.BaseAddress = new Uri($"{baseUrl}/providers/");
-        });
-
-        _ = AddClient<IAppParametersClient, AppParametersClient>(provider =>
-        {
-            provider.BaseAddress = new Uri($"{baseUrl}/");
-        });
-        _ = AddClient<IReceiptNoteApiClient, ReceiptNoteApiClient>(receipt =>
-        {
-            receipt.BaseAddress = new Uri(baseUrl);
-        });
-        _ = AddClient<IProviderInvoiceApiClient, ProviderInvoiceApiClient>(invoice =>
-        {
-            invoice.BaseAddress = new Uri(baseUrl);
-        });
-        _ = AddClient<IOrderApiClient, OrderApiClient>(order =>
-        {
-            order.BaseAddress = new Uri(baseUrl);
-        });
-        _ = AddClient<IAccountingYearApiClient, AccountingYearApiClient>(accountingYear =>
-        {
-            accountingYear.BaseAddress = new Uri(baseUrl);
-        });
-        _ = AddClient<IQuotationApiClient, QuotationApiClient>(quotation =>
-        {
-            quotation.BaseAddress = new Uri(baseUrl);
-        });
-        _ = AddClient<IAvoirsApiClient, AvoirsApiClient>(avoir =>
-        {
-            avoir.BaseAddress = new Uri(baseUrl);
-        });
-        _ = AddClient<IAvoirFournisseurApiClient, AvoirFournisseurApiClient>(avoirFournisseur =>
-        {
-            avoirFournisseur.BaseAddress = new Uri(baseUrl);
-        });
-        _ = AddClient<IFactureAvoirFournisseurApiClient, FactureAvoirFournisseurApiClient>(factureAvoirFournisseur =>
-        {
-            factureAvoirFournisseur.BaseAddress = new Uri(baseUrl);
-        });
-        _ = AddClient<IAvoirFinancierFournisseursApiClient, AvoirFinancierFournisseursApiClient>(avoirFinancierFournisseurs =>
-        {
-            avoirFinancierFournisseurs.BaseAddress = new Uri(baseUrl);
-        });
-        _ = AddClient<IPaiementClientApiClient, PaiementClientApiClient>(paiementClient =>
-        {
-            paiementClient.BaseAddress = new Uri(baseUrl);
-        });
-        _ = AddClient<IPaiementFournisseurApiClient, PaiementFournisseurApiClient>(paiementFournisseur =>
-        {
-            paiementFournisseur.BaseAddress = new Uri(baseUrl);
-        });
-        _ = AddClient<IBanqueApiClient, BanqueApiClient>(banque =>
-        {
-            banque.BaseAddress = new Uri(baseUrl);
-        });
-        _ = AddClient<ICompteBancaireApiClient, CompteBancaireApiClient>(compteBancaire =>
-        {
-            compteBancaire.BaseAddress = new Uri(baseUrl);
-        });
-        _ = AddClient<IBankTransactionsApiClient, BankTransactionsApiClient>(bankTransactions =>
-        {
-            bankTransactions.BaseAddress = new Uri(baseUrl);
-        });
-        _ = AddClient<ISoldesApiClient, SoldesApiClient>(soldes =>
-        {
-            soldes.BaseAddress = new Uri(baseUrl);
-        });
-        _ = AddClient<ITagsApiClient, TagsApiClient>(tags =>
-        {
-            tags.BaseAddress = new Uri(baseUrl);
-        });
-        _ = AddClient<IInstallationTechnicianApiClient, InstallationTechnicianApiClient>(installationTechnician =>
-        {
-            installationTechnician.BaseAddress = new Uri(baseUrl);
-        });
-        _ = AddClient<IAuditLogsClient, AuditLogsClient>(auditLogs =>
-        {
-            auditLogs.BaseAddress = new Uri(baseUrl);
-        });
-        _ = AddClient<IUsersClient, UsersClient>(users =>
-        {
-            users.BaseAddress = new Uri(baseUrl);
-        });
-        _ = AddClient<IPrintHistoryClient, PrintHistoryClient>(printHistory =>
-        {
-            printHistory.BaseAddress = new Uri(baseUrl);
-        });
-        _ = AddClient<IProductFamiliesApiClient, ProductFamiliesApiClient>(productFamilies =>
-        {
-            productFamilies.BaseAddress = new Uri(baseUrl);
-        });
-        _ = AddClient<IProductSubFamiliesApiClient, ProductSubFamiliesApiClient>(productSubFamilies =>
-        {
-            productSubFamilies.BaseAddress = new Uri(baseUrl);
-        });
-        _ = AddClient<IRetenueSourceClientApiClient, RetenueSourceClientApiClient>(retenueSourceClient =>
-        {
-            retenueSourceClient.BaseAddress = new Uri(baseUrl);
-        });
-        _ = AddClient<IRetenueSourceFournisseurApiClient, RetenueSourceFournisseurApiClient>(retenueSourceFournisseur =>
-        {
-            retenueSourceFournisseur.BaseAddress = new Uri(baseUrl);
-        });
-        _ = AddClient<INotificationApiClient, NotificationApiClient>(notifications =>
-        {
-            notifications.BaseAddress = new Uri(baseUrl);
-        });
-        _ = AddClient<IDeliveryCarApiClient, DeliveryCarApiClient>(deliveryCar =>
-        {
-            deliveryCar.BaseAddress = new Uri(baseUrl);
-        });
-        _ = AddClient<IRetourMarchandiseFournisseurApiClient, RetourMarchandiseFournisseurApiClient>(retourMarchandiseFournisseur =>
-        {
-            retourMarchandiseFournisseur.BaseAddress = new Uri(baseUrl);
-        });
-        _ = AddClient<ITiersDepenseFonctionnementApiClient, TiersDepenseFonctionnementApiClient>(tiersDepense =>
-        {
-            tiersDepense.BaseAddress = new Uri(baseUrl);
-        });
-        _ = AddClient<IFactureDepenseApiClient, FactureDepenseApiClient>(factureDepense =>
-        {
-            factureDepense.BaseAddress = new Uri(baseUrl);
-        });
-        _ = AddClient<IRetenueSourceFactureDepenseApiClient, RetenueSourceFactureDepenseApiClient>(retenueSourceFactureDepense =>
-        {
-            retenueSourceFactureDepense.BaseAddress = new Uri(baseUrl);
-        });
-        _ = AddClient<IPaiementTiersDepenseApiClient, PaiementTiersDepenseApiClient>(paiementTiersDepense =>
-        {
-            paiementTiersDepense.BaseAddress = new Uri(baseUrl);
-        });
-        _ = AddClient<ITiersApiClient, TiersApiClient>(tiers =>
-        {
-            tiers.BaseAddress = new Uri(baseUrl);
-        });
+        // AppParametersClient uses baseUrl + trailing slash
+        AddClient<IAppParametersClient, AppParametersClient>($"{baseUrl}/");
     }
 }
