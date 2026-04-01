@@ -612,8 +612,18 @@
                 tagIds: searchCriteria.SelectedTagIds,
                 cancellationToken: default);
 
-            quotationsList = response.Value;
-            totalCount = response.ODataCount ?? response.Value.Count;
+            if (!string.IsNullOrWhiteSpace(response.Error))
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["Error"],
+                    Detail = response.Error
+                });
+            }
+
+            quotationsList = response.Value ?? new List<QuotationBaseInfo>();
+            totalCount = response.ODataCount ?? quotationsList.Count;
         }
         catch (Exception ex)
         {
