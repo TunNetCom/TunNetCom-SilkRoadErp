@@ -132,13 +132,17 @@ builder.Services.AddSalesHttpClients(baseUrl, clientBuilder =>
 });
 
 // OData service — same handler chain
-builder.Services.AddHttpClient<ODataService>(client =>
+var odataHttpClient = builder.Services.AddHttpClient<ODataService>(client =>
 {
     client.BaseAddress = new Uri(baseUrl);
     client.Timeout = TimeSpan.FromMinutes(5);
 })
 .AddHttpMessageHandler<AuthHttpClientHandler>();
-builder.Services.AddScoped<ODataService>();
+
+if (deploymentMode == DeploymentMode.MultiTenant)
+{
+    odataHttpClient.AddHttpMessageHandler<TenantDelegatingHandler>();
+}
 
 // Recap Ventes/Achats service
 builder.Services.AddHttpClient<RecapVentesAchatsService>(client =>
