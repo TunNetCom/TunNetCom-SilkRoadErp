@@ -76,7 +76,9 @@ stages:
         set -e
         echo "🐳 Building API Docker image..."
         docker build --no-cache --progress=plain \
-          -t $(dockerRepository):$(apiTag) -f src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.Api/Dockerfile .
+          -t $(dockerRepository):$(apiTag) \
+          -f $(Build.SourcesDirectory)/src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.Api/Dockerfile \
+          $(Build.SourcesDirectory)
         echo "✅ API image built successfully"
       displayName: 'Build API Docker Image'
 
@@ -98,7 +100,9 @@ stages:
         set -e
         echo "🐳 Building WebApp Docker image..."
         docker build --no-cache --progress=plain \
-          -t $(dockerRepository):$(webappTag) -f src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.WebApp/Dockerfile .
+          -t $(dockerRepository):$(webappTag) \
+          -f $(Build.SourcesDirectory)/src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.WebApp/Dockerfile \
+          $(Build.SourcesDirectory)
         echo "✅ WebApp image built successfully"
       displayName: 'Build WebApp Docker Image'
 
@@ -119,8 +123,8 @@ stages:
     - script: |
         set -e
         mkdir -p $(Build.ArtifactStagingDirectory)/deployments
-        # Deployment YAML files are in deployments/k8s/
-        cp -v deployments/k8s/*.yaml $(Build.ArtifactStagingDirectory)/deployments/
+        # Kubernetes manifests (repo-root paths; pipeline YAML lives under deployments/azure-pipelines/)
+        cp -v $(Build.SourcesDirectory)/deployments/k8s/*.yaml $(Build.ArtifactStagingDirectory)/deployments/
         echo "✅ Deployment files copied"
       displayName: 'Prepare Deployment Artifacts'
 
@@ -140,7 +144,7 @@ stages:
   pool:
     name: OnPremAgents
   jobs:
-  - template: templates/deploy-k8s-job.yml
+  - template: /deployments/azure-pipelines/templates/deploy-k8s-job.yml
     parameters:
       kubeNamespace: $(kubeNamespace)
       deploymentApiName: silkroad-api
