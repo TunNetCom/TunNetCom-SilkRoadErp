@@ -84,8 +84,37 @@ public class AuthHttpClientHandler : DelegatingHandler
                 }
                 else
                 {
-                    _logger.LogWarning("AuthHttpClientHandler: Token refresh failed for {Method} {Uri}", 
+                    _logger.LogWarning("AuthHttpClientHandler: Token refresh failed for {Method} {Uri} - attempting load-from-storage and retry", 
                         request.Method, request.RequestUri);
+
+                    // Common Blazor Server timing issue: token exists in localStorage but hasn't been loaded into memory yet.
+                    // Try to load it and retry ONCE.
+                    try
+                    {
+                        await _authService.LoadTokenFromStorageAsync();
+                        var token = _authService.AccessToken;
+                        if (!string.IsNullOrEmpty(token))
+                        {
+                            var retryRequest = await CloneRequestAsync(request);
+                            retryRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+                            _isRetrying.Value = true;
+                            try
+                            {
+                                response.Dispose();
+                                response = await base.SendAsync(retryRequest, cancellationToken);
+                            }
+                            finally
+                            {
+                                _isRetrying.Value = false;
+                            }
+                        }
+                    }
+                    catch (Exception loadEx)
+                    {
+                        _logger.LogError(loadEx, "AuthHttpClientHandler: Failed load-from-storage retry for {Method} {Uri}",
+                            request.Method, request.RequestUri);
+                    }
                 }
             }
             catch (Exception refreshEx)
@@ -107,6 +136,10 @@ public class AuthHttpClientHandler : DelegatingHandler
             // STRATEGY: Try AuthService in-memory first (fastest), then localStorage (slower, may fail during prerendering)
             // This is important for Blazor Server where AuthService is scoped but persists within a user's circuit
             
+            // First, attempt to ensure token is loaded into memory (localStorage -> AuthService) when possible.
+            // This reduces early-request 401s caused by token not yet loaded for this circuit.
+            _ = await _authService.EnsureValidTokenAsync();
+
             // 1. Try to get token from AuthService in-memory (works even during prerendering if set during login)
             token = _authService?.AccessToken;
             if (!string.IsNullOrEmpty(token))

@@ -226,7 +226,11 @@ public class ODataService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error querying OData endpoint {EntitySet}", entitySet);
-            return new ODataResponse<T> { Value = new List<T>() };
+            return new ODataResponse<T>
+            {
+                Value = new List<T>(),
+                Error = ex.Message
+            };
         }
     }
 }
@@ -241,5 +245,7 @@ public class ODataResponse<T>
 
     [JsonPropertyName("value")]
     public List<T> Value { get; set; } = new();
+
+    public string? Error { get; set; }
 }
 

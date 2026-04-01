@@ -191,11 +191,36 @@ else
 
         searchList = new List<QuotationDetailResponse>();
         orders = new List<QuotationDetailResponse>();
-        var param = await appParametersClient.GetAppParametersAsync(_cancellationTokenSource.Token);
-        getAppParametersResponse = param.AsT0;
-        await LoadCustomers(null);
-        await FetchQuotation();
-        isLoading = false;
+
+        // Defer API calls until after first render so JS interop/localStorage is available.
+        // This avoids initial 401s when the auth token hasn't been loaded yet.
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+
+        if (!firstRender)
+        {
+            return;
+        }
+
+        try
+        {
+            // Ensure auth state has a chance to load token from storage (Blazor Server + localStorage)
+            _ = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+            var param = await appParametersClient.GetAppParametersAsync(_cancellationTokenSource.Token);
+            getAppParametersResponse = param.AsT0;
+
+            await LoadCustomers(null);
+            await FetchQuotation();
+        }
+        finally
+        {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     private async Task SaveQuotation()
