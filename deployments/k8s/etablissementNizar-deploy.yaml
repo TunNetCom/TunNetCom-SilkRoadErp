@@ -4,26 +4,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: silkroad-api-nizar
+  name: silkroad-webapp-nizar
   namespace: silkroad-prod-nizar
-  labels:
-    app: silkroad-api-nizar
-    environment: production
-    tier: backend
 spec:
   replicas: 1
   strategy:
     type: Recreate
   selector:
     matchLabels:
-      app: silkroad-api-nizar
+      app: silkroad-webapp-nizar
       environment: production
   template:
     metadata:
       labels:
-        app: silkroad-api-nizar
+        app: silkroad-webapp-nizar
         environment: production
-        tier: backend
+        tier: frontend
     spec:
       # ✅ Pod-level security
       securityContext:
@@ -31,9 +27,15 @@ spec:
         runAsUser: 1000
         fsGroup: 1000
 
+      volumes:
+        - name: dataprotection-keys
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+
       containers:
-      - name: api
-        image: tunnetcom/silkroad:latest-api
+      - name: webapp
+        image: tunnetcom/silkroad:latest-webapp
         imagePullPolicy: Always
 
         # ✅ Container-level security
@@ -44,22 +46,94 @@ spec:
             drop:
               - ALL
 
+        volumeMounts:
+          # ✅ FIX: no /root anymore
+          - name: dataprotection-keys
+            mountPath: /home/app/.aspnet/DataProtection-Keys
+          - name: tmp
+            mountPath: /tmp
+
         ports:
         - containerPort: 8080
-        - containerPort: 8081
 
         env:
         - name: ASPNETCORE_ENVIRONMENT
           value: "Production"
         - name: ASPNETCORE_URLS
           value: "http://+:8080"
-        - name: ConnectionStrings__DefaultConnection
-          valueFrom:
-            secretKeyRef:
-              name: silkroad-connection-secret
-              key: ConnectionStrings__DefaultConnection
-        - name: EF_MIGRATE_ON_STARTUP
-          value: "false"
+        - name: ApiSettings__BaseUrl
+          value: "http://silkroad-api-service-nizar:8080"
+
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "1000m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: silkroad-webapp-nizar
+  namespace: silkroad-prod-nizar
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: silkroad-webapp-nizar
+      environment: production
+  template:
+    metadata:
+      labels:
+        app: silkroad-webapp-nizar
+        environment: production
+        tier: frontend
+    spec:
+      # ✅ Pod-level security
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+
+      volumes:
+        - name: dataprotection-keys
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+
+      containers:
+      - name: webapp
+        image: tunnetcom/silkroad:latest-webapp
+        imagePullPolicy: Always
+
+        # ✅ Container-level security
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+
+        volumeMounts:
+          # ✅ FIX: no /root anymore
+          - name: dataprotection-keys
+            mountPath: /home/app/.aspnet/DataProtection-Keys
+          - name: tmp
+            mountPath: /tmp
+
+        ports:
+        - containerPort: 8080
+
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+        - name: ASPNETCORE_URLS
+          value: "http://+:8080"
+        - name: ApiSettings__BaseUrl
+          value: "http://silkroad-api-service-nizar:8080"
 
         resources:
           requests:
