@@ -27,10 +27,22 @@ spec:
       annotations:
         deployment.kubernetes.io/revision: "1"
     spec:
+      # FIX KSV-0118: pod-level security context — no root, proper fs ownership
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
       containers:
       - name: api
         image: tunnetcom/silkroad:API_TAG_PLACEHOLDER
         imagePullPolicy: Always
+        # FIX KSV-0014 + KSV-0118: container-level security context
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
         ports:
         - containerPort: 8080
           name: http
@@ -57,7 +69,6 @@ spec:
           limits:
             memory: "1Gi"
             cpu: "2000m"
-        # TCP probe - checks if port is open (app is running)
         livenessProbe:
           tcpSocket:
             port: 8080
@@ -65,7 +76,6 @@ spec:
           periodSeconds: 10
           timeoutSeconds: 5
           failureThreshold: 3
-        # TCP probe - app must be listening to be considered ready
         readinessProbe:
           tcpSocket:
             port: 8080
@@ -73,7 +83,6 @@ spec:
           periodSeconds: 5
           timeoutSeconds: 3
           failureThreshold: 2
-        # Startup probe - gives the app time to start (up to 5 minutes)
         startupProbe:
           tcpSocket:
             port: 8080
@@ -108,10 +117,34 @@ spec:
       annotations:
         deployment.kubernetes.io/revision: "1"
     spec:
+      # FIX KSV-0118: pod-level security context
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      volumes:
+        - name: dataprotection-keys
+          emptyDir: {}
+        # FIX: ASP.NET needs a writable temp dir when root FS is readonly
+        - name: tmp
+          emptyDir: {}
       containers:
       - name: webapp
         image: tunnetcom/silkroad:WEBAPP_TAG_PLACEHOLDER
         imagePullPolicy: Always
+        # FIX KSV-0014 + KSV-0118: container-level security context
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+        volumeMounts:
+          - name: dataprotection-keys
+            mountPath: /home/app/.aspnet/DataProtection-Keys
+          # FIX: mount writable /tmp for ASP.NET runtime temp files
+          - name: tmp
+            mountPath: /tmp
         ports:
         - containerPort: 8080
           name: http
@@ -130,7 +163,6 @@ spec:
           limits:
             memory: "1Gi"
             cpu: "1000m"
-        # TCP probe - checks if port is open (app is running)
         livenessProbe:
           tcpSocket:
             port: 8080
@@ -138,7 +170,6 @@ spec:
           periodSeconds: 10
           timeoutSeconds: 5
           failureThreshold: 3
-        # TCP probe - app must be listening to be considered ready
         readinessProbe:
           tcpSocket:
             port: 8080
@@ -146,7 +177,6 @@ spec:
           periodSeconds: 5
           timeoutSeconds: 3
           failureThreshold: 2
-        # Startup probe - gives the app time to start (up to 5 minutes)
         startupProbe:
           tcpSocket:
             port: 8080
