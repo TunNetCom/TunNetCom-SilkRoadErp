@@ -1,0 +1,35 @@
+# ============================================================
+# Deploy SilkRoad API & WebApp to SocieteNizar Kubernetes
+# ============================================================
+
+pool:
+  name: OnPremAgents
+  demands:
+    - Agent.Name -equals nizar-server
+
+variables:
+- group: Connection_String_SteNizar
+- name: connectionString
+  value: $(Connection_String_SteNizar)
+- name: kubeNamespace
+  value: silkroad-prod-societe
+- name: deploymentApiName
+  value: silkroad-api-societe
+- name: deploymentWebappName
+  value: silkroad-webapp-societe
+- name: manifestPath
+  value: src/deployments/societeNizar-deploy.yaml
+
+stages:
+- stage: Deploy
+  displayName: Deploy to Nizar Soukra Kubernetes
+  jobs:
+  - template: templates/deploy-k8s-job.yml
+    parameters:
+      stageDisplayName: Deploy to Nizar Soukra Kubernetes
+      kubeNamespace: $(kubeNamespace)
+      deploymentApiName: $(deploymentApiName)
+      deploymentWebappName: $(deploymentWebappName)
+      manifestPath: $(manifestPath)
+      variableGroup: Connection_String_SteNizar
+      forceImagePullPatch: false

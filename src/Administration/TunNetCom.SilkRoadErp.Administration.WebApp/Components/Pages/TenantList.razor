@@ -1,0 +1,275 @@
+@page "/tenants"
+@inject IAdminApiClient AdminApi
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+
+<PageTitle>Tenants</PageTitle>
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" class="rz-mb-4">
+    <RadzenStack>
+        <RadzenText TextStyle="TextStyle.H3" class="rz-mb-0">Tenants</RadzenText>
+        <RadzenText TextStyle="TextStyle.Body2" class="rz-color-secondary">Manage tenant accounts, provisioning, and lifecycle status.</RadzenText>
+    </RadzenStack>
+    <RadzenButton Text="Register Tenant" Icon="person_add" ButtonStyle="ButtonStyle.Primary" Click="@OpenRegister" />
+</RadzenStack>
+
+@if (_loading)
+{
+    <RadzenProgressBarCircular ShowValue="true" Mode="ProgressBarMode.Indeterminate" />
+}
+else if (_error is not null)
+{
+    <RadzenAlert AlertStyle="AlertStyle.Danger" Shade="Shade.Lighter" Text="@_error" />
+}
+else
+{
+    <RadzenDataGrid @ref="_grid" Data="@_tenants" TItem="TenantSummaryDto" AllowSorting="true" AllowFiltering="true" AllowPaging="true" PageSize="10">
+        <Columns>
+            <RadzenDataGridColumn TItem="TenantSummaryDto" Property="Identifier" Title="Identifier" Width="180px">
+                <Template Context="tenant">
+                    <code>@tenant.Identifier</code>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="TenantSummaryDto" Property="Name" Title="Company Name" />
+            <RadzenDataGridColumn TItem="TenantSummaryDto" Title="Status" Width="140px">
+                <Template Context="tenant">
+                    <RadzenBadge Text="@GetStatusText(tenant.Status)" BadgeStyle="@GetBadgeStyle(tenant.Status)" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="TenantSummaryDto" Property="CreatedAt" Title="Registered" FormatString="{0:yyyy-MM-dd}" Width="130px" />
+            <RadzenDataGridColumn TItem="TenantSummaryDto" Title="Actions" Width="300px" Sortable="false" Filterable="false">
+                <Template Context="tenant">
+                    <RadzenButton Text="Edit" Icon="edit" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" Click="@(() => OpenEdit(tenant))" class="rz-mr-1" />
+                    @if (tenant.Status == 3)
+                    {
+                        <RadzenButton Text="Unblock" Icon="lock_open" ButtonStyle="ButtonStyle.Success" Size="ButtonSize.Small" Click="@(() => Unblock(tenant))" class="rz-mr-1" />
+                    }
+                    else if (tenant.Status != 4)
+                    {
+                        <RadzenButton Text="Block" Icon="block" ButtonStyle="ButtonStyle.Warning" Size="ButtonSize.Small" Click="@(() => OpenBlock(tenant))" class="rz-mr-1" />
+                    }
+                    @if (tenant.Status != 4)
+                    {
+                        <RadzenButton Text="Deactivate" Icon="person_off" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click="@(() => Deactivate(tenant))" />
+                    }
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+}
+
+@code {
+    private List<TenantSummaryDto> _tenants = new();
+    private RadzenDataGrid<TenantSummaryDto>? _grid;
+    private bool _loading = true;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync() => await LoadData();
+
+    private async Task LoadData()
+    {
+        _loading = true;
+        _error = null;
+        try
+        {
+            var list = await AdminApi.GetTenantsAsync();
+            _tenants = list?.ToList() ?? [];
+        }
+        catch (Exception ex)
+        {
+            _error = $"Failed to load tenants: {ex.Message}";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task OpenRegister()
+    {
+        var model = new RegisterModel();
+        var result = await DialogService.OpenAsync("Register New Tenant", ds =>
+            @<RadzenStack Gap="1.25rem" class="rz-p-4" Style="min-width:500px">
+                <RadzenText TextStyle="TextStyle.Subtitle2" class="rz-mb-0">Tenant Identity</RadzenText>
+
+                <RadzenFormField Text="Identifier *" Variant="Variant.Outlined">
+                    <ChildContent><RadzenTextBox @bind-Value="model.Identifier" Placeholder="e.g. acme-corp" /></ChildContent>
+                    <Helper>
+                        <RadzenText TextStyle="TextStyle.Caption">Unique slug used in URLs and API routing. Lowercase, no spaces.</RadzenText>
+                    </Helper>
+                </RadzenFormField>
+
+                <RadzenFormField Text="Company Name *" Variant="Variant.Outlined">
+                    <ChildContent><RadzenTextBox @bind-Value="model.CompanyName" Placeholder="e.g. ACME Corporation" /></ChildContent>
+                </RadzenFormField>
+
+                <RadzenText TextStyle="TextStyle.Subtitle2" class="rz-mb-0 rz-mt-2">Initial Administrator</RadzenText>
+
+                <RadzenFormField Text="Admin Full Name *" Variant="Variant.Outlined">
+                    <ChildContent><RadzenTextBox @bind-Value="model.AdminName" Placeholder="e.g. John Doe" /></ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="Admin Email *" Variant="Variant.Outlined">
+                    <ChildContent><RadzenTextBox @bind-Value="model.AdminEmail" Placeholder="admin@example.com" /></ChildContent>
+                    <Helper>
+                        <RadzenText TextStyle="TextStyle.Caption">This will be the login email for the tenant admin.</RadzenText>
+                    </Helper>
+                </RadzenFormField>
+
+                <RadzenFormField Text="Admin Password *" Variant="Variant.Outlined">
+                    <ChildContent><RadzenPassword @bind-Value="model.AdminPassword" Placeholder="Strong password" /></ChildContent>
+                    <Helper>
+                        <RadzenText TextStyle="TextStyle.Caption">Minimum 8 characters, mixed case, with numbers.</RadzenText>
+                    </Helper>
+                </RadzenFormField>
+
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem" class="rz-mt-2">
+                    <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="@(() => ds.Close(false))" />
+                    <RadzenButton Text="Register" Icon="person_add" ButtonStyle="ButtonStyle.Primary" Click="@(() => ds.Close(true))" />
+                </RadzenStack>
+            </RadzenStack>);
+
+        if (result is true)
+        {
+            try
+            {
+                await AdminApi.RegisterTenantAsync(new CreateTenantDto(
+                    model.Identifier, model.CompanyName, model.AdminName, model.AdminEmail, model.AdminPassword,
+                    null, null, null, null));
+                NotificationService.Notify(NotificationSeverity.Success, "Tenant registered", "Provisioning will start automatically.");
+                await LoadData();
+            }
+            catch (Exception ex)
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Registration failed", ex.Message);
+            }
+        }
+    }
+
+    private async Task OpenEdit(TenantSummaryDto tenant)
+    {
+        var model = new EditModel { Name = tenant.Name };
+        var result = await DialogService.OpenAsync($"Edit: {tenant.Identifier}", ds =>
+            @<RadzenStack Gap="1.25rem" class="rz-p-4" Style="min-width:420px">
+                <RadzenFormField Text="Identifier" Variant="Variant.Outlined">
+                    <ChildContent><RadzenTextBox Value="@tenant.Identifier" ReadOnly="true" Style="opacity:0.6" /></ChildContent>
+                    <Helper><RadzenText TextStyle="TextStyle.Caption">Cannot be changed.</RadzenText></Helper>
+                </RadzenFormField>
+
+                <RadzenFormField Text="Company Name *" Variant="Variant.Outlined">
+                    <ChildContent><RadzenTextBox @bind-Value="model.Name" /></ChildContent>
+                </RadzenFormField>
+
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem" class="rz-mt-2">
+                    <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="@(() => ds.Close(false))" />
+                    <RadzenButton Text="Save" Icon="save" ButtonStyle="ButtonStyle.Primary" Click="@(() => ds.Close(true))" />
+                </RadzenStack>
+            </RadzenStack>);
+
+        if (result is true)
+        {
+            try
+            {
+                await AdminApi.UpdateTenantAsync(tenant.Id, new UpdateTenantDto(model.Name, null, null));
+                NotificationService.Notify(NotificationSeverity.Success, "Tenant updated");
+                await LoadData();
+            }
+            catch (Exception ex)
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message);
+            }
+        }
+    }
+
+    private async Task OpenBlock(TenantSummaryDto tenant)
+    {
+        var reason = "";
+        var result = await DialogService.OpenAsync($"Block: {tenant.Identifier}", ds =>
+            @<RadzenStack Gap="1.25rem" class="rz-p-4" Style="min-width:420px">
+                <RadzenAlert AlertStyle="AlertStyle.Warning" Shade="Shade.Lighter" AllowClose="false">
+                    Blocking will immediately prevent all users of this tenant from accessing the system.
+                </RadzenAlert>
+
+                <RadzenFormField Text="Reason *" Variant="Variant.Outlined">
+                    <ChildContent><RadzenTextArea @bind-Value="reason" Placeholder="Why is this tenant being blocked?" Rows="3" /></ChildContent>
+                </RadzenFormField>
+
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+                    <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="@(() => ds.Close(false))" />
+                    <RadzenButton Text="Block Tenant" Icon="block" ButtonStyle="ButtonStyle.Warning" Click="@(() => ds.Close(true))" />
+                </RadzenStack>
+            </RadzenStack>);
+
+        if (result is true)
+        {
+            try
+            {
+                await AdminApi.BlockTenantAsync(tenant.Id, reason);
+                NotificationService.Notify(NotificationSeverity.Success, "Tenant blocked");
+                await LoadData();
+            }
+            catch (Exception ex)
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message);
+            }
+        }
+    }
+
+    private async Task Unblock(TenantSummaryDto tenant)
+    {
+        try
+        {
+            await AdminApi.UnblockTenantAsync(tenant.Id);
+            NotificationService.Notify(NotificationSeverity.Success, "Tenant unblocked");
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message);
+        }
+    }
+
+    private async Task Deactivate(TenantSummaryDto tenant)
+    {
+        var confirmed = await DialogService.Confirm(
+            $"Permanently deactivate tenant '{tenant.Identifier}'? This will disable all access. Data is preserved but the tenant cannot be reactivated from the UI.",
+            "Confirm Deactivation",
+            new ConfirmOptions { OkButtonText = "Deactivate", CancelButtonText = "Cancel" });
+        if (confirmed != true) return;
+
+        try
+        {
+            await AdminApi.DeleteTenantAsync(tenant.Id);
+            NotificationService.Notify(NotificationSeverity.Success, "Tenant deactivated");
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message);
+        }
+    }
+
+    private static string GetStatusText(int status) => status switch
+    {
+        0 => "Provisioning", 1 => "Active", 2 => "Suspended", 3 => "Blocked", 4 => "Deactivated", _ => "Unknown"
+    };
+
+    private static BadgeStyle GetBadgeStyle(int status) => status switch
+    {
+        1 => BadgeStyle.Success, 2 => BadgeStyle.Warning, 3 => BadgeStyle.Danger, 0 => BadgeStyle.Info, _ => BadgeStyle.Light
+    };
+
+    private class RegisterModel
+    {
+        public string Identifier { get; set; } = "";
+        public string CompanyName { get; set; } = "";
+        public string AdminName { get; set; } = "";
+        public string AdminEmail { get; set; } = "";
+        public string AdminPassword { get; set; } = "";
+    }
+
+    private class EditModel
+    {
+        public string Name { get; set; } = "";
+    }
+}

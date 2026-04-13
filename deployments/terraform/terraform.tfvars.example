@@ -1,0 +1,21 @@
+# Copy to terraform.tfvars and fill in values
+
+location             = "eastus"
+environment          = "dev"
+resource_group_name  = "rg-silkroad-hubspoke-dev"
+
+hub_address_space         = "10.0.0.0/16"
+compute_spoke_address_space = "10.1.0.0/16"
+data_spoke_address_space   = "10.2.0.0/16"
+
+aks_node_count        = 2
+aks_vm_size           = "Standard_D2s_v3"
+aks_kubernetes_version = "1.28"
+
+sql_administrator_login    = "sqladmin"
+sql_administrator_password = "CHANGE_ME_AT_DEPLOY_TIME"
+
+enable_azure_firewall   = true
+enable_private_cluster  = false
+
+project_name = "silkroad"

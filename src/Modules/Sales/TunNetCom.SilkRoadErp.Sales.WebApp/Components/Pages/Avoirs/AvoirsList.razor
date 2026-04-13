@@ -1,0 +1,676 @@
+@page "/avoirs"
+@using Microsoft.Extensions.Localization
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Avoirs
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Avoirs
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@inject IAvoirsApiClient AvoirsService
+@inject ICustomersApiClient CustomersService
+@inject IStringLocalizer<SharedResource> Localizer
+@inject ILogger<AvoirsList> _logger
+@using Radzen.Blazor
+@using Radzen
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Customers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Shared
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Customers
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Common
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Sorting
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Tags
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Tags
+@inject NavigationManager NavigationManager
+@inject ITagsApiClient TagsService
+@inject Radzen.NotificationService NotificationService
+@inject DialogService DialogService
+@using TunNetCom.SilkRoadErp.Sales.Domain.Entites
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Reports.Avoirs
+@using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure
+@inject PrintAvoirService PrintAvoirService
+@inject IPrintService PrintServiceInfra
+
+<div class="invoices-list-container">
+    <div class="search-header">
+        <PeriodFilter @bind-SelectedPeriod="searchCriteria.PeriodFilter"
+                     @bind-StartDate="searchCriteria.StartDate"
+                     @bind-EndDate="searchCriteria.EndDate"
+                     OnPeriodChanged="@OnPeriodFilterChanged" />
+        <div class="search-field">
+            <label for="customer">Client</label>
+            <RadzenDropDownDataGrid id="customer"
+                                    AllowClear="true"
+                                    @bind-Value="@searchCriteria.SelectedClientId"
+                                    LoadData="@LoadCustomers"
+                                    AllowFiltering="true"
+                                    class="w-100 search-input"
+                                    Data="@_filteredCustomers"
+                                    TextProperty="@nameof(CustomerResponse.Name)"
+                                    ValueProperty="@nameof(CustomerResponse.Id)"
+                                    Placeholder="@Localizer["select_customer"]">
+                <Columns>
+                    <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Id)" Title="ID" Width="80px" />
+                    <RadzenDropDownDataGridColumn Property="@nameof(CustomerResponse.Name)" Title="@Localizer["name"]" Width="220px" />
+                </Columns>
+            </RadzenDropDownDataGrid>
+        </div>
+        <div class="search-button">
+            <RadzenButton Icon="search"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Click="@SearchAvoirs"
+                          class="action-button" />
+        </div>
+        <div class="search-field">
+            <label>Statut</label>
+            <RadzenDropDown @bind-Value="@searchCriteria.Status"
+                            Data="@(Enum.GetValues(typeof(DocumentStatus)).Cast<DocumentStatus>().Select(e => new { Value = (int?)e, Text = e.ToString() }).Prepend(new { Value = (int?)null, Text = "Tous" }))"
+                            TextProperty="Text"
+                            ValueProperty="Value"
+                            class="w-100 search-input" />
+        </div>
+        <div class="search-button" style="display: flex; gap: 8px;">
+            <RadzenButton Icon="check_circle"
+                          ButtonStyle="ButtonStyle.Success"
+                          Click="@ValidateSelectedAvoirs"
+                          Disabled="@(selectedAvoirs == null || !selectedAvoirs.Any())"
+                          Title="Valider la sélection"
+                          AriaLabel="Valider la sélection"
+                          class="action-button" />
+        </div>
+    </div>
+    <div class="list-card">
+        <h2>Avoirs</h2>
+        <RadzenDataGrid @ref="avoirsGrid"
+                        Data="@avoirsList"
+                        LoadData="@Callback"
+                        TItem="AvoirBaseInfo"
+                        SelectionMode="DataGridSelectionMode.Multiple"
+                        @bind-Value="selectedAvoirs"
+                        AllowSorting="true"
+                        AllowFiltering="true"
+                        AllowPaging="true"
+                        PageSize="@pageSize"
+                        PageSizeOptions="@GridPageSizeConstants.PageSizeOptions"
+                        Count="@totalCount"
+                        AllowColumnResize="true">
+            <EmptyTemplate>
+                <p style="font-size: 24px; text-align: center; margin: 2rem;">No records to display.</p>
+            </EmptyTemplate>
+            <Columns>
+                <RadzenDataGridColumn TItem="AvoirBaseInfo" Width="40px" Sortable="false" Filterable="false">
+                    <HeaderTemplate>
+                        <RadzenCheckBox TriState="false" TValue="bool" Value="@(avoirsList != null && avoirsList.Any() && selectedAvoirs != null && avoirsList.All(i => selectedAvoirs.Contains(i)))"
+                                        Change="@(args => { if(args == true) { selectedAvoirs = avoirsList.ToList(); } else { selectedAvoirs = new List<AvoirBaseInfo>(); } })" />
+                    </HeaderTemplate>
+                    <Template Context="data">
+                        <RadzenCheckBox TriState="false" Value="@(selectedAvoirs != null && selectedAvoirs.Contains(data))" 
+                                        TValue="bool" Change="@(args => { if(selectedAvoirs == null) selectedAvoirs = new List<AvoirBaseInfo>(); if(args) { if(!selectedAvoirs.Contains(data)) selectedAvoirs.Add(data); } else { selectedAvoirs.Remove(data); } })" />
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="AvoirBaseInfo" Property="Statut" Title="Statut" Width="100px">
+                    <Template Context="item">
+                        <span class="status-tag" style="@GetStatusStyle(item.Statut)">
+                            @(item.Statut == 1 ? "Validé" : "Brouillon")
+                        </span>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="AvoirBaseInfo"
+                                      Property="@nameof(AvoirBaseInfo.Num)"
+                                      Title="Numéro"
+                                      Width="150px" />
+                <RadzenDataGridColumn TItem="AvoirBaseInfo"
+                                      Property="@nameof(AvoirBaseInfo.Date)"
+                                      Title="@Localizer["date"]"
+                                      Width="150px"
+                                      FormatString="{0:d MMMM yyyy}" />
+                <RadzenDataGridColumn TItem="AvoirBaseInfo"
+                                      Property="@nameof(AvoirBaseInfo.ClientName)"
+                                      Title="Client"
+                                      Width="200px" />
+                <RadzenDataGridColumn TItem="AvoirBaseInfo"
+                                      Property="@nameof(AvoirBaseInfo.TotalExcludingTaxAmount)"
+                                      Title="@Localizer["total_net"]"
+                                      Width="150px">
+                    <Template Context="item">
+                        @item.TotalExcludingTaxAmount.FormatAmount()
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="AvoirBaseInfo"
+                                      Property="@nameof(AvoirBaseInfo.TotalVATAmount)"
+                                      Title="@Localizer["total_vat"]"
+                                      Width="150px">
+                    <Template Context="item">
+                        @item.TotalVATAmount.FormatAmount()
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="AvoirBaseInfo"
+                                      Property="@nameof(AvoirBaseInfo.TotalIncludingTaxAmount)"
+                                      Title="Total TTC"
+                                      Width="150px">
+                    <Template Context="item">
+                        @item.TotalIncludingTaxAmount.FormatAmount()
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="AvoirBaseInfo"
+                                      Title="Tags"
+                                      Width="250px"
+                                      Sortable="false"
+                                      Filterable="false">
+                    <Template Context="item">
+                        <TagSelector DocumentType="Avoir" 
+                                    DocumentId="@item.Num"
+                                    SaveOnChange="true" />
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="AvoirBaseInfo"
+                                      Title="@Localizer["actions_label"]"
+                                      Width="140px"
+                                      Sortable="false"
+                                      Filterable="false">
+                    <Template Context="item">
+                        <RadzenButton Icon="print"
+                                      ButtonStyle="ButtonStyle.Secondary"
+                                      Variant="Variant.Flat"
+                                      Size="ButtonSize.Small"
+                                      Click="@(() => PrintAvoirAsync(item.Num))"
+                                      Title="Imprimer"
+                                      AriaLabel="Imprimer"
+                                      Style="margin-right: 4px;" />
+                        <RadzenButton Icon="edit"
+                                      ButtonStyle="ButtonStyle.Primary"
+                                      Variant="Variant.Flat"
+                                      Size="ButtonSize.Small"
+                                      Click="@(() => EditAvoir(item.Num))"
+                                      Disabled="@(item.Statut == 1)"
+                                      Title="@Localizer["Edit"]"
+                                      AriaLabel="@Localizer["Edit"]"
+                                      Style="margin-right: 4px;" />
+                        <RadzenButton Icon="check_circle"
+                                      ButtonStyle="ButtonStyle.Success"
+                                      Variant="Variant.Flat"
+                                      Size="ButtonSize.Small"
+                                      Click="@(() => ValidateAvoir(item))"
+                                      Disabled="@(item.Statut == 1)"
+                                      Title="Valider"
+                                      AriaLabel="Valider" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+        <RadzenCard class="summary-card" Variant="Variant.Outlined">
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal"
+                         Gap="1.5rem"
+                         JustifyContent="JustifyContent.End"
+                         class="summary-stack">
+                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                    @Localizer["total_net"]: <strong>@totalNetAmount.FormatAmount()</strong>
+                </RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                    @Localizer["total_vat"]: <strong>@totalVatAmount.FormatAmount()</strong>
+                </RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
+                    Total TTC: <strong>@totalIncludingTaxAmount.FormatAmount()</strong>
+                </RadzenText>
+            </RadzenStack>
+        </RadzenCard>
+    </div>
+</div>
+
+<style>
+    .status-tag {
+        font-size: 0.75rem;
+        padding: 0.125rem 0.5rem;
+        display: inline-flex;
+        align-items: center;
+        border-radius: 3px;
+        line-height: 1.5;
+        font-weight: 500;
+    }
+
+    .invoices-list-container {
+        padding: 0;
+        min-height: 100%;
+    }
+
+    .list-card {
+        width: 100%;
+        margin: 0;
+    }
+
+    h2 {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 20px;
+        margin: 0 0 16px 0;
+        padding: 0;
+    }
+
+    .action-button {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 6px 12px;
+        border-radius: 6px;
+        background-color: #3b82f6;
+        border: none;
+        transition: background-color 0.2s, box-shadow 0.2s;
+    }
+
+        .action-button:hover:not(:disabled) {
+            background-color: #2563eb;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .action-button:disabled {
+            background-color: #d1d5db;
+            cursor: not-allowed;
+        }
+
+    .search-header {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+        margin: 0 0 16px 0;
+        align-items: end;
+        padding: 0;
+    }
+
+    .search-field {
+        display: flex;
+        flex-direction: column;
+    }
+
+        .search-field label {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+
+    .search-input {
+        width: 100% !important;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        padding: 8px;
+        font-size: 14px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+        .search-input:hover {
+            border-color: #9ca3af;
+        }
+
+        .search-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            outline: none;
+        }
+
+    .search-button {
+        display: flex;
+        align-items: flex-end;
+    }
+
+    @@media (max-width: 768px) {
+        .invoices-list-container {
+            padding: 0;
+        }
+
+        h2 {
+            font-size: 18px;
+        }
+
+        .action-button {
+            font-size: 12px;
+            padding: 6px 10px;
+        }
+
+        .search-header {
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .search-field {
+            min-width: 100%;
+        }
+
+            .search-field label {
+                font-size: 12px;
+            }
+
+        .search-input {
+            font-size: 13px;
+            padding: 6px;
+        }
+
+        .search-button {
+            margin-bottom: 0;
+        }
+    }
+
+    .summary-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 8px 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        flex: 0 0 auto;
+    }
+
+    .summary-stack {
+        gap: 1.5rem;
+    }
+
+    .summary-text {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+        .summary-text strong {
+            font-weight: 600;
+        }
+
+    @@media (min-width: 769px) and (max-width: 1024px) {
+        .search-header {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .summary-card {
+            width: 100%;
+            padding: 8px 12px;
+        }
+
+        .summary-stack {
+            flex-direction: column;
+            gap: 0.75rem;
+            align-items: flex-start;
+        }
+
+        .summary-text {
+            font-size: 12px;
+        }
+    }
+
+    /* Style pour le bouton "Oui" dans les modals de confirmation */
+    ::deep .rz-dialog-footer button:first-child {
+        background-color: #4CAF50 !important;
+        color: white !important;
+        border-color: #4CAF50 !important;
+    }
+
+    ::deep .rz-dialog-footer button:first-child:hover {
+        background-color: #45a049 !important;
+        border-color: #45a049 !important;
+    }
+</style>
+
+@code {
+    private RadzenDataGrid<AvoirBaseInfo> avoirsGrid = default!;
+    private List<AvoirBaseInfo> avoirsList = new();
+    private IList<AvoirBaseInfo> selectedAvoirs = new List<AvoirBaseInfo>();
+    private int totalCount = 0;
+    private decimal totalNetAmount = 0;
+    private decimal totalVatAmount = 0;
+    private decimal totalIncludingTaxAmount = 0;
+    private int pageSize = GridPageSizeConstants.PageSize10;
+    private SearchCriteria searchCriteria = new SearchCriteria();
+    private List<CustomerResponse> _filteredCustomers = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _logger.LogInformation("AvoirsList.OnInitializedAsync called");
+        
+        await LoadCustomers(new LoadDataArgs { Filter = string.Empty });
+
+        // Set default period to CurrentMonth and calculate dates
+        searchCriteria.PeriodFilter = "CurrentMonth";
+        var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
+            searchCriteria.PeriodFilter,
+            searchCriteria.StartDate,
+            searchCriteria.EndDate);
+        searchCriteria.StartDate = startDate;
+        searchCriteria.EndDate = endDate;
+
+        // Load initial data
+        _logger.LogInformation("Calling Callback to load initial data");
+        await Callback(new LoadDataArgs { Skip = 0, Top = pageSize });
+    }
+
+    async Task LoadCustomers(LoadDataArgs args)
+    {
+        var parameters = new QueryStringParameters
+        {
+            PageNumber = 1,
+            PageSize = 7,
+            SearchKeyword = args?.Filter ?? string.Empty
+        };
+
+        try
+        {
+            var pagedCustomers = await CustomersService.SearchCustomers(parameters, default);
+            _filteredCustomers = pagedCustomers.Items.ToList();
+        }
+        catch (Exception ex)
+        {
+            _filteredCustomers = new List<CustomerResponse>();
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void OnPeriodFilterChanged()
+    {
+        StateHasChanged();
+    }
+
+    private async Task SearchAvoirs()
+    {
+        // Trigger a refresh by calling Callback with current args
+        await Callback(new LoadDataArgs { Skip = 0, Top = pageSize });
+    }
+
+    private async Task ValidateSelectedAvoirs()
+    {
+        if (selectedAvoirs == null || !selectedAvoirs.Any())
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Warning, Summary = Localizer["Attention"], Detail = Localizer["Select_At_Least_One_Avoir"] });
+            return;
+        }
+
+        var count = selectedAvoirs.Count;
+        var confirmed = await DialogService.Confirm(
+            string.Format(Localizer["Confirmation_Validation_Avoirs"], count, count > 1 ? "s" : ""),
+            Localizer["Confirmation_Validation_Titre"],
+            new ConfirmOptions() { OkButtonText = Localizer["Oui"], CancelButtonText = Localizer["Non"] });
+
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        var ids = selectedAvoirs.Select(d => d.Num).ToList();
+        var result = await AvoirsService.ValidateAvoirsAsync(ids, default);
+        
+        if (result.IsSuccess)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = Localizer["Success"], Detail = Localizer["Validation_Success_Avoirs"] });
+            selectedAvoirs.Clear();
+            if (avoirsGrid != null)
+            {
+                await avoirsGrid.Reload();
+            }
+            else
+            {
+                await SearchAvoirs();
+            }
+        }
+        else
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = Localizer["Error"], Detail = result.Errors.FirstOrDefault()?.Message ?? Localizer["Unexpected_Error"] });
+        }
+    }
+
+    private async Task ValidateAvoir(AvoirBaseInfo item)
+    {
+        var confirmed = await DialogService.Confirm(
+            string.Format(Localizer["Confirmation_Validation_Avoir"], item.Num),
+            Localizer["Confirmation_Validation_Titre"],
+            new ConfirmOptions() { OkButtonText = Localizer["Oui"], CancelButtonText = Localizer["Non"] });
+
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        var result = await AvoirsService.ValidateAvoirsAsync(new List<int> { item.Num }, default);
+        
+        if (result.IsSuccess)
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = Localizer["Success"], Detail = Localizer["Validation_Success_Avoir"] });
+            if (avoirsGrid != null)
+            {
+                await avoirsGrid.Reload();
+            }
+            else
+            {
+                await SearchAvoirs();
+            }
+        }
+        else
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = Localizer["Error"], Detail = result.Errors.FirstOrDefault()?.Message ?? Localizer["Unexpected_Error"] });
+        }
+    }
+
+    private async Task Callback(LoadDataArgs args)
+    {
+        _logger.LogInformation("AvoirsList.Callback called with Skip: {Skip}, Top: {Top}", args.Skip, args.Top);
+        
+        // Update pageSize if Top is provided
+        if (args.Top.HasValue)
+        {
+            pageSize = args.Top.Value;
+        }
+        
+        var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
+            searchCriteria.PeriodFilter,
+            searchCriteria.StartDate,
+            searchCriteria.EndDate);
+
+        _logger.LogInformation("Date range: StartDate: {StartDate}, EndDate: {EndDate}", startDate, endDate);
+
+        try
+        {
+            var pageNumber = (args.Skip ?? 0) / pageSize + 1;
+            var (sortOrder, sortProperty) = args.Sorts != null && args.Sorts.Any()
+                ? (args.Sorts.First().SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending, args.Sorts.First().Property)
+                : (SortConstants.Ascending, nameof(AvoirBaseInfo.Num));
+            var queryParams = new GetAvoirsQueryParams
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                ClientId = searchCriteria.SelectedClientId,
+                StartDate = startDate,
+                EndDate = endDate,
+                SearchKeyword = args.Filter,
+                SortOrder = sortOrder,
+                SortProperty = sortProperty
+            };
+
+            var response = await AvoirsService.GetAvoirsWithSummariesAsync(
+                queryParams.ClientId,
+                queryParams.SortOrder,
+                queryParams.SortProperty,
+                queryParams.PageNumber ?? 1,
+                queryParams.PageSize ?? 10,
+                queryParams.SearchKeyword,
+                queryParams.StartDate,
+                queryParams.EndDate,
+                default,
+                status: searchCriteria.Status);
+
+            avoirsList = response.Avoirs.Items.ToList();
+            totalCount = response.Avoirs.TotalCount;
+            totalNetAmount = response.TotalNetAmount;
+            totalVatAmount = response.TotalVatAmount;
+            totalIncludingTaxAmount = response.TotalIncludingTaxAmount;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading avoirs: {Message}", ex.Message);
+            avoirsList = new List<AvoirBaseInfo>();
+            totalCount = 0;
+            totalNetAmount = 0;
+            totalVatAmount = 0;
+            totalIncludingTaxAmount = 0;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public class SearchCriteria
+    {
+        public string PeriodFilter { get; set; } = "CurrentMonth";
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public int? SelectedClientId { get; set; }
+        public int? Status { get; set; }
+    }
+
+    private void EditAvoir(int num)
+    {
+        NavigationManager.NavigateTo($"/AddOrUpdateAvoir/{num}");
+    }
+
+    private async Task PrintAvoirAsync(int avoirNum)
+    {
+        try
+        {
+            var pdfResult = await PrintAvoirService.GenerateAvoirPdfAsync(avoirNum, default);
+
+            if (pdfResult.IsSuccess)
+            {
+                var printOptions = new PrintOptions
+                {
+                    Mode = PrintMode.Download,
+                    FileName = $"AvoirClient_{avoirNum}.pdf",
+                    DocumentType = DocumentTypes.Avoirs,
+                    DocumentId = avoirNum
+                };
+
+                await PrintServiceInfra.PrintAsync(pdfResult.Value, printOptions, default);
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = Localizer["Success"],
+                    Detail = "L'avoir client a été généré avec succès."
+                });
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["Error"],
+                    Detail = pdfResult.Errors.FirstOrDefault()?.Message ?? "Erreur lors de la génération du PDF."
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error printing avoir client {Num}", avoirNum);
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Error"],
+                Detail = $"Erreur lors de l'impression: {ex.Message}"
+            });
+        }
+    }
+
+    private string GetStatusStyle(int statut)
+    {
+        return statut == 1 
+            ? "background-color: #388e3c; color: #fff;" 
+            : "background-color: #e1e1e1; color: #333;";
+    }
+}
+

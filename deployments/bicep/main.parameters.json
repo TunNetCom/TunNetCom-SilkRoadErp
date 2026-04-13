@@ -1,0 +1,45 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "eastus"
+    },
+    "environment": {
+      "value": "dev"
+    },
+    "hubAddressPrefix": {
+      "value": "10.0.0.0/16"
+    },
+    "computeSpokeAddressPrefix": {
+      "value": "10.1.0.0/16"
+    },
+    "dataSpokeAddressPrefix": {
+      "value": "10.2.0.0/16"
+    },
+    "aksNodeCount": {
+      "value": 2
+    },
+    "aksVmSize": {
+      "value": "Standard_D2s_v3"
+    },
+    "aksKubernetesVersion": {
+      "value": "1.28"
+    },
+    "sqlAdministratorLogin": {
+      "value": "sqladmin"
+    },
+    "sqlAdministratorPassword": {
+      "value": "CHANGE_ME_AT_DEPLOY_TIME"
+    },
+    "enableAzureFirewall": {
+      "value": true
+    },
+    "enablePrivateCluster": {
+      "value": false
+    },
+    "projectName": {
+      "value": "silkroad"
+    }
+  }
+}

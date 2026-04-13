@@ -1,237 +1,188 @@
 # SilkRoadErp
 
-Welcome to SilkRoadErp, a comprehensive and efficient ERP solution designed to streamline your business processes. SilkRoadErp offers robust modules for managing your sales and purchasing operations, ensuring seamless integration and functionality. The application is built using a .NET backend and a Blazor Server frontend for a modern and responsive user experience.
+SilkRoadErp is a multi-tenant ERP solution built with .NET Aspire. It provides modules for sales operations, supplier management, administration, and tenant provisioning. The application uses a distributed microservices architecture with Blazor Server web apps consuming backend APIs.
 
-## Table of Contents
+## Architecture
 
-- [Features](#features)
-  - [Sales Module](#sales-module)
-  - [Purchasing Module](#purchasing-module)
-- [Technology Stack](#technology-stack)
-- [Installation](#installation)
-- [Contributing](#contributing)
-- [License](#license)
-- [Contact](#contact)
+The solution is orchestrated by **Aspire AppHost** and runs the following services:
 
-## Features
+```mermaid
+flowchart TB
+    subgraph AppHost["Aspire AppHost (Orchestrator)"]
+        HOST[AppHost]
+    end
+
+    subgraph Services["Services"]
+        SA[sales-api]
+        AA[admin-api]
+        SW[sales-web]
+        AW[admin-webapp]
+        TW[tenant-webapp]
+    end
+
+    subgraph Data["Data Layer"]
+        SALESDB[(salesdb SQL)]
+        ADMINDB[(admindb SQL)]
+        REDIS[(Redis)]
+    end
+
+    subgraph Observability["Observability"]
+        LOKI[Grafana Loki]
+        GRAFANA[Grafana]
+    end
+
+    HOST --> SA & AA & SW & AW & TW
+    SA --> SALESDB
+    SA --> REDIS
+    AA --> ADMINDB
+    SW & AW & TW --> SA
+    SW & AW & TW --> AA
+    SA & AA --> LOKI
+    LOKI --> GRAFANA
+```
+
+### Services
+
+| Service | Description |
+|--------|-------------|
+| **Sales API** | REST API for sales, clients, suppliers, invoices, delivery notes, products, orders, quotations |
+| **Administration API** | Tenant and administration management |
+| **Sales WebApp** | Blazor Server UI for sales operations |
+| **Administration WebApp** | Blazor Server UI for administration |
+| **TenantSetup WebApp** | Blazor Server UI for initial tenant configuration |
+
+### Infrastructure
+
+- **SQL Server** – Two databases: `salesdb` (sales module), `admindb` (administration)
+- **Redis** – Distributed caching for the Sales API
+- **Grafana Loki** – Log aggregation
+- **Grafana** – Dashboards and monitoring (port 3000)
+
+## Project Structure
+
+```mermaid
+flowchart TD
+    subgraph src[src]
+        subgraph Aspire
+            AH[AppHost - Orchestrator]
+            SD[ServiceDefaults]
+        end
+        subgraph Modules
+            subgraph Sales
+                SAPI[Sales.Api]
+                SDOM[Sales.Domain]
+                SCT[Sales.Contracts]
+                SHC[Sales.HttpClients]
+                SWA[Sales.WebApp]
+            end
+        end
+        subgraph Administration
+            AAPI[Administration.Api]
+            ADOM[Administration.Domain]
+            ACT[Administration.Contracts]
+            AHC[Administration.HttpClients]
+            AWA[Administration.WebApp]
+            TWA[TenantSetup.WebApp]
+        end
+        subgraph SharedKernel
+            SK[SharedKernel]
+            subgraph Infra[Infrastructure]
+                CACHE[Caching]
+                MT[MultiTenancy]
+            end
+        end
+    end
+```
+
+| Path | Description |
+|------|-------------|
+| `Aspire/AppHost` | Orchestrator — run this to start all services |
+| `Aspire/ServiceDefaults` | Shared service configuration |
+| `Modules/Sales/*` | Sales REST API, domain, contracts, HTTP clients, Blazor UI |
+| `Administration/*` | Administration and tenant APIs and web apps |
+| `SharedKernel/` | Shared kernel, caching, and multi-tenancy infrastructure |
 
 ### Sales Module
 
-The Sales Module in SilkRoadErp includes:
+The Sales module handles both customer-facing sales and supplier-side operations:
 
-- **Order Management**: Create, view, and manage sales orders.
-- **Customer Management**: Maintain detailed records of customers and their interactions.
-- **Invoice Generation**: Generate and send invoices to customers.
-- **Sales Reporting**: Access comprehensive sales reports to track performance and trends.
-- **Discount and Promotion Management**: Configure discounts and promotions for various products and services.
+- **Sales**: Clients, invoices (Factures), credit notes (Avoirs), delivery notes (Bons de livraison), orders, quotations, payments
+- **Purchasing**: Suppliers (Fournisseurs), supplier invoices (Factures fournisseurs), supplier credit notes, expense invoices (Factures dépenses), reception notes, returns
+- **Catalog**: Products (Produits), categories, subcategories, tags, inventory
 
-### Purchasing Module
-
-The Purchasing Module in SilkRoadErp includes:
-
-- **Supplier Management**: Maintain detailed records of suppliers and their products.
-- **Purchase Order Management**: Create, view, and manage purchase orders.
-- **Inventory Management**: Track and manage inventory levels to ensure stock availability.
-- **Receiving and Inspection**: Manage receiving and inspection of goods from suppliers.
-- **Purchasing Reports**: Access detailed reports on purchasing activities and supplier performance.
-
-## Diagram
-``` mermaid
-classDiagram
-    class Client {
-        +int Id
-        +string Name
-        +string Address
-        +string Phone
-        +string Email
-    }
-
-    class SalesInvoice {
-        +int Id
-        +int ClientId
-        +DateTime Date
-        +decimal TotalAmount
-        +Client Client
-        +ICollection~DeliveryNote~ DeliveryNotes
-        +Payment Payment
-    }
-
-    class DeliveryNote {
-        +int Num
-        +DateTime Date
-        +decimal TotalExcludingVat
-        +decimal NetToPay
-        +TimeOnly DeliveryTime
-        +int? SalesInvoiceId
-        +Client? Client
-        +ICollection~LigneBl~ Lines
-        +SalesInvoice? SalesInvoiceNavigation
-        +Transaction? Transaction
-    }
-
-    class LigneBl {
-        +int Id
-        +int DeliveryNoteNum
-        +int ProductId
-        +int Quantity
-        +decimal UnitPrice
-        +decimal TotalLine
-        +DeliveryNote DeliveryNote
-        +Product Product
-    }
-
-    class Supplier {
-        +int Id
-        +string Name
-        +string Address
-        +string Phone
-        +string Email
-    }
-
-    class PurchaseOrder {
-        +int Id
-        +int SupplierId
-        +DateTime Date
-        +decimal TotalAmount
-        +Supplier Supplier
-        +ICollection~PurchaseOrderLine~ PurchaseOrderLines
-        +Payment Payment
-    }
-
-    class PurchaseOrderLine {
-        +int Id
-        +int PurchaseOrderId
-        +int ProductId
-        +string ProductCode
-        +string Description
-        +int Quantity
-        +decimal UnitPrice
-        +decimal TotalLine
-        +PurchaseOrder PurchaseOrder
-        +Product Product
-    }
-
-    class Product {
-        +int Id
-        +string ProductCode
-        +string Name
-        +decimal Price
-        +int StockQuantity
-        +int CategoryId
-        +Category Category
-        +ICollection~Inventory~ Inventories
-    }
-
-    class Category {
-        +int Id
-        +string Name
-        +string Description
-        +ICollection~Product~ Products
-    }
-
-    class Inventory {
-        +int Id
-        +int ProductId
-        +int WarehouseId
-        +int Quantity
-        +DateTime LastUpdated
-        +Product Product
-        +Warehouse Warehouse
-    }
-
-    class Warehouse {
-        +int Id
-        +string Name
-        +string Location
-        +ICollection~Inventory~ Inventories
-    }
-
-    class Payment {
-        +int Id
-        +int? SalesInvoiceId
-        +int? PurchaseOrderId
-        +decimal Amount
-        +DateTime PaymentDate
-        +string PaymentMethod
-        +SalesInvoice SalesInvoice
-        +PurchaseOrder PurchaseOrder
-    }
-
-    class Employee {
-        +int Id
-        +string FirstName
-        +string LastName
-        +string Role
-        +string Email
-    }
-
-    Client "1" --> "0..*" SalesInvoice : Has
-    SalesInvoice "1" --> "0..*" DeliveryNote : References
-    SalesInvoice "1" --> "0..1" Payment : Paid By
-    DeliveryNote "1" --> "1..*" LigneBl : Contains
-    Supplier "1" --> "0..*" PurchaseOrder : Supplies
-    PurchaseOrder "1" --> "1..*" PurchaseOrderLine : Contains
-    PurchaseOrder "1" --> "0..1" Payment : Paid By
-    PurchaseOrderLine "1" --> "1" Product : References
-    LigneBl "1" --> "1" Product : References
-    Product "1" --> "1" Category : Belongs To
-    Product "1" --> "0..*" Inventory : Tracked In
-    Inventory "1" --> "1" Warehouse : Stored In
-    Category "1" --> "0..*" Product : Categorizes
-    Warehouse "1" --> "0..*" Inventory : Holds
-```
-
+It uses **multi-tenancy** (per-tenant data isolation) and **accounting year** scoping for financial documents.
 
 ## Technology Stack
 
-- **Backend**: .NET 8
-- **Frontend**: Blazor Server
-- **Database**: SQL Server
-- **Authentication**: ASP.NET Identity
-- **Logging**: Serilog with Grafana and Grafana Loki
-- **Monitoring**: Grafana
+| Layer | Technology |
+|-------|------------|
+| Backend | .NET 8+, Carter (minimal APIs), MediatR (CQRS) |
+| Frontend | Blazor Server, Blazor.Bootstrap, Radzen |
+| Database | SQL Server, Entity Framework Core 10 |
+| Caching | Redis |
+| Auth | JWT Bearer |
+| Logging | Serilog, Grafana Loki |
+| Orchestration | Aspire AppHost |
 
-## Installation
+## Getting Started
 
-1. **Clone the repository**:
-    ```sh
-    git clone https://github.com/yourusername/SilkRoadErp.git
-    cd SilkRoadErp
-    ```
+```mermaid
+flowchart LR
+    A[Prerequisites] --> B[Run AppHost]
+    B --> C[Aspire Dashboard]
+    C --> D[All Services]
+    D --> E[salesdb + admindb]
+    D --> F[Redis + Loki + Grafana]
+```
 
-2. **Set up the database**:
-    - Update the connection string in `appsettings.json`.
-    - Run the migrations to set up the database schema:
-      ```sh
-      dotnet ef database update
-      ```
+### Prerequisites
 
-3. **Run the application**:
-    ```sh
-    dotnet run
-    ```
+- .NET 8 SDK
+- Docker (for SQL Server, Redis, Loki, Grafana when running via Aspire)
 
-4. **Access the application**:
-    - Open your browser and navigate to `https://localhost:5001`.
+### Run the application
+
+From the repository root:
+
+```sh
+cd src/Aspire/TunNetCom.SilkRoadErp.AppHost
+dotnet run
+```
+
+This starts the Aspire dashboard and all services. The dashboard shows endpoints for each application.
+
+### Run without Aspire
+
+To run individual projects (e.g. Sales API or Sales WebApp), configure connection strings in `appsettings.json` or user secrets, then:
+
+```sh
+# Sales API
+cd src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.Api
+dotnet run
+
+# Sales WebApp
+cd src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.WebApp
+dotnet run
+```
+
+### Database migrations
+
+From the Sales Domain project:
+
+```sh
+cd src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.Api
+dotnet ef database update --project ../TunNetCom.SilkRoadErp.Sales.Domain
+```
 
 ## Contributing
 
-We welcome contributions from the community! To contribute:
-
 1. Fork the repository.
-2. Create a new branch for your feature or bug fix.
-3. Commit your changes.
-4. Push to the branch.
-5. Open a pull request.
+2. Create a feature branch.
+3. Commit your changes and open a pull request.
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License.
 
 ## Contact
 
-For questions or support, please contact us at [nieze.benmansour@outlook.com](mailto:support@silkroaderp.com).
-
----
-
-Thank you for using SilkRoadErp!

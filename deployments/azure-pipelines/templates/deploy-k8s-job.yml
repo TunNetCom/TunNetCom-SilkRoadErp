@@ -1,0 +1,204 @@
+# ============================================================
+# Reusable CD Job Template: Deploy SilkRoad API & WebApp to K8s
+# ============================================================
+# Pipelines must define: connectionString = $(Connection_String_XXX) in variables
+# and include the variable group that contains the connection string.
+parameters:
+- name: stageDisplayName
+  type: string
+  default: 'Deploy'
+- name: kubeNamespace
+  type: string
+- name: deploymentApiName
+  type: string
+- name: deploymentWebappName
+  type: string
+- name: manifestPath
+  type: string
+- name: variableGroup
+  type: string
+  default: 'silkroad-prod'
+- name: dockerRepository
+  type: string
+  default: 'tunnetcom/silkroad'
+- name: apiImageTag
+  type: string
+  default: 'latest-api'
+- name: webappImageTag
+  type: string
+  default: 'latest-webapp'
+- name: secretName
+  type: string
+  default: 'silkroad-connection-secret'
+- name: runPreflightCheck
+  type: boolean
+  default: false
+- name: verboseVerify
+  type: boolean
+  default: false
+- name: forceImagePullPatch
+  type: boolean
+  default: true
+- name: rolloutTimeoutSeconds
+  type: number
+  default: 300
+- name: artifactName
+  type: string
+  default: ' '  # Use space as sentinel; empty string can cause "Unexpected value ''" in template expansion
+- name: artifactDownloadPath
+  type: string
+  default: '$(Pipeline.Workspace)'
+
+jobs:
+- job: DeployJob
+  displayName: K8s Deployment
+  steps:
+
+  # --------------------------------------------------
+  # -1. Optional: Download pipeline artifact (for CI+CD flows)
+  # --------------------------------------------------
+  - task: DownloadPipelineArtifact@2
+    displayName: 'Download K8s Manifests'
+    condition: and(succeeded(), ne('${{ parameters.artifactName }}', ' '))
+    inputs:
+      artifactName: ${{ parameters.artifactName }}
+      path: $(Pipeline.Workspace)
+
+  # --------------------------------------------------
+  # 0. Check Cluster Access
+  # --------------------------------------------------
+  - script: |
+      echo "🔍 Checking cluster access"
+      kubectl version --client
+      kubectl cluster-info
+    displayName: 'Check Kubernetes Cluster'
+
+  # --------------------------------------------------
+  # 1. Ensure DB Connection Secret
+  # --------------------------------------------------
+  - script: |
+      echo "🔐 Creating / Updating DB Secret"
+
+      if [ -z "$connectionString" ]; then
+        echo "❌ connectionString is EMPTY"
+        exit 1
+      fi
+
+      kubectl create secret generic ${{ parameters.secretName }} \
+        -n ${{ parameters.kubeNamespace }} \
+        --from-literal=ConnectionStrings__DefaultConnection="$connectionString" \
+        --dry-run=client -o yaml | kubectl apply -f -
+
+      echo "✅ DB secret ensured"
+    displayName: 'Ensure DB Secret'
+    env:
+      connectionString: $(connectionString)
+
+  # --------------------------------------------------
+  # 2. Optional Preflight Check
+  # --------------------------------------------------
+  - ${{ if eq(parameters.runPreflightCheck, true) }}:
+    - script: |
+        echo "👤 User:"
+        whoami
+        echo "📂 Kubeconfig:"
+        ls -la ~/.kube || true
+        echo "🔍 Nodes:"
+        kubectl get nodes -o wide
+      displayName: 'Preflight: Kubernetes Access Check'
+
+  # --------------------------------------------------
+  # 3. Apply Kubernetes Manifests
+  # --------------------------------------------------
+  - script: |
+      echo "🚀 Applying Kubernetes manifests"
+      kubectl apply -f ${{ parameters.manifestPath }}
+      echo "✅ Manifests applied"
+    displayName: 'Apply Manifests'
+
+  # --------------------------------------------------
+  # 4. Update Deployment Images
+  # --------------------------------------------------
+  - script: |
+      echo "🔄 Updating deployment images to latest tags..."
+      echo "📝 Setting API image to: ${{ parameters.dockerRepository }}:${{ parameters.apiImageTag }}"
+      kubectl set image deployment/${{ parameters.deploymentApiName }} \
+        api=${{ parameters.dockerRepository }}:${{ parameters.apiImageTag }} \
+        -n ${{ parameters.kubeNamespace }}
+      echo "📝 Setting WebApp image to: ${{ parameters.dockerRepository }}:${{ parameters.webappImageTag }}"
+      kubectl set image deployment/${{ parameters.deploymentWebappName }} \
+        webapp=${{ parameters.dockerRepository }}:${{ parameters.webappImageTag }} \
+        -n ${{ parameters.kubeNamespace }}
+      echo "✅ Image tags updated"
+    displayName: 'Update Images'
+
+  # --------------------------------------------------
+  # 5. Force Rollout
+  # --------------------------------------------------
+  - script: |
+      echo "🔄 Forcing rollout to pull latest images"
+      kubectl rollout restart deployment/${{ parameters.deploymentApiName }} -n ${{ parameters.kubeNamespace }}
+      kubectl rollout restart deployment/${{ parameters.deploymentWebappName }} -n ${{ parameters.kubeNamespace }}
+    displayName: 'Force Rollout'
+
+  # --------------------------------------------------
+  # 5b. Optional: Patch and delete pods for forced image pull
+  # --------------------------------------------------
+  - ${{ if eq(parameters.forceImagePullPatch, true) }}:
+    - script: |
+        TIMESTAMP=$(date +%s)
+        echo "📝 Patching deployments with build annotations"
+        kubectl patch deployment ${{ parameters.deploymentApiName }} \
+          -n ${{ parameters.kubeNamespace }} \
+          -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"ci-build\":\"$(Build.BuildId)\",\"force-image-pull\":\"$(Build.BuildId)-$TIMESTAMP\"}}}}}"
+        kubectl patch deployment ${{ parameters.deploymentWebappName }} \
+          -n ${{ parameters.kubeNamespace }} \
+          -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"ci-build\":\"$(Build.BuildId)\",\"force-image-pull\":\"$(Build.BuildId)-$TIMESTAMP\"}}}}}"
+        echo "🗑️ Deleting existing pods to force fresh image pull..."
+        kubectl delete pods -n ${{ parameters.kubeNamespace }} -l app=${{ parameters.deploymentApiName }} --ignore-not-found=true || true
+        kubectl delete pods -n ${{ parameters.kubeNamespace }} -l app=${{ parameters.deploymentWebappName }} --ignore-not-found=true || true
+        echo "⏳ Waiting for pods to start terminating..."
+        sleep 10
+      displayName: 'Force Image Refresh Patch'
+
+  # --------------------------------------------------
+  # 6. Wait for Rollout Completion
+  # --------------------------------------------------
+  - script: |
+      echo "⏳ Waiting for API rollout to complete..."
+      kubectl rollout status deployment/${{ parameters.deploymentApiName }} -n ${{ parameters.kubeNamespace }} --timeout=${{ parameters.rolloutTimeoutSeconds }}s || exit 1
+      echo "✅ API rollout completed"
+      echo ""
+      echo "⏳ Waiting for WebApp rollout to complete..."
+      kubectl rollout status deployment/${{ parameters.deploymentWebappName }} -n ${{ parameters.kubeNamespace }} --timeout=${{ parameters.rolloutTimeoutSeconds }}s || exit 1
+      echo "✅ WebApp rollout completed"
+      sleep 10
+    displayName: 'Wait for Rollout'
+
+  # --------------------------------------------------
+  # 7. Optional: Check for Image Pull Errors
+  # --------------------------------------------------
+  - ${{ if eq(parameters.verboseVerify, true) }}:
+    - script: |
+        echo "🔍 Checking for image pull errors..."
+        echo "=== Recent Events (last 20) ==="
+        kubectl get events -n ${{ parameters.kubeNamespace }} --sort-by='.lastTimestamp' | tail -20
+      displayName: 'Check Image Pull Errors'
+      continueOnError: true
+
+  # --------------------------------------------------
+  # 8. Verify Deployment
+  # --------------------------------------------------
+  - script: |
+      echo "🔍 Verifying deployed images and pod status"
+      kubectl get pods -n ${{ parameters.kubeNamespace }} -o wide
+      echo "✅ Deployment verification complete"
+    displayName: 'Verify Deployment'
+
+  # --------------------------------------------------
+  # 9. Final Status
+  # --------------------------------------------------
+  - script: |
+      echo "✅ Deployment finished successfully"
+      kubectl get all -n ${{ parameters.kubeNamespace }}
+    displayName: 'Final Status'

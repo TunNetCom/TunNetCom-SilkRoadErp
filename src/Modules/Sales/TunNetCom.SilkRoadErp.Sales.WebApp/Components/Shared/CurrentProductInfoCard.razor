@@ -1,0 +1,220 @@
+@using Radzen
+@using Radzen.Blazor
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Services
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Helpers
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Products
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Products
+@using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
+@using Microsoft.Extensions.Localization
+@using System.Globalization
+@implements IDisposable
+@inject ICurrentProductStateService StateService
+@inject IProductsApiClient ProductsApiClient
+@inject IStringLocalizer<SharedResource> Localizer
+
+<div class="current-product-card">
+@if (StateService.State != null)
+{
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal" 
+                 Gap="1.25rem" 
+                 JustifyContent="JustifyContent.SpaceBetween"
+                 AlignItems="AlignItems.Center"
+                 Wrap="FlexWrap.Wrap">
+        
+        <div class="cp-left-block">
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.6rem" AlignItems="AlignItems.Center">
+                <RadzenIcon Icon="inventory_2" class="cp-icon" />
+                <div class="cp-ref-and-designation">
+                    <div class="cp-kicker">Produit actuel</div>
+                    <div class="cp-title">@StateService.State.ProductReference</div>
+                    @if (!string.IsNullOrWhiteSpace(StateService.State.ProductName))
+                    {
+                        <div class="cp-designation" title="@StateService.State.ProductName">@StateService.State.ProductName</div>
+                    }
+                </div>
+            </RadzenStack>
+        </div>
+
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.85rem" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap" Class="cp-metrics">
+            <div class="cp-metric">
+                <div class="cp-label">@Localizer["product_prixAchat"]</div>
+                <div class="cp-value">@(purchasingPrice.HasValue ? purchasingPrice.Value.ToString(AmountHelper.FORMAT_N3, CultureInfo.GetCultureInfo("fr-FR")) : "—")</div>
+            </div>
+            <div class="cp-divider"></div>
+            <div class="cp-metric">
+                <div class="cp-label">@Localizer["product_prix"]</div>
+                <div class="cp-value">@StateService.State.UnitPriceHt.ToString(AmountHelper.FORMAT_N3, CultureInfo.GetCultureInfo("fr-FR"))</div>
+            </div>
+            <div class="cp-divider"></div>
+            <div class="cp-metric">
+                <div class="cp-label">@Localizer["Taux_TVA"]</div>
+                <div class="cp-value">@StateService.State.VatPercentage.ToString(AmountHelper.FORMAT_N2, CultureInfo.GetCultureInfo("fr-FR"))%</div>
+            </div>
+        </RadzenStack>
+    </RadzenStack>
+}
+else
+{
+    <div class="cp-empty">
+        <RadzenIcon Icon="info" class="cp-empty-icon" />
+        <span>Aucun produit sélectionné</span>
+    </div>
+}
+</div>
+
+<style>
+    .current-product-card {
+        background: linear-gradient(
+            180deg,
+            var(--rz-panel-background-color, #ffffff) 0%,
+            var(--rz-base-background-color, #f8fafc) 100%
+        );
+        border: 1px solid var(--rz-border-color, rgba(148, 163, 184, 0.45));
+        border-radius: 10px;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+        margin-bottom: 0.9rem;
+        padding: 0.65rem 0.85rem;
+    }
+
+    .cp-left-block {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .cp-ref-and-designation {
+        min-width: 0;
+    }
+
+    .cp-designation {
+        font-size: 0.8rem;
+        color: var(--rz-text-secondary-color, #64748b);
+        margin-top: 0.2rem;
+        line-height: 1.3;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        word-break: break-word;
+    }
+
+    .cp-metrics {
+        flex-shrink: 0;
+    }
+
+    .cp-icon {
+        font-size: 1.05rem;
+        color: var(--rz-primary, #1b6ec2);
+    }
+
+    .cp-kicker {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #64748b;
+        letter-spacing: 0.01em;
+        text-transform: uppercase;
+    }
+
+    .cp-title {
+        font-size: 0.95rem;
+        font-weight: 750;
+        color: var(--rz-text-color, #0f172a);
+    }
+
+    .cp-metric {
+        text-align: center;
+        padding: 0 0.45rem;
+        min-width: 92px;
+    }
+
+    .cp-label {
+        font-size: 0.68rem;
+        color: var(--rz-text-secondary-color, #64748b);
+        font-weight: 600;
+    }
+
+    .cp-value {
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: var(--rz-text-color, #0f172a);
+    }
+
+    .cp-subvalue {
+        margin-top: 0.05rem;
+        font-size: 0.74rem;
+        font-weight: 700;
+        color: var(--rz-text-secondary-color, #64748b);
+    }
+
+    .cp-divider {
+        border-left: 1px solid var(--rz-border-color, rgba(148, 163, 184, 0.55));
+        height: 28px;
+    }
+
+    .cp-empty {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        color: var(--rz-text-secondary-color, #64748b);
+        font-size: 0.92rem;
+        font-weight: 600;
+    }
+
+    .cp-empty-icon {
+        font-size: 1.15rem;
+        color: var(--rz-text-tertiary-color, #94a3b8);
+    }
+</style>
+
+@code {
+    private decimal? purchasingPrice;
+    private string? _loadedProductRef;
+
+    protected override void OnInitialized()
+    {
+        StateService.OnStateChanged += HandleStateChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && StateService.State != null)
+        {
+            await LoadPurchasingPriceIfNeededAsync();
+            StateHasChanged();
+        }
+    }
+
+    private async void HandleStateChanged()
+    {
+        await LoadPurchasingPriceIfNeededAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadPurchasingPriceIfNeededAsync()
+    {
+        var state = StateService.State;
+        if (state == null || string.IsNullOrEmpty(state.ProductReference))
+        {
+            purchasingPrice = null;
+            _loadedProductRef = null;
+            return;
+        }
+        if (state.ProductReference == _loadedProductRef)
+            return;
+        _loadedProductRef = state.ProductReference;
+        try
+        {
+            var result = await ProductsApiClient.GetAsync(state.ProductReference, CancellationToken.None);
+            purchasingPrice = result.IsT0 ? result.AsT0.PurchasingPrice : null;
+        }
+        catch
+        {
+            purchasingPrice = null;
+        }
+    }
+
+    public void Dispose()
+    {
+        StateService.OnStateChanged -= HandleStateChanged;
+    }
+}

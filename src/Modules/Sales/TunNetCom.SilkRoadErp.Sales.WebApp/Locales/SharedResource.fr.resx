@@ -1,0 +1,1827 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AddClient" xml:space="preserve">
+    <value>Ajouter un client</value>
+  </data>
+  <data name="Adresse" xml:space="preserve">
+    <value>Adresse</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Annuler</value>
+  </data>
+  <data name="Clients" xml:space="preserve">
+    <value>Clients</value>
+  </data>
+  <data name="Code" xml:space="preserve">
+    <value>Code</value>
+  </data>
+  <data name="CodeCat" xml:space="preserve">
+    <value>Code Catégorie</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>Supprimer</value>
+  </data>
+  <data name="Edit" xml:space="preserve">
+    <value>Modifier</value>
+  </data>
+  <data name="duplicate_quotation" xml:space="preserve">
+    <value>Dupliquer</value>
+  </data>
+  <data name="duplicate_quotation_success" xml:space="preserve">
+    <value>Devis dupliqué avec succès</value>
+  </data>
+  <data name="View" xml:space="preserve">
+    <value>Voir</value>
+  </data>
+  <data name="EditClient" xml:space="preserve">
+    <value>Modifier le client</value>
+  </data>
+  <data name="EtbSec" xml:space="preserve">
+    <value>Établissement Secondaire</value>
+  </data>
+  <data name="Home" xml:space="preserve">
+    <value>Maison</value>
+  </data>
+  <data name="Loading" xml:space="preserve">
+    <value>Chargement...</value>
+  </data>
+  <data name="Mail" xml:space="preserve">
+    <value>E-mail</value>
+  </data>
+  <data name="Matricule" xml:space="preserve">
+    <value>Numéro d'inscription</value>
+  </data>
+  <data name="Next" xml:space="preserve">
+    <value>Suivant</value>
+  </data>
+  <data name="Nom" xml:space="preserve">
+    <value>Nom</value>
+  </data>
+  <data name="Previous" xml:space="preserve">
+    <value>Précédent</value>
+  </data>
+  <data name="save" xml:space="preserve">
+    <value>Sauvegarder</value>
+  </data>
+  <data name="search" xml:space="preserve">
+    <value>Rechercher</value>
+  </data>
+  <data name="SilkRoadErp" xml:space="preserve">
+    <value>Erp de la Route de la Soie</value>
+  </data>
+  <data name="Tel" xml:space="preserve">
+    <value>Téléphone</value>
+  </data>
+  <data name="customer" xml:space="preserve">
+    <value>Client</value>
+  </data>
+  <data name="delete_message" xml:space="preserve">
+    <value>Do you want to delete</value>
+  </data>
+  <data name="delete_title" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="select_customer" xml:space="preserve">
+    <value>Selectionner un client</value>
+  </data>
+  <data name="customer_id" xml:space="preserve">
+    <value>Identifiant client</value>
+  </data>
+  <data name="company_name" xml:space="preserve">
+    <value>Nom de l'entreprise</value>
+  </data>
+  <data name="invoice_number" xml:space="preserve">
+    <value>Numéro de facture</value>
+  </data>
+  <data name="date" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="date_livraison" xml:space="preserve">
+    <value>Date de livraison</value>
+  </data>
+  <data name="total_incl_tax" xml:space="preserve">
+    <value>Total TTC</value>
+  </data>
+  <data name="delivery_notes_details" xml:space="preserve">
+    <value>Détails bons de livraison</value>
+  </data>
+  <data name="number" xml:space="preserve">
+    <value>Numéro</value>
+  </data>
+  <data name="total_ex_tax" xml:space="preserve">
+    <value>Total HT</value>
+  </data>
+  <data name="net_payer" xml:space="preserve">
+    <value>Net à payer</value>
+  </data>
+  <data name="total_net" xml:space="preserve">
+    <value>Total Net</value>
+  </data>
+  <data name="total_gross" xml:space="preserve">
+    <value>Total Brut</value>
+  </data>
+  <data name="total_vat" xml:space="preserve">
+    <value>Total TVA</value>
+  </data>
+  <data name="detach_from_invoice" xml:space="preserve">
+    <value>Détacher de la facture</value>
+  </data>
+  <data name="manage_invoices" xml:space="preserve">
+    <value>Gérer factures</value>
+  </data>
+  <data name="customer_invoice_details" xml:space="preserve">
+    <value>Détails facture client</value>
+  </data>
+  <data name="uninvoiced_delivery_notes_details" xml:space="preserve">
+    <value>Détails bons de livraison non facturées</value>
+  </data>
+  <data name="attach_delivery_note_to_invoice" xml:space="preserve">
+    <value>Joindre à la facture</value>
+  </data>
+  <data name="delivery_note_number" xml:space="preserve">
+    <value>Numéro bon de livraison</value>
+  </data>
+  <data name="manage_providers_invoices" xml:space="preserve">
+    <value> Gérer les Factures des fournisseurs</value>
+  </data>
+  <data name="select_provider" xml:space="preserve">
+    <value>Selectionner un fournisseur</value>
+  </data>
+  <data name="provider_invoice_details" xml:space="preserve">
+    <value>Détails facture fournisseur</value>
+  </data>
+  <data name="create_new_invoice" xml:space="preserve">
+    <value>Créer une nouvelle facture</value>
+  </data>
+  <data name="provider_invoice_number" xml:space="preserve">
+    <value>Numéro chez fournisseur</value>
+  </data>
+  <data name="edit_provider_invoice_number" xml:space="preserve">
+    <value>Modifier le numéro chez fournisseur</value>
+  </data>
+  <data name="receipt_notes_details" xml:space="preserve">
+    <value>Détails bons de réception</value>
+  </data>
+  <data name="uninvoiced_receipt_notes_details" xml:space="preserve">
+    <value>Détails bons de réception non facturés</value>
+  </data>
+  <data name="attach_receipt_note_to_invoice" xml:space="preserve">
+    <value>Joindre bons de réception à la facture</value>
+  </data>
+  <data name="discount_percentage" xml:space="preserve">
+    <value>Remise %</value>
+  </data>
+  <data name="unit_price_required" xml:space="preserve">
+    <value>Prix Unitaire</value>
+  </data>
+  <data name="quantity" xml:space="preserve">
+    <value>Qte</value>
+  </data>
+  <data name="product" xml:space="preserve">
+    <value>Article</value>
+  </data>
+  <data name="total_including_tax" xml:space="preserve">
+    <value>Total TTC</value>
+  </data>
+  <data name="tot_ttc" xml:space="preserve">
+    <value>Total TTC</value>
+  </data>
+  <data name="total_excluding_tax" xml:space="preserve">
+    <value>Total HT</value>
+  </data>
+  <data name="unit_price_ht" xml:space="preserve">
+    <value>Prix Unitaire</value>
+  </data>
+  <data name="vat_percentage" xml:space="preserve">
+    <value>TVA</value>
+  </data>
+  <data name="customer_name" xml:space="preserve">
+    <value>Nom Client</value>
+  </data>
+  <data name="customer_phone" xml:space="preserve">
+    <value>Téléphone Client</value>
+  </data>
+  <data name="customer_address" xml:space="preserve">
+    <value>Adresse Client</value>
+  </data>
+  <data name="customer_matricule" xml:space="preserve">
+    <value>Matricule client</value>
+  </data>
+  <data name="customer_email" xml:space="preserve">
+    <value>Email Client</value>
+  </data>
+  <data name="save_label" xml:space="preserve">
+    <value>Sauvegarder</value>
+  </data>
+  <data name="delivery_notes" xml:space="preserve">
+    <value>Bons de livraison</value>
+  </data>
+  <data name="invoiced" xml:space="preserve">
+    <value>Facturé</value>
+  </data>
+  <data name="not_invoiced" xml:space="preserve">
+    <value>Non Facturé</value>
+  </data>
+  <data name="start_date" xml:space="preserve">
+    <value>Date de début</value>
+  </data>
+  <data name="end_date" xml:space="preserve">
+    <value>Date de fin</value>
+  </data>
+  <data name="period_filter" xml:space="preserve">
+    <value>Période</value>
+  </data>
+  <data name="select_period" xml:space="preserve">
+    <value>Sélectionner une période</value>
+  </data>
+  <data name="current_month" xml:space="preserve">
+    <value>Mois actuel</value>
+  </data>
+  <data name="current_day" xml:space="preserve">
+    <value>Jour</value>
+  </data>
+  <data name="current_week" xml:space="preserve">
+    <value>Semaine</value>
+  </data>
+  <data name="Tableau_de_bord" xml:space="preserve">
+    <value>Tableau de bord</value>
+  </data>
+  <data name="Recap_ventes_achats" xml:space="preserve">
+    <value>Récap ventes &amp; achats</value>
+  </data>
+  <data name="last_month" xml:space="preserve">
+    <value>Mois précédent</value>
+  </data>
+  <data name="current_year" xml:space="preserve">
+    <value>Année actuelle</value>
+  </data>
+  <data name="custom_period" xml:space="preserve">
+    <value>Période personnalisée</value>
+  </data>
+  <data name="delivery_note_status" xml:space="preserve">
+    <value>Statut bon de livraison</value>
+  </data>
+  <data name="select_invoice" xml:space="preserve">
+    <value>Selectionner une facture</value>
+  </data>
+  <data name="print_invoice" xml:space="preserve">
+    <value>Imprimer la facture</value>
+  </data>
+  <data name="Select_Delivery_Car" xml:space="preserve">
+    <value>Sélectionner un véhicule de livraison</value>
+  </data>
+  <data name="Delivery_Car" xml:space="preserve">
+    <value>Véhicule de livraison</value>
+  </data>
+  <data name="delivery_note_saved_successfully" xml:space="preserve">
+    <value>Bon de livraison enregistré avec succés</value>
+  </data>
+  <data name="add_new_order" xml:space="preserve">
+    <value>Ajouter une ligne</value>
+  </data>
+  <data name="print" xml:space="preserve">
+    <value>print</value>
+  </data>
+  <data name="Print_Solde" xml:space="preserve">
+    <value>Imprimer le solde</value>
+  </data>
+  <data name="Erreur_Impression_Solde" xml:space="preserve">
+    <value>Impossible de générer le rapport de solde.</value>
+  </data>
+  <data name="Print_Restes_ALivrer" xml:space="preserve">
+    <value>Imprimer restes à livrer</value>
+  </data>
+  <data name="Erreur_Impression_Restes_ALivrer" xml:space="preserve">
+    <value>Impossible de générer le rapport des restes à livrer.</value>
+  </data>
+  <data name="Show_Only_Missing_Products" xml:space="preserve">
+    <value>Afficher uniquement les produits manquants</value>
+  </data>
+  <data name="apply_discount" xml:space="preserve">
+    <value>Appliquer remise</value>
+  </data>
+  <data name="apply" xml:space="preserve">
+    <value>Appliquer</value>
+  </data>
+  <data name="apply_discount_to_all" xml:space="preserve">
+    <value>Appliquer la remise à toutes les lignes</value>
+  </data>
+  <data name="apply_vat" xml:space="preserve">
+    <value>Appliquer TVA</value>
+  </data>
+  <data name="apply_vat_to_all" xml:space="preserve">
+    <value>Appliquer la TVA à toutes les lignes</value>
+  </data>
+  <data name="apply_purchase_info" xml:space="preserve">
+    <value>Appliquer infos achat</value>
+  </data>
+  <data name="apply_purchase_info_to_line" xml:space="preserve">
+    <value>Appliquer infos achat à la ligne</value>
+  </data>
+  <data name="use_product_values" xml:space="preserve">
+    <value>Utiliser les valeurs du produit</value>
+  </data>
+  <data name="use_last_purchase_info" xml:space="preserve">
+    <value>Utiliser les dernières infos d'achat</value>
+  </data>
+  <data name="purchase_info_from_product" xml:space="preserve">
+    <value>Prix d'achat, remise d'achat et TVA depuis le produit</value>
+  </data>
+  <data name="purchase_info_from_receipt" xml:space="preserve">
+    <value>Prix, remise et TVA depuis le dernier bon de réception</value>
+  </data>
+  <data name="select_printer" xml:space="preserve">
+    <value>Sélectionner une imprimante</value>
+  </data>
+  <data name="printer" xml:space="preserve">
+    <value>Imprimante</value>
+  </data>
+  <data name="loading_printers" xml:space="preserve">
+    <value>Chargement des imprimantes...</value>
+  </data>
+  <data name="no_printers_available" xml:space="preserve">
+    <value>Aucune imprimante disponible</value>
+  </data>
+  <data name="duplex_printing" xml:space="preserve">
+    <value>Impression recto-verso</value>
+  </data>
+  <data name="copies" xml:space="preserve">
+    <value>Copies</value>
+  </data>
+  <data name="print_mode" xml:space="preserve">
+    <value>Mode d'impression</value>
+  </data>
+  <data name="download_pdf" xml:space="preserve">
+    <value>Télécharger PDF</value>
+  </data>
+  <data name="print_directly" xml:space="preserve">
+    <value>Imprimer directement</value>
+  </data>
+  <data name="include_enterprise_header" xml:space="preserve">
+    <value>Inclure l'en-tête avec les informations de l'entreprise (nom, adresse, téléphone, TVA)</value>
+  </data>
+  <data name="print_job_submitted" xml:space="preserve">
+    <value>Tâche d'impression soumise avec succès</value>
+  </data>
+  <data name="confirm" xml:space="preserve">
+    <value>Confirmer</value>
+  </data>
+  <data name="failed_to_save_delivery_note" xml:space="preserve">
+    <value>Échec de l'enregistrement du bon de livraison</value>
+  </data>
+  <data name="input_error" xml:space="preserve">
+    <value>Erreur de saisie</value>
+  </data>
+  <data name="manage_customer_invoices" xml:space="preserve">
+    <value>Gérer Factures Clients</value>
+  </data>
+  <data name="pourcentage_retenu" xml:space="preserve">
+    <value>Pourcentage Retenu</value>
+  </data>
+  <data name="CustomerPreview" xml:space="preserve">
+    <value>Aperçu du client</value>
+  </data>
+  <data name="UnableToLoadCustomer" xml:space="preserve">
+    <value>Impossible de charger les informations du client</value>
+  </data>
+  <data name="NotAvailable" xml:space="preserve">
+    <value>Non disponible</value>
+  </data>
+  <data name="customer_code" xml:space="preserve">
+    <value>Code du client</value>
+  </data>
+  <data name="customer_codeCat" xml:space="preserve">
+    <value>Code catégorie du client</value>
+  </data>
+  <data name="customer_etbSec" xml:space="preserve">
+    <value>Établissement secondaire</value>
+  </data>
+  <data name="actions_label" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="cancel_label" xml:space="preserve">
+    <value>Annuler</value>
+  </data>
+  <data name="add_product" xml:space="preserve">
+    <value>Ajouter un article</value>
+  </data>
+  <data name="products" xml:space="preserve">
+    <value>Articles</value>
+  </data>
+  <data name="delete_button_label" xml:space="preserve">
+    <value>Supprimer</value>
+  </data>
+  <data name="edit_button_label" xml:space="preserve">
+    <value>Modifier</value>
+  </data>
+  <data name="edit_product" xml:space="preserve">
+    <value>Modifier article</value>
+  </data>
+  <data name="product_name" xml:space="preserve">
+    <value>Nom de l'article</value>
+  </data>
+  <data name="product_prix" xml:space="preserve">
+    <value>Prix vente</value>
+  </data>
+  <data name="product_prixAchat" xml:space="preserve">
+    <value>Prix d'achat</value>
+  </data>
+  <data name="product_qte" xml:space="preserve">
+    <value>Qantité d'article</value>
+  </data>
+  <data name="product_qteLimite" xml:space="preserve">
+    <value>Qantité limité d'article</value>
+  </data>
+  <data name="product_refe" xml:space="preserve">
+    <value>Refernece de l'article</value>
+  </data>
+  <data name="add_provider" xml:space="preserve">
+    <value>ajouter un fournisseur</value>
+  </data>
+  <data name="edit_provider" xml:space="preserve">
+    <value>Modifier le fournisseur</value>
+  </data>
+  <data name="provider_adress" xml:space="preserve">
+    <value>Adresse </value>
+  </data>
+  <data name="provider_code" xml:space="preserve">
+    <value>Code </value>
+  </data>
+  <data name="provider_code_cat" xml:space="preserve">
+    <value>CodeCat </value>
+  </data>
+  <data name="provider_constructor" xml:space="preserve">
+    <value>Constructeur</value>
+  </data>
+  <data name="provider_email" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="provider_etb_sec" xml:space="preserve">
+    <value>Établissement Secondaire</value>
+  </data>
+  <data name="provider_fax" xml:space="preserve">
+    <value>Fax </value>
+  </data>
+  <data name="provider_matricule" xml:space="preserve">
+    <value>Matricule</value>
+  </data>
+  <data name="provider_name" xml:space="preserve">
+    <value>Nom du fournisseur</value>
+  </data>
+  <data name="provider_phone" xml:space="preserve">
+    <value>Numéro de téléphone</value>
+  </data>
+  <data name="provider_second_email" xml:space="preserve">
+    <value>Deuxième E-mail </value>
+  </data>
+  <data name="product_remise" xml:space="preserve">
+    <value>Remise article</value>
+  </data>
+  <data name="product_remiseAchat" xml:space="preserve">
+    <value>Remise d'achat </value>
+  </data>
+  <data name="product_tva" xml:space="preserve">
+    <value>TVA</value>
+  </data>
+  <data name="product_visibilite" xml:space="preserve">
+    <value>Visibilité</value>
+  </data>
+  <data name="providers" xml:space="preserve">
+    <value>Fournisseurs</value>
+  </data>
+  <data name="Timbre" xml:space="preserve">
+    <value>Timbre</value>
+  </data>
+  <data name="Adresse_retenu" xml:space="preserve">
+    <value>Adresse retenue</value>
+  </data>
+  <data name="matricule_fiscale" xml:space="preserve">
+    <value>Matricule fiscale</value>
+  </data>
+  <data name="pourcentage_fodec" xml:space="preserve">
+    <value>Pourcentage FODEC %</value>
+  </data>
+  <data name="Fax" xml:space="preserve">
+    <value>Fax</value>
+  </data>
+  <data name="CodeTva" xml:space="preserve">
+    <value>Code TVA</value>
+  </data>
+  <data name="created_with_success" xml:space="preserve">
+    <value>créé avec succès</value>
+  </data>
+  <data name="updated_with_success" xml:space="preserve">
+    <value>mis à jour avec succès</value>
+  </data>
+  <data name="provider" xml:space="preserve">
+    <value>Fournisseur</value>
+  </data>
+  <data name="Overview" xml:space="preserve">
+    <value>Vue d'ensemble</value>
+  </data>
+  <data name="Dashboard" xml:space="preserve">
+    <value>Tableau de bord</value>
+  </data>
+  <data name="Accounts" xml:space="preserve">
+    <value>Comptes</value>
+  </data>
+  <data name="Manage_Invoices" xml:space="preserve">
+    <value>Gestion Factures</value>
+  </data>
+  <data name="Devis" xml:space="preserve">
+    <value>Devis</value>
+  </data>
+  <data name="Delivery_Note" xml:space="preserve">
+    <value>Bon de livraison</value>
+  </data>
+  <data name="Delivery_Notes_List" xml:space="preserve">
+    <value>Liste des bons de livraison</value>
+  </data>
+  <data name="Invoices_List" xml:space="preserve">
+    <value>Liste des factures</value>
+  </data>
+  <data name="Receipt_Note" xml:space="preserve">
+    <value>Bon de réception</value>
+  </data>
+  <data name="Receipt_Notes_List" xml:space="preserve">
+    <value>Liste des bons de réception</value>
+  </data>
+  <data name="Retour_Marchandise_Fournisseur" xml:space="preserve">
+    <value>Retour marchandise fournisseur</value>
+  </data>
+  <data name="Retours_Marchandise_Fournisseur_List" xml:space="preserve">
+    <value>Liste des retours marchandise fournisseur</value>
+  </data>
+  <data name="Nouveau_Retour_Marchandise_Fournisseur" xml:space="preserve">
+    <value>Nouveau retour marchandise fournisseur</value>
+  </data>
+  <data name="Select_At_Least_One_Retour" xml:space="preserve">
+    <value>Veuillez sélectionner au moins un retour</value>
+  </data>
+  <data name="Confirmation_Validation_Retours" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider {0} retour{1} ?</value>
+  </data>
+  <data name="Confirmation_Validation_Retour" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider le retour {0} ?</value>
+  </data>
+  <data name="Validation_Success_Retours" xml:space="preserve">
+    <value>Les retours ont été validés avec succès</value>
+  </data>
+  <data name="Validation_Success_Retour" xml:space="preserve">
+    <value>Le retour a été validé avec succès</value>
+  </data>
+  <data name="Stock" xml:space="preserve">
+    <value>Stock</value>
+  </data>
+  <data name="Articles" xml:space="preserve">
+    <value>Articles</value>
+  </data>
+  <data name="Silk_Road_ERP" xml:space="preserve">
+    <value>ERP Route de la Soie</value>
+  </data>
+  <data name="no_records_to_display" xml:space="preserve">
+    <value>Aucun enregistrement à afficher</value>
+  </data>
+  <data name="no_receipt_notes_found" xml:space="preserve">
+    <value>Aucun bon de réception trouvé pour cette facture</value>
+  </data>
+  <data name="history" xml:space="preserve">
+    <value>Historique</value>
+  </data>
+  <data name="article" xml:space="preserve">
+    <value>article</value>
+  </data>
+  <data name="partial_delivery" xml:space="preserve">
+    <value>Livraison partielle</value>
+  </data>
+  <data name="delivered_quantity" xml:space="preserve">
+    <value>Quantité livrée</value>
+  </data>
+  <data name="enable_partial_delivery" xml:space="preserve">
+    <value>Activer la livraison partielle</value>
+  </data>
+  <data name="Paiements_Clients" xml:space="preserve">
+    <value>Paiements Clients</value>
+  </data>
+  <data name="Paiements_Fournisseurs" xml:space="preserve">
+    <value>Paiements Fournisseurs</value>
+  </data>
+  <data name="Liste" xml:space="preserve">
+    <value>Liste</value>
+  </data>
+  <data name="Calendrier_Echeances" xml:space="preserve">
+    <value>Calendrier des échéances</value>
+  </data>
+  <data name="Soldes_Clients" xml:space="preserve">
+    <value>Soldes Clients</value>
+  </data>
+  <data name="Soldes_Fournisseurs" xml:space="preserve">
+    <value>Soldes Fournisseurs</value>
+  </data>
+  <data name="Banques" xml:space="preserve">
+    <value>Banques</value>
+  </data>
+  <data name="Ajouter_Paiement" xml:space="preserve">
+    <value>Ajouter un paiement</value>
+  </data>
+  <data name="Nouveau_Paiement_Client" xml:space="preserve">
+    <value>Nouveau paiement client</value>
+  </data>
+  <data name="Modifier_Paiement" xml:space="preserve">
+    <value>Modifier le paiement</value>
+  </data>
+  <data name="Retour" xml:space="preserve">
+    <value>Retour</value>
+  </data>
+  <data name="Numero_Paiement" xml:space="preserve">
+    <value>Numéro du paiement</value>
+  </data>
+  <data name="Numero_Transaction_Bancaire" xml:space="preserve">
+    <value>Numéro de transaction bancaire (optionnel)</value>
+  </data>
+  <data name="Numero_Transaction_Bancaire_Description" xml:space="preserve">
+    <value>Numéro de transaction bancaire associé à ce paiement</value>
+  </data>
+  <data name="Exercice_Comptable" xml:space="preserve">
+    <value>Exercice comptable</value>
+  </data>
+  <data name="Exercice_Comptable_Filter" xml:space="preserve">
+    <value>Exercice comptable</value>
+  </data>
+  <data name="Date_Paiement" xml:space="preserve">
+    <value>Date de paiement</value>
+  </data>
+  <data name="Methode_Paiement" xml:space="preserve">
+    <value>Méthode de paiement</value>
+  </data>
+  <data name="Select_Methode" xml:space="preserve">
+    <value>Sélectionner une méthode</value>
+  </data>
+  <data name="Numero_Cheque_Traite" xml:space="preserve">
+    <value>Numéro chèque/traite</value>
+  </data>
+  <data name="Select_Banque" xml:space="preserve">
+    <value>Sélectionner une banque</value>
+  </data>
+  <data name="Nouvelle_Banque" xml:space="preserve">
+    <value>Nouvelle banque</value>
+  </data>
+  <data name="Date_Echeance" xml:space="preserve">
+    <value>Date d'échéance</value>
+  </data>
+  <data name="Factures_Rattachees" xml:space="preserve">
+    <value>Facture(s)</value>
+  </data>
+  <data name="Facture_Optionnel" xml:space="preserve">
+    <value>Facture (optionnel)</value>
+  </data>
+  <data name="Select_Facture" xml:space="preserve">
+    <value>Sélectionner une facture</value>
+  </data>
+  <data name="Bon_Livraison_Optionnel" xml:space="preserve">
+    <value>Bon de livraison (optionnel)</value>
+  </data>
+  <data name="Select_Bon_Livraison" xml:space="preserve">
+    <value>Sélectionner un bon de livraison</value>
+  </data>
+  <data name="Rattacher_A" xml:space="preserve">
+    <value>Rattacher à</value>
+  </data>
+  <data name="Rattacher_Facture" xml:space="preserve">
+    <value>Rattacher à la facture</value>
+  </data>
+  <data name="Rattacher_BL" xml:space="preserve">
+    <value>Rattacher au BL</value>
+  </data>
+  <data name="Paiements" xml:space="preserve">
+    <value>Paiements</value>
+  </data>
+  <data name="Reste_A_Payer" xml:space="preserve">
+    <value>Reste à payer</value>
+  </data>
+  <data name="Commentaire_Optionnel" xml:space="preserve">
+    <value>Commentaire (optionnel)</value>
+  </data>
+  <data name="Creer" xml:space="preserve">
+    <value>Créer</value>
+  </data>
+  <data name="Aucun_Paiement" xml:space="preserve">
+    <value>Aucun paiement trouvé.</value>
+  </data>
+  <data name="Chargement" xml:space="preserve">
+    <value>Chargement...</value>
+  </data>
+  <data name="Attention" xml:space="preserve">
+    <value>Attention</value>
+  </data>
+  <data name="Validation" xml:space="preserve">
+    <value>Validation</value>
+  </data>
+  <data name="Select_Client" xml:space="preserve">
+    <value>Sélectionner un client</value>
+  </data>
+  <data name="Select_Client_Validation" xml:space="preserve">
+    <value>Veuillez sélectionner un client</value>
+  </data>
+  <data name="No_Accounting_Year" xml:space="preserve">
+    <value>Aucun exercice comptable actif trouvé</value>
+  </data>
+  <data name="No_Accounting_Year_Validation" xml:space="preserve">
+    <value>Aucun exercice comptable actif trouvé. Veuillez activer un exercice comptable.</value>
+  </data>
+  <data name="Select_Methode_Validation" xml:space="preserve">
+    <value>Veuillez sélectionner une méthode de paiement</value>
+  </data>
+  <data name="Paiement_Cree" xml:space="preserve">
+    <value>Paiement créé avec succès</value>
+  </data>
+  <data name="Paiement_Modifie" xml:space="preserve">
+    <value>Paiement modifié avec succès</value>
+  </data>
+  <data name="Paiement_Supprime" xml:space="preserve">
+    <value>Paiement supprimé avec succès</value>
+  </data>
+  <data name="Erreur_Chargement_Accounting_Year" xml:space="preserve">
+    <value>Erreur lors du chargement de l'exercice comptable</value>
+  </data>
+  <data name="Erreur_Chargement_Banques" xml:space="preserve">
+    <value>Erreur lors du chargement des banques</value>
+  </data>
+  <data name="Erreur_Chargement_Paiement" xml:space="preserve">
+    <value>Impossible de charger le paiement</value>
+  </data>
+  <data name="Erreur_Chargement" xml:space="preserve">
+    <value>Erreur lors du chargement</value>
+  </data>
+  <data name="Erreur_Chargement_Clients" xml:space="preserve">
+    <value>Erreur lors du chargement des clients</value>
+  </data>
+  <data name="Erreur_Chargement_Factures" xml:space="preserve">
+    <value>Erreur lors du chargement des factures</value>
+  </data>
+  <data name="Erreur_Chargement_BL" xml:space="preserve">
+    <value>Erreur lors du chargement des bons de livraison</value>
+  </data>
+  <data name="Erreur_Chargement_Paiements" xml:space="preserve">
+    <value>Erreur lors du chargement des paiements</value>
+  </data>
+  <data name="Erreur_Suppression" xml:space="preserve">
+    <value>Erreur lors de la suppression</value>
+  </data>
+  <data name="Erreur_Sauvegarde" xml:space="preserve">
+    <value>Erreur lors de la sauvegarde</value>
+  </data>
+  <data name="Confirmation_Suppression" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir supprimer ce paiement ?</value>
+  </data>
+  <data name="Confirmation_Suppression_Titre" xml:space="preserve">
+    <value>Confirmation de suppression</value>
+  </data>
+  <data name="Oui" xml:space="preserve">
+    <value>Oui</value>
+  </data>
+  <data name="Non" xml:space="preserve">
+    <value>Non</value>
+  </data>
+  <data name="Espece" xml:space="preserve">
+    <value>Espèce</value>
+  </data>
+  <data name="Cheque" xml:space="preserve">
+    <value>Chèque</value>
+  </data>
+  <data name="Traite" xml:space="preserve">
+    <value>Traite</value>
+  </data>
+  <data name="TPE" xml:space="preserve">
+    <value>TPE</value>
+  </data>
+  <data name="Rechercher" xml:space="preserve">
+    <value>Rechercher</value>
+  </data>
+  <data name="Tous_Exercices" xml:space="preserve">
+    <value>Tous les exercices</value>
+  </data>
+  <data name="Numero_Col" xml:space="preserve">
+    <value>Numéro</value>
+  </data>
+  <data name="Client_Col" xml:space="preserve">
+    <value>Client</value>
+  </data>
+  <data name="Montant_Col" xml:space="preserve">
+    <value>Montant</value>
+  </data>
+  <data name="Date_Paiement_Col" xml:space="preserve">
+    <value>Date de paiement</value>
+  </data>
+  <data name="Methode_Col" xml:space="preserve">
+    <value>Méthode</value>
+  </data>
+  <data name="Banque_Col" xml:space="preserve">
+    <value>Banque</value>
+  </data>
+  <data name="Select_Provider" xml:space="preserve">
+    <value>Sélectionner un fournisseur</value>
+  </data>
+  <data name="Erreur_Chargement_Providers" xml:space="preserve">
+    <value>Erreur lors du chargement des fournisseurs</value>
+  </data>
+  <data name="Nouveau_Paiement_Fournisseur" xml:space="preserve">
+    <value>Nouveau paiement fournisseur</value>
+  </data>
+  <data name="Nouveau_Paiement_Tiers_Depenses" xml:space="preserve">
+    <value>Nouveau paiement tiers dépenses</value>
+  </data>
+  <data name="Select_Tiers" xml:space="preserve">
+    <value>Choisir un tiers</value>
+  </data>
+  <data name="Modifier_Tiers" xml:space="preserve">
+    <value>Modifier le tiers</value>
+  </data>
+  <data name="Nouveau_Tiers_Depenses" xml:space="preserve">
+    <value>Nouveau tiers dépenses</value>
+  </data>
+  <data name="Informations_Generales" xml:space="preserve">
+    <value>Informations générales</value>
+  </data>
+  <data name="Informations_Generales_Desc" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Coordonnees" xml:space="preserve">
+    <value>Coordonnées</value>
+  </data>
+  <data name="Coordonnees_Desc" xml:space="preserve">
+    <value />
+  </data>
+  <data name="Tiers_Depenses" xml:space="preserve">
+    <value>Tiers dépenses</value>
+  </data>
+  <data name="Acces_Refuse_Creer_Tiers" xml:space="preserve">
+    <value>Vous n'avez pas les droits pour créer ou modifier des tiers dépenses.</value>
+  </data>
+  <data name="Acces_Refuse_Factures_Depenses" xml:space="preserve">
+    <value>Vous n'avez pas les droits pour accéder aux factures dépenses.</value>
+  </data>
+  <data name="Acces_Rapide" xml:space="preserve">
+    <value>Accès rapide</value>
+  </data>
+  <data name="Facture_Depense_Optionnel" xml:space="preserve">
+    <value>Facture dépense (optionnel)</value>
+  </data>
+  <data name="Select_Facture_Depense" xml:space="preserve">
+    <value>Choisir une facture dépense</value>
+  </data>
+  <data name="Select_Tiers_Validation" xml:space="preserve">
+    <value>Veuillez sélectionner un tiers.</value>
+  </data>
+  <data name="Document_Photo_Facture" xml:space="preserve">
+    <value>Document / Photo</value>
+  </data>
+  <data name="Nouvelle_Facture_Depense" xml:space="preserve">
+    <value>Nouvelle facture dépense</value>
+  </data>
+  <data name="Modifier_Facture" xml:space="preserve">
+    <value>Modifier la facture</value>
+  </data>
+  <data name="Valider_Facture" xml:space="preserve">
+    <value>Valider la facture</value>
+  </data>
+  <data name="Facture_Depense_Creee" xml:space="preserve">
+    <value>Facture dépense créée.</value>
+  </data>
+  <data name="Facture_Mise_A_Jour" xml:space="preserve">
+    <value>Facture mise à jour.</value>
+  </data>
+  <data name="Facture_Validee" xml:space="preserve">
+    <value>Facture validée.</value>
+  </data>
+  <data name="Facture_Supprimee" xml:space="preserve">
+    <value>Facture supprimée.</value>
+  </data>
+  <data name="Facture_Has_Paiement" xml:space="preserve">
+    <value>Impossible de supprimer : cette facture est liée à un ou plusieurs paiements.</value>
+  </data>
+  <data name="Montant_Total" xml:space="preserve">
+    <value>Montant total</value>
+  </data>
+  <data name="Montant_HT" xml:space="preserve">
+    <value>Montant HT</value>
+  </data>
+  <data name="Taux_TVA" xml:space="preserve">
+    <value>Taux TVA</value>
+  </data>
+  <data name="Montant_TVA" xml:space="preserve">
+    <value>Montant TVA</value>
+  </data>
+  <data name="Montant_TTC" xml:space="preserve">
+    <value>Montant TTC</value>
+  </data>
+  <data name="Sans_TVA" xml:space="preserve">
+    <value>Sans TVA (0%)</value>
+  </data>
+  <data name="Description_Optionnel" xml:space="preserve">
+    <value>Description (optionnel)</value>
+  </data>
+  <data name="Select_Provider_Validation" xml:space="preserve">
+    <value>Veuillez sélectionner un fournisseur</value>
+  </data>
+  <data name="Facture_Fournisseur_Optionnel" xml:space="preserve">
+    <value>Facture fournisseur (optionnel)</value>
+  </data>
+  <data name="Select_Facture_Fournisseur" xml:space="preserve">
+    <value>Sélectionner une facture fournisseur</value>
+  </data>
+  <data name="Bon_Reception_Optionnel" xml:space="preserve">
+    <value>Bon de réception (optionnel)</value>
+  </data>
+  <data name="Select_Bon_Reception" xml:space="preserve">
+    <value>Sélectionner un bon de réception</value>
+  </data>
+  <data name="Erreur_Chargement_Factures_Fournisseur" xml:space="preserve">
+    <value>Erreur lors du chargement des factures fournisseur</value>
+  </data>
+  <data name="Erreur_Chargement_BR" xml:space="preserve">
+    <value>Erreur lors du chargement des bons de réception</value>
+  </data>
+  <data name="Solde_Summary" xml:space="preserve">
+    <value>Résumé du solde</value>
+  </data>
+  <data name="Total_Factures" xml:space="preserve">
+    <value>Total factures</value>
+  </data>
+  <data name="Total_BL_Non_Factures" xml:space="preserve">
+    <value>Total BL non facturés</value>
+  </data>
+  <data name="Total_Avoirs" xml:space="preserve">
+    <value>Total avoirs</value>
+  </data>
+  <data name="Total_Factures_Avoir" xml:space="preserve">
+    <value>Total factures avoir</value>
+  </data>
+  <data name="Total_BR_Non_Factures" xml:space="preserve">
+    <value>Total BR non facturés</value>
+  </data>
+  <data name="Total_Paiements" xml:space="preserve">
+    <value>Total paiements</value>
+  </data>
+  <data name="Solde" xml:space="preserve">
+    <value>Solde</value>
+  </data>
+  <data name="Documents" xml:space="preserve">
+    <value>Documents</value>
+  </data>
+  <data name="Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Erreur_Chargement_Solde" xml:space="preserve">
+    <value>Erreur lors du chargement du solde</value>
+  </data>
+  <data name="Ajouter_Banque" xml:space="preserve">
+    <value>Ajouter une banque</value>
+  </data>
+  <data name="Aucune_Banque" xml:space="preserve">
+    <value>Aucune banque trouvée.</value>
+  </data>
+  <data name="Modifier_Banque" xml:space="preserve">
+    <value>Modifier la banque</value>
+  </data>
+  <data name="Nouvelle_Banque" xml:space="preserve">
+    <value>Nouvelle banque</value>
+  </data>
+  <data name="Nom_Banque" xml:space="preserve">
+    <value>Nom de la banque</value>
+  </data>
+  <data name="Confirmation_Suppression_Banque" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir supprimer cette banque ?</value>
+  </data>
+  <data name="Confirmation_Suppression_AvoirFinancier" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir supprimer l'avoir financier n°{0} ?</value>
+  </data>
+  <data name="Fonctionnalite_Non_Disponible" xml:space="preserve">
+    <value>Cette fonctionnalité n'est pas encore disponible</value>
+  </data>
+  <data name="Information" xml:space="preserve">
+    <value>Information</value>
+  </data>
+  <data name="Nom_Requis" xml:space="preserve">
+    <value>Le nom est requis</value>
+  </data>
+  <data name="invoice_number_is_required" xml:space="preserve">
+    <value>Le numéro de facture est requis</value>
+  </data>
+  <data name="invoice_number_must_be_greater_than_0" xml:space="preserve">
+    <value>Le numéro de facture doit être supérieur à 0</value>
+  </data>
+  <data name="Banque_Creee" xml:space="preserve">
+    <value>Banque créée avec succès</value>
+  </data>
+  <data name="Comptes_Bancaires" xml:space="preserve">
+    <value>Comptes bancaires</value>
+  </data>
+  <data name="Ajouter_Compte_Bancaire" xml:space="preserve">
+    <value>Ajouter un compte bancaire</value>
+  </data>
+  <data name="Aucun_Compte_Bancaire" xml:space="preserve">
+    <value>Aucun compte bancaire trouvé.</value>
+  </data>
+  <data name="Modifier_Compte_Bancaire" xml:space="preserve">
+    <value>Modifier le compte bancaire</value>
+  </data>
+  <data name="Informations_Bancaires_Entreprise" xml:space="preserve">
+    <value>Informations Bancaires Entreprise</value>
+  </data>
+  <data name="Confirmation_Suppression_Compte_Bancaire" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir supprimer ce compte bancaire ?</value>
+  </data>
+  <data name="Compte_Bancaire_Supprime" xml:space="preserve">
+    <value>Compte bancaire supprimé avec succès</value>
+  </data>
+  <data name="Compte_Bancaire_Modifie" xml:space="preserve">
+    <value>Compte bancaire modifié avec succès</value>
+  </data>
+  <data name="Compte_Bancaire_Cree" xml:space="preserve">
+    <value>Compte bancaire créé avec succès</value>
+  </data>
+  <data name="Code_Etablissement" xml:space="preserve">
+    <value>Code Établissement</value>
+  </data>
+  <data name="Code_Agence" xml:space="preserve">
+    <value>Code Agence</value>
+  </data>
+  <data name="Numero_Compte" xml:space="preserve">
+    <value>Numéro de Compte</value>
+  </data>
+  <data name="Cle_RIB" xml:space="preserve">
+    <value>Clé RIB</value>
+  </data>
+  <data name="Libelle" xml:space="preserve">
+    <value>Libellé</value>
+  </data>
+  <data name="Champs_Requis" xml:space="preserve">
+    <value>Veuillez remplir tous les champs obligatoires.</value>
+  </data>
+  <data name="Releves_Bancaires" xml:space="preserve">
+    <value>Relevés bancaires</value>
+  </data>
+  <data name="Importer_Fichier" xml:space="preserve">
+    <value>Importer un fichier</value>
+  </data>
+  <data name="Select_Compte_Bancaire" xml:space="preserve">
+    <value>Sélectionner un compte bancaire</value>
+  </data>
+  <data name="Fichier" xml:space="preserve">
+    <value>Fichier</value>
+  </data>
+  <data name="Importer" xml:space="preserve">
+    <value>Importer</value>
+  </data>
+  <data name="Aucun_Import_Releve" xml:space="preserve">
+    <value>Aucun import de relevé.</value>
+  </data>
+  <data name="Date_Import" xml:space="preserve">
+    <value>Date d'import</value>
+  </data>
+  <data name="Nombre_Lignes" xml:space="preserve">
+    <value>Nombre de lignes</value>
+  </data>
+  <data name="Exporter_Sage" xml:space="preserve">
+    <value>Exporter vers Sage</value>
+  </data>
+  <data name="Import_Reussi" xml:space="preserve">
+    <value>Import réussi</value>
+  </data>
+  <data name="Import_Produits" xml:space="preserve">
+    <value>Importer produits</value>
+  </data>
+  <data name="Import_Produits_Select_File" xml:space="preserve">
+    <value>Choisissez un fichier Excel (.xlsx) contenant la liste des prix.</value>
+  </data>
+  <data name="Import_Produits_Mapping" xml:space="preserve">
+    <value>Mapping des colonnes</value>
+  </data>
+  <data name="Import_Produits_Mapping_Help" xml:space="preserve">
+    <value>Associez chaque champ à une colonne du fichier.</value>
+  </data>
+  <data name="Import_Col_Reference" xml:space="preserve">
+    <value>Référence produit</value>
+  </data>
+  <data name="Import_Col_Prix_Brut" xml:space="preserve">
+    <value>Prix brut</value>
+  </data>
+  <data name="Import_Col_Nom" xml:space="preserve">
+    <value>Désignation / Nom</value>
+  </data>
+  <data name="Import_Col_Societe" xml:space="preserve">
+    <value>Société (ST / SD)</value>
+  </data>
+  <data name="Non_mappe" xml:space="preserve">
+    <value>Non mappé</value>
+  </data>
+  <data name="Apercu" xml:space="preserve">
+    <value>Aperçu</value>
+  </data>
+  <data name="Import_Produits_Back" xml:space="preserve">
+    <value>Retour</value>
+  </data>
+  <data name="Import_Produits_Run" xml:space="preserve">
+    <value>Lancer l'import</value>
+  </data>
+  <data name="Import_Produits_Result" xml:space="preserve">
+    <value>Résultat de l'import</value>
+  </data>
+  <data name="Import_Produits_Created" xml:space="preserve">
+    <value>Créés</value>
+  </data>
+  <data name="Import_Produits_Updated" xml:space="preserve">
+    <value>Mis à jour</value>
+  </data>
+  <data name="Import_Produits_Errors" xml:space="preserve">
+    <value>Erreurs</value>
+  </data>
+  <data name="Select" xml:space="preserve">
+    <value>Choisir</value>
+  </data>
+  <data name="Lignes" xml:space="preserve">
+    <value>lignes</value>
+  </data>
+  <data name="Export_Sage_Reussi" xml:space="preserve">
+    <value>Export Sage réussi</value>
+  </data>
+  <data name="Compte_Bancaire" xml:space="preserve">
+    <value>Compte bancaire</value>
+  </data>
+  <data name="inventaires" xml:space="preserve">
+    <value>Inventaires</value>
+  </data>
+  <data name="inventaire" xml:space="preserve">
+    <value>Inventaire</value>
+  </data>
+  <data name="add_inventaire" xml:space="preserve">
+    <value>Créer un inventaire</value>
+  </data>
+  <data name="inventaires_export_excel_page_vide" xml:space="preserve">
+    <value>Aucun inventaire sur cette page à exporter.</value>
+  </data>
+  <data name="date_inventaire" xml:space="preserve">
+    <value>Date d'inventaire</value>
+  </data>
+  <data name="quantite_theorique" xml:space="preserve">
+    <value>Quantité théorique</value>
+  </data>
+  <data name="quantite_reelle" xml:space="preserve">
+    <value>Quantité réelle</value>
+  </data>
+  <data name="dernier_prix_achat" xml:space="preserve">
+    <value>Dernier prix d'achat</value>
+  </data>
+  <data name="historique_achat_vente" xml:space="preserve">
+    <value>Historique Achat/Vente</value>
+  </data>
+  <data name="lignes_inventaire" xml:space="preserve">
+    <value>Lignes d'inventaire</value>
+  </data>
+  <data name="valider" xml:space="preserve">
+    <value>Valider</value>
+  </data>
+  <data name="cloturer" xml:space="preserve">
+    <value>Clôturer</value>
+  </data>
+  <data name="statut" xml:space="preserve">
+    <value>Statut</value>
+  </data>
+  <data name="num" xml:space="preserve">
+    <value>Numéro</value>
+  </data>
+  <data name="document_num" xml:space="preserve">
+    <value>Numéro document</value>
+  </data>
+  <data name="fournisseur_client" xml:space="preserve">
+    <value>Fournisseur/Client</value>
+  </data>
+  <data name="back" xml:space="preserve">
+    <value>Retour</value>
+  </data>
+  <data name="stock_calcule" xml:space="preserve">
+    <value>Stock calculé</value>
+  </data>
+  <data name="stock_disponible" xml:space="preserve">
+    <value>Stock disponible</value>
+  </data>
+  <data name="stock_initial" xml:space="preserve">
+    <value>Stock initial</value>
+  </data>
+  <data name="total_achats" xml:space="preserve">
+    <value>Total achats</value>
+  </data>
+  <data name="total_ventes" xml:space="preserve">
+    <value>Total ventes</value>
+  </data>
+  <data name="stock_insuffisant" xml:space="preserve">
+    <value>Stock insuffisant</value>
+  </data>
+  <data name="alerte_stock" xml:space="preserve">
+    <value>Alerte stock</value>
+  </data>
+  <data name="forcer_vente" xml:space="preserve">
+    <value>Forcer la vente</value>
+  </data>
+  <data name="ajuster_quantite" xml:space="preserve">
+    <value>Ajuster la quantité</value>
+  </data>
+  <data name="stock_manquant" xml:space="preserve">
+    <value>Stock manquant</value>
+  </data>
+  <data name="quantite_demandee" xml:space="preserve">
+    <value>Quantité demandée</value>
+  </data>
+  <data name="quantite_disponible" xml:space="preserve">
+    <value>Quantité disponible</value>
+  </data>
+  <data name="difference_stock" xml:space="preserve">
+    <value>Différence avec le stock théorique</value>
+  </data>
+  <data name="stock_insuffisant_message" xml:space="preserve">
+    <value>Le stock disponible est insuffisant pour la quantité demandée.</value>
+  </data>
+  <data name="Ref_Produit" xml:space="preserve">
+    <value>Référence produit</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Quantite" xml:space="preserve">
+    <value>Quantité</value>
+  </data>
+  <data name="Quantite_Livree" xml:space="preserve">
+    <value>Quantité livrée</value>
+  </data>
+  <data name="Quantite_Non_Livree" xml:space="preserve">
+    <value>Quantité non livrée</value>
+  </data>
+  <data name="Lignes_BL" xml:space="preserve">
+    <value>Lignes BL</value>
+  </data>
+  <data name="Quantites_Non_Livrees_Indicator" xml:space="preserve">
+    <value>Quantités non livrées</value>
+  </data>
+  <data name="Facture" xml:space="preserve">
+    <value>Facture</value>
+  </data>
+  <data name="Bons_Livraison" xml:space="preserve">
+    <value>Bons de livraison</value>
+  </data>
+  <data name="Confirmation_Validation_Titre" xml:space="preserve">
+    <value>Confirmer la validation</value>
+  </data>
+  <data name="Confirmation_Validation_DeliveryNote" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider le bon de livraison n°{0} ?</value>
+  </data>
+  <data name="Confirmation_Validation_DeliveryNotes" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider {0} bon{1} de livraison ?</value>
+  </data>
+  <data name="Confirmation_Validation_Order" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider la commande n°{0} ?</value>
+  </data>
+  <data name="Confirmation_Validation_Orders" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider {0} commande{1} ?</value>
+  </data>
+  <data name="Confirmation_Validation_Invoice" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider la facture n°{0} ?</value>
+  </data>
+  <data name="Confirmation_Validation_Invoices" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider {0} facture{1} ?</value>
+  </data>
+  <data name="Confirmation_Validation_Quotation" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider le devis n°{0} ?</value>
+  </data>
+  <data name="Confirmation_Validation_Quotations" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider {0} devis ?</value>
+  </data>
+  <data name="Confirmation_Validation_ReceiptNote" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider le bon de réception n°{0} ?</value>
+  </data>
+  <data name="Confirmation_Validation_ReceiptNotes" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider {0} bon{1} de réception ?</value>
+  </data>
+  <data name="Confirmation_Validation_ProviderInvoice" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider la facture fournisseur n°{0} ?</value>
+  </data>
+  <data name="Confirmation_Validation_ProviderInvoices" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider {0} facture{1} fournisseur ?</value>
+  </data>
+  <data name="Confirmation_Validation_Avoir" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider l'avoir n°{0} ?</value>
+  </data>
+  <data name="Confirmation_Validation_Avoirs" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider {0} avoir{1} ?</value>
+  </data>
+  <data name="Confirmation_Validation_AvoirFournisseur" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider l'avoir fournisseur n°{0} ?</value>
+  </data>
+  <data name="Confirmation_Validation_AvoirsFournisseur" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir valider {0} avoir{1} fournisseur ?</value>
+  </data>
+  <data name="Validation_Success_DeliveryNote" xml:space="preserve">
+    <value>Bon de livraison validé avec succès.</value>
+  </data>
+  <data name="Validation_Success_DeliveryNotes" xml:space="preserve">
+    <value>Bons de livraison validés avec succès.</value>
+  </data>
+  <data name="Validation_Success_Order" xml:space="preserve">
+    <value>Commande validée avec succès.</value>
+  </data>
+  <data name="Validation_Success_Orders" xml:space="preserve">
+    <value>Commandes validées avec succès.</value>
+  </data>
+  <data name="Validation_Success_Invoice" xml:space="preserve">
+    <value>Facture validée avec succès.</value>
+  </data>
+  <data name="Validation_Success_Invoices" xml:space="preserve">
+    <value>Factures validées avec succès.</value>
+  </data>
+  <data name="Validation_Success_Quotation" xml:space="preserve">
+    <value>Devis validé avec succès.</value>
+  </data>
+  <data name="Validation_Success_Quotations" xml:space="preserve">
+    <value>Devis validés avec succès.</value>
+  </data>
+  <data name="Validation_Success_ReceiptNote" xml:space="preserve">
+    <value>Bon de réception validé avec succès.</value>
+  </data>
+  <data name="Validation_Success_ReceiptNotes" xml:space="preserve">
+    <value>Bons de réception validés avec succès.</value>
+  </data>
+  <data name="Validation_Success_ProviderInvoice" xml:space="preserve">
+    <value>Facture fournisseur validée avec succès.</value>
+  </data>
+  <data name="Validation_Success_ProviderInvoices" xml:space="preserve">
+    <value>Factures fournisseur validées avec succès.</value>
+  </data>
+  <data name="Validation_Success_Avoir" xml:space="preserve">
+    <value>Avoir validé avec succès.</value>
+  </data>
+  <data name="Validation_Success_Avoirs" xml:space="preserve">
+    <value>Avoirs validés avec succès.</value>
+  </data>
+  <data name="Validation_Success_AvoirFournisseur" xml:space="preserve">
+    <value>Avoir fournisseur validé avec succès.</value>
+  </data>
+  <data name="Validation_Success_AvoirsFournisseur" xml:space="preserve">
+    <value>Avoirs fournisseur validés avec succès.</value>
+  </data>
+  <data name="Select_At_Least_One_DeliveryNote" xml:space="preserve">
+    <value>Veuillez sélectionner au moins un bon de livraison.</value>
+  </data>
+  <data name="Cannot_Validate_New_Document" xml:space="preserve">
+    <value>Impossible de valider un nouveau document non enregistré.</value>
+  </data>
+  <data name="Document_Already_Validated" xml:space="preserve">
+    <value>Ce document est déjà validé.</value>
+  </data>
+  <data name="Invalid_Document_Number" xml:space="preserve">
+    <value>Numéro de document invalide.</value>
+  </data>
+  <data name="Validate" xml:space="preserve">
+    <value>Valider</value>
+  </data>
+  <data name="Select_At_Least_One_Order" xml:space="preserve">
+    <value>Veuillez sélectionner au moins une commande.</value>
+  </data>
+  <data name="Select_At_Least_One_Invoice" xml:space="preserve">
+    <value>Veuillez sélectionner au moins une facture.</value>
+  </data>
+  <data name="Select_At_Least_One_Quotation" xml:space="preserve">
+    <value>Veuillez sélectionner au moins un devis.</value>
+  </data>
+  <data name="Select_At_Least_One_ReceiptNote" xml:space="preserve">
+    <value>Veuillez sélectionner au moins un bon de réception.</value>
+  </data>
+  <data name="Select_At_Least_One_ProviderInvoice" xml:space="preserve">
+    <value>Veuillez sélectionner au moins une facture fournisseur.</value>
+  </data>
+  <data name="Select_At_Least_One_Avoir" xml:space="preserve">
+    <value>Veuillez sélectionner au moins un avoir.</value>
+  </data>
+  <data name="Select_At_Least_One_AvoirFournisseur" xml:space="preserve">
+    <value>Veuillez sélectionner au moins un avoir fournisseur.</value>
+  </data>
+  <data name="Success" xml:space="preserve">
+    <value>Succès</value>
+  </data>
+  <data name="Error" xml:space="preserve">
+    <value>Erreur</value>
+  </data>
+  <data name="Unexpected_Error" xml:space="preserve">
+    <value>Une erreur est survenue.</value>
+  </data>
+  <data name="retenue_source" xml:space="preserve">
+    <value>Retenue à la source</value>
+  </data>
+  <data name="exonere_retenue_source" xml:space="preserve">
+    <value>Exonéré de retenue à la source</value>
+  </data>
+  <data name="num_tej" xml:space="preserve">
+    <value>Numéro TEJ</value>
+  </data>
+  <data name="num_tej_placeholder" xml:space="preserve">
+    <value>Entrez le numéro TEJ</value>
+  </data>
+  <data name="montant_avant_retenu" xml:space="preserve">
+    <value>Montant avant retenue</value>
+  </data>
+  <data name="montant_apres_retenu" xml:space="preserve">
+    <value>Montant après retenue</value>
+  </data>
+  <data name="montant_apres_retenu_plus_timbre" xml:space="preserve">
+    <value>Montant après retenue + timbre</value>
+  </data>
+  <data name="taux_retenu" xml:space="preserve">
+    <value>Taux de retenue (%)</value>
+  </data>
+  <data name="upload_pdf_tej" xml:space="preserve">
+    <value>Uploader le PDF TEJ</value>
+  </data>
+  <data name="tej_export_info_retenue" xml:space="preserve">
+    <value>Lors de l'export TEJ, le montant envoyé est le montant avant retenue ; la plateforme TEJ effectue le calcul de la retenue.</value>
+  </data>
+  <data name="tej_acte_depot_choice" xml:space="preserve">
+    <value>Choisir le type de déclaration TEJ :</value>
+  </data>
+  <data name="tej_acte_depot_title" xml:space="preserve">
+    <value>Type de déclaration TEJ</value>
+  </data>
+  <data name="tej_export_all" xml:space="preserve">
+    <value>Exporter tout en TEJ</value>
+  </data>
+  <data name="tej_no_invoices_to_export" xml:space="preserve">
+    <value>Aucune facture à exporter. Appliquez des filtres et rechargez les données.</value>
+  </data>
+  <data name="Factures_Fournisseur" xml:space="preserve">
+    <value>Factures fournisseur</value>
+  </data>
+  <data name="Factures_Depense" xml:space="preserve">
+    <value>Factures dépense</value>
+  </data>
+  <data name="seuil_non_atteint" xml:space="preserve">
+    <value>Seuil non atteint</value>
+  </data>
+  <data name="seuil" xml:space="preserve">
+    <value>Seuil</value>
+  </data>
+  <data name="file_too_large" xml:space="preserve">
+    <value>Le fichier est trop volumineux (max 10 MB)</value>
+  </data>
+  <data name="invalid_file_type" xml:space="preserve">
+    <value>Type de fichier invalide. Seuls les fichiers PDF sont acceptés.</value>
+  </data>
+  <data name="error_uploading_file" xml:space="preserve">
+    <value>Erreur lors du téléchargement du fichier</value>
+  </data>
+  <data name="montant_ttc" xml:space="preserve">
+    <value>Montant TTC</value>
+  </data>
+  <data name="retenue_status" xml:space="preserve">
+    <value>Statut retenue</value>
+  </data>
+  <data name="retenue_action" xml:space="preserve">
+    <value>Action</value>
+  </data>
+  <data name="retenue_exists" xml:space="preserve">
+    <value>Créée</value>
+  </data>
+  <data name="retenue_not_exists" xml:space="preserve">
+    <value>Non créée</value>
+  </data>
+  <data name="existing_pdf_loaded" xml:space="preserve">
+    <value>PDF existant chargé</value>
+  </data>
+  <data name="upload_new_pdf_to_replace" xml:space="preserve">
+    <value>Uploadez un nouveau PDF pour remplacer l'existant</value>
+  </data>
+  <data name="download_pdf" xml:space="preserve">
+    <value>Télécharger le PDF</value>
+  </data>
+  <data name="error_downloading_file" xml:space="preserve">
+    <value>Erreur lors du téléchargement du fichier</value>
+  </data>
+  <data name="Clients_Avec_Problemes_Solde" xml:space="preserve">
+    <value>Clients avec problèmes de solde</value>
+  </data>
+  <data name="Fournisseurs_Avec_Problemes_Solde" xml:space="preserve">
+    <value>Fournisseurs avec problème de solde</value>
+  </data>
+  <data name="Total_Avoirs_Financiers" xml:space="preserve">
+    <value>Total avoirs financiers</value>
+  </data>
+  <data name="Quantites_Non_Livrees" xml:space="preserve">
+    <value>Quantités non livrées</value>
+  </data>
+  <data name="Date_Dernier_Document" xml:space="preserve">
+    <value>Date dernier document</value>
+  </data>
+  <data name="No_Records_To_Display" xml:space="preserve">
+    <value>Aucun enregistrement à afficher</value>
+  </data>
+  <data name="Notifications" xml:space="preserve">
+    <value>Notifications</value>
+  </data>
+  <data name="Unread_Notifications" xml:space="preserve">
+    <value>Notifications non lues</value>
+  </data>
+  <data name="Mark_as_Read" xml:space="preserve">
+    <value>Marquer comme lu</value>
+  </data>
+  <data name="Mark_All_as_Read" xml:space="preserve">
+    <value>Tout marquer comme lu</value>
+  </data>
+  <data name="No_Notifications" xml:space="preserve">
+    <value>Aucune notification</value>
+  </data>
+  <data name="New" xml:space="preserve">
+    <value>Nouveau</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Fermer</value>
+  </data>
+  <data name="Accounting_Years" xml:space="preserve">
+    <value>Exercices Comptables</value>
+  </data>
+  <data name="Accounting_Year" xml:space="preserve">
+    <value>Exercice Comptable</value>
+  </data>
+  <data name="New_Accounting_Year" xml:space="preserve">
+    <value>Nouvel Exercice Comptable</value>
+  </data>
+  <data name="Edit_Accounting_Year" xml:space="preserve">
+    <value>Modifier l'Exercice Comptable</value>
+  </data>
+  <data name="No_Accounting_Years" xml:space="preserve">
+    <value>Aucun exercice comptable</value>
+  </data>
+  <data name="Error_Loading_Accounting_Years" xml:space="preserve">
+    <value>Erreur lors du chargement des exercices comptables</value>
+  </data>
+  <data name="Error_Loading_Accounting_Year" xml:space="preserve">
+    <value>Erreur lors du chargement de l'exercice comptable</value>
+  </data>
+  <data name="Error_Deleting_Accounting_Year" xml:space="preserve">
+    <value>Erreur lors de la suppression de l'exercice comptable</value>
+  </data>
+  <data name="Error_Saving" xml:space="preserve">
+    <value>Erreur lors de l'enregistrement</value>
+  </data>
+  <data name="Accounting_Year_Created" xml:space="preserve">
+    <value>Exercice comptable créé avec succès</value>
+  </data>
+  <data name="Accounting_Year_Updated" xml:space="preserve">
+    <value>Exercice comptable modifié avec succès</value>
+  </data>
+  <data name="Accounting_Year_Deleted" xml:space="preserve">
+    <value>Exercice comptable supprimé avec succès</value>
+  </data>
+  <data name="Confirm_Delete_Accounting_Year" xml:space="preserve">
+    <value>Êtes-vous sûr de vouloir supprimer cet exercice comptable ?</value>
+  </data>
+  <data name="Accounting_Year_Used_Cannot_Modify" xml:space="preserve">
+    <value>Cet exercice comptable est utilisé dans des documents (factures, bons de livraison, etc.) et ne peut pas être modifié. Veuillez supprimer ou modifier les documents associés avant de modifier cet exercice comptable.</value>
+  </data>
+  <data name="Accounting_Year_Used_Cannot_Delete" xml:space="preserve">
+    <value>Cet exercice comptable est utilisé et ne peut pas être supprimé</value>
+  </data>
+  <data name="Accounting_Year_Already_Exists" xml:space="preserve">
+    <value>Un exercice comptable pour cette année existe déjà</value>
+  </data>
+  <data name="Error_Updating_Accounting_Year_Validation" xml:space="preserve">
+    <value>Erreur de validation lors de la mise à jour de l'exercice comptable</value>
+  </data>
+  <data name="Year" xml:space="preserve">
+    <value>Année</value>
+  </data>
+  <data name="Year_Placeholder" xml:space="preserve">
+    <value>Ex: 2024</value>
+  </data>
+  <data name="Year_Required" xml:space="preserve">
+    <value>L'année est requise</value>
+  </data>
+  <data name="Year_Invalid_Range" xml:space="preserve">
+    <value>L'année doit être comprise entre 2000 et 2100</value>
+  </data>
+  <data name="Is_Active" xml:space="preserve">
+    <value>Actif</value>
+  </data>
+  <data name="Active" xml:space="preserve">
+    <value>Actif</value>
+  </data>
+  <data name="Inactive" xml:space="preserve">
+    <value>Inactif</value>
+  </data>
+  <data name="Export_Excel" xml:space="preserve">
+    <value>Exporter vers Excel</value>
+  </data>
+  <data name="Export_Pdf" xml:space="preserve">
+    <value>Exporter vers PDF</value>
+  </data>
+  <data name="Export_Excel_Success" xml:space="preserve">
+    <value>Export Excel réussi</value>
+  </data>
+  <data name="Erreur_Export" xml:space="preserve">
+    <value>Erreur lors de l'export</value>
+  </data>
+  <data name="Cloture_Caisse" xml:space="preserve">
+    <value>Clôture de caisse</value>
+  </data>
+  <data name="Date" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="Imprimer_PDF" xml:space="preserve">
+    <value>Imprimer PDF</value>
+  </data>
+  <data name="Somme_Espece" xml:space="preserve">
+    <value>Somme Espèce</value>
+  </data>
+  <data name="Somme_Cheque" xml:space="preserve">
+    <value>Somme Chèque</value>
+  </data>
+  <data name="Somme_Traite" xml:space="preserve">
+    <value>Somme Traite</value>
+  </data>
+  <data name="Somme_Virement" xml:space="preserve">
+    <value>Somme Virement</value>
+  </data>
+  <data name="Somme_TPE" xml:space="preserve">
+    <value>Somme TPE</value>
+  </data>
+  <data name="Total_Paiements" xml:space="preserve">
+    <value>Total Paiements</value>
+  </data>
+  <data name="Total" xml:space="preserve">
+    <value>Total</value>
+  </data>
+  <data name="Afficher_Detail" xml:space="preserve">
+    <value>Afficher le détail</value>
+  </data>
+  <data name="Masquer_Detail" xml:space="preserve">
+    <value>Masquer le détail</value>
+  </data>
+  <data name="Avoirs" xml:space="preserve">
+    <value>Avoirs</value>
+  </data>
+  <data name="Aucun_avoir_date" xml:space="preserve">
+    <value>Aucun avoir pour cette date.</value>
+  </data>
+  <data name="Aucun_bl_date" xml:space="preserve">
+    <value>Aucun bon de livraison pour cette date.</value>
+  </data>
+  <data name="Resultat_Cloture" xml:space="preserve">
+    <value>Résultat (Total BL - Total Avoirs)</value>
+  </data>
+  <data name="Export_PDF_Reussi" xml:space="preserve">
+    <value>Export PDF réussi.</value>
+  </data>
+  <data name="Actualiser" xml:space="preserve">
+    <value>Actualiser</value>
+  </data>
+  <data name="Ventes_nettes" xml:space="preserve">
+    <value>Ventes nettes</value>
+  </data>
+  <data name="Achats_nets" xml:space="preserve">
+    <value>Achats nets</value>
+  </data>
+  <data name="Resultat" xml:space="preserve">
+    <value>Résultat</value>
+  </data>
+  <data name="HT" xml:space="preserve">
+    <value>HT</value>
+  </data>
+  <data name="Evolution_ventes_achats" xml:space="preserve">
+    <value>Évolution ventes / achats</value>
+  </data>
+  <data name="Alertes_soldes" xml:space="preserve">
+    <value>Alertes soldes</value>
+  </data>
+  <data name="Aucune_donnee_evolution" xml:space="preserve">
+    <value>Aucune donnée d'évolution disponible.</value>
+  </data>
+  <data name="Voir_tout" xml:space="preserve">
+    <value>Voir tout</value>
+  </data>
+  <data name="Voir_recap_detaille" xml:space="preserve">
+    <value>Voir le récap détaillé</value>
+  </data>
+</root>

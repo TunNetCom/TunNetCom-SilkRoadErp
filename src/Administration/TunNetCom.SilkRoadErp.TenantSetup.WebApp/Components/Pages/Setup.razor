@@ -1,0 +1,417 @@
+@page "/setup"
+@inject IAdminApiClient AdminApi
+@inject IConfiguration Configuration
+@inject NavigationManager Navigation
+
+<PageTitle>Create tenant</PageTitle>
+
+@if (_phase == Phase.Form)
+{
+    <RadzenCard class="rz-shadow-2" Style="max-width: 600px;">
+        <RadzenStack Gap="0.5rem" class="rz-mb-4">
+            <RadzenText TextStyle="TextStyle.H4" class="rz-mb-0">Create your tenant</RadzenText>
+            <RadzenText TextStyle="TextStyle.Body2" class="rz-color-secondary">Enter your company and administrator details. Provisioning will start automatically after registration.</RadzenText>
+        </RadzenStack>
+
+        @if (!string.IsNullOrEmpty(_formError))
+        {
+            <RadzenAlert AlertStyle="AlertStyle.Danger" Shade="Shade.Lighter" Text="@_formError" class="rz-mb-4" AllowClose="true" Close="() => _formError = null" />
+        }
+
+    <RadzenStack Gap="1.25rem" Style="max-width: 560px;">
+        <RadzenFormField Text="Identifier *" Variant="Variant.Outlined">
+            <ChildContent><RadzenTextBox @bind-Value="_identifier" Placeholder="e.g. acme-corp" /></ChildContent>
+            <Helper><RadzenText TextStyle="TextStyle.Caption">Unique slug for your tenant (lowercase, no spaces).</RadzenText></Helper>
+        </RadzenFormField>
+        <RadzenFormField Text="Company name *" Variant="Variant.Outlined">
+            <ChildContent><RadzenTextBox @bind-Value="_companyName" Placeholder="e.g. ACME Corporation" /></ChildContent>
+        </RadzenFormField>
+        <RadzenFormField Text="Admin full name *" Variant="Variant.Outlined">
+            <ChildContent><RadzenTextBox @bind-Value="_adminName" Placeholder="e.g. John Doe" /></ChildContent>
+        </RadzenFormField>
+        <RadzenFormField Text="Admin email *" Variant="Variant.Outlined">
+            <ChildContent><RadzenTextBox @bind-Value="_adminEmail" Placeholder="admin@example.com" /></ChildContent>
+        </RadzenFormField>
+        <RadzenFormField Text="Admin password *" Variant="Variant.Outlined">
+            <ChildContent><RadzenPassword @bind-Value="_adminPassword" Placeholder="Strong password" /></ChildContent>
+        </RadzenFormField>
+        <RadzenFormField Text="Subscription plan" Variant="Variant.Outlined">
+            <ChildContent>
+                <RadzenDropDown @bind-Value="_planId" Data="@_activePlans" TextProperty="Name" ValueProperty="Id" Placeholder="@(_activePlans.Count == 0 ? "No active plans" : "Select a plan")" AllowClear="true" Style="width:100%" />
+            </ChildContent>
+            <Helper>
+                <RadzenText TextStyle="TextStyle.Caption">Only active plans are listed. Create plans in the Administration app if none appear.</RadzenText>
+            </Helper>
+        </RadzenFormField>
+        <RadzenFormField Text="Currency" Variant="Variant.Outlined">
+            <ChildContent>
+                <RadzenDropDown @bind-Value="_currency" Data="@_currencyOptions" TextProperty="Text" ValueProperty="Value" Placeholder="Select currency" AllowClear="true" Style="width:100%" />
+            </ChildContent>
+        </RadzenFormField>
+        <RadzenFormField Text="Language" Variant="Variant.Outlined">
+            <ChildContent>
+                <RadzenDropDown @bind-Value="_language" Data="@_languageOptions" TextProperty="Text" ValueProperty="Value" Placeholder="Select language" AllowClear="true" Style="width:100%" />
+            </ChildContent>
+        </RadzenFormField>
+
+        <RadzenText TextStyle="TextStyle.Subtitle2" class="rz-mb-0">Modules</RadzenText>
+        <RadzenText TextStyle="TextStyle.Caption" class="rz-color-secondary rz-mb-2">Choose which ERP modules to enable for this tenant. You can change this later in the Administration app.</RadzenText>
+        <RadzenStack Gap="0.5rem" class="rz-p-2" Style="border: 1px solid var(--rz-base-300); border-radius: 8px; max-height: 220px; overflow-y: auto;">
+            @foreach (var bc in _boundedContexts.OrderBy(b => b.DisplayOrder).ThenBy(b => b.Name))
+            {
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                    <RadzenCheckBox TValue="bool" Checked="@_selectedModuleIds.Contains(bc.Id)" Change="@(val => SetModuleSelected(bc.Id, val))" />
+                    @if (!string.IsNullOrEmpty(bc.Icon))
+                    {
+                        <RadzenIcon Icon="@bc.Icon" Style="font-size: 1.1rem; opacity: 0.8;" />
+                    }
+                    <RadzenText TextStyle="TextStyle.Body2" class="rz-mb-0">@bc.Name</RadzenText>
+                    @if (bc.IsCore)
+                    {
+                        <RadzenBadge Text="Core" BadgeStyle="BadgeStyle.Primary" Size="BadgeSize.Small" />
+                    }
+                </RadzenStack>
+            }
+            @if (_boundedContexts.Count == 0)
+            {
+                <RadzenText TextStyle="TextStyle.Caption" class="rz-color-secondary">No modules defined. Create modules in the Administration app first.</RadzenText>
+            }
+        </RadzenStack>
+
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+            <RadzenButton Text="Create tenant and start setup" Icon="play_arrow" ButtonStyle="ButtonStyle.Primary" Click="@Submit" Disabled="@_submitting" />
+            <RadzenButton Text="Back" ButtonStyle="ButtonStyle.Light" Click="@(() => Navigation.NavigateTo("/"))" Disabled="@_submitting" />
+        </RadzenStack>
+    </RadzenStack>
+    </RadzenCard>
+}
+else if (_phase == Phase.Connecting)
+{
+    <RadzenCard class="rz-shadow-2" Style="max-width: 480px;">
+        <RadzenStack Gap="1rem" AlignItems="AlignItems.Center">
+            <RadzenText TextStyle="TextStyle.H5" class="rz-mb-0">Connecting</RadzenText>
+            <RadzenProgressBarCircular ShowValue="true" Mode="ProgressBarMode.Indeterminate" />
+            <RadzenText TextStyle="TextStyle.Body2" class="rz-color-secondary">Connecting to provisioning service…</RadzenText>
+        </RadzenStack>
+    </RadzenCard>
+}
+else if (_phase == Phase.Provisioning)
+{
+    <RadzenCard class="rz-shadow-2" Style="max-width: 560px;">
+        <RadzenText TextStyle="TextStyle.H5" class="rz-mb-3">Setting up your tenant</RadzenText>
+        <RadzenProgressBar Value="@_progressPercent" ShowValue="true" Mode="ProgressBarMode.Determinate" class="rz-mb-3" />
+        <RadzenText TextStyle="TextStyle.Body2" class="rz-mb-4">@_currentActivity</RadzenText>
+    <RadzenStack Gap="0.5rem">
+        @foreach (var step in _steps)
+        {
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                @if (step.Completed)
+                {
+                    <RadzenIcon Icon="check_circle" Style="color: var(--rz-success);" />
+                }
+                else if (step.Id == _currentStepId)
+                {
+                    <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Small" />
+                }
+                else
+                {
+                    <RadzenIcon Icon="radio_button_unchecked" Style="opacity: 0.5;" />
+                }
+                <RadzenText TextStyle="TextStyle.Body2">@step.Name</RadzenText>
+            </RadzenStack>
+        }
+    </RadzenStack>
+    </RadzenCard>
+}
+else if (_phase == Phase.Success)
+{
+    <RadzenCard class="rz-shadow-2" Style="max-width: 560px;">
+        <RadzenText TextStyle="TextStyle.H5" class="rz-mb-3">Tenant ready</RadzenText>
+        <RadzenAlert AlertStyle="AlertStyle.Success" Shade="Shade.Lighter" class="rz-mb-4">
+            Your tenant has been provisioned successfully.
+        </RadzenAlert>
+        <RadzenStack Gap="0.5rem" class="rz-mb-4">
+            <RadzenText TextStyle="TextStyle.Body2"><strong>Tenant URL:</strong> <a href="@_tenantUrl" target="_blank" rel="noopener">@_tenantUrl</a></RadzenText>
+        </RadzenStack>
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+            <RadzenButton Text="Go to tenant" Icon="open_in_new" ButtonStyle="ButtonStyle.Primary" Click="@(() => Navigation.NavigateTo(_tenantUrl, true))" />
+            <RadzenButton Text="Set up another" ButtonStyle="ButtonStyle.Light" Click="@Reset" />
+        </RadzenStack>
+    </RadzenCard>
+}
+else if (_phase == Phase.Failed)
+{
+    <RadzenCard class="rz-shadow-2" Style="max-width: 560px;">
+        <RadzenText TextStyle="TextStyle.H5" class="rz-mb-3">Provisioning failed</RadzenText>
+        <RadzenAlert AlertStyle="AlertStyle.Danger" Shade="Shade.Lighter" Text="@_error" class="rz-mb-4" AllowClose="false" />
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+            <RadzenButton Text="Try again" Icon="replay" ButtonStyle="ButtonStyle.Primary" Click="@Reset" />
+            <RadzenButton Text="Back to home" ButtonStyle="ButtonStyle.Light" Click="@(() => Navigation.NavigateTo("/"))" />
+        </RadzenStack>
+    </RadzenCard>
+}
+
+@code {
+    private enum Phase { Form, Connecting, Provisioning, Success, Failed }
+
+    private Phase _phase = Phase.Form;
+    private string _identifier = "";
+    private string _companyName = "";
+    private string _adminName = "";
+    private string _adminEmail = "";
+    private string _adminPassword = "";
+    private int? _planId;
+    private string? _currency;
+    private string? _language;
+    private string? _formError;
+    private bool _submitting;
+
+    private int _progressPercent;
+    private string _currentActivity = "";
+    private string? _currentStepId;
+    private List<StepState> _steps = new();
+    private string? _error;
+    private string _tenantUrl = "";
+    private List<PlanDto> _plans = new();
+    private List<PlanDto> _activePlans => _plans.Where(p => p.IsActive).ToList();
+    private List<BoundedContextSummaryDto> _boundedContexts = new();
+    private HashSet<int> _selectedModuleIds = new();
+
+    private static readonly List<SelectItem> _currencyOptions = new()
+    {
+        new("TND - Tunisian Dinar", "TND"),
+        new("EUR - Euro", "EUR"),
+        new("USD - US Dollar", "USD"),
+        new("GBP - British Pound", "GBP"),
+        new("CAD - Canadian Dollar", "CAD")
+    };
+
+    private static readonly List<SelectItem> _languageOptions = new()
+    {
+        new("English", "en"),
+        new("French", "fr"),
+        new("Arabic", "ar")
+    };
+
+    private sealed class SelectItem
+    {
+        public string Text { get; set; } = "";
+        public string? Value { get; set; }
+        public SelectItem() { }
+        public SelectItem(string text, string value) { Text = text; Value = value; }
+    }
+
+    private sealed class StepState
+    {
+        public string Id { get; set; } = "";
+        public string Name { get; set; } = "";
+        public bool Completed { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var list = await AdminApi.GetPlansAsync();
+            _plans = list?.ToList() ?? [];
+        }
+        catch
+        {
+            // Plans optional
+        }
+        try
+        {
+            var bcList = await AdminApi.GetBoundedContextsAsync();
+            _boundedContexts = bcList?.ToList() ?? [];
+            // Default: select all modules
+            foreach (var bc in _boundedContexts)
+                _selectedModuleIds.Add(bc.Id);
+        }
+        catch
+        {
+            // Bounded contexts optional
+        }
+    }
+
+    private void ToggleModule(int id)
+    {
+        if (_selectedModuleIds.Contains(id))
+            _selectedModuleIds.Remove(id);
+        else
+            _selectedModuleIds.Add(id);
+        StateHasChanged();
+    }
+
+    private void SetModuleSelected(int id, bool selected)
+    {
+        if (selected)
+            _selectedModuleIds.Add(id);
+        else
+            _selectedModuleIds.Remove(id);
+        StateHasChanged();
+    }
+
+    private async Task Submit()
+    {
+        _formError = null;
+        if (string.IsNullOrWhiteSpace(_identifier) || string.IsNullOrWhiteSpace(_companyName) ||
+            string.IsNullOrWhiteSpace(_adminName) || string.IsNullOrWhiteSpace(_adminEmail) ||
+            string.IsNullOrWhiteSpace(_adminPassword))
+        {
+            _formError = "Please fill in all required fields.";
+            return;
+        }
+
+        _submitting = true;
+        _phase = Phase.Connecting;
+        StateHasChanged();
+
+        var baseUrl = Configuration["AdminApi:BaseUrl"]?.TrimEnd('/') ?? "https://localhost:5011";
+        var hubUrl = $"{baseUrl}/hubs/provisioning";
+
+        HubConnection? connection = null;
+        try
+        {
+            connection = new HubConnectionBuilder()
+                .WithUrl(hubUrl)
+                .WithAutomaticReconnect()
+                .Build();
+
+            connection.On<string, string, int, int>("OnStepStarted", (stepId, stepName, stepNumber, totalSteps) =>
+                InvokeAsync(() =>
+                {
+                    _currentStepId = stepId;
+                    _currentActivity = stepName;
+                    while (_steps.Count < totalSteps)
+                        _steps.Add(new StepState { Id = $"step{_steps.Count + 1}", Name = "", Completed = false });
+                    if (stepNumber - 1 < _steps.Count)
+                    {
+                        _steps[stepNumber - 1].Id = stepId;
+                        _steps[stepNumber - 1].Name = stepName;
+                    }
+                    StateHasChanged();
+                }));
+
+            connection.On<string, bool, string>("OnStepCompleted", (stepId, success, message) =>
+                InvokeAsync(() =>
+                {
+                    var step = _steps.FirstOrDefault(s => s.Id == stepId);
+                    if (step != null) step.Completed = success;
+                    _currentStepId = null;
+                    StateHasChanged();
+                }));
+
+            connection.On<int, string>("OnProgress", (percent, activity) =>
+                InvokeAsync(() =>
+                {
+                    _progressPercent = percent;
+                    _currentActivity = activity;
+                    StateHasChanged();
+                }));
+
+            connection.On<string, string>("OnProvisioningCompleted", (tenantId, tenantUrl) =>
+                InvokeAsync(() =>
+                {
+                    _phase = Phase.Success;
+                    _tenantUrl = tenantUrl;
+                    _currentStepId = null;
+                    StateHasChanged();
+                }));
+
+            connection.On<string>("OnProvisioningFailed", (error) =>
+                InvokeAsync(() =>
+                {
+                    _phase = Phase.Failed;
+                    _error = error;
+                    _currentStepId = null;
+                    StateHasChanged();
+                }));
+
+            await connection.StartAsync();
+            var connectionId = connection.ConnectionId;
+            if (string.IsNullOrEmpty(connectionId))
+            {
+                _phase = Phase.Failed;
+                _error = "Could not obtain SignalR connection ID.";
+                _submitting = false;
+                StateHasChanged();
+                return;
+            }
+
+            var request = new CreateTenantDto(
+                _identifier.Trim(), _companyName.Trim(), _adminName.Trim(), _adminEmail.Trim(), _adminPassword,
+                _planId, string.IsNullOrWhiteSpace(_currency) ? null : _currency.Trim(), string.IsNullOrWhiteSpace(_language) ? null : _language.Trim(),
+                _selectedModuleIds.Count > 0 ? _selectedModuleIds.ToList() : null);
+            string tenantId;
+            try
+            {
+                tenantId = await AdminApi.RegisterTenantAsync(request);
+            }
+            catch (HttpRequestException ex)
+            {
+                _phase = Phase.Failed;
+                _error = ex.Message;
+                _submitting = false;
+                await connection.DisposeAsync();
+                StateHasChanged();
+                return;
+            }
+            catch (Exception ex)
+            {
+                var msg = ex.InnerException?.Message ?? ex.Message;
+                if (ex is System.Net.Http.HttpRequestException && ex.Message.Contains("409"))
+                    msg = "A tenant with this identifier already exists.";
+                _phase = Phase.Failed;
+                _error = msg;
+                _submitting = false;
+                await connection.DisposeAsync();
+                StateHasChanged();
+                return;
+            }
+
+            if (string.IsNullOrEmpty(tenantId))
+            {
+                _phase = Phase.Failed;
+                _error = "Registration did not return a tenant ID.";
+                _submitting = false;
+                await connection.DisposeAsync();
+                StateHasChanged();
+                return;
+            }
+
+            _phase = Phase.Provisioning;
+            _steps.Clear();
+            _progressPercent = 0;
+            _currentActivity = "Starting…";
+            StateHasChanged();
+
+            await AdminApi.StartProvisioningAsync(tenantId, connectionId);
+
+            // Keep connection alive; completion/failure will come via SignalR
+            _submitting = false;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _phase = Phase.Failed;
+            _error = ex.InnerException?.Message ?? ex.Message;
+            _submitting = false;
+            if (connection != null)
+                await connection.DisposeAsync();
+            StateHasChanged();
+        }
+    }
+
+    private void Reset()
+    {
+        _phase = Phase.Form;
+        _formError = null;
+        _error = null;
+        _progressPercent = 0;
+        _currentActivity = "";
+        _currentStepId = null;
+        _steps.Clear();
+        _tenantUrl = "";
+        StateHasChanged();
+    }
+}

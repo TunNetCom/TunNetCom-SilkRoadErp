@@ -1,0 +1,38 @@
+# ============================================================
+# Deploy SilkRoad API & WebApp to On-Prem Kubernetes (Mourouj)
+# ============================================================
+trigger: none
+pr: none
+
+pool:
+  name: OnPremAgents
+  demands:
+    - Agent.Name -equals ubuntu-self-hosted-mourouj
+
+variables:
+- group: silkroad-mourouj
+- name: connectionString
+  value: $(Connection_String_Mourouj)
+- name: kubeNamespace
+  value: silkroad-prod
+- name: deploymentApiName
+  value: silkroad-api
+- name: deploymentWebappName
+  value: silkroad-webapp
+- name: manifestPath
+  value: src/deployments/prod-deployment.yaml
+
+stages:
+- stage: Deploy
+  displayName: Deploy to Mourouj Kubernetes
+  jobs:
+  - template: templates/deploy-k8s-job.yml
+    parameters:
+      stageDisplayName: Deploy to Mourouj Kubernetes
+      kubeNamespace: $(kubeNamespace)
+      deploymentApiName: $(deploymentApiName)
+      deploymentWebappName: $(deploymentWebappName)
+      manifestPath: $(manifestPath)
+      variableGroup: silkroad-mourouj
+      forceImagePullPatch: true
+      verboseVerify: true

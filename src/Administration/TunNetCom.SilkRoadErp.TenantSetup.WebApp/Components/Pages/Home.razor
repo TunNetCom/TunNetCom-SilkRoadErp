@@ -1,0 +1,21 @@
+@page "/"
+
+<PageTitle>SilkRoad ERP – Tenant setup</PageTitle>
+
+<RadzenStack Gap="1.5rem" Style="max-width: 640px;">
+    <RadzenStack Gap="0.25rem">
+        <RadzenText TextStyle="TextStyle.H3" class="rz-mb-0">Set up a new tenant</RadzenText>
+        <RadzenText TextStyle="TextStyle.Body1" class="rz-color-secondary">Create a new SilkRoad ERP tenant and run provisioning. You get a dedicated environment and an initial administrator account.</RadzenText>
+    </RadzenStack>
+
+    <RadzenCard class="rz-shadow-2" Style="padding: 1.5rem;">
+        <RadzenStack Gap="1rem">
+            <RadzenText TextStyle="TextStyle.Body1">Use the setup wizard to enter your company details and the first administrator account. Provisioning will run automatically and you can follow progress in real time.</RadzenText>
+            <RadzenButton Text="Start setup" Icon="add_circle" ButtonStyle="ButtonStyle.Primary" Click="@(() => Navigation.NavigateTo("/setup"))" Style="align-self: flex-start;" />
+        </RadzenStack>
+    </RadzenCard>
+</RadzenStack>
+
+@code {
+    [Inject] private NavigationManager Navigation { get; set; } = null!;
+}

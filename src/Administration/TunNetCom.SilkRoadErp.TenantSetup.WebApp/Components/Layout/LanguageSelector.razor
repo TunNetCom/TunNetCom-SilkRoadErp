@@ -1,0 +1,65 @@
+@using System.Globalization
+@inject NavigationManager Navigation
+
+<RadzenDropDown TValue="string"
+                @bind-Value="SelectedCulture"
+                Data="@LanguageOptions"
+                TextProperty="DisplayName"
+                ValueProperty="Code"
+                Style="width: 150px"
+                Change="@OnCultureChanged" />
+
+@code {
+    private List<LanguageOption> LanguageOptions = new()
+    {
+        new LanguageOption { Code = "fr", DisplayName = "Français" },
+        new LanguageOption { Code = "en", DisplayName = "English" },
+        new LanguageOption { Code = "ar", DisplayName = "العربية" }
+    };
+
+    private string SelectedCulture { get; set; } = "fr";
+    private bool _hasCheckedDefaultCulture;
+
+    protected override void OnInitialized()
+    {
+        var currentCulture = CultureInfo.CurrentCulture.Name;
+        if (LanguageOptions.Any(o => o.Code == currentCulture))
+            SelectedCulture = currentCulture;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_hasCheckedDefaultCulture)
+        {
+            _hasCheckedDefaultCulture = true;
+            var currentCulture = CultureInfo.CurrentCulture.Name;
+            if (currentCulture != "fr" && !LanguageOptions.Any(o => o.Code == currentCulture))
+            {
+                SelectedCulture = "fr";
+                var uri = new Uri(Navigation.Uri).GetComponents(UriComponents.PathAndQuery, UriFormat.Unescaped);
+                Navigation.NavigateTo($"Culture/Set?culture={Uri.EscapeDataString("fr")}&redirectUri={Uri.EscapeDataString(uri)}", forceLoad: true);
+            }
+        }
+    }
+
+    private void OnCultureChanged()
+    {
+        if (string.IsNullOrEmpty(SelectedCulture)) return;
+        try
+        {
+            var selectedCulture = new CultureInfo(SelectedCulture);
+            if (CultureInfo.CurrentCulture.Name != selectedCulture.Name)
+            {
+                var uri = new Uri(Navigation.Uri).GetComponents(UriComponents.PathAndQuery, UriFormat.Unescaped);
+                Navigation.NavigateTo($"Culture/Set?culture={Uri.EscapeDataString(selectedCulture.Name)}&redirectUri={Uri.EscapeDataString(uri)}", forceLoad: true);
+            }
+        }
+        catch { /* ignore */ }
+    }
+
+    private sealed class LanguageOption
+    {
+        public string Code { get; set; } = string.Empty;
+        public string DisplayName { get; set; } = string.Empty;
+    }
+}

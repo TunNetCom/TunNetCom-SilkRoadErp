@@ -1,0 +1,13 @@
+@page "/Error"
+
+<PageTitle>Error</PageTitle>
+
+<RadzenText TextStyle="TextStyle.H3">Error</RadzenText>
+<RadzenAlert AlertStyle="AlertStyle.Danger" Shade="Shade.Lighter" AllowClose="false">
+    An error occurred while processing your request.
+</RadzenAlert>
+<RadzenButton Text="Back to home" ButtonStyle="ButtonStyle.Light" Click="@(() => Navigation.NavigateTo("/"))" />
+
+@code {
+    [Inject] private NavigationManager Navigation { get; set; } = null!;
+}
