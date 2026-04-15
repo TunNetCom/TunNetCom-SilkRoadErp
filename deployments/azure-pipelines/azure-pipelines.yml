@@ -1,5 +1,5 @@
 # ============================================================
-# Dev CI/CD Pipeline for SilkRoad (FINAL - STABLE + TRIVY FIXED)
+# Dev CI/CD Pipeline for SilkRoad (FINAL - FULLY FIXED)
 # ============================================================
 
 pool:
@@ -103,7 +103,6 @@ stages:
     # -----------------------------
     - script: |
         mkdir -p $(Build.ArtifactStagingDirectory)/trivy
-
         export TMPDIR=$(Build.SourcesDirectory)/tmp
 
         trivy image \
@@ -124,7 +123,7 @@ stages:
       displayName: Push API
 
     # ============================================================
-    # 🧹 CLEAN BEFORE WEBAPP (CRITICAL FIX)
+    # 🧹 CLEAN BEFORE WEBAPP (CRITICAL)
     # ============================================================
     - script: |
         echo "🧹 Cleaning disk before WebApp..."
@@ -136,6 +135,7 @@ stages:
 
         mkdir -p $(Build.SourcesDirectory)/tmp
 
+        echo "📦 Disk usage:"
         df -h
       displayName: Cleanup Disk
 
@@ -151,7 +151,7 @@ stages:
       displayName: Build WebApp
 
     # -----------------------------
-    # TRIVY SCAN WEBAPP (FIXED)
+    # TRIVY SCAN WEBAPP
     # -----------------------------
     - script: |
         export TMPDIR=$(Build.SourcesDirectory)/tmp
@@ -187,7 +187,7 @@ stages:
       displayName: Push WebApp
 
     # ============================================================
-    # K8S SCAN
+    # 🔐 K8S SCAN
     # ============================================================
     - script: |
         trivy config \
@@ -197,9 +197,33 @@ stages:
       displayName: Trivy K8s Scan
 
     # ============================================================
-    # PUBLISH REPORTS
+    # 📦 PREPARE K8S MANIFESTS (FIX)
     # ============================================================
+    - script: |
+        echo "📦 Preparing Kubernetes manifests..."
+
+        mkdir -p $(Build.ArtifactStagingDirectory)/deployments
+
+        cp -v $(Build.SourcesDirectory)/deployments/k8s/*.yaml \
+          $(Build.ArtifactStagingDirectory)/deployments/
+
+        echo "✅ K8s manifests ready"
+      displayName: Prepare K8s Manifests
+
+    # -----------------------------
+    # Publish K8s manifests
+    # -----------------------------
     - task: PublishBuildArtifacts@1
+      displayName: Publish K8s Manifests
+      inputs:
+        pathToPublish: '$(Build.ArtifactStagingDirectory)/deployments'
+        artifactName: 'k8s-manifests'
+
+    # -----------------------------
+    # Publish Trivy reports
+    # -----------------------------
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Trivy Reports
       condition: always()
       inputs:
         pathToPublish: '$(Build.ArtifactStagingDirectory)/trivy'
