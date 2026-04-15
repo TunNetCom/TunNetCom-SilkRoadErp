@@ -1,8 +1,7 @@
 # ============================================================
 # Dev CI/CD Pipeline for SilkRoad (Deploys to silkroad-dev)
+# WITH TRIVY REPORTS
 # ============================================================
-#trigger:
-#- master
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -25,6 +24,7 @@ variables:
   value: 'silkroad-dev'
 
 stages:
+
 # ============================================================
 # 1️⃣ BUILD & PUSH STAGE
 # ============================================================
@@ -36,41 +36,37 @@ stages:
     steps:
 
     # -----------------------------
-    # Login to DockerHub
+    # Docker Login
     # -----------------------------
     - task: Docker@2
-      displayName: 'Login to DockerHub'
+      displayName: Login to DockerHub
       inputs:
         command: login
         containerRegistry: 'TunNetCom_Dockerhub_Connection'
 
     # -----------------------------
-    # Use .NET SDK
+    # .NET SDK
     # -----------------------------
     - task: UseDotNet@2
-      displayName: 'Use .NET 10 SDK'
       inputs:
         packageType: 'sdk'
         version: '10.x'
 
-    # -----------------------------
-    # Restore & Build
-    # -----------------------------
     - task: DotNetCoreCLI@2
-      displayName: 'Restore'
+      displayName: Restore
       inputs:
-        command: 'restore'
+        command: restore
         projects: '$(solution)'
 
     - task: DotNetCoreCLI@2
-      displayName: 'Build'
+      displayName: Build
       inputs:
-        command: 'build'
+        command: build
         projects: '$(solution)'
         arguments: '--configuration $(buildConfiguration) --no-restore'
 
     # -----------------------------
-    # Install Trivy (once, before any scan)
+    # Install Trivy
     # -----------------------------
     - script: |
         sudo apt-get update -qq
@@ -80,182 +76,157 @@ stages:
           | sudo tee /etc/apt/sources.list.d/trivy.list
         sudo apt-get update -qq
         sudo apt-get install -y trivy
-        trivy --version
-      displayName: 'Install Trivy'
+      displayName: Install Trivy
 
     # ============================================================
-    # API: Build → Scan → Push
+    # 🐳 API BUILD + SCAN
     # ============================================================
 
-    # -----------------------------
-    # Build API Docker Image
-    # -----------------------------
     - script: |
         set -e
-        echo "🐳 Building API Docker image..."
-        docker build --no-cache --progress=plain \
+        docker build --no-cache \
           -t $(dockerRepository):$(apiTag) \
           -f $(Build.SourcesDirectory)/src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.Api/Dockerfile \
           $(Build.SourcesDirectory)
-        echo "✅ API image built successfully"
-      displayName: 'Build API Docker Image'
+      displayName: Build API Image
 
-    # -----------------------------
-    # Trivy Scan API (blocks push on HIGH/CRITICAL)
-    # -----------------------------
+    # ❌ FAIL IF HIGH/CRITICAL
     - script: |
-        set -e
-        echo "🔍 Scanning API image with Trivy..."
         trivy image \
           --exit-code 1 \
           --severity HIGH,CRITICAL \
           --no-progress \
-          --scanners vuln \
           $(dockerRepository):$(apiTag)
-      displayName: 'Trivy Scan - API Image'
+      displayName: Trivy Scan API
 
-    # -----------------------------
-    # Trivy Report API (JSON — always runs)
-    # -----------------------------
+    # 📄 JSON REPORT
     - script: |
+        mkdir -p $(Build.ArtifactStagingDirectory)/trivy
         trivy image \
           --format json \
-          --output $(Build.ArtifactStagingDirectory)/trivy-api-report.json \
-          --scanners vuln \
+          -o $(Build.ArtifactStagingDirectory)/trivy/api-report.json \
           $(dockerRepository):$(apiTag)
-      displayName: 'Trivy Report - API (JSON)'
+      displayName: Trivy JSON API
       condition: always()
 
-    # -----------------------------
-    # Tag and Push API
-    # -----------------------------
+    # 🌐 HTML REPORT (IMPORTANT FOR YOU)
     - script: |
-        set -e
+        trivy image \
+          --format template \
+          --template "@contrib/html.tpl" \
+          -o $(Build.ArtifactStagingDirectory)/trivy/api-report.html \
+          $(dockerRepository):$(apiTag)
+      displayName: Trivy HTML API
+      condition: always()
+
+    # 📊 SARIF REPORT (Security tools)
+    - script: |
+        trivy image \
+          --format sarif \
+          -o $(Build.ArtifactStagingDirectory)/trivy/api-report.sarif \
+          $(dockerRepository):$(apiTag)
+      displayName: Trivy SARIF API
+      condition: always()
+
+    # PUSH API IMAGE
+    - script: |
         docker tag $(dockerRepository):$(apiTag) $(dockerRepository):latest-api
         docker push $(dockerRepository):$(apiTag)
         docker push $(dockerRepository):latest-api
-        echo "✅ API image pushed successfully"
-      displayName: 'Push API Docker Image'
-
-    # -----------------------------
-    # FIX: Free disk space before WebApp build
-    # -----------------------------
-    - script: |
-        echo "📦 Disk usage before cleanup:"
-        df -h /
-        docker image prune -f
-        docker builder prune -f
-        echo "✅ Disk usage after cleanup:"
-        df -h /
-      displayName: 'Free Disk Space (prune Docker)'
+      displayName: Push API Image
 
     # ============================================================
-    # WebApp: Build → Scan → Push
+    # 🐳 WEBAPP
     # ============================================================
 
-    # -----------------------------
-    # Build WebApp Docker Image
-    # -----------------------------
     - script: |
         set -e
-        echo "🐳 Building WebApp Docker image..."
-        docker build --no-cache --progress=plain \
+        docker build --no-cache \
           -t $(dockerRepository):$(webappTag) \
           -f $(Build.SourcesDirectory)/src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.WebApp/Dockerfile \
           $(Build.SourcesDirectory)
-        echo "✅ WebApp image built successfully"
-      displayName: 'Build WebApp Docker Image'
+      displayName: Build WebApp Image
 
-    # -----------------------------
-    # Trivy Scan WebApp (blocks push on HIGH/CRITICAL)
-    # -----------------------------
     - script: |
-        set -e
-        echo "🔍 Scanning WebApp image with Trivy..."
         trivy image \
           --exit-code 1 \
           --severity HIGH,CRITICAL \
-          --no-progress \
-          --scanners vuln \
           $(dockerRepository):$(webappTag)
-      displayName: 'Trivy Scan - WebApp Image'
+      displayName: Trivy Scan WebApp
 
-    # -----------------------------
-    # Trivy Report WebApp (JSON — always runs)
-    # -----------------------------
+    # JSON
     - script: |
         trivy image \
           --format json \
-          --output $(Build.ArtifactStagingDirectory)/trivy-webapp-report.json \
-          --scanners vuln \
+          -o $(Build.ArtifactStagingDirectory)/trivy/webapp-report.json \
           $(dockerRepository):$(webappTag)
-      displayName: 'Trivy Report - WebApp (JSON)'
+      displayName: Trivy JSON WebApp
       condition: always()
 
-    # -----------------------------
-    # Tag and Push WebApp
-    # -----------------------------
+    # HTML
     - script: |
-        set -e
+        trivy image \
+          --format template \
+          --template "@contrib/html.tpl" \
+          -o $(Build.ArtifactStagingDirectory)/trivy/webapp-report.html \
+          $(dockerRepository):$(webappTag)
+      displayName: Trivy HTML WebApp
+      condition: always()
+
+    # SARIF
+    - script: |
+        trivy image \
+          --format sarif \
+          -o $(Build.ArtifactStagingDirectory)/trivy/webapp-report.sarif \
+          $(dockerRepository):$(webappTag)
+      displayName: Trivy SARIF WebApp
+      condition: always()
+
+    # PUSH WEBAPP
+    - script: |
         docker tag $(dockerRepository):$(webappTag) $(dockerRepository):latest-webapp
         docker push $(dockerRepository):$(webappTag)
         docker push $(dockerRepository):latest-webapp
-        echo "✅ WebApp image pushed successfully"
-      displayName: 'Push WebApp Docker Image'
+      displayName: Push WebApp Image
 
     # ============================================================
-    # Trivy Scan K8s Manifests
+    # K8S SCAN
     # ============================================================
     - script: |
-        set -e
-        echo "🔍 Scanning Kubernetes manifests..."
         trivy config \
           --exit-code 1 \
           --severity HIGH,CRITICAL \
           $(Build.SourcesDirectory)/deployments/k8s/
-      displayName: 'Trivy Scan - K8s Manifests'
+      displayName: Trivy K8s Scan
 
     # ============================================================
-    # Publish Artifacts
+    # ARTIFACTS (THIS IS WHAT MAKES REPORTS VISIBLE IN UI)
     # ============================================================
-
-    # -----------------------------
-    # Prepare K8s deployment files
-    # -----------------------------
-    - script: |
-        set -e
-        mkdir -p $(Build.ArtifactStagingDirectory)/deployments
-        cp -v $(Build.SourcesDirectory)/deployments/k8s/*.yaml \
-          $(Build.ArtifactStagingDirectory)/deployments/
-        echo "✅ Deployment files copied"
-      displayName: 'Prepare Deployment Artifacts'
 
     - task: PublishBuildArtifacts@1
-      displayName: 'Publish Deployment Artifacts'
+      displayName: Publish Trivy Reports
+      condition: always()
+      inputs:
+        pathToPublish: '$(Build.ArtifactStagingDirectory)/trivy'
+        artifactName: 'trivy-reports'
+        publishLocation: 'Container'
+
+    - task: PublishBuildArtifacts@1
+      displayName: Publish K8s Manifests
       inputs:
         pathToPublish: '$(Build.ArtifactStagingDirectory)/deployments'
         artifactName: 'k8s-manifests'
         publishLocation: 'Container'
 
-    # -----------------------------
-    # Publish Trivy reports (always, even on scan failure)
-    # -----------------------------
-    - task: PublishBuildArtifacts@1
-      displayName: 'Publish Trivy Reports'
-      condition: always()
-      inputs:
-        pathToPublish: '$(Build.ArtifactStagingDirectory)'
-        artifactName: 'trivy-reports'
-        publishLocation: 'Container'
-
 # ============================================================
-# 2️⃣ DEPLOY STAGE TO DEV KUBERNETES
+# 2️⃣ DEPLOY STAGE (UNCHANGED TEMPLATE CALL)
 # ============================================================
 - stage: Deploy
   displayName: Deploy to SilkRoad Dev (silkroad-dev)
   dependsOn: BuildAndPush
   pool:
     name: OnPremAgents
+
   jobs:
   - template: /deployments/azure-pipelines/templates/deploy-k8s-job.yml
     parameters:
@@ -263,6 +234,5 @@ stages:
       deploymentApiName: silkroad-api
       deploymentWebappName: silkroad-webapp
       manifestPath: $(Pipeline.Workspace)/k8s-manifests/prod-deployment.yaml
-      stageDisplayName: Deploy to SilkRoad Dev (silkroad-dev)
       artifactName: k8s-manifests
       forceImagePullPatch: false
