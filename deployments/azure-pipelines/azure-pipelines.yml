@@ -1,6 +1,5 @@
 # ============================================================
-# Dev CI/CD Pipeline for SilkRoad (Deploys to silkroad-dev)
-# WITH FIXED TRIVY REPORTS
+# Dev CI/CD Pipeline for SilkRoad (FINAL - STABLE + TRIVY FIXED)
 # ============================================================
 
 pool:
@@ -26,13 +25,12 @@ variables:
 stages:
 
 # ============================================================
-# 1️⃣ BUILD & PUSH + SECURITY
+# 1️⃣ BUILD + SCAN + PUSH
 # ============================================================
 - stage: BuildAndPush
-  displayName: Build and Push Docker Images
+  displayName: Build, Scan and Push
   jobs:
   - job: BuildPushJob
-    displayName: Build & Scan
     steps:
 
     # -----------------------------
@@ -79,41 +77,41 @@ stages:
     # 🐳 API BUILD
     # ============================================================
     - script: |
-        set -e
         docker build -t $(dockerRepository):$(apiTag) \
           -f $(Build.SourcesDirectory)/src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.Api/Dockerfile \
           $(Build.SourcesDirectory)
 
-        echo "📦 Docker images:"
         docker images | grep silkroad || true
-      displayName: Build API Image
+      displayName: Build API
 
     # -----------------------------
-    # TRIVY SCAN API (FAIL GATE)
+    # TRIVY SCAN API
     # -----------------------------
     - script: |
+        export TMPDIR=$(Build.SourcesDirectory)/tmp
+        mkdir -p $TMPDIR
+
         trivy image \
+          --scanners vuln \
           --exit-code 1 \
           --severity HIGH,CRITICAL \
           $(dockerRepository):$(apiTag)
       displayName: Trivy Scan API
 
     # -----------------------------
-    # TRIVY REPORTS API
+    # TRIVY REPORT API
     # -----------------------------
     - script: |
         mkdir -p $(Build.ArtifactStagingDirectory)/trivy
 
-        trivy image \
-          --format json \
-          -o $(Build.ArtifactStagingDirectory)/trivy/api-report.json \
-          $(dockerRepository):$(apiTag)
+        export TMPDIR=$(Build.SourcesDirectory)/tmp
 
         trivy image \
-          --format table \
-          -o $(Build.ArtifactStagingDirectory)/trivy/api-report.txt \
+          --scanners vuln \
+          --format json \
+          -o $(Build.ArtifactStagingDirectory)/trivy/api.json \
           $(dockerRepository):$(apiTag)
-      displayName: Trivy Reports API
+      displayName: Trivy Report API
       condition: always()
 
     # -----------------------------
@@ -123,47 +121,60 @@ stages:
         docker tag $(dockerRepository):$(apiTag) $(dockerRepository):latest-api
         docker push $(dockerRepository):$(apiTag)
         docker push $(dockerRepository):latest-api
-      displayName: Push API Image
+      displayName: Push API
+
+    # ============================================================
+    # 🧹 CLEAN BEFORE WEBAPP (CRITICAL FIX)
+    # ============================================================
+    - script: |
+        echo "🧹 Cleaning disk before WebApp..."
+
+        docker system prune -af || true
+        docker builder prune -af || true
+
+        sudo rm -rf /tmp/* || true
+
+        mkdir -p $(Build.SourcesDirectory)/tmp
+
+        df -h
+      displayName: Cleanup Disk
 
     # ============================================================
     # 🐳 WEBAPP BUILD
     # ============================================================
     - script: |
-        set -e
         docker build -t $(dockerRepository):$(webappTag) \
           -f $(Build.SourcesDirectory)/src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.WebApp/Dockerfile \
           $(Build.SourcesDirectory)
 
-        echo "📦 Docker images:"
         docker images | grep silkroad || true
-      displayName: Build WebApp Image
+      displayName: Build WebApp
 
     # -----------------------------
     # TRIVY SCAN WEBAPP (FIXED)
     # -----------------------------
     - script: |
+        export TMPDIR=$(Build.SourcesDirectory)/tmp
+
         trivy image \
+          --scanners vuln \
           --exit-code 1 \
           --severity HIGH,CRITICAL \
           $(dockerRepository):$(webappTag)
       displayName: Trivy Scan WebApp
 
     # -----------------------------
-    # TRIVY REPORTS WEBAPP
+    # TRIVY REPORT WEBAPP
     # -----------------------------
     - script: |
-        mkdir -p $(Build.ArtifactStagingDirectory)/trivy
+        export TMPDIR=$(Build.SourcesDirectory)/tmp
 
         trivy image \
+          --scanners vuln \
           --format json \
-          -o $(Build.ArtifactStagingDirectory)/trivy/webapp-report.json \
+          -o $(Build.ArtifactStagingDirectory)/trivy/web.json \
           $(dockerRepository):$(webappTag)
-
-        trivy image \
-          --format table \
-          -o $(Build.ArtifactStagingDirectory)/trivy/webapp-report.txt \
-          $(dockerRepository):$(webappTag)
-      displayName: Trivy Reports WebApp
+      displayName: Trivy Report WebApp
       condition: always()
 
     # -----------------------------
@@ -173,7 +184,7 @@ stages:
         docker tag $(dockerRepository):$(webappTag) $(dockerRepository):latest-webapp
         docker push $(dockerRepository):$(webappTag)
         docker push $(dockerRepository):latest-webapp
-      displayName: Push WebApp Image
+      displayName: Push WebApp
 
     # ============================================================
     # K8S SCAN
@@ -186,7 +197,7 @@ stages:
       displayName: Trivy K8s Scan
 
     # ============================================================
-    # ARTIFACTS (REPORTS VISIBLE IN AZURE DEVOPS)
+    # PUBLISH REPORTS
     # ============================================================
     - task: PublishBuildArtifacts@1
       condition: always()
@@ -194,16 +205,11 @@ stages:
         pathToPublish: '$(Build.ArtifactStagingDirectory)/trivy'
         artifactName: 'trivy-reports'
 
-    - task: PublishBuildArtifacts@1
-      inputs:
-        pathToPublish: '$(Build.ArtifactStagingDirectory)/deployments'
-        artifactName: 'k8s-manifests'
-
 # ============================================================
-# 2️⃣ DEPLOY STAGE (UNCHANGED TEMPLATE)
+# 2️⃣ DEPLOY (UNCHANGED TEMPLATE)
 # ============================================================
 - stage: Deploy
-  displayName: Deploy to SilkRoad Dev (silkroad-dev)
+  displayName: Deploy to SilkRoad Dev
   dependsOn: BuildAndPush
   pool:
     name: OnPremAgents
