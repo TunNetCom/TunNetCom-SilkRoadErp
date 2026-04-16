@@ -99,16 +99,26 @@ stages:
       displayName: Trivy Scan API
 
     # -----------------------------
-    # TRIVY REPORT API
+    # TRIVY REPORT API (JSON + HTML)
     # -----------------------------
     - script: |
         mkdir -p $(Build.ArtifactStagingDirectory)/trivy
+        mkdir -p $(Build.ArtifactStagingDirectory)/security-report
         export TMPDIR=$(Build.SourcesDirectory)/tmp
 
+        # JSON (kept for artifact)
         trivy image \
           --scanners vuln \
           --format json \
           -o $(Build.ArtifactStagingDirectory)/trivy/api.json \
+          $(dockerRepository):$(apiTag)
+
+        # HTML (for pipeline tab)
+        trivy image \
+          --scanners vuln \
+          --format template \
+          --template "@/usr/local/share/trivy/templates/html.tpl" \
+          -o $(Build.ArtifactStagingDirectory)/security-report/api.html \
           $(dockerRepository):$(apiTag)
       displayName: Trivy Report API
       condition: always()
@@ -164,15 +174,24 @@ stages:
       displayName: Trivy Scan WebApp
 
     # -----------------------------
-    # TRIVY REPORT WEBAPP
+    # TRIVY REPORT WEBAPP (JSON + HTML)
     # -----------------------------
     - script: |
         export TMPDIR=$(Build.SourcesDirectory)/tmp
 
+        # JSON (kept for artifact)
         trivy image \
           --scanners vuln \
           --format json \
           -o $(Build.ArtifactStagingDirectory)/trivy/web.json \
+          $(dockerRepository):$(webappTag)
+
+        # HTML (for pipeline tab)
+        trivy image \
+          --scanners vuln \
+          --format template \
+          --template "@/usr/local/share/trivy/templates/html.tpl" \
+          -o $(Build.ArtifactStagingDirectory)/security-report/web.html \
           $(dockerRepository):$(webappTag)
       displayName: Trivy Report WebApp
       condition: always()
@@ -197,7 +216,7 @@ stages:
       displayName: Trivy K8s Scan
 
     # ============================================================
-    # 📦 PREPARE K8S MANIFESTS (FIX)
+    # 📦 PREPARE K8S MANIFESTS
     # ============================================================
     - script: |
         echo "📦 Preparing Kubernetes manifests..."
@@ -220,17 +239,37 @@ stages:
         artifactName: 'k8s-manifests'
 
     # -----------------------------
-    # Publish Trivy reports
+    # Publish Trivy JSON reports
     # -----------------------------
     - task: PublishBuildArtifacts@1
-      displayName: Publish Trivy Reports
+      displayName: Publish Trivy JSON Reports
       condition: always()
       inputs:
         pathToPublish: '$(Build.ArtifactStagingDirectory)/trivy'
         artifactName: 'trivy-reports'
 
+    # -----------------------------
+    # Publish HTML Security Report
+    # -----------------------------
+    - task: PublishBuildArtifacts@1
+      displayName: Publish HTML Security Report
+      condition: always()
+      inputs:
+        pathToPublish: '$(Build.ArtifactStagingDirectory)/security-report'
+        artifactName: 'security-report'
+
+    # -----------------------------
+    # Show Security Report Tab
+    # -----------------------------
+    - task: PublishHtmlReport@1
+      displayName: Show Security Report Tab
+      condition: always()
+      inputs:
+        reportDir: '$(Build.ArtifactStagingDirectory)/security-report'
+        tabName: 'Security Report'
+
 # ============================================================
-# 2️⃣ DEPLOY (UNCHANGED TEMPLATE)
+# 2️⃣ DEPLOY 
 # ============================================================
 - stage: Deploy
   displayName: Deploy to SilkRoad Dev
