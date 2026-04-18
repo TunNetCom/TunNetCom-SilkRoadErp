@@ -232,12 +232,10 @@ stages:
         chmod 777 $(System.DefaultWorkingDirectory)/zap-baseline
       displayName: Prepare ZAP Baseline directory
 
-    # FIX: explicit pull so failures are visible
     - script: |
         docker pull ghcr.io/zaproxy/zaproxy:stable
       displayName: Pull ZAP image
 
-    # FIX: removed -u $(id -u):$(id -g) — causes silent exit on hosted agents
     - script: |
         docker run --rm \
           -v $(System.DefaultWorkingDirectory)/zap-baseline:/zap/wrk:rw \
@@ -249,6 +247,12 @@ stages:
           -l WARN \
           -I
       displayName: Run ZAP Baseline scan
+
+    # FIX: ZAP writes files as its internal user — make them readable by the agent
+    - script: |
+        sudo chmod -R 755 $(System.DefaultWorkingDirectory)/zap-baseline
+      displayName: Fix ZAP report permissions
+      condition: always()
 
     - task: PublishBuildArtifacts@1
       displayName: Publish ZAP Baseline Report
@@ -283,7 +287,6 @@ stages:
         chmod 777 $(System.DefaultWorkingDirectory)/zap-ajax
       displayName: Prepare ZAP AJAX directory
 
-    # FIX: explicit pull so failures are visible
     - script: |
         docker pull ghcr.io/zaproxy/zaproxy:stable
       displayName: Pull ZAP image
@@ -332,13 +335,18 @@ stages:
         EOF
       displayName: Generate AJAX plan YAML
 
-    # FIX: removed -u $(id -u):$(id -g) — causes silent exit on hosted agents
     - script: |
         docker run --rm \
           -v $(System.DefaultWorkingDirectory)/zap-ajax:/zap/wrk:rw \
           ghcr.io/zaproxy/zaproxy:stable \
           zap.sh -cmd -autorun /zap/wrk/ajax-plan.yaml
       displayName: Run ZAP AJAX Spider scan
+
+    # FIX: ZAP writes files as its internal user — make them readable by the agent
+    - script: |
+        sudo chmod -R 755 $(System.DefaultWorkingDirectory)/zap-ajax
+      displayName: Fix ZAP report permissions
+      condition: always()
 
     - task: PublishBuildArtifacts@1
       displayName: Publish ZAP AJAX Report
