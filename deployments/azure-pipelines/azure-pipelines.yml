@@ -35,17 +35,11 @@ stages:
   - job: BuildPushJob
     steps:
 
-    # -----------------------------
-    # Docker login
-    # -----------------------------
     - task: Docker@2
       inputs:
         command: login
         containerRegistry: 'TunNetCom_Dockerhub_Connection'
 
-    # -----------------------------
-    # .NET build
-    # -----------------------------
     - task: UseDotNet@2
       inputs:
         packageType: sdk
@@ -62,9 +56,6 @@ stages:
         projects: '$(solution)'
         arguments: '--configuration $(buildConfiguration) --no-restore'
 
-    # -----------------------------
-    # Install Trivy
-    # -----------------------------
     - script: |
         sudo apt-get update -qq
         sudo apt-get install -y wget apt-transport-https gnupg lsb-release
@@ -76,23 +67,18 @@ stages:
       displayName: Install Trivy
 
     # ============================================================
-    # API BUILD
+    # API
     # ============================================================
     - script: |
         docker build -t $(dockerRepository):$(apiTag) \
           -f $(Build.SourcesDirectory)/src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.Api/Dockerfile \
           $(Build.SourcesDirectory)
-
         docker images | grep silkroad || true
       displayName: Build API
 
-    # -----------------------------
-    # TRIVY SCAN API
-    # -----------------------------
     - script: |
         export TMPDIR=$(Build.SourcesDirectory)/tmp
         mkdir -p $TMPDIR
-
         trivy image \
           --scanners vuln \
           --exit-code 1 \
@@ -100,9 +86,6 @@ stages:
           $(dockerRepository):$(apiTag)
       displayName: Trivy Scan API
 
-    # -----------------------------
-    # TRIVY REPORT API (JSON + HTML)
-    # -----------------------------
     - script: |
         mkdir -p $(Build.ArtifactStagingDirectory)/trivy
         mkdir -p $(Build.ArtifactStagingDirectory)/security-report
@@ -123,9 +106,6 @@ stages:
       displayName: Trivy Report API
       condition: always()
 
-    # -----------------------------
-    # PUSH API
-    # -----------------------------
     - script: |
         docker tag $(dockerRepository):$(apiTag) $(dockerRepository):latest-api
         docker push $(dockerRepository):$(apiTag)
@@ -133,7 +113,7 @@ stages:
       displayName: Push API
 
     # ============================================================
-    # CLEAN BEFORE WEBAPP (CRITICAL)
+    # CLEANUP
     # ============================================================
     - script: |
         echo "Cleaning disk before WebApp..."
@@ -146,22 +126,17 @@ stages:
       displayName: Cleanup Disk
 
     # ============================================================
-    # WEBAPP BUILD
+    # WEBAPP
     # ============================================================
     - script: |
         docker build -t $(dockerRepository):$(webappTag) \
           -f $(Build.SourcesDirectory)/src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.WebApp/Dockerfile \
           $(Build.SourcesDirectory)
-
         docker images | grep silkroad || true
       displayName: Build WebApp
 
-    # -----------------------------
-    # TRIVY SCAN WEBAPP
-    # -----------------------------
     - script: |
         export TMPDIR=$(Build.SourcesDirectory)/tmp
-
         trivy image \
           --scanners vuln \
           --exit-code 1 \
@@ -169,9 +144,6 @@ stages:
           $(dockerRepository):$(webappTag)
       displayName: Trivy Scan WebApp
 
-    # -----------------------------
-    # TRIVY REPORT WEBAPP (JSON + HTML)
-    # -----------------------------
     - script: |
         export TMPDIR=$(Build.SourcesDirectory)/tmp
 
@@ -190,9 +162,6 @@ stages:
       displayName: Trivy Report WebApp
       condition: always()
 
-    # -----------------------------
-    # PUSH WEBAPP
-    # -----------------------------
     - script: |
         docker tag $(dockerRepository):$(webappTag) $(dockerRepository):latest-webapp
         docker push $(dockerRepository):$(webappTag)
@@ -200,7 +169,7 @@ stages:
       displayName: Push WebApp
 
     # ============================================================
-    # K8S SCAN
+    # K8S
     # ============================================================
     - script: |
         trivy config \
@@ -209,9 +178,6 @@ stages:
           $(Build.SourcesDirectory)/deployments/k8s/
       displayName: Trivy K8s Scan
 
-    # ============================================================
-    # PREPARE K8S MANIFESTS
-    # ============================================================
     - script: |
         echo "Preparing Kubernetes manifests..."
         mkdir -p $(Build.ArtifactStagingDirectory)/deployments
@@ -220,18 +186,12 @@ stages:
         echo "K8s manifests ready"
       displayName: Prepare K8s Manifests
 
-    # -----------------------------
-    # Publish K8s manifests
-    # -----------------------------
     - task: PublishBuildArtifacts@1
       displayName: Publish K8s Manifests
       inputs:
         pathToPublish: '$(Build.ArtifactStagingDirectory)/deployments'
         artifactName: 'k8s-manifests'
 
-    # -----------------------------
-    # Publish Trivy JSON reports
-    # -----------------------------
     - task: PublishBuildArtifacts@1
       displayName: Publish Trivy JSON Reports
       condition: always()
@@ -239,9 +199,6 @@ stages:
         pathToPublish: '$(Build.ArtifactStagingDirectory)/trivy'
         artifactName: 'trivy-reports'
 
-    # -----------------------------
-    # Publish HTML Security Report
-    # -----------------------------
     - task: PublishBuildArtifacts@1
       displayName: Publish HTML Security Report
       condition: always()
@@ -249,9 +206,6 @@ stages:
         pathToPublish: '$(Build.ArtifactStagingDirectory)/security-report'
         artifactName: 'security-report'
 
-    # -----------------------------
-    # Show Security Report Tab
-    # -----------------------------
     - task: PublishHtmlReport@1
       displayName: Show Security Report Tab
       condition: always()
@@ -261,9 +215,6 @@ stages:
 
 # ============================================================
 # 2 - DAST : OWASP ZAP BASELINE SCAN
-#     Scan passif sur l'env dev apres le push des images.
-#     Detecte : headers manquants, cookies, CSP, cache-control.
-#     Ne bloque PAS le pipeline (condition: always sur publish).
 # ============================================================
 - stage: ZAP_Baseline
   displayName: DAST - ZAP Baseline Scan
@@ -281,9 +232,14 @@ stages:
         chmod 777 $(System.DefaultWorkingDirectory)/zap-baseline
       displayName: Prepare ZAP Baseline directory
 
+    # FIX: explicit pull so failures are visible
+    - script: |
+        docker pull ghcr.io/zaproxy/zaproxy:stable
+      displayName: Pull ZAP image
+
+    # FIX: removed -u $(id -u):$(id -g) — causes silent exit on hosted agents
     - script: |
         docker run --rm \
-          -u $(id -u):$(id -g) \
           -v $(System.DefaultWorkingDirectory)/zap-baseline:/zap/wrk:rw \
           ghcr.io/zaproxy/zaproxy:stable \
           zap-baseline.py \
@@ -293,8 +249,6 @@ stages:
           -l WARN \
           -I
       displayName: Run ZAP Baseline scan
-      # -I : ignore warnings, ne fait pas echouer le pipeline
-      # Retirer -I quand les findings P1 sont corriges
 
     - task: PublishBuildArtifacts@1
       displayName: Publish ZAP Baseline Report
@@ -312,9 +266,6 @@ stages:
 
 # ============================================================
 # 3 - DAST : OWASP ZAP AJAX SPIDER SCAN
-#     Utilise Firefox headless pour crawler les routes Blazor.
-#     Decouvre les endpoints invisibles au spider classique.
-#     Sur silkroad : passe de 21 a 46 URLs scannees.
 # ============================================================
 - stage: ZAP_AJAX
   displayName: DAST - ZAP AJAX Spider Scan
@@ -331,6 +282,11 @@ stages:
         mkdir -p $(System.DefaultWorkingDirectory)/zap-ajax
         chmod 777 $(System.DefaultWorkingDirectory)/zap-ajax
       displayName: Prepare ZAP AJAX directory
+
+    # FIX: explicit pull so failures are visible
+    - script: |
+        docker pull ghcr.io/zaproxy/zaproxy:stable
+      displayName: Pull ZAP image
 
     - script: |
         cat > $(System.DefaultWorkingDirectory)/zap-ajax/ajax-plan.yaml << EOF
@@ -376,9 +332,9 @@ stages:
         EOF
       displayName: Generate AJAX plan YAML
 
+    # FIX: removed -u $(id -u):$(id -g) — causes silent exit on hosted agents
     - script: |
         docker run --rm \
-          -u $(id -u):$(id -g) \
           -v $(System.DefaultWorkingDirectory)/zap-ajax:/zap/wrk:rw \
           ghcr.io/zaproxy/zaproxy:stable \
           zap.sh -cmd -autorun /zap/wrk/ajax-plan.yaml
@@ -399,9 +355,7 @@ stages:
         tabName: 'ZAP AJAX Spider'
 
 # ============================================================
-# 4 - DEPLOY (inchange - CD Azure DevOps existant)
-#     Depend de ZAP_AJAX : le deploiement ne se fait que si
-#     les deux scans ZAP ont reussi (ou passe avec -I).
+# 4 - DEPLOY
 # ============================================================
 - stage: Deploy
   displayName: Deploy to SilkRoad Dev
