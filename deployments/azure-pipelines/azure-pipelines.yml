@@ -1,5 +1,5 @@
 # ============================================================
-# Dev CI/CD Pipeline for SilkRoad (FINAL - FULLY FIXED)
+# Dev CI/CD Pipeline for SilkRoad (FINAL - WITH OWASP ZAP)
 # ============================================================
 
 pool:
@@ -21,11 +21,13 @@ variables:
   value: 'webapp-$(Build.BuildId)'
 - name: kubeNamespace
   value: 'silkroad-dev'
+- name: zapTarget
+  value: 'https://silkroad.aion-time.com'
 
 stages:
 
 # ============================================================
-# 1️⃣ BUILD + SCAN + PUSH
+# 1 - BUILD + SCAN + PUSH
 # ============================================================
 - stage: BuildAndPush
   displayName: Build, Scan and Push
@@ -74,7 +76,7 @@ stages:
       displayName: Install Trivy
 
     # ============================================================
-    # 🐳 API BUILD
+    # API BUILD
     # ============================================================
     - script: |
         docker build -t $(dockerRepository):$(apiTag) \
@@ -106,14 +108,12 @@ stages:
         mkdir -p $(Build.ArtifactStagingDirectory)/security-report
         export TMPDIR=$(Build.SourcesDirectory)/tmp
 
-        # JSON (kept for artifact)
         trivy image \
           --scanners vuln \
           --format json \
           -o $(Build.ArtifactStagingDirectory)/trivy/api.json \
           $(dockerRepository):$(apiTag)
 
-        # HTML (for pipeline tab)
         trivy image \
           --scanners vuln \
           --format template \
@@ -133,24 +133,20 @@ stages:
       displayName: Push API
 
     # ============================================================
-    # 🧹 CLEAN BEFORE WEBAPP (CRITICAL)
+    # CLEAN BEFORE WEBAPP (CRITICAL)
     # ============================================================
     - script: |
-        echo "🧹 Cleaning disk before WebApp..."
-
+        echo "Cleaning disk before WebApp..."
         docker system prune -af || true
         docker builder prune -af || true
-
         sudo rm -rf /tmp/* || true
-
         mkdir -p $(Build.SourcesDirectory)/tmp
-
-        echo "📦 Disk usage:"
+        echo "Disk usage:"
         df -h
       displayName: Cleanup Disk
 
     # ============================================================
-    # 🐳 WEBAPP BUILD
+    # WEBAPP BUILD
     # ============================================================
     - script: |
         docker build -t $(dockerRepository):$(webappTag) \
@@ -179,14 +175,12 @@ stages:
     - script: |
         export TMPDIR=$(Build.SourcesDirectory)/tmp
 
-        # JSON (kept for artifact)
         trivy image \
           --scanners vuln \
           --format json \
           -o $(Build.ArtifactStagingDirectory)/trivy/web.json \
           $(dockerRepository):$(webappTag)
 
-        # HTML (for pipeline tab)
         trivy image \
           --scanners vuln \
           --format template \
@@ -206,7 +200,7 @@ stages:
       displayName: Push WebApp
 
     # ============================================================
-    # 🔐 K8S SCAN
+    # K8S SCAN
     # ============================================================
     - script: |
         trivy config \
@@ -216,17 +210,14 @@ stages:
       displayName: Trivy K8s Scan
 
     # ============================================================
-    # 📦 PREPARE K8S MANIFESTS
+    # PREPARE K8S MANIFESTS
     # ============================================================
     - script: |
-        echo "📦 Preparing Kubernetes manifests..."
-
+        echo "Preparing Kubernetes manifests..."
         mkdir -p $(Build.ArtifactStagingDirectory)/deployments
-
         cp -v $(Build.SourcesDirectory)/deployments/k8s/*.yaml \
           $(Build.ArtifactStagingDirectory)/deployments/
-
-        echo "✅ K8s manifests ready"
+        echo "K8s manifests ready"
       displayName: Prepare K8s Manifests
 
     # -----------------------------
@@ -269,11 +260,153 @@ stages:
         tabName: 'Security Report'
 
 # ============================================================
-# 2️⃣ DEPLOY 
+# 2 - DAST : OWASP ZAP BASELINE SCAN
+#     Scan passif sur l'env dev apres le push des images.
+#     Detecte : headers manquants, cookies, CSP, cache-control.
+#     Ne bloque PAS le pipeline (condition: always sur publish).
+# ============================================================
+- stage: ZAP_Baseline
+  displayName: DAST - ZAP Baseline Scan
+  dependsOn: BuildAndPush
+  condition: succeeded()
+  pool:
+    vmImage: 'ubuntu-latest'
+  jobs:
+  - job: ZAPBaselineJob
+    displayName: ZAP Baseline (passive scan)
+    steps:
+
+    - script: |
+        mkdir -p $(System.DefaultWorkingDirectory)/zap-baseline
+        chmod 777 $(System.DefaultWorkingDirectory)/zap-baseline
+      displayName: Prepare ZAP Baseline directory
+
+    - script: |
+        docker run --rm \
+          -u $(id -u):$(id -g) \
+          -v $(System.DefaultWorkingDirectory)/zap-baseline:/zap/wrk:rw \
+          ghcr.io/zaproxy/zaproxy:stable \
+          zap-baseline.py \
+          -t $(zapTarget) \
+          -r zap-baseline.html \
+          -J zap-baseline.json \
+          -l WARN \
+          -I
+      displayName: Run ZAP Baseline scan
+      # -I : ignore warnings, ne fait pas echouer le pipeline
+      # Retirer -I quand les findings P1 sont corriges
+
+    - task: PublishBuildArtifacts@1
+      displayName: Publish ZAP Baseline Report
+      condition: always()
+      inputs:
+        pathToPublish: '$(System.DefaultWorkingDirectory)/zap-baseline'
+        artifactName: 'ZAP-Baseline-Report'
+
+    - task: PublishHtmlReport@1
+      displayName: Show ZAP Baseline Tab
+      condition: always()
+      inputs:
+        reportDir: '$(System.DefaultWorkingDirectory)/zap-baseline'
+        tabName: 'ZAP Baseline'
+
+# ============================================================
+# 3 - DAST : OWASP ZAP AJAX SPIDER SCAN
+#     Utilise Firefox headless pour crawler les routes Blazor.
+#     Decouvre les endpoints invisibles au spider classique.
+#     Sur silkroad : passe de 21 a 46 URLs scannees.
+# ============================================================
+- stage: ZAP_AJAX
+  displayName: DAST - ZAP AJAX Spider Scan
+  dependsOn: ZAP_Baseline
+  condition: succeeded()
+  pool:
+    vmImage: 'ubuntu-latest'
+  jobs:
+  - job: ZAPAjaxJob
+    displayName: ZAP AJAX Spider (Blazor routes)
+    steps:
+
+    - script: |
+        mkdir -p $(System.DefaultWorkingDirectory)/zap-ajax
+        chmod 777 $(System.DefaultWorkingDirectory)/zap-ajax
+      displayName: Prepare ZAP AJAX directory
+
+    - script: |
+        cat > $(System.DefaultWorkingDirectory)/zap-ajax/ajax-plan.yaml << EOF
+        env:
+          contexts:
+          - name: silkroad-erp
+            urls:
+            - $(zapTarget)/
+            excludePaths: []
+          parameters:
+            failOnError: false
+            progressToStdout: true
+        jobs:
+        - type: spiderAjax
+          parameters:
+            url: $(zapTarget)/
+            maxDuration: 5
+            maxCrawlDepth: 10
+            numberOfBrowsers: 2
+            browserId: firefox-headless
+            clickDefaultElems: true
+            clickElemsOnce: true
+            randomInputs: true
+        - type: passiveScan-wait
+          parameters:
+            maxDuration: 5
+        - type: outputSummary
+          parameters:
+            format: Long
+            summaryFile: /zap/wrk/zap_out.json
+        - type: report
+          parameters:
+            reportTitle: ZAP AJAX Spider - SilkRoad ERP
+            reportDir: /zap/wrk/
+            reportFile: zap-ajax.html
+            template: traditional-html
+        - type: report
+          parameters:
+            reportTitle: ZAP AJAX Spider - SilkRoad ERP
+            reportDir: /zap/wrk/
+            reportFile: zap-ajax.json
+            template: traditional-json
+        EOF
+      displayName: Generate AJAX plan YAML
+
+    - script: |
+        docker run --rm \
+          -u $(id -u):$(id -g) \
+          -v $(System.DefaultWorkingDirectory)/zap-ajax:/zap/wrk:rw \
+          ghcr.io/zaproxy/zaproxy:stable \
+          zap.sh -cmd -autorun /zap/wrk/ajax-plan.yaml
+      displayName: Run ZAP AJAX Spider scan
+
+    - task: PublishBuildArtifacts@1
+      displayName: Publish ZAP AJAX Report
+      condition: always()
+      inputs:
+        pathToPublish: '$(System.DefaultWorkingDirectory)/zap-ajax'
+        artifactName: 'ZAP-AJAX-Report'
+
+    - task: PublishHtmlReport@1
+      displayName: Show ZAP AJAX Tab
+      condition: always()
+      inputs:
+        reportDir: '$(System.DefaultWorkingDirectory)/zap-ajax'
+        tabName: 'ZAP AJAX Spider'
+
+# ============================================================
+# 4 - DEPLOY (inchange - CD Azure DevOps existant)
+#     Depend de ZAP_AJAX : le deploiement ne se fait que si
+#     les deux scans ZAP ont reussi (ou passe avec -I).
 # ============================================================
 - stage: Deploy
   displayName: Deploy to SilkRoad Dev
-  dependsOn: BuildAndPush
+  dependsOn: ZAP_AJAX
+  condition: succeeded()
   pool:
     name: OnPremAgents
 
