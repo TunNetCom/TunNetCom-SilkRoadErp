@@ -250,6 +250,7 @@ stages:
 
     # FIX: ZAP writes files as its internal user — make them readable by the agent
     - script: |
+        sudo chown -R $(id -u):$(id -g) $(System.DefaultWorkingDirectory)/zap-baseline
         sudo chmod -R 755 $(System.DefaultWorkingDirectory)/zap-baseline
       displayName: Fix ZAP report permissions
       condition: always()
@@ -344,6 +345,7 @@ stages:
 
     # FIX: ZAP writes files as its internal user — make them readable by the agent
     - script: |
+        sudo chown -R $(id -u):$(id -g) $(System.DefaultWorkingDirectory)/zap-ajax
         sudo chmod -R 755 $(System.DefaultWorkingDirectory)/zap-ajax
       displayName: Fix ZAP report permissions
       condition: always()
