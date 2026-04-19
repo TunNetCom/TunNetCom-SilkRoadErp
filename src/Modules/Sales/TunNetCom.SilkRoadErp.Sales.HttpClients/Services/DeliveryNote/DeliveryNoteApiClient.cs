@@ -120,6 +120,16 @@ public class DeliveryNoteApiClient(HttpClient _httpClient) : IDeliveryNoteApiCli
 
             if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
             {
+                var body = await response.Content.ReadAsStringAsync(cancellationToken);
+                // If server indicates invoice is valid, return false to caller so UI can show message
+                if (body?.Contains("invoice_is_valid") == true)
+                {
+                    throw new InvalidOperationException("invoice_is_valid");
+                }
+            }
+
+            if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+            {
                 string errorResponse = await response.Content.ReadAsStringAsync(cancellationToken);
                 throw new Exception($"Validation error: {errorResponse}");
             }
@@ -186,6 +196,12 @@ public class DeliveryNoteApiClient(HttpClient _httpClient) : IDeliveryNoteApiCli
 
         if (response.StatusCode == HttpStatusCode.BadRequest)
         {
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (body?.Contains("invoice_is_valid") == true)
+            {
+                // convert to BadRequestResponse to propagate message to UI
+                return new BadRequestResponse { Detail = "invoice_is_valid" };
+            }
             return await response.ReadJsonAsync<BadRequestResponse>();
         }
 

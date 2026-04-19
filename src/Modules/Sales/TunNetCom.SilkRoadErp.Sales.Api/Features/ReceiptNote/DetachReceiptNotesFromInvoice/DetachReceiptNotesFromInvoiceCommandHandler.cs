@@ -9,12 +9,20 @@
         {
             logger.LogInformation("Detaching receipt notes {ReceiptNoteIds} from invoice {InvoiceId}",
                 string.Join(", ", request.ReceiptNoteIds), request.InvoiceId);
-            var invoiceExists = await context.FactureFournisseur
-                .AnyAsync(f => f.Num == request.InvoiceId, cancellationToken);
-            if (!invoiceExists)
+            var invoice = await context.FactureFournisseur
+                .Select(f => new { f.Num, f.Statut })
+                .FirstOrDefaultAsync(f => f.Num == request.InvoiceId, cancellationToken);
+
+            if (invoice is null)
             {
                 logger.LogWarning("Invoice with ID {InvoiceId} not found", request.InvoiceId);
                 return Result.Fail("EntityNotFound"); 
+            }
+
+            if (invoice.Statut == DocumentStatus.Valid)
+            {
+                logger.LogWarning("Attempt to detach receipt notes from validated invoice {InvoiceId}", request.InvoiceId);
+                return Result.Fail("invoice_is_valid");
             }
             var notesToDetach = await context.BonDeReception
                 .Where(note => request.ReceiptNoteIds.Contains(note.Num) &&

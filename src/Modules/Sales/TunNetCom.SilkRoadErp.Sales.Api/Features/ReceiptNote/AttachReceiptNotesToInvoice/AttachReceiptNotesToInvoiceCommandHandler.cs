@@ -7,13 +7,20 @@ public class AttachReceiptNotesToInvoiceCommandHandler(
     {
         logger.LogInformation("Attaching receipt notes {receipt-notes} to invoice {invoice}",
             string.Join(" ,", command.ReceiptNotesIds), command.InvoiceId);
-        var invoiceExist = await context.FactureFournisseur
-            .AnyAsync(f => f.Num == command.InvoiceId);
+        var invoice = await context.FactureFournisseur
+            .Select(f => new { f.Num, f.Statut })
+            .FirstOrDefaultAsync(f => f.Num == command.InvoiceId, cancellationToken);
 
-        if (!invoiceExist)
+        if (invoice is null)
         {
             logger.LogWarning("Invoice with id {InvoiceId} not found", command.InvoiceId);
             return Result.Fail(EntityNotFound.Error());
+        }
+
+        if (invoice.Statut == DocumentStatus.Valid)
+        {
+            logger.LogWarning("Attempt to attach receipt notes to validated invoice {InvoiceId}", command.InvoiceId);
+            return Result.Fail("invoice_is_valid");
         }
         var receiptNotes = context.BonDeReception
             .Where(r => command.ReceiptNotesIds.Contains(r.Num))

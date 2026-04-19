@@ -175,11 +175,11 @@
                                 </EmptyTemplate>
                                 <HeaderTemplate>
                                     <div style="display: flex; align-items: center; justify-content: flex-end; margin-bottom: 0.75rem; gap: 1rem;">
-                                        <RadzenButton 
+                                        <RadzenButton
                                             Text="@Localizer["detach_from_invoice"]"
                                             ButtonStyle="ButtonStyle.Danger"
                                             Size="ButtonSize.Small"
-                                            Disabled="@(!_selectedDeliveryNotesToDetach.Any())"
+                                            Disabled="@(!_selectedDeliveryNotesToDetach.Any() || invoiceWithBLs.Invoice.Statut == (int)TunNetCom.SilkRoadErp.Sales.Domain.Entites.DocumentStatus.Valid)"
                                             Click="@DetachDeliveryNotesFromInvoice"
                                             Style="border-radius: 6px; padding: 0.4rem 0.8rem; font-weight: 500; font-size: 0.85rem;" />
                                     </div>
@@ -339,6 +339,7 @@
                                               Text="@Localizer["attach_delivery_note_to_invoice"]"
                                               ButtonStyle="ButtonStyle.Primary"
                                               Size="ButtonSize.Small"
+                                              Disabled="@(SelectedInvoiceId <= 0 || !_selectedDeliveryNotesToAttach.Any() || _invoicesWithDeliveryNotes.FirstOrDefault(i => i.Invoice.Number == SelectedInvoiceId)?.Invoice.Statut == (int)TunNetCom.SilkRoadErp.Sales.Domain.Entites.DocumentStatus.Valid)"
                                               Style="border-radius: 6px; padding: 0.4rem 0.8rem; font-weight: 500; font-size: 0.85rem;" />
                             </div>
                         </div>

@@ -115,6 +115,17 @@ class ReceiptNoteApiClient : IReceiptNoteApiClient
 
         if (response.IsSuccessStatusCode)
             return true;
+
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (body?.Contains("invoice_is_valid") == true)
+            {
+                throw new InvalidOperationException("invoice_is_valid");
+            }
+            return false;
+        }
+
         return false;
     }
 

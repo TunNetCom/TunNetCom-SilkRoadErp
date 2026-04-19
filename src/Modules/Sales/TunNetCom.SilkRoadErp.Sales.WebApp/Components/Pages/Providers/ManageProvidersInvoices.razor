@@ -59,6 +59,7 @@
 @inject HttpClient HttpClient
 @inject IConfiguration Configuration
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.DeliveryNotes
+@using TunNetCom.SilkRoadErp.Sales.Domain.Entites
 
 <div style="padding: 0.5rem 1.5rem 1.5rem 1.5rem; min-height: 100vh;">
     <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
@@ -206,7 +207,7 @@
                                             Text="@Localizer["detach_from_invoice"]"
                                             ButtonStyle="ButtonStyle.Danger"
                                             Size="ButtonSize.Small"
-                                            Disabled="@(!_selectedReceiptNotesToDetach.Any())"
+                                            Disabled="@(!_selectedReceiptNotesToDetach.Any() || invoiceWithBRs.Invoice.Statut == (int)TunNetCom.SilkRoadErp.Sales.Domain.Entites.DocumentStatus.Valid)"
                                             Click="@DetachReceiptNotesFromInvoice"
                                             Style="border-radius: 6px; padding: 0.4rem 0.8rem; font-weight: 500; font-size: 0.85rem;" />
                                     </div>
@@ -388,7 +389,7 @@
                             <div style="margin-left: auto;">
                                 <RadzenButton Click="@(args => AttachReceiptNotesToInvoiceClick("Primary button"))"
                                               Text="@Localizer["attach_receipt_note_to_invoice"]"
-                                              Disabled="@(SelectedInvoiceId == 0 || !_selectedReceiptNotesToAttach.Any())"
+                                              Disabled="@(SelectedInvoiceId == 0 || !_selectedReceiptNotesToAttach.Any() || _invoicesWithReceiptNotes.FirstOrDefault(i => i.Invoice.Num == SelectedInvoiceId)?.Invoice.Statut == (int)TunNetCom.SilkRoadErp.Sales.Domain.Entites.DocumentStatus.Valid)"
                                               ButtonStyle="ButtonStyle.Primary"
                                               Size="ButtonSize.Small"
                                               Style="border-radius: 6px; padding: 0.4rem 0.8rem; font-weight: 500; font-size: 0.85rem;" />

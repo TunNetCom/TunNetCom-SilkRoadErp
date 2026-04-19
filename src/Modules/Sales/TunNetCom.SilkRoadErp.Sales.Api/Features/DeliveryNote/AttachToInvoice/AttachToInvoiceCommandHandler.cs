@@ -13,13 +13,20 @@ public class AttachToInvoiceCommandHandler(
             string.Join(", ", attachToInvoiceCommand.DeliveryNoteIds), attachToInvoiceCommand.InvoiceId);
 
         var invoice = await _context.Facture
-            .Select(i => new { CustomerId = i.IdClient, NumInvoice = i.Num })
+            .Select(i => new { CustomerId = i.IdClient, NumInvoice = i.Num, Statut = i.Statut })
             .FirstOrDefaultAsync(i => i.NumInvoice == attachToInvoiceCommand.InvoiceId, cancellationToken);
 
         if (invoice is null)
         {
             _logger.LogEntityNotFound(nameof(Facture), attachToInvoiceCommand.InvoiceId);
             return Result.Fail(EntityNotFound.Error());
+        }
+
+        // Disallow attaching delivery notes to a validated invoice
+        if (invoice.Statut == DocumentStatus.Valid)
+        {
+            _logger.LogWarning("Attempt to attach delivery notes to validated invoice {InvoiceId}", attachToInvoiceCommand.InvoiceId);
+            return Result.Fail("invoice_is_valid");
         }
 
         var deliveryNotes = await _context.BonDeLivraison

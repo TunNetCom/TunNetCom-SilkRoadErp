@@ -10,13 +10,20 @@ public class DetachFromInvoiceCommandHandler(
         logger.LogInformation("Detaching delivery notes {DeliveryNoteIds} from invoice {InvoiceId}",
             string.Join(", ", request.DeliveryNoteIds), request.InvoiceId);
 
-        var isInvoiceExist = await context.Facture
-            .AnyAsync(f => f.Num == request.InvoiceId, cancellationToken);
+        var invoice = await context.Facture
+            .Select(f => new { f.Num, f.Statut })
+            .FirstOrDefaultAsync(f => f.Num == request.InvoiceId, cancellationToken);
 
-        if (!isInvoiceExist)
+        if (invoice is null)
         {
             logger.LogWarning("Invoice with id {InvoiceId} not found", request.InvoiceId);
             return Result.Fail("invoice_not_found");
+        }
+
+        if (invoice.Statut == DocumentStatus.Valid)
+        {
+            logger.LogWarning("Attempt to detach delivery notes from validated invoice {InvoiceId}", request.InvoiceId);
+            return Result.Fail("invoice_is_valid");
         }
 
         var deliveryNotesToUpdate = await context.BonDeLivraison

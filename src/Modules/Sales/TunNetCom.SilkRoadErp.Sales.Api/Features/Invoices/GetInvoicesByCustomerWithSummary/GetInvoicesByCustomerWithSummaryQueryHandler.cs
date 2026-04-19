@@ -34,6 +34,9 @@ public class GetInvoicesByCustomerWithSummaryQueryHandler(
                 Id = f.Id,
                 Number = f.Num,
                 Date = f.Date,
+                // Do not cast enum to int in the SQL projection because Statut is stored as string in the DB
+                // Casting here would cause SQL to attempt conversion of the text value (e.g. 'Valid') to int.
+                // We'll populate the Statut value after materialization.
                 TotalExcludingTaxAmount = f.BonDeLivraison.Sum(d => d.TotHTva),
                 TotalVATAmount = f.BonDeLivraison.Sum(d => d.TotTva),
                 TotalIncludingTaxAmount = f.BonDeLivraison.Sum(d => d.NetPayer) + timbre,
@@ -52,6 +55,26 @@ public class GetInvoicesByCustomerWithSummaryQueryHandler(
             pageNumber: query.PageNumber,
             pageSize: query.PageSize,
             cancellationToken: cancellationToken);
+
+        // After materializing the InvoiceResponse objects, populate the Statut field from the original entity
+        // We fetch the raw statut values for the invoices in the current page to avoid additional roundtrips per item.
+        var invoiceNums = pagedInvoices.Items.Select(i => i.Number).ToList();
+        if (invoiceNums.Any())
+        {
+            var statuts = await _context.Facture
+                .Where(f => invoiceNums.Contains(f.Num))
+                .Select(f => new { f.Num, f.Statut })
+                .ToListAsync(cancellationToken);
+
+            var statutByNum = statuts.ToDictionary(s => s.Num, s => s.Statut);
+            foreach (var inv in pagedInvoices.Items)
+            {
+                if (statutByNum.TryGetValue(inv.Number, out var statut))
+                {
+                    inv.Statut = (int)statut;
+                }
+            }
+        }
 
         var totalGrossAmount = await invoicesQueryBase.SumAsync(d => d.BonDeLivraison.Sum(d => d.TotHTva));
         var totalVATAmount = await invoicesQueryBase.SumAsync(d => d.BonDeLivraison.Sum(d => d.TotTva));
