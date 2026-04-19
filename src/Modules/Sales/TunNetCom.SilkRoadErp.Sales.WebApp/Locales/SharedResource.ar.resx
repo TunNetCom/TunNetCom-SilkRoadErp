@@ -492,6 +492,24 @@
   <data name="actions_label" xml:space="preserve">
     <value>الإجراءات</value>
   </data>
+  <data name="edit_date" xml:space="preserve">
+    <value>تعديل تاريخ الفاتورة</value>
+  </data>
+  <data name="edit_invoice_date" xml:space="preserve">
+    <value>تعديل تاريخ الفاتورة</value>
+  </data>
+  <data name="edit_invoice_date_prompt" xml:space="preserve">
+    <value>اختر تاريخ الفاتورة الجديد.</value>
+  </data>
+  <data name="invoice_date_updated" xml:space="preserve">
+    <value>تم تحديث تاريخ الفاتورة.</value>
+  </data>
+  <data name="invoice_date_edit_draft_only" xml:space="preserve">
+    <value>لا يمكن تغيير تاريخ الفاتورة إلا عندما تكون مسودة.</value>
+  </data>
+  <data name="invoice_editing_requires_draft" xml:space="preserve">
+    <value>يُسمح بهذا فقط عندما تكون فاتورة المورد مسودة.</value>
+  </data>
   <data name="cancel_label" xml:space="preserve">
     <value>إلغاء</value>
   </data>

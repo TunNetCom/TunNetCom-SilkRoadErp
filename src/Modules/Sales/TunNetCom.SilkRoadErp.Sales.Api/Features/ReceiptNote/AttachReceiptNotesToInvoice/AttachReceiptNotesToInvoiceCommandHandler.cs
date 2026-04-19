@@ -1,4 +1,4 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.AttachReceiptNotesToInvoice;
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.AttachReceiptNotesToInvoice;
 public class AttachReceiptNotesToInvoiceCommandHandler(
     SalesContext context,
     ILogger<AttachReceiptNotesToInvoiceCommandHandler> logger) : IRequestHandler<AttachReceiptNotesToInvoiceCommand, Result>
@@ -17,9 +17,9 @@ public class AttachReceiptNotesToInvoiceCommandHandler(
             return Result.Fail(EntityNotFound.Error());
         }
 
-        if (invoice.Statut == DocumentStatus.Valid)
+        if (invoice.Statut != DocumentStatus.Draft)
         {
-            logger.LogWarning("Attempt to attach receipt notes to validated invoice {InvoiceId}", command.InvoiceId);
+            logger.LogWarning("Attempt to attach receipt notes to invoice {InvoiceId} while status is {Statut}", command.InvoiceId, invoice.Statut);
             return Result.Fail("invoice_is_valid");
         }
         var receiptNotes = context.BonDeReception

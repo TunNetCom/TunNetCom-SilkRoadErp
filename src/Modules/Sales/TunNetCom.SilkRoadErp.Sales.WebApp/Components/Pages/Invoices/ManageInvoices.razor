@@ -266,7 +266,7 @@
                             </Template>
                         </RadzenDataGridColumn>
                         <RadzenDataGridColumn Title="@Localizer["actions_label"]"
-                                              Width="120px">
+                                              Width="160px">
                             <Template Context="invoiceWithBLs">
                                 @{
                                     // Afficher le bouton si les BLs sont chargés et qu'il n'y en a pas,
@@ -274,15 +274,24 @@
                                     var hasNoDeliveryNotes = !invoiceWithBLs.DeliveryNotesLoaded || 
                                                              invoiceWithBLs.DeliveryNotes == null || 
                                                              !invoiceWithBLs.DeliveryNotes.Any();
+                                    var isDraft = invoiceWithBLs.Invoice.Statut == (int)TunNetCom.SilkRoadErp.Sales.Domain.Entites.DocumentStatus.Draft;
                                 }
-                                @if (hasNoDeliveryNotes)
-                                {
-                                    <RadzenButton Icon="swap_horiz" 
-                                                  ButtonStyle="ButtonStyle.Secondary" 
+                                <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap: wrap;">
+                                    <RadzenButton Icon="edit"
+                                                  ButtonStyle="ButtonStyle.Light"
                                                   Size="ButtonSize.Small"
-                                                  Title="@Localizer["transfer_invoice"]"
-                                                  Click="@(() => TransferInvoiceToCustomer(invoiceWithBLs.Invoice.Number))" />
-                                }
+                                                  Title="@(isDraft ? Localizer["edit_date"] : Localizer["invoice_date_edit_draft_only"])"
+                                                  Disabled="@(!isDraft)"
+                                                  Click="@(() => EditInvoiceDate(invoiceWithBLs.Invoice.Number))" />
+                                    @if (hasNoDeliveryNotes)
+                                    {
+                                        <RadzenButton Icon="swap_horiz"
+                                                      ButtonStyle="ButtonStyle.Secondary"
+                                                      Size="ButtonSize.Small"
+                                                      Title="@Localizer["transfer_invoice"]"
+                                                      Click="@(() => TransferInvoiceToCustomer(invoiceWithBLs.Invoice.Number))" />
+                                    }
+                                </div>
                             </Template>
                         </RadzenDataGridColumn>
                     </Columns>

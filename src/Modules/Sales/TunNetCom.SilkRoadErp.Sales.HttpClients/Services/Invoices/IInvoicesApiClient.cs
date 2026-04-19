@@ -36,6 +36,8 @@ public interface IInvoicesApiClient
         List<int> ids,
         CancellationToken cancellationToken);
 
+    Task<Result> UpdateInvoiceDateAsync(int num, TunNetCom.SilkRoadErp.Sales.Contracts.Invoice.UpdateInvoiceDateRequest request, CancellationToken cancellationToken);
+
     Task<Result<int>> GetInvoiceIdByNumberAsync(
         int invoiceNumber,
         CancellationToken cancellationToken);

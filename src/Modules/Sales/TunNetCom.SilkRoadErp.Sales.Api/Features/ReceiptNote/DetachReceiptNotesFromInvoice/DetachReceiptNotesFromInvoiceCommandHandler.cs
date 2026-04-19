@@ -1,4 +1,4 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.DetachReceiptNotesFromInvoice
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.ReceiptNote.DetachReceiptNotesFromInvoice
 {
     public class DetachReceiptNotesFromInvoiceCommandHandler(
          SalesContext context,
@@ -19,9 +19,9 @@
                 return Result.Fail("EntityNotFound"); 
             }
 
-            if (invoice.Statut == DocumentStatus.Valid)
+            if (invoice.Statut != DocumentStatus.Draft)
             {
-                logger.LogWarning("Attempt to detach receipt notes from validated invoice {InvoiceId}", request.InvoiceId);
+                logger.LogWarning("Attempt to detach receipt notes from invoice {InvoiceId} while status is {Statut}", request.InvoiceId, invoice.Statut);
                 return Result.Fail("invoice_is_valid");
             }
             var notesToDetach = await context.BonDeReception

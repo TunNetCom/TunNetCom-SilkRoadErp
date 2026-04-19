@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;
 
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProviderInvoice;
@@ -257,6 +257,29 @@ public class ProviderInvoiceApiClient : IProviderInvoiceApiClient
             _logger.LogError(ex.Message, ex);
             throw;
         }
+    }
+
+    public async Task<Result> UpdateProviderInvoiceDateAsync(int num, UpdateProviderInvoiceDateRequest request, CancellationToken cancellationToken = default)
+    {
+        var response = await _httpClient.PutAsJsonAsync($"/provider-invoice/{num}/date", request, cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.NoContent)
+        {
+            return Result.Ok();
+        }
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return Result.Fail("invoice_not_found");
+        }
+
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            var bad = await response.ReadJsonAsync<BadRequestResponse>(cancellationToken: cancellationToken);
+            return Result.Fail(bad?.Detail ?? "bad_request");
+        }
+
+        return Result.Fail($"Unexpected status code: {response.StatusCode}");
     }
 
     public async Task<Result> ValidateProviderInvoicesAsync(List<int> ids, CancellationToken cancellationToken)
