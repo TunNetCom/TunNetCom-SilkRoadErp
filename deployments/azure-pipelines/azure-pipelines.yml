@@ -1,14 +1,12 @@
 # ============================================================
-# Dev CI/CD Pipeline for SilkRoad (Deploys to silkroad-dev)
+# Dev CI/CD Pipeline for SilkRoad (FINAL - WITH OWASP ZAP)
 # ============================================================
-#trigger:
-#- master
 
 pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-- group: silkroad-prod    # Use dev-specific variable group containing Connection_String_Dev
+- group: silkroad-prod
 - name: connectionString
   value: $(Connection_String_Dev)
 - name: solution
@@ -23,126 +21,359 @@ variables:
   value: 'webapp-$(Build.BuildId)'
 - name: kubeNamespace
   value: 'silkroad-dev'
+- name: zapTarget
+  value: 'https://silkroad.aion-time.com'
 
 stages:
+
 # ============================================================
-# 1️⃣ BUILD & PUSH STAGE
+# 1 - BUILD + SCAN + PUSH
 # ============================================================
 - stage: BuildAndPush
-  displayName: Build and Push Docker Images
+  displayName: Build, Scan and Push
   jobs:
   - job: BuildPushJob
-    displayName: Build & Push
     steps:
 
-    # -----------------------------
-    # Login to DockerHub
-    # -----------------------------
     - task: Docker@2
-      displayName: 'Login to DockerHub'
       inputs:
         command: login
         containerRegistry: 'TunNetCom_Dockerhub_Connection'
 
-    # -----------------------------
-    # Use .NET SDK
-    # -----------------------------
     - task: UseDotNet@2
-      displayName: 'Use .NET 10 SDK'
       inputs:
-        packageType: 'sdk'
+        packageType: sdk
         version: '10.x'
 
-    # -----------------------------
-    # Restore & Build
-    # -----------------------------
     - task: DotNetCoreCLI@2
-      displayName: 'Restore'
       inputs:
-        command: 'restore'
+        command: restore
         projects: '$(solution)'
 
     - task: DotNetCoreCLI@2
-      displayName: 'Build'
       inputs:
-        command: 'build'
+        command: build
         projects: '$(solution)'
         arguments: '--configuration $(buildConfiguration) --no-restore'
 
-    # -----------------------------
-    # Build API Docker Image
-    # -----------------------------
     - script: |
-        set -e
-        echo "🐳 Building API Docker image..."
-        docker build --no-cache --progress=plain \
-          -t $(dockerRepository):$(apiTag) \
+        sudo apt-get update -qq
+        sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+        wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+        echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main \
+          | sudo tee /etc/apt/sources.list.d/trivy.list
+        sudo apt-get update -qq
+        sudo apt-get install -y trivy
+      displayName: Install Trivy
+
+    # ============================================================
+    # API
+    # ============================================================
+    - script: |
+        docker build -t $(dockerRepository):$(apiTag) \
           -f $(Build.SourcesDirectory)/src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.Api/Dockerfile \
           $(Build.SourcesDirectory)
-        echo "✅ API image built successfully"
-      displayName: 'Build API Docker Image'
+        docker images | grep silkroad || true
+      displayName: Build API
 
-    # -----------------------------
-    # Tag and Push API
-    # -----------------------------
     - script: |
-        set -e
+        export TMPDIR=$(Build.SourcesDirectory)/tmp
+        mkdir -p $TMPDIR
+        trivy image \
+          --scanners vuln \
+          --exit-code 1 \
+          --severity HIGH,CRITICAL \
+          $(dockerRepository):$(apiTag)
+      displayName: Trivy Scan API
+
+    - script: |
+        mkdir -p $(Build.ArtifactStagingDirectory)/trivy
+        mkdir -p $(Build.ArtifactStagingDirectory)/security-report
+        export TMPDIR=$(Build.SourcesDirectory)/tmp
+
+        trivy image \
+          --scanners vuln \
+          --format json \
+          -o $(Build.ArtifactStagingDirectory)/trivy/api.json \
+          $(dockerRepository):$(apiTag)
+
+        trivy image \
+          --scanners vuln \
+          --format template \
+          --template "@/usr/local/share/trivy/templates/html.tpl" \
+          -o $(Build.ArtifactStagingDirectory)/security-report/api.html \
+          $(dockerRepository):$(apiTag)
+      displayName: Trivy Report API
+      condition: always()
+
+    - script: |
         docker tag $(dockerRepository):$(apiTag) $(dockerRepository):latest-api
         docker push $(dockerRepository):$(apiTag)
         docker push $(dockerRepository):latest-api
-        echo "✅ API image pushed successfully"
-      displayName: 'Push API Docker Image'
+      displayName: Push API
 
-    # -----------------------------
-    # Build WebApp Docker Image
-    # -----------------------------
+    # ============================================================
+    # CLEANUP
+    # ============================================================
     - script: |
-        set -e
-        echo "🐳 Building WebApp Docker image..."
-        docker build --no-cache --progress=plain \
-          -t $(dockerRepository):$(webappTag) \
+        echo "Cleaning disk before WebApp..."
+        docker system prune -af || true
+        docker builder prune -af || true
+        sudo rm -rf /tmp/* || true
+        mkdir -p $(Build.SourcesDirectory)/tmp
+        echo "Disk usage:"
+        df -h
+      displayName: Cleanup Disk
+
+    # ============================================================
+    # WEBAPP
+    # ============================================================
+    - script: |
+        docker build -t $(dockerRepository):$(webappTag) \
           -f $(Build.SourcesDirectory)/src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.WebApp/Dockerfile \
           $(Build.SourcesDirectory)
-        echo "✅ WebApp image built successfully"
-      displayName: 'Build WebApp Docker Image'
+        docker images | grep silkroad || true
+      displayName: Build WebApp
 
-    # -----------------------------
-    # Tag and Push WebApp
-    # -----------------------------
     - script: |
-        set -e
+        export TMPDIR=$(Build.SourcesDirectory)/tmp
+        trivy image \
+          --scanners vuln \
+          --exit-code 1 \
+          --severity HIGH,CRITICAL \
+          $(dockerRepository):$(webappTag)
+      displayName: Trivy Scan WebApp
+
+    - script: |
+        export TMPDIR=$(Build.SourcesDirectory)/tmp
+
+        trivy image \
+          --scanners vuln \
+          --format json \
+          -o $(Build.ArtifactStagingDirectory)/trivy/web.json \
+          $(dockerRepository):$(webappTag)
+
+        trivy image \
+          --scanners vuln \
+          --format template \
+          --template "@/usr/local/share/trivy/templates/html.tpl" \
+          -o $(Build.ArtifactStagingDirectory)/security-report/web.html \
+          $(dockerRepository):$(webappTag)
+      displayName: Trivy Report WebApp
+      condition: always()
+
+    - script: |
         docker tag $(dockerRepository):$(webappTag) $(dockerRepository):latest-webapp
         docker push $(dockerRepository):$(webappTag)
         docker push $(dockerRepository):latest-webapp
-        echo "✅ WebApp image pushed successfully"
-      displayName: 'Push WebApp Docker Image'
+      displayName: Push WebApp
 
-    # -----------------------------
-    # Publish Deployment Files as Artifact
-    # -----------------------------
+    # ============================================================
+    # K8S
+    # ============================================================
     - script: |
-        set -e
+        trivy config \
+          --exit-code 1 \
+          --severity HIGH,CRITICAL \
+          $(Build.SourcesDirectory)/deployments/k8s/
+      displayName: Trivy K8s Scan
+
+    - script: |
+        echo "Preparing Kubernetes manifests..."
         mkdir -p $(Build.ArtifactStagingDirectory)/deployments
-        # Kubernetes manifests (repo-root paths; pipeline YAML lives under deployments/azure-pipelines/)
-        cp -v $(Build.SourcesDirectory)/deployments/k8s/*.yaml $(Build.ArtifactStagingDirectory)/deployments/
-        echo "✅ Deployment files copied"
-      displayName: 'Prepare Deployment Artifacts'
+        cp -v $(Build.SourcesDirectory)/deployments/k8s/*.yaml \
+          $(Build.ArtifactStagingDirectory)/deployments/
+        echo "K8s manifests ready"
+      displayName: Prepare K8s Manifests
 
     - task: PublishBuildArtifacts@1
-      displayName: 'Publish Deployment Artifacts'
+      displayName: Publish K8s Manifests
       inputs:
         pathToPublish: '$(Build.ArtifactStagingDirectory)/deployments'
         artifactName: 'k8s-manifests'
-        publishLocation: 'Container'
+
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Trivy JSON Reports
+      condition: always()
+      inputs:
+        pathToPublish: '$(Build.ArtifactStagingDirectory)/trivy'
+        artifactName: 'trivy-reports'
+
+    - task: PublishBuildArtifacts@1
+      displayName: Publish HTML Security Report
+      condition: always()
+      inputs:
+        pathToPublish: '$(Build.ArtifactStagingDirectory)/security-report'
+        artifactName: 'security-report'
+
+    - task: PublishHtmlReport@1
+      displayName: Show Security Report Tab
+      condition: always()
+      inputs:
+        reportDir: '$(Build.ArtifactStagingDirectory)/security-report'
+        tabName: 'Security Report'
 
 # ============================================================
-# 2️⃣ DEPLOY STAGE TO DEV KUBERNETES
+# 2 - DAST : OWASP ZAP BASELINE SCAN
+# ============================================================
+- stage: ZAP_Baseline
+  displayName: DAST - ZAP Baseline Scan
+  dependsOn: BuildAndPush
+  condition: succeeded()
+  pool:
+    vmImage: 'ubuntu-latest'
+  jobs:
+  - job: ZAPBaselineJob
+    displayName: ZAP Baseline (passive scan)
+    steps:
+
+    - script: |
+        mkdir -p $(System.DefaultWorkingDirectory)/zap-baseline
+        chmod 777 $(System.DefaultWorkingDirectory)/zap-baseline
+      displayName: Prepare ZAP Baseline directory
+
+    - script: |
+        docker pull ghcr.io/zaproxy/zaproxy:stable
+      displayName: Pull ZAP image
+
+    - script: |
+        docker run --rm \
+          -v $(System.DefaultWorkingDirectory)/zap-baseline:/zap/wrk:rw \
+          ghcr.io/zaproxy/zaproxy:stable \
+          zap-baseline.py \
+          -t $(zapTarget) \
+          -r zap-baseline.html \
+          -J zap-baseline.json \
+          -l WARN \
+          -I
+      displayName: Run ZAP Baseline scan
+
+    # FIX: ZAP writes files as its internal user — make them readable by the agent
+    - script: |
+        sudo chown -R $(id -u):$(id -g) $(System.DefaultWorkingDirectory)/zap-baseline
+        sudo chmod -R 755 $(System.DefaultWorkingDirectory)/zap-baseline
+      displayName: Fix ZAP report permissions
+      condition: always()
+
+    - task: PublishBuildArtifacts@1
+      displayName: Publish ZAP Baseline Report
+      condition: always()
+      inputs:
+        pathToPublish: '$(System.DefaultWorkingDirectory)/zap-baseline'
+        artifactName: 'ZAP-Baseline-Report'
+
+    - task: PublishHtmlReport@1
+      displayName: Show ZAP Baseline Tab
+      condition: always()
+      inputs:
+        reportDir: '$(System.DefaultWorkingDirectory)/zap-baseline'
+        tabName: 'ZAP Baseline'
+
+# ============================================================
+# 3 - DAST : OWASP ZAP AJAX SPIDER SCAN
+# ============================================================
+- stage: ZAP_AJAX
+  displayName: DAST - ZAP AJAX Spider Scan
+  dependsOn: ZAP_Baseline
+  condition: succeeded()
+  pool:
+    vmImage: 'ubuntu-latest'
+  jobs:
+  - job: ZAPAjaxJob
+    displayName: ZAP AJAX Spider (Blazor routes)
+    steps:
+
+    - script: |
+        mkdir -p $(System.DefaultWorkingDirectory)/zap-ajax
+        chmod 777 $(System.DefaultWorkingDirectory)/zap-ajax
+      displayName: Prepare ZAP AJAX directory
+
+    - script: |
+        docker pull ghcr.io/zaproxy/zaproxy:stable
+      displayName: Pull ZAP image
+
+    - script: |
+        cat > $(System.DefaultWorkingDirectory)/zap-ajax/ajax-plan.yaml << EOF
+        env:
+          contexts:
+          - name: silkroad-erp
+            urls:
+            - $(zapTarget)/
+            excludePaths: []
+          parameters:
+            failOnError: false
+            progressToStdout: true
+        jobs:
+        - type: spiderAjax
+          parameters:
+            url: $(zapTarget)/
+            maxDuration: 5
+            maxCrawlDepth: 10
+            numberOfBrowsers: 2
+            browserId: firefox-headless
+            clickDefaultElems: true
+            clickElemsOnce: true
+            randomInputs: true
+        - type: passiveScan-wait
+          parameters:
+            maxDuration: 5
+        - type: outputSummary
+          parameters:
+            format: Long
+            summaryFile: /zap/wrk/zap_out.json
+        - type: report
+          parameters:
+            reportTitle: ZAP AJAX Spider - SilkRoad ERP
+            reportDir: /zap/wrk/
+            reportFile: zap-ajax.html
+            template: traditional-html
+        - type: report
+          parameters:
+            reportTitle: ZAP AJAX Spider - SilkRoad ERP
+            reportDir: /zap/wrk/
+            reportFile: zap-ajax.json
+            template: traditional-json
+        EOF
+      displayName: Generate AJAX plan YAML
+
+    - script: |
+        docker run --rm \
+          -v $(System.DefaultWorkingDirectory)/zap-ajax:/zap/wrk:rw \
+          ghcr.io/zaproxy/zaproxy:stable \
+          zap.sh -cmd -autorun /zap/wrk/ajax-plan.yaml
+      displayName: Run ZAP AJAX Spider scan
+
+    # FIX: ZAP writes files as its internal user — make them readable by the agent
+    - script: |
+        sudo chown -R $(id -u):$(id -g) $(System.DefaultWorkingDirectory)/zap-ajax
+        sudo chmod -R 755 $(System.DefaultWorkingDirectory)/zap-ajax
+      displayName: Fix ZAP report permissions
+      condition: always()
+
+    - task: PublishBuildArtifacts@1
+      displayName: Publish ZAP AJAX Report
+      condition: always()
+      inputs:
+        pathToPublish: '$(System.DefaultWorkingDirectory)/zap-ajax'
+        artifactName: 'ZAP-AJAX-Report'
+
+    - task: PublishHtmlReport@1
+      displayName: Show ZAP AJAX Tab
+      condition: always()
+      inputs:
+        reportDir: '$(System.DefaultWorkingDirectory)/zap-ajax'
+        tabName: 'ZAP AJAX Spider'
+
+# ============================================================
+# 4 - DEPLOY
 # ============================================================
 - stage: Deploy
-  displayName: Deploy to SilkRoad Dev (silkroad-dev)
-  dependsOn: BuildAndPush
+  displayName: Deploy to SilkRoad Dev
+  dependsOn: ZAP_AJAX
+  condition: succeeded()
   pool:
     name: OnPremAgents
+
   jobs:
   - template: /deployments/azure-pipelines/templates/deploy-k8s-job.yml
     parameters:
@@ -150,6 +381,5 @@ stages:
       deploymentApiName: silkroad-api
       deploymentWebappName: silkroad-webapp
       manifestPath: $(Pipeline.Workspace)/k8s-manifests/prod-deployment.yaml
-      stageDisplayName: Deploy to SilkRoad Dev (silkroad-dev)
       artifactName: k8s-manifests
       forceImagePullPatch: false

@@ -90,17 +90,30 @@ public class CustomersApiClient : ICustomersApiClient
             $"/customers?pageNumber={queryParameters.PageNumber}&pageSize={queryParameters.PageSize}&searchKeyword={queryParameters.SearchKeyword}",
             cancellationToken: cancellationToken);
 
-        var responseContent = await response.Content.ReadAsStringAsync();
-        var pagedClients = JsonConvert.DeserializeObject<PagedList<CustomerResponse>>(responseContent);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception(
+                $"Customers: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync(cancellationToken)}");
+        }
+
+        var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+        var pagedClients = JsonConvert.DeserializeObject<PagedList<CustomerResponse>>(responseContent)
+                          ?? new PagedList<CustomerResponse>();
 
         if (response.Headers.TryGetValues("X-Pagination", out var headerValues))
         {
-            var paginationMetadata = JsonConvert.DeserializeObject<PaginationMetadata>(headerValues.FirstOrDefault());
+            var rawPagination = headerValues.FirstOrDefault();
+            var paginationMetadata = string.IsNullOrWhiteSpace(rawPagination)
+                ? null
+                : JsonConvert.DeserializeObject<PaginationMetadata>(rawPagination);
 
-            pagedClients.TotalCount = paginationMetadata.TotalCount;
-            pagedClients.PageSize = paginationMetadata.PageSize;
-            pagedClients.TotalPages = paginationMetadata.TotalPages;
-            pagedClients.CurrentPage = paginationMetadata.CurrentPage;
+            if (paginationMetadata != null)
+            {
+                pagedClients.TotalCount = paginationMetadata.TotalCount;
+                pagedClients.PageSize = paginationMetadata.PageSize;
+                pagedClients.TotalPages = paginationMetadata.TotalPages;
+                pagedClients.CurrentPage = paginationMetadata.CurrentPage;
+            }
 
             return pagedClients;
         }
@@ -148,10 +161,16 @@ public class CustomersApiClient : ICustomersApiClient
 
         // Make the HTTP request
         var response = await _httpClient.GetAsync($"/customers{queryString}", cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception(
+                $"Customers: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync(cancellationToken)}");
+        }
 
         // Read and deserialize the response
-        var responseContent = await response.Content.ReadAsStringAsync();
-        var pagedCustomers = JsonConvert.DeserializeObject<PagedList<CustomerResponse>>(responseContent);
+        var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+        var pagedCustomers = JsonConvert.DeserializeObject<PagedList<CustomerResponse>>(responseContent)
+                            ?? new PagedList<CustomerResponse>();
         return pagedCustomers;
     }
 

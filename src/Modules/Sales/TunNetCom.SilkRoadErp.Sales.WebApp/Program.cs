@@ -132,7 +132,7 @@ builder.Services.AddSalesHttpClients(baseUrl, clientBuilder =>
 });
 
 // OData service — same handler chain
-builder.Services.AddHttpClient<ODataService>(client =>
+var odataHttpClient = builder.Services.AddHttpClient<ODataService>(client =>
 {
     client.BaseAddress = new Uri(baseUrl);
     client.Timeout = TimeSpan.FromMinutes(5);
@@ -141,6 +141,11 @@ builder.Services.AddHttpClient<ODataService>(client =>
 // ODataService is registered as a typed HttpClient above via AddHttpClient<TClient>.
 // Do not register it again with AddScoped<T>() because that would override the
 // typed client registration and inject a plain HttpClient without BaseAddress.
+
+if (deploymentMode == DeploymentMode.MultiTenant)
+{
+    odataHttpClient.AddHttpMessageHandler<TenantDelegatingHandler>();
+}
 
 // Recap Ventes/Achats service
 builder.Services.AddHttpClient<RecapVentesAchatsService>(client =>

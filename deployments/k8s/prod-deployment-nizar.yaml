@@ -11,9 +11,9 @@ metadata:
     environment: production
     tier: backend
 spec:
-  replicas: 1 # Single pod - no shared storage needed
+  replicas: 1
   strategy:
-    type: Recreate # Simpler strategy for single pod
+    type: Recreate
   selector:
     matchLabels:
       app: silkroad-api-nizar
@@ -25,17 +25,29 @@ spec:
         environment: production
         tier: backend
     spec:
+      # ✅ Pod-level security
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+
       containers:
       - name: api
         image: tunnetcom/silkroad:latest-api
         imagePullPolicy: Always
+
+        # ✅ Container-level security
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+
         ports:
         - containerPort: 8080
-          name: http
-          protocol: TCP
         - containerPort: 8081
-          name: https
-          protocol: TCP
+
         env:
         - name: ASPNETCORE_ENVIRONMENT
           value: "Production"
@@ -48,6 +60,7 @@ spec:
               key: ConnectionStrings__DefaultConnection
         - name: EF_MIGRATE_ON_STARTUP
           value: "false"
+
         resources:
           requests:
             memory: "1Gi"
@@ -55,7 +68,6 @@ spec:
           limits:
             memory: "2Gi"
             cpu: "2000m"
-      restartPolicy: Always
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -67,9 +79,9 @@ metadata:
     environment: production
     tier: frontend
 spec:
-  replicas: 1 # Single pod - no encryption key sharing issues
+  replicas: 1
   strategy:
-    type: Recreate # Simpler strategy for single pod
+    type: Recreate
   selector:
     matchLabels:
       app: silkroad-webapp-nizar
@@ -81,14 +93,41 @@ spec:
         environment: production
         tier: frontend
     spec:
+      # ✅ Pod-level security
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+
+      volumes:
+        - name: dataprotection-keys
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+
       containers:
       - name: webapp
         image: tunnetcom/silkroad:latest-webapp
         imagePullPolicy: Always
+
+        # ✅ Container-level security
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+
+        volumeMounts:
+          # ✅ FIX: non-root path
+          - name: dataprotection-keys
+            mountPath: /home/app/.aspnet/DataProtection-Keys
+          - name: tmp
+            mountPath: /tmp
+
         ports:
         - containerPort: 8080
-          name: http
-          protocol: TCP
+
         env:
         - name: ASPNETCORE_ENVIRONMENT
           value: "Production"
@@ -96,6 +135,7 @@ spec:
           value: "http://+:8080"
         - name: ApiSettings__BaseUrl
           value: "http://silkroad-api-service-nizar:8080"
+
         resources:
           requests:
             memory: "1Gi"
@@ -103,4 +143,3 @@ spec:
           limits:
             memory: "2Gi"
             cpu: "2000m"
-      restartPolicy: Always
