@@ -487,6 +487,18 @@
   <data name="invoice_editing_requires_draft" xml:space="preserve">
     <value />
   </data>
+  <data name="delivery_note_invoice_filter_label" xml:space="preserve">
+    <value />
+  </data>
+  <data name="delivery_note_invoice_filter_all" xml:space="preserve">
+    <value />
+  </data>
+  <data name="delivery_note_invoice_filter_unattached" xml:space="preserve">
+    <value />
+  </data>
+  <data name="delivery_note_invoice_filter_attached" xml:space="preserve">
+    <value />
+  </data>
   <data name="cancel_label" xml:space="preserve">
     <value />
   </data>

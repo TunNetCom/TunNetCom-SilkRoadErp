@@ -528,6 +528,18 @@
   <data name="invoice_editing_requires_draft" xml:space="preserve">
     <value>This is only allowed while the supplier invoice is a draft.</value>
   </data>
+  <data name="delivery_note_invoice_filter_label" xml:space="preserve">
+    <value>Invoice link</value>
+  </data>
+  <data name="delivery_note_invoice_filter_all" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="delivery_note_invoice_filter_unattached" xml:space="preserve">
+    <value>Not linked to an invoice</value>
+  </data>
+  <data name="delivery_note_invoice_filter_attached" xml:space="preserve">
+    <value>Linked to an invoice</value>
+  </data>
   <data name="cancel_label" xml:space="preserve">
     <value>Cancel</value>
   </data>

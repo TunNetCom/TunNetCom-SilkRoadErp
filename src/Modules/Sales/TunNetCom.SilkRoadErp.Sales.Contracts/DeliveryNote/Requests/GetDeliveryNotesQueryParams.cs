@@ -1,10 +1,11 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
+namespace TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests;
 
 public class GetDeliveryNotesQueryParams
 {
     public int? CustomerId { get; set; }
     public int? InvoiceId { get; set; }
-    public bool? IsInvoiced { get; set; } = false;
+    /// <summary>When null, do not filter by invoice attachment (all delivery notes).</summary>
+    public bool? IsInvoiced { get; set; }
     public string? SortOrder { get; set; }
     public string? SortProperty { get; set; }
     public int? PageNumber { get; set; } 

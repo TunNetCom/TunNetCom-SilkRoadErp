@@ -510,6 +510,18 @@
   <data name="invoice_editing_requires_draft" xml:space="preserve">
     <value>يُسمح بهذا فقط عندما تكون فاتورة المورد مسودة.</value>
   </data>
+  <data name="delivery_note_invoice_filter_label" xml:space="preserve">
+    <value>ربط الفاتورة</value>
+  </data>
+  <data name="delivery_note_invoice_filter_all" xml:space="preserve">
+    <value>الكل</value>
+  </data>
+  <data name="delivery_note_invoice_filter_unattached" xml:space="preserve">
+    <value>غير مرتبط بفاتورة</value>
+  </data>
+  <data name="delivery_note_invoice_filter_attached" xml:space="preserve">
+    <value>مرتبط بفاتورة</value>
+  </data>
   <data name="cancel_label" xml:space="preserve">
     <value>إلغاء</value>
   </data>
