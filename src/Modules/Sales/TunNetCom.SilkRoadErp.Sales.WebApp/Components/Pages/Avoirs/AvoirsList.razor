@@ -27,6 +27,7 @@
 @using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure
 @inject PrintAvoirService PrintAvoirService
 @inject IPrintService PrintServiceInfra
+@inject IJSRuntime JS
 
 <div class="invoices-list-container">
     <div class="search-header">
@@ -74,6 +75,12 @@
                           Title="Valider la sélection"
                           AriaLabel="Valider la sélection"
                           class="action-button" />
+            <RadzenButton Icon="table_chart"
+                          ButtonStyle="ButtonStyle.Info"
+                          Click="@ExportToExcelAsync"
+                          class="action-button"
+                          Title="Exporter vers Excel"
+                          AriaLabel="Exporter vers Excel" />
         </div>
     </div>
     <div class="list-card">
@@ -125,14 +132,6 @@
                                       Property="@nameof(AvoirBaseInfo.ClientName)"
                                       Title="Client"
                                       Width="200px" />
-                <RadzenDataGridColumn TItem="AvoirBaseInfo"
-                                      Property="@nameof(AvoirBaseInfo.TotalExcludingTaxAmount)"
-                                      Title="@Localizer["total_net"]"
-                                      Width="150px">
-                    <Template Context="item">
-                        @item.TotalExcludingTaxAmount.FormatAmount()
-                    </Template>
-                </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="AvoirBaseInfo"
                                       Property="@nameof(AvoirBaseInfo.TotalVATAmount)"
                                       Title="@Localizer["total_vat"]"
@@ -195,22 +194,16 @@
                 </RadzenDataGridColumn>
             </Columns>
         </RadzenDataGrid>
-        <RadzenCard class="summary-card" Variant="Variant.Outlined">
-            <RadzenStack Orientation="Radzen.Orientation.Horizontal"
-                         Gap="1.5rem"
-                         JustifyContent="JustifyContent.End"
-                         class="summary-stack">
-                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                    @Localizer["total_net"]: <strong>@totalNetAmount.FormatAmount()</strong>
-                </RadzenText>
-                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                    @Localizer["total_vat"]: <strong>@totalVatAmount.FormatAmount()</strong>
-                </RadzenText>
-                <RadzenText TextStyle="TextStyle.Body1" class="summary-text">
-                    Total TTC: <strong>@totalIncludingTaxAmount.FormatAmount()</strong>
-                </RadzenText>
-            </RadzenStack>
-        </RadzenCard>
+        <InvoiceTotalsSummary TotalNet="totalNetAmount"
+                              TotalVat="totalVatAmount"
+                              TotalTtc="totalIncludingTaxAmount"
+                              ShowDetailByRate="true"
+                              Base7="totalBase7"
+                              Base13="totalBase13"
+                              Base19="totalBase19"
+                              Vat7="totalVat7"
+                              Vat13="totalVat13"
+                              Vat19="totalVat19" />
     </div>
 </div>
 
@@ -346,46 +339,9 @@
         }
     }
 
-    .summary-card {
-        border: 1px solid #e5e7eb;
-        border-radius: 6px;
-        padding: 8px 16px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        flex: 0 0 auto;
-    }
-
-    .summary-stack {
-        gap: 1.5rem;
-    }
-
-    .summary-text {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        font-size: 13px;
-        line-height: 1.5;
-    }
-
-        .summary-text strong {
-            font-weight: 600;
-        }
-
     @@media (min-width: 769px) and (max-width: 1024px) {
         .search-header {
             grid-template-columns: repeat(2, 1fr);
-        }
-
-        .summary-card {
-            width: 100%;
-            padding: 8px 12px;
-        }
-
-        .summary-stack {
-            flex-direction: column;
-            gap: 0.75rem;
-            align-items: flex-start;
-        }
-
-        .summary-text {
-            font-size: 12px;
         }
     }
 
@@ -410,9 +366,17 @@
     private decimal totalNetAmount = 0;
     private decimal totalVatAmount = 0;
     private decimal totalIncludingTaxAmount = 0;
+    private decimal totalVat7 = 0;
+    private decimal totalVat13 = 0;
+    private decimal totalVat19 = 0;
+    private decimal totalBase7 = 0;
+    private decimal totalBase13 = 0;
+    private decimal totalBase19 = 0;
     private int pageSize = GridPageSizeConstants.PageSize10;
     private SearchCriteria searchCriteria = new SearchCriteria();
     private List<CustomerResponse> _filteredCustomers = new();
+    private string? _lastSortProperty;
+    private string? _lastSortOrder;
 
     protected override async Task OnInitializedAsync()
     {
@@ -563,6 +527,8 @@
             var (sortOrder, sortProperty) = args.Sorts != null && args.Sorts.Any()
                 ? (args.Sorts.First().SortOrder == SortOrder.Ascending ? SortConstants.Ascending : SortConstants.Descending, args.Sorts.First().Property)
                 : (SortConstants.Ascending, nameof(AvoirBaseInfo.Num));
+            _lastSortProperty = sortProperty;
+            _lastSortOrder = sortOrder;
             var queryParams = new GetAvoirsQueryParams
             {
                 PageNumber = pageNumber,
@@ -592,6 +558,12 @@
             totalNetAmount = response.TotalNetAmount;
             totalVatAmount = response.TotalVatAmount;
             totalIncludingTaxAmount = response.TotalIncludingTaxAmount;
+            totalBase7 = response.TotalBaseHt7;
+            totalBase13 = response.TotalBaseHt13;
+            totalBase19 = response.TotalBaseHt19;
+            totalVat7 = response.TotalVat7;
+            totalVat13 = response.TotalVat13;
+            totalVat19 = response.TotalVat19;
         }
         catch (Exception ex)
         {
@@ -601,9 +573,68 @@
             totalNetAmount = 0;
             totalVatAmount = 0;
             totalIncludingTaxAmount = 0;
+            totalVat7 = 0;
+            totalVat13 = 0;
+            totalVat19 = 0;
+            totalBase7 = 0;
+            totalBase13 = 0;
+            totalBase19 = 0;
         }
 
         await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ExportToExcelAsync()
+    {
+        try
+        {
+            var (startDate, endDate) = PeriodFilterHelper.GetDateRangeFromPeriod(
+                searchCriteria.PeriodFilter,
+                searchCriteria.StartDate,
+                searchCriteria.EndDate);
+
+            var columnsToExport = new[]
+            {
+                nameof(AvoirBaseInfo.Num),
+                nameof(AvoirBaseInfo.Date),
+                nameof(AvoirBaseInfo.ClientName),
+                nameof(AvoirBaseInfo.TotalExcludingTaxAmount),
+                nameof(AvoirBaseInfo.TotalVATAmount),
+                nameof(AvoirBaseInfo.TotalIncludingTaxAmount)
+            };
+
+            var orderBy = !string.IsNullOrEmpty(_lastSortProperty) && _lastSortOrder != null
+                ? $"{_lastSortProperty} {(_lastSortOrder == SortConstants.Ascending ? SortConstants.Ascending : SortConstants.Descending)}"
+                : null;
+
+            var (content, fileName) = await AvoirsService.ExportAvoirsToExcelAsync(
+                startDate,
+                endDate,
+                searchCriteria.SelectedClientId,
+                searchCriteria.Status,
+                columnsToExport,
+                orderBy,
+                default);
+
+            await JS.InvokeVoidAsync("downloadFile", fileName, Convert.ToBase64String(content));
+
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = Localizer["Success"],
+                Detail = "Export Excel réussi"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error exporting avoirs to Excel");
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Error"],
+                Detail = $"Erreur lors de l'export: {ex.Message}"
+            });
+        }
     }
 
     public class SearchCriteria

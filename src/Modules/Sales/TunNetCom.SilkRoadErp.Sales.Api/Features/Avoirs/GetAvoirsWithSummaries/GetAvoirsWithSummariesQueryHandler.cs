@@ -1,9 +1,15 @@
+using Microsoft.EntityFrameworkCore;
+using TunNetCom.SilkRoadErp.Sales.Api.Features.AppParameters.GetAppParameters;
+using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
 using TunNetCom.SilkRoadErp.Sales.Contracts.Avoirs;
+using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Avoirs.GetAvoirsWithSummaries;
 
 public class GetAvoirsWithSummariesQueryHandler(
     SalesContext _context,
+    IMediator _mediator,
+    IAccountingYearFinancialParametersService _financialParametersService,
     ILogger<GetAvoirsWithSummariesQueryHandler> _logger)
     : IRequestHandler<GetAvoirsWithSummariesQuery, GetAvoirsWithSummariesResponse>
 {
@@ -33,7 +39,8 @@ public class GetAvoirsWithSummariesQueryHandler(
         if (request.Status.HasValue)
         {
             _logger.LogInformation("Applying status filter: {status}", request.Status);
-            baseQuery = baseQuery.Where(x => (int)x.a.Statut == request.Status.Value);
+            var statusEnum = (DocumentStatus)request.Status.Value;
+            baseQuery = baseQuery.Where(x => x.a.Statut == statusEnum);
         }
 
         // Apply Date Range filters
@@ -73,6 +80,39 @@ public class GetAvoirsWithSummariesQueryHandler(
         var totalNetAmount = await totalsQuery.SumAsync(x => x.TotalExcludingTaxAmount, cancellationToken);
         var totalIncludingTaxAmount = await totalsQuery.SumAsync(x => x.TotalIncludingTaxAmount, cancellationToken);
 
+        // Récap TVA 7 / 13 / 19 (même logique que l’export Excel / BL)
+        decimal totalBaseHt7 = 0, totalBaseHt13 = 0, totalBaseHt19 = 0;
+        decimal totalVat7 = 0, totalVat13 = 0, totalVat19 = 0;
+        var appParamsResult = await _mediator.Send(new GetAppParametersQuery(), cancellationToken);
+        if (appParamsResult.IsSuccess)
+        {
+            var p = appParamsResult.Value;
+            var vatRate7 = (int)await _financialParametersService.GetVatRate7Async(p.VatRate7, cancellationToken);
+            var vatRate13 = (int)await _financialParametersService.GetVatRate13Async(p.VatRate13, cancellationToken);
+            var vatRate19 = (int)await _financialParametersService.GetVatRate19Async(p.VatRate19, cancellationToken);
+
+            async Task<decimal> SumTotHtForRateAsync(int rate) =>
+                await (
+                    from x in baseQuery
+                    from l in x.a.LigneAvoirs
+                    where (int)l.Tva == rate
+                    select l.TotHt).SumAsync(cancellationToken);
+
+            async Task<decimal> SumVatForRateAsync(int rate) =>
+                await (
+                    from x in baseQuery
+                    from l in x.a.LigneAvoirs
+                    where (int)l.Tva == rate
+                    select l.TotTtc - l.TotHt).SumAsync(cancellationToken);
+
+            totalBaseHt7 = await SumTotHtForRateAsync(vatRate7);
+            totalBaseHt13 = await SumTotHtForRateAsync(vatRate13);
+            totalBaseHt19 = await SumTotHtForRateAsync(vatRate19);
+            totalVat7 = await SumVatForRateAsync(vatRate7);
+            totalVat13 = await SumVatForRateAsync(vatRate13);
+            totalVat19 = await SumVatForRateAsync(vatRate19);
+        }
+
         // Query 2: Get paginated data with calculations
         // Build query with calculations but without Statut conversion to avoid SQL conversion issues
         _logger.LogInformation("Getting paginated data from database");
@@ -108,8 +148,8 @@ public class GetAvoirsWithSummariesQueryHandler(
                     ? avoirsQueryWithTotals.OrderBy(x => x.TotalExcludingTaxAmount)
                     : avoirsQueryWithTotals.OrderByDescending(x => x.TotalExcludingTaxAmount),
                 nameof(AvoirBaseInfo.Statut) => isAscending
-                    ? avoirsQueryWithTotals.OrderBy(x => (int)x.a.Statut)
-                    : avoirsQueryWithTotals.OrderByDescending(x => (int)x.a.Statut),
+                    ? avoirsQueryWithTotals.OrderBy(x => x.a.Statut)
+                    : avoirsQueryWithTotals.OrderByDescending(x => x.a.Statut),
                 _ => avoirsQueryWithTotals
             };
         }
@@ -147,12 +187,17 @@ public class GetAvoirsWithSummariesQueryHandler(
             Avoirs = pagedAvoirs,
             TotalNetAmount = totalNetAmount,
             TotalVatAmount = totalVatAmount,
-            TotalIncludingTaxAmount = totalIncludingTaxAmount
+            TotalIncludingTaxAmount = totalIncludingTaxAmount,
+            TotalBaseHt7 = totalBaseHt7,
+            TotalBaseHt13 = totalBaseHt13,
+            TotalBaseHt19 = totalBaseHt19,
+            TotalVat7 = totalVat7,
+            TotalVat13 = totalVat13,
+            TotalVat19 = totalVat19
         };
 
         _logger.LogEntitiesFetched(nameof(Avoirs), pagedAvoirs.Items.Count);
         return response;
     }
-
 }
 

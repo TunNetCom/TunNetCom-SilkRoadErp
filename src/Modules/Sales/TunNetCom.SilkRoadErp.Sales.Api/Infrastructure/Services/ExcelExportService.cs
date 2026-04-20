@@ -200,6 +200,26 @@ public class ExcelExportService
                 }
                 rowIndex++;
                 
+                // Base HT 13% - Always show
+                var labelCell13 = worksheet.Cells[rowIndex, 1];
+                labelCell13.Value = "Base HT 13%:";
+                labelCell13.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                labelCell13.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(249, 249, 249));
+                labelCell13.Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
+                
+                var valueCell13 = worksheet.Cells[rowIndex, totalColSpan];
+                valueCell13.Value = totalBase13 ?? 0;
+                valueCell13.Style.Numberformat.Format = formatString;
+                valueCell13.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                valueCell13.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(249, 249, 249));
+                valueCell13.Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
+                
+                if (totalColSpan > 1)
+                {
+                    worksheet.Cells[rowIndex, 1, rowIndex, totalColSpan - 1].Merge = true;
+                }
+                rowIndex++;
+                
                 // Base HT 19% - Always show
                 var labelCell19 = worksheet.Cells[rowIndex, 1];
                 labelCell19.Value = "Base HT 19%:";
@@ -233,6 +253,26 @@ public class ExcelExportService
                 valueCellVat7.Style.Fill.PatternType = ExcelFillStyle.Solid;
                 valueCellVat7.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(249, 249, 249));
                 valueCellVat7.Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
+                
+                if (totalColSpan > 1)
+                {
+                    worksheet.Cells[rowIndex, 1, rowIndex, totalColSpan - 1].Merge = true;
+                }
+                rowIndex++;
+                
+                // Montant TVA 13% - Always show
+                var labelCellVat13 = worksheet.Cells[rowIndex, 1];
+                labelCellVat13.Value = "Montant TVA 13%:";
+                labelCellVat13.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                labelCellVat13.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(249, 249, 249));
+                labelCellVat13.Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
+                
+                var valueCellVat13 = worksheet.Cells[rowIndex, totalColSpan];
+                valueCellVat13.Value = totalVat13 ?? 0;
+                valueCellVat13.Style.Numberformat.Format = formatString;
+                valueCellVat13.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                valueCellVat13.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(249, 249, 249));
+                valueCellVat13.Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
                 
                 if (totalColSpan > 1)
                 {
