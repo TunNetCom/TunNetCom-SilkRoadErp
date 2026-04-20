@@ -36,6 +36,10 @@ public interface IPaiementClientApiClient
     Task<Result> DeletePaiementClientAsync(
         int id,
         CancellationToken cancellationToken);
+
+    Task<SuggestedPaymentFromDeliveryNoteResponse?> GetSuggestedPaymentFromDeliveryNoteAsync(
+        int deliveryNoteId,
+        CancellationToken cancellationToken);
 }
 
 

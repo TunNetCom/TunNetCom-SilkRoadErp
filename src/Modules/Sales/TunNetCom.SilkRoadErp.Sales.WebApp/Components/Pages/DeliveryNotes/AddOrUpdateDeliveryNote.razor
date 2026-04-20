@@ -375,18 +375,18 @@ else
                 <RadzenLabel Text="@Localizer["invoice_number"]" />
                 <RadzenDropDownDataGrid AllowClear="true"
                                         IsLoading="@isLoadingInvoices"
-                                        @bind-Value="@_selectedInvoiceId"
+                                        @bind-Value="@selectedInvoiceId"
                                         LoadData="@LoadCustomerInvoices"
                                         AllowFiltering="true"
-                                        Style="width: 350px;"
+                                        Style="width: 520px;"
                                         Data="@_filteredInvoices"
                                         TextProperty="@nameof(InvoiceResponse.Number)"
                                         ValueProperty="@nameof(InvoiceResponse.Number)"
                                         Placeholder="@Localizer["select_invoice"]"
                                         Disabled="@isReadOnly">
                     <Columns>
-                        <RadzenDropDownDataGridColumn Property="@nameof(InvoiceResponse.Number)" Title="Num" Width="100px" />
-                        <RadzenDropDownDataGridColumn Property="@nameof(InvoiceResponse.Date)" Title="Date" Width="100px" />
+                        <RadzenDropDownDataGridColumn Property="@nameof(InvoiceResponse.Number)" Title="Num" Width="220px" />
+                        <RadzenDropDownDataGridColumn Property="@nameof(InvoiceResponse.Date)" Title="Date" Width="120px" />
                         <RadzenDropDownDataGridColumn Property="@nameof(InvoiceResponse.TotalIncludingTaxAmount)" Title="@Localizer["tot_ttc"]" Width="200px" />
                     </Columns>
                 </RadzenDropDownDataGrid>
@@ -1557,7 +1557,7 @@ else
                 }
                 
                 // Sélectionner automatiquement la nouvelle facture
-                _selectedInvoiceId = invoiceNumber;
+                selectedInvoiceId = invoiceNumber;
                 
                 NotificationService.Notify(new NotificationMessage
                 {
@@ -2117,6 +2117,7 @@ else
         }
 
         int? invoiceId = null;
+        decimal suggestedAmount = totalTtc;
         
         // Si le BL a une facture associée, récupérer son ID
         if (selectedInvoiceId.HasValue)
@@ -2133,9 +2134,20 @@ else
             DebugLog.Write("AddOrUpdateDeliveryNote:after GetInvoiceId", "Result", new { invoiceId = invoiceId, isSuccess = invoiceIdResult.IsSuccess }, "H1");
             // #endregion
         }
+
+        // Suggested amount must be server-side (invoice TTC incl. timbre when BL is invoiced).
+        var suggested = await PaiementClientService.GetSuggestedPaymentFromDeliveryNoteAsync(deliveryNoteId.Value, _cancellationTokenSource.Token);
+        if (suggested != null && suggested.SuggestedAmount > 0)
+        {
+            suggestedAmount = suggested.SuggestedAmount;
+            if (suggested.InvoiceId.HasValue && suggested.InvoiceId.Value > 0)
+            {
+                invoiceId = suggested.InvoiceId.Value;
+            }
+        }
         
         // #region agent log
-        DebugLog.Write("AddOrUpdateDeliveryNote:before OpenAsync", "Opening dialog", new { deliveryNoteId = deliveryNoteId!.Value, customerId = selectedCustomerId!.Value, invoiceId, suggestedAmount = totalTtc }, "H1");
+        DebugLog.Write("AddOrUpdateDeliveryNote:before OpenAsync", "Opening dialog", new { deliveryNoteId = deliveryNoteId!.Value, customerId = selectedCustomerId!.Value, invoiceId, suggestedAmount }, "H1");
         // #endregion
         var result = await DialogService.OpenAsync<CreatePaiementFromBlDialog>(
             "Nouveau Paiement",
@@ -2144,7 +2156,7 @@ else
                 { "DeliveryNoteId", deliveryNoteId.Value },
                 { "CustomerId", selectedCustomerId.Value },
                 { "InvoiceId", invoiceId },
-                { "SuggestedAmount", totalTtc }
+                { "SuggestedAmount", suggestedAmount }
             },
             new DialogOptions
             {

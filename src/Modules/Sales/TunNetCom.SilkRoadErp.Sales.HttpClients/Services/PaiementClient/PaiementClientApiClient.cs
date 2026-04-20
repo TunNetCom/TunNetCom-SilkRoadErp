@@ -210,5 +210,20 @@ public class PaiementClientApiClient : IPaiementClientApiClient
 
         throw new Exception($"PaiementClient: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
     }
+
+    public async Task<SuggestedPaymentFromDeliveryNoteResponse?> GetSuggestedPaymentFromDeliveryNoteAsync(
+        int deliveryNoteId,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Fetching suggested payment from API /paiement-client/suggested-from-delivery-note for BL {DeliveryNoteId}", deliveryNoteId);
+        var response = await _httpClient.GetAsync($"/paiement-client/suggested-from-delivery-note?deliveryNoteId={deliveryNoteId}", cancellationToken: cancellationToken);
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+
+        _ = response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<SuggestedPaymentFromDeliveryNoteResponse>(cancellationToken: cancellationToken);
+    }
 }
 
