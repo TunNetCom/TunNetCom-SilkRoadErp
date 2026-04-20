@@ -532,12 +532,7 @@
             invoicesList = response.Value;
             totalCount = response.ODataCount ?? response.Value.Count;
 
-            // Calculate totals from current page (for display)
-            totalNetAmount = invoicesList.Sum(i => i.NetAmount);
-            totalVatAmount = invoicesList.Sum(i => i.VatAmount);
-            totalTtc = totalNetAmount + totalVatAmount;
-            
-            // Fetch exact totals by VAT rate from API
+            // Fetch totals from API (server-side), do not calculate in the front.
             await LoadTotalsAsync();
         }
         catch (Exception ex)

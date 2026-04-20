@@ -31,7 +31,8 @@ public class GetInvoicesWithSummariesQueryHandler(
                                 Date = f.Date,
                                 CustomerId = f.IdClient,
                                 CustomerName = c.Nom,
-                                NetAmount = f.BonDeLivraison.Sum(d => d.NetPayer) + timbre,
+                                // NetAmount is HT (excl. VAT). Using NetPayer (TTC) here caused VAT to be counted twice in UI/exports.
+                                NetAmount = f.BonDeLivraison.Sum(d => d.TotHTva) + timbre,
                                 VatAmount = f.BonDeLivraison.Sum(d => d.TotTva)
                             })
                             .AsNoTracking()

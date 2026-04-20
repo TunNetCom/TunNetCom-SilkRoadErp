@@ -2,6 +2,7 @@ using Carter;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TunNetCom.SilkRoadErp.Sales.Api.Features.AppParameters.GetAppParameters;
+using TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetInvoiceTotals;
 using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Constants;
 using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
 using TunNetCom.SilkRoadErp.Sales.Contracts.Invoice;
@@ -131,7 +132,8 @@ public class GetInvoicesListEndpoint : ICarterModule
                     Date = new DateTimeOffset(g.Key.Date, TimeSpan.Zero),
                     CustomerId = g.Key.IdClient,
                     CustomerName = g.Key.Nom,
-                    NetAmount = g.Where(x => x.bdl != null).Sum(x => x.bdl!.NetPayer) + timbre,
+                    // NetAmount is HT (excl. VAT). Using NetPayer (TTC) here caused VAT to be counted twice in UI/exports.
+                    NetAmount = g.Where(x => x.bdl != null).Sum(x => x.bdl!.TotHTva) + timbre,
                     VatAmount = g.Where(x => x.bdl != null).Sum(x => x.bdl!.TotTva),
                     Statut = (int)g.Key.Statut,
                     StatutLibelle = g.Key.Statut.ToString()
@@ -175,27 +177,9 @@ public class GetInvoicesListEndpoint : ICarterModule
                 .Take(pageSize)
                 .ToList();
 
-            // Calculate totals for ALL invoices (not just current page)
-            var totalNetAmount = allInvoices.Sum(i => i.NetAmount);
-            var totalVatAmount = allInvoices.Sum(i => i.VatAmount);
-            var totalTtc = totalNetAmount + totalVatAmount;
-
-            // Calculate VAT details
-            var invoiceNumbers = allInvoices.Select(i => i.Number).ToList();
-            var linesQuery = from bdl in context.BonDeLivraison
-                            where bdl.NumFacture.HasValue && invoiceNumbers.Contains(bdl.NumFacture.Value)
-                            join line in context.LigneBl on bdl.Id equals line.BonDeLivraisonId
-                            select new { line.TotHt, line.TotTtc, Tva = (int)line.Tva };
-
-            var lines = await linesQuery.ToListAsync(cancellationToken);
-
-            var totalVat7 = lines.Where(l => l.Tva == vatRate7).Sum(l => l.TotTtc - l.TotHt);
-            var totalVat13 = lines.Where(l => l.Tva == vatRate13).Sum(l => l.TotTtc - l.TotHt);
-            var totalVat19 = lines.Where(l => l.Tva == vatRate19).Sum(l => l.TotTtc - l.TotHt);
-            
-            var totalBase7 = lines.Where(l => l.Tva == vatRate7).Sum(l => l.TotHt);
-            var totalBase13 = lines.Where(l => l.Tva == vatRate13).Sum(l => l.TotHt);
-            var totalBase19 = lines.Where(l => l.Tva == vatRate19).Sum(l => l.TotHt);
+            // Centralize totals calculation via the same query handler used by the advanced list (/api/invoices/totals).
+            // This ensures list + advanced list always show the same totals and avoids duplicating logic here.
+            var totals = await mediator.Send(new GetInvoiceTotalsQuery(startDate, endDate, customerId, tagIds, status), cancellationToken);
 
             var response = new InvoicesListResponse
             {
@@ -203,18 +187,7 @@ public class GetInvoicesListEndpoint : ICarterModule
                 TotalCount = totalCount,
                 Page = page,
                 PageSize = pageSize,
-                Totals = new InvoiceTotalsResponse
-                {
-                    TotalHT = totalNetAmount,
-                    TotalVat = totalVatAmount,
-                    TotalTTC = totalTtc,
-                    TotalVat7 = totalVat7,
-                    TotalVat13 = totalVat13,
-                    TotalVat19 = totalVat19,
-                    TotalBase7 = totalBase7,
-                    TotalBase13 = totalBase13,
-                    TotalBase19 = totalBase19
-                }
+                Totals = totals
             };
 
             return TypedResults.Ok(response);
