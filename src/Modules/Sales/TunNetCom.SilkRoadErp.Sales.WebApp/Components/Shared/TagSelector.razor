@@ -168,6 +168,9 @@
     /// <summary>When set (e.g. from a parent list page), avoids one GET /tags per grid row.</summary>
     [Parameter] public List<TagResponse>? AllTagsCatalog { get; set; }
 
+    /// <summary>When set (e.g. from a parent list page), avoids one GET /tags/{type}/{id} per grid row.</summary>
+    [Parameter] public List<TagResponse>? PrefetchedDocumentTags { get; set; }
+
     [Parameter] public string DocumentType { get; set; } = string.Empty;
     [Parameter] public int DocumentId { get; set; }
     [Parameter] public List<TagResponse> SelectedTags { get; set; } = new();
@@ -201,6 +204,21 @@
         {
             AvailableTags = AllTagsCatalog.ToList();
             _availableTagsLoaded = true;
+        }
+
+        if (PrefetchedDocumentTags != null && DocumentId > 0)
+        {
+            _localSelectedTags = PrefetchedDocumentTags.ToList();
+            InitialTags = PrefetchedDocumentTags.ToList();
+            SelectedTags = _localSelectedTags;
+            if (SelectedTagsChanged.HasDelegate)
+            {
+                await SelectedTagsChanged.InvokeAsync(SelectedTags);
+            }
+
+            _lastLoadedDocumentId = DocumentId;
+            _lastLoadedDocumentType = DocumentType;
+            return;
         }
 
         // Synchroniser la liste locale avec les paramètres

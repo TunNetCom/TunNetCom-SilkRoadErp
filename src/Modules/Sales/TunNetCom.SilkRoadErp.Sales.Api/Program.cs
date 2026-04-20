@@ -27,6 +27,8 @@ builder.Host.UseSerilog();
 
 builder.Services.AddCarter();
 
+builder.Services.AddMemoryCache();
+
 // Add OData support
 builder.Services.AddControllers()
     .AddOData(options => options

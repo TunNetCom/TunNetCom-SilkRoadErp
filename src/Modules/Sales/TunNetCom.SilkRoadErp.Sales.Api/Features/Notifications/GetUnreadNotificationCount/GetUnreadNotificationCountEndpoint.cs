@@ -12,11 +12,11 @@ public class GetUnreadNotificationCountEndpoint : ICarterModule
     public void AddRoutes(IEndpointRouteBuilder app)
     {
         _ = app.MapGet("/notifications/unread-count", async (
-                [FromQuery] int? userId,
                 IMediator mediator,
                 CancellationToken cancellationToken) =>
             {
-                var query = new GetUnreadNotificationCountQuery(userId);
+                // Resolve current user on the server (claims) to avoid "global COUNT(*)" bugs.
+                var query = new GetUnreadNotificationCountQuery();
                 var count = await mediator.Send(query, cancellationToken);
                 return Results.Ok(new { count });
             })
