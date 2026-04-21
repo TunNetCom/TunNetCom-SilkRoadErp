@@ -154,7 +154,7 @@
                                       Sortable="false"
                                       Filterable="false">
                     <Template Context="item">
-                        @((item.NetAmount + item.VatAmount).FormatAmount())
+                        @item.TotalTtc.FormatAmount()
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="ProviderInvoiceBaseInfo"
@@ -245,8 +245,7 @@
                                       AriaLabel="Valider"
                                       Style="margin-right: 4px;" />
                         @{
-                            // Calculer le montant TTC (HT + TVA)
-                            var montantTTC = item.NetAmount + item.VatAmount;
+                            var montantTTC = item.TotalTtc;
                         }
                         @* Afficher le bouton Export TEJ uniquement si le montant TTC dépasse le seuil de retenue source *@
                         @if (montantTTC >= _seuilRetenueSource)

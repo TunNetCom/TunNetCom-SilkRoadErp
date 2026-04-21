@@ -141,7 +141,7 @@
                                       Filterable="false"
                                       Visible="@GetColumnVisibility("TotalTtc")">
                     <Template Context="item">
-                        @((item.NetAmount + item.VatAmount).FormatAmount())
+                        @item.TotalTtc.FormatAmount()
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="ProviderInvoiceBaseInfo"
