@@ -142,10 +142,19 @@
                                       FormatString="{0:d MMMM yyyy}" />
                 <RadzenDataGridColumn TItem="ProviderInvoiceBaseInfo"
                                       Property="@nameof(ProviderInvoiceBaseInfo.NetAmount)"
-                                      Title="@Localizer["total_net"]"
+                                      Title="Tot HT"
                                       Width="150px">
                     <Template Context="item">
                         @item.NetAmount.FormatAmount()
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ProviderInvoiceBaseInfo"
+                                      Title="Tot TTC"
+                                      Width="150px"
+                                      Sortable="false"
+                                      Filterable="false">
+                    <Template Context="item">
+                        @((item.NetAmount + item.VatAmount).FormatAmount())
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="ProviderInvoiceBaseInfo"
