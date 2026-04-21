@@ -106,7 +106,14 @@ public class ExcelExportService
                 }
                 else
                 {
-                    cell.Value = value?.ToString() ?? string.Empty;
+                    var strVal = value?.ToString() ?? string.Empty;
+                    cell.Value = strVal;
+                    // Enable wrap text for multi-line content (e.g. linked invoices)
+                    if (strVal.Contains('\n'))
+                    {
+                        cell.Style.WrapText = true;
+                        cell.Style.VerticalAlignment = ExcelVerticalAlignment.Top;
+                    }
                 }
 
                 cell.Style.Border.BorderAround(ExcelBorderStyle.Thin);
