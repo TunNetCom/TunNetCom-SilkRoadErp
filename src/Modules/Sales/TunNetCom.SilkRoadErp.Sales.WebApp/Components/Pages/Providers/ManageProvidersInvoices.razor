@@ -59,6 +59,7 @@
 @inject HttpClient HttpClient
 @inject IConfiguration Configuration
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Components.Pages.DeliveryNotes
+@using TunNetCom.SilkRoadErp.Sales.Domain.Entites
 
 <div style="padding: 0.5rem 1.5rem 1.5rem 1.5rem; min-height: 100vh;">
     <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
@@ -188,12 +189,14 @@
                         }
                         else
                         {
+                            var receiptNotesRowIsDraft = invoiceWithBRs.Invoice.Statut == (int)DocumentStatus.Draft;
                             <RadzenDataGrid AllowFiltering="true" 
                                             AllowPaging="true" 
                                             AllowSorting="true" 
                                             Data="@(invoiceWithBRs.ReceiptNotes ?? new List<ReceiptNoteDetailsResponse>())"
                                             TItem="ReceiptNoteDetailsResponse"
-                                            SelectionMode="DataGridSelectionMode.Multiple"
+                                            SelectionMode="@(receiptNotesRowIsDraft ? DataGridSelectionMode.Multiple : DataGridSelectionMode.Single)"
+                                            AllowRowSelectOnRowClick="@receiptNotesRowIsDraft"
                                             @bind-Value="@_selectedReceiptNotesToDetach"
                                             Style="margin: 0.5rem 0; border: 1px solid #e0e0e0; border-radius: 4px;"
                                             Class="detail-grid">
@@ -206,7 +209,7 @@
                                             Text="@Localizer["detach_from_invoice"]"
                                             ButtonStyle="ButtonStyle.Danger"
                                             Size="ButtonSize.Small"
-                                            Disabled="@(!_selectedReceiptNotesToDetach.Any())"
+                                            Disabled="@(!_selectedReceiptNotesToDetach.Any() || !receiptNotesRowIsDraft)"
                                             Click="@DetachReceiptNotesFromInvoice"
                                             Style="border-radius: 6px; padding: 0.4rem 0.8rem; font-weight: 500; font-size: 0.85rem;" />
                                     </div>
@@ -269,6 +272,20 @@
                                               Width="140px">
                             <Template Context="invoiceWithBRs">
                                 @invoiceWithBRs.Invoice.Date.ToString("d")
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn Title="@Localizer["actions_label"]"
+                                              Width="100px">
+                            <Template Context="invoiceWithBRs">
+                                @{
+                                    var isDraft = invoiceWithBRs.Invoice.Statut == (int)DocumentStatus.Draft;
+                                }
+                                <RadzenButton Icon="edit"
+                                              ButtonStyle="ButtonStyle.Light"
+                                              Size="ButtonSize.Small"
+                                              Title="@(isDraft ? Localizer["edit_date"] : Localizer["invoice_date_edit_draft_only"])"
+                                              Disabled="@(!isDraft)"
+                                              Click="@(() => EditProviderInvoiceDate(invoiceWithBRs.Invoice.Num))" />
                             </Template>
                         </RadzenDataGridColumn>
                         <RadzenDataGridColumn Property="@nameof(ProviderInvoiceResponse.TotTTC)"
@@ -337,10 +354,14 @@
                                             }
                                         </div>
                                     }
+                                    @{
+                                        var attachLinksDraft = invoiceWithBRs.Invoice.Statut == (int)DocumentStatus.Draft;
+                                    }
                                     <RadzenButton Icon="link" 
                                                   ButtonStyle="ButtonStyle.Secondary" 
                                                   Size="ButtonSize.Small"
-                                                  Title="Rattacher facture avoir ou avoir financier"
+                                                  Title="@(attachLinksDraft ? "Rattacher facture avoir ou avoir financier" : Localizer["invoice_editing_requires_draft"])"
+                                                  Disabled="@(!attachLinksDraft)"
                                                   Click="@(() => OpenAttachDialog(invoiceWithBRs.Invoice.Num, invoiceWithBRs.Invoice.ProviderId, invoiceWithBRs.Invoice.Id))" />
                                 </div>
                             </Template>
@@ -360,7 +381,8 @@
             <RadzenCard Variant="Variant.Flat"
                         Style="padding: 1rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
                 <RadzenDataGrid @ref="_receiptNoteGrid"
-                                AllowRowSelectOnRowClick="true"
+                                @key="@($"uninvoiced-br-{SelectedProviderId}-{SelectedInvoiceId}")"
+                                AllowRowSelectOnRowClick="@CanSelectReceiptNotesToAttach"
                                 AllowFiltering="true"
                                 FilterPopupRenderMode="PopupRenderMode.OnDemand"
                                 FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
@@ -373,7 +395,7 @@
                                 Data="@_uninvoicedReceiptNotesWithSummary.ReceiptNotes.Items"
                                 LoadData="LoadUninvoicedReceiptNote"
                                 IsLoading="@isLoadingUninvoicedDeliveryNotes"
-                                SelectionMode="DataGridSelectionMode.Multiple"
+                                SelectionMode="@(CanSelectReceiptNotesToAttach ? DataGridSelectionMode.Multiple : DataGridSelectionMode.Single)"
                                 @bind-Value="@_selectedReceiptNotesToAttach"
                                 Style="border: none;"
                                 Class="custom-grid">
@@ -388,7 +410,7 @@
                             <div style="margin-left: auto;">
                                 <RadzenButton Click="@(args => AttachReceiptNotesToInvoiceClick("Primary button"))"
                                               Text="@Localizer["attach_receipt_note_to_invoice"]"
-                                              Disabled="@(SelectedInvoiceId == 0 || !_selectedReceiptNotesToAttach.Any())"
+                                              Disabled="@(SelectedInvoiceId <= _minValueId || !_selectedReceiptNotesToAttach.Any() || !IsSelectedProviderInvoiceDraft)"
                                               ButtonStyle="ButtonStyle.Primary"
                                               Size="ButtonSize.Small"
                                               Style="border-radius: 6px; padding: 0.4rem 0.8rem; font-weight: 500; font-size: 0.85rem;" />
@@ -952,6 +974,12 @@
 
     private async Task OpenAttachDialog(int invoiceNum, int providerId, int invoiceId)
     {
+        if (!ProviderInvoiceIsDraft(invoiceNum))
+        {
+            NotifyInvoiceEditingRequiresDraft();
+            return;
+        }
+
         try
         {
             var dialogOptions = new DialogOptions
@@ -992,6 +1020,12 @@
 
     private async Task DetachReceiptNotesFromInvoice()
     {
+        if (!ProviderInvoiceIsDraft(SelectedInvoiceId))
+        {
+            NotifyInvoiceEditingRequiresDraft();
+            return;
+        }
+
         try
         {
             var deliveryNoteIds = _selectedReceiptNotesIdsToDetach.Select(dn => dn.Num).ToList();
@@ -1074,6 +1108,12 @@
     {
         if (SelectedInvoiceId > _minValueId && _selectedReceiptNotesToAttach?.Any() == true)
         {
+            if (!ProviderInvoiceIsDraft(SelectedInvoiceId))
+            {
+                NotifyInvoiceEditingRequiresDraft();
+                return;
+            }
+
             var deliveryNoteIds = _selectedReceiptNotesToAttach.Select(dn => dn.Num).ToList();
             var attachToInvoiceRequest = new AttachToInvoiceRequest
                 {

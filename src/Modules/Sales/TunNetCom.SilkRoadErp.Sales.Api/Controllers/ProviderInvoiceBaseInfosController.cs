@@ -88,6 +88,7 @@ public class ProviderInvoiceBaseInfosController : ODataController
                     ProviderName = g.Key.Nom,
                     NetAmount = g.Where(x => x.lbr != null).Sum(x => x.lbr!.TotHt),
                     VatAmount = g.Where(x => x.lbr != null).Sum(x => x.lbr!.TotTtc) - g.Where(x => x.lbr != null).Sum(x => x.lbr!.TotHt),
+                    TotalTtc = g.Where(x => x.lbr != null).Sum(x => x.lbr!.TotTtc),
                     Statut = (int)g.Key.Statut,
                     StatutLibelle = g.Key.Statut.ToString(),
                     ProviderInvoiceNumber = g.Key.NumFactureFournisseur

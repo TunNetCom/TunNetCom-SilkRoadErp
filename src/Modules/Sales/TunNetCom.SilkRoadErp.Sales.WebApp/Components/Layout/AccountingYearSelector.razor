@@ -38,11 +38,13 @@
         await LoadAccountingYearsAsync();
         await LoadActiveYearAsync();
 
-        // Refresh every 30 seconds
+        // Refresh with jitter to avoid synchronized polling across multiple circuits/tabs.
+        var dueTimeSeconds = Random.Shared.Next(10, 21); // 10-20s
+        var periodSeconds = 60; // 60s
         refreshTimer = new System.Threading.Timer(async _ =>
         {
             await InvokeAsync(async () => await RefreshAsync());
-        }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+        }, null, TimeSpan.FromSeconds(dueTimeSeconds), TimeSpan.FromSeconds(periodSeconds));
     }
 
     private async Task LoadAccountingYearsAsync()

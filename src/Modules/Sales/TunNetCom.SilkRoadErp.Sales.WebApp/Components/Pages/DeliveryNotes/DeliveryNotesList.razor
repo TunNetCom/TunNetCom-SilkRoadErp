@@ -115,6 +115,17 @@
                             ValueProperty="Value"
                             class="w-100 search-input" />
         </div>
+        <div class="search-field">
+            <label for="invoice-billing">@Localizer["delivery_note_invoice_filter_label"]</label>
+            <RadzenDropDown id="invoice-billing"
+                            TValue="string"
+                            Value="@searchCriteria.InvoiceStatus"
+                            ValueChanged="@OnInvoiceBillingFilterChanged"
+                            Data="@_invoiceBillingFilterOptions"
+                            TextProperty="@nameof(InvoiceBillingFilterOption.Text)"
+                            ValueProperty="@nameof(InvoiceBillingFilterOption.Value)"
+                            class="w-100 search-input" />
+        </div>
         <div class="search-button" style="display: flex; gap: 8px;">
             <RadzenButton Icon="today"
                           ButtonStyle="ButtonStyle.Info"
@@ -217,7 +228,8 @@
                         <div style="width: 100%; padding: 4px;">
                             <TagSelector DocumentType="BonDeLivraison"
                                          DocumentId="@item.Number"
-                                         SaveOnChange="true" />
+                                         SaveOnChange="true"
+                                         AllTagsCatalog="@(_deliveryNotesTagCatalog.Count > 0 ? _deliveryNotesTagCatalog : null)" />
                         </div>
                     </Template>
                 </RadzenDataGridColumn>
@@ -498,12 +510,31 @@
     private string? _lastSortProperty;
     private string? _lastSortOrder;
     private bool _isLoadingList;
+    private List<TagResponse> _deliveryNotesTagCatalog = new();
+    private List<InvoiceBillingFilterOption> _invoiceBillingFilterOptions = new();
 
     protected override async Task OnInitializedAsync()
     {
         _logger.LogInformation("DeliveryNotesList.OnInitializedAsync called");
         
         await LoadCustomers(new LoadDataArgs { Filter = string.Empty });
+
+        _invoiceBillingFilterOptions =
+        [
+            new InvoiceBillingFilterOption(Localizer["delivery_note_invoice_filter_all"], "Tous"),
+            new InvoiceBillingFilterOption(Localizer["delivery_note_invoice_filter_unattached"], "Non facturé"),
+            new InvoiceBillingFilterOption(Localizer["delivery_note_invoice_filter_attached"], "Facturé")
+        ];
+
+        try
+        {
+            _deliveryNotesTagCatalog = await TagsService.GetAllTagsAsync(default);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not preload tag catalog for delivery notes list");
+            _deliveryNotesTagCatalog = new List<TagResponse>();
+        }
 
         // Set default period to CurrentMonth and calculate dates
         searchCriteria.PeriodFilter = "CurrentMonth";
@@ -579,6 +610,12 @@
     {
         // Trigger a refresh by calling Callback with current args
         await Callback(new LoadDataArgs { Skip = 0, Top = pageSize });
+    }
+
+    private async Task OnInvoiceBillingFilterChanged(string value)
+    {
+        searchCriteria.InvoiceStatus = value;
+        await SearchDeliveryNotes();
     }
 
     private async Task FilterToday()
@@ -787,6 +824,8 @@
         public List<int> SelectedTagIds { get; set; } = new();
         public int? Status { get; set; }
     }
+
+    private sealed record InvoiceBillingFilterOption(string Text, string Value);
 
     private void OnPeriodFilterChanged()
     {

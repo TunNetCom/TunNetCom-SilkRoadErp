@@ -140,7 +140,8 @@ public class InvoiceBaseInfosController : ODataController
                     Date = new DateTimeOffset(g.Key.Date, TimeSpan.Zero),
                     CustomerId = g.Key.IdClient,
                     CustomerName = g.Key.Nom,
-                    NetAmount = g.Where(x => x.bdl != null).Sum(x => x.bdl!.NetPayer) + timbre,
+                    // NetAmount is HT (excl. VAT). Using NetPayer (TTC) here caused VAT to be counted twice in UI/exports.
+                    NetAmount = g.Where(x => x.bdl != null).Sum(x => x.bdl!.TotHTva) + timbre,
                     VatAmount = g.Where(x => x.bdl != null).Sum(x => x.bdl!.TotTva),
                     Statut = (int)g.Key.Statut,
                     StatutLibelle = g.Key.Statut.ToString()

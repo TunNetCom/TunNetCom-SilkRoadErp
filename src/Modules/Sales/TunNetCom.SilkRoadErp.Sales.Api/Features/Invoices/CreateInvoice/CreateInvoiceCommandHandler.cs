@@ -1,4 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
+using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.CreateInvoice
 {
@@ -43,7 +43,9 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.CreateInvoice
             _ = _context.Facture.Add(invoice);
             _ = await _context.SaveChangesAsync(cancellationToken);
             _logger.LogInformation("Facture created successfully with Id {Id} and Num {Num}", invoice.Id, invoice.Num);
-            return Result.Ok(invoice.Id);
+            // Return invoice business number (Num), not DB identity (Id).
+            // The UI and downstream flows treat the create result as the invoice number.
+            return Result.Ok(invoice.Num);
         }
     }
 }

@@ -11,6 +11,25 @@ public class InvoicesApiClient : IInvoicesApiClient
         _logger = logger;
     }
 
+    public async Task<Result> UpdateInvoiceDateAsync(int num, TunNetCom.SilkRoadErp.Sales.Contracts.Invoice.UpdateInvoiceDateRequest request, CancellationToken cancellationToken)
+    {
+        var response = await _httpClient.PutAsJsonAsync($"/invoices/{num}/date", request, cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.NoContent)
+            return Result.Ok();
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+            return Result.Fail("invoice_not_found");
+
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            var bad = await response.ReadJsonAsync<BadRequestResponse>(cancellationToken: cancellationToken);
+            return Result.Fail(bad?.Detail ?? "bad_request");
+        }
+
+        return Result.Fail($"Unexpected status code: {response.StatusCode}");
+    }
+
 
     public async Task<OneOf<GetInvoiceListWithSummary, BadRequestResponse>> GetInvoicesByCustomerIdWithSummary(
         int customerId,

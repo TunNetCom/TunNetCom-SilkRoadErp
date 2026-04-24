@@ -27,7 +27,6 @@
     private int unreadCount = 0;
     private bool showPopup = false;
     private System.Threading.Timer? refreshTimer;
-    private int? userId;
     private bool isAuthenticated = false;
 
     protected override async Task OnInitializedAsync()
@@ -71,14 +70,17 @@
 
             await LoadUnreadCountAsync();
 
-            // Refresh every 30 seconds
+            // Refresh with jitter to avoid thundering herds across multiple circuits/tabs.
+            // The server also caches this for a short TTL to prevent DB storms.
+            var dueTimeSeconds = Random.Shared.Next(10, 21); // 10-20s
+            var periodSeconds = 60; // 60s
             refreshTimer = new System.Threading.Timer(async _ =>
             {
                 if (AuthService.IsAuthenticated)
                 {
                     await InvokeAsync(async () => await LoadUnreadCountAsync());
                 }
-            }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+            }, null, TimeSpan.FromSeconds(dueTimeSeconds), TimeSpan.FromSeconds(periodSeconds));
         }
         catch (Exception)
         {
@@ -96,7 +98,7 @@
 
         try
         {
-            unreadCount = await AppNotificationService.GetUnreadNotificationCountAsync(userId);
+            unreadCount = await AppNotificationService.GetUnreadNotificationCountAsync();
             await InvokeAsync(StateHasChanged);
         }
         catch (Exception)

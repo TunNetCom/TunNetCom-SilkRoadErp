@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;
 
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProviderInvoice;
@@ -41,15 +41,110 @@ public class ProviderInvoiceApiClient : IProviderInvoiceApiClient
         var queryString = string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
         var requestUri = $"/provider-invoice?{queryString}";
 
-        var response = await _httpClient.GetAsync(requestUri, cancellationToken);
+        // Build absolute Uri: prefer HttpClient.BaseAddress when requestUri is relative
+        Uri requestUriObj;
+        if (Uri.IsWellFormedUriString(requestUri, UriKind.Absolute))
+        {
+            requestUriObj = new Uri(requestUri, UriKind.Absolute);
+        }
+        else if (_httpClient.BaseAddress != null)
+        {
+            requestUriObj = new Uri(_httpClient.BaseAddress, requestUri);
+        }
+        else
+        {
+            throw new InvalidOperationException($"Cannot send request: HttpClient.BaseAddress is not set and request URI is relative ('{requestUri}'). Register the HttpClient with a BaseAddress or use an absolute URI.");
+        }
+
+        var response = await _httpClient.GetAsync(requestUriObj, cancellationToken);
         //response.EnsureSuccessStatusCode();
 
         var content = await response.Content.ReadAsStringAsync(cancellationToken);
         if (response.StatusCode == HttpStatusCode.OK)
         {
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
             var result = System.Text.Json.JsonSerializer.Deserialize<GetProviderInvoicesWithSummary>(
                 content,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                options);
+
+            // Robust fallback: if items are missing in the deserialized PagedList, try to extract them manually
+            if (result != null && (result.Invoices == null || result.Invoices.Items == null || !result.Invoices.Items.Any()))
+            {
+                try
+                {
+                    using var doc = JsonDocument.Parse(content);
+                    if (doc.RootElement.TryGetProperty("invoices", out var invoicesElem))
+                    {
+                        // Try common property names for the items array
+                        JsonElement itemsElem;
+                        if (invoicesElem.TryGetProperty("items", out itemsElem) ||
+                            invoicesElem.TryGetProperty("Items", out itemsElem) ||
+                            invoicesElem.TryGetProperty("data", out itemsElem))
+                        {
+                            if (itemsElem.ValueKind == JsonValueKind.Array)
+                            {
+                                var itemsJson = itemsElem.GetRawText();
+                                var items = System.Text.Json.JsonSerializer.Deserialize<List<ProviderInvoiceResponse>>(itemsJson, options) ?? new List<ProviderInvoiceResponse>();
+                                if (result.Invoices == null) result.Invoices = new PagedList<ProviderInvoiceResponse>();
+                                result.Invoices.Items = items;
+
+                                // Try to set total count if present
+                                if (invoicesElem.TryGetProperty("totalCount", out var totalCountElem) && totalCountElem.TryGetInt32(out var tc))
+                                {
+                                    result.Invoices.TotalCount = tc;
+                                }
+                            }
+                        }
+                        else if (invoicesElem.ValueKind == JsonValueKind.Array)
+                        {
+                            // Some APIs return invoices as an array directly
+                            var items = System.Text.Json.JsonSerializer.Deserialize<List<ProviderInvoiceResponse>>(invoicesElem.GetRawText(), options) ?? new List<ProviderInvoiceResponse>();
+                            if (result.Invoices == null) result.Invoices = new PagedList<ProviderInvoiceResponse>();
+                            result.Invoices.Items = items;
+                        }
+                    }
+                    else
+                    {
+                        // Last-resort: scan the document for an array that looks like invoice items
+                        JsonElement? candidateArray = null;
+                        void Scan(JsonElement element)
+                        {
+                            if (candidateArray.HasValue) return;
+                            if (element.ValueKind == JsonValueKind.Array)
+                            {
+                                var arr = element;
+                                if (arr.GetArrayLength() > 0 && arr[0].ValueKind == JsonValueKind.Object && (arr[0].TryGetProperty("num", out _) || arr[0].TryGetProperty("id", out _)))
+                                {
+                                    candidateArray = arr;
+                                    return;
+                                }
+                            }
+                            else if (element.ValueKind == JsonValueKind.Object)
+                            {
+                                foreach (var prop in element.EnumerateObject())
+                                {
+                                    Scan(prop.Value);
+                                    if (candidateArray.HasValue) return;
+                                }
+                            }
+                        }
+
+                        Scan(doc.RootElement);
+
+                        if (candidateArray.HasValue)
+                        {
+                            var items = System.Text.Json.JsonSerializer.Deserialize<List<ProviderInvoiceResponse>>(candidateArray.Value.GetRawText(), options) ?? new List<ProviderInvoiceResponse>();
+                            if (result.Invoices == null) result.Invoices = new PagedList<ProviderInvoiceResponse>();
+                            result.Invoices.Items = items;
+                        }
+                    }
+                }
+                catch
+                {
+                    // ignore fallback errors and return whatever we have
+                }
+            }
+
             return result ?? new GetProviderInvoicesWithSummary();
         }
         if (response.StatusCode == HttpStatusCode.BadRequest)
@@ -162,6 +257,29 @@ public class ProviderInvoiceApiClient : IProviderInvoiceApiClient
             _logger.LogError(ex.Message, ex);
             throw;
         }
+    }
+
+    public async Task<Result> UpdateProviderInvoiceDateAsync(int num, UpdateProviderInvoiceDateRequest request, CancellationToken cancellationToken = default)
+    {
+        var response = await _httpClient.PutAsJsonAsync($"/provider-invoice/{num}/date", request, cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.NoContent)
+        {
+            return Result.Ok();
+        }
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return Result.Fail("invoice_not_found");
+        }
+
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            var bad = await response.ReadJsonAsync<BadRequestResponse>(cancellationToken: cancellationToken);
+            return Result.Fail(bad?.Detail ?? "bad_request");
+        }
+
+        return Result.Fail($"Unexpected status code: {response.StatusCode}");
     }
 
     public async Task<Result> ValidateProviderInvoicesAsync(List<int> ids, CancellationToken cancellationToken)

@@ -175,11 +175,11 @@
                                 </EmptyTemplate>
                                 <HeaderTemplate>
                                     <div style="display: flex; align-items: center; justify-content: flex-end; margin-bottom: 0.75rem; gap: 1rem;">
-                                        <RadzenButton 
+                                        <RadzenButton
                                             Text="@Localizer["detach_from_invoice"]"
                                             ButtonStyle="ButtonStyle.Danger"
                                             Size="ButtonSize.Small"
-                                            Disabled="@(!_selectedDeliveryNotesToDetach.Any())"
+                                            Disabled="@(!_selectedDeliveryNotesToDetach.Any() || invoiceWithBLs.Invoice.Statut == (int)TunNetCom.SilkRoadErp.Sales.Domain.Entites.DocumentStatus.Valid)"
                                             Click="@DetachDeliveryNotesFromInvoice"
                                             Style="border-radius: 6px; padding: 0.4rem 0.8rem; font-weight: 500; font-size: 0.85rem;" />
                                     </div>
@@ -266,7 +266,7 @@
                             </Template>
                         </RadzenDataGridColumn>
                         <RadzenDataGridColumn Title="@Localizer["actions_label"]"
-                                              Width="120px">
+                                              Width="160px">
                             <Template Context="invoiceWithBLs">
                                 @{
                                     // Afficher le bouton si les BLs sont chargés et qu'il n'y en a pas,
@@ -274,15 +274,24 @@
                                     var hasNoDeliveryNotes = !invoiceWithBLs.DeliveryNotesLoaded || 
                                                              invoiceWithBLs.DeliveryNotes == null || 
                                                              !invoiceWithBLs.DeliveryNotes.Any();
+                                    var isDraft = invoiceWithBLs.Invoice.Statut == (int)TunNetCom.SilkRoadErp.Sales.Domain.Entites.DocumentStatus.Draft;
                                 }
-                                @if (hasNoDeliveryNotes)
-                                {
-                                    <RadzenButton Icon="swap_horiz" 
-                                                  ButtonStyle="ButtonStyle.Secondary" 
+                                <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap: wrap;">
+                                    <RadzenButton Icon="edit"
+                                                  ButtonStyle="ButtonStyle.Light"
                                                   Size="ButtonSize.Small"
-                                                  Title="@Localizer["transfer_invoice"]"
-                                                  Click="@(() => TransferInvoiceToCustomer(invoiceWithBLs.Invoice.Number))" />
-                                }
+                                                  Title="@(isDraft ? Localizer["edit_date"] : Localizer["invoice_date_edit_draft_only"])"
+                                                  Disabled="@(!isDraft)"
+                                                  Click="@(() => EditInvoiceDate(invoiceWithBLs.Invoice.Number))" />
+                                    @if (hasNoDeliveryNotes)
+                                    {
+                                        <RadzenButton Icon="swap_horiz"
+                                                      ButtonStyle="ButtonStyle.Secondary"
+                                                      Size="ButtonSize.Small"
+                                                      Title="@Localizer["transfer_invoice"]"
+                                                      Click="@(() => TransferInvoiceToCustomer(invoiceWithBLs.Invoice.Number))" />
+                                    }
+                                </div>
                             </Template>
                         </RadzenDataGridColumn>
                     </Columns>
@@ -339,6 +348,7 @@
                                               Text="@Localizer["attach_delivery_note_to_invoice"]"
                                               ButtonStyle="ButtonStyle.Primary"
                                               Size="ButtonSize.Small"
+                                              Disabled="@(SelectedInvoiceId <= 0 || !_selectedDeliveryNotesToAttach.Any() || _invoicesWithDeliveryNotes.FirstOrDefault(i => i.Invoice.Number == SelectedInvoiceId)?.Invoice.Statut == (int)TunNetCom.SilkRoadErp.Sales.Domain.Entites.DocumentStatus.Valid)"
                                               Style="border-radius: 6px; padding: 0.4rem 0.8rem; font-weight: 500; font-size: 0.85rem;" />
                             </div>
                         </div>

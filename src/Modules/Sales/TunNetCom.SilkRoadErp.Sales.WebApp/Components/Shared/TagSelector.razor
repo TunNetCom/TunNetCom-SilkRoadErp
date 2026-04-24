@@ -5,6 +5,7 @@
 @using Microsoft.Extensions.Localization
 @using TunNetCom.SilkRoadErp.Sales.WebApp.Locales
 @using Microsoft.AspNetCore.Components.Web
+@using System.Threading
 @inject ITagsApiClient TagsService
 @inject ToastService ToastService
 @inject Radzen.NotificationService NotificationService
@@ -164,12 +165,22 @@
 </style>
 
 @code {
+    /// <summary>When set (e.g. from a parent list page), avoids one GET /tags per grid row.</summary>
+    [Parameter] public List<TagResponse>? AllTagsCatalog { get; set; }
+
+    /// <summary>When set (e.g. from a parent list page), avoids one GET /tags/{type}/{id} per grid row.</summary>
+    [Parameter] public List<TagResponse>? PrefetchedDocumentTags { get; set; }
+
     [Parameter] public string DocumentType { get; set; } = string.Empty;
     [Parameter] public int DocumentId { get; set; }
     [Parameter] public List<TagResponse> SelectedTags { get; set; } = new();
     [Parameter] public EventCallback<List<TagResponse>> SelectedTagsChanged { get; set; }
     [Parameter] public bool SaveOnChange { get; set; } = false; // Si false, les tags sont gérés localement
     [Parameter] public bool IsReadOnly { get; set; } = false; // Mode lecture seule
+
+    private static readonly SemaphoreSlim CatalogLoadLock = new(1, 1);
+    private static List<TagResponse>? SharedAllTagsCatalog;
+    private static readonly SemaphoreSlim DocumentTagsConcurrency = new(8, 8);
 
     private List<TagResponse> AvailableTags { get; set; } = new();
     private List<TagResponse> InitialTags { get; set; } = new(); // Tags initiaux chargés
@@ -189,6 +200,27 @@
 
     protected override async Task OnParametersSetAsync()
     {
+        if (AllTagsCatalog is { Count: > 0 })
+        {
+            AvailableTags = AllTagsCatalog.ToList();
+            _availableTagsLoaded = true;
+        }
+
+        if (PrefetchedDocumentTags != null && DocumentId > 0)
+        {
+            _localSelectedTags = PrefetchedDocumentTags.ToList();
+            InitialTags = PrefetchedDocumentTags.ToList();
+            SelectedTags = _localSelectedTags;
+            if (SelectedTagsChanged.HasDelegate)
+            {
+                await SelectedTagsChanged.InvokeAsync(SelectedTags);
+            }
+
+            _lastLoadedDocumentId = DocumentId;
+            _lastLoadedDocumentType = DocumentType;
+            return;
+        }
+
         // Synchroniser la liste locale avec les paramètres
         if (SelectedTags != null)
         {
@@ -205,24 +237,47 @@
 
     private async Task EnsureAvailableTagsLoadedAsync()
     {
-        if (_availableTagsLoaded)
+        if (AllTagsCatalog is { Count: > 0 })
+        {
+            AvailableTags = AllTagsCatalog.ToList();
+            _availableTagsLoaded = true;
+            return;
+        }
+
+        if (_availableTagsLoaded && AvailableTags.Count > 0)
         {
             return;
         }
 
+        await CatalogLoadLock.WaitAsync();
         try
         {
-            AvailableTags = await TagsService.GetAllTagsAsync();
-            _availableTagsLoaded = true;
-        }
-        catch (Exception ex)
-        {
-            NotificationService.Notify(new NotificationMessage
+            if (SharedAllTagsCatalog != null)
             {
-                Severity = NotificationSeverity.Error,
-                Summary = "Error",
-                Detail = "Failed to load tags"
-            });
+                AvailableTags = SharedAllTagsCatalog.ToList();
+                _availableTagsLoaded = true;
+                return;
+            }
+
+            try
+            {
+                SharedAllTagsCatalog = await TagsService.GetAllTagsAsync();
+                AvailableTags = SharedAllTagsCatalog.ToList();
+                _availableTagsLoaded = true;
+            }
+            catch (Exception)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Error",
+                    Detail = "Failed to load tags"
+                });
+            }
+        }
+        finally
+        {
+            CatalogLoadLock.Release();
         }
     }
 
@@ -240,6 +295,7 @@
             return;
         }
 
+        await DocumentTagsConcurrency.WaitAsync();
         try
         {
             var documentTags = await TagsService.GetDocumentTagsAsync(DocumentType, DocumentId);
@@ -269,6 +325,10 @@
             {
                 await SelectedTagsChanged.InvokeAsync(SelectedTags);
             }
+        }
+        finally
+        {
+            DocumentTagsConcurrency.Release();
         }
     }
 

@@ -223,8 +223,11 @@
 
     private bool IsEditMode => PaiementId.HasValue && PaiementId.Value > 0;
     private bool HasBothBlAndInvoice => DeliveryNoteId > 0 && InvoiceId.HasValue && InvoiceId.Value > 0;
-    private bool ShowFactureList => HasBothBlAndInvoice ? attachmentChoice == AttachmentFacture : (InvoiceId.HasValue && InvoiceId.Value > 0);
-    private bool ShowBlList => HasBothBlAndInvoice ? attachmentChoice == AttachmentBl : DeliveryNoteId > 0;
+    // When opened from a BL already linked to a specific invoice, we force attachment to that invoice
+    // and avoid showing checkbox lists.
+    private bool ForceSingleInvoiceAttachment => !IsEditMode && HasBothBlAndInvoice;
+    private bool ShowFactureList => !ForceSingleInvoiceAttachment && (HasBothBlAndInvoice ? attachmentChoice == AttachmentFacture : (InvoiceId.HasValue && InvoiceId.Value > 0));
+    private bool ShowBlList => !ForceSingleInvoiceAttachment && (HasBothBlAndInvoice ? attachmentChoice == AttachmentBl : DeliveryNoteId > 0);
 
     private string _attachmentChoice = AttachmentBl;
     private string attachmentChoice
@@ -340,6 +343,11 @@
         else
         {
             paiement.ClientId = CustomerId;
+            // If the BL is already linked to an invoice, default the payment attachment to the invoice.
+            if (HasBothBlAndInvoice)
+            {
+                _attachmentChoice = AttachmentFacture;
+            }
             if (HasBothBlAndInvoice)
             {
                 if (attachmentChoice == AttachmentBl)

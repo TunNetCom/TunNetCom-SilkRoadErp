@@ -194,5 +194,55 @@ public class AvoirsApiClient : IAvoirsApiClient
 
         throw new Exception($"Avoirs validation: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
     }
+
+    public async Task<(byte[] Content, string FileName)> ExportAvoirsToExcelAsync(
+        DateTime? startDate,
+        DateTime? endDate,
+        int? clientId,
+        int? status,
+        string[]? selectedColumns,
+        string? orderBy,
+        CancellationToken cancellationToken = default)
+    {
+        var queryParams = new List<string>();
+
+        if (startDate.HasValue)
+            queryParams.Add($"startDate={Uri.EscapeDataString(startDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+        if (endDate.HasValue)
+            queryParams.Add($"endDate={Uri.EscapeDataString(endDate.Value.ToString("yyyy-MM-ddTHH:mm:ss"))}");
+        if (clientId.HasValue)
+            queryParams.Add($"clientId={clientId.Value}");
+        if (status.HasValue)
+            queryParams.Add($"status={status.Value}");
+        if (!string.IsNullOrEmpty(orderBy))
+            queryParams.Add($"orderBy={Uri.EscapeDataString(orderBy)}");
+        if (selectedColumns != null && selectedColumns.Length > 0)
+        {
+            foreach (var column in selectedColumns)
+                queryParams.Add($"selectedColumns={Uri.EscapeDataString(column)}");
+        }
+
+        var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : string.Empty;
+        var requestUri = $"/api/avoirs/export/excel{queryString}";
+
+        _logger.LogInformation("Exporting avoirs to Excel via {RequestUri}", requestUri);
+        var response = await _httpClient.GetAsync(requestUri, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+            _logger.LogError(
+                "ExportAvoirsToExcelAsync failed. Status: {StatusCode}. Body: {Body}",
+                response.StatusCode,
+                body);
+            throw new HttpRequestException(
+                $"Export avoirs excel failed. StatusCode={(int)response.StatusCode} ({response.StatusCode}). Body={body}");
+        }
+
+        var content = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+        var fileName = response.Content.Headers.ContentDisposition?.FileName?.Trim('"')
+                       ?? $"AvoirsClient_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+
+        return (content, fileName);
+    }
 }
 

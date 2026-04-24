@@ -138,6 +138,9 @@ var odataHttpClient = builder.Services.AddHttpClient<ODataService>(client =>
     client.Timeout = TimeSpan.FromMinutes(5);
 })
 .AddHttpMessageHandler<AuthHttpClientHandler>();
+// ODataService is registered as a typed HttpClient above via AddHttpClient<TClient>.
+// Do not register it again with AddScoped<T>() because that would override the
+// typed client registration and inject a plain HttpClient without BaseAddress.
 
 if (deploymentMode == DeploymentMode.MultiTenant)
 {

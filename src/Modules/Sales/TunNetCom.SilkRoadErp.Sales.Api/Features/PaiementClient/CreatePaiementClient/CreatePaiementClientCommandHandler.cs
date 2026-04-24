@@ -77,15 +77,23 @@ public class CreatePaiementClientCommandHandler(
         if (hasBonDeLivraisons)
         {
             var bonDeLivraisonIds = command.BonDeLivraisonIds!.Distinct().ToList();
-            var bonDeLivraisonsExist = await _context.BonDeLivraison
+            var bonDeLivraisons = await _context.BonDeLivraison
                 .Where(b => b.AccountingYearId == accountingYear.Id && bonDeLivraisonIds.Contains(b.Id))
-                .Select(b => b.Id)
+                .Select(b => new { b.Id, b.NumFacture })
                 .ToListAsync(cancellationToken);
             
+            var bonDeLivraisonsExist = bonDeLivraisons.Select(b => b.Id).ToList();
             var missingBonDeLivraisons = bonDeLivraisonIds.Except(bonDeLivraisonsExist).ToList();
             if (missingBonDeLivraisons.Any())
             {
                 return Result.Fail($"bon_de_livraisons_not_found: {string.Join(", ", missingBonDeLivraisons)}");
+            }
+
+            // Server-side rule: if a BL is already attached to an invoice, payment must be attached to the invoice (not to the BL).
+            var invoicedBlIds = bonDeLivraisons.Where(b => b.NumFacture.HasValue).Select(b => b.Id).ToList();
+            if (invoicedBlIds.Any())
+            {
+                return Result.Fail($"bon_de_livraison_already_invoiced_attach_payment_to_invoice: {string.Join(", ", invoicedBlIds)}");
             }
         }
 

@@ -1,4 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;
+using TunNetCom.SilkRoadErp.Sales.Contracts.ProviderInvoice;
 
 namespace TunNetCom.SilkRoadErp.Sales.HttpClients.Services.ProviderInvoice; 
 
@@ -25,6 +25,8 @@ public interface IProviderInvoiceApiClient
         int num,
         UpdateProviderInvoiceRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<Result> UpdateProviderInvoiceDateAsync(int num, UpdateProviderInvoiceDateRequest request, CancellationToken cancellationToken = default);
 
     Task<Result> ValidateProviderInvoicesAsync(List<int> ids, CancellationToken cancellationToken);
 }

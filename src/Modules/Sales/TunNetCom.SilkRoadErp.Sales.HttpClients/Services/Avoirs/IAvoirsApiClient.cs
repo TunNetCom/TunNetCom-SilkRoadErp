@@ -34,5 +34,14 @@ public interface IAvoirsApiClient
         CancellationToken cancellationToken);
 
     Task<Result> ValidateAvoirsAsync(List<int> ids, CancellationToken cancellationToken);
+
+    Task<(byte[] Content, string FileName)> ExportAvoirsToExcelAsync(
+        DateTime? startDate,
+        DateTime? endDate,
+        int? clientId,
+        int? status,
+        string[]? selectedColumns,
+        string? orderBy,
+        CancellationToken cancellationToken = default);
 }
 

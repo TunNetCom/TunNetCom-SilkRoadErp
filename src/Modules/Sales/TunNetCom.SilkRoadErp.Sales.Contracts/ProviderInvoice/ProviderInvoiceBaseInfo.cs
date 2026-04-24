@@ -19,6 +19,9 @@ public class ProviderInvoiceBaseInfo
     [JsonPropertyName("vatAmount")]
     public decimal VatAmount { get; set; }
 
+    [JsonPropertyName("totalTtc")]
+    public decimal TotalTtc { get; set; }
+
     [JsonPropertyName("providerName")]
     public string? ProviderName { get; set; }
 

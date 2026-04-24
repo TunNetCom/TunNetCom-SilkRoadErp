@@ -110,6 +110,28 @@ public class TagsApiClient : ITagsApiClient
         }
     }
 
+    public async Task<GetDocumentTagsBatchResponse> GetDocumentTagsBatchAsync(
+        GetDocumentTagsBatchRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync("/tags/batch", request, cancellationToken: cancellationToken);
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<GetDocumentTagsBatchResponse>(cancellationToken: cancellationToken)
+                       ?? new GetDocumentTagsBatchResponse { DocumentType = request.DocumentType };
+            }
+
+            throw new Exception($"GetDocumentTagsBatch: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting document tags batch for {DocumentType}", request.DocumentType);
+            throw;
+        }
+    }
+
     public async Task<bool> AddTagsToDocumentAsync(string documentType, int documentId, AddTagsToDocumentRequest request, CancellationToken cancellationToken = default)
     {
         try

@@ -170,6 +170,7 @@
                     <Template Context="item">
                         <TagSelector DocumentType="@DocumentTypes.Facture" 
                                     DocumentId="@item.Number"
+                                    PrefetchedDocumentTags="@(_prefetchedTagsByInvoiceNumber.TryGetValue(item.Number, out var tags) ? tags : null)"
                                     SaveOnChange="true" />
                     </Template>
                 </RadzenDataGridColumn>
@@ -393,6 +394,7 @@
     private RadzenDataGrid<InvoiceBaseInfo> invoicesGrid = default!;
     private List<InvoiceBaseInfo> invoicesList = new();
     private IList<InvoiceBaseInfo> selectedInvoices = new List<InvoiceBaseInfo>();
+    private Dictionary<int, List<TagResponse>> _prefetchedTagsByInvoiceNumber = new();
     private int totalCount = 0;
     private decimal totalNetAmount = 0;
     private decimal totalVatAmount = 0;
@@ -628,6 +630,8 @@
                 totalBase7 = response.Totals.TotalBase7;
                 totalBase13 = response.Totals.TotalBase13;
                 totalBase19 = response.Totals.TotalBase19;
+
+                await PrefetchTagsForCurrentPageAsync();
             }
         }
         catch (Exception ex)
@@ -644,9 +648,43 @@
             totalBase7 = 0;
             totalBase13 = 0;
             totalBase19 = 0;
+            _prefetchedTagsByInvoiceNumber = new Dictionary<int, List<TagResponse>>();
         }
 
         await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task PrefetchTagsForCurrentPageAsync()
+    {
+        try
+        {
+            if (invoicesList == null || invoicesList.Count == 0)
+            {
+                _prefetchedTagsByInvoiceNumber = new Dictionary<int, List<TagResponse>>();
+                return;
+            }
+
+            var ids = invoicesList.Select(i => i.Number).Where(n => n > 0).Distinct().ToList();
+            if (ids.Count == 0)
+            {
+                _prefetchedTagsByInvoiceNumber = new Dictionary<int, List<TagResponse>>();
+                return;
+            }
+
+            var batch = await TagsService.GetDocumentTagsBatchAsync(new GetDocumentTagsBatchRequest
+            {
+                DocumentType = DocumentTypes.Facture,
+                DocumentIds = ids
+            });
+
+            _prefetchedTagsByInvoiceNumber = batch.Documents
+                .ToDictionary(d => d.DocumentId, d => d.Tags ?? new List<TagResponse>());
+        }
+        catch
+        {
+            // If batch fails, keep empty dict; TagSelector will fall back to per-row load.
+            _prefetchedTagsByInvoiceNumber = new Dictionary<int, List<TagResponse>>();
+        }
     }
     
     public class InvoicesListResponse

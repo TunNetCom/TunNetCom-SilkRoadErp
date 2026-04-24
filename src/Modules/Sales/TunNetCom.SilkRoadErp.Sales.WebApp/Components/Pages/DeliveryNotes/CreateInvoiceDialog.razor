@@ -7,7 +7,7 @@
 
 <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
     <RadzenText TextStyle="TextStyle.Body1">
-        @Localizer["create_new_invoice"]
+        @Localizer[DescriptionResourceKey]
     </RadzenText>
     
     <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
@@ -29,6 +29,9 @@
 </RadzenStack>
 
 @code {
+    /// <summary>Localization key for the short description above the date picker (default: create flow).</summary>
+    [Parameter] public string DescriptionResourceKey { get; set; } = "create_new_invoice";
+
     [Parameter] public DateTime InitialDate { get; set; } = DateTime.Now.Date;
     
     private DateTime InvoiceDate { get; set; }

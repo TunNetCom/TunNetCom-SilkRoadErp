@@ -203,7 +203,24 @@ public class ODataService
             // #endregion
             _logger.LogInformation("OData query: {Url}", url);
 
-            var response = await _httpClient.GetAsync(url, cancellationToken);
+            // Resolve URL to absolute Uri using HttpClient.BaseAddress if needed
+            Uri requestUriObj;
+            if (Uri.IsWellFormedUriString(url, UriKind.Absolute))
+            {
+                requestUriObj = new Uri(url, UriKind.Absolute);
+            }
+            else if (_httpClient.BaseAddress != null)
+            {
+                requestUriObj = new Uri(_httpClient.BaseAddress, url);
+            }
+            else
+            {
+                var msg = $"Cannot send OData request: HttpClient.BaseAddress is not set and request URI is relative ('{url}'). Register the HttpClient with a BaseAddress or use an absolute URI.";
+                _logger.LogError(msg);
+                throw new InvalidOperationException(msg);
+            }
+
+            var response = await _httpClient.GetAsync(requestUriObj, cancellationToken);
             
             if (!response.IsSuccessStatusCode)
             {

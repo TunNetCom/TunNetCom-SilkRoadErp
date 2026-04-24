@@ -49,6 +49,11 @@ public class ExportPaiementsFournisseurToExcelEndpoint : ICarterModule
             // Build query with same filters as GetPaiementsFournisseurQueryHandler
             var paiementsQuery = context.PaiementFournisseur
                 .AsNoTracking()
+                .Include(p => p.Fournisseur)
+                .Include(p => p.Banque)
+                .Include(p => p.FactureFournisseurs)
+                    .ThenInclude(ff => ff.FactureFournisseur)
+                        .ThenInclude(f => f.BonDeReception)
                 .AsQueryable();
 
             if (fournisseurId.HasValue)
@@ -99,22 +104,44 @@ public class ExportPaiementsFournisseurToExcelEndpoint : ICarterModule
                 paiementsQuery = paiementsQuery.Where(p => p.Mois.HasValue && p.Mois.Value == mois.Value);
             }
 
-            // Get all paiements (no pagination for export)
-            var paiements = await paiementsQuery
-                .Select(p => new PaiementFournisseurExportInfo
+            // Get all paiements with their linked factures (no pagination for export)
+            var rawPaiements = await paiementsQuery
+                .OrderByDescending(p => p.DatePaiement)
+                .ToListAsync(cancellationToken);
+
+            // Get timbre
+            var timbre = await financialParametersService.GetTimbreAsync(appParams.Value.Timbre, cancellationToken);
+
+            // Project in memory so we can build FacturesInfo (multi-line string)
+            var decimalFormat = decimalPlaces == 3 ? "N3" : $"N{decimalPlaces}";
+            var paiements = rawPaiements.Select(p =>
+            {
+                var facturesLines = p.FactureFournisseurs
+                    .Select(ff => ff.FactureFournisseur)
+                    .Where(f => f != null)
+                    .Select(f =>
+                    {
+                        var montantFacture = (f.BonDeReception?.Sum(br => br.NetPayer) ?? 0) + timbre;
+                        return $"N°{f.NumFactureFournisseur} | {f.DateFacturationFournisseur:dd/MM/yyyy} | {montantFacture.ToString(decimalFormat)} TND";
+                    })
+                    .ToList();
+
+                return new PaiementFournisseurExportInfo
                 {
                     NumeroTransactionBancaire = p.NumeroTransactionBancaire ?? string.Empty,
                     NumeroChequeTraite = p.NumeroChequeTraite ?? string.Empty,
-                    FournisseurNom = p.Fournisseur.Nom,
+                    FournisseurNom = p.Fournisseur?.Nom ?? string.Empty,
                     Montant = p.Montant,
                     DatePaiement = p.DatePaiement,
                     MethodePaiement = p.MethodePaiement.ToString(),
-                    BanqueNom = p.Banque != null ? p.Banque.Nom : string.Empty,
+                    BanqueNom = p.Banque?.Nom ?? string.Empty,
                     DateEcheance = p.DateEcheance,
-                    StatutReglement = !string.IsNullOrEmpty(p.NumeroTransactionBancaire) ? "Régle" : "Non réglé"
-                })
-                .OrderByDescending(p => p.DatePaiement)
-                .ToListAsync(cancellationToken);
+                    StatutReglement = !string.IsNullOrEmpty(p.NumeroTransactionBancaire) ? "Réglé" : "Non réglé",
+                    FacturesInfo = facturesLines.Count > 0
+                        ? string.Join("\n", facturesLines)
+                        : string.Empty
+                };
+            }).ToList();
 
             if (!paiements.Any())
             {
@@ -143,7 +170,8 @@ public class ExportPaiementsFournisseurToExcelEndpoint : ICarterModule
                 new() { PropertyName = "MethodePaiement", DisplayName = "Méthode Paiement" },
                 new() { PropertyName = "BanqueNom", DisplayName = "Banque" },
                 new() { PropertyName = "DateEcheance", DisplayName = "Date Échéance" },
-                new() { PropertyName = "StatutReglement", DisplayName = "Statut Règlement" }
+                new() { PropertyName = "StatutReglement", DisplayName = "Statut Règlement" },
+                new() { PropertyName = "FacturesInfo", DisplayName = "Factures liées (N° | Date | Montant)" }
             };
 
             logger.LogInformation("Exporting {Count} paiements fournisseur to Excel", paiements.Count);
@@ -156,7 +184,8 @@ public class ExportPaiementsFournisseurToExcelEndpoint : ICarterModule
                 columns,
                 "Paiements Fournisseurs",
                 decimalPlaces,
-                totalNetAmount: totalMontant);
+                totalNetAmount: totalMontant,
+                appendVatRecapSection: false);
 
             var filename = $"Paiements_Fournisseurs_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
 

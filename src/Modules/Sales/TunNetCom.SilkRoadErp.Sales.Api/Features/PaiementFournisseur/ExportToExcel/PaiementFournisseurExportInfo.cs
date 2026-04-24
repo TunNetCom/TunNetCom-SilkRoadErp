@@ -12,5 +12,9 @@ public class PaiementFournisseurExportInfo
     public string BanqueNom { get; set; } = string.Empty;
     public DateTime? DateEcheance { get; set; }
     public string StatutReglement { get; set; } = string.Empty;
+    /// <summary>
+    /// Résumé des factures liées : une ligne par facture (N° | Date | Montant)
+    /// </summary>
+    public string FacturesInfo { get; set; } = string.Empty;
 }
 

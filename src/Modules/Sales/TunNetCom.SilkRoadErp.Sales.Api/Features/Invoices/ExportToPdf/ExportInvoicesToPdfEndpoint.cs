@@ -6,6 +6,7 @@ using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Constants;
 using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
 using TunNetCom.SilkRoadErp.Sales.Contracts.Invoice;
 using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
+using TunNetCom.SilkRoadErp.Sales.Domain.Services;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.ExportToPdf;
 
@@ -100,7 +101,8 @@ public class ExportInvoicesToPdfEndpoint : ICarterModule
                     Date = new DateTimeOffset(g.Key.Date, TimeSpan.Zero),
                     CustomerId = g.Key.IdClient,
                     CustomerName = g.Key.Nom,
-                    NetAmount = g.Where(x => x.bdl != null).Sum(x => x.bdl!.NetPayer) + timbre,
+                    // NetAmount is HT (excl. VAT). Using NetPayer (TTC) here caused VAT to be counted twice in UI/exports.
+                    NetAmount = g.Where(x => x.bdl != null).Sum(x => x.bdl!.TotHTva) + timbre,
                     VatAmount = g.Where(x => x.bdl != null).Sum(x => x.bdl!.TotTva),
                     Statut = (int)g.Key.Statut,
                     StatutLibelle = g.Key.Statut.ToString()
@@ -160,22 +162,24 @@ public class ExportInvoicesToPdfEndpoint : ICarterModule
                             select new { line.TotHt, line.TotTtc, Tva = (int)line.Tva };
 
             var lines = await linesQuery.ToListAsync(cancellationToken);
+            var vatLines = lines.Select(l => new VatLineItem(l.TotHt, l.TotTtc, l.Tva));
+            var totals = VatTotalsAggregator.Aggregate(vatLines, vatRate7, vatRate13, vatRate19, timbre, invoiceList.Count);
 
-            var totalNetAmount = lines.Sum(l => l.TotHt) + (timbre * invoiceList.Count);
-            
-            // Calculate VAT bases (using TotHt)
-            var totalBase7 = lines.Where(l => l.Tva == vatRate7).Sum(l => l.TotHt);
-            var totalBase13 = lines.Where(l => l.Tva == vatRate13).Sum(l => l.TotHt);
-            var totalBase19 = lines.Where(l => l.Tva == vatRate19).Sum(l => l.TotHt);
-            
-            // Calculate VAT amounts (using TotTtc - TotHt)
-            var totalVat7 = lines.Where(l => l.Tva == vatRate7).Sum(l => l.TotTtc - l.TotHt);
-            var totalVat13 = lines.Where(l => l.Tva == vatRate13).Sum(l => l.TotTtc - l.TotHt);
-            var totalVat19 = lines.Where(l => l.Tva == vatRate19).Sum(l => l.TotTtc - l.TotHt);
-            var totalVatAmount = totalVat7 + totalVat13 + totalVat19;
-            var totalTtcAmount = totalNetAmount + totalVatAmount;
-
-            var fileBytes = await exportService.ExportToPdfAsync(invoiceList, columnsToExport, "Liste des Factures", decimalPlaces, totalNetAmount, totalVatAmount, totalTtcAmount, totalVat7, totalVat13, totalVat19, totalBase7, totalBase13, totalBase19, cancellationToken);
+            var fileBytes = await exportService.ExportToPdfAsync(
+                invoiceList,
+                columnsToExport,
+                "Liste des Factures",
+                decimalPlaces,
+                totals.TotalHT,
+                totals.TotalVat,
+                totals.TotalTTC,
+                totals.TotalVat7,
+                totals.TotalVat13,
+                totals.TotalVat19,
+                totals.TotalBase7,
+                totals.TotalBase13,
+                totals.TotalBase19,
+                cancellationToken);
 
             var filename = $"Factures_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
 

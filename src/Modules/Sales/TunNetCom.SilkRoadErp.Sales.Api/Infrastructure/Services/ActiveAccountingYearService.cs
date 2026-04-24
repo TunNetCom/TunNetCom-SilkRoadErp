@@ -42,9 +42,9 @@ public class ActiveAccountingYearService : IActiveAccountingYearService
             using var scope = _serviceScopeFactory.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<SalesContext>();
             
-            // Récupérer l'exercice actif en ignorant les filtres de requête
+            // Récupérer l'exercice actif (respecter les filtres tenant).
+            // IMPORTANT: ne pas utiliser IgnoreQueryFilters() ici, sinon on risque de charger l'année active d'un autre tenant.
             var activeYear = await context.AccountingYear
-                .IgnoreQueryFilters()
                 .Where(ay => ay.IsActive)
                 .Select(ay => new { ay.Id })
                 .FirstOrDefaultAsync(cancellationToken);

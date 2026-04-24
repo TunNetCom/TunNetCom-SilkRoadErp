@@ -126,12 +126,22 @@
                                       Visible="@GetColumnVisibility("ProviderName")" />
                 <RadzenDataGridColumn TItem="ProviderInvoiceBaseInfo"
                                       Property="@nameof(ProviderInvoiceBaseInfo.NetAmount)"
-                                      Title="@Localizer["total_net"]"
+                                      Title="Tot HT"
                                       Width="150px"
                                       Filterable="true"
                                       Visible="@GetColumnVisibility("NetAmount")">
                     <Template Context="item">
                         @item.NetAmount.FormatAmount()
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ProviderInvoiceBaseInfo"
+                                      Title="Tot TTC"
+                                      Width="150px"
+                                      Sortable="false"
+                                      Filterable="false"
+                                      Visible="@GetColumnVisibility("TotalTtc")">
+                    <Template Context="item">
+                        @item.TotalTtc.FormatAmount()
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="ProviderInvoiceBaseInfo"
@@ -314,15 +324,16 @@
         await LoadProviders(new LoadDataArgs { Filter = string.Empty });
 
         // Initialize column visibility
-        availableColumns = new List<ColumnInfo>
-        {
-            new() { PropertyName = "Number", DisplayName = "Numéro", IsVisible = true },
-            new() { PropertyName = "Date", DisplayName = "Date", IsVisible = true },
-            new() { PropertyName = "ProviderName", DisplayName = "Fournisseur", IsVisible = true },
-            new() { PropertyName = "NetAmount", DisplayName = "Montant HT", IsVisible = true },
-            new() { PropertyName = "VatAmount", DisplayName = "Montant TVA", IsVisible = true },
-            new() { PropertyName = "StatutLibelle", DisplayName = "Statut", IsVisible = true }
-        };
+            availableColumns = new List<ColumnInfo>
+            {
+                new() { PropertyName = "Number", DisplayName = "Numéro", IsVisible = true },
+                new() { PropertyName = "Date", DisplayName = "Date", IsVisible = true },
+                new() { PropertyName = "ProviderName", DisplayName = "Fournisseur", IsVisible = true },
+                new() { PropertyName = "NetAmount", DisplayName = "Tot HT", IsVisible = true },
+                new() { PropertyName = "VatAmount", DisplayName = "Montant TVA", IsVisible = true },
+                new() { PropertyName = "TotalTtc", DisplayName = "Tot TTC", IsVisible = true },
+                new() { PropertyName = "StatutLibelle", DisplayName = "Statut", IsVisible = true }
+            };
 
         // Set default period to CurrentMonth and calculate dates
         searchCriteria.PeriodFilter = "CurrentMonth";

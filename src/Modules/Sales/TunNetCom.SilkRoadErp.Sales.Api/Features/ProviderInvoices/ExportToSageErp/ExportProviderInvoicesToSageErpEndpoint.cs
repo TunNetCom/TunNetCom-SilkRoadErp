@@ -118,7 +118,8 @@ public class ExportProviderInvoicesToSageErpEndpoint : ICarterModule
                         ProviderId = g.Key.IdFournisseur,
                         ProviderName = g.Key.Nom,
                         NetAmount = relatedLines.Sum(lbr => lbr.TotHt),
-                        VatAmount = relatedLines.Sum(lbr => lbr.TotTtc) - relatedLines.Sum(lbr => lbr.TotHt)
+                        VatAmount = relatedLines.Sum(lbr => lbr.TotTtc) - relatedLines.Sum(lbr => lbr.TotHt),
+                        TotalTtc = relatedLines.Sum(lbr => lbr.TotTtc)
                     };
                 })
                 .OrderBy(inv => inv.Date)

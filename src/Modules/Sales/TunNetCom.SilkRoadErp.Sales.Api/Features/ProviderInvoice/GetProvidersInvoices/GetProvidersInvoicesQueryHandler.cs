@@ -44,6 +44,7 @@ public class GetProvidersInvoicesQueryHandler(
                                   Id = g.Key.Id,
                                   Num = g.Key.Num,
                                   ProviderId = g.Key.IdFournisseur,
+                                  Statut = 0, // expose statut for UI purposes if needed
                                   Date = g.Key.Date,
                                   ProviderInvoiceNumber = g.Key.NumFactureFournisseur,
                                   TotHTva = g.Sum(x => x.lbr != null ? x.lbr.TotHt : 0),

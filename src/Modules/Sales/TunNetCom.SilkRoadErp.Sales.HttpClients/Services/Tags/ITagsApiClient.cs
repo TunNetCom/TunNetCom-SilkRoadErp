@@ -14,6 +14,8 @@ public interface ITagsApiClient
 
     Task<DocumentTagResponse> GetDocumentTagsAsync(string documentType, int documentId, CancellationToken cancellationToken = default);
 
+    Task<GetDocumentTagsBatchResponse> GetDocumentTagsBatchAsync(GetDocumentTagsBatchRequest request, CancellationToken cancellationToken = default);
+
     Task<bool> AddTagsToDocumentAsync(string documentType, int documentId, AddTagsToDocumentRequest request, CancellationToken cancellationToken = default);
 
     Task<bool> RemoveTagsFromDocumentAsync(string documentType, int documentId, RemoveTagsFromDocumentRequest request, CancellationToken cancellationToken = default);
