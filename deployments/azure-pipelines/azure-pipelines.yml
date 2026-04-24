@@ -71,7 +71,14 @@ stages:
       displayName: Build API
 
     - script: |
-        trivy image --exit-code 1 --severity HIGH,CRITICAL $(dockerRepository):$(apiTag)
+        export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-cache
+        mkdir -p $(Pipeline.Workspace)/trivy-cache
+
+        trivy image \
+          --cache-dir $(Pipeline.Workspace)/trivy-cache \
+          --exit-code 1 \
+          --severity HIGH,CRITICAL \
+          $(dockerRepository):$(apiTag)
       displayName: Scan API
 
     - script: |
@@ -85,7 +92,14 @@ stages:
       displayName: Build Web
 
     - script: |
-        trivy image --exit-code 1 --severity HIGH,CRITICAL $(dockerRepository):$(webappTag)
+        export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-cache
+        mkdir -p $(Pipeline.Workspace)/trivy-cache
+
+        trivy image \
+          --cache-dir $(Pipeline.Workspace)/trivy-cache \
+          --exit-code 1 \
+          --severity HIGH,CRITICAL \
+          $(dockerRepository):$(webappTag)
       displayName: Scan Web
 
     - script: |
