@@ -39,7 +39,6 @@ stages:
     - task: UseDotNet@2
       inputs:
         packageType: sdk
-        packageType: sdk
         version: '10.x'
 
     - task: DotNetCoreCLI@2
