@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: silkroad-webapp-blue
+  namespace: silkroad-dev
+  labels:
+    app: silkroad-webapp
+    version: blue
+    environment: production
+    tier: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: silkroad-webapp
+      version: blue
+      environment: production
+  template:
+    metadata:
+      labels:
+        app: silkroad-webapp
+        version: blue
+        environment: production
+        tier: frontend
+      annotations:
+        deployment.kubernetes.io/revision: "1"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      volumes:
+        - name: dataprotection-keys
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+      containers:
+      - name: webapp
+        image: tunnetcom/silkroad:latest-webapp
+        imagePullPolicy: Always
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+        volumeMounts:
+          - name: dataprotection-keys
+            mountPath: /home/app/.aspnet/DataProtection-Keys
+          - name: tmp
+            mountPath: /tmp
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+        - name: ASPNETCORE_URLS
+          value: "http://+:8080"
+        - name: ApiSettings__BaseUrl
+          value: "http://silkroad-api-service:8080"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
+        startupProbe:
+          tcpSocket:
+            port: 8080
+          failureThreshold: 30
+          periodSeconds: 10
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
