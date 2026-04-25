@@ -166,8 +166,20 @@ stages:
     steps:
     - script: |
         docker run --rm ghcr.io/zaproxy/zaproxy:stable \
-        zap-baseline.py -t $(zapTarget) -r report.html
+        zap-baseline.py \
+          -t $(zapTarget) \
+          -r report.html \
+          -J report.json \
+          -l WARN \
+          -I
       displayName: Run ZAP Baseline
+
+    - task: PublishBuildArtifacts@1
+      displayName: Publish ZAP Report
+      condition: always()
+      inputs:
+        pathToPublish: report.html
+        artifactName: zap-report
 
 # ============================================================
 # 3️⃣ BLUE / GREEN DEPLOYMENT
