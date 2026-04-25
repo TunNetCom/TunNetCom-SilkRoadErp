@@ -1,5 +1,5 @@
 # ============================================================
-# SilkRoad CI/CD Pipeline - BLUE/GREEN + SECURITY (FIXED)
+# SilkRoad CI/CD Pipeline - BLUE/GREEN + SECURITY (FIXED FINAL)
 # ============================================================
 
 pool:
@@ -78,20 +78,19 @@ stages:
     # 🔵 API
     # ============================================================
 
+    # BUILD
     - script: |
         docker build --no-cache \
           -t $(dockerRepository):$(apiTag) \
           -f src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.Api/Dockerfile .
       displayName: Build API
 
+    # SCAN (NO PRUNE BEFORE!)
     - script: |
-        echo "Cleaning disk before scan..."
-        docker system prune -af || true
-        docker builder prune -af || true
-
         export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-api
         mkdir -p $TRIVY_CACHE_DIR
 
+        echo "Scanning API image..."
         trivy image \
           --scanners vuln \
           --cache-dir $TRIVY_CACHE_DIR \
@@ -102,28 +101,36 @@ stages:
           $(dockerRepository):$(apiTag)
       displayName: Scan API
 
+    # PUSH
     - script: |
         docker push $(dockerRepository):$(apiTag)
       displayName: Push API
+
+    # CLEAN AFTER API
+    - script: |
+        echo "Cleaning AFTER API..."
+        docker system prune -af || true
+        docker builder prune -af || true
+        df -h
+      displayName: Cleanup API
 
     # ============================================================
     # 🟢 WEB
     # ============================================================
 
+    # BUILD
     - script: |
         docker build --no-cache \
           -t $(dockerRepository):$(webappTag) \
           -f src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.WebApp/Dockerfile .
       displayName: Build Web
 
+    # SCAN
     - script: |
-        echo "Cleaning disk before scan..."
-        docker system prune -af || true
-        docker builder prune -af || true
-
         export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-web
         mkdir -p $TRIVY_CACHE_DIR
 
+        echo "Scanning Web image..."
         trivy image \
           --scanners vuln \
           --cache-dir $TRIVY_CACHE_DIR \
@@ -134,9 +141,18 @@ stages:
           $(dockerRepository):$(webappTag)
       displayName: Scan Web
 
+    # PUSH
     - script: |
         docker push $(dockerRepository):$(webappTag)
       displayName: Push Web
+
+    # CLEAN AFTER WEB
+    - script: |
+        echo "Cleaning AFTER Web..."
+        docker system prune -af || true
+        docker builder prune -af || true
+        df -h
+      displayName: Cleanup Web
 
 # ============================================================
 # 2️⃣ SECURITY - OWASP ZAP
@@ -167,7 +183,7 @@ stages:
   - job: BlueGreenDeploy
     steps:
 
-    # ---------------- DETECT CURRENT ----------------
+    # DETECT CURRENT ENV
     - script: |
         echo "Detecting current environment..."
         CURRENT=$(kubectl get svc $(apiService) -n $(kubeNamespace) -o jsonpath='{.spec.selector.version}')
@@ -180,7 +196,7 @@ stages:
         fi
       displayName: Detect Active Environment
 
-    # ---------------- DEPLOY TARGET ----------------
+    # DEPLOY TARGET
     - script: |
         echo "Deploying $(targetColor)..."
 
@@ -194,20 +210,20 @@ stages:
           web=$(dockerRepository):$(webappTag) -n $(kubeNamespace)
       displayName: Deploy Target
 
-    # ---------------- WAIT ----------------
+    # WAIT FOR ROLLOUT
     - script: |
         kubectl rollout status deployment/silkroad-api-$(targetColor) -n $(kubeNamespace)
         kubectl rollout status deployment/silkroad-webapp-$(targetColor) -n $(kubeNamespace)
       displayName: Wait Rollout
 
-    # ---------------- HEALTH CHECK ----------------
+    # HEALTH CHECK
     - script: |
         echo "Health check..."
         sleep 15
         curl -f $(zapTarget)/health || exit 1
       displayName: Health Check
 
-    # ---------------- SWITCH TRAFFIC ----------------
+    # SWITCH TRAFFIC
     - script: |
         echo "Switching traffic to $(targetColor)..."
 
@@ -218,7 +234,7 @@ stages:
           -p "{\"spec\":{\"selector\":{\"app\":\"silkroad-webapp\",\"version\":\"$(targetColor)\"}}}"
       displayName: Switch Traffic
 
-    # ---------------- VERIFY ----------------
+    # VERIFY
     - script: |
         kubectl get svc $(apiService) -n $(kubeNamespace) -o wide
       displayName: Verify Switch
