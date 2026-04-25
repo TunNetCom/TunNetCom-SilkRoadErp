@@ -1,5 +1,5 @@
 # ============================================================
-# SilkRoad CI/CD Pipeline - BLUE/GREEN PRODUCTION READY
+# SilkRoad CI/CD Pipeline - BLUE/GREEN + SECURITY (FIXED)
 # ============================================================
 
 pool:
@@ -7,18 +7,25 @@ pool:
 
 variables:
 - group: silkroad-prod
+
 - name: dockerRepository
   value: 'tunnetcom/silkroad'
+
 - name: apiTag
   value: 'api-$(Build.BuildId)'
+
 - name: webappTag
   value: 'webapp-$(Build.BuildId)'
+
 - name: kubeNamespace
   value: 'silkroad-dev'
+
 - name: apiService
   value: 'silkroad-api-service'
+
 - name: webService
   value: 'silkroad-webapp-service'
+
 - name: zapTarget
   value: 'https://silkroad.aion-time.com'
 
@@ -27,15 +34,19 @@ variables:
 # ============================================================
 stages:
 - stage: Build
+  displayName: Build, Scan & Push
+
   jobs:
   - job: BuildPush
     steps:
 
+    # ---------------- LOGIN ----------------
     - task: Docker@2
       inputs:
         command: login
         containerRegistry: 'TunNetCom_Dockerhub_Connection'
 
+    # ---------------- .NET ----------------
     - task: UseDotNet@2
       inputs:
         packageType: sdk
@@ -52,7 +63,7 @@ stages:
         projects: '**/*.sln'
         arguments: '--configuration Release --no-restore'
 
-    # Install Trivy
+    # ---------------- INSTALL TRIVY ----------------
     - script: |
         sudo apt-get update -qq
         sudo apt-get install -y wget apt-transport-https gnupg lsb-release
@@ -63,19 +74,29 @@ stages:
         sudo apt-get install -y trivy
       displayName: Install Trivy
 
-    # ---------------- API ----------------
+    # ============================================================
+    # 🔵 API
+    # ============================================================
+
     - script: |
-        docker build -t $(dockerRepository):$(apiTag) \
+        docker build --no-cache \
+          -t $(dockerRepository):$(apiTag) \
           -f src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.Api/Dockerfile .
       displayName: Build API
 
     - script: |
-        export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-cache-api
-        mkdir -p $(TRIVY_CACHE_DIR)
+        echo "Cleaning disk before scan..."
+        docker system prune -af || true
+        docker builder prune -af || true
+
+        export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-api
+        mkdir -p $TRIVY_CACHE_DIR
 
         trivy image \
           --scanners vuln \
-          --cache-dir $(TRIVY_CACHE_DIR) \
+          --cache-dir $TRIVY_CACHE_DIR \
+          --no-progress \
+          --timeout 10m \
           --exit-code 1 \
           --severity HIGH,CRITICAL \
           $(dockerRepository):$(apiTag)
@@ -85,19 +106,29 @@ stages:
         docker push $(dockerRepository):$(apiTag)
       displayName: Push API
 
-    # ---------------- WEB ----------------
+    # ============================================================
+    # 🟢 WEB
+    # ============================================================
+
     - script: |
-        docker build -t $(dockerRepository):$(webappTag) \
+        docker build --no-cache \
+          -t $(dockerRepository):$(webappTag) \
           -f src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.WebApp/Dockerfile .
       displayName: Build Web
 
     - script: |
-        export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-cache-web
-        mkdir -p $(TRIVY_CACHE_DIR)
+        echo "Cleaning disk before scan..."
+        docker system prune -af || true
+        docker builder prune -af || true
+
+        export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-web
+        mkdir -p $TRIVY_CACHE_DIR
 
         trivy image \
           --scanners vuln \
-          --cache-dir $(TRIVY_CACHE_DIR) \
+          --cache-dir $TRIVY_CACHE_DIR \
+          --no-progress \
+          --timeout 10m \
           --exit-code 1 \
           --severity HIGH,CRITICAL \
           $(dockerRepository):$(webappTag)
@@ -108,34 +139,35 @@ stages:
       displayName: Push Web
 
 # ============================================================
-# 2️⃣ ZAP SECURITY SCAN (unchanged)
+# 2️⃣ SECURITY - OWASP ZAP
 # ============================================================
 - stage: Security
+  displayName: OWASP ZAP Scan
   dependsOn: Build
+
   jobs:
   - job: ZAP
     steps:
     - script: |
         docker run --rm ghcr.io/zaproxy/zaproxy:stable \
         zap-baseline.py -t $(zapTarget) -r report.html
-      displayName: Run ZAP
+      displayName: Run ZAP Baseline
 
 # ============================================================
-# 3️⃣ DEPLOY GREEN/BLUE (SMART SWITCH)
+# 3️⃣ BLUE / GREEN DEPLOYMENT
 # ============================================================
 - stage: Deploy
+  displayName: Blue/Green Deploy
   dependsOn: Security
+
   pool:
     name: OnPremAgents
-
 
   jobs:
   - job: BlueGreenDeploy
     steps:
 
-    # ------------------------------------
-    # Detect current active color
-    # ------------------------------------
+    # ---------------- DETECT CURRENT ----------------
     - script: |
         echo "Detecting current environment..."
         CURRENT=$(kubectl get svc $(apiService) -n $(kubeNamespace) -o jsonpath='{.spec.selector.version}')
@@ -148,9 +180,7 @@ stages:
         fi
       displayName: Detect Active Environment
 
-    # ------------------------------------
-    # Deploy TARGET (inactive env)
-    # ------------------------------------
+    # ---------------- DEPLOY TARGET ----------------
     - script: |
         echo "Deploying $(targetColor)..."
 
@@ -162,28 +192,22 @@ stages:
 
         kubectl set image deployment/silkroad-webapp-$(targetColor) \
           web=$(dockerRepository):$(webappTag) -n $(kubeNamespace)
-      displayName: Deploy Target Environment
+      displayName: Deploy Target
 
-    # ------------------------------------
-    # Wait rollout
-    # ------------------------------------
+    # ---------------- WAIT ----------------
     - script: |
         kubectl rollout status deployment/silkroad-api-$(targetColor) -n $(kubeNamespace)
         kubectl rollout status deployment/silkroad-webapp-$(targetColor) -n $(kubeNamespace)
-      displayName: Wait for rollout
+      displayName: Wait Rollout
 
-    # ------------------------------------
-    # HEALTH CHECK (VERY IMPORTANT)
-    # ------------------------------------
+    # ---------------- HEALTH CHECK ----------------
     - script: |
         echo "Health check..."
         sleep 15
         curl -f $(zapTarget)/health || exit 1
       displayName: Health Check
 
-    # ------------------------------------
-    # SWITCH TRAFFIC
-    # ------------------------------------
+    # ---------------- SWITCH TRAFFIC ----------------
     - script: |
         echo "Switching traffic to $(targetColor)..."
 
@@ -194,17 +218,7 @@ stages:
           -p "{\"spec\":{\"selector\":{\"app\":\"silkroad-webapp\",\"version\":\"$(targetColor)\"}}}"
       displayName: Switch Traffic
 
-    # ------------------------------------
-    # VERIFY SWITCH
-    # ------------------------------------
+    # ---------------- VERIFY ----------------
     - script: |
-        echo "Verifying switch..."
         kubectl get svc $(apiService) -n $(kubeNamespace) -o wide
       displayName: Verify Switch
-
-    # ------------------------------------
-    # OPTIONAL CLEANUP OLD ENV
-    # ------------------------------------
-    - script: |
-        echo "Old environment can be cleaned later"
-      displayName: Cleanup (optional)
