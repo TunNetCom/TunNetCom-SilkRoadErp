@@ -155,38 +155,174 @@ stages:
       displayName: Cleanup Web
 
 # ============================================================
-# 2️⃣ SECURITY - OWASP ZAP
+# 2️⃣ DAST : OWASP ZAP BASELINE SCAN
 # ============================================================
-- stage: Security
-  displayName: OWASP ZAP Scan
-  dependsOn: Build
+- stage: ZAP_Baseline
+  displayName: DAST - ZAP Baseline Scan
+  dependsOn: Build          # ✅ FIX 1: was 'BuildAndPush' (stage does not exist)
+  condition: succeeded()
+
+  pool:
+    vmImage: 'ubuntu-latest'
 
   jobs:
-  - job: ZAP
-    steps:
-    - script: |
-        docker run --rm ghcr.io/zaproxy/zaproxy:stable \
-        zap-baseline.py \
-          -t $(zapTarget) \
-          -r report.html \
-          -J report.json \
-          -l WARN \
-          -I
-      displayName: Run ZAP Baseline
+    - job: ZAPBaselineJob
+      displayName: ZAP Baseline (passive scan)
 
-    - task: PublishBuildArtifacts@1
-      displayName: Publish ZAP Report
-      condition: always()
-      inputs:
-        pathToPublish: report.html
-        artifactName: zap-report
+      steps:
+        - script: |
+            mkdir -p $(System.DefaultWorkingDirectory)/zap-baseline
+            chmod 777 $(System.DefaultWorkingDirectory)/zap-baseline
+          displayName: Prepare ZAP Baseline directory
+
+        - script: |
+            docker pull ghcr.io/zaproxy/zaproxy:stable
+          displayName: Pull ZAP image
+
+        - script: |
+            docker run --rm \
+              -v $(System.DefaultWorkingDirectory)/zap-baseline:/zap/wrk:rw \
+              ghcr.io/zaproxy/zaproxy:stable \
+              zap-baseline.py \
+              -t $(zapTarget) \
+              -r zap-baseline.html \
+              -J zap-baseline.json \
+              -l WARN \
+              -I
+          displayName: Run ZAP Baseline scan
+
+        # Fix permissions
+        - script: |
+            sudo chown -R $(id -u):$(id -g) $(System.DefaultWorkingDirectory)/zap-baseline
+            sudo chmod -R 755 $(System.DefaultWorkingDirectory)/zap-baseline
+          displayName: Fix ZAP report permissions
+          condition: always()
+
+        - task: PublishBuildArtifacts@1
+          displayName: Publish ZAP Baseline Report
+          condition: always()
+          inputs:
+            pathToPublish: '$(System.DefaultWorkingDirectory)/zap-baseline'
+            artifactName: 'ZAP-Baseline-Report'
+
+        - task: PublishHtmlReport@1
+          displayName: Show ZAP Baseline Tab
+          condition: always()
+          inputs:
+            reportDir: '$(System.DefaultWorkingDirectory)/zap-baseline'
+            tabName: 'ZAP Baseline'
+
 
 # ============================================================
-# 3️⃣ BLUE / GREEN DEPLOYMENT
+# 3️⃣ DAST : OWASP ZAP AJAX SPIDER SCAN
+# ============================================================
+- stage: ZAP_AJAX
+  displayName: DAST - ZAP AJAX Spider Scan
+  dependsOn: ZAP_Baseline   # ✅ FIX 2: confirmed valid — no cycle, correct linear order
+  condition: succeeded()
+
+  pool:
+    vmImage: 'ubuntu-latest'
+
+  jobs:
+    - job: ZAPAjaxJob
+      displayName: ZAP AJAX Spider (Blazor routes)
+
+      steps:
+        - script: |
+            mkdir -p $(System.DefaultWorkingDirectory)/zap-ajax
+            chmod 777 $(System.DefaultWorkingDirectory)/zap-ajax
+          displayName: Prepare ZAP AJAX directory
+
+        - script: |
+            docker pull ghcr.io/zaproxy/zaproxy:stable
+          displayName: Pull ZAP image
+
+        - script: |
+            cat > $(System.DefaultWorkingDirectory)/zap-ajax/ajax-plan.yaml << 'EOF'
+            env:
+              contexts:
+                - name: silkroad-erp
+                  urls:
+                    - $(zapTarget)/
+                  excludePaths: []
+
+            parameters:
+              failOnError: false
+              progressToStdout: true
+
+            jobs:
+              - type: spiderAjax
+                parameters:
+                  url: $(zapTarget)/
+                  maxDuration: 5
+                  maxCrawlDepth: 10
+                  numberOfBrowsers: 2
+                  browserId: firefox-headless
+                  clickDefaultElems: true
+                  clickElemsOnce: true
+                  randomInputs: true
+
+              - type: passiveScan-wait
+                parameters:
+                  maxDuration: 5
+
+              - type: outputSummary
+                parameters:
+                  format: Long
+                  summaryFile: /zap/wrk/zap_out.json
+
+              - type: report
+                parameters:
+                  reportTitle: ZAP AJAX Spider - SilkRoad ERP
+                  reportDir: /zap/wrk/
+                  reportFile: zap-ajax.html
+                  template: traditional-html
+
+              - type: report
+                parameters:
+                  reportTitle: ZAP AJAX Spider - SilkRoad ERP
+                  reportDir: /zap/wrk/
+                  reportFile: zap-ajax.json
+                  template: traditional-json
+            EOF
+          displayName: Generate AJAX plan YAML
+
+        - script: |
+            docker run --rm \
+              -v $(System.DefaultWorkingDirectory)/zap-ajax:/zap/wrk:rw \
+              ghcr.io/zaproxy/zaproxy:stable \
+              zap.sh -cmd -autorun /zap/wrk/ajax-plan.yaml
+          displayName: Run ZAP AJAX Spider scan
+
+        # Fix permissions
+        - script: |
+            sudo chown -R $(id -u):$(id -g) $(System.DefaultWorkingDirectory)/zap-ajax
+            sudo chmod -R 755 $(System.DefaultWorkingDirectory)/zap-ajax
+          displayName: Fix ZAP report permissions
+          condition: always()
+
+        - task: PublishBuildArtifacts@1
+          displayName: Publish ZAP AJAX Report
+          condition: always()
+          inputs:
+            pathToPublish: '$(System.DefaultWorkingDirectory)/zap-ajax'
+            artifactName: 'ZAP-AJAX-Report'
+
+        - task: PublishHtmlReport@1
+          displayName: Show ZAP AJAX Tab
+          condition: always()
+          inputs:
+            reportDir: '$(System.DefaultWorkingDirectory)/zap-ajax'
+            tabName: 'ZAP AJAX Spider'
+
+# ============================================================
+# 4️⃣ BLUE / GREEN DEPLOYMENT
 # ============================================================
 - stage: Deploy
   displayName: Blue/Green Deploy
-  dependsOn: Security
+  dependsOn: ZAP_AJAX       # ✅ FIX 3: was 'Security' (stage does not exist)
+  condition: succeeded()
 
   pool:
     name: OnPremAgents
