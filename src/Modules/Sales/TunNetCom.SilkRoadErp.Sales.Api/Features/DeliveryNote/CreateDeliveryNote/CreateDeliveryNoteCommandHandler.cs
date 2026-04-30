@@ -1,4 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
+using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
 using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 using TunNetCom.SilkRoadErp.Sales.Domain.Services;
 
@@ -59,6 +59,25 @@ public class CreateDeliveryNoteCommandHandler(
         {
             _logger.LogWarning("Delivery note creation blocked: invoice number is required when BloquerBlSansFacture is enabled");
             return Result.Fail("invoice_number_is_required");
+        }
+
+        // Vérifier que la facture liée est validée (statut Valid)
+        if (createDeliveryNoteCommand.NumFacture.HasValue && createDeliveryNoteCommand.NumFacture.Value > 0)
+        {
+            var facture = await _context.Facture
+                .FirstOrDefaultAsync(f => f.Num == createDeliveryNoteCommand.NumFacture.Value, cancellationToken);
+
+            if (facture == null)
+            {
+                _logger.LogWarning("Delivery note creation blocked: invoice {NumFacture} not found", createDeliveryNoteCommand.NumFacture.Value);
+                return Result.Fail("invoice_not_found");
+            }
+
+            if (facture.Statut != DocumentStatus.Valid)
+            {
+                _logger.LogWarning("Delivery note creation blocked: invoice {NumFacture} is not validated (current status: {Statut})", createDeliveryNoteCommand.NumFacture.Value, facture.Statut);
+                return Result.Fail("invoice_must_be_validated");
+            }
         }
 
         // Valider le stock pour chaque ligne
