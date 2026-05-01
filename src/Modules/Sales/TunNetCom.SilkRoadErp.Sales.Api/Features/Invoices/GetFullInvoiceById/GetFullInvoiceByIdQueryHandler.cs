@@ -1,4 +1,4 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetFullInvoiceById;
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetFullInvoiceById;
 
 
 public class GetFullInvoiceByIdQueryHandler(
@@ -36,7 +36,7 @@ public class GetFullInvoiceByIdQueryHandler(
     {
         return await _context.Facture
                .AsNoTracking()
-               .Where(f => f.Num == query.Id)
+               .Where(f => f.Id == query.Id)
                .Include(f => f.IdClientNavigation)
                .Include(f => f.BonDeLivraison)
                    .ThenInclude(bl => bl.LigneBl)

@@ -1453,4 +1453,25 @@
   <data name="tej_export_info_retenue" xml:space="preserve">
     <value>When exporting to TEJ, the amount sent is the amount before withholding; the TEJ platform performs the withholding calculation.</value>
   </data>
+  <data name="Deliver_Remaining" xml:space="preserve">
+    <value>Deliver Remaining</value>
+  </data>
+  <data name="Erreur_Chargement_Facture" xml:space="preserve">
+    <value>Error loading invoice details</value>
+  </data>
+  <data name="No_Remaining_Quantities" xml:space="preserve">
+    <value>No remaining quantities to deliver</value>
+  </data>
+  <data name="Erreur" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="Info" xml:space="preserve">
+    <value>Information</value>
+  </data>
+  <data name="Confirm_Delivery_Remaining_Message" xml:space="preserve">
+    <value>Please confirm the quantities to deliver to settle this document.</value>
+  </data>
+  <data name="Success" xml:space="preserve">
+    <value>Success</value>
+  </data>
 </root>
