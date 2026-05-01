@@ -154,6 +154,10 @@ stages:
     - script: |
         echo "Deploying $(targetColor)..."
 
+        # Ensure stable Services exist (Ingress points to these)
+        kubectl apply -f deployments/k8s/api-service.yaml
+        kubectl apply -f deployments/k8s/webapp-service.yaml
+
         kubectl apply -f deployments/k8s/api-$(targetColor).yaml
         kubectl apply -f deployments/k8s/webapp-$(targetColor).yaml
 
@@ -188,10 +192,10 @@ stages:
         echo "Switching traffic to $(targetColor)..."
 
         kubectl patch svc $(apiService) -n $(kubeNamespace) \
-          -p "{\"spec\":{\"selector\":{\"app\":\"silkroad-api\",\"version\":\"$(targetColor)\"}}}"
+          -p "{\"spec\":{\"selector\":{\"app\":\"silkroad-api\",\"environment\":\"production\",\"version\":\"$(targetColor)\"}}}"
 
         kubectl patch svc $(webService) -n $(kubeNamespace) \
-          -p "{\"spec\":{\"selector\":{\"app\":\"silkroad-webapp\",\"version\":\"$(targetColor)\"}}}"
+          -p "{\"spec\":{\"selector\":{\"app\":\"silkroad-webapp\",\"environment\":\"production\",\"version\":\"$(targetColor)\"}}}"
       displayName: Switch Traffic
 
     # ------------------------------------
