@@ -28,6 +28,13 @@ public class GetInvoicesByCustomerWithSummaryQueryHandler(
             .FilterByActiveAccountingYear()
             .Where(f => f.IdClient == query.ClientId);
 
+        // Filtrer par statut si spécifié (ex: seulement les factures validées)
+        if (query.Statut.HasValue)
+        {
+            invoicesQueryBase = invoicesQueryBase.Where(f => f.Statut == query.Statut.Value);
+        }
+
+
         var invoicesQuery = invoicesQueryBase
             .Select(f => new InvoiceResponse
             {
