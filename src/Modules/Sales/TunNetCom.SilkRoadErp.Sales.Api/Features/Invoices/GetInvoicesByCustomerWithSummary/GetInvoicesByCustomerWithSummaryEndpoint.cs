@@ -1,4 +1,6 @@
-﻿namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetInvoicesByCustomerWithSummary;
+using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
+
+namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetInvoicesByCustomerWithSummary;
 
 public class GetInvoicesByCustomerWithSummaryEndpoint : ICarterModule
 {
@@ -13,9 +15,11 @@ public class GetInvoicesByCustomerWithSummaryEndpoint : ICarterModule
                     [FromQuery] int pageSize,
                     [FromQuery] string sortOrder,
                     [FromQuery] string sortProprety,
+                    [FromQuery] int? statut,
                     CancellationToken cancellationToken) =>
                 {
-                    var query = new GetInvoicesByCustomerWithSummaryQuery(clientId, pageNumber, pageSize, sortProprety, sortOrder);
+                    DocumentStatus? documentStatus = statut.HasValue ? (DocumentStatus)statut.Value : null;
+                    var query = new GetInvoicesByCustomerWithSummaryQuery(clientId, pageNumber, pageSize, sortProprety, sortOrder, documentStatus);
 
                     var result = await mediator.Send(query, cancellationToken);
 

@@ -34,12 +34,16 @@ public class InvoicesApiClient : IInvoicesApiClient
     public async Task<OneOf<GetInvoiceListWithSummary, BadRequestResponse>> GetInvoicesByCustomerIdWithSummary(
         int customerId,
         QueryStringParameters queryParameters,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        int? statut = null)
     {
         _logger.LogInformation("Fetching invoices by customer ID from the API /invoices/client/{customerId}", customerId);
-        var response = await _httpClient.GetAsync(
-                $"/invoices/client/{customerId}?pageNumber={queryParameters.PageNumber}&pageSize={queryParameters.PageSize}&sortOrder={queryParameters.SortOrder}&sortProprety={queryParameters.SortProprety}",
-                cancellationToken: cancellationToken);
+        var url = $"/invoices/client/{customerId}?pageNumber={queryParameters.PageNumber}&pageSize={queryParameters.PageSize}&sortOrder={queryParameters.SortOrder}&sortProprety={queryParameters.SortProprety}";
+        if (statut.HasValue)
+        {
+            url += $"&statut={statut.Value}";
+        }
+        var response = await _httpClient.GetAsync(url, cancellationToken: cancellationToken);
 
         if (response.StatusCode == HttpStatusCode.OK)
         {

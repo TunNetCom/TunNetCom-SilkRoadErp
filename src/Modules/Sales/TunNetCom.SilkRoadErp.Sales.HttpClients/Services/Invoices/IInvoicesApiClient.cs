@@ -5,7 +5,8 @@ public interface IInvoicesApiClient
     Task<OneOf<GetInvoiceListWithSummary, BadRequestResponse>> GetInvoicesByCustomerIdWithSummary(
         int customerId,
         QueryStringParameters queryParameters,
-        CancellationToken cancellationToken);
+        CancellationToken cancellationToken,
+        int? statut = null);
     Task<PagedList<InvoiceResponse>> GetInvoices(
         QueryStringParameters queryParameters,
         CancellationToken cancellationToken);

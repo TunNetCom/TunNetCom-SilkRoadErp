@@ -61,7 +61,7 @@ public class CreateDeliveryNoteCommandHandler(
             return Result.Fail("invoice_number_is_required");
         }
 
-        // Vérifier que la facture liée est validée (statut Valid)
+        // Vérifier que la facture liée est brouillon (statut Draft)
         if (createDeliveryNoteCommand.NumFacture.HasValue && createDeliveryNoteCommand.NumFacture.Value > 0)
         {
             var facture = await _context.Facture
@@ -73,10 +73,10 @@ public class CreateDeliveryNoteCommandHandler(
                 return Result.Fail("invoice_not_found");
             }
 
-            if (facture.Statut != DocumentStatus.Valid)
+            if (facture.Statut != DocumentStatus.Draft)
             {
-                _logger.LogWarning("Delivery note creation blocked: invoice {NumFacture} is not validated (current status: {Statut})", createDeliveryNoteCommand.NumFacture.Value, facture.Statut);
-                return Result.Fail("invoice_must_be_validated");
+                _logger.LogWarning("Delivery note creation blocked: invoice {NumFacture} is not draft (current status: {Statut})", createDeliveryNoteCommand.NumFacture.Value, facture.Statut);
+                return Result.Fail("invoice_must_be_draft");
             }
         }
 

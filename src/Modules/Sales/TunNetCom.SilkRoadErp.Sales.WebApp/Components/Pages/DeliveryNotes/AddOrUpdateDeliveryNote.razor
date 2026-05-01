@@ -1468,7 +1468,9 @@ else
             var result = await invoicesApiClient.GetInvoicesByCustomerIdWithSummary(
                 selectedCustomerId.Value,
                 parameters,
-                _cancellationTokenSource.Token);
+                _cancellationTokenSource.Token,
+                statut: 0); // 0 = DocumentStatus.Draft : seulement les factures non validées
+
 
             if (result.IsT0)
             {
