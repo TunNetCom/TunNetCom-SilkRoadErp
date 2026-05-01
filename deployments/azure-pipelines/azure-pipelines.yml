@@ -317,11 +317,11 @@ stages:
             tabName: 'ZAP AJAX Spider'
 
 # ============================================================
-# 4️⃣ BLUE / GREEN DEPLOYMENT
+# BLUE / GREEN DEPLOYMENT (FIXED + SAFE)
 # ============================================================
 - stage: Deploy
   displayName: Blue/Green Deploy
-  dependsOn: ZAP_AJAX       # ✅ FIX 3: was 'Security' (stage does not exist)
+  dependsOn: ZAP_AJAX
   condition: succeeded()
 
   pool:
@@ -331,47 +331,117 @@ stages:
   - job: BlueGreenDeploy
     steps:
 
-    # DETECT CURRENT ENV
+    # ------------------------------------------------------------
+    # 1. DETECT ACTIVE ENV
+    # ------------------------------------------------------------
     - script: |
-        echo "Detecting current environment..."
-        CURRENT=$(kubectl get svc $(apiService) -n $(kubeNamespace) -o jsonpath='{.spec.selector.version}')
-        echo "Current: $CURRENT"
+        echo "Detecting active environment..."
+
+        CURRENT=$(kubectl get svc $(apiService) -n $(kubeNamespace) \
+          -o jsonpath='{.spec.selector.version}')
+
+        echo "Current active version: $CURRENT"
 
         if [ "$CURRENT" = "blue" ]; then
+          echo "Switching target -> green"
           echo "##vso[task.setvariable variable=targetColor]green"
         else
+          echo "Switching target -> blue"
           echo "##vso[task.setvariable variable=targetColor]blue"
         fi
       displayName: Detect Active Environment
 
-    # DEPLOY TARGET
+    # ------------------------------------------------------------
+    # 2. VALIDATE IMAGE TAGS (CRITICAL FIX)
+    # ------------------------------------------------------------
+    - script: |
+        echo "Validating image tags..."
+
+        if [[ -z "$(apiTag)" || "$(apiTag)" == *"PLACEHOLDER"* ]]; then
+          echo "❌ Invalid apiTag: $(apiTag)"
+          exit 1
+        fi
+
+        if [[ -z "$(webappTag)" || "$(webappTag)" == *"PLACEHOLDER"* ]]; then
+          echo "❌ Invalid webappTag: $(webappTag)"
+          exit 1
+        fi
+
+        echo "✅ Image tags are valid"
+      displayName: Validate Image Tags
+
+    # ------------------------------------------------------------
+    # 3. DEPLOY TARGET
+    # ------------------------------------------------------------
     - script: |
         echo "Deploying $(targetColor)..."
 
         kubectl apply -f deployments/k8s/api-$(targetColor).yaml
         kubectl apply -f deployments/k8s/webapp-$(targetColor).yaml
 
+        # Force correct images (NO PLACEHOLDERS EVER)
         kubectl set image deployment/silkroad-api-$(targetColor) \
-          api=$(dockerRepository):$(apiTag) -n $(kubeNamespace)
+          api=$(dockerRepository):$(apiTag) \
+          -n $(kubeNamespace)
 
         kubectl set image deployment/silkroad-webapp-$(targetColor) \
-          web=$(dockerRepository):$(webappTag) -n $(kubeNamespace)
+          webapp=$(dockerRepository):$(webappTag) \
+          -n $(kubeNamespace)
+
       displayName: Deploy Target
 
-    # WAIT FOR ROLLOUT
+    # ------------------------------------------------------------
+    # 4. WAIT FOR ROLLOUT (SAFE TIMEOUT)
+    # ------------------------------------------------------------
     - script: |
-        kubectl rollout status deployment/silkroad-api-$(targetColor) -n $(kubeNamespace)
-        kubectl rollout status deployment/silkroad-webapp-$(targetColor) -n $(kubeNamespace)
+        echo "Waiting for rollout..."
+
+        kubectl rollout status deployment/silkroad-api-$(targetColor) \
+          -n $(kubeNamespace) --timeout=180s
+
+        kubectl rollout status deployment/silkroad-webapp-$(targetColor) \
+          -n $(kubeNamespace) --timeout=180s
       displayName: Wait Rollout
 
-    # HEALTH CHECK
+    # ------------------------------------------------------------
+    # 5. VERIFY POD HEALTH (CRITICAL GATE)
+    # ------------------------------------------------------------
     - script: |
-        echo "Health check..."
-        sleep 15
-        curl -f $(zapTarget)/health || exit 1
+        echo "Checking pod health..."
+
+        kubectl get pods -n $(kubeNamespace) -l version=$(targetColor)
+
+        READY=$(kubectl get pods -n $(kubeNamespace) -l version=$(targetColor) \
+          --no-headers | grep "1/1 Running" | wc -l)
+
+        if [ "$READY" -eq 0 ]; then
+          echo "❌ No healthy pods detected. Aborting deployment."
+          kubectl describe pods -n $(kubeNamespace) -l version=$(targetColor)
+          exit 1
+        fi
+
+        echo "✅ Pods are healthy"
+      displayName: Verify Target Health
+
+    # ------------------------------------------------------------
+    # 6. APPLICATION HEALTH CHECK
+    # ------------------------------------------------------------
+    - script: |
+        echo "Running API health check..."
+
+        sleep 10
+
+        curl -f $(zapTarget)/health || {
+          echo "❌ Health check failed"
+          exit 1
+        }
+
+        echo "✅ Health check passed"
       displayName: Health Check
 
-    # SWITCH TRAFFIC
+    # ------------------------------------------------------------
+    # 7. SWITCH TRAFFIC
+    # ------------------------------------------------------------
     - script: |
         echo "Switching traffic to $(targetColor)..."
 
@@ -380,9 +450,16 @@ stages:
 
         kubectl patch svc $(webService) -n $(kubeNamespace) \
           -p "{\"spec\":{\"selector\":{\"app\":\"silkroad-webapp\",\"version\":\"$(targetColor)\"}}}"
+
       displayName: Switch Traffic
 
-    # VERIFY
+    # ------------------------------------------------------------
+    # 8. FINAL VERIFICATION
+    # ------------------------------------------------------------
     - script: |
+        echo "Final verification..."
+
         kubectl get svc $(apiService) -n $(kubeNamespace) -o wide
+        kubectl get pods -n $(kubeNamespace) -l version=$(targetColor)
+
       displayName: Verify Switch
