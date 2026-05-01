@@ -6,7 +6,7 @@ metadata:
 spec:
   selector:
     app: silkroad-webapp
-    version: blue
+    version: green
   ports:
     - name: http
       port: 8080
