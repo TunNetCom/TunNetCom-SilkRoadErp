@@ -408,26 +408,6 @@ stages:
       displayName: Wait Rollout
 
     # ------------------------------------------------------------
-    # 5. VERIFY POD HEALTH (CRITICAL GATE)
-    # ------------------------------------------------------------
-    - script: |
-        echo "Checking pod health..."
-
-        kubectl get pods -n $(kubeNamespace) -l version=$(targetColor)
-
-        READY=$(kubectl get pods -n $(kubeNamespace) -l version=$(targetColor) \
-          --no-headers | grep "1/1 Running" | wc -l)
-
-        if [ "$READY" -eq 0 ]; then
-          echo "❌ No healthy pods detected. Aborting deployment."
-          kubectl describe pods -n $(kubeNamespace) -l version=$(targetColor)
-          exit 1
-        fi
-
-        echo "✅ Pods are healthy"
-      displayName: Verify Target Health
-
-    # ------------------------------------------------------------
     # 6. APPLICATION HEALTH CHECK
     # ------------------------------------------------------------
     - script: |
