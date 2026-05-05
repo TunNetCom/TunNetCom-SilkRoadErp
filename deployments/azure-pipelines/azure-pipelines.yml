@@ -431,17 +431,24 @@ stages:
     # 6. APPLICATION HEALTH CHECK
     # ------------------------------------------------------------
     - script: |
-        echo "Running API health check..."
+        echo "Checking pod health..."
 
-        sleep 10
+        kubectl get pods -n $(kubeNamespace) -l version=$(targetColor)
 
-        curl -f $(zapTarget)/health || {
-          echo "❌ Health check failed"
+        READY=$(kubectl get pods -n $(kubeNamespace) \
+          -l version=$(targetColor) \
+          --no-headers \
+          -o custom-columns='READY:.status.containerStatuses[0].ready,PHASE:.status.phase' \
+          | grep "true.*Running" | wc -l)
+
+        if [ "$READY" -eq 0 ]; then
+          echo "❌ No healthy pods detected. Aborting deployment."
+          kubectl describe pods -n $(kubeNamespace) -l version=$(targetColor)
           exit 1
-        }
+        fi
 
-        echo "✅ Health check passed"
-      displayName: Health Check
+        echo "✅ $READY healthy pod(s) found"
+      displayName: Verify Target Health
 
     # ------------------------------------------------------------
     # 7. SWITCH TRAFFIC
