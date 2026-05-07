@@ -63,7 +63,7 @@ stages:
     - task: SonarQubePrepare@7
       inputs:
         SonarQube: 'SonarConnection'   
-        scannerMode: 'MSBuild'
+        scannerMode: 'dotnet'
         projectKey: 'Silk_Road_ERP_Silk_Road_ERP_f493c9cb-0b66-4d3f-8bfe-e8056216b526'
         projectName: 'SilkRoad ERP'
         extraProperties: |
