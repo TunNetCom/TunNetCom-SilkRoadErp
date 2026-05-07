@@ -62,12 +62,14 @@ stages:
     # ============================================================
     - task: SonarQubePrepare@7
       inputs:
-        SonarQube: 'SonarConnection'   
+        SonarQube: 'SonarConnection'
         scannerMode: 'dotnet'
         projectKey: 'Silk_Road_ERP_Silk_Road_ERP_f493c9cb-0b66-4d3f-8bfe-e8056216b526'
         projectName: 'SilkRoad ERP'
         extraProperties: |
-          sonar.exclusions=**/bin/**,**/obj/**
+          sonar.exclusions=**/bin/**,**/obj/**,**/*.json,**/*.html
+          sonar.coverage.exclusions=**/*
+          sonar.cpd.exclusions=**/*.json,**/*.html
 
     # ---------------- BUILD ----------------
     - task: DotNetCoreCLI@2
