@@ -60,6 +60,11 @@ stages:
     # ============================================================
     # 🔷 SONARQUBE PREPARE (MUST BE BEFORE BUILD)
     # ============================================================
+    - task: UseDotNet@2
+      inputs:
+        packageType: sdk
+        version: '8.x'
+
     - task: SonarQubePrepare@7
       inputs:
         SonarQube: 'SonarConnection'
@@ -67,6 +72,7 @@ stages:
         projectKey: 'Silk_Road_ERP_Silk_Road_ERP_f493c9cb-0b66-4d3f-8bfe-e8056216b526'
         projectName: 'SilkRoad ERP'
         extraProperties: |
+          sonar.host.url=https://sonarqube.aion-time.com
           sonar.exclusions=**/bin/**,**/obj/**,**/*.json,**/*.html
           sonar.coverage.exclusions=**/*
           sonar.cpd.exclusions=**/*.json,**/*.html
