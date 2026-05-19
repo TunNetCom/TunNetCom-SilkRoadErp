@@ -1,5 +1,5 @@
 # ============================================================
-# SilkRoad CI/CD Pipeline - BLUE/GREEN + SECURITY (FIXED FINAL)
+# SilkRoad CI/CD Pipeline - BLUE/GREEN + SECURITY + SONARQUBE
 # ============================================================
 
 pool:
@@ -7,35 +7,27 @@ pool:
 
 variables:
 - group: silkroad-prod
-
 - name: dockerRepository
   value: 'tunnetcom/silkroad'
-
 - name: apiTag
   value: 'api-$(Build.BuildId)'
-
 - name: webappTag
   value: 'webapp-$(Build.BuildId)'
-
 - name: kubeNamespace
   value: 'silkroad-dev'
-
 - name: apiService
   value: 'silkroad-api-service'
-
 - name: webService
   value: 'silkroad-webapp-service'
-
 - name: zapTarget
   value: 'https://silkroad.aion-time.com'
 
 # ============================================================
-# 1️⃣ BUILD + SCAN + PUSH
+# 1️⃣ BUILD + SONARQUBE + SCAN + PUSH
 # ============================================================
 stages:
 - stage: Build
-  displayName: Build, Scan & Push
-
+  displayName: Build, SonarQube, Scan & Push
   jobs:
   - job: BuildPush
     steps:
@@ -46,7 +38,7 @@ stages:
         command: login
         containerRegistry: 'TunNetCom_Dockerhub_Connection'
 
-    # ---------------- .NET ----------------
+    # ---------------- .NET SDK 10 (restore/build) ----------------
     - task: UseDotNet@2
       inputs:
         packageType: sdk
@@ -57,412 +49,539 @@ stages:
         command: restore
         projects: '**/*.sln'
 
+    # ---------------- .NET SDK 8 (required by SonarQube scanner) ----------------
+    - task: UseDotNet@2
+      inputs:
+        packageType: sdk
+        version: '8.x'
+
+    # ============================================================
+    # 🔷 SONARQUBE PREPARE (must be before build)
+    # ============================================================
+    - task: SonarQubePrepare@7
+      inputs:
+        SonarQube: 'SonarConnection'
+        scannerMode: 'dotnet'
+        projectKey: 'Silk_Road_ERP_Silk_Road_ERP_f493c9cb-0b66-4d3f-8bfe-e8056216b526'
+        projectName: 'SilkRoad ERP'
+        extraProperties: |
+          sonar.host.url=https://sonarqube.aion-time.com
+          sonar.exclusions=**/bin/**,**/obj/**,**/*.json,**/*.html
+          sonar.coverage.exclusions=**/*
+          sonar.cpd.exclusions=**/*.json,**/*.html
+
+    # ---------------- BUILD ----------------
     - task: DotNetCoreCLI@2
       inputs:
         command: build
         projects: '**/*.sln'
         arguments: '--configuration Release --no-restore'
 
+    # ============================================================
+    # 🔷 SONARQUBE ANALYSIS + QUALITY GATE
+    # ============================================================
+    - task: SonarQubeAnalyze@7
+
+    - task: SonarQubePublish@7
+      inputs:
+        pollingTimeoutSec: '300'
+
+    # ============================================================
+    # 🧹 DISK CLEANUP BEFORE DOCKER BUILDS
+    # Sonar analysis leaves significant artifacts; clear them
+    # before Docker work to avoid "no space left on device"
+    # ============================================================
+    - task: CmdLine@2
+      displayName: Pre-Docker Disk Cleanup
+      inputs:
+        script: |
+          echo "Freeing disk space before Docker builds..."
+          # Remove .NET build output (already analysed by Sonar)
+          find . -type d -name 'bin' -exec rm -rf {} + 2>/dev/null || true
+          find . -type d -name 'obj' -exec rm -rf {} + 2>/dev/null || true
+          # Remove SonarQube scanner cache
+          rm -rf ~/.sonar/cache 2>/dev/null || true
+          # Remove any leftover .NET packages cache
+          dotnet nuget locals all --clear 2>/dev/null || true
+          docker system prune -af || true
+          docker builder prune -af || true
+          df -h
+
     # ---------------- INSTALL TRIVY ----------------
-    - script: |
-        sudo apt-get update -qq
-        sudo apt-get install -y wget apt-transport-https gnupg lsb-release
-        wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-        echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main \
-          | sudo tee /etc/apt/sources.list.d/trivy.list
-        sudo apt-get update -qq
-        sudo apt-get install -y trivy
+    - task: CmdLine@2
       displayName: Install Trivy
+      inputs:
+        script: |
+          sudo apt-get update -qq
+          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main \
+            | sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update -qq
+          sudo apt-get install -y trivy
+
+          # Download HTML template (reliable cross-version approach)
+          mkdir -p /tmp/trivy-templates
+          wget -q https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl \
+            -O /tmp/trivy-templates/html.tpl
+          echo "✅ Trivy HTML template downloaded"
 
     # ============================================================
-    # 🔵 API
+    # 🔵 API: BUILD → SCAN → PUSH → CLEANUP
     # ============================================================
-
-    # BUILD
-    - script: |
-        docker build --no-cache \
-          -t $(dockerRepository):$(apiTag) \
-          -f src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.Api/Dockerfile .
+    - task: CmdLine@2
       displayName: Build API
+      inputs:
+        script: |
+          docker build --no-cache \
+            -t $(dockerRepository):$(apiTag) \
+            -f src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.Api/Dockerfile .
 
-    # SCAN (NO PRUNE BEFORE!)
-    - script: |
-        export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-api
-        mkdir -p $TRIVY_CACHE_DIR
+    - task: CmdLine@2
+      displayName: Scan API - Generate HTML Report
+      continueOnError: true
+      inputs:
+        script: |
+          export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-api
+          mkdir -p $TRIVY_CACHE_DIR
+          mkdir -p $(System.DefaultWorkingDirectory)/trivy-api-report
 
-        echo "Scanning API image..."
-        trivy image \
-          --scanners vuln \
-          --cache-dir $TRIVY_CACHE_DIR \
-          --no-progress \
-          --timeout 10m \
-          --exit-code 1 \
-          --severity HIGH,CRITICAL \
-          $(dockerRepository):$(apiTag)
-      displayName: Scan API
+          echo "Generating API scan HTML report..."
+          trivy image \
+            --scanners vuln \
+            --cache-dir $TRIVY_CACHE_DIR \
+            --no-progress \
+            --timeout 10m \
+            --severity HIGH,CRITICAL \
+            --format template \
+            --template "@/tmp/trivy-templates/html.tpl" \
+            --output $(System.DefaultWorkingDirectory)/trivy-api-report/trivy-api.html \
+            $(dockerRepository):$(apiTag)
 
-    # PUSH
-    - script: |
-        docker push $(dockerRepository):$(apiTag)
+          echo "✅ API HTML report saved"
+
+    - task: CmdLine@2
+      displayName: Scan API - Enforce Gate
+      inputs:
+        script: |
+          export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-api
+          mkdir -p $TRIVY_CACHE_DIR
+
+          echo "Enforcing vulnerability gate on API image..."
+          trivy image \
+            --scanners vuln \
+            --cache-dir $TRIVY_CACHE_DIR \
+            --no-progress \
+            --timeout 10m \
+            --exit-code 1 \
+            --severity HIGH,CRITICAL \
+            $(dockerRepository):$(apiTag)
+
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Trivy API Report
+      condition: always()
+      inputs:
+        pathToPublish: '$(System.DefaultWorkingDirectory)/trivy-api-report'
+        artifactName: 'Trivy-API-Report'
+
+    - task: PublishHtmlReport@1
+      displayName: Show Trivy API Tab
+      condition: always()
+      inputs:
+        reportDir: '$(System.DefaultWorkingDirectory)/trivy-api-report'
+        tabName: 'Trivy API Scan'
+
+    - task: CmdLine@2
       displayName: Push API
+      inputs:
+        script: |
+          docker push $(dockerRepository):$(apiTag)
 
-    # CLEAN AFTER API
-    - script: |
-        echo "Cleaning AFTER API..."
-        docker system prune -af || true
-        docker builder prune -af || true
-        df -h
+    - task: CmdLine@2
       displayName: Cleanup API
+      inputs:
+        script: |
+          echo "Cleaning AFTER API..."
+          docker system prune -af || true
+          docker builder prune -af || true
+          df -h
 
     # ============================================================
-    # 🟢 WEB
+    # 🟢 WEB: BUILD → SCAN → PUSH → CLEANUP
     # ============================================================
-
-    # BUILD
-    - script: |
-        docker build --no-cache \
-          -t $(dockerRepository):$(webappTag) \
-          -f src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.WebApp/Dockerfile .
+    - task: CmdLine@2
       displayName: Build Web
+      inputs:
+        script: |
+          docker build --no-cache \
+            -t $(dockerRepository):$(webappTag) \
+            -f src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.WebApp/Dockerfile .
 
-    # SCAN
-    - script: |
-        export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-web
-        mkdir -p $TRIVY_CACHE_DIR
+    - task: CmdLine@2
+      displayName: Scan Web - Generate HTML Report
+      continueOnError: true
+      inputs:
+        script: |
+          export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-web
+          mkdir -p $TRIVY_CACHE_DIR
+          mkdir -p $(System.DefaultWorkingDirectory)/trivy-web-report
 
-        echo "Scanning Web image..."
-        trivy image \
-          --scanners vuln \
-          --cache-dir $TRIVY_CACHE_DIR \
-          --no-progress \
-          --timeout 10m \
-          --exit-code 1 \
-          --severity HIGH,CRITICAL \
-          $(dockerRepository):$(webappTag)
-      displayName: Scan Web
+          echo "Generating Web scan HTML report..."
+          trivy image \
+            --scanners vuln \
+            --cache-dir $TRIVY_CACHE_DIR \
+            --no-progress \
+            --timeout 10m \
+            --severity HIGH,CRITICAL \
+            --format template \
+            --template "@/tmp/trivy-templates/html.tpl" \
+            --output $(System.DefaultWorkingDirectory)/trivy-web-report/trivy-web.html \
+            $(dockerRepository):$(webappTag)
 
-    # PUSH
-    - script: |
-        docker push $(dockerRepository):$(webappTag)
+          echo "✅ Web HTML report saved"
+
+    - task: CmdLine@2
+      displayName: Scan Web - Enforce Gate
+      inputs:
+        script: |
+          export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-web
+          mkdir -p $TRIVY_CACHE_DIR
+
+          echo "Enforcing vulnerability gate on Web image..."
+          trivy image \
+            --scanners vuln \
+            --cache-dir $TRIVY_CACHE_DIR \
+            --no-progress \
+            --timeout 10m \
+            --exit-code 1 \
+            --severity HIGH,CRITICAL \
+            $(dockerRepository):$(webappTag)
+
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Trivy Web Report
+      condition: always()
+      inputs:
+        pathToPublish: '$(System.DefaultWorkingDirectory)/trivy-web-report'
+        artifactName: 'Trivy-Web-Report'
+
+    - task: PublishHtmlReport@1
+      displayName: Show Trivy Web Tab
+      condition: always()
+      inputs:
+        reportDir: '$(System.DefaultWorkingDirectory)/trivy-web-report'
+        tabName: 'Trivy Web Scan'
+
+    - task: CmdLine@2
       displayName: Push Web
+      inputs:
+        script: |
+          docker push $(dockerRepository):$(webappTag)
 
-    # CLEAN AFTER WEB
-    - script: |
-        echo "Cleaning AFTER Web..."
-        docker system prune -af || true
-        docker builder prune -af || true
-        df -h
+    - task: CmdLine@2
       displayName: Cleanup Web
+      inputs:
+        script: |
+          echo "Cleaning AFTER Web..."
+          docker system prune -af || true
+          docker builder prune -af || true
+          df -h
 
 # ============================================================
-# 2️⃣ DAST : OWASP ZAP BASELINE SCAN
+# 2️⃣ ZAP BASELINE
 # ============================================================
 - stage: ZAP_Baseline
   displayName: DAST - ZAP Baseline Scan
-  dependsOn: Build          # ✅ FIX 1: was 'BuildAndPush' (stage does not exist)
+  dependsOn:
+  - Build
   condition: succeeded()
-
   pool:
     vmImage: 'ubuntu-latest'
-
   jobs:
-    - job: ZAPBaselineJob
-      displayName: ZAP Baseline (passive scan)
+  - job: ZAPBaselineJob
+    displayName: ZAP Baseline (passive scan)
+    steps:
+    - task: CmdLine@2
+      displayName: Prepare ZAP Baseline directory
+      inputs:
+        script: |
+          mkdir -p $(System.DefaultWorkingDirectory)/zap-baseline
+          chmod 777 $(System.DefaultWorkingDirectory)/zap-baseline
 
-      steps:
-        - script: |
-            mkdir -p $(System.DefaultWorkingDirectory)/zap-baseline
-            chmod 777 $(System.DefaultWorkingDirectory)/zap-baseline
-          displayName: Prepare ZAP Baseline directory
+    - task: CmdLine@2
+      displayName: Pull ZAP image
+      inputs:
+        script: |
+          docker pull ghcr.io/zaproxy/zaproxy:stable
 
-        - script: |
-            docker pull ghcr.io/zaproxy/zaproxy:stable
-          displayName: Pull ZAP image
+    - task: CmdLine@2
+      displayName: Run ZAP Baseline scan
+      inputs:
+        script: |
+          docker run --rm \
+            -v $(System.DefaultWorkingDirectory)/zap-baseline:/zap/wrk:rw \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py \
+            -t $(zapTarget) \
+            -r zap-baseline.html \
+            -J zap-baseline.json \
+            -l WARN \
+            -I
 
-        - script: |
-            docker run --rm \
-              -v $(System.DefaultWorkingDirectory)/zap-baseline:/zap/wrk:rw \
-              ghcr.io/zaproxy/zaproxy:stable \
-              zap-baseline.py \
-              -t $(zapTarget) \
-              -r zap-baseline.html \
-              -J zap-baseline.json \
-              -l WARN \
-              -I
-          displayName: Run ZAP Baseline scan
+    - task: CmdLine@2
+      displayName: Fix ZAP report permissions
+      condition: always()
+      inputs:
+        script: |
+          sudo chown -R $(id -u):$(id -g) $(System.DefaultWorkingDirectory)/zap-baseline
+          sudo chmod -R 755 $(System.DefaultWorkingDirectory)/zap-baseline
 
-        # Fix permissions
-        - script: |
-            sudo chown -R $(id -u):$(id -g) $(System.DefaultWorkingDirectory)/zap-baseline
-            sudo chmod -R 755 $(System.DefaultWorkingDirectory)/zap-baseline
-          displayName: Fix ZAP report permissions
-          condition: always()
+    - task: PublishBuildArtifacts@1
+      displayName: Publish ZAP Baseline Report
+      condition: always()
+      inputs:
+        pathToPublish: '$(System.DefaultWorkingDirectory)/zap-baseline'
+        artifactName: 'ZAP-Baseline-Report'
 
-        - task: PublishBuildArtifacts@1
-          displayName: Publish ZAP Baseline Report
-          condition: always()
-          inputs:
-            pathToPublish: '$(System.DefaultWorkingDirectory)/zap-baseline'
-            artifactName: 'ZAP-Baseline-Report'
-
-        - task: PublishHtmlReport@1
-          displayName: Show ZAP Baseline Tab
-          condition: always()
-          inputs:
-            reportDir: '$(System.DefaultWorkingDirectory)/zap-baseline'
-            tabName: 'ZAP Baseline'
-
+    - task: PublishHtmlReport@1
+      displayName: Show ZAP Baseline Tab
+      condition: always()
+      inputs:
+        reportDir: '$(System.DefaultWorkingDirectory)/zap-baseline'
+        tabName: 'ZAP Baseline'
 
 # ============================================================
-# 3️⃣ DAST : OWASP ZAP AJAX SPIDER SCAN
+# 3️⃣ ZAP AJAX
 # ============================================================
 - stage: ZAP_AJAX
   displayName: DAST - ZAP AJAX Spider Scan
-  dependsOn: ZAP_Baseline   # ✅ FIX 2: confirmed valid — no cycle, correct linear order
+  dependsOn:
+  - ZAP_Baseline
   condition: succeeded()
-
   pool:
     vmImage: 'ubuntu-latest'
-
   jobs:
-    - job: ZAPAjaxJob
-      displayName: ZAP AJAX Spider (Blazor routes)
+  - job: ZAPAjaxJob
+    displayName: ZAP AJAX Spider (Blazor routes)
+    steps:
+    - task: CmdLine@2
+      displayName: Prepare ZAP AJAX directory
+      inputs:
+        script: |
+          mkdir -p $(System.DefaultWorkingDirectory)/zap-ajax
+          chmod 777 $(System.DefaultWorkingDirectory)/zap-ajax
 
-      steps:
-        - script: |
-            mkdir -p $(System.DefaultWorkingDirectory)/zap-ajax
-            chmod 777 $(System.DefaultWorkingDirectory)/zap-ajax
-          displayName: Prepare ZAP AJAX directory
+    - task: CmdLine@2
+      displayName: Pull ZAP image
+      inputs:
+        script: |
+          docker pull ghcr.io/zaproxy/zaproxy:stable
 
-        - script: |
-            docker pull ghcr.io/zaproxy/zaproxy:stable
-          displayName: Pull ZAP image
+    - task: CmdLine@2
+      displayName: Generate AJAX plan YAML
+      inputs:
+        script: |
+          cat > $(System.DefaultWorkingDirectory)/zap-ajax/ajax-plan.yaml << 'EOF'
+          env:
+            contexts:
+              - name: silkroad-erp
+                urls:
+                  - $(zapTarget)/
+                excludePaths: []
 
-        - script: |
-            cat > $(System.DefaultWorkingDirectory)/zap-ajax/ajax-plan.yaml << 'EOF'
-            env:
-              contexts:
-                - name: silkroad-erp
-                  urls:
-                    - $(zapTarget)/
-                  excludePaths: []
+          parameters:
+            failOnError: false
+            progressToStdout: true
 
-            parameters:
-              failOnError: false
-              progressToStdout: true
+          jobs:
+            - type: spiderAjax
+              parameters:
+                url: $(zapTarget)/
+                maxDuration: 5
+                maxCrawlDepth: 10
+                numberOfBrowsers: 2
+                browserId: firefox-headless
+                clickDefaultElems: true
+                clickElemsOnce: true
+                randomInputs: true
 
-            jobs:
-              - type: spiderAjax
-                parameters:
-                  url: $(zapTarget)/
-                  maxDuration: 5
-                  maxCrawlDepth: 10
-                  numberOfBrowsers: 2
-                  browserId: firefox-headless
-                  clickDefaultElems: true
-                  clickElemsOnce: true
-                  randomInputs: true
+            - type: passiveScan-wait
+              parameters:
+                maxDuration: 5
 
-              - type: passiveScan-wait
-                parameters:
-                  maxDuration: 5
+            - type: outputSummary
+              parameters:
+                format: Long
+                summaryFile: /zap/wrk/zap_out.json
 
-              - type: outputSummary
-                parameters:
-                  format: Long
-                  summaryFile: /zap/wrk/zap_out.json
+            - type: report
+              parameters:
+                reportTitle: ZAP AJAX Spider - SilkRoad ERP
+                reportDir: /zap/wrk/
+                reportFile: zap-ajax.html
+                template: traditional-html
 
-              - type: report
-                parameters:
-                  reportTitle: ZAP AJAX Spider - SilkRoad ERP
-                  reportDir: /zap/wrk/
-                  reportFile: zap-ajax.html
-                  template: traditional-html
+            - type: report
+              parameters:
+                reportTitle: ZAP AJAX Spider - SilkRoad ERP
+                reportDir: /zap/wrk/
+                reportFile: zap-ajax.json
+                template: traditional-json
+          EOF
 
-              - type: report
-                parameters:
-                  reportTitle: ZAP AJAX Spider - SilkRoad ERP
-                  reportDir: /zap/wrk/
-                  reportFile: zap-ajax.json
-                  template: traditional-json
-            EOF
-          displayName: Generate AJAX plan YAML
+    - task: CmdLine@2
+      displayName: Run ZAP AJAX Spider scan
+      inputs:
+        script: |
+          docker run --rm \
+            -v $(System.DefaultWorkingDirectory)/zap-ajax:/zap/wrk:rw \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap.sh -cmd -autorun /zap/wrk/ajax-plan.yaml
 
-        - script: |
-            docker run --rm \
-              -v $(System.DefaultWorkingDirectory)/zap-ajax:/zap/wrk:rw \
-              ghcr.io/zaproxy/zaproxy:stable \
-              zap.sh -cmd -autorun /zap/wrk/ajax-plan.yaml
-          displayName: Run ZAP AJAX Spider scan
+    - task: CmdLine@2
+      displayName: Fix ZAP report permissions
+      condition: always()
+      inputs:
+        script: |
+          sudo chown -R $(id -u):$(id -g) $(System.DefaultWorkingDirectory)/zap-ajax
+          sudo chmod -R 755 $(System.DefaultWorkingDirectory)/zap-ajax
 
-        # Fix permissions
-        - script: |
-            sudo chown -R $(id -u):$(id -g) $(System.DefaultWorkingDirectory)/zap-ajax
-            sudo chmod -R 755 $(System.DefaultWorkingDirectory)/zap-ajax
-          displayName: Fix ZAP report permissions
-          condition: always()
+    - task: PublishBuildArtifacts@1
+      displayName: Publish ZAP AJAX Report
+      condition: always()
+      inputs:
+        pathToPublish: '$(System.DefaultWorkingDirectory)/zap-ajax'
+        artifactName: 'ZAP-AJAX-Report'
 
-        - task: PublishBuildArtifacts@1
-          displayName: Publish ZAP AJAX Report
-          condition: always()
-          inputs:
-            pathToPublish: '$(System.DefaultWorkingDirectory)/zap-ajax'
-            artifactName: 'ZAP-AJAX-Report'
-
-        - task: PublishHtmlReport@1
-          displayName: Show ZAP AJAX Tab
-          condition: always()
-          inputs:
-            reportDir: '$(System.DefaultWorkingDirectory)/zap-ajax'
-            tabName: 'ZAP AJAX Spider'
+    - task: PublishHtmlReport@1
+      displayName: Show ZAP AJAX Tab
+      condition: always()
+      inputs:
+        reportDir: '$(System.DefaultWorkingDirectory)/zap-ajax'
+        tabName: 'ZAP AJAX Spider'
 
 # ============================================================
-# BLUE / GREEN DEPLOYMENT (FIXED + SAFE)
+# 4️⃣ BLUE / GREEN DEPLOYMENT
 # ============================================================
 - stage: Deploy
   displayName: Blue/Green Deploy
-  dependsOn: ZAP_AJAX
+  dependsOn:
+  - ZAP_AJAX
   condition: succeeded()
-
   pool:
     name: OnPremAgents
-
   jobs:
   - job: BlueGreenDeploy
     steps:
-
-    # ------------------------------------------------------------
-    # 1. DETECT ACTIVE ENV
-    # ------------------------------------------------------------
-    - script: |
-        echo "Detecting active environment..."
-
-        CURRENT=$(kubectl get svc $(apiService) -n $(kubeNamespace) \
-          -o jsonpath='{.spec.selector.version}')
-
-        echo "Current active version: $CURRENT"
-
-        if [ "$CURRENT" = "blue" ]; then
-          echo "Switching target -> green"
-          echo "##vso[task.setvariable variable=targetColor]green"
-        else
-          echo "Switching target -> blue"
-          echo "##vso[task.setvariable variable=targetColor]blue"
-        fi
+    - task: CmdLine@2
       displayName: Detect Active Environment
+      inputs:
+        script: |
+          echo "Detecting active environment..."
 
-    # ------------------------------------------------------------
-    # 2. VALIDATE IMAGE TAGS (CRITICAL FIX)
-    # ------------------------------------------------------------
-    - script: |
-        echo "Validating image tags..."
+          CURRENT=$(kubectl get svc $(apiService) -n $(kubeNamespace) \
+            -o jsonpath='{.spec.selector.version}')
 
-        if [[ -z "$(apiTag)" || "$(apiTag)" == *"PLACEHOLDER"* ]]; then
-          echo "❌ Invalid apiTag: $(apiTag)"
-          exit 1
-        fi
+          echo "Current active version: $CURRENT"
 
-        if [[ -z "$(webappTag)" || "$(webappTag)" == *"PLACEHOLDER"* ]]; then
-          echo "❌ Invalid webappTag: $(webappTag)"
-          exit 1
-        fi
+          if [ "$CURRENT" = "blue" ]; then
+            echo "Switching target -> green"
+            echo "##vso[task.setvariable variable=targetColor]green"
+          else
+            echo "Switching target -> blue"
+            echo "##vso[task.setvariable variable=targetColor]blue"
+          fi
 
-        echo "✅ Image tags are valid"
+    - task: CmdLine@2
       displayName: Validate Image Tags
+      inputs:
+        script: |
+          echo "Validating image tags..."
 
-    # ------------------------------------------------------------
-    # 3. DEPLOY TARGET
-    # ------------------------------------------------------------
-    - script: |
-        echo "Deploying $(targetColor)..."
+          if [[ -z "$(apiTag)" || "$(apiTag)" == *"PLACEHOLDER"* ]]; then
+            echo "❌ Invalid apiTag: $(apiTag)"
+            exit 1
+          fi
 
-        # Ensure stable Services exist (Ingress points to these)
-        kubectl apply -f deployments/k8s/api-service.yaml
-        kubectl apply -f deployments/k8s/webapp-service.yaml
+          if [[ -z "$(webappTag)" || "$(webappTag)" == *"PLACEHOLDER"* ]]; then
+            echo "❌ Invalid webappTag: $(webappTag)"
+            exit 1
+          fi
 
-        kubectl apply -f deployments/k8s/api-$(targetColor).yaml
-        kubectl apply -f deployments/k8s/webapp-$(targetColor).yaml
+          echo "✅ Image tags are valid"
 
-        # Force correct images (NO PLACEHOLDERS EVER)
-        kubectl set image deployment/silkroad-api-$(targetColor) \
-          api=$(dockerRepository):$(apiTag) \
-          -n $(kubeNamespace)
-
-        kubectl set image deployment/silkroad-webapp-$(targetColor) \
-          webapp=$(dockerRepository):$(webappTag) \
-          -n $(kubeNamespace)
-
+    - task: CmdLine@2
       displayName: Deploy Target
+      inputs:
+        script: |
+          echo "Deploying $(targetColor)..."
 
-    # ------------------------------------------------------------
-    # 4. WAIT FOR ROLLOUT (SAFE TIMEOUT)
-    # ------------------------------------------------------------
-    - script: |
-        echo "Waiting for rollout..."
+          # Ensure stable Services exist (Ingress points to these)
+          kubectl apply -f deployments/k8s/api-service.yaml
+          kubectl apply -f deployments/k8s/webapp-service.yaml
 
-        kubectl rollout status deployment/silkroad-api-$(targetColor) \
-          -n $(kubeNamespace) --timeout=180s
+          kubectl apply -f deployments/k8s/api-$(targetColor).yaml
+          kubectl apply -f deployments/k8s/webapp-$(targetColor).yaml
 
-        kubectl rollout status deployment/silkroad-webapp-$(targetColor) \
-          -n $(kubeNamespace) --timeout=180s
+          # Force correct images (NO PLACEHOLDERS EVER)
+          kubectl set image deployment/silkroad-api-$(targetColor) \
+            api=$(dockerRepository):$(apiTag) \
+            -n $(kubeNamespace)
+
+          kubectl set image deployment/silkroad-webapp-$(targetColor) \
+            webapp=$(dockerRepository):$(webappTag) \
+            -n $(kubeNamespace)
+
+    - task: CmdLine@2
       displayName: Wait Rollout
+      inputs:
+        script: |
+          echo "Waiting for rollout..."
 
-    # ------------------------------------------------------------
-    # 5. VERIFY POD HEALTH (CRITICAL GATE)
-    # ------------------------------------------------------------
-    - script: |
-        echo "Checking pod health..."
+          kubectl rollout status deployment/silkroad-api-$(targetColor) \
+            -n $(kubeNamespace) --timeout=180s
 
-        kubectl get pods -n $(kubeNamespace) -l version=$(targetColor)
+          kubectl rollout status deployment/silkroad-webapp-$(targetColor) \
+            -n $(kubeNamespace) --timeout=180s
 
-        READY=$(kubectl get pods -n $(kubeNamespace) -l version=$(targetColor) \
-          --no-headers | grep "1/1 Running" | wc -l)
-
-        if [ "$READY" -eq 0 ]; then
-          echo "❌ No healthy pods detected. Aborting deployment."
-          kubectl describe pods -n $(kubeNamespace) -l version=$(targetColor)
-          exit 1
-        fi
-
-        echo "✅ Pods are healthy"
+    - task: CmdLine@2
       displayName: Verify Target Health
+      inputs:
+        script: |
+          echo "Checking pod health..."
 
-    # ------------------------------------------------------------
-    # 6. APPLICATION HEALTH CHECK
-    # ------------------------------------------------------------
-    - script: |
-        echo "Running API health check..."
+          kubectl get pods -n $(kubeNamespace) -l version=$(targetColor)
 
-        sleep 10
+          READY=$(kubectl get pods -n $(kubeNamespace) \
+            -l version=$(targetColor) \
+            --no-headers \
+            -o custom-columns='READY:.status.containerStatuses[0].ready,PHASE:.status.phase' \
+            | grep "true.*Running" | wc -l)
 
-        curl -f $(zapTarget)/health || {
-          echo "❌ Health check failed"
-          exit 1
-        }
+          if [ "$READY" -eq 0 ]; then
+            echo "❌ No healthy pods detected. Aborting deployment."
+            kubectl describe pods -n $(kubeNamespace) -l version=$(targetColor)
+            exit 1
+          fi
 
-        echo "✅ Health check passed"
-      displayName: Health Check
+          echo "✅ $READY healthy pod(s) found"
 
-    # ------------------------------------------------------------
-    # 7. SWITCH TRAFFIC
-    # ------------------------------------------------------------
-    - script: |
-        echo "Switching traffic to $(targetColor)..."
-
-        kubectl patch svc $(apiService) -n $(kubeNamespace) \
-          -p "{\"spec\":{\"selector\":{\"app\":\"silkroad-api\",\"environment\":\"production\",\"version\":\"$(targetColor)\"}}}"
-
-        kubectl patch svc $(webService) -n $(kubeNamespace) \
-          -p "{\"spec\":{\"selector\":{\"app\":\"silkroad-webapp\",\"environment\":\"production\",\"version\":\"$(targetColor)\"}}}"
+    - task: CmdLine@2
       displayName: Switch Traffic
+      inputs:
+        script: |
+          echo "Switching traffic to $(targetColor)..."
 
-    # ------------------------------------------------------------
-    # 8. FINAL VERIFICATION
-    # ------------------------------------------------------------
-    - script: |
-        echo "Final verification..."
+          kubectl patch svc $(apiService) -n $(kubeNamespace) \
+            -p "{\"spec\":{\"selector\":{\"app\":\"silkroad-api\",\"environment\":\"production\",\"version\":\"$(targetColor)\"}}}"
 
-        kubectl get svc $(apiService) -n $(kubeNamespace) -o wide
-        kubectl get pods -n $(kubeNamespace) -l version=$(targetColor)
+          kubectl patch svc $(webService) -n $(kubeNamespace) \
+            -p "{\"spec\":{\"selector\":{\"app\":\"silkroad-webapp\",\"environment\":\"production\",\"version\":\"$(targetColor)\"}}}"
 
+    - task: CmdLine@2
       displayName: Verify Switch
+      inputs:
+        script: |
+          echo "Final verification..."
+
+          kubectl get svc $(apiService) -n $(kubeNamespace) -o wide
+          kubectl get pods -n $(kubeNamespace) -l version=$(targetColor)

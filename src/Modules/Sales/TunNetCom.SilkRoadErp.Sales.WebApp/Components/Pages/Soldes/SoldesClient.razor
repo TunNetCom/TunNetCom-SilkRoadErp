@@ -14,6 +14,12 @@
 @using TunNetCom.SilkRoadErp.Sales.Contracts.Customers
 @using System.Linq
 @using static TunNetCom.SilkRoadErp.Sales.Domain.Entites.DocumentTypes
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.Invoices
+@using TunNetCom.SilkRoadErp.Sales.Contracts.Invoice
+@using TunNetCom.SilkRoadErp.Sales.Contracts.DeliveryNote.Requests
+@using TunNetCom.SilkRoadErp.Sales.HttpClients.Services.DeliveryNote
+@using System.Text.Json
+@inject IInvoicesApiClient InvoicesService
 @inject NavigationManager NavigationManager
 @inject IStringLocalizer<SharedResource> Localizer
 @inject ISoldesApiClient SoldesService
@@ -23,6 +29,9 @@
 @inject IDecimalFormatService DecimalFormatService
 @inject PrintSoldeClientService PrintSoldeClientService
 @inject IJSRuntime JS
+@inject ILogger<SoldesClient> logger
+@inject Radzen.DialogService DialogService
+@inject IDeliveryNoteApiClient DeliveryNoteService
 
 <div class="soldes-container">
     <div class="soldes-card">
@@ -169,8 +178,14 @@
                                         <Template Context="bl">
                                             @if (bl.HasQuantitesNonLivrees)
                                             {
-                                                <div class="alert-icon-column" style="display: flex; justify-content: center; align-items: center;">
+                                                <div class="alert-icon-column" style="display: flex; justify-content: center; align-items: center; gap: 8px;">
                                                     <RadzenIcon Icon="warning" Style="color: #f44336; font-size: 20px; cursor: pointer;" Title="@Localizer["Quantites_Non_Livrees_Indicator"]" />
+                                                    <RadzenButton Icon="local_shipping" 
+                                                                  ButtonStyle="ButtonStyle.Success" 
+                                                                  Variant="Variant.Flat" 
+                                                                  Size="ButtonSize.ExtraSmall" 
+                                                                  Click="@(async () => await DeliverRemainingQuantitiesAsync(facture, bl))" 
+                                                                  Title="@Localizer["Deliver_Remaining"]" />
                                                 </div>
                                             }
                                             else
@@ -206,8 +221,14 @@
                                 <Template Context="facture">
                                     @if (facture.HasQuantitesNonLivrees)
                                     {
-                                        <div class="alert-icon-column" style="display: flex; justify-content: center; align-items: center;">
+                                        <div class="alert-icon-column" style="display: flex; justify-content: center; align-items: center; gap: 8px;">
                                             <RadzenIcon Icon="warning" Style="color: #f44336; font-size: 20px; cursor: pointer;" Title="@Localizer["Quantites_Non_Livrees_Indicator"]" />
+                                            <RadzenButton Icon="local_shipping" 
+                                                          ButtonStyle="ButtonStyle.Success" 
+                                                          Variant="Variant.Flat" 
+                                                          Size="ButtonSize.ExtraSmall" 
+                                                          Click="@(async () => await DeliverRemainingQuantitiesAsync(facture))" 
+                                                          Title="@Localizer["Deliver_Remaining"]" />
                                         </div>
                                     }
                                     else
@@ -411,6 +432,8 @@
     private int decimalPlaces = AmountHelper.DEFAULT_DECIMAL_PLACES;
     private bool isPrinting;
     private bool showOnlyMissingProducts = false;
+    private DeliverRemainingQuantitiesRequest? currentDeliverRequest;
+    private List<DeliverRemainingItemRequest> currentItemsToDeliver = new();
     
     DataGridExpandMode expandMode = DataGridExpandMode.Multiple;
     RadzenDataGrid<DocumentSoldeClient>? facturesGrid;
@@ -593,6 +616,178 @@
         finally
         {
             isPrinting = false;
+        }
+    }
+
+    private async Task DeliverRemainingQuantitiesAsync(DocumentSoldeClient facture, DocumentSoldeClient? bl = null)
+    {
+        try
+        {
+            var result = await InvoicesService.GetFullInvoiceByIdAsync(facture.Id, cancellationTokenSource.Token);
+            if (result.IsFailed)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["Erreur"],
+                    Detail = Localizer["Erreur_Chargement_Facture"]
+                });
+                return;
+            }
+
+            var fullInvoice = result.Value;
+            var itemsToDeliver = new List<DeliverRemainingItemRequest>();
+
+            if (bl != null)
+            {
+                var dn = fullInvoice.DeliveryNotes.FirstOrDefault(d => d.Num == bl.Numero);
+                if (dn != null)
+                {
+                    foreach (var line in dn.Lines)
+                    {
+                        var soldeLine = bl.LignesBl?.FirstOrDefault(l => l.RefProduit == line.RefProduit);
+                        if (soldeLine != null && soldeLine.QuantiteNonLivree > 0)
+                        {
+                            itemsToDeliver.Add(new DeliverRemainingItemRequest
+                            {
+                                RefProduit = line.RefProduit,
+                                DesignationLi = line.DesignationLi,
+                                QuantityToDeliver = (int)soldeLine.QuantiteNonLivree
+                            });
+                        }
+                    }
+                }
+            }
+            else
+            {
+                foreach (var dn in fullInvoice.DeliveryNotes)
+                {
+                    var soldeBl = facture.BonsLivraison?.FirstOrDefault(b => b.Numero == dn.Num);
+                    if (soldeBl != null)
+                    {
+                        foreach (var line in dn.Lines)
+                        {
+                            var soldeLine = soldeBl.LignesBl?.FirstOrDefault(l => l.RefProduit == line.RefProduit);
+                            if (soldeLine != null && soldeLine.QuantiteNonLivree > 0)
+                            {
+                                var existing = itemsToDeliver.FirstOrDefault(i => i.RefProduit == line.RefProduit);
+                                if (existing != null)
+                                {
+                                    existing.QuantityToDeliver += (int)soldeLine.QuantiteNonLivree;
+                                }
+                                else
+                                {
+                                    itemsToDeliver.Add(new DeliverRemainingItemRequest
+                                    {
+                                        RefProduit = line.RefProduit,
+                                        DesignationLi = line.DesignationLi,
+                                        QuantityToDeliver = (int)soldeLine.QuantiteNonLivree
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!itemsToDeliver.Any())
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Info,
+                    Summary = Localizer["Info"],
+                    Detail = Localizer["No_Remaining_Quantities"]
+                });
+                return;
+            }
+
+            currentItemsToDeliver = itemsToDeliver;
+            currentDeliverRequest = new DeliverRemainingQuantitiesRequest
+            {
+                InvoiceId = facture.Id,
+                DeliveryNoteNum = bl?.Numero,
+                Items = currentItemsToDeliver
+            };
+
+            await DialogService.OpenAsync(Localizer["Deliver_Remaining"], _ => RenderDeliverDialog, 
+                new DialogOptions { Width = "700px", Resizable = true, Draggable = true }
+            );
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error while preparing remaining quantities delivery");
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = ex.Message
+            });
+        }
+    }
+
+    private RenderFragment RenderDeliverDialog => 
+        @<RadzenStack Gap="1rem">
+            <RadzenText TextStyle="TextStyle.Body1">@Localizer["Confirm_Delivery_Remaining_Message"]</RadzenText>
+            <RadzenDataGrid Data="@currentItemsToDeliver" TItem="DeliverRemainingItemRequest" Style="max-height: 400px;">
+                <Columns>
+                    <RadzenDataGridColumn TItem="DeliverRemainingItemRequest" Property="RefProduit" Title="@Localizer["Ref_Produit"]" Width="150px" />
+                    <RadzenDataGridColumn TItem="DeliverRemainingItemRequest" Property="DesignationLi" Title="@Localizer["Description"]" />
+                    <RadzenDataGridColumn TItem="DeliverRemainingItemRequest" Property="QuantityToDeliver" Title="@Localizer["Quantity"]" Width="100px">
+                        <Template Context="deliveryItem">
+                            <RadzenNumeric TValue="int" @bind-Value="@deliveryItem.QuantityToDeliver" Min="1" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem" Style="margin-top: 1rem;">
+                <RadzenButton Text="@Localizer["Cancel"]" Click="() => DialogService.Close(false)" ButtonStyle="ButtonStyle.Light" />
+                <RadzenButton Text="@Localizer["confirm"]" Click="@(async () => await HandleConfirmDelivery())" ButtonStyle="ButtonStyle.Success" Icon="check" />
+            </RadzenStack>
+        </RadzenStack>;
+
+    private async Task HandleConfirmDelivery()
+    {
+        if (currentDeliverRequest != null)
+        {
+            await ProcessDeliveryAsync(currentDeliverRequest);
+            DialogService.Close(true);
+        }
+    }
+
+    private async Task ProcessDeliveryAsync(DeliverRemainingQuantitiesRequest request)
+    {
+        try
+        {
+            var result = await DeliveryNoteService.DeliverRemainingQuantitiesAsync(request, cancellationTokenSource.Token);
+            if (result.IsSuccess)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = Localizer["Success"],
+                    Detail = Localizer["delivery_note_saved_successfully"]
+                });
+                await LoadSolde();
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = Localizer["Erreur"],
+                    Detail = string.Join(", ", result.Errors.Select(e => e.Message))
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error while processing delivery for remaining quantities");
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Localizer["Erreur"],
+                Detail = ex.Message
+            });
         }
     }
 

@@ -496,4 +496,42 @@ public class DeliveryNoteApiClient(HttpClient _httpClient) : IDeliveryNoteApiCli
         }
         return queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : string.Empty;
     }
+    public async Task<Result<int>> DeliverRemainingQuantitiesAsync(
+        DeliverRemainingQuantitiesRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync(
+                "/delivery-notes/deliver-remaining",
+                request,
+                cancellationToken);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var num = await response.Content.ReadFromJsonAsync<int>(cancellationToken);
+                return Result.Ok(num);
+            }
+
+            if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+            {
+                var problemDetails = await response.Content.ReadFromJsonAsync<BadRequestResponse>(
+                    cancellationToken);
+
+                if (problemDetails?.errors != null)
+                {
+                    var errors = problemDetails.errors
+                        .SelectMany(kvp => kvp.Value.Select(v => $"{kvp.Key}: {v}"));
+                    return Result.Fail(errors);
+                }
+                return Result.Fail("Validation failed but no error details provided");
+            }
+
+            return Result.Fail($"Failed to deliver remaining quantities: {response.StatusCode}");
+        }
+        catch (Exception ex)
+        {
+            return Result.Fail($"Unexpected error: {ex.Message}");
+        }
+    }
 }

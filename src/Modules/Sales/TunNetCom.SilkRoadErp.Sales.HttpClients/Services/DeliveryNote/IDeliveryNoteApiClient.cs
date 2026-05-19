@@ -90,4 +90,7 @@ public interface IDeliveryNoteApiClient
         string[]? selectedColumns,
         string? orderBy,
         CancellationToken cancellationToken = default);
+    Task<Result<int>> DeliverRemainingQuantitiesAsync(
+        DeliverRemainingQuantitiesRequest request,
+        CancellationToken cancellationToken);
 }

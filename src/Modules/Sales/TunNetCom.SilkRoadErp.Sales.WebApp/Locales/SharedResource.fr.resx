@@ -1854,4 +1854,22 @@
   <data name="Voir_recap_detaille" xml:space="preserve">
     <value>Voir le récap détaillé</value>
   </data>
+  <data name="Deliver_Remaining" xml:space="preserve">
+    <value>Livrer le reste</value>
+  </data>
+  <data name="Erreur_Chargement_Facture" xml:space="preserve">
+    <value>Erreur lors du chargement de la facture</value>
+  </data>
+  <data name="No_Remaining_Quantities" xml:space="preserve">
+    <value>Aucune quantité restante à livrer</value>
+  </data>
+  <data name="Erreur" xml:space="preserve">
+    <value>Erreur</value>
+  </data>
+  <data name="Info" xml:space="preserve">
+    <value>Information</value>
+  </data>
+  <data name="Confirm_Delivery_Remaining_Message" xml:space="preserve">
+    <value>Veuillez confirmer les quantités à livrer pour régulariser ce document.</value>
+  </data>
 </root>
