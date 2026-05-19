@@ -32,6 +32,7 @@ stages:
     name: OnPremAgents
   jobs:
   - job: BuildPush
+    timeoutInMinutes: 120
     steps:
 
     # ---------------- LOGIN ----------------
@@ -71,9 +72,10 @@ stages:
           sonar.exclusions=**/bin/**,**/obj/**,**/*.json,**/*.html
           sonar.coverage.exclusions=**/*
           sonar.cpd.exclusions=**/*.json,**/*.html
+          sonar.scanner.skipJreProvisioning=true
+          sonar.scanner.javaExePath=/usr/bin/java
+          sonar.nodejs.executable=/usr/bin/node
           sonar.javascript.node.maxspace=4096
-          sonar.scanner.skipJreProvisioning=true   # already have Java installed
-          sonar.nodejs.executable=/usr/bin/node    # explicit path once Node is installed
 
     # ---------------- BUILD ----------------
     - task: DotNetCoreCLI@2
@@ -101,12 +103,9 @@ stages:
       inputs:
         script: |
           echo "Freeing disk space before Docker builds..."
-          # Remove .NET build output (already analysed by Sonar)
           find . -type d -name 'bin' -exec rm -rf {} + 2>/dev/null || true
           find . -type d -name 'obj' -exec rm -rf {} + 2>/dev/null || true
-          # Remove SonarQube scanner cache
           rm -rf ~/.sonar/cache 2>/dev/null || true
-          # Remove any leftover .NET packages cache
           dotnet nuget locals all --clear 2>/dev/null || true
           docker system prune -af || true
           docker builder prune -af || true
