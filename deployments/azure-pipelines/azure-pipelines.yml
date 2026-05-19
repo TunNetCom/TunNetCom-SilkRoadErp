@@ -69,13 +69,21 @@ stages:
         projectName: 'SilkRoad ERP'
         extraProperties: |
           sonar.host.url=https://sonarqube.aion-time.com
-          sonar.exclusions=**/bin/**,**/obj/**,**/*.json,**/*.html
+
+          # ✅ ONLY .NET FOCUS
+          sonar.language=cs
+
+          # 🚫 Disable unnecessary analyzers
+          sonar.javascript.enabled=false
+          sonar.typescript.enabled=false
+          sonar.java.enabled=false
+
+          # Optional safety exclusions
+          sonar.exclusions=**/bin/**,**/obj/**,**/*.json,**/*.html,**/*.js,**/*.ts,**/*.css
+          sonar.cpd.exclusions=**/*.json,**/*.html,**/*.js,**/*.ts
+
           sonar.coverage.exclusions=**/*
-          sonar.cpd.exclusions=**/*.json,**/*.html
           sonar.scanner.skipJreProvisioning=true
-          sonar.scanner.javaExePath=/usr/bin/java
-          sonar.nodejs.executable=/usr/bin/node
-          sonar.javascript.node.maxspace=4096
 
     # ---------------- BUILD ----------------
     - task: DotNetCoreCLI@2
