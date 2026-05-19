@@ -120,6 +120,12 @@ stages:
           sudo apt-get update -qq
           sudo apt-get install -y trivy
 
+          # Download HTML template (reliable cross-version approach)
+          mkdir -p /tmp/trivy-templates
+          wget -q https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl \
+            -O /tmp/trivy-templates/html.tpl
+          echo "✅ Trivy HTML template downloaded"
+
     # ============================================================
     # 🔵 API: BUILD → SCAN → PUSH → CLEANUP
     # ============================================================
@@ -132,13 +138,36 @@ stages:
             -f src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.Api/Dockerfile .
 
     - task: CmdLine@2
-      displayName: Scan API
+      displayName: Scan API - Generate HTML Report
+      continueOnError: true
+      inputs:
+        script: |
+          export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-api
+          mkdir -p $TRIVY_CACHE_DIR
+          mkdir -p $(System.DefaultWorkingDirectory)/trivy-api-report
+
+          echo "Generating API scan HTML report..."
+          trivy image \
+            --scanners vuln \
+            --cache-dir $TRIVY_CACHE_DIR \
+            --no-progress \
+            --timeout 10m \
+            --severity HIGH,CRITICAL \
+            --format template \
+            --template "@/tmp/trivy-templates/html.tpl" \
+            --output $(System.DefaultWorkingDirectory)/trivy-api-report/trivy-api.html \
+            $(dockerRepository):$(apiTag)
+
+          echo "✅ API HTML report saved"
+
+    - task: CmdLine@2
+      displayName: Scan API - Enforce Gate
       inputs:
         script: |
           export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-api
           mkdir -p $TRIVY_CACHE_DIR
 
-          echo "Scanning API image..."
+          echo "Enforcing vulnerability gate on API image..."
           trivy image \
             --scanners vuln \
             --cache-dir $TRIVY_CACHE_DIR \
@@ -147,6 +176,20 @@ stages:
             --exit-code 1 \
             --severity HIGH,CRITICAL \
             $(dockerRepository):$(apiTag)
+
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Trivy API Report
+      condition: always()
+      inputs:
+        pathToPublish: '$(System.DefaultWorkingDirectory)/trivy-api-report'
+        artifactName: 'Trivy-API-Report'
+
+    - task: PublishHtmlReport@1
+      displayName: Show Trivy API Tab
+      condition: always()
+      inputs:
+        reportDir: '$(System.DefaultWorkingDirectory)/trivy-api-report'
+        tabName: 'Trivy API Scan'
 
     - task: CmdLine@2
       displayName: Push API
@@ -175,13 +218,36 @@ stages:
             -f src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.WebApp/Dockerfile .
 
     - task: CmdLine@2
-      displayName: Scan Web
+      displayName: Scan Web - Generate HTML Report
+      continueOnError: true
+      inputs:
+        script: |
+          export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-web
+          mkdir -p $TRIVY_CACHE_DIR
+          mkdir -p $(System.DefaultWorkingDirectory)/trivy-web-report
+
+          echo "Generating Web scan HTML report..."
+          trivy image \
+            --scanners vuln \
+            --cache-dir $TRIVY_CACHE_DIR \
+            --no-progress \
+            --timeout 10m \
+            --severity HIGH,CRITICAL \
+            --format template \
+            --template "@/tmp/trivy-templates/html.tpl" \
+            --output $(System.DefaultWorkingDirectory)/trivy-web-report/trivy-web.html \
+            $(dockerRepository):$(webappTag)
+
+          echo "✅ Web HTML report saved"
+
+    - task: CmdLine@2
+      displayName: Scan Web - Enforce Gate
       inputs:
         script: |
           export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-web
           mkdir -p $TRIVY_CACHE_DIR
 
-          echo "Scanning Web image..."
+          echo "Enforcing vulnerability gate on Web image..."
           trivy image \
             --scanners vuln \
             --cache-dir $TRIVY_CACHE_DIR \
@@ -190,6 +256,20 @@ stages:
             --exit-code 1 \
             --severity HIGH,CRITICAL \
             $(dockerRepository):$(webappTag)
+
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Trivy Web Report
+      condition: always()
+      inputs:
+        pathToPublish: '$(System.DefaultWorkingDirectory)/trivy-web-report'
+        artifactName: 'Trivy-Web-Report'
+
+    - task: PublishHtmlReport@1
+      displayName: Show Trivy Web Tab
+      condition: always()
+      inputs:
+        reportDir: '$(System.DefaultWorkingDirectory)/trivy-web-report'
+        tabName: 'Trivy Web Scan'
 
     - task: CmdLine@2
       displayName: Push Web
