@@ -71,6 +71,9 @@ stages:
           sonar.exclusions=**/bin/**,**/obj/**,**/*.json,**/*.html
           sonar.coverage.exclusions=**/*
           sonar.cpd.exclusions=**/*.json,**/*.html
+          sonar.javascript.node.maxspace=4096
+          sonar.scanner.skipJreProvisioning=true   # already have Java installed
+          sonar.nodejs.executable=/usr/bin/node    # explicit path once Node is installed
 
     # ---------------- BUILD ----------------
     - task: DotNetCoreCLI@2
