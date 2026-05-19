@@ -144,8 +144,14 @@ stages:
     # SONARQUBE ANALYZE
     # ========================================================
 
+# ============================================================
+# SONARQUBE ANALYZE
+# ============================================================
+
     - task: SonarQubeAnalyze@7
       displayName: Run SonarQube Analysis
+      env:
+        SONAR_SCANNER_OPTS: "-Xmx2048m"
 
     # ========================================================
     # SONARQUBE QUALITY GATE
