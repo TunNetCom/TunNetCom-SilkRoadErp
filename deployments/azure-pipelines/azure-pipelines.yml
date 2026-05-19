@@ -28,6 +28,8 @@ variables:
 stages:
 - stage: Build
   displayName: Build, SonarQube, Scan & Push
+  pool:
+    name: OnPremAgents
   jobs:
   - job: BuildPush
     steps:
