@@ -8,9 +8,7 @@ using TunNetCom.SilkRoadErp.Sales.UnitTests.Tests;
 
 namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Features.DeliveryNote.CreateDeliveryNote;
 
-[Trait("Category", "Integration")]
-[Collection("SqlServerIntegration")]
-public class CreateDeliveryNoteCommandHandlerTestcontainersTests : IAsyncLifetime
+public class CreateDeliveryNoteCommandHandlerTestcontainersTests : IClassFixture<SqlServerTestcontainerFixture>, IAsyncLifetime
 {
     private readonly SqlServerTestcontainerFixture _fixture;
 
@@ -47,30 +45,10 @@ public class CreateDeliveryNoteCommandHandlerTestcontainersTests : IAsyncLifetim
         return year;
     }
 
-    private static void SeedProduit(SalesContext context, string reference = "REF1")
-    {
-        if (context.Produit.Any(p => p.Refe == reference))
-            return;
-
-        context.Produit.Add(Produit.CreateProduct(
-            refe: reference,
-            nom: "Test product",
-            qteLimite: 0,
-            remise: 0,
-            remiseAchat: 0,
-            tva: 19,
-            prix: 50m,
-            prixAchat: 40m,
-            visibilite: true));
-        context.SaveChanges();
-    }
-
     [Fact]
     public async Task Handle_WhenNoActiveAccountingYear_ReturnsFailResult()
     {
         await using var context = _fixture.CreateContext();
-        context.AccountingYear.RemoveRange(context.AccountingYear);
-        await context.SaveChangesAsync();
         SeedSysteme(context);
         // Do not seed AccountingYear so there is no active year
 
@@ -112,7 +90,6 @@ public class CreateDeliveryNoteCommandHandlerTestcontainersTests : IAsyncLifetim
         await using var context = _fixture.CreateContext();
         SeedSysteme(context);
         var accountingYear = SeedActiveAccountingYear(context);
-        SeedProduit(context, "REF1");
 
         var numberGeneratorMock = new Mock<INumberGeneratorService>();
         numberGeneratorMock
