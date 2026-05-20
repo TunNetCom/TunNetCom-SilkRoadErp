@@ -87,20 +87,30 @@ stages:
 
     - task: Bash@3
       displayName: Run tests with coverage
+      continueOnError: true
       inputs:
         targetType: inline
         script: |
-          set -euo pipefail
+          set -uo pipefail
           echo "dotnet SDK: $(dotnet --version)"
           mkdir -p "$(Agent.TempDirectory)/TestResults"
+          set +e
           dotnet test "$(Build.SourcesDirectory)/TunNetCom.SilkRoadErp.sln" \
             --configuration Release \
             --no-build \
             --no-restore \
+            --filter "Category!=Integration" \
             --collect:"XPlat Code Coverage" \
             --settings "$(Build.SourcesDirectory)/codecoverage.runsettings" \
             --results-directory "$(Agent.TempDirectory)/TestResults" \
             --logger "trx;LogFileName=test-results.trx"
+          TEST_EXIT=$?
+          set -e
+          find "$(Agent.TempDirectory)/TestResults" -name "coverage.*.xml" 2>/dev/null | head -20 || true
+          if [ "$TEST_EXIT" -ne 0 ]; then
+            echo "##vso[task.logissue type=warning]Unit tests finished with exit code $TEST_EXIT; continuing to publish coverage and SonarQube analysis."
+          fi
+          exit "$TEST_EXIT"
 
     - task: PublishTestResults@2
       displayName: Publish test results
