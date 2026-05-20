@@ -81,14 +81,8 @@ stages:
       displayName: Run tests with coverage
       inputs:
         command: test
-        projects: '**/*Tests*.csproj'
-        arguments: >-
-          --configuration Release
-          --no-build
-          --collect:"XPlat Code Coverage"
-          --results-directory $(Agent.TempDirectory)/TestResults
-          --
-          DataCollectionRunners.DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover,cobertura
+        projects: '**/*.sln'
+        arguments: '--configuration Release --no-build --no-restore --collect:"XPlat Code Coverage" --settings $(Build.SourcesDirectory)/codecoverage.runsettings --results-directory $(Agent.TempDirectory)/TestResults'
 
     # ============================================================
     # 🔷 SONARQUBE ANALYSIS + QUALITY GATE
