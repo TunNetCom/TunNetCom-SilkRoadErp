@@ -65,10 +65,9 @@ stages:
         projectKey: 'Silk_Road_ERP_Silk_Road_ERP_f493c9cb-0b66-4d3f-8bfe-e8056216b526'
         projectName: 'SilkRoad ERP'
         extraProperties: |
-          sonar.host.url=https://sonarqube.aion-time.com
           sonar.exclusions=**/bin/**,**/obj/**,**/*.json,**/*.html
-          sonar.coverage.exclusions=**/*
           sonar.cpd.exclusions=**/*.json,**/*.html
+          sonar.cs.opencover.reportsPaths=$(Agent.TempDirectory)/TestResults/**/coverage.opencover.xml
 
     # ---------------- BUILD ----------------
     - task: DotNetCoreCLI@2
@@ -76,6 +75,20 @@ stages:
         command: build
         projects: '**/*.sln'
         arguments: '--configuration Release --no-restore'
+
+    # ---------------- TEST + CODE COVERAGE ----------------
+    - task: DotNetCoreCLI@2
+      displayName: Run tests with coverage
+      inputs:
+        command: test
+        projects: '**/*Tests*.csproj'
+        arguments: >-
+          --configuration Release
+          --no-build
+          --collect:"XPlat Code Coverage"
+          --results-directory $(Agent.TempDirectory)/TestResults
+          --
+          DataCollectionRunners.DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover,cobertura
 
     # ============================================================
     # 🔷 SONARQUBE ANALYSIS + QUALITY GATE
@@ -85,6 +98,13 @@ stages:
     - task: SonarQubePublish@7
       inputs:
         pollingTimeoutSec: '300'
+
+    - task: PublishCodeCoverageResults@2
+      displayName: Publish code coverage to Azure DevOps
+      inputs:
+        summaryFileLocation: '$(Agent.TempDirectory)/TestResults/**/coverage.cobertura.xml'
+        pathToSources: '$(Build.SourcesDirectory)'
+        failIfCoverageEmpty: false
 
     # ============================================================
     # 🧹 DISK CLEANUP BEFORE DOCKER BUILDS
@@ -120,6 +140,14 @@ stages:
           sudo apt-get update -qq
           sudo apt-get install -y trivy
 
+    - task: CmdLine@2
+      displayName: Prepare Trivy HTML reports
+      inputs:
+        script: |
+          mkdir -p $(Pipeline.Workspace)/trivy-reports
+          wget -q https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl \
+            -O $(Pipeline.Workspace)/trivy-reports/html.tpl
+
     # ============================================================
     # 🔵 API: BUILD → SCAN → PUSH → CLEANUP
     # ============================================================
@@ -137,8 +165,22 @@ stages:
         script: |
           export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-api
           mkdir -p $TRIVY_CACHE_DIR
+          TRIVY_TEMPLATE="$(Pipeline.Workspace)/trivy-reports/html.tpl"
+          IMAGE="$(dockerRepository):$(apiTag)"
 
-          echo "Scanning API image..."
+          echo "Generating API vulnerability HTML report..."
+          trivy image \
+            --scanners vuln \
+            --cache-dir $TRIVY_CACHE_DIR \
+            --no-progress \
+            --timeout 10m \
+            --format template \
+            --template "@${TRIVY_TEMPLATE}" \
+            --output $(Pipeline.Workspace)/trivy-reports/trivy-api.html \
+            --severity UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL \
+            $IMAGE
+
+          echo "Checking API image for HIGH/CRITICAL vulnerabilities..."
           trivy image \
             --scanners vuln \
             --cache-dir $TRIVY_CACHE_DIR \
@@ -146,7 +188,7 @@ stages:
             --timeout 10m \
             --exit-code 1 \
             --severity HIGH,CRITICAL \
-            $(dockerRepository):$(apiTag)
+            $IMAGE
 
     - task: CmdLine@2
       displayName: Push API
@@ -180,8 +222,22 @@ stages:
         script: |
           export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-web
           mkdir -p $TRIVY_CACHE_DIR
+          TRIVY_TEMPLATE="$(Pipeline.Workspace)/trivy-reports/html.tpl"
+          IMAGE="$(dockerRepository):$(webappTag)"
 
-          echo "Scanning Web image..."
+          echo "Generating Web vulnerability HTML report..."
+          trivy image \
+            --scanners vuln \
+            --cache-dir $TRIVY_CACHE_DIR \
+            --no-progress \
+            --timeout 10m \
+            --format template \
+            --template "@${TRIVY_TEMPLATE}" \
+            --output $(Pipeline.Workspace)/trivy-reports/trivy-web.html \
+            --severity UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL \
+            $IMAGE
+
+          echo "Checking Web image for HIGH/CRITICAL vulnerabilities..."
           trivy image \
             --scanners vuln \
             --cache-dir $TRIVY_CACHE_DIR \
@@ -189,7 +245,7 @@ stages:
             --timeout 10m \
             --exit-code 1 \
             --severity HIGH,CRITICAL \
-            $(dockerRepository):$(webappTag)
+            $IMAGE
 
     - task: CmdLine@2
       displayName: Push Web
@@ -205,6 +261,20 @@ stages:
           docker system prune -af || true
           docker builder prune -af || true
           df -h
+
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Trivy Reports
+      condition: always()
+      inputs:
+        pathToPublish: '$(Pipeline.Workspace)/trivy-reports'
+        artifactName: 'Trivy-Reports'
+
+    - task: PublishHtmlReport@1
+      displayName: Show Trivy Reports Tab
+      condition: always()
+      inputs:
+        reportDir: '$(Pipeline.Workspace)/trivy-reports'
+        tabName: 'Trivy Container Scan'
 
 # ============================================================
 # 2️⃣ ZAP BASELINE
