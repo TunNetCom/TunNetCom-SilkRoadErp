@@ -77,12 +77,38 @@ stages:
         arguments: '--configuration Release --no-restore'
 
     # ---------------- TEST + CODE COVERAGE ----------------
-    - task: DotNetCoreCLI@2
+    # DotNetCoreCLI@2 mangles --collect:"XPlat Code Coverage"; use Bash instead.
+    # SonarQube step switches default SDK to 8.x — tests need 10.x (net10.0).
+    - task: UseDotNet@2
+      displayName: Use .NET 10 SDK for tests
+      inputs:
+        packageType: sdk
+        version: '10.x'
+
+    - task: Bash@3
       displayName: Run tests with coverage
       inputs:
-        command: test
-        projects: '**/*.sln'
-        arguments: '--configuration Release --no-build --no-restore --collect:"XPlat Code Coverage" --settings $(Build.SourcesDirectory)/codecoverage.runsettings --results-directory $(Agent.TempDirectory)/TestResults'
+        targetType: inline
+        script: |
+          set -euo pipefail
+          echo "dotnet SDK: $(dotnet --version)"
+          mkdir -p "$(Agent.TempDirectory)/TestResults"
+          dotnet test "$(Build.SourcesDirectory)/TunNetCom.SilkRoadErp.sln" \
+            --configuration Release \
+            --no-build \
+            --no-restore \
+            --collect:"XPlat Code Coverage" \
+            --settings "$(Build.SourcesDirectory)/codecoverage.runsettings" \
+            --results-directory "$(Agent.TempDirectory)/TestResults" \
+            --logger "trx;LogFileName=test-results.trx"
+
+    - task: PublishTestResults@2
+      displayName: Publish test results
+      condition: succeededOrFailed()
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: '$(Agent.TempDirectory)/TestResults/**/*.trx'
+        testRunTitle: 'SilkRoad Unit Tests'
 
     # ============================================================
     # 🔷 SONARQUBE ANALYSIS + QUALITY GATE
