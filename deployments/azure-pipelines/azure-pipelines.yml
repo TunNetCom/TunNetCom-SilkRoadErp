@@ -65,9 +65,8 @@ stages:
         projectKey: 'Silk_Road_ERP_Silk_Road_ERP_f493c9cb-0b66-4d3f-8bfe-e8056216b526'
         projectName: 'SilkRoad ERP'
         extraProperties: |
-          sonar.host.url=https://sonarqube.aion-time.com
           sonar.exclusions=**/bin/**,**/obj/**,**/*.json,**/*.html
-          sonar.coverage.exclusions=**/*
+          sonar.cs.opencover.reportsPaths=**/coverage.opencover.xml
           sonar.cpd.exclusions=**/*.json,**/*.html
 
     # ---------------- BUILD ----------------
@@ -76,6 +75,16 @@ stages:
         command: build
         projects: '**/*.sln'
         arguments: '--configuration Release --no-restore'
+
+    # ============================================================
+    # 🧪 RUN TESTS WITH COVERAGE (required for SonarQube coverage)
+    # ============================================================
+    - task: DotNetCoreCLI@2
+      displayName: Run tests with coverage
+      inputs:
+        command: test
+        projects: '**/*[Tt]est*/*.csproj'
+        arguments: '--configuration Release --no-build --collect "XPlat Code Coverage" --settings test.runsettings -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover'
 
     # ============================================================
     # 🔷 SONARQUBE ANALYSIS + QUALITY GATE
