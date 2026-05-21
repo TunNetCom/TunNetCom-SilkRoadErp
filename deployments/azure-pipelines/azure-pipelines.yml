@@ -22,9 +22,6 @@ variables:
 - name: zapTarget
   value: 'https://silkroad.aion-time.com'
 
-# ============================================================
-# 1️⃣ BUILD + SONARQUBE + SCAN + PUSH
-# ============================================================
 stages:
 - stage: Build
   displayName: Build, SonarQube, Scan & Push
@@ -38,7 +35,13 @@ stages:
         command: login
         containerRegistry: 'TunNetCom_Dockerhub_Connection'
 
-    # ---------------- .NET SDK 10 (restore/build) ----------------
+    # ---------------- SDK 8 first (SonarQube scanner requirement) ----------------
+    - task: UseDotNet@2
+      inputs:
+        packageType: sdk
+        version: '8.x'
+
+    # ---------------- SDK 10 last → becomes the active default ----------------
     - task: UseDotNet@2
       inputs:
         packageType: sdk
@@ -49,14 +52,9 @@ stages:
         command: restore
         projects: '**/*.sln'
 
-    # ---------------- .NET SDK 8 (required by SonarQube scanner) ----------------
-    - task: UseDotNet@2
-      inputs:
-        packageType: sdk
-        version: '8.x'
-
     # ============================================================
     # 🔷 SONARQUBE PREPARE (must be before build)
+    # Scanner finds SDK 8 in the tool cache; build/test use SDK 10
     # ============================================================
     - task: SonarQubePrepare@7
       inputs:
@@ -69,7 +67,7 @@ stages:
           sonar.cs.opencover.reportsPaths=**/coverage.opencover.xml
           sonar.cpd.exclusions=**/*.json,**/*.html
 
-    # ---------------- BUILD ----------------
+    # ---------------- BUILD (runs under SDK 10) ----------------
     - task: DotNetCoreCLI@2
       inputs:
         command: build
@@ -77,7 +75,9 @@ stages:
         arguments: '--configuration Release --no-restore'
 
     # ============================================================
-    # 🧪 RUN TESTS WITH COVERAGE (required for SonarQube coverage)
+    # 🧪 RUN TESTS WITH COVERAGE
+    # --no-build removed: Sales.UnitTests must compile under SDK 10
+    # continueOnError kept so a test failure doesn't block SonarQube
     # ============================================================
     - task: DotNetCoreCLI@2
       displayName: Run tests with coverage
@@ -85,7 +85,11 @@ stages:
       inputs:
         command: test
         projects: '**/*[Tt]est*/*.csproj'
-        arguments: '--configuration Release --no-build --collect "XPlat Code Coverage" --settings test.runsettings -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover'
+        arguments: >-
+          --configuration Release
+          --collect "XPlat Code Coverage"
+          --settings test.runsettings
+          -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
 
     # ============================================================
     # 🔷 SONARQUBE ANALYSIS + QUALITY GATE
@@ -95,6 +99,7 @@ stages:
     - task: SonarQubePublish@7
       inputs:
         pollingTimeoutSec: '300'
+
 
     # ============================================================
     # 🧹 DISK CLEANUP BEFORE DOCKER BUILDS
