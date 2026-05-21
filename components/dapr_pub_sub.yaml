@@ -1,0 +1,31 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: pubsub
+spec:
+  type: pubsub.rabbitmq
+  version: v1
+  metadata:
+    - name: connectionString
+      value: "amqp://guest:guest@localhost:5672"
+
+    - name: durable
+      value: "true"
+
+    - name: autoAck
+      value: "false"
+
+    - name: deliveryMode
+      value: "2"
+
+    - name: requeueInFailure
+      value: "false"
+
+    - name: enableDeadLetter
+      value: "true"
+
+    - name: prefetchCount
+      value: "10"
+
+    - name: rawPayload
+      value: "true"

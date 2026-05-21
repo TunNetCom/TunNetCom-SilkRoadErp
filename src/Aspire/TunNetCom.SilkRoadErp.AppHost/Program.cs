@@ -1,3 +1,6 @@
+using CommunityToolkit.Aspire.Hosting.Dapr;
+using Microsoft.AspNetCore.Components.Rendering;
+
 var builder = DistributedApplication.CreateBuilder(args);
 
 // Fixed SQL Server sa password so it stays the same across restarts; connection strings and health checks always match.
@@ -13,6 +16,11 @@ var adminDb = sql.AddDatabase("admindb");
 var redis = builder.AddRedis("redis")
     .WithLifetime(ContainerLifetime.Persistent);
 
+var rabbitmq = builder.AddRabbitMQ("rabbitmq");
+
+var pubsub = builder.AddDaprComponent("pubsub", "pubsub.rabbitmq")
+    .WithMetadata("connectionString", rabbitmq.Resource.ConnectionStringExpression);
+
 var loki = builder.AddContainer("loki", "grafana/loki", "latest")
     .WithHttpEndpoint(port: 3100, targetPort: 3100, name: "http");
 
@@ -26,13 +34,29 @@ var salesApi = builder.AddProject<Projects.TunNetCom_SilkRoadErp_Sales_Api>("sal
     .WaitFor(salesDb)
     .WithReference(redis)
     .WithEnvironment("ConnectionStrings__DefaultConnection", salesDb)
-    .WithEnvironment("Loki__ServerUrl", loki.GetEndpoint("http"));
+    .WithEnvironment("Loki__ServerUrl", loki.GetEndpoint("http"))
+    .WithReference(rabbitmq)
+    .WithReference(pubsub)
+    .WaitFor(rabbitmq)
+    .WithDaprSidecar(new DaprSidecarOptions
+    {
+        PlacementHostAddress = "",
+        SchedulerHostAddress = ""
+    });
 
 var adminApi = builder.AddProject<Projects.TunNetCom_SilkRoadErp_Administration_Api>("admin-api")
     .WithExternalHttpEndpoints()
     .WithReference(adminDb)
     .WaitFor(adminDb)
-    .WithEnvironment("ConnectionStrings__AdminConnection", adminDb);
+    .WithEnvironment("ConnectionStrings__AdminConnection", adminDb)
+    .WithReference(rabbitmq)
+    .WithReference(pubsub)
+    .WaitFor(rabbitmq)
+    .WithDaprSidecar(new DaprSidecarOptions
+    {
+        PlacementHostAddress = "",
+        SchedulerHostAddress = ""
+    });
 
 builder.AddProject<Projects.TunNetCom_SilkRoadErp_Sales_WebApp>("sales-webapp")
     .WithExternalHttpEndpoints()
