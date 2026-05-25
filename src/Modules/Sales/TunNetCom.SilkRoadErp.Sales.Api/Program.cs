@@ -1,11 +1,13 @@
-using Serilog.Sinks.Grafana.Loki;
 using Microsoft.AspNetCore.HttpOverrides;
+using Serilog.Sinks.Grafana.Loki;
 using System.Security.Claims;
-using TunNetCom.SilkRoadErp.SharedKernel.Tenancy;
-using TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy;
-using TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy.Middleware;
-using TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy.EfCore;
+using System.Text.Json;
 using TunNetCom.SilkRoadErp.Infrastructure.Caching;
+using TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy;
+using TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy.EfCore;
+using TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy.Middleware;
+using TunNetCom.SilkRoadErp.Sales.Api;
+using TunNetCom.SilkRoadErp.SharedKernel.Tenancy;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -357,6 +359,13 @@ builder.Services.AddAuthorization(options =>
 // Register Permission Authorization Handler and Policy Provider
 builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+builder.Services.AddDaprClient(client => client.UseJsonSerializationOptions(
+    new JsonSerializerOptions
+    {
+        PropertyNameCaseInsensitive = true
+    }));
+
+builder.Services.AddControllers().AddDapr();
 
 var app = builder.Build();
 
@@ -418,7 +427,8 @@ app.UseMiddleware<ActiveAccountingYearMiddleware>();
 
 app.UseStaticFiles();
 app.UseHttpsRedirection();
-
+app.MapEventEndPoint();
+app.MapSubscribeHandler();
 // Routing must be before Authentication
 app.UseRouting();
 

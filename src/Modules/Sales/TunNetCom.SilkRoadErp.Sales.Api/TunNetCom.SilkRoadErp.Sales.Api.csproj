@@ -64,6 +64,7 @@
 
   <ItemGroup>
     <Folder Include="Features\AppParameters\InitOrUpdateAppParameters\" />
+    <Folder Include="Features\Invoices\Event\Outgoing\" />
     <Folder Include="Features\ProviderReceiptNoteLine\GetReceiptNoteLine\" />
     <Folder Include="Features\ProviderReceiptNoteLine\DeleteReceiptNotes\" />
   </ItemGroup>

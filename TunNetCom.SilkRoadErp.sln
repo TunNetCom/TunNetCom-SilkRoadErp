@@ -58,6 +58,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TunNetCom.SilkRoadErp.Servi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TunNetCom.SilkRoadErp.AppHost", "src\Aspire\TunNetCom.SilkRoadErp.AppHost\TunNetCom.SilkRoadErp.AppHost.csproj", "{D3D3D3D3-D3D3-D3D3-D3D3-D3D3D3D3D3D3}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "components", "components", "{1375B400-D236-4076-9B2B-85E1D607256F}"
+	ProjectSection(SolutionItems) = preProject
+		dapr_pub_sub.yaml = dapr_pub_sub.yaml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
