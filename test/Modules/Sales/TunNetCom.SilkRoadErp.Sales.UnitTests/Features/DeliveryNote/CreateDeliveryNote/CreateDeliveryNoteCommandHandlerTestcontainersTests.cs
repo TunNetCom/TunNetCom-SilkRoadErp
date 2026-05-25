@@ -8,7 +8,7 @@ using TunNetCom.SilkRoadErp.Sales.UnitTests.Tests;
 
 namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Features.DeliveryNote.CreateDeliveryNote;
 
-public class CreateDeliveryNoteCommandHandlerTestcontainersTests : IClassFixture<SqlServerTestcontainerFixture>, IAsyncLifetime
+public class CreateDeliveryNoteCommandHandlerTestcontainersTests : IClassFixture<SqlServerTestcontainerFixture>
 {
     private readonly SqlServerTestcontainerFixture _fixture;
 
@@ -16,10 +16,6 @@ public class CreateDeliveryNoteCommandHandlerTestcontainersTests : IClassFixture
     {
         _fixture = fixture;
     }
-
-    public Task InitializeAsync() => _fixture.InitializeAsync();
-
-    public Task DisposeAsync() => Task.CompletedTask;
 
     private static void SeedSysteme(SalesContext context)
     {
