@@ -74,6 +74,13 @@ stages:
         projects: '**/*.sln'
         arguments: '--configuration Release --no-restore'
 
+    # ---------------- PRE-PULL IMAGE FOR TESTCONTAINERS ----------------
+    - task: CmdLine@2
+      displayName: Pre-pull SQL Server Image for Testcontainers
+      inputs:
+        script: |
+          docker pull mcr.microsoft.com/mssql/server:2022-latest
+
     # ============================================================
     # 🧪 RUN TESTS WITH COVERAGE
     # --no-build removed: Sales.UnitTests must compile under SDK 10
@@ -90,6 +97,8 @@ stages:
           --collect "XPlat Code Coverage"
           --settings test.runsettings
           -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+      env:
+        TESTCONTAINERS_RYUK_DISABLED: "true"
 
     # ============================================================
     # 🔷 SONARQUBE ANALYSIS + QUALITY GATE
