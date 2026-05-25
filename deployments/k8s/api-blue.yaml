@@ -24,6 +24,10 @@ spec:
         tier: backend
       annotations:
         deployment.kubernetes.io/revision: "1"
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "silkroad-api"
+        dapr.io/app-port: "8080"
+        dapr.io/app-protocol: "http"
     spec:
       securityContext:
         runAsNonRoot: true
