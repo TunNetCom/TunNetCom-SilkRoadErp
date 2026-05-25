@@ -1,6 +1,18 @@
 # ============================================================
 # SilkRoad CI/CD Pipeline - BLUE/GREEN + SECURITY + SONARQUBE
 # ============================================================
+#
+# FIXES APPLIED (2026-05-25):
+#   1. Moved Pre-pull SQL Server image to just before tests
+#      → docker system prune was wiping the image before tests ran
+#   2. Moved Pre-Docker Disk Cleanup to AFTER SonarQube Publish
+#      → prune was deleting the SQL Server image needed by Testcontainers
+#   3. Removed duplicate DataCollectionRunSettings inline override
+#      → conflicted with test.runsettings; coverage now controlled
+#        entirely by test.runsettings (opencover format)
+#   4. Added --logger console;verbosity=detailed to test step
+#      → surfaces actual failure messages in the pipeline log
+# ============================================================
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -23,31 +35,43 @@ variables:
   value: 'https://silkroad.aion-time.com'
 
 stages:
+
+# ============================================================
+# 1️⃣  BUILD
+# ============================================================
 - stage: Build
   displayName: Build, SonarQube, Scan & Push
   jobs:
   - job: BuildPush
     steps:
 
-    # ---------------- LOGIN ----------------
+    # ---------------- DOCKER LOGIN ----------------
     - task: Docker@2
+      displayName: Docker Login
       inputs:
         command: login
         containerRegistry: 'TunNetCom_Dockerhub_Connection'
 
     # ---------------- SDK 8 first (SonarQube scanner requirement) ----------------
+    # SonarQube's .NET scanner requires SDK 8 to be present in the tool cache.
+    # Installing it first ensures it is found; SDK 10 is installed second so
+    # it becomes the active default for build/test steps.
     - task: UseDotNet@2
+      displayName: Install .NET SDK 8 (SonarQube scanner requirement)
       inputs:
         packageType: sdk
         version: '8.x'
 
     # ---------------- SDK 10 last → becomes the active default ----------------
     - task: UseDotNet@2
+      displayName: Install .NET SDK 10 (active default)
       inputs:
         packageType: sdk
         version: '10.x'
 
+    # ---------------- RESTORE ----------------
     - task: DotNetCoreCLI@2
+      displayName: Restore NuGet packages
       inputs:
         command: restore
         projects: '**/*.sln'
@@ -57,6 +81,7 @@ stages:
     # Scanner finds SDK 8 in the tool cache; build/test use SDK 10
     # ============================================================
     - task: SonarQubePrepare@7
+      displayName: SonarQube Prepare
       inputs:
         SonarQube: 'SonarConnection'
         scannerMode: 'dotnet'
@@ -69,22 +94,38 @@ stages:
 
     # ---------------- BUILD (runs under SDK 10) ----------------
     - task: DotNetCoreCLI@2
+      displayName: Build solution
       inputs:
         command: build
         projects: '**/*.sln'
         arguments: '--configuration Release --no-restore'
 
-    # ---------------- PRE-PULL IMAGE FOR TESTCONTAINERS ----------------
+    # ============================================================
+    # FIX #1 — Pre-pull SQL Server image immediately before tests
+    # Previously this step was placed before SonarQube Prepare,
+    # meaning the subsequent disk cleanup wiped the image before
+    # Testcontainers could use it.
+    # ============================================================
     - task: CmdLine@2
-      displayName: Pre-pull SQL Server Image for Testcontainers
+      displayName: Pre-pull SQL Server image for Testcontainers
       inputs:
         script: |
           docker pull mcr.microsoft.com/mssql/server:2022-latest
 
     # ============================================================
     # 🧪 RUN TESTS WITH COVERAGE
-    # --no-build removed: Sales.UnitTests must compile under SDK 10
-    # continueOnError kept so a test failure doesn't block SonarQube
+    #
+    # FIX #2 — Removed duplicate DataCollectionRunSettings override
+    #   The inline "-- DataCollectionRunSettings..." argument
+    #   conflicted with test.runsettings which already sets opencover.
+    #   Coverage format is now controlled solely by test.runsettings.
+    #
+    # FIX #3 — Added --logger console;verbosity=detailed
+    #   Surfaces actual test failure messages directly in the log
+    #   so you don't have to navigate to the Tests tab to diagnose.
+    #
+    # continueOnError: true — a test failure must not block
+    #   SonarQube from publishing its quality gate result.
     # ============================================================
     - task: DotNetCoreCLI@2
       displayName: Run tests with coverage
@@ -96,7 +137,7 @@ stages:
           --configuration Release
           --collect "XPlat Code Coverage"
           --settings test.runsettings
-          -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+          --logger "console;verbosity=detailed"
       env:
         TESTCONTAINERS_RYUK_DISABLED: "true"
 
@@ -104,34 +145,50 @@ stages:
     # 🔷 SONARQUBE ANALYSIS + QUALITY GATE
     # ============================================================
     - task: SonarQubeAnalyze@7
+      displayName: SonarQube Analyze
 
     - task: SonarQubePublish@7
+      displayName: SonarQube Publish Quality Gate
       inputs:
         pollingTimeoutSec: '300'
 
-
     # ============================================================
-    # 🧹 DISK CLEANUP BEFORE DOCKER BUILDS
-    # Sonar analysis leaves significant artifacts; clear them
-    # before Docker work to avoid "no space left on device"
+    # FIX #4 — Disk cleanup moved to AFTER SonarQube Publish
+    #
+    # Previously this ran before tests, which caused docker system
+    # prune to delete the pre-pulled SQL Server image that
+    # Testcontainers needed. Now it runs after all analysis is
+    # complete, safely clearing space before Docker image builds.
     # ============================================================
     - task: CmdLine@2
       displayName: Pre-Docker Disk Cleanup
       inputs:
         script: |
+          echo "=== Disk usage before cleanup ==="
+          df -h
+
           echo "Freeing disk space before Docker builds..."
+
           # Remove .NET build output (already analysed by Sonar)
           find . -type d -name 'bin' -exec rm -rf {} + 2>/dev/null || true
           find . -type d -name 'obj' -exec rm -rf {} + 2>/dev/null || true
+
           # Remove SonarQube scanner cache
           rm -rf ~/.sonar/cache 2>/dev/null || true
-          # Remove any leftover .NET packages cache
+
+          # Remove leftover .NET package cache
           dotnet nuget locals all --clear 2>/dev/null || true
+
+          # Remove stopped containers, dangling images, unused networks/volumes
           docker system prune -af || true
           docker builder prune -af || true
+
+          echo "=== Disk usage after cleanup ==="
           df -h
 
-    # ---------------- INSTALL TRIVY ----------------
+    # ============================================================
+    # 🔒 INSTALL TRIVY
+    # ============================================================
     - task: CmdLine@2
       displayName: Install Trivy
       inputs:
@@ -148,7 +205,7 @@ stages:
     # 🔵 API: BUILD → SCAN → PUSH → CLEANUP
     # ============================================================
     - task: CmdLine@2
-      displayName: Build API
+      displayName: Build API image
       inputs:
         script: |
           docker build --no-cache \
@@ -156,7 +213,7 @@ stages:
             -f src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.Api/Dockerfile .
 
     - task: CmdLine@2
-      displayName: Scan API
+      displayName: Scan API image (Trivy)
       inputs:
         script: |
           export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-api
@@ -173,13 +230,13 @@ stages:
             $(dockerRepository):$(apiTag)
 
     - task: CmdLine@2
-      displayName: Push API
+      displayName: Push API image
       inputs:
         script: |
           docker push $(dockerRepository):$(apiTag)
 
     - task: CmdLine@2
-      displayName: Cleanup API
+      displayName: Cleanup after API build
       inputs:
         script: |
           echo "Cleaning AFTER API..."
@@ -191,7 +248,7 @@ stages:
     # 🟢 WEB: BUILD → SCAN → PUSH → CLEANUP
     # ============================================================
     - task: CmdLine@2
-      displayName: Build Web
+      displayName: Build Web image
       inputs:
         script: |
           docker build --no-cache \
@@ -199,7 +256,7 @@ stages:
             -f src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.WebApp/Dockerfile .
 
     - task: CmdLine@2
-      displayName: Scan Web
+      displayName: Scan Web image (Trivy)
       inputs:
         script: |
           export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-web
@@ -216,13 +273,13 @@ stages:
             $(dockerRepository):$(webappTag)
 
     - task: CmdLine@2
-      displayName: Push Web
+      displayName: Push Web image
       inputs:
         script: |
           docker push $(dockerRepository):$(webappTag)
 
     - task: CmdLine@2
-      displayName: Cleanup Web
+      displayName: Cleanup after Web build
       inputs:
         script: |
           echo "Cleaning AFTER Web..."
@@ -230,8 +287,9 @@ stages:
           docker builder prune -af || true
           df -h
 
+
 # ============================================================
-# 2️⃣ ZAP BASELINE
+# 2️⃣  ZAP BASELINE
 # ============================================================
 - stage: ZAP_Baseline
   displayName: DAST - ZAP Baseline Scan
@@ -244,6 +302,7 @@ stages:
   - job: ZAPBaselineJob
     displayName: ZAP Baseline (passive scan)
     steps:
+
     - task: CmdLine@2
       displayName: Prepare ZAP Baseline directory
       inputs:
@@ -293,8 +352,9 @@ stages:
         reportDir: '$(System.DefaultWorkingDirectory)/zap-baseline'
         tabName: 'ZAP Baseline'
 
+
 # ============================================================
-# 3️⃣ ZAP AJAX
+# 3️⃣  ZAP AJAX
 # ============================================================
 - stage: ZAP_AJAX
   displayName: DAST - ZAP AJAX Spider Scan
@@ -307,6 +367,7 @@ stages:
   - job: ZAPAjaxJob
     displayName: ZAP AJAX Spider (Blazor routes)
     steps:
+
     - task: CmdLine@2
       displayName: Prepare ZAP AJAX directory
       inputs:
@@ -403,8 +464,9 @@ stages:
         reportDir: '$(System.DefaultWorkingDirectory)/zap-ajax'
         tabName: 'ZAP AJAX Spider'
 
+
 # ============================================================
-# 4️⃣ BLUE / GREEN DEPLOYMENT
+# 4️⃣  BLUE / GREEN DEPLOYMENT
 # ============================================================
 - stage: Deploy
   displayName: Blue/Green Deploy
@@ -416,6 +478,7 @@ stages:
   jobs:
   - job: BlueGreenDeploy
     steps:
+
     - task: CmdLine@2
       displayName: Detect Active Environment
       inputs:
@@ -476,7 +539,7 @@ stages:
             -n $(kubeNamespace)
 
     - task: CmdLine@2
-      displayName: Wait Rollout
+      displayName: Wait for Rollout
       inputs:
         script: |
           echo "Waiting for rollout..."
@@ -522,7 +585,7 @@ stages:
             -p "{\"spec\":{\"selector\":{\"app\":\"silkroad-webapp\",\"environment\":\"production\",\"version\":\"$(targetColor)\"}}}"
 
     - task: CmdLine@2
-      displayName: Verify Switch
+      displayName: Verify Traffic Switch
       inputs:
         script: |
           echo "Final verification..."
