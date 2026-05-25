@@ -15,6 +15,8 @@ public class UpdateReceiptNoteTest
             .Options;
 
         _context = new SalesContext(options);
+        _context.AccountingYear.Add(AccountingYear.CreateAccountingYear(2024, true));
+        _context.SaveChanges();
         _TestLogger = new TestLogger<UpdateReceiptNoteCommandHandler>();
         _handler = new UpdateReceiptNoteCommandHandler(_context, _TestLogger);
     }

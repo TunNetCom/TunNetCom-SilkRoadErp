@@ -17,11 +17,16 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Quotations
         }
         private void SeedTestData()
         {
+            var client1 = Client.CreateClient(nom: "Client1", tel: "1", adresse: null, matricule: null, code: null, codeCat: null, etbSec: null, mail: null);
+            var client2 = Client.CreateClient(nom: "Client2", tel: "2", adresse: null, matricule: null, code: null, codeCat: null, etbSec: null, mail: null);
+            var client3 = Client.CreateClient(nom: "Client3", tel: "3", adresse: null, matricule: null, code: null, codeCat: null, etbSec: null, mail: null);
+            _context.Client.AddRange(client1, client2, client3);
+            _ = _context.SaveChanges();
             _context.Devis.AddRange(new List<Devis>
             {
-                new() { Num = 1, IdClient = 100, Date = new System.DateTime(2024, 1, 1), TotHTva = 100, TotTva = 19, TotTtc = 119 },
-                new() { Num = 2, IdClient = 101, Date = new System.DateTime(2024, 2, 2), TotHTva = 200, TotTva = 38, TotTtc = 238 },
-                new() { Num = 3, IdClient = 102, Date = new System.DateTime(2024, 3, 3), TotHTva = 300, TotTva = 57, TotTtc = 357 }
+                new() { Num = 1, IdClient = client1.Id, Date = new System.DateTime(2024, 1, 1), TotHTva = 100, TotTva = 19, TotTtc = 119 },
+                new() { Num = 2, IdClient = client2.Id, Date = new System.DateTime(2024, 2, 2), TotHTva = 200, TotTva = 38, TotTtc = 238 },
+                new() { Num = 3, IdClient = client3.Id, Date = new System.DateTime(2024, 3, 3), TotHTva = 300, TotTva = 57, TotTtc = 357 }
             });
             _ = _context.SaveChanges();
         }

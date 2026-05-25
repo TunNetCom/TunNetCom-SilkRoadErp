@@ -38,8 +38,8 @@
         _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, _) => v.ToString().Contains("deleted")),
+                It.Is<EventId>(e => e.Name == "LogEntityDeleted"),
+                It.IsAny<It.IsAnyType>(),
                 null,
                 It.IsAny<Func<It.IsAnyType, Exception, string>>()),
             Times.AtLeastOnce);
@@ -60,8 +60,8 @@
         _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Warning,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, _) => v.ToString().Contains("not found") || v.ToString().Contains("not_found")),
+                It.Is<EventId>(e => e.Name == "LogEntityNotFound"),
+                It.IsAny<It.IsAnyType>(),
                 null,
                 It.IsAny<Func<It.IsAnyType, Exception, string>>()),
             Times.AtLeastOnce);

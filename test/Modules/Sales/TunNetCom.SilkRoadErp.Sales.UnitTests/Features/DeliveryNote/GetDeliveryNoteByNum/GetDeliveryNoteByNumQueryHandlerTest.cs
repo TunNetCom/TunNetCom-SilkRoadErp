@@ -34,6 +34,7 @@ public class GetDeliveryNoteByNumQueryHandlerTest
             NetPayer = 119,
             NumFacture = 5,
             TempBl = new TimeOnly(14, 30),
+            AccountingYearId = 1,
             LigneBl = new List<LigneBl>
             {
                 new() {
@@ -49,6 +50,7 @@ public class GetDeliveryNoteByNumQueryHandlerTest
             }
         };
         using var context = CreateContextWithData(new[] { bonLivraison });
+        SalesContext.SetActiveAccountingYearId(1);
         var handler = new GetDeliveryNoteByNumQueryHandler(context, _loggerMock.Object);
         var query = new GetDeliveryNoteByNumQuery(deliveryNoteNum);
         // Act
@@ -61,8 +63,8 @@ public class GetDeliveryNoteByNumQueryHandlerTest
         _loggerMock.Verify(
             l => l.Log(
                 LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, _) => v.ToString()!.Contains("BonDeLivraison")),
+                It.Is<EventId>(e => e.Name == "LogFetchingEntityById"),
+                It.IsAny<It.IsAnyType>(),
                 null,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.AtLeastOnce);
@@ -82,9 +84,9 @@ public class GetDeliveryNoteByNumQueryHandlerTest
         _ = result.Errors.Should().ContainSingle(e => e.Message == "not_found");     
         _loggerMock.Verify(
             l => l.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, _) => v.ToString()!.Contains("BonDeLivraison")),
+                LogLevel.Warning,
+                It.Is<EventId>(e => e.Name == "LogEntityNotFound"),
+                It.IsAny<It.IsAnyType>(),
                 null,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.AtLeastOnce);

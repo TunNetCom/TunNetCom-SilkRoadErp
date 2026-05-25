@@ -81,7 +81,7 @@
 
             var result = _validator.TestValidate(model);
             _ = result.ShouldHaveValidationErrorFor(x => x.Tel)
-                  .WithErrorMessage("tel_must_be_heigher_than_10_and_less_than_15");
+                  .WithErrorMessage("tel_must_be_between_9_and_15_characters");
         }
 
         [Fact]

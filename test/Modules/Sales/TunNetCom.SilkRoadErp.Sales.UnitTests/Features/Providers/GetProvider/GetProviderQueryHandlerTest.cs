@@ -47,14 +47,14 @@
 
         _loggerMock.Verify(x => x.Log(
             LogLevel.Information,
-            It.IsAny<EventId>(),
-            It.Is<It.IsAnyType>((v, _) => v.ToString().Contains("Fetching Fournisseur with pageIndex")),
+            It.Is<EventId>(e => e.Name == "LogPaginationRequest"),
+            It.IsAny<It.IsAnyType>(),
             null,
             It.IsAny<Func<It.IsAnyType, Exception, string>>()), Times.Once);
         _loggerMock.Verify(x => x.Log(
             LogLevel.Information,
-            It.IsAny<EventId>(),
-            It.Is<It.IsAnyType>((v, _) => v.ToString().Contains("Fetched")),
+            It.Is<EventId>(e => e.Name == "LogEntitiesFetched"),
+            It.IsAny<It.IsAnyType>(),
             null,
             It.IsAny<Func<It.IsAnyType, Exception, string>>()), Times.Once);
     }

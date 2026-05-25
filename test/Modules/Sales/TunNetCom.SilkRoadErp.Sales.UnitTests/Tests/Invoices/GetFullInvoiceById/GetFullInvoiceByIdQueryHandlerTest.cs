@@ -14,6 +14,9 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.GetFullInvoiceByl
                 .UseInMemoryDatabase(databaseName: "SalesContext")
                 .Options;
             _context = new SalesContext(options);
+            _context.AccountingYear.Add(AccountingYear.CreateAccountingYear(2024, true));
+            _context.SaveChanges();
+            SalesContext.SetActiveAccountingYearId(1);
             _logger = new TestLogger<GetFullInvoiceByIdQueryHandler>();
             getFullInvoiceByIdQueryHandler = new GetFullInvoiceByIdQueryHandler(_context, _logger);
         }
@@ -29,12 +32,13 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.GetFullInvoiceByl
             {
                 Date = DateTime.Now,
                 IdClient = client.Id,
-                IdClientNavigation = client
+                IdClientNavigation = client,
+                AccountingYearId = 1
             };
             _ = _context.Facture.Add(invoice);
             _ = await _context.SaveChangesAsync();
 
-            var query = new GetFullInvoiceByIdQuery(invoice.Num);
+            var query = new GetFullInvoiceByIdQuery(invoice.Id);
 
             // Act
             var result = await getFullInvoiceByIdQueryHandler.Handle(query, CancellationToken.None);

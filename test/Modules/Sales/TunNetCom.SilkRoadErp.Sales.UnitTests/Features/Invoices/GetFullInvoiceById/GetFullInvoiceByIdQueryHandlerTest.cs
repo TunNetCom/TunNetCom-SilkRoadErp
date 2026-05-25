@@ -4,15 +4,18 @@ public class GetFullInvoiceByIdQueryHandlerTest
     private readonly SalesContext _context;
     private readonly GetFullInvoiceByIdQueryHandler _handler;
     private readonly Mock<ILogger<GetFullInvoiceByIdQueryHandler>> _mockLogger;
-    public GetFullInvoiceByIdQueryHandlerTest()
-    {
-        var options = new DbContextOptionsBuilder<SalesContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-        _context = new SalesContext(options);
-        _mockLogger = new Mock<ILogger<GetFullInvoiceByIdQueryHandler>>();
-        _handler = new GetFullInvoiceByIdQueryHandler(_context, _mockLogger.Object);
-    }
+        public GetFullInvoiceByIdQueryHandlerTest()
+        {
+            var options = new DbContextOptionsBuilder<SalesContext>()
+                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+                .Options;
+            _context = new SalesContext(options);
+            _context.AccountingYear.Add(AccountingYear.CreateAccountingYear(2024, true));
+            _context.SaveChanges();
+            SalesContext.SetActiveAccountingYearId(_context.AccountingYear.First().Id);
+            _mockLogger = new Mock<ILogger<GetFullInvoiceByIdQueryHandler>>();
+            _handler = new GetFullInvoiceByIdQueryHandler(_context, _mockLogger.Object);
+        }
 
     [Fact]
     public async Task Handle_ShouldReturnInvoice_WhenInvoiceExists()
@@ -28,12 +31,14 @@ public class GetFullInvoiceByIdQueryHandlerTest
             etbSec: "ES1",
             mail: "test@client.com"
         );
+        var activeYearId = _context.AccountingYear.First().Id;
         var facture = new Facture
         {
             Num = 100,
             IdClient = client.Id,
             Date = DateTime.Today,
             IdClientNavigation = client,
+            AccountingYearId = activeYearId,
             BonDeLivraison = new List<BonDeLivraison>
             {
                 new() {
@@ -44,6 +49,7 @@ public class GetFullInvoiceByIdQueryHandlerTest
                     NetPayer = 120,
                     TempBl = new TimeOnly(14, 30),
                     ClientId = client.Id,
+                    AccountingYearId = activeYearId,
                     LigneBl = new List<LigneBl>
                     {
                         new() {
@@ -64,7 +70,7 @@ public class GetFullInvoiceByIdQueryHandlerTest
         _ = _context.Client.Add(client);
         _ = _context.Facture.Add(facture);
         _ = await _context.SaveChangesAsync();
-        var query = new GetFullInvoiceByIdQuery(facture.Num);
+        var query = new GetFullInvoiceByIdQuery(facture.Id);
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
         // Assert

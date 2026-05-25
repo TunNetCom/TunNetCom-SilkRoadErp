@@ -18,11 +18,19 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.PriceQuotes
         }
         private void SeedDatabase()
         {
+            var client1 = Client.CreateClient(
+                nom: "Client1", tel: "123", adresse: null, matricule: null,
+                code: null, codeCat: null, etbSec: null, mail: null);
+            var client2 = Client.CreateClient(
+                nom: "Client2", tel: "456", adresse: null, matricule: null,
+                code: null, codeCat: null, etbSec: null, mail: null);
+            _context.Client.AddRange(client1, client2);
+            _ = _context.SaveChanges();
             _context.Devis.AddRange(
                 new Devis
                 {
                     Num = 1,
-                    IdClient = 100,
+                    IdClient = client1.Id,
                     Date = new DateTime(2023, 01, 10),
                     TotHTva = 500,
                     TotTva = 100,
@@ -31,7 +39,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.PriceQuotes
                 new Devis
                 {
                     Num = 2,
-                    IdClient = 200,
+                    IdClient = client2.Id,
                     Date = new DateTime(2023, 02, 20),
                     TotHTva = 800,
                     TotTva = 160,

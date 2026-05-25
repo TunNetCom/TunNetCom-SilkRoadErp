@@ -42,7 +42,7 @@ public class CreateCustomerValidatorTest
         var command = new CreateCustomerCommand("John", "123", null, null, null, null, null, null);
         var result = _validator.TestValidate(command);
         _ = result.ShouldHaveValidationErrorFor(x => x.Tel)
-              .WithErrorMessage("tel_must_be_heigher_than_10_and_less_than_15");
+              .WithErrorMessage("tel_must_be_between_9_and_15_characters");
     }
 
     [Fact]

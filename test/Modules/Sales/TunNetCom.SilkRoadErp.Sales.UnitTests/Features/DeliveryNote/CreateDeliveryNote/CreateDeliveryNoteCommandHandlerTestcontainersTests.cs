@@ -86,6 +86,20 @@ public class CreateDeliveryNoteCommandHandlerTestcontainersTests : IClassFixture
         await using var context = _fixture.CreateContext();
         SeedSysteme(context);
         var accountingYear = SeedActiveAccountingYear(context);
+        if (!context.Produit.Any())
+        {
+            context.Produit.Add(new Produit(
+                refe: "REF1",
+                nom: "Product 1",
+                qteLimite: 0,
+                remise: 0,
+                remiseAchat: 0,
+                tva: 19,
+                prix: 50m,
+                prixAchat: 0,
+                visibilite: true));
+            context.SaveChanges();
+        }
 
         var numberGeneratorMock = new Mock<INumberGeneratorService>();
         numberGeneratorMock
