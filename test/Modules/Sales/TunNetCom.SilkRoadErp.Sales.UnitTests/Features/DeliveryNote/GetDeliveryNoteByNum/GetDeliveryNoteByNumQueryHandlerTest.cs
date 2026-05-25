@@ -17,6 +17,7 @@ public class GetDeliveryNoteByNumQueryHandlerTest
     public GetDeliveryNoteByNumQueryHandlerTest()
     {
         _ = _loggerMock.Setup(l => l.IsEnabled(LogLevel.Information)).Returns(true);
+        _ = _loggerMock.Setup(l => l.IsEnabled(LogLevel.Warning)).Returns(true);
     }
 
     [Fact]

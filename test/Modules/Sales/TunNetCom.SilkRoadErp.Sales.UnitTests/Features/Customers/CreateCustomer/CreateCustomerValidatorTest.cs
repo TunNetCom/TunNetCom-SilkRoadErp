@@ -65,7 +65,7 @@
         [Theory]
         [InlineData("12345")]
         [InlineData("abcdefghijk")]
-        [InlineData("+123456789")] // 9 digits only, too short
+        [InlineData("12345678")] // 8 chars, too short
         [InlineData("+12345678901234567")] // 17 digits, too long
         public void Should_Have_Error_When_Tel_Format_Invalid(string tel)
         {

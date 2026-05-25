@@ -58,20 +58,20 @@
         Assert.Equal(provider.Id, result.Value.Id);
         Assert.Equal(provider.Nom, result.Value.Nom);
         _loggerMock.Verify(
-     x => x.Log(
-         LogLevel.Information,
-         It.IsAny<EventId>(),
-         It.Is<It.IsAnyType>((v, _) => v.ToString().IndexOf("fetching", StringComparison.OrdinalIgnoreCase) >= 0),
-         null,
-         It.IsAny<Func<It.IsAnyType, Exception, string>>()),
-     Times.Once);
+            x => x.Log(
+                LogLevel.Information,
+                It.Is<EventId>(e => e.Name == "LogFetchingEntityById"),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
         _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, _) => v.ToString().IndexOf("fetched", StringComparison.OrdinalIgnoreCase) >= 0),
+                It.Is<EventId>(e => e.Name == "LogEntityFetchedById"),
+                It.IsAny<It.IsAnyType>(),
                 null,
-                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
 
@@ -88,10 +88,10 @@
         _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Warning,
-                It.IsAny<EventId>(),
+                It.Is<EventId>(e => e.Name == "LogEntityNotFound"),
                 It.IsAny<It.IsAnyType>(),
                 null,
-                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
 }

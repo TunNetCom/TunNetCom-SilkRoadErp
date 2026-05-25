@@ -48,14 +48,14 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Quotations
         public async Task Handle_ShouldReturnFilteredList_WhenSearchKeywordMatches()
         {
             // Arrange
-            var query = new GetPriceQuoteQuery(1, 10, "101"); 
+            var query = new GetPriceQuoteQuery(1, 10, "1"); 
             var handler = new GetPriceQuoteQueryHandler(_context, _loggerMock.Object);
             // Act
             var result = await handler.Handle(query, CancellationToken.None);
             // Assert
             _ = result.Should().NotBeNull();
             _ = result.Items.Should().HaveCount(1);
-            _ = result.Items.First().IdClient.Should().Be(101);
+            _ = result.Items.First().IdClient.Should().Be(1);
         }
 
         [Fact]

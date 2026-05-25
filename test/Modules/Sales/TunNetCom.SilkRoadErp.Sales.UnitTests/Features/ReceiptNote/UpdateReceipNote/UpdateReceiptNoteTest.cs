@@ -79,7 +79,7 @@ public class UpdateReceiptNoteTest
         // Assert
         Assert.True(result.IsSuccess);
 
-        var updated = await _context.BonDeReception.FindAsync(entity.Num);
+        var updated = await _context.BonDeReception.FirstAsync(b => b.Num == entity.Num);
         Assert.NotNull(updated);
         Assert.Equal(55, updated.NumBonFournisseur);
         Assert.Equal(numFournisseur, updated.NumFactureFournisseur);
