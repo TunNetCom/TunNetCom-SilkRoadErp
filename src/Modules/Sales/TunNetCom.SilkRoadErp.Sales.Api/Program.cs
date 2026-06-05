@@ -212,7 +212,7 @@ builder.Services.AddSwaggerGen(options =>
 
 // Register the exception handler
 builder.Services.AddSingleton<IExceptionHandler, GlobalExceptionHandler>();
-
+builder.Services.AddEventHandler();
 // Register DatabaseSeeder
 builder.Services.AddScoped<DatabaseSeeder>();
 

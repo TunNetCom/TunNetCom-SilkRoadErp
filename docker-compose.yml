@@ -1,0 +1,243 @@
+services:
+  sql-server:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: silkroad_sql
+    ports:
+      - "1433:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "SilkRoad_SqlDev123!"
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P "SilkRoad_SqlDev123!" -Q "SELECT 1" || exit 1
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    volumes:
+      - silkroad-sql-data:/var/opt/mssql
+    networks:
+      - docker-web
+
+  redis:
+    image: redis:7-alpine
+    container_name: silkroad_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - docker-web
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: silkroad_rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: "guest"
+      RABBITMQ_DEFAULT_PASS: "guest"
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "-rabbit loopback_users []"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+    networks:
+      - docker-web
+
+  loki:
+    image: grafana/loki:3.0.0
+    container_name: silkroad_loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - docker-web
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: silkroad_grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: "admin"
+      GF_SECURITY_ADMIN_PASSWORD: "admin"
+    volumes:
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      - loki
+    networks:
+      - docker-web
+
+  # ──────────────────────────────────────────────
+  # Sales API + Dapr sidecar
+  # ──────────────────────────────────────────────
+
+  sales-api:
+    image: silkroad-sales-api
+    container_name: silkroad_sales_api
+    build:
+      context: .
+      dockerfile: ./src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.Api/Dockerfile
+    ports:
+      - "5001:8080"
+      - "3500:3500"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      ASPNETCORE_URLS: "http://+:8080"
+      ConnectionStrings__DefaultConnection: "Server=sql-server;Database=SilkRoadErpDB;User Id=sa;Password=SilkRoad_SqlDev123!;TrustServerCertificate=True;MultipleActiveResultSets=true"
+      Loki__ServerUrl: "http://loki:3100"
+      Deployment__Mode: "Standalone"
+      Deployment__DefaultTenantId: "default"
+      Caching__Provider: "InMemory"
+    restart: always
+    depends_on:
+      sql-server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - docker-web
+
+  sales-api-dapr:
+    image: daprio/dapr:1.17.9
+    container_name: silkroad_sales_api_dapr
+    command:
+      - "./daprd"
+      - "-app-id"
+      - "sales-api"
+      - "-app-port"
+      - "8080"
+      - "-resources-path"
+      - "/components"
+    volumes:
+      - ./components:/components
+    depends_on:
+      - sales-api
+      - rabbitmq
+    network_mode: "service:sales-api"
+
+  # ──────────────────────────────────────────────
+  # Administration API + Dapr sidecar
+  # ──────────────────────────────────────────────
+
+  admin-api:
+    image: silkroad-admin-api
+    container_name: silkroad_admin_api
+    build:
+      context: .
+      dockerfile: ./src/Administration/TunNetCom.SilkRoadErp.Administration.Api/Dockerfile
+    ports:
+      - "5011:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      ASPNETCORE_URLS: "http://+:8080"
+      ConnectionStrings__AdminConnection: "Server=sql-server;Database=SlikRoadErp_Admin;User Id=sa;Password=SilkRoad_SqlDev123!;TrustServerCertificate=True;MultipleActiveResultSets=true"
+    restart: always
+    depends_on:
+      sql-server:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - docker-web
+
+  admin-api-dapr:
+    image: daprio/dapr:1.17.9
+    container_name: silkroad_admin_api_dapr
+    command:
+      - "./daprd"
+      - "-app-id"
+      - "admin-api"
+      - "-app-port"
+      - "8080"
+      - "-resources-path"
+      - "/components"
+    volumes:
+      - ./components:/components
+    depends_on:
+      - admin-api
+      - rabbitmq
+    network_mode: "service:admin-api"
+
+  # ──────────────────────────────────────────────
+  # Sales WebApp (Blazor Server)
+  # ──────────────────────────────────────────────
+
+  sales-webapp:
+    image: silkroad-sales-webapp
+    container_name: silkroad_sales_webapp
+    build:
+      context: .
+      dockerfile: ./src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.WebApp/Dockerfile
+    ports:
+      - "5005:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      ASPNETCORE_URLS: "http://+:8080"
+      ApiSettings__BaseUrl: "http://sales-api:8080"
+      Caching__Provider: "InMemory"
+      Deployment__Mode: "Standalone"
+      Deployment__DefaultTenantId: "default"
+    restart: always
+    depends_on:
+      - sales-api
+    networks:
+      - docker-web
+
+  # ──────────────────────────────────────────────
+  # Administration WebApp (Blazor Server)
+  # ──────────────────────────────────────────────
+
+  admin-webapp:
+    image: silkroad-admin-webapp
+    container_name: silkroad_admin_webapp
+    build:
+      context: .
+      dockerfile: ./src/Administration/TunNetCom.SilkRoadErp.Administration.WebApp/Dockerfile
+    ports:
+      - "5002:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      ASPNETCORE_URLS: "http://+:8080"
+      AdminApi__BaseUrl: "http://admin-api:8080"
+    restart: always
+    depends_on:
+      - admin-api
+    networks:
+      - docker-web
+
+  # ──────────────────────────────────────────────
+  # Tenant Setup WebApp (Blazor Server)
+  # ──────────────────────────────────────────────
+
+  tenant-webapp:
+    image: silkroad-tenant-webapp
+    container_name: silkroad_tenant_webapp
+    build:
+      context: .
+      dockerfile: ./src/Administration/TunNetCom.SilkRoadErp.TenantSetup.WebApp/Dockerfile
+    ports:
+      - "5003:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      ASPNETCORE_URLS: "http://+:8080"
+      AdminApi__BaseUrl: "http://admin-api:8080"
+    restart: always
+    depends_on:
+      - admin-api
+    networks:
+      - docker-web
+
+networks:
+  docker-web:
+    driver: bridge
+
+volumes:
+  silkroad-sql-data:

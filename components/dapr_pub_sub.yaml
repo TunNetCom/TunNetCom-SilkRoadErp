@@ -7,7 +7,7 @@ spec:
   version: v1
   metadata:
     - name: connectionString
-      value: "amqp://guest:guest@localhost:5672"
+      value: "amqp://guest:guest@rabbitmq:5672"
 
     - name: durable
       value: "true"
@@ -26,6 +26,3 @@ spec:
 
     - name: prefetchCount
       value: "10"
-
-    - name: rawPayload
-      value: "true"
