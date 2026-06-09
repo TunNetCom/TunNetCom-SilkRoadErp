@@ -85,7 +85,7 @@ stages:
       inputs:
         SonarQube: 'SonarConnection'
         scannerMode: 'dotnet'
-        projectKey: 'Silk_Road_ERP_Silk_Road_ERP_f493c9cb-0b66-4d3f-8bfe-e8056216b526'
+        projectKey: 'Silk_Road_ERP_Silk_Road_ERP_5cfe75f5-a231-4074-9e4c-4f5ccd21b96e'
         projectName: 'SilkRoad ERP'
         extraProperties: |
           sonar.host.url=https://sonarqube.aion-time.com
