@@ -90,7 +90,7 @@ stages:
         extraProperties: |
           sonar.host.url=https://sonarqube.aion-time.com
           sonar.exclusions=**/bin/**,**/obj/**,**/*.json,**/*.html
-          sonar.cs.opencover.reportsPaths=**/coverage.opencover.xml
+          sonar.cs.opencover.reportsPaths=$(Agent.TempDirectory)/**/coverage.opencover.xml
           sonar.cpd.exclusions=**/*.json,**/*.html
 
     # ---------------- BUILD (runs under SDK 10) ----------------
@@ -128,19 +128,30 @@ stages:
     # continueOnError: true — a test failure must not block
     #   SonarQube from publishing its quality gate result.
     # ============================================================
+# AFTER
     - task: DotNetCoreCLI@2
       displayName: Run tests with coverage
       continueOnError: true
       inputs:
         command: test
         projects: '**/*[Tt]est*/*.csproj'
+        publishTestResults: false
         arguments: >-
+          --logger trx
+          --results-directory $(Agent.TempDirectory)
           --configuration Release
           --collect "XPlat Code Coverage"
           --settings test.runsettings
           --logger "console;verbosity=detailed"
       env:
         TESTCONTAINERS_RYUK_DISABLED: "true"
+
+    - task: PublishTestResults@2
+      displayName: Publish test results
+      condition: always()
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: '$(Agent.TempDirectory)/**/*.trx'
 
     # ============================================================
     # 🔷 SONARQUBE ANALYSIS + QUALITY GATE
