@@ -80,17 +80,17 @@ stages:
     # 🔷 SONARQUBE PREPARE (must be before build)
     # Scanner finds SDK 8 in the tool cache; build/test use SDK 10
     # ============================================================
-    # - task: SonarQubePrepare@7
-    #   displayName: SonarQube Prepare
-    #   inputs:
-    #     SonarQube: 'SonarConnection'
-    #     scannerMode: 'dotnet'
-    #     projectKey: 'Silk_Road_ERP_Silk_Road_ERP_f493c9cb-0b66-4d3f-8bfe-e8056216b526'
-    #     projectName: 'SilkRoad ERP'
-    #     extraProperties: |
-    #       sonar.exclusions=**/bin/**,**/obj/**,**/*.json,**/*.html
-    #       sonar.cs.opencover.reportsPaths=**/coverage.opencover.xml
-    #       sonar.cpd.exclusions=**/*.json,**/*.html
+    - task: SonarQubePrepare@7
+      displayName: SonarQube Prepare
+      inputs:
+        SonarQube: 'SonarConnection'
+        scannerMode: 'dotnet'
+        projectKey: 'Silk_Road_ERP_Silk_Road_ERP_f493c9cb-0b66-4d3f-8bfe-e8056216b526'
+        projectName: 'SilkRoad ERP'
+        extraProperties: |
+          sonar.exclusions=**/bin/**,**/obj/**,**/*.json,**/*.html
+          sonar.cs.opencover.reportsPaths=**/coverage.opencover.xml
+          sonar.cpd.exclusions=**/*.json,**/*.html
 
     # ---------------- BUILD (runs under SDK 10) ----------------
     - task: DotNetCoreCLI@2
@@ -127,30 +127,30 @@ stages:
     # continueOnError: true — a test failure must not block
     #   SonarQube from publishing its quality gate result.
     # ============================================================
-    # - task: DotNetCoreCLI@2
-    #   displayName: Run tests with coverage
-    #   continueOnError: true
-    #   inputs:
-    #     command: test
-    #     projects: '**/*[Tt]est*/*.csproj'
-    #     arguments: >-
-    #       --configuration Release
-    #       --collect "XPlat Code Coverage"
-    #       --settings test.runsettings
-    #       --logger "console;verbosity=detailed"
-    #   env:
-    #     TESTCONTAINERS_RYUK_DISABLED: "true"
+    - task: DotNetCoreCLI@2
+      displayName: Run tests with coverage
+      continueOnError: true
+      inputs:
+        command: test
+        projects: '**/*[Tt]est*/*.csproj'
+        arguments: >-
+          --configuration Release
+          --collect "XPlat Code Coverage"
+          --settings test.runsettings
+          --logger "console;verbosity=detailed"
+      env:
+        TESTCONTAINERS_RYUK_DISABLED: "true"
 
     # ============================================================
     # 🔷 SONARQUBE ANALYSIS + QUALITY GATE
     # # ============================================================
-    # - task: SonarQubeAnalyze@7
-    #   displayName: SonarQube Analyze
+    - task: SonarQubeAnalyze@7
+      displayName: SonarQube Analyze
 
-    # - task: SonarQubePublish@7
-    #   displayName: SonarQube Publish Quality Gate
-    #   inputs:
-    #     pollingTimeoutSec: '300'
+    - task: SonarQubePublish@7
+      displayName: SonarQube Publish Quality Gate
+      inputs:
+        pollingTimeoutSec: '300'
 
     # ============================================================
     # FIX #4 — Disk cleanup moved to AFTER SonarQube Publish
