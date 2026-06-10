@@ -43,6 +43,8 @@ spec:
       - name: api
         image: tunnetcom/silkroad:latest-api
         imagePullPolicy: Always
+        command: ["/bin/sh", "-c"]
+        args: ["set -a; . /vault/secrets/db; set +a; exec dotnet TunNetCom.SilkRoadErp.Sales.Api.dll"]
         securityContext:
           readOnlyRootFilesystem: true
           allowPrivilegeEscalation: false
@@ -61,11 +63,7 @@ spec:
           value: "Production"
         - name: ASPNETCORE_URLS
           value: "http://+:8080"
-        - name: ConnectionStrings__DefaultConnection
-          valueFrom:
-            secretKeyRef:
-              name: silkroad-connection-secret
-              key: ConnectionStrings__DefaultConnection
+
         resources:
           requests:
             memory: "256Mi"
