@@ -505,9 +505,11 @@ stages:
           if [ "$CURRENT" = "blue" ]; then
             echo "Switching target -> green"
             echo "##vso[task.setvariable variable=targetColor]green"
+            echo "##vso[task.setvariable variable=otherColor]blue"
           else
             echo "Switching target -> blue"
             echo "##vso[task.setvariable variable=targetColor]blue"
+            echo "##vso[task.setvariable variable=otherColor]green"
           fi
 
     - task: CmdLine@2
@@ -584,7 +586,7 @@ stages:
 
           echo "✅ $READY healthy pod(s) found"
 
-    - task: CmdLine@2
+      - task: CmdLine@2
       displayName: Switch Traffic
       inputs:
         script: |
@@ -595,6 +597,26 @@ stages:
 
           kubectl patch svc $(webService) -n $(kubeNamespace) \
             -p "{\"spec\":{\"selector\":{\"app\":\"silkroad-webapp\",\"environment\":\"production\",\"version\":\"$(targetColor)\"}}}"
+
+    - task: CmdLine@2
+      displayName: Fix Dapr Annotations
+      inputs:
+        script: |
+          echo "Enabling Dapr on $(targetColor), disabling on $(otherColor)..."
+
+          # Enable Dapr on the active (target) deployment
+          kubectl patch deployment silkroad-api-$(targetColor) -n $(kubeNamespace) \
+            -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"dapr.io/enabled\":\"true\"}}}}}"
+
+          kubectl patch deployment silkroad-webapp-$(targetColor) -n $(kubeNamespace) \
+            -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"dapr.io/enabled\":\"true\"}}}}}"
+
+          # Disable Dapr on the inactive (other) deployment
+          kubectl patch deployment silkroad-api-$(otherColor) -n $(kubeNamespace) \
+            -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"dapr.io/enabled\":\"false\"}}}}}"
+
+          kubectl patch deployment silkroad-webapp-$(otherColor) -n $(kubeNamespace) \
+            -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"dapr.io/enabled\":\"false\"}}}}}"
 
     - task: CmdLine@2
       displayName: Verify Traffic Switch
