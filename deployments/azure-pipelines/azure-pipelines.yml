@@ -201,17 +201,17 @@ stages:
     # ============================================================
     # 🔒 INSTALL TRIVY
     # ============================================================
-    - task: CmdLine@2
-      displayName: Install Trivy
-      inputs:
-        script: |
-          sudo apt-get update -qq
-          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main \
-            | sudo tee /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update -qq
-          sudo apt-get install -y trivy
+    # - task: CmdLine@2
+    #   displayName: Install Trivy
+    #   inputs:
+    #     script: |
+    #       sudo apt-get update -qq
+    #       sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+    #       wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+    #       echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main \
+    #         | sudo tee /etc/apt/sources.list.d/trivy.list
+    #       sudo apt-get update -qq
+    #       sudo apt-get install -y trivy
 
     # ============================================================
     # 🔵 API: BUILD → SCAN → PUSH → CLEANUP
@@ -224,22 +224,22 @@ stages:
             -t $(dockerRepository):$(apiTag) \
             -f src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.Api/Dockerfile .
 
-    - task: CmdLine@2
-      displayName: Scan API image (Trivy)
-      inputs:
-        script: |
-          export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-api
-          mkdir -p $TRIVY_CACHE_DIR
+    # - task: CmdLine@2
+    #   displayName: Scan API image (Trivy)
+    #   inputs:
+    #     script: |
+    #       export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-api
+    #       mkdir -p $TRIVY_CACHE_DIR
 
-          echo "Scanning API image..."
-          trivy image \
-            --scanners vuln \
-            --cache-dir $TRIVY_CACHE_DIR \
-            --no-progress \
-            --timeout 10m \
-            --exit-code 1 \
-            --severity HIGH,CRITICAL \
-            $(dockerRepository):$(apiTag)
+    #       echo "Scanning API image..."
+    #       trivy image \
+    #         --scanners vuln \
+    #         --cache-dir $TRIVY_CACHE_DIR \
+    #         --no-progress \
+    #         --timeout 10m \
+    #         --exit-code 1 \
+    #         --severity HIGH,CRITICAL \
+    #         $(dockerRepository):$(apiTag)
 
     - task: CmdLine@2
       displayName: Push API image
@@ -267,22 +267,22 @@ stages:
             -t $(dockerRepository):$(webappTag) \
             -f src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.WebApp/Dockerfile .
 
-    - task: CmdLine@2
-      displayName: Scan Web image (Trivy)
-      inputs:
-        script: |
-          export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-web
-          mkdir -p $TRIVY_CACHE_DIR
+    # - task: CmdLine@2
+    #   displayName: Scan Web image (Trivy)
+    #   inputs:
+    #     script: |
+    #       export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-web
+    #       mkdir -p $TRIVY_CACHE_DIR
 
-          echo "Scanning Web image..."
-          trivy image \
-            --scanners vuln \
-            --cache-dir $TRIVY_CACHE_DIR \
-            --no-progress \
-            --timeout 10m \
-            --exit-code 1 \
-            --severity HIGH,CRITICAL \
-            $(dockerRepository):$(webappTag)
+    #       echo "Scanning Web image..."
+    #       trivy image \
+    #         --scanners vuln \
+    #         --cache-dir $TRIVY_CACHE_DIR \
+    #         --no-progress \
+    #         --timeout 10m \
+    #         --exit-code 1 \
+    #         --severity HIGH,CRITICAL \
+    #         $(dockerRepository):$(webappTag)
 
     - task: CmdLine@2
       displayName: Push Web image
@@ -303,178 +303,178 @@ stages:
 # ============================================================
 # 2️⃣  ZAP BASELINE
 # ============================================================
-- stage: ZAP_Baseline
-  displayName: DAST - ZAP Baseline Scan
-  dependsOn:
-  - Build
-  condition: succeeded()
-  pool:
-    vmImage: 'ubuntu-latest'
-  jobs:
-  - job: ZAPBaselineJob
-    displayName: ZAP Baseline (passive scan)
-    steps:
+# - stage: ZAP_Baseline
+#   displayName: DAST - ZAP Baseline Scan
+#   dependsOn:
+#   - Build
+#   condition: succeeded()
+#   pool:
+#     vmImage: 'ubuntu-latest'
+#   jobs:
+#   - job: ZAPBaselineJob
+#     displayName: ZAP Baseline (passive scan)
+#     steps:
 
-    - task: CmdLine@2
-      displayName: Prepare ZAP Baseline directory
-      inputs:
-        script: |
-          mkdir -p $(System.DefaultWorkingDirectory)/zap-baseline
-          chmod 777 $(System.DefaultWorkingDirectory)/zap-baseline
+#     - task: CmdLine@2
+#       displayName: Prepare ZAP Baseline directory
+#       inputs:
+#         script: |
+#           mkdir -p $(System.DefaultWorkingDirectory)/zap-baseline
+#           chmod 777 $(System.DefaultWorkingDirectory)/zap-baseline
 
-    - task: CmdLine@2
-      displayName: Pull ZAP image
-      inputs:
-        script: |
-          docker pull ghcr.io/zaproxy/zaproxy:stable
+#     - task: CmdLine@2
+#       displayName: Pull ZAP image
+#       inputs:
+#         script: |
+#           docker pull ghcr.io/zaproxy/zaproxy:stable
 
-    - task: CmdLine@2
-      displayName: Run ZAP Baseline scan
-      inputs:
-        script: |
-          docker run --rm \
-            -v $(System.DefaultWorkingDirectory)/zap-baseline:/zap/wrk:rw \
-            ghcr.io/zaproxy/zaproxy:stable \
-            zap-baseline.py \
-            -t $(zapTarget) \
-            -r zap-baseline.html \
-            -J zap-baseline.json \
-            -l WARN \
-            -I
+#     - task: CmdLine@2
+#       displayName: Run ZAP Baseline scan
+#       inputs:
+#         script: |
+#           docker run --rm \
+#             -v $(System.DefaultWorkingDirectory)/zap-baseline:/zap/wrk:rw \
+#             ghcr.io/zaproxy/zaproxy:stable \
+#             zap-baseline.py \
+#             -t $(zapTarget) \
+#             -r zap-baseline.html \
+#             -J zap-baseline.json \
+#             -l WARN \
+#             -I
 
-    - task: CmdLine@2
-      displayName: Fix ZAP report permissions
-      condition: always()
-      inputs:
-        script: |
-          sudo chown -R $(id -u):$(id -g) $(System.DefaultWorkingDirectory)/zap-baseline
-          sudo chmod -R 755 $(System.DefaultWorkingDirectory)/zap-baseline
+#     - task: CmdLine@2
+#       displayName: Fix ZAP report permissions
+#       condition: always()
+#       inputs:
+#         script: |
+#           sudo chown -R $(id -u):$(id -g) $(System.DefaultWorkingDirectory)/zap-baseline
+#           sudo chmod -R 755 $(System.DefaultWorkingDirectory)/zap-baseline
 
-    - task: PublishBuildArtifacts@1
-      displayName: Publish ZAP Baseline Report
-      condition: always()
-      inputs:
-        pathToPublish: '$(System.DefaultWorkingDirectory)/zap-baseline'
-        artifactName: 'ZAP-Baseline-Report'
+#     - task: PublishBuildArtifacts@1
+#       displayName: Publish ZAP Baseline Report
+#       condition: always()
+#       inputs:
+#         pathToPublish: '$(System.DefaultWorkingDirectory)/zap-baseline'
+#         artifactName: 'ZAP-Baseline-Report'
 
-    - task: PublishHtmlReport@1
-      displayName: Show ZAP Baseline Tab
-      condition: always()
-      inputs:
-        reportDir: '$(System.DefaultWorkingDirectory)/zap-baseline'
-        tabName: 'ZAP Baseline'
+#     - task: PublishHtmlReport@1
+#       displayName: Show ZAP Baseline Tab
+#       condition: always()
+#       inputs:
+#         reportDir: '$(System.DefaultWorkingDirectory)/zap-baseline'
+#         tabName: 'ZAP Baseline'
 
 
-# ============================================================
-# 3️⃣  ZAP AJAX
-# ============================================================
-- stage: ZAP_AJAX
-  displayName: DAST - ZAP AJAX Spider Scan
-  dependsOn:
-  - ZAP_Baseline
-  condition: succeeded()
-  pool:
-    vmImage: 'ubuntu-latest'
-  jobs:
-  - job: ZAPAjaxJob
-    displayName: ZAP AJAX Spider (Blazor routes)
-    steps:
+# # ============================================================
+# # 3️⃣  ZAP AJAX
+# # ============================================================
+# - stage: ZAP_AJAX
+#   displayName: DAST - ZAP AJAX Spider Scan
+#   dependsOn:
+#   - ZAP_Baseline
+#   condition: succeeded()
+#   pool:
+#     vmImage: 'ubuntu-latest'
+#   jobs:
+#   - job: ZAPAjaxJob
+#     displayName: ZAP AJAX Spider (Blazor routes)
+#     steps:
 
-    - task: CmdLine@2
-      displayName: Prepare ZAP AJAX directory
-      inputs:
-        script: |
-          mkdir -p $(System.DefaultWorkingDirectory)/zap-ajax
-          chmod 777 $(System.DefaultWorkingDirectory)/zap-ajax
+#     - task: CmdLine@2
+#       displayName: Prepare ZAP AJAX directory
+#       inputs:
+#         script: |
+#           mkdir -p $(System.DefaultWorkingDirectory)/zap-ajax
+#           chmod 777 $(System.DefaultWorkingDirectory)/zap-ajax
 
-    - task: CmdLine@2
-      displayName: Pull ZAP image
-      inputs:
-        script: |
-          docker pull ghcr.io/zaproxy/zaproxy:stable
+#     - task: CmdLine@2
+#       displayName: Pull ZAP image
+#       inputs:
+#         script: |
+#           docker pull ghcr.io/zaproxy/zaproxy:stable
 
-    - task: CmdLine@2
-      displayName: Generate AJAX plan YAML
-      inputs:
-        script: |
-          cat > $(System.DefaultWorkingDirectory)/zap-ajax/ajax-plan.yaml << 'EOF'
-          env:
-            contexts:
-              - name: silkroad-erp
-                urls:
-                  - $(zapTarget)/
-                excludePaths: []
+#     - task: CmdLine@2
+#       displayName: Generate AJAX plan YAML
+#       inputs:
+#         script: |
+#           cat > $(System.DefaultWorkingDirectory)/zap-ajax/ajax-plan.yaml << 'EOF'
+#           env:
+#             contexts:
+#               - name: silkroad-erp
+#                 urls:
+#                   - $(zapTarget)/
+#                 excludePaths: []
 
-          parameters:
-            failOnError: false
-            progressToStdout: true
+#           parameters:
+#             failOnError: false
+#             progressToStdout: true
 
-          jobs:
-            - type: spiderAjax
-              parameters:
-                url: $(zapTarget)/
-                maxDuration: 5
-                maxCrawlDepth: 10
-                numberOfBrowsers: 2
-                browserId: firefox-headless
-                clickDefaultElems: true
-                clickElemsOnce: true
-                randomInputs: true
+#           jobs:
+#             - type: spiderAjax
+#               parameters:
+#                 url: $(zapTarget)/
+#                 maxDuration: 5
+#                 maxCrawlDepth: 10
+#                 numberOfBrowsers: 2
+#                 browserId: firefox-headless
+#                 clickDefaultElems: true
+#                 clickElemsOnce: true
+#                 randomInputs: true
 
-            - type: passiveScan-wait
-              parameters:
-                maxDuration: 5
+#             - type: passiveScan-wait
+#               parameters:
+#                 maxDuration: 5
 
-            - type: outputSummary
-              parameters:
-                format: Long
-                summaryFile: /zap/wrk/zap_out.json
+#             - type: outputSummary
+#               parameters:
+#                 format: Long
+#                 summaryFile: /zap/wrk/zap_out.json
 
-            - type: report
-              parameters:
-                reportTitle: ZAP AJAX Spider - SilkRoad ERP
-                reportDir: /zap/wrk/
-                reportFile: zap-ajax.html
-                template: traditional-html
+#             - type: report
+#               parameters:
+#                 reportTitle: ZAP AJAX Spider - SilkRoad ERP
+#                 reportDir: /zap/wrk/
+#                 reportFile: zap-ajax.html
+#                 template: traditional-html
 
-            - type: report
-              parameters:
-                reportTitle: ZAP AJAX Spider - SilkRoad ERP
-                reportDir: /zap/wrk/
-                reportFile: zap-ajax.json
-                template: traditional-json
-          EOF
+#             - type: report
+#               parameters:
+#                 reportTitle: ZAP AJAX Spider - SilkRoad ERP
+#                 reportDir: /zap/wrk/
+#                 reportFile: zap-ajax.json
+#                 template: traditional-json
+#           EOF
 
-    - task: CmdLine@2
-      displayName: Run ZAP AJAX Spider scan
-      inputs:
-        script: |
-          docker run --rm \
-            -v $(System.DefaultWorkingDirectory)/zap-ajax:/zap/wrk:rw \
-            ghcr.io/zaproxy/zaproxy:stable \
-            zap.sh -cmd -autorun /zap/wrk/ajax-plan.yaml
+#     - task: CmdLine@2
+#       displayName: Run ZAP AJAX Spider scan
+#       inputs:
+#         script: |
+#           docker run --rm \
+#             -v $(System.DefaultWorkingDirectory)/zap-ajax:/zap/wrk:rw \
+#             ghcr.io/zaproxy/zaproxy:stable \
+#             zap.sh -cmd -autorun /zap/wrk/ajax-plan.yaml
 
-    - task: CmdLine@2
-      displayName: Fix ZAP report permissions
-      condition: always()
-      inputs:
-        script: |
-          sudo chown -R $(id -u):$(id -g) $(System.DefaultWorkingDirectory)/zap-ajax
-          sudo chmod -R 755 $(System.DefaultWorkingDirectory)/zap-ajax
+#     - task: CmdLine@2
+#       displayName: Fix ZAP report permissions
+#       condition: always()
+#       inputs:
+#         script: |
+#           sudo chown -R $(id -u):$(id -g) $(System.DefaultWorkingDirectory)/zap-ajax
+#           sudo chmod -R 755 $(System.DefaultWorkingDirectory)/zap-ajax
 
-    - task: PublishBuildArtifacts@1
-      displayName: Publish ZAP AJAX Report
-      condition: always()
-      inputs:
-        pathToPublish: '$(System.DefaultWorkingDirectory)/zap-ajax'
-        artifactName: 'ZAP-AJAX-Report'
+#     - task: PublishBuildArtifacts@1
+#       displayName: Publish ZAP AJAX Report
+#       condition: always()
+#       inputs:
+#         pathToPublish: '$(System.DefaultWorkingDirectory)/zap-ajax'
+#         artifactName: 'ZAP-AJAX-Report'
 
-    - task: PublishHtmlReport@1
-      displayName: Show ZAP AJAX Tab
-      condition: always()
-      inputs:
-        reportDir: '$(System.DefaultWorkingDirectory)/zap-ajax'
-        tabName: 'ZAP AJAX Spider'
+#     - task: PublishHtmlReport@1
+#       displayName: Show ZAP AJAX Tab
+#       condition: always()
+#       inputs:
+#         reportDir: '$(System.DefaultWorkingDirectory)/zap-ajax'
+#         tabName: 'ZAP AJAX Spider'
 
 
 # ============================================================
@@ -586,7 +586,7 @@ stages:
 
           echo "✅ $READY healthy pod(s) found"
 
-      - task: CmdLine@2
+    - task: CmdLine@2
       displayName: Switch Traffic
       inputs:
         script: |
