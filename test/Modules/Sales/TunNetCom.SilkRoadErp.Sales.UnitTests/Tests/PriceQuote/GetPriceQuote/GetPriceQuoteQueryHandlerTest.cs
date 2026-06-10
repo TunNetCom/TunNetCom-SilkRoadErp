@@ -65,7 +65,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.PriceQuotes
         public async Task Handle_ShouldReturnFilteredQuotations_WithSearch()
         {
             // Arrange
-            var query = new GetPriceQuoteQuery(1, 10, "1");
+            var query = new GetPriceQuoteQuery(1, 10, "100");
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
             // Assert

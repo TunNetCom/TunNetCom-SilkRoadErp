@@ -10,7 +10,9 @@ public class CreateCustomerValidator : AbstractValidator<CreateCustomerCommand>
 
         _ = RuleFor(x => x.Tel)
             .NotEmpty().WithMessage("tel_is_required")
-            .Matches(@"^\+?\d{8,15}$").WithMessage("tel_must_be_between_9_and_15_characters");
+            .MinimumLength(9).WithMessage("tel_must_be_between_9_and_15_characters")
+            .MaximumLength(15).WithMessage("tel_must_be_between_9_and_15_characters")
+            .Matches(@"^\+?\d+$").WithMessage("tel_must_be_between_9_and_15_characters");
 
         _ = RuleFor(x => x.Adresse)
             .MaximumLength(50).WithMessage("adresse_must_be_less_than_50_characters");
