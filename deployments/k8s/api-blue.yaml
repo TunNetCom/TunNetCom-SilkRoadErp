@@ -28,6 +28,9 @@ spec:
         dapr.io/app-id: "silkroad-api"
         dapr.io/app-port: "8080"
         dapr.io/app-protocol: "http"
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: "silkroad-api"
+        vault.hashicorp.com/agent-inject-secret-db: "secret/data/silkroad/db"
     spec:
       securityContext:
         runAsNonRoot: true
