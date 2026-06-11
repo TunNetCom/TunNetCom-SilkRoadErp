@@ -32,7 +32,7 @@ spec:
         vault.hashicorp.com/role: "silkroad-api"
         vault.hashicorp.com/agent-inject-secret-db: "secret/data/silkroad/db"
         vault.hashicorp.com/agent-inject-template-db: |
-          {{- with secret "secret/data/silkroad/db" -}}{{ range $k, $v := .Data.data }}{{ $k }}='{{ $v }}'
+          {{- with secret "secret/data/silkroad/db" -}}{{ range $k, $v := .Data.data }}{{ $k }}={{ $v }}
           {{ end }}{{- end -}}
     spec:
       securityContext:
