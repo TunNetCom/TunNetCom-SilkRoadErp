@@ -9,8 +9,16 @@ pool:
   demands:
     - Agent.Name -equals ubuntu-self-hosted-mourouj
 
+resources:
+  pipelines:
+  - pipeline: ci                          # alias used to reference variables below
+    source: 'TunNetCom.SilkRoadErp-DEV'              # ← exact pipeline name as it appears in Azure DevOps
+    trigger: none                         # manual only, never auto-triggered
+
 variables:
 - group: silkroad-mourouj
+- name: dockerRepository
+  value: 'tunnetcom/silkroad'
 - name: connectionString
   value: $(Connection_String_Mourouj)
 - name: kubeNamespace
@@ -21,12 +29,29 @@ variables:
   value: silkroad-webapp
 - name: manifestPath
   value: src/deployments/prod-deployment.yaml
+- name: apiTag                            # ← built from the CI run ID you pick at runtime
+  value: 'api-$(resources.pipeline.ci.runID)'
+- name: webappTag
+  value: 'webapp-$(resources.pipeline.ci.runID)'
 
 stages:
 - stage: Deploy
   displayName: Deploy to Mourouj Kubernetes
   jobs:
-  - template: templates/deploy-k8s-job.yml
+  - job: ShowImages
+    displayName: Show images being deployed
+    steps:
+    - task: CmdLine@2
+      displayName: Show images being deployed
+      inputs:
+        script: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "API image : $(dockerRepository):$(apiTag)"
+          echo "Web image : $(dockerRepository):$(webappTag)"
+          echo "Namespace : $(kubeNamespace)"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+  - template: templates/deploy-k8s-job.yml      
     parameters:
       stageDisplayName: Deploy to Mourouj Kubernetes
       kubeNamespace: $(kubeNamespace)
