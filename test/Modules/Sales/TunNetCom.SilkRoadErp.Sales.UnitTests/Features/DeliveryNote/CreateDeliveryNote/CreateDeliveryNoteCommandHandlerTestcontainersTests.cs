@@ -21,7 +21,7 @@ public class CreateDeliveryNoteCommandHandlerTestcontainersTests : IClassFixture
     {
         if (context.Systeme.Any())
             return;
-        context.Systeme.Add(new Systeme
+        _ = context.Systeme.Add(new Systeme
         {
             NomSociete = "Test",
             Adresse = "Test",
@@ -30,14 +30,14 @@ public class CreateDeliveryNoteCommandHandlerTestcontainersTests : IClassFixture
             BloquerVenteStockInsuffisant = false,
             BloquerBlSansFacture = false
         });
-        context.SaveChanges();
+        _ = context.SaveChanges();
     }
 
     private static AccountingYear SeedActiveAccountingYear(SalesContext context)
     {
         var year = AccountingYear.CreateAccountingYear(2024, isActive: true);
-        context.AccountingYear.Add(year);
-        context.SaveChanges();
+        _ = context.AccountingYear.Add(year);
+        _ = context.SaveChanges();
         return year;
     }
 
@@ -51,7 +51,7 @@ public class CreateDeliveryNoteCommandHandlerTestcontainersTests : IClassFixture
         var numberGeneratorMock = new Mock<INumberGeneratorService>();
         var stockMock = new Mock<IStockCalculationService>();
         var activeYearMock = new Mock<IActiveAccountingYearService>();
-        activeYearMock.Setup(x => x.GetActiveAccountingYearIdAsync(It.IsAny<CancellationToken>()))
+        _ = activeYearMock.Setup(x => x.GetActiveAccountingYearIdAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync((int?)null);
 
         var logger = new TestLogger<CreateDeliveryNoteCommandHandler>();
@@ -88,7 +88,7 @@ public class CreateDeliveryNoteCommandHandlerTestcontainersTests : IClassFixture
         var accountingYear = SeedActiveAccountingYear(context);
         if (!context.Produit.Any())
         {
-            context.Produit.Add(new Produit(
+            _ = context.Produit.Add(new Produit(
                 refe: "REF1",
                 nom: "Product 1",
                 qteLimite: 0,
@@ -98,16 +98,16 @@ public class CreateDeliveryNoteCommandHandlerTestcontainersTests : IClassFixture
                 prix: 50m,
                 prixAchat: 0,
                 visibilite: true));
-            context.SaveChanges();
+            _ = context.SaveChanges();
         }
 
         var numberGeneratorMock = new Mock<INumberGeneratorService>();
-        numberGeneratorMock
+        _ = numberGeneratorMock
             .Setup(x => x.GenerateBonDeLivraisonNumberAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         var stockMock = new Mock<IStockCalculationService>();
-        stockMock
+        _ = stockMock
             .Setup(x => x.CalculateStockAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ProductStockResult
             {
@@ -117,7 +117,7 @@ public class CreateDeliveryNoteCommandHandlerTestcontainersTests : IClassFixture
             });
 
         var activeYearMock = new Mock<IActiveAccountingYearService>();
-        activeYearMock
+        _ = activeYearMock
             .Setup(x => x.GetActiveAccountingYearIdAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(accountingYear.Id);
 
