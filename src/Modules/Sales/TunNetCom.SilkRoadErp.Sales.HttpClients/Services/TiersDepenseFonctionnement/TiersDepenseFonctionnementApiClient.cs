@@ -20,6 +20,10 @@ public class TiersDepenseFonctionnementApiClient : ITiersDepenseFonctionnementAp
         QueryStringParameters queryParameters,
         CancellationToken cancellationToken)
     {
+        _logger.LogInformation(
+            "Fetching paged TiersDepenseFonctionnement: page {PageNumber}, size {PageSize}, search \"{SearchKeyword}\"",
+            queryParameters.PageNumber, queryParameters.PageSize, queryParameters.SearchKeyword ?? "");
+
         var response = await _httpClient.GetAsync(
             $"/tiers-depenses-fonctionnement?pageNumber={queryParameters.PageNumber}&pageSize={queryParameters.PageSize}&searchKeyword={Uri.EscapeDataString(queryParameters.SearchKeyword ?? "")}",
             cancellationToken: cancellationToken);
@@ -39,6 +43,8 @@ public class TiersDepenseFonctionnementApiClient : ITiersDepenseFonctionnementAp
             }
         }
 
+        var itemCount = paged?.Items.Count ?? 0;
+        _logger.LogInformation("Fetched {ItemCount} TiersDepenseFonctionnement (total: {TotalCount})", itemCount, paged?.TotalCount ?? 0);
         return paged ?? new PagedList<TiersDepenseFonctionnementResponse>(new List<TiersDepenseFonctionnementResponse>(), 0, 1, 10);
     }
 
@@ -46,15 +52,21 @@ public class TiersDepenseFonctionnementApiClient : ITiersDepenseFonctionnementAp
         int id,
         CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Fetching TiersDepenseFonctionnement with ID: {Id}", id);
+
         var response = await _httpClient.GetAsync($"/tiers-depenses-fonctionnement/{id}", cancellationToken: cancellationToken);
         if (response.StatusCode == HttpStatusCode.OK)
         {
-            return await response.ReadJsonAsync<TiersDepenseFonctionnementResponse>();
+            var result = await response.ReadJsonAsync<TiersDepenseFonctionnementResponse>();
+            _logger.LogInformation("Fetched TiersDepenseFonctionnement with ID: {Id}", id);
+            return result;
         }
         if (response.StatusCode == HttpStatusCode.NotFound)
         {
+            _logger.LogWarning("TiersDepenseFonctionnement with ID: {Id} not found", id);
             return false;
         }
+        _logger.LogError("Unexpected response fetching TiersDepenseFonctionnement {Id}: {StatusCode}", id, response.StatusCode);
         throw new Exception($"TiersDepenseFonctionnement: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
     }
 
@@ -62,6 +74,8 @@ public class TiersDepenseFonctionnementApiClient : ITiersDepenseFonctionnementAp
         CreateTiersDepenseFonctionnementRequest request,
         CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Creating TiersDepenseFonctionnement with request: {@Request}", request);
+
         var response = await _httpClient.PostAsJsonAsync("/tiers-depenses-fonctionnement", request, cancellationToken: cancellationToken);
         if (response.StatusCode == HttpStatusCode.Created)
         {
@@ -71,19 +85,26 @@ public class TiersDepenseFonctionnementApiClient : ITiersDepenseFonctionnementAp
                 var segments = locationPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
                 if (segments.Length >= 1 && int.TryParse(segments[^1], out var id))
                 {
+                    _logger.LogInformation("TiersDepenseFonctionnement created successfully with ID: {Id}", id);
                     return id;
                 }
             }
             var body = await response.Content.ReadAsStringAsync(cancellationToken);
             var created = JsonConvert.DeserializeObject<CreatedIdResponse>(body);
             if (created?.Id > 0)
+            {
+                _logger.LogInformation("TiersDepenseFonctionnement created successfully with ID: {Id}", created.Id);
                 return created.Id;
+            }
+            _logger.LogError("Unable to extract id from TiersDepenseFonctionnement create response: {Body}", body);
             throw new Exception($"TiersDepenseFonctionnement: Unable to extract id from response: {await response.Content.ReadAsStringAsync()}");
         }
         if (response.StatusCode == HttpStatusCode.BadRequest)
         {
+            _logger.LogWarning("TiersDepenseFonctionnement create returned BadRequest: {@Request}", request);
             return await response.ReadJsonAsync<BadRequestResponse>();
         }
+        _logger.LogError("Unexpected response creating TiersDepenseFonctionnement: {StatusCode}", response.StatusCode);
         throw new Exception($"TiersDepenseFonctionnement: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
     }
 
@@ -92,20 +113,26 @@ public class TiersDepenseFonctionnementApiClient : ITiersDepenseFonctionnementAp
         UpdateTiersDepenseFonctionnementRequest request,
         CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Updating TiersDepenseFonctionnement with ID: {Id}", id);
+
         var headers = new Dictionary<string, string> { { "Accept", "application/problem+json" } };
         var response = await _httpClient.PutAsJsonAsync($"/tiers-depenses-fonctionnement/{id}", request, headers, cancellationToken);
         if (response.StatusCode == HttpStatusCode.NoContent)
         {
+            _logger.LogInformation("TiersDepenseFonctionnement with ID: {Id} updated successfully", id);
             return ResponseTypes.Success;
         }
         if (response.StatusCode == HttpStatusCode.NotFound)
         {
+            _logger.LogWarning("TiersDepenseFonctionnement with ID: {Id} not found for update", id);
             return ResponseTypes.NotFound;
         }
         if (response.StatusCode == HttpStatusCode.BadRequest)
         {
+            _logger.LogWarning("TiersDepenseFonctionnement update {Id} returned BadRequest", id);
             return await response.ReadJsonAsync<BadRequestResponse>();
         }
+        _logger.LogError("Unexpected response updating TiersDepenseFonctionnement {Id}: {StatusCode}", id, response.StatusCode);
         throw new Exception($"TiersDepenseFonctionnement: Unexpected response. Status Code: {response.StatusCode}. Content: {await response.Content.ReadAsStringAsync()}");
     }
 

@@ -18,7 +18,7 @@ public class ProviderInvoiceApiClient : IProviderInvoiceApiClient
     public async Task<OneOf<GetProviderInvoicesWithSummary, BadRequestResponse>> GetProvidersInvoicesAsync(
     int idFournisseur,
     QueryStringParameters query,
-    CancellationToken cancellationToken)
+    CancellationToken cancellationToken = default)
     {
         var queryParams = new Dictionary<string, string>
         {
