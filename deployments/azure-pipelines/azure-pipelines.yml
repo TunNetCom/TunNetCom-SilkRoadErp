@@ -157,13 +157,29 @@ stages:
             -f src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.Api/Dockerfile .
 
     - task: CmdLine@2
+      displayName: Prepare Trivy API report directory
+      inputs:
+        script: |
+          mkdir -p $(System.DefaultWorkingDirectory)/trivy-api-report
+          chmod 777 $(System.DefaultWorkingDirectory)/trivy-api-report
+
+    - task: CmdLine@2
+      displayName: Download Trivy HTML template
+      inputs:
+        script: |
+          mkdir -p $(Pipeline.Workspace)/trivy-templates
+          curl -sL -o $(Pipeline.Workspace)/trivy-templates/html.tpl \
+            https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl
+
+    - task: CmdLine@2
       displayName: Scan API image (Trivy)
+      condition: always()
       inputs:
         script: |
           export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-api
           mkdir -p $TRIVY_CACHE_DIR
 
-          echo "Scanning API image..."
+          echo "Scanning API image (console)..."
           trivy image \
             --scanners vuln \
             --cache-dir $TRIVY_CACHE_DIR \
@@ -172,6 +188,33 @@ stages:
             --exit-code 0 \
             --severity HIGH,CRITICAL \
             $(dockerRepository):$(apiTag)
+
+          echo "Generating Trivy API HTML report..."
+          trivy image \
+            --scanners vuln \
+            --cache-dir $TRIVY_CACHE_DIR \
+            --no-progress \
+            --timeout 10m \
+            --exit-code 0 \
+            --severity HIGH,CRITICAL \
+            --format template \
+            --template "@$(Pipeline.Workspace)/trivy-templates/html.tpl" \
+            -o $(System.DefaultWorkingDirectory)/trivy-api-report/trivy-api.html \
+            $(dockerRepository):$(apiTag)
+
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Trivy API Report
+      condition: always()
+      inputs:
+        pathToPublish: '$(System.DefaultWorkingDirectory)/trivy-api-report'
+        artifactName: 'Trivy-API-Report'
+
+    - task: PublishHtmlReport@1
+      displayName: Show Trivy API Tab
+      condition: always()
+      inputs:
+        reportDir: '$(System.DefaultWorkingDirectory)/trivy-api-report'
+        tabName: 'Trivy API'
 
     - task: CmdLine@2
       displayName: Push API image
@@ -199,13 +242,21 @@ stages:
             -f src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.WebApp/Dockerfile .
 
     - task: CmdLine@2
+      displayName: Prepare Trivy Web report directory
+      inputs:
+        script: |
+          mkdir -p $(System.DefaultWorkingDirectory)/trivy-web-report
+          chmod 777 $(System.DefaultWorkingDirectory)/trivy-web-report
+
+    - task: CmdLine@2
       displayName: Scan Web image (Trivy)
+      condition: always()
       inputs:
         script: |
           export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-web
           mkdir -p $TRIVY_CACHE_DIR
 
-          echo "Scanning Web image..."
+          echo "Scanning Web image (console)..."
           trivy image \
             --scanners vuln \
             --cache-dir $TRIVY_CACHE_DIR \
@@ -214,6 +265,33 @@ stages:
             --exit-code 0 \
             --severity HIGH,CRITICAL \
             $(dockerRepository):$(webappTag)
+
+          echo "Generating Trivy Web HTML report..."
+          trivy image \
+            --scanners vuln \
+            --cache-dir $TRIVY_CACHE_DIR \
+            --no-progress \
+            --timeout 10m \
+            --exit-code 0 \
+            --severity HIGH,CRITICAL \
+            --format template \
+            --template "@$(Pipeline.Workspace)/trivy-templates/html.tpl" \
+            -o $(System.DefaultWorkingDirectory)/trivy-web-report/trivy-web.html \
+            $(dockerRepository):$(webappTag)
+
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Trivy Web Report
+      condition: always()
+      inputs:
+        pathToPublish: '$(System.DefaultWorkingDirectory)/trivy-web-report'
+        artifactName: 'Trivy-Web-Report'
+
+    - task: PublishHtmlReport@1
+      displayName: Show Trivy Web Tab
+      condition: always()
+      inputs:
+        reportDir: '$(System.DefaultWorkingDirectory)/trivy-web-report'
+        tabName: 'Trivy Web'
 
     - task: CmdLine@2
       displayName: Push Web image
