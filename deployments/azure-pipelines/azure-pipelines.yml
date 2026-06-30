@@ -171,7 +171,6 @@ stages:
             --timeout 10m \
             --exit-code 0 \
             --severity HIGH,CRITICAL \
-            --ignorefile $(System.DefaultWorkingDirectory)/.trivyignore \
             $(dockerRepository):$(apiTag)
 
     - task: CmdLine@2
@@ -214,7 +213,6 @@ stages:
             --timeout 10m \
             --exit-code 0 \
             --severity HIGH,CRITICAL \
-            --ignorefile $(System.DefaultWorkingDirectory)/.trivyignore \
             $(dockerRepository):$(webappTag)
 
     - task: CmdLine@2
