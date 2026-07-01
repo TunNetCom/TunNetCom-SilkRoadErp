@@ -59,6 +59,50 @@ stages:
         command: restore
         projects: '**/*.sln'
 
+    # ============================================================
+    # 🛡️ OWASP DEPENDENCY-CHECK (SCA - scans NuGet dependencies
+    # against the NVD database, independent of Trivy's image scan)
+    # ============================================================
+    - task: CmdLine@2
+      displayName: Prepare OWASP Dependency-Check directories
+      inputs:
+        script: |
+          mkdir -p $(System.DefaultWorkingDirectory)/dependency-check-report
+          mkdir -p $(Pipeline.Workspace)/dependency-check-data
+          chmod 777 $(System.DefaultWorkingDirectory)/dependency-check-report
+
+    - task: CmdLine@2
+      displayName: Run OWASP Dependency-Check
+      condition: always()
+      inputs:
+        script: |
+          docker run --rm \
+            -v $(System.DefaultWorkingDirectory):/src:ro \
+            -v $(System.DefaultWorkingDirectory)/dependency-check-report:/report:rw \
+            -v $(Pipeline.Workspace)/dependency-check-data:/usr/share/dependency-check/data:rw \
+            owasp/dependency-check:latest \
+            --scan /src \
+            --project "SilkRoad ERP" \
+            --format HTML \
+            --format JSON \
+            --out /report \
+            --nvdApiKey "$(nvdApiKey)" \
+            --failOnCVSS 11
+
+    - task: PublishBuildArtifacts@1
+      displayName: Publish OWASP Dependency-Check Report
+      condition: always()
+      inputs:
+        pathToPublish: '$(System.DefaultWorkingDirectory)/dependency-check-report'
+        artifactName: 'OWASP-DependencyCheck-Report'
+
+    - task: PublishHtmlReport@1
+      displayName: Show OWASP Dependency-Check Tab
+      condition: always()
+      inputs:
+        reportDir: '$(System.DefaultWorkingDirectory)/dependency-check-report'
+        tabName: 'OWASP Dependency-Check'
+
     - task: SonarQubePrepare@7
       displayName: SonarQube Prepare
       inputs:
