@@ -1,6 +1,8 @@
 # ============================================================
 # SilkRoad CI/CD Pipeline - BLUE/GREEN + SECURITY + SONARQUBE
 # ============================================================
+# Stages: Build (+Trivy) -> ZAP Baseline -> ZAP AJAX -> Deploy
+# ============================================================
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -31,6 +33,8 @@ stages:
   displayName: Build, SonarQube, Scan & Push
   jobs:
   - job: BuildPush
+    timeoutInMinutes: 300
+    cancelTimeoutInMinutes: 5
     steps:
 
     - task: Docker@2
@@ -56,6 +60,109 @@ stages:
       inputs:
         command: restore
         projects: '**/*.sln'
+
+    # ============================================================
+    # 🛡️ OWASP DEPENDENCY-CHECK (SCA - scans NuGet dependencies
+    # against the NVD database, independent of Trivy's image scan)
+    # ============================================================
+    - task: CmdLine@2
+      displayName: Compute cache week key
+      inputs:
+        script: |
+          echo "##vso[task.setvariable variable=nvdCacheWeek]$(date +%G%V)"
+
+    - task: CmdLine@2
+      displayName: Prepare OWASP Dependency-Check directories
+      inputs:
+        script: |
+          mkdir -p $(System.DefaultWorkingDirectory)/dependency-check-report
+          mkdir -p $(Pipeline.Workspace)/dependency-check-data
+          chmod 777 $(System.DefaultWorkingDirectory)/dependency-check-report
+          chmod 777 $(Pipeline.Workspace)/dependency-check-data
+
+    # Persist the NVD vulnerability database across pipeline runs so most
+    # builds only need an incremental update instead of a full cold pull.
+    # Cache key rotates weekly so the DB still refreshes regularly.
+    - task: Cache@2
+      displayName: Cache OWASP Dependency-Check NVD data
+      inputs:
+        key: 'dependency-check-nvd | "$(nvdCacheWeek)"'
+        restoreKeys: |
+          dependency-check-nvd
+        path: $(Pipeline.Workspace)/dependency-check-data
+
+    - task: CmdLine@2
+      displayName: Clear stale Dependency-Check lock files
+      inputs:
+        script: |
+          find $(Pipeline.Workspace)/dependency-check-data -name "*.lock.db" -delete 2>/dev/null || true
+
+    - task: CmdLine@2
+      displayName: Update NVD database
+      continueOnError: true
+      condition: always()
+      timeoutInMinutes: 90
+      inputs:
+        script: |
+          docker run --rm \
+            -v $(Pipeline.Workspace)/dependency-check-data:/usr/share/dependency-check/data:rw \
+            owasp/dependency-check:latest \
+            --updateonly \
+            --nvdApiKey "$NVD_API_KEY"
+      env:
+        NVD_API_KEY: $(nvdApiKey)
+
+    - task: CmdLine@2
+      displayName: Run OWASP Dependency-Check
+      condition: always()
+      inputs:
+        script: |
+          docker run --rm \
+            -v $(System.DefaultWorkingDirectory):/src:ro \
+            -v $(System.DefaultWorkingDirectory)/dependency-check-report:/report:rw \
+            -v $(Pipeline.Workspace)/dependency-check-data:/usr/share/dependency-check/data:rw \
+            owasp/dependency-check:latest \
+            --scan /src \
+            --project "SilkRoad ERP" \
+            --format HTML \
+            --format JSON \
+            --format XML \
+            --out /report \
+            --noupdate \
+            --failOnCVSS 11
+
+    - task: PublishBuildArtifacts@1
+      displayName: Publish OWASP Dependency-Check Report
+      condition: always()
+      inputs:
+        pathToPublish: '$(System.DefaultWorkingDirectory)/dependency-check-report'
+        artifactName: 'OWASP-DependencyCheck-Report'
+
+    - task: PublishHtmlReport@1
+      displayName: Show OWASP Dependency-Check Tab
+      condition: always()
+      inputs:
+        reportDir: '$(System.DefaultWorkingDirectory)/dependency-check-report'
+        tabName: 'OWASP Dependency-Check'
+
+    - task: CmdLine@2
+      displayName: Push OWASP Dependency-Check results to DefectDojo
+      condition: always()
+      inputs:
+        script: |
+          curl -sS -X POST "$(defectDojoUrl)/api/v2/reimport-scan/" \
+            -H "Authorization: Token $DEFECTDOJO_API_KEY" \
+            -F "scan_type=Dependency Check Scan" \
+            -F "file=@$(System.DefaultWorkingDirectory)/dependency-check-report/dependency-check-report.xml" \
+            -F "product_type_name=SilkRoad ERP" \
+            -F "product_name=SilkRoad ERP" \
+            -F "engagement_name=SilkRoad Dependencies" \
+            -F "test_title=OWASP Dependency-Check" \
+            -F "auto_create_context=True" \
+            -F "close_old_findings=true" \
+            -F "minimum_severity=High"
+      env:
+        DEFECTDOJO_API_KEY: $(defectDojoApiKey)
 
     - task: SonarQubePrepare@7
       displayName: SonarQube Prepare
@@ -128,6 +235,24 @@ stages:
           docker builder prune -af || true
           df -h
 
+    # ============================================================
+    # 🔒 INSTALL TRIVY (re-added)
+    # ============================================================
+    - task: CmdLine@2
+      displayName: Install Trivy
+      inputs:
+        script: |
+          sudo apt-get update -qq
+          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main \
+            | sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update -qq
+          sudo apt-get install -y trivy
+
+    # ============================================================
+    # 🔵 API: BUILD → SCAN (Trivy) → PUSH → CLEANUP
+    # ============================================================
     - task: CmdLine@2
       displayName: Build API image
       inputs:
@@ -135,6 +260,97 @@ stages:
           docker build --no-cache \
             -t $(dockerRepository):$(apiTag) \
             -f src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.Api/Dockerfile .
+
+    - task: CmdLine@2
+      displayName: Prepare Trivy API report directory
+      inputs:
+        script: |
+          mkdir -p $(System.DefaultWorkingDirectory)/trivy-api-report
+          chmod 777 $(System.DefaultWorkingDirectory)/trivy-api-report
+
+    - task: CmdLine@2
+      displayName: Download Trivy HTML template
+      inputs:
+        script: |
+          mkdir -p $(Pipeline.Workspace)/trivy-templates
+          curl -sL -o $(Pipeline.Workspace)/trivy-templates/html.tpl \
+            https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl
+
+    - task: CmdLine@2
+      displayName: Scan API image (Trivy)
+      condition: always()
+      inputs:
+        script: |
+          export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-api
+          mkdir -p $TRIVY_CACHE_DIR
+
+          echo "Scanning API image (console)..."
+          trivy image \
+            --scanners vuln \
+            --cache-dir $TRIVY_CACHE_DIR \
+            --no-progress \
+            --timeout 10m \
+            --exit-code 0 \
+            --severity HIGH,CRITICAL \
+            $(dockerRepository):$(apiTag)
+
+          echo "Generating Trivy API HTML report..."
+          trivy image \
+            --scanners vuln \
+            --cache-dir $TRIVY_CACHE_DIR \
+            --no-progress \
+            --timeout 10m \
+            --exit-code 0 \
+            --severity HIGH,CRITICAL \
+            --format template \
+            --template "@$(Pipeline.Workspace)/trivy-templates/html.tpl" \
+            -o $(System.DefaultWorkingDirectory)/trivy-api-report/trivy-api.html \
+            $(dockerRepository):$(apiTag)
+
+          echo "Generating Trivy API JSON report (for DefectDojo)..."
+          trivy image \
+            --scanners vuln \
+            --cache-dir $TRIVY_CACHE_DIR \
+            --no-progress \
+            --timeout 10m \
+            --exit-code 0 \
+            --severity HIGH,CRITICAL \
+            --format json \
+            -o $(System.DefaultWorkingDirectory)/trivy-api-report/trivy-api.json \
+            $(dockerRepository):$(apiTag)
+
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Trivy API Report
+      condition: always()
+      inputs:
+        pathToPublish: '$(System.DefaultWorkingDirectory)/trivy-api-report'
+        artifactName: 'Trivy-API-Report'
+
+    - task: PublishHtmlReport@1
+      displayName: Show Trivy API Tab
+      condition: always()
+      inputs:
+        reportDir: '$(System.DefaultWorkingDirectory)/trivy-api-report'
+        tabName: 'Trivy API'
+
+    - task: CmdLine@2
+      displayName: Push Trivy API results to DefectDojo
+      condition: always()
+      inputs:
+        script: |
+          curl -sS -X POST "$(defectDojoUrl)/api/v2/reimport-scan/" \
+            -H "Authorization: Token $DEFECTDOJO_API_KEY" \
+            -F "scan_type=Trivy Scan" \
+            -F "file=@$(System.DefaultWorkingDirectory)/trivy-api-report/trivy-api.json" \
+            -F "product_type_name=SilkRoad ERP" \
+            -F "product_name=SilkRoad ERP" \
+            -F "engagement_name=SilkRoad API" \
+            -F "test_title=Trivy - API Image" \
+            -F "auto_create_context=True" \
+            -F "close_old_findings=true" \
+            -F "minimum_severity=High"
+      env:
+        DEFECTDOJO_API_KEY: $(defectDojoApiKey)
 
     - task: CmdLine@2
       displayName: Push API image
@@ -150,6 +366,9 @@ stages:
           docker builder prune -af || true
           df -h
 
+    # ============================================================
+    # 🟢 WEB: BUILD → SCAN (Trivy) → PUSH → CLEANUP
+    # ============================================================
     - task: CmdLine@2
       displayName: Build Web image
       inputs:
@@ -157,6 +376,89 @@ stages:
           docker build --no-cache \
             -t $(dockerRepository):$(webappTag) \
             -f src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.WebApp/Dockerfile .
+
+    - task: CmdLine@2
+      displayName: Prepare Trivy Web report directory
+      inputs:
+        script: |
+          mkdir -p $(System.DefaultWorkingDirectory)/trivy-web-report
+          chmod 777 $(System.DefaultWorkingDirectory)/trivy-web-report
+
+    - task: CmdLine@2
+      displayName: Scan Web image (Trivy)
+      condition: always()
+      inputs:
+        script: |
+          export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-web
+          mkdir -p $TRIVY_CACHE_DIR
+
+          echo "Scanning Web image (console)..."
+          trivy image \
+            --scanners vuln \
+            --cache-dir $TRIVY_CACHE_DIR \
+            --no-progress \
+            --timeout 10m \
+            --exit-code 0 \
+            --severity HIGH,CRITICAL \
+            $(dockerRepository):$(webappTag)
+
+          echo "Generating Trivy Web HTML report..."
+          trivy image \
+            --scanners vuln \
+            --cache-dir $TRIVY_CACHE_DIR \
+            --no-progress \
+            --timeout 10m \
+            --exit-code 0 \
+            --severity HIGH,CRITICAL \
+            --format template \
+            --template "@$(Pipeline.Workspace)/trivy-templates/html.tpl" \
+            -o $(System.DefaultWorkingDirectory)/trivy-web-report/trivy-web.html \
+            $(dockerRepository):$(webappTag)
+
+          echo "Generating Trivy Web JSON report (for DefectDojo)..."
+          trivy image \
+            --scanners vuln \
+            --cache-dir $TRIVY_CACHE_DIR \
+            --no-progress \
+            --timeout 10m \
+            --exit-code 0 \
+            --severity HIGH,CRITICAL \
+            --format json \
+            -o $(System.DefaultWorkingDirectory)/trivy-web-report/trivy-web.json \
+            $(dockerRepository):$(webappTag)
+
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Trivy Web Report
+      condition: always()
+      inputs:
+        pathToPublish: '$(System.DefaultWorkingDirectory)/trivy-web-report'
+        artifactName: 'Trivy-Web-Report'
+
+    - task: PublishHtmlReport@1
+      displayName: Show Trivy Web Tab
+      condition: always()
+      inputs:
+        reportDir: '$(System.DefaultWorkingDirectory)/trivy-web-report'
+        tabName: 'Trivy Web'
+
+    - task: CmdLine@2
+      displayName: Push Trivy Web results to DefectDojo
+      condition: always()
+      inputs:
+        script: |
+          curl -sS -X POST "$(defectDojoUrl)/api/v2/reimport-scan/" \
+            -H "Authorization: Token $DEFECTDOJO_API_KEY" \
+            -F "scan_type=Trivy Scan" \
+            -F "file=@$(System.DefaultWorkingDirectory)/trivy-web-report/trivy-web.json" \
+            -F "product_type_name=SilkRoad ERP" \
+            -F "product_name=SilkRoad ERP" \
+            -F "engagement_name=SilkRoad WebApp" \
+            -F "test_title=Trivy - Web Image" \
+            -F "auto_create_context=True" \
+            -F "close_old_findings=true" \
+            -F "minimum_severity=High"
+      env:
+        DEFECTDOJO_API_KEY: $(defectDojoApiKey)
 
     - task: CmdLine@2
       displayName: Push Web image
@@ -172,11 +474,191 @@ stages:
           docker builder prune -af || true
           df -h
 
+
 # ============================================================
-# 2️⃣  DEPLOY TO DEV
+# 2️⃣  ZAP BASELINE (re-added)
+# ============================================================
+- stage: ZAP_Baseline
+  displayName: DAST - ZAP Baseline Scan
+  dependsOn:
+  - Build
+  condition: succeeded()
+  pool:
+    vmImage: 'ubuntu-latest'
+  jobs:
+  - job: ZAPBaselineJob
+    displayName: ZAP Baseline (passive scan)
+    steps:
+
+    - task: CmdLine@2
+      displayName: Prepare ZAP Baseline directory
+      inputs:
+        script: |
+          mkdir -p $(System.DefaultWorkingDirectory)/zap-baseline
+          chmod 777 $(System.DefaultWorkingDirectory)/zap-baseline
+
+    - task: CmdLine@2
+      displayName: Pull ZAP image
+      inputs:
+        script: |
+          docker pull ghcr.io/zaproxy/zaproxy:stable
+
+    - task: CmdLine@2
+      displayName: Run ZAP Baseline scan
+      inputs:
+        script: |
+          docker run --rm \
+            -v $(System.DefaultWorkingDirectory)/zap-baseline:/zap/wrk:rw \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py \
+            -t $(zapTarget) \
+            -r zap-baseline.html \
+            -J zap-baseline.json \
+            -l WARN \
+            -I
+
+    - task: CmdLine@2
+      displayName: Fix ZAP report permissions
+      condition: always()
+      inputs:
+        script: |
+          sudo chown -R $(id -u):$(id -g) $(System.DefaultWorkingDirectory)/zap-baseline
+          sudo chmod -R 755 $(System.DefaultWorkingDirectory)/zap-baseline
+
+    - task: PublishBuildArtifacts@1
+      displayName: Publish ZAP Baseline Report
+      condition: always()
+      inputs:
+        pathToPublish: '$(System.DefaultWorkingDirectory)/zap-baseline'
+        artifactName: 'ZAP-Baseline-Report'
+
+    - task: PublishHtmlReport@1
+      displayName: Show ZAP Baseline Tab
+      condition: always()
+      inputs:
+        reportDir: '$(System.DefaultWorkingDirectory)/zap-baseline'
+        tabName: 'ZAP Baseline'
+
+
+# ============================================================
+# 3️⃣  ZAP AJAX (re-added)
+# ============================================================
+- stage: ZAP_AJAX
+  displayName: DAST - ZAP AJAX Spider Scan
+  dependsOn:
+  - ZAP_Baseline
+  condition: succeeded()
+  pool:
+    vmImage: 'ubuntu-latest'
+  jobs:
+  - job: ZAPAjaxJob
+    displayName: ZAP AJAX Spider (Blazor routes)
+    steps:
+
+    - task: CmdLine@2
+      displayName: Prepare ZAP AJAX directory
+      inputs:
+        script: |
+          mkdir -p $(System.DefaultWorkingDirectory)/zap-ajax
+          chmod 777 $(System.DefaultWorkingDirectory)/zap-ajax
+
+    - task: CmdLine@2
+      displayName: Pull ZAP image
+      inputs:
+        script: |
+          docker pull ghcr.io/zaproxy/zaproxy:stable
+
+    - task: CmdLine@2
+      displayName: Generate AJAX plan YAML
+      inputs:
+        script: |
+          cat > $(System.DefaultWorkingDirectory)/zap-ajax/ajax-plan.yaml << 'EOF'
+          env:
+            contexts:
+              - name: silkroad-erp
+                urls:
+                  - $(zapTarget)/
+                excludePaths: []
+
+          parameters:
+            failOnError: false
+            progressToStdout: true
+
+          jobs:
+            - type: spiderAjax
+              parameters:
+                url: $(zapTarget)/
+                maxDuration: 5
+                maxCrawlDepth: 10
+                numberOfBrowsers: 2
+                browserId: firefox-headless
+                clickDefaultElems: true
+                clickElemsOnce: true
+                randomInputs: true
+
+            - type: passiveScan-wait
+              parameters:
+                maxDuration: 5
+
+            - type: outputSummary
+              parameters:
+                format: Long
+                summaryFile: /zap/wrk/zap_out.json
+
+            - type: report
+              parameters:
+                reportTitle: ZAP AJAX Spider - SilkRoad ERP
+                reportDir: /zap/wrk/
+                reportFile: zap-ajax.html
+                template: traditional-html
+
+            - type: report
+              parameters:
+                reportTitle: ZAP AJAX Spider - SilkRoad ERP
+                reportDir: /zap/wrk/
+                reportFile: zap-ajax.json
+                template: traditional-json
+          EOF
+
+    - task: CmdLine@2
+      displayName: Run ZAP AJAX Spider scan
+      inputs:
+        script: |
+          docker run --rm \
+            -v $(System.DefaultWorkingDirectory)/zap-ajax:/zap/wrk:rw \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap.sh -cmd -autorun /zap/wrk/ajax-plan.yaml
+
+    - task: CmdLine@2
+      displayName: Fix ZAP report permissions
+      condition: always()
+      inputs:
+        script: |
+          sudo chown -R $(id -u):$(id -g) $(System.DefaultWorkingDirectory)/zap-ajax
+          sudo chmod -R 755 $(System.DefaultWorkingDirectory)/zap-ajax
+
+    - task: PublishBuildArtifacts@1
+      displayName: Publish ZAP AJAX Report
+      condition: always()
+      inputs:
+        pathToPublish: '$(System.DefaultWorkingDirectory)/zap-ajax'
+        artifactName: 'ZAP-AJAX-Report'
+
+    - task: PublishHtmlReport@1
+      displayName: Show ZAP AJAX Tab
+      condition: always()
+      inputs:
+        reportDir: '$(System.DefaultWorkingDirectory)/zap-ajax'
+        tabName: 'ZAP AJAX Spider'
+
+
+# ============================================================
+# 4️⃣  DEPLOY TO DEV (kept from the stable pipeline)
 # ============================================================
 - stage: Deploy
   displayName: Blue/Green Deploy to Dev
+  dependsOn:
+  - ZAP_AJAX
   condition: succeeded()
   pool:
     name: OnPremAgents
