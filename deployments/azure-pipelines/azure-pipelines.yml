@@ -64,12 +64,48 @@ stages:
     # against the NVD database, independent of Trivy's image scan)
     # ============================================================
     - task: CmdLine@2
+      displayName: Compute cache week key
+      inputs:
+        script: |
+          echo "##vso[task.setvariable variable=nvdCacheWeek]$(date +%G%V)"
+
+    - task: CmdLine@2
       displayName: Prepare OWASP Dependency-Check directories
       inputs:
         script: |
           mkdir -p $(System.DefaultWorkingDirectory)/dependency-check-report
           mkdir -p $(Pipeline.Workspace)/dependency-check-data
           chmod 777 $(System.DefaultWorkingDirectory)/dependency-check-report
+          chmod 777 $(Pipeline.Workspace)/dependency-check-data
+
+    # Persist the NVD vulnerability database across pipeline runs so most
+    # builds only need an incremental update instead of a full cold pull.
+    # Cache key rotates weekly so the DB still refreshes regularly.
+    - task: Cache@2
+      displayName: Cache OWASP Dependency-Check NVD data
+      inputs:
+        key: 'dependency-check-nvd | "$(nvdCacheWeek)"'
+        restoreKeys: |
+          dependency-check-nvd
+        path: $(Pipeline.Workspace)/dependency-check-data
+
+    - task: CmdLine@2
+      displayName: Clear stale Dependency-Check lock files
+      inputs:
+        script: |
+          find $(Pipeline.Workspace)/dependency-check-data -name "*.lock.db" -delete 2>/dev/null || true
+
+    - task: CmdLine@2
+      displayName: Update NVD database
+      continueOnError: true
+      condition: always()
+      inputs:
+        script: |
+          docker run --rm \
+            -v $(Pipeline.Workspace)/dependency-check-data:/usr/share/dependency-check/data:rw \
+            owasp/dependency-check:latest \
+            --updateonly \
+            --nvdApiKey "$(nvdApiKey)"
 
     - task: CmdLine@2
       displayName: Run OWASP Dependency-Check
@@ -85,8 +121,9 @@ stages:
             --project "SilkRoad ERP" \
             --format HTML \
             --format JSON \
+            --format XML \
             --out /report \
-            --nvdApiKey "$(nvdApiKey)" \
+            --noupdate \
             --failOnCVSS 11
 
     - task: PublishBuildArtifacts@1
@@ -102,6 +139,23 @@ stages:
       inputs:
         reportDir: '$(System.DefaultWorkingDirectory)/dependency-check-report'
         tabName: 'OWASP Dependency-Check'
+
+    - task: CmdLine@2
+      displayName: Push OWASP Dependency-Check results to DefectDojo
+      condition: always()
+      inputs:
+        script: |
+          curl -sS -X POST "$(defectDojoUrl)/api/v2/reimport-scan/" \
+            -H "Authorization: Token $(defectDojoApiKey)" \
+            -F "scan_type=Dependency Check Scan" \
+            -F "file=@$(System.DefaultWorkingDirectory)/dependency-check-report/dependency-check-report.xml" \
+            -F "product_type_name=SilkRoad ERP" \
+            -F "product_name=SilkRoad ERP" \
+            -F "engagement_name=SilkRoad Dependencies" \
+            -F "test_title=OWASP Dependency-Check" \
+            -F "auto_create_context=True" \
+            -F "close_old_findings=true" \
+            -F "minimum_severity=High"
 
     - task: SonarQubePrepare@7
       displayName: SonarQube Prepare
@@ -246,6 +300,18 @@ stages:
             -o $(System.DefaultWorkingDirectory)/trivy-api-report/trivy-api.html \
             $(dockerRepository):$(apiTag)
 
+          echo "Generating Trivy API JSON report (for DefectDojo)..."
+          trivy image \
+            --scanners vuln \
+            --cache-dir $TRIVY_CACHE_DIR \
+            --no-progress \
+            --timeout 10m \
+            --exit-code 0 \
+            --severity HIGH,CRITICAL \
+            --format json \
+            -o $(System.DefaultWorkingDirectory)/trivy-api-report/trivy-api.json \
+            $(dockerRepository):$(apiTag)
+
     - task: PublishBuildArtifacts@1
       displayName: Publish Trivy API Report
       condition: always()
@@ -259,6 +325,23 @@ stages:
       inputs:
         reportDir: '$(System.DefaultWorkingDirectory)/trivy-api-report'
         tabName: 'Trivy API'
+
+    - task: CmdLine@2
+      displayName: Push Trivy API results to DefectDojo
+      condition: always()
+      inputs:
+        script: |
+          curl -sS -X POST "$(defectDojoUrl)/api/v2/reimport-scan/" \
+            -H "Authorization: Token $(defectDojoApiKey)" \
+            -F "scan_type=Trivy Scan" \
+            -F "file=@$(System.DefaultWorkingDirectory)/trivy-api-report/trivy-api.json" \
+            -F "product_type_name=SilkRoad ERP" \
+            -F "product_name=SilkRoad ERP" \
+            -F "engagement_name=SilkRoad API" \
+            -F "test_title=Trivy - API Image" \
+            -F "auto_create_context=True" \
+            -F "close_old_findings=true" \
+            -F "minimum_severity=High"
 
     - task: CmdLine@2
       displayName: Push API image
@@ -323,6 +406,18 @@ stages:
             -o $(System.DefaultWorkingDirectory)/trivy-web-report/trivy-web.html \
             $(dockerRepository):$(webappTag)
 
+          echo "Generating Trivy Web JSON report (for DefectDojo)..."
+          trivy image \
+            --scanners vuln \
+            --cache-dir $TRIVY_CACHE_DIR \
+            --no-progress \
+            --timeout 10m \
+            --exit-code 0 \
+            --severity HIGH,CRITICAL \
+            --format json \
+            -o $(System.DefaultWorkingDirectory)/trivy-web-report/trivy-web.json \
+            $(dockerRepository):$(webappTag)
+
     - task: PublishBuildArtifacts@1
       displayName: Publish Trivy Web Report
       condition: always()
@@ -336,6 +431,23 @@ stages:
       inputs:
         reportDir: '$(System.DefaultWorkingDirectory)/trivy-web-report'
         tabName: 'Trivy Web'
+
+    - task: CmdLine@2
+      displayName: Push Trivy Web results to DefectDojo
+      condition: always()
+      inputs:
+        script: |
+          curl -sS -X POST "$(defectDojoUrl)/api/v2/reimport-scan/" \
+            -H "Authorization: Token $(defectDojoApiKey)" \
+            -F "scan_type=Trivy Scan" \
+            -F "file=@$(System.DefaultWorkingDirectory)/trivy-web-report/trivy-web.json" \
+            -F "product_type_name=SilkRoad ERP" \
+            -F "product_name=SilkRoad ERP" \
+            -F "engagement_name=SilkRoad WebApp" \
+            -F "test_title=Trivy - Web Image" \
+            -F "auto_create_context=True" \
+            -F "close_old_findings=true" \
+            -F "minimum_severity=High"
 
     - task: CmdLine@2
       displayName: Push Web image
