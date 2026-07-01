@@ -33,6 +33,8 @@ stages:
   displayName: Build, SonarQube, Scan & Push
   jobs:
   - job: BuildPush
+    timeoutInMinutes: 120
+    cancelTimeoutInMinutes: 5
     steps:
 
     - task: Docker@2
@@ -99,6 +101,7 @@ stages:
       displayName: Update NVD database
       continueOnError: true
       condition: always()
+      timeoutInMinutes: 90
       inputs:
         script: |
           docker run --rm \
