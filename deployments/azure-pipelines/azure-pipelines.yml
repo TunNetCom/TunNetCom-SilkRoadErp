@@ -33,7 +33,7 @@ stages:
   displayName: Build, SonarQube, Scan & Push
   jobs:
   - job: BuildPush
-    timeoutInMinutes: 120
+    timeoutInMinutes: 300
     cancelTimeoutInMinutes: 5
     steps:
 
