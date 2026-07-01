@@ -10,8 +10,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Infrastructure;
 /// </summary>
 public sealed class SqlServerTestcontainerFixture : IAsyncLifetime
 {
-    private readonly MsSqlContainer _container = new MsSqlBuilder()
-        .WithImage("mcr.microsoft.com/mssql/server:2022-latest")
+    private readonly MsSqlContainer _container = new MsSqlBuilder("mcr.microsoft.com/mssql/server:2022-latest")
         .WithPassword("Strong@Pass1")
         .Build();
 
