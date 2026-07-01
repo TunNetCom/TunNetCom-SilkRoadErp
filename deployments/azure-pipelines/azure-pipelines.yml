@@ -108,7 +108,9 @@ stages:
             -v $(Pipeline.Workspace)/dependency-check-data:/usr/share/dependency-check/data:rw \
             owasp/dependency-check:latest \
             --updateonly \
-            --nvdApiKey "$(nvdApiKey)"
+            --nvdApiKey "$NVD_API_KEY"
+      env:
+        NVD_API_KEY: $(nvdApiKey)
 
     - task: CmdLine@2
       displayName: Run OWASP Dependency-Check
@@ -149,7 +151,7 @@ stages:
       inputs:
         script: |
           curl -sS -X POST "$(defectDojoUrl)/api/v2/reimport-scan/" \
-            -H "Authorization: Token $(defectDojoApiKey)" \
+            -H "Authorization: Token $DEFECTDOJO_API_KEY" \
             -F "scan_type=Dependency Check Scan" \
             -F "file=@$(System.DefaultWorkingDirectory)/dependency-check-report/dependency-check-report.xml" \
             -F "product_type_name=SilkRoad ERP" \
@@ -159,6 +161,8 @@ stages:
             -F "auto_create_context=True" \
             -F "close_old_findings=true" \
             -F "minimum_severity=High"
+      env:
+        DEFECTDOJO_API_KEY: $(defectDojoApiKey)
 
     - task: SonarQubePrepare@7
       displayName: SonarQube Prepare
@@ -335,7 +339,7 @@ stages:
       inputs:
         script: |
           curl -sS -X POST "$(defectDojoUrl)/api/v2/reimport-scan/" \
-            -H "Authorization: Token $(defectDojoApiKey)" \
+            -H "Authorization: Token $DEFECTDOJO_API_KEY" \
             -F "scan_type=Trivy Scan" \
             -F "file=@$(System.DefaultWorkingDirectory)/trivy-api-report/trivy-api.json" \
             -F "product_type_name=SilkRoad ERP" \
@@ -345,6 +349,8 @@ stages:
             -F "auto_create_context=True" \
             -F "close_old_findings=true" \
             -F "minimum_severity=High"
+      env:
+        DEFECTDOJO_API_KEY: $(defectDojoApiKey)
 
     - task: CmdLine@2
       displayName: Push API image
@@ -441,7 +447,7 @@ stages:
       inputs:
         script: |
           curl -sS -X POST "$(defectDojoUrl)/api/v2/reimport-scan/" \
-            -H "Authorization: Token $(defectDojoApiKey)" \
+            -H "Authorization: Token $DEFECTDOJO_API_KEY" \
             -F "scan_type=Trivy Scan" \
             -F "file=@$(System.DefaultWorkingDirectory)/trivy-web-report/trivy-web.json" \
             -F "product_type_name=SilkRoad ERP" \
@@ -451,6 +457,8 @@ stages:
             -F "auto_create_context=True" \
             -F "close_old_findings=true" \
             -F "minimum_severity=High"
+      env:
+        DEFECTDOJO_API_KEY: $(defectDojoApiKey)
 
     - task: CmdLine@2
       displayName: Push Web image
