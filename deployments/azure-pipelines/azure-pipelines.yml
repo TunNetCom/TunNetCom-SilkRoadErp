@@ -23,6 +23,8 @@ variables:
   value: 'silkroad-webapp-service'
 - name: zapTarget
   value: 'https://silkroad.aion-time.com'
+- name: defectDojoUrl
+  value: 'https://defectdojo.aion-time.com'
 
 stages:
 
@@ -131,6 +133,16 @@ stages:
             --noupdate \
             --failOnCVSS 11
 
+    # ---- FIX: container runs as root, so files land as root-owned with
+    # restrictive perms. Reclaim ownership before publish/upload steps read them.
+    - task: CmdLine@2
+      displayName: Fix OWASP Dependency-Check report permissions
+      condition: always()
+      inputs:
+        script: |
+          sudo chown -R $(id -u):$(id -g) $(System.DefaultWorkingDirectory)/dependency-check-report
+          sudo chmod -R 755 $(System.DefaultWorkingDirectory)/dependency-check-report
+
     - task: PublishBuildArtifacts@1
       displayName: Publish OWASP Dependency-Check Report
       condition: always()
@@ -150,7 +162,7 @@ stages:
       condition: always()
       inputs:
         script: |
-          curl -sS -X POST "$(defectDojoUrl)/api/v2/reimport-scan/" \
+          curl -sS -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
             -H "Authorization: Token $DEFECTDOJO_API_KEY" \
             -F "scan_type=Dependency Check Scan" \
             -F "file=@$(System.DefaultWorkingDirectory)/dependency-check-report/dependency-check-report.xml" \
@@ -162,6 +174,7 @@ stages:
             -F "close_old_findings=true" \
             -F "minimum_severity=High"
       env:
+        DEFECTDOJO_URL: $(defectDojoUrl)
         DEFECTDOJO_API_KEY: $(defectDojoApiKey)
 
     - task: SonarQubePrepare@7
@@ -338,7 +351,7 @@ stages:
       condition: always()
       inputs:
         script: |
-          curl -sS -X POST "$(defectDojoUrl)/api/v2/reimport-scan/" \
+          curl -sS -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
             -H "Authorization: Token $DEFECTDOJO_API_KEY" \
             -F "scan_type=Trivy Scan" \
             -F "file=@$(System.DefaultWorkingDirectory)/trivy-api-report/trivy-api.json" \
@@ -350,6 +363,7 @@ stages:
             -F "close_old_findings=true" \
             -F "minimum_severity=High"
       env:
+        DEFECTDOJO_URL: $(defectDojoUrl)
         DEFECTDOJO_API_KEY: $(defectDojoApiKey)
 
     - task: CmdLine@2
@@ -446,7 +460,7 @@ stages:
       condition: always()
       inputs:
         script: |
-          curl -sS -X POST "$(defectDojoUrl)/api/v2/reimport-scan/" \
+          curl -sS -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
             -H "Authorization: Token $DEFECTDOJO_API_KEY" \
             -F "scan_type=Trivy Scan" \
             -F "file=@$(System.DefaultWorkingDirectory)/trivy-web-report/trivy-web.json" \
@@ -458,6 +472,7 @@ stages:
             -F "close_old_findings=true" \
             -F "minimum_severity=High"
       env:
+        DEFECTDOJO_URL: $(defectDojoUrl)
         DEFECTDOJO_API_KEY: $(defectDojoApiKey)
 
     - task: CmdLine@2
