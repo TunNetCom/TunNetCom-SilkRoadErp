@@ -178,7 +178,7 @@ stages:
       condition: always()
       inputs:
         script: |
-          curl -sS -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
+          HTTP_CODE=$(curl -sS -o /tmp/dd_owasp_response.json -w "%{http_code}" -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
             -H "Authorization: Token $DEFECTDOJO_API_KEY" \
             -F "scan_type=Dependency Check Scan" \
             -F "file=@$(System.DefaultWorkingDirectory)/dependency-check-report/dependency-check-report.xml" \
@@ -188,7 +188,14 @@ stages:
             -F "test_title=OWASP Dependency-Check" \
             -F "auto_create_context=True" \
             -F "close_old_findings=true" \
-            -F "minimum_severity=High"
+            -F "minimum_severity=High")
+          echo "DefectDojo response (HTTP $HTTP_CODE):"
+          cat /tmp/dd_owasp_response.json
+          echo ""
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            echo "##vso[task.logissue type=error]DefectDojo import (OWASP Dependency-Check) failed with HTTP $HTTP_CODE"
+            exit 1
+          fi
       env:
         DEFECTDOJO_URL: $(defectDojoUrl)
         DEFECTDOJO_API_KEY: $(defectDojoApiKey)
@@ -367,7 +374,7 @@ stages:
       condition: always()
       inputs:
         script: |
-          curl -sS -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
+          HTTP_CODE=$(curl -sS -o /tmp/dd_trivy_api_response.json -w "%{http_code}" -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
             -H "Authorization: Token $DEFECTDOJO_API_KEY" \
             -F "scan_type=Trivy Scan" \
             -F "file=@$(System.DefaultWorkingDirectory)/trivy-api-report/trivy-api.json" \
@@ -377,7 +384,14 @@ stages:
             -F "test_title=Trivy - API Image" \
             -F "auto_create_context=True" \
             -F "close_old_findings=true" \
-            -F "minimum_severity=High"
+            -F "minimum_severity=High")
+          echo "DefectDojo response (HTTP $HTTP_CODE):"
+          cat /tmp/dd_trivy_api_response.json
+          echo ""
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            echo "##vso[task.logissue type=error]DefectDojo import (Trivy API) failed with HTTP $HTTP_CODE"
+            exit 1
+          fi
       env:
         DEFECTDOJO_URL: $(defectDojoUrl)
         DEFECTDOJO_API_KEY: $(defectDojoApiKey)
@@ -476,7 +490,7 @@ stages:
       condition: always()
       inputs:
         script: |
-          curl -sS -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
+          HTTP_CODE=$(curl -sS -o /tmp/dd_trivy_web_response.json -w "%{http_code}" -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
             -H "Authorization: Token $DEFECTDOJO_API_KEY" \
             -F "scan_type=Trivy Scan" \
             -F "file=@$(System.DefaultWorkingDirectory)/trivy-web-report/trivy-web.json" \
@@ -486,7 +500,14 @@ stages:
             -F "test_title=Trivy - Web Image" \
             -F "auto_create_context=True" \
             -F "close_old_findings=true" \
-            -F "minimum_severity=High"
+            -F "minimum_severity=High")
+          echo "DefectDojo response (HTTP $HTTP_CODE):"
+          cat /tmp/dd_trivy_web_response.json
+          echo ""
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            echo "##vso[task.logissue type=error]DefectDojo import (Trivy Web) failed with HTTP $HTTP_CODE"
+            exit 1
+          fi
       env:
         DEFECTDOJO_URL: $(defectDojoUrl)
         DEFECTDOJO_API_KEY: $(defectDojoApiKey)
