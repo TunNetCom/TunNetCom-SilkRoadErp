@@ -68,12 +68,6 @@ stages:
     # against the NVD database, independent of Trivy's image scan)
     # ============================================================
     - task: CmdLine@2
-      displayName: Compute cache week key
-      inputs:
-        script: |
-          echo "##vso[task.setvariable variable=nvdCacheWeek]$(date +%G%V)"
-
-    - task: CmdLine@2
       displayName: Prepare OWASP Dependency-Check directories
       inputs:
         script: |
@@ -85,12 +79,13 @@ stages:
     # Persist the NVD vulnerability database across pipeline runs so most
     # builds only need an incremental update instead of a full cold pull.
     # Cache key rotates weekly so the DB still refreshes regularly.
+    # ---- FIX: static cache key (was rotating weekly, which forced a full
+    # 360k-record re-download every week and tripped NVD's 503 throttling).
+    # ODC's own --nvdValidForHours check now governs freshness instead.
     - task: Cache@2
       displayName: Cache OWASP Dependency-Check NVD data
       inputs:
-        key: 'dependency-check-nvd | "$(nvdCacheWeek)"'
-        restoreKeys: |
-          dependency-check-nvd
+        key: 'dependency-check-nvd-v1 | "static"'
         path: $(Pipeline.Workspace)/dependency-check-data
 
     - task: CmdLine@2
@@ -104,15 +99,36 @@ stages:
       continueOnError: true
       condition: always()
       timeoutInMinutes: 300
+      retryCountOnTaskFailure: 3
       inputs:
         script: |
           docker run --rm \
             -v $(Pipeline.Workspace)/dependency-check-data:/usr/share/dependency-check/data:rw \
             owasp/dependency-check:latest \
             --updateonly \
-            --nvdApiKey "$NVD_API_KEY"
+            --nvdApiKey "$NVD_API_KEY" \
+            --nvdValidForHours 24 \
+            --nvdApiDelay 4000
       env:
         NVD_API_KEY: $(nvdApiKey)
+
+    # ---- Warn (don't fail the build) if the NVD DB looks suspiciously small,
+    # which would mean the update above failed/skipped and results may be stale.
+    - task: CmdLine@2
+      displayName: Sanity-check NVD DB size
+      condition: always()
+      inputs:
+        script: |
+          DB_FILE=$(find $(Pipeline.Workspace)/dependency-check-data -name "odc.mv.db" 2>/dev/null | head -n1)
+          if [ -z "$DB_FILE" ]; then
+            echo "##vso[task.logissue type=warning]NVD database file not found — scan will likely run against an empty DB."
+          else
+            SIZE_MB=$(du -m "$DB_FILE" | cut -f1)
+            echo "NVD DB size: ${SIZE_MB} MB"
+            if [ "$SIZE_MB" -lt 50 ]; then
+              echo "##vso[task.logissue type=warning]NVD database is only ${SIZE_MB}MB — looks stale/incomplete. Scan results may under-report vulnerabilities."
+            fi
+          fi
 
     - task: CmdLine@2
       displayName: Run OWASP Dependency-Check
