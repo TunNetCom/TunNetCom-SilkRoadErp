@@ -101,7 +101,7 @@ stages:
       displayName: Update NVD database
       continueOnError: true
       condition: always()
-      timeoutInMinutes: 90
+      timeoutInMinutes: 300
       inputs:
         script: |
           docker run --rm \
