@@ -301,8 +301,13 @@ stages:
       displayName: Install Trivy
       inputs:
         script: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
-            | sudo sh -s -- -b /usr/local/bin
+          set -e
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh -o /tmp/trivy-install.sh
+          sudo bash /tmp/trivy-install.sh -b /usr/local/bin
+          if ! command -v trivy >/dev/null 2>&1; then
+            echo "##vso[task.logissue type=error]Trivy binary not found on PATH after install."
+            exit 1
+          fi
           trivy --version
 
     # ============================================================
@@ -585,6 +590,7 @@ stages:
             -t $(zapTarget) \
             -r zap-baseline.html \
             -J zap-baseline.json \
+            -x zap-baseline.xml \
             -l WARN \
             -I
 
@@ -609,6 +615,33 @@ stages:
       inputs:
         reportDir: '$(System.DefaultWorkingDirectory)/zap-baseline'
         tabName: 'ZAP Baseline'
+
+    - task: CmdLine@2
+      displayName: Push ZAP Baseline results to DefectDojo
+      condition: always()
+      inputs:
+        script: |
+          HTTP_CODE=$(curl -sS -o /tmp/dd_zap_baseline_response.json -w "%{http_code}" -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
+            -H "Authorization: Token $DEFECTDOJO_API_KEY" \
+            -F "scan_type=ZAP Scan" \
+            -F "file=@$(System.DefaultWorkingDirectory)/zap-baseline/zap-baseline.xml" \
+            -F "product_type_name=SilkRoad ERP" \
+            -F "product_name=SilkRoad ERP" \
+            -F "engagement_name=SilkRoad DAST" \
+            -F "test_title=ZAP Baseline Scan" \
+            -F "auto_create_context=True" \
+            -F "close_old_findings=true" \
+            -F "minimum_severity=Low")
+          echo "DefectDojo response (HTTP $HTTP_CODE):"
+          cat /tmp/dd_zap_baseline_response.json
+          echo ""
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            echo "##vso[task.logissue type=error]DefectDojo import (ZAP Baseline) failed with HTTP $HTTP_CODE"
+            exit 1
+          fi
+      env:
+        DEFECTDOJO_URL: $(defectDojoUrl)
+        DEFECTDOJO_API_KEY: $(defectDojoApiKey)
 
 
 # ============================================================
@@ -689,6 +722,13 @@ stages:
                 reportDir: /zap/wrk/
                 reportFile: zap-ajax.json
                 template: traditional-json
+
+            - type: report
+              parameters:
+                reportTitle: ZAP AJAX Spider - SilkRoad ERP
+                reportDir: /zap/wrk/
+                reportFile: zap-ajax.xml
+                template: traditional-xml
           EOF
 
     - task: CmdLine@2
@@ -721,6 +761,33 @@ stages:
       inputs:
         reportDir: '$(System.DefaultWorkingDirectory)/zap-ajax'
         tabName: 'ZAP AJAX Spider'
+
+    - task: CmdLine@2
+      displayName: Push ZAP AJAX results to DefectDojo
+      condition: always()
+      inputs:
+        script: |
+          HTTP_CODE=$(curl -sS -o /tmp/dd_zap_ajax_response.json -w "%{http_code}" -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
+            -H "Authorization: Token $DEFECTDOJO_API_KEY" \
+            -F "scan_type=ZAP Scan" \
+            -F "file=@$(System.DefaultWorkingDirectory)/zap-ajax/zap-ajax.xml" \
+            -F "product_type_name=SilkRoad ERP" \
+            -F "product_name=SilkRoad ERP" \
+            -F "engagement_name=SilkRoad DAST" \
+            -F "test_title=ZAP AJAX Spider Scan" \
+            -F "auto_create_context=True" \
+            -F "close_old_findings=true" \
+            -F "minimum_severity=Low")
+          echo "DefectDojo response (HTTP $HTTP_CODE):"
+          cat /tmp/dd_zap_ajax_response.json
+          echo ""
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            echo "##vso[task.logissue type=error]DefectDojo import (ZAP AJAX) failed with HTTP $HTTP_CODE"
+            exit 1
+          fi
+      env:
+        DEFECTDOJO_URL: $(defectDojoUrl)
+        DEFECTDOJO_API_KEY: $(defectDojoApiKey)
 
 
 # ============================================================
