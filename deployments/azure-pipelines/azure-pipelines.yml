@@ -82,10 +82,18 @@ stages:
     # ---- FIX: static cache key (was rotating weekly, which forced a full
     # 360k-record re-download every week and tripped NVD's 503 throttling).
     # ODC's own --nvdValidForHours check now governs freshness instead.
+    # ---- FIX v2: BuildId-keyed cache (always a "miss") so a clean DB gets
+    # saved fresh at the end of every successful run. The static key from the
+    # previous fix could restore a corrupted/locked DB forever, since Cache@2
+    # only saves on a miss — a static key that always hits never re-saves,
+    # so any corruption becomes permanent. restoreKeys still lets us pull the
+    # most recent good copy to keep updates incremental.
     - task: Cache@2
       displayName: Cache OWASP Dependency-Check NVD data
       inputs:
-        key: 'dependency-check-nvd-v1 | "static"'
+        key: 'dependency-check-nvd-v2 | "$(Build.BuildId)"'
+        restoreKeys: |
+          dependency-check-nvd-v2
         path: $(Pipeline.Workspace)/dependency-check-data
 
     - task: CmdLine@2
@@ -99,16 +107,26 @@ stages:
       continueOnError: true
       condition: always()
       timeoutInMinutes: 300
-      retryCountOnTaskFailure: 3
       inputs:
         script: |
-          docker run --rm \
-            -v $(Pipeline.Workspace)/dependency-check-data:/usr/share/dependency-check/data:rw \
-            owasp/dependency-check:latest \
-            --updateonly \
-            --nvdApiKey "$NVD_API_KEY" \
-            --nvdValidForHours 24 \
-            --nvdApiDelay 4000
+          DATA_DIR=$(Pipeline.Workspace)/dependency-check-data
+
+          update_nvd() {
+            docker run --rm \
+              -v "$DATA_DIR":/usr/share/dependency-check/data:rw \
+              owasp/dependency-check:latest \
+              --updateonly \
+              --nvdApiKey "$NVD_API_KEY" \
+              --nvdValidForHours 24 \
+              --nvdApiDelay 4000
+          }
+
+          echo "Attempting NVD update..."
+          if ! update_nvd; then
+            echo "##[warning]NVD update failed — likely a locked/corrupted cached database. Purging local NVD data and retrying with a clean rebuild..."
+            rm -rf "${DATA_DIR:?}"/*
+            update_nvd
+          fi
       env:
         NVD_API_KEY: $(nvdApiKey)
 
@@ -274,17 +292,18 @@ stages:
     # ============================================================
     # 🔒 INSTALL TRIVY (re-added)
     # ============================================================
+    # ---- FIX: apt-key is deprecated/unreliable on newer Ubuntu images
+    # (ubuntu-latest has moved to 24.04 "Noble"), which was silently leaving
+    # Trivy uninstalled. Use Aqua's official install script instead, and
+    # verify the binary actually works before moving on so a broken install
+    # fails loudly here instead of surfacing later as "command not found".
     - task: CmdLine@2
       displayName: Install Trivy
       inputs:
         script: |
-          sudo apt-get update -qq
-          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main \
-            | sudo tee /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update -qq
-          sudo apt-get install -y trivy
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+            | sudo sh -s -- -b /usr/local/bin
+          trivy --version
 
     # ============================================================
     # 🔵 API: BUILD → SCAN (Trivy) → PUSH → CLEANUP
