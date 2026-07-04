@@ -53,7 +53,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
 
         if (!context.Systeme.Any())
         {
-            context.Systeme.Add(new Systeme
+            _ = context.Systeme.Add(new Systeme
             {
                 NomSociete = "Test",
                 Adresse = "Test",
@@ -67,44 +67,67 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
         if (!context.AccountingYear.Any())
         {
             var year = AccountingYear.CreateAccountingYear(2024, isActive: true);
-            context.AccountingYear.Add(year);
+            _ = context.AccountingYear.Add(year);
         }
 
         if (!context.Produit.Any())
         {
-            context.Produit.Add(new Produit(
-                refe: "REF1",
-                nom: "Product 1",
-                qteLimite: 0,
-                remise: 0,
-                remiseAchat: 0,
-                tva: 19,
-                prix: 50m,
-                prixAchat: 0,
-                visibilite: true));
+            context.Produit.AddRange(new[] {
+                new Produit(
+                    refe: "REF1",
+                    nom: "Product 1",
+                    qteLimite: 0,
+                    remise: 0,
+                    remiseAchat: 0,
+                    tva: 19,
+                    prix: 50m,
+                    prixAchat: 0,
+                    visibilite: true),
+                new Produit(
+                    refe: "REF2",
+                    nom: "Product 2",
+                    qteLimite: 0,
+                    remise: 0,
+                    remiseAchat: 0,
+                    tva: 19,
+                    prix: 25m,
+                    prixAchat: 0,
+                    visibilite: true),
+                new Produit(
+                    refe: "REF3",
+                    nom: "Product 3",
+                    qteLimite: 0,
+                    remise: 0,
+                    remiseAchat: 0,
+                    tva: 19,
+                    prix: 20m,
+                    prixAchat: 0,
+                    visibilite: true)
+            });
         }
 
-        context.SaveChanges();
+        _ = context.SaveChanges();
     }
+  
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.UseSetting("ConnectionStrings:DefaultConnection", ConnectionString);
+        _ = builder.UseSetting("ConnectionStrings:DefaultConnection", ConnectionString);
 
-        builder.ConfigureServices(services =>
+        _ = builder.ConfigureServices(services =>
         {
-            services.AddAuthentication(TestAuthHandler.SchemeName)
+            _ = services.AddAuthentication(TestAuthHandler.SchemeName)
                 .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, null);
 
-            services.RemoveAll<IAuthorizationHandler>();
-            services.AddSingleton<IAuthorizationHandler, TestPermissionHandler>();
+            _ = services.RemoveAll<IAuthorizationHandler>();
+            _ = services.AddSingleton<IAuthorizationHandler, TestPermissionHandler>();
 
-            services.RemoveAll<INumberGeneratorService>();
+            _ = services.RemoveAll<INumberGeneratorService>();
             var numberGeneratorMock = new Mock<INumberGeneratorService>();
-            numberGeneratorMock
+            _ = numberGeneratorMock
                 .Setup(x => x.GenerateBonDeLivraisonNumberAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(1);
-            services.AddScoped<INumberGeneratorService>(_ => numberGeneratorMock.Object);
+            _ = services.AddScoped<INumberGeneratorService>(_ => numberGeneratorMock.Object);
         });
     }
 
