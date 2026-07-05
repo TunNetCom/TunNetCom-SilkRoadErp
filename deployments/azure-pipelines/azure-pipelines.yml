@@ -110,6 +110,7 @@ stages:
       inputs:
         script: |
           DATA_DIR=$(Pipeline.Workspace)/dependency-check-data
+          LOG_FILE="$DATA_DIR/odc-update.log"
 
           update_nvd() {
             docker run --rm \
@@ -118,14 +119,24 @@ stages:
               --updateonly \
               --nvdApiKey "$NVD_API_KEY" \
               --nvdValidForHours 24 \
-              --nvdApiDelay 4000
+              --nvdApiDelay 4000 \
+              --log /usr/share/dependency-check/data/odc-update.log
           }
 
           echo "Attempting NVD update..."
           if ! update_nvd; then
-            echo "##[warning]NVD update failed — likely a locked/corrupted cached database. Purging local NVD data and retrying with a clean rebuild..."
+            echo "##[warning]NVD update failed. Dumping verbose log to find the real cause (the lock error is often a misleading downstream symptom, not the actual root cause):"
+            echo "---------------------------------------------------------------"
+            cat "$LOG_FILE" 2>/dev/null || echo "(no log file found)"
+            echo "---------------------------------------------------------------"
+            echo "##[warning]Purging local NVD data and retrying with a clean rebuild..."
             sudo find "$DATA_DIR" -mindepth 1 -delete
-            update_nvd
+            if ! update_nvd; then
+              echo "##[error]Retry also failed. Verbose log from retry:"
+              echo "---------------------------------------------------------------"
+              cat "$LOG_FILE" 2>/dev/null || echo "(no log file found)"
+              echo "---------------------------------------------------------------"
+            fi
           fi
       env:
         NVD_API_KEY: $(nvdApiKey)
