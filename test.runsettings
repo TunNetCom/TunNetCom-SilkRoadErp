@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RunSettings>
+  <RunConfiguration>
+    <EnvironmentVariables>
+      <UI_TESTS_HEADED>1</UI_TESTS_HEADED>
+      <UI_TESTS_SLOWMO>500</UI_TESTS_SLOWMO>
+    </EnvironmentVariables>
+  </RunConfiguration>
   <DataCollectionRunSettings>
     <DataCollectors>
       <DataCollector friendlyName="XPlat Code Coverage">
