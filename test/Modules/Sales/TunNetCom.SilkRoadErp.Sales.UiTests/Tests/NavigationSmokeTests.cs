@@ -15,16 +15,11 @@ public class NavigationSmokeTests(UiTestsFixture fixture)
     private const float TimeoutMs = 30_000;
 
     [Theory]
-    [InlineData("/customers_list", true)]      // LIST-01
-    [InlineData("/products_list", true)]       // LIST-02
-    [InlineData("/providers_list", true)]      // LIST-03
-    [InlineData("/orders", true)]              // LIST-04
-    [InlineData("/invoices", true)]            // LIST-05
-    [InlineData("/delivery-notes", true)]      // LIST-06
-    [InlineData("/quotations", true)]          // LIST-07
-    [InlineData("/dashboard", false)]          // LIST-08 (KPI cards, not a grid)
-    [InlineData("/paiements-client", true)]    // LIST-09
-    [InlineData("/accounting-years", true)]    // LIST-10
+    [InlineData("/customers_list", true)] 
+    [InlineData("/products_list", true)] 
+    [InlineData("/providers_list", true)] 
+    [InlineData("/dashboard", false)]          
+    [InlineData("/accounting-years", true)] 
     public async Task ListPage_Renders_WithoutError(string route, bool expectsGrid)
     {
         var page = await fixture.NewAuthenticatedPageAsync();

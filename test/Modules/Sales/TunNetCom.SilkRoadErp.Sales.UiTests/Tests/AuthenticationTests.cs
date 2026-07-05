@@ -15,13 +15,13 @@ public class AuthenticationTests(UiTestsFixture fixture)
     {
         var page = await fixture.NewPageAsync();
 
-        await page.GotoAsync("/");
+        _ = await page.GotoAsync("/");
 
         await page.WaitForURLAsync(
             url => url.Contains("/login"),
             new PageWaitForURLOptions { Timeout = NavigationTimeoutMs });
 
-        page.Url.Should().Contain("/login");
+        _ = page.Url.Should().Contain("/login");
         await page.Context.DisposeAsync();
     }
 
@@ -38,7 +38,7 @@ public class AuthenticationTests(UiTestsFixture fixture)
             url => !url.Contains("/login"),
             new PageWaitForURLOptions { Timeout = NavigationTimeoutMs });
 
-        page.Url.Should().NotContain("/login");
+        _ = page.Url.Should().NotContain("/login");
         await page.Context.DisposeAsync();
     }
 
@@ -48,7 +48,7 @@ public class AuthenticationTests(UiTestsFixture fixture)
     {
         var page = await fixture.NewPageAsync();
 
-        await page.GotoAsync("/invoices");
+        _ = await page.GotoAsync("/invoices");
         await page.WaitForURLAsync(
             url => url.Contains("/login"),
             new PageWaitForURLOptions { Timeout = NavigationTimeoutMs });
@@ -60,7 +60,7 @@ public class AuthenticationTests(UiTestsFixture fixture)
             url => url.Contains("/invoices"),
             new PageWaitForURLOptions { Timeout = NavigationTimeoutMs });
 
-        page.Url.Should().Contain("/invoices");
+        _ = page.Url.Should().Contain("/invoices");
         await page.Context.DisposeAsync();
     }
 
@@ -80,12 +80,12 @@ public class AuthenticationTests(UiTestsFixture fixture)
             new PageWaitForURLOptions { Timeout = NavigationTimeoutMs });
 
         // Session is really gone: a protected page bounces back to login.
-        await page.GotoAsync("/");
+        _ = await page.GotoAsync("/");
         await page.WaitForURLAsync(
             url => url.Contains("/login"),
             new PageWaitForURLOptions { Timeout = NavigationTimeoutMs });
 
-        page.Url.Should().Contain("/login");
+        _ = page.Url.Should().Contain("/login");
         await page.Context.DisposeAsync();
     }
 
@@ -101,7 +101,7 @@ public class AuthenticationTests(UiTestsFixture fixture)
         await Assertions.Expect(loginPage.ErrorAlert)
             .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = NavigationTimeoutMs });
 
-        page.Url.Should().Contain("/login");
+        _ = page.Url.Should().Contain("/login");
         await page.Context.DisposeAsync();
     }
 }
