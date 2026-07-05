@@ -124,7 +124,7 @@ stages:
           echo "Attempting NVD update..."
           if ! update_nvd; then
             echo "##[warning]NVD update failed — likely a locked/corrupted cached database. Purging local NVD data and retrying with a clean rebuild..."
-            rm -rf "${DATA_DIR:?}"/*
+            sudo find "$DATA_DIR" -mindepth 1 -delete
             update_nvd
           fi
       env:
@@ -302,8 +302,14 @@ stages:
       inputs:
         script: |
           set -e
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh -o /tmp/trivy-install.sh
-          sudo bash /tmp/trivy-install.sh -b /usr/local/bin
+          sudo apt-get update -qq
+          sudo apt-get install -y ca-certificates curl gnupg
+          curl -fsSL https://aquasecurity.github.io/trivy-repo/deb/public.key \
+            | sudo gpg --dearmor -o /usr/share/keyrings/trivy.gpg
+          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" \
+            | sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update -qq
+          sudo apt-get install -y trivy
           if ! command -v trivy >/dev/null 2>&1; then
             echo "##vso[task.logissue type=error]Trivy binary not found on PATH after install."
             exit 1
