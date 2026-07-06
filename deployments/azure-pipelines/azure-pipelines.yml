@@ -73,8 +73,18 @@ stages:
         script: |
           mkdir -p $(System.DefaultWorkingDirectory)/dependency-check-report
           mkdir -p $(Pipeline.Workspace)/dependency-check-data
+          mkdir -p /tmp/dependency-check-data
           chmod 777 $(System.DefaultWorkingDirectory)/dependency-check-report
           chmod 777 $(Pipeline.Workspace)/dependency-check-data
+          chmod 777 /tmp/dependency-check-data
+          # ---- Copy the cache-restored data onto guaranteed-local disk (/tmp).
+          # Pipeline.Workspace's backing filesystem on hosted agents may not
+          # fully support the NIO file-locking semantics Java/H2 expects,
+          # which would explain a lock timeout that survives a full purge.
+          # All update/scan containers below now mount /tmp instead.
+          if [ -n "$(ls -A $(Pipeline.Workspace)/dependency-check-data 2>/dev/null)" ]; then
+            cp -a $(Pipeline.Workspace)/dependency-check-data/. /tmp/dependency-check-data/
+          fi
 
     # Persist the NVD vulnerability database across pipeline runs so most
     # builds only need an incremental update instead of a full cold pull.
@@ -100,7 +110,7 @@ stages:
       displayName: Clear stale Dependency-Check lock files
       inputs:
         script: |
-          find $(Pipeline.Workspace)/dependency-check-data -name "*.lock.db" -delete 2>/dev/null || true
+          find /tmp/dependency-check-data -name "*.lock.db" -delete 2>/dev/null || true
 
     - task: CmdLine@2
       displayName: Update NVD database
@@ -109,7 +119,7 @@ stages:
       timeoutInMinutes: 300
       inputs:
         script: |
-          DATA_DIR=$(Pipeline.Workspace)/dependency-check-data
+          DATA_DIR=/tmp/dependency-check-data
           LOG_FILE="$DATA_DIR/odc-update.log"
 
           update_nvd() {
@@ -153,7 +163,7 @@ stages:
       condition: always()
       inputs:
         script: |
-          DB_FILE=$(find $(Pipeline.Workspace)/dependency-check-data -name "odc.mv.db" 2>/dev/null | head -n1)
+          DB_FILE=$(find /tmp/dependency-check-data -name "odc.mv.db" 2>/dev/null | head -n1)
           if [ -z "$DB_FILE" ]; then
             echo "##vso[task.logissue type=warning]NVD database file not found — scan will likely run against an empty DB."
           else
@@ -165,6 +175,14 @@ stages:
           fi
 
     - task: CmdLine@2
+      displayName: Sync updated NVD data back for caching
+      condition: always()
+      inputs:
+        script: |
+          rm -rf $(Pipeline.Workspace)/dependency-check-data/*
+          cp -a /tmp/dependency-check-data/. $(Pipeline.Workspace)/dependency-check-data/
+
+    - task: CmdLine@2
       displayName: Run OWASP Dependency-Check
       condition: always()
       inputs:
@@ -172,7 +190,7 @@ stages:
           docker run --rm \
             -v $(System.DefaultWorkingDirectory):/src:ro \
             -v $(System.DefaultWorkingDirectory)/dependency-check-report:/report:rw \
-            -v $(Pipeline.Workspace)/dependency-check-data:/usr/share/dependency-check/data:rw \
+            -v /tmp/dependency-check-data:/usr/share/dependency-check/data:rw \
             owasp/dependency-check:latest \
             --scan /src \
             --project "SilkRoad ERP" \
