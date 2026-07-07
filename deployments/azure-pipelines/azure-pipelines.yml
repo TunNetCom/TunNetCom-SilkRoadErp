@@ -843,48 +843,22 @@ stages:
   jobs:
   - job: TerraformApply
     steps:
-    - task: CmdLine@2
-      displayName: Install Terraform (if missing)
+    - task: AzureCLI@2
+      displayName: Terraform Init & Apply (worker-vm)
       inputs:
-        script: |
-          set -e
-          if ! command -v terraform >/dev/null 2>&1; then
-            TF_VERSION="1.7.5"
-            curl -fsSL -o /tmp/terraform.zip \
-              "https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_amd64.zip"
-            sudo unzip -o /tmp/terraform.zip -d /usr/local/bin
-            rm -f /tmp/terraform.zip
-          fi
-          terraform -version
-
-    - task: CmdLine@2
-      displayName: Provision Worker VM (if missing)
-      inputs:
-        script: |
+        azureSubscription: 'TunNetCom_Azure_Connection'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
           set -e
 
-          RESOURCE_GROUP="Aion_VM_group"
-          VM_NAME="AionWorkerNode"
-          STATE_DIR="/opt/terraform-state/worker-vm"
-
-          echo "Checking if VM '$VM_NAME' exists in RG '$RESOURCE_GROUP'..."
-          if az vm show -g "$RESOURCE_GROUP" -n "$VM_NAME" -o none 2>/dev/null; then
-            echo "✅ VM already exists — skipping Terraform."
-            exit 0
-          fi
-
-          echo "⚠️  VM not found — provisioning via Terraform..."
           cd deployments/terraform/worker-vm
 
-          # Persistent state (agent is persistent, checkout is not)
-          sudo mkdir -p "$STATE_DIR"
-          sudo chown -R "$(id -u):$(id -g)" "$STATE_DIR"
-
-          # Write .tfvars (SSH key from pipeline secret)
+          # Write the SSH key from the pipeline secret into a .tfvars file
           cat > terraform.tfvars <<- EOF
-          resource_group_name     = "$RESOURCE_GROUP"
+          resource_group_name     = "Aion_VM_group"
           location                = "francecentral"
-          vm_name                 = "$VM_NAME"
+          vm_name                 = "AionWorkerNode"
           vm_size                 = "Standard_B2s"
           admin_username          = "workerMalek"
           ssh_public_key          = "$(AZURE_WORKER_SSH_KEY)"
@@ -900,9 +874,8 @@ stages:
           shutdown_timezone       = "Central European Standard Time"
           EOF
 
-          terraform init -input=false \
-            -backend-config="path=$STATE_DIR/terraform.tfstate"
-          terraform apply -auto-approve -input=false
+          terraform init
+          terraform apply -auto-approve
 
 # ============================================================
 # 5️⃣  DEPLOY TO DEV (kept from the stable pipeline)
