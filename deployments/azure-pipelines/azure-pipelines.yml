@@ -843,11 +843,57 @@ stages:
   - job: TerraformApply
     steps:
     - task: CmdLine@2
-      displayName: Verify VM exists (assumed)
+      displayName: Install Azure CLI & Terraform
       inputs:
         script: |
-          echo "VM 'AionWorkerNode' is assumed to exist."
-          echo "Skipping Terraform (az/terraform not on agent yet)."
+          set -e
+          if ! command -v az >/dev/null 2>&1; then
+            curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+          fi
+          az version
+          if ! command -v terraform >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y wget gnupg
+            wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+            echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+            sudo apt-get update -qq
+            sudo apt-get install -y terraform
+          fi
+          terraform -version
+
+    - task: AzureCLI@2
+      displayName: Terraform Init & Apply (worker-vm)
+      inputs:
+        azureSubscription: 'TunNetCom_Azure_Connection'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          set -e
+
+          cd deployments/terraform/worker-vm
+
+          # Write the SSH key from the pipeline secret into a .tfvars file
+          cat > terraform.tfvars <<- EOF
+          resource_group_name     = "Aion_VM_group"
+          location                = "francecentral"
+          vm_name                 = "AionWorkerNode"
+          vm_size                 = "Standard_B2s"
+          admin_username          = "workerMalek"
+          ssh_public_key          = "$(AZURE_WORKER_SSH_KEY)"
+          allowed_ssh_source_cidr = "*"
+          assign_public_ip        = true
+          vnet_name               = "AionWorkerNode-vnet"
+          vnet_address_space      = "10.0.0.0/16"
+          subnet_name             = "default"
+          subnet_address_prefix   = "10.0.0.0/24"
+          nsg_name                = "AionWorkerNode-nsg"
+          nic_name                = "aionworkernode1"
+          shutdown_time           = "1900"
+          shutdown_timezone       = "Central European Standard Time"
+          EOF
+
+          terraform init
+          terraform apply -auto-approve
 
 # ============================================================
 # 5️⃣  DEPLOY TO DEV (kept from the stable pipeline)
