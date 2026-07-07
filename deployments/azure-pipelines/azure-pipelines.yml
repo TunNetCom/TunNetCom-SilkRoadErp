@@ -870,13 +870,22 @@ stages:
         inlineScript: |
           set -e
 
+          RESOURCE_GROUP="Aion_VM_group"
+          VM_NAME="AionWorkerNode"
+
+          echo "Checking if VM '$VM_NAME' exists in RG '$RESOURCE_GROUP'..."
+          if az vm show -g "$RESOURCE_GROUP" -n "$VM_NAME" -o none 2>/dev/null; then
+            echo "✅ VM already exists — skipping Terraform."
+            exit 0
+          fi
+
+          echo "⚠️  VM not found — provisioning via Terraform..."
           cd deployments/terraform/worker-vm
 
-          # Write the SSH key from the pipeline secret into a .tfvars file
           cat > terraform.tfvars <<- EOF
-          resource_group_name     = "Aion_VM_group"
+          resource_group_name     = "$RESOURCE_GROUP"
           location                = "francecentral"
-          vm_name                 = "AionWorkerNode"
+          vm_name                 = "$VM_NAME"
           vm_size                 = "Standard_B2s"
           admin_username          = "workerMalek"
           ssh_public_key          = "$(AZURE_WORKER_SSH_KEY)"
