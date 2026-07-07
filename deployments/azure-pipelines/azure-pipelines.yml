@@ -831,12 +831,59 @@ stages:
 
 
 # ============================================================
-# 4️⃣  DEPLOY TO DEV (kept from the stable pipeline)
+# 4️⃣  ENSURE WORKER VM EXISTS (IaC)
+# ============================================================
+- stage: EnsureWorker
+  displayName: Ensure Worker VM exists
+  dependsOn:
+  - ZAP_AJAX
+  condition: succeeded()
+  pool:
+    name: OnPremAgents
+  jobs:
+  - job: TerraformApply
+    steps:
+    - task: AzureCLI@2
+      displayName: Terraform Init & Apply (worker-vm)
+      inputs:
+        azureSubscription: 'TunNetCom_Azure_Connection'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          set -e
+
+          cd deployments/terraform/worker-vm
+
+          # Write the SSH key from the pipeline secret into a .tfvars file
+          cat > terraform.tfvars <<- EOF
+          resource_group_name     = "Aion_VM_group"
+          location                = "francecentral"
+          vm_name                 = "AionWorkerNode"
+          vm_size                 = "Standard_B2s"
+          admin_username          = "workerMalek"
+          ssh_public_key          = "$(AZURE_WORKER_SSH_KEY)"
+          allowed_ssh_source_cidr = "*"
+          assign_public_ip        = true
+          vnet_name               = "AionWorkerNode-vnet"
+          vnet_address_space      = "10.0.0.0/16"
+          subnet_name             = "default"
+          subnet_address_prefix   = "10.0.0.0/24"
+          nsg_name                = "AionWorkerNode-nsg"
+          nic_name                = "aionworkernode1"
+          shutdown_time           = "1900"
+          shutdown_timezone       = "Central European Standard Time"
+          EOF
+
+          terraform init
+          terraform apply -auto-approve
+
+# ============================================================
+# 5️⃣  DEPLOY TO DEV (kept from the stable pipeline)
 # ============================================================
 - stage: Deploy
   displayName: Blue/Green Deploy to Dev
   dependsOn:
-  - ZAP_AJAX
+  - EnsureWorker
   condition: succeeded()
   pool:
     name: OnPremAgents
