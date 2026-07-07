@@ -28,11 +28,11 @@ variables:
 
 stages:
 
-# ============================================================
-# 1️⃣  BUILD
-# ============================================================
-- stage: Build
-  displayName: Build, SonarQube, Scan & Push
+# # ============================================================
+# # 1️⃣  BUILD
+# # ============================================================
+# - stage: Build
+#   displayName: Build, SonarQube, Scan & Push
   jobs:
   - job: BuildPush
     timeoutInMinutes: 300
@@ -591,10 +591,10 @@ stages:
           df -h
 
 
-# ============================================================
-# 2️⃣  ZAP BASELINE (re-added)
-# ============================================================
-- stage: ZAP_Baseline
+# # ============================================================
+# # 2️⃣  ZAP BASELINE (re-added)
+# # ============================================================
+# - stage: ZAP_Baseline
   displayName: DAST - ZAP Baseline Scan
   dependsOn:
   - Build
@@ -684,10 +684,10 @@ stages:
         DEFECTDOJO_API_KEY: $(defectDojoApiKey)
 
 
-# ============================================================
-# 3️⃣  ZAP AJAX (re-added)
-# ============================================================
-- stage: ZAP_AJAX
+# # ============================================================
+# # 3️⃣  ZAP AJAX (re-added)
+# # ============================================================
+# - stage: ZAP_AJAX
   displayName: DAST - ZAP AJAX Spider Scan
   dependsOn:
   - ZAP_Baseline
@@ -835,8 +835,7 @@ stages:
 # ============================================================
 - stage: EnsureWorker
   displayName: Ensure Worker VM exists
-  dependsOn:
-  - ZAP_AJAX
+  dependsOn: []
   condition: succeeded()
   pool:
     name: OnPremAgents
