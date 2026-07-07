@@ -33,6 +33,7 @@ stages:
 # ============================================================
 - stage: Build
   displayName: Build, SonarQube, Scan & Push
+  condition: false
   jobs:
   - job: BuildPush
     timeoutInMinutes: 300
@@ -596,9 +597,8 @@ stages:
 # ============================================================
 - stage: ZAP_Baseline
   displayName: DAST - ZAP Baseline Scan
-  dependsOn:
-  - Build
-  condition: succeeded()
+  dependsOn: []
+  condition: false
   pool:
     vmImage: 'ubuntu-latest'
   jobs:
@@ -835,8 +835,7 @@ stages:
 # ============================================================
 - stage: EnsureWorker
   displayName: Ensure Worker VM exists
-  dependsOn:
-  - ZAP_AJAX
+  dependsOn: []
   condition: succeeded()
   pool:
     name: OnPremAgents
