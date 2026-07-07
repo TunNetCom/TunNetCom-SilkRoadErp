@@ -77,13 +77,19 @@ stages:
           chmod 777 $(System.DefaultWorkingDirectory)/dependency-check-report
           chmod 777 $(Pipeline.Workspace)/dependency-check-data
           chmod 777 /tmp/dependency-check-data
-          # ---- Copy the cache-restored data onto guaranteed-local disk (/tmp).
-          # Pipeline.Workspace's backing filesystem on hosted agents may not
-          # fully support the NIO file-locking semantics Java/H2 expects,
-          # which would explain a lock timeout that survives a full purge.
-          # All update/scan containers below now mount /tmp instead.
+
+    # ---- Move cached NVD data to /tmp AFTER Cache@2 has restored it.
+    # Was previously inside "Prepare" above, but that ran before Cache@2
+    # restored the data, so /tmp was always empty → full re-download every run.
+    - task: CmdLine@2
+      displayName: Copy cached NVD data to local /tmp
+      inputs:
+        script: |
           if [ -n "$(ls -A $(Pipeline.Workspace)/dependency-check-data 2>/dev/null)" ]; then
             cp -a $(Pipeline.Workspace)/dependency-check-data/. /tmp/dependency-check-data/
+            echo "Copied cached NVD data to /tmp."
+          else
+            echo "No cached NVD data found — will download fresh."
           fi
 
     # Persist the NVD vulnerability database across pipeline runs so most
