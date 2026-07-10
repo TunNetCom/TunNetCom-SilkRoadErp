@@ -23,8 +23,8 @@ variables:
   value: 'silkroad-webapp-service'
 - name: zapTarget
   value: 'https://silkroad.aion-time.com'
-# - name: defectDojoUrl
-#   value: 'https://defectdojo.aion-time.com'
+- name: defectDojoUrl
+  value: 'https://defectdojo.aion-time.com'
 
 stages:
 
@@ -66,35 +66,31 @@ stages:
     # ============================================================
     # 🛡️ OWASP DEPENDENCY-CHECK (SCA - scans NuGet dependencies
     # against the NVD database, independent of Trivy's image scan)
-    # ------------------------------------------------------------
-    # DISABLED: entire OWASP Dependency-Check + NVD cache/update
-    # block commented out per request. Only Trivy/ZAP scans and
-    # the CD deploy stages should run.
     # ============================================================
-    # - task: CmdLine@2
-    #   displayName: Prepare OWASP Dependency-Check directories
-    #   inputs:
-    #     script: |
-    #       mkdir -p $(System.DefaultWorkingDirectory)/dependency-check-report
-    #       mkdir -p $(Pipeline.Workspace)/dependency-check-data
-    #       mkdir -p /tmp/dependency-check-data
-    #       chmod 777 $(System.DefaultWorkingDirectory)/dependency-check-report
-    #       chmod 777 $(Pipeline.Workspace)/dependency-check-data
-    #       chmod 777 /tmp/dependency-check-data
+    - task: CmdLine@2
+      displayName: Prepare OWASP Dependency-Check directories
+      inputs:
+        script: |
+          mkdir -p $(System.DefaultWorkingDirectory)/dependency-check-report
+          mkdir -p $(Pipeline.Workspace)/dependency-check-data
+          mkdir -p /tmp/dependency-check-data
+          chmod 777 $(System.DefaultWorkingDirectory)/dependency-check-report
+          chmod 777 $(Pipeline.Workspace)/dependency-check-data
+          chmod 777 /tmp/dependency-check-data
 
     # ---- Move cached NVD data to /tmp AFTER Cache@2 has restored it.
     # Was previously inside "Prepare" above, but that ran before Cache@2
     # restored the data, so /tmp was always empty → full re-download every run.
-    # - task: CmdLine@2
-    #   displayName: Copy cached NVD data to local /tmp
-    #   inputs:
-    #     script: |
-    #       if [ -n "$(ls -A $(Pipeline.Workspace)/dependency-check-data 2>/dev/null)" ]; then
-    #         cp -a $(Pipeline.Workspace)/dependency-check-data/. /tmp/dependency-check-data/
-    #         echo "Copied cached NVD data to /tmp."
-    #       else
-    #         echo "No cached NVD data found — will download fresh."
-    #       fi
+    - task: CmdLine@2
+      displayName: Copy cached NVD data to local /tmp
+      inputs:
+        script: |
+          if [ -n "$(ls -A $(Pipeline.Workspace)/dependency-check-data 2>/dev/null)" ]; then
+            cp -a $(Pipeline.Workspace)/dependency-check-data/. /tmp/dependency-check-data/
+            echo "Copied cached NVD data to /tmp."
+          else
+            echo "No cached NVD data found — will download fresh."
+          fi
 
     # Persist the NVD vulnerability database across pipeline runs so most
     # builds only need an incremental update instead of a full cold pull.
@@ -108,159 +104,159 @@ stages:
     # only saves on a miss — a static key that always hits never re-saves,
     # so any corruption becomes permanent. restoreKeys still lets us pull the
     # most recent good copy to keep updates incremental.
-    # - task: Cache@2
-    #   displayName: Cache OWASP Dependency-Check NVD data
-    #   inputs:
-    #     key: 'dependency-check-nvd-v2 | "$(Build.BuildId)"'
-    #     restoreKeys: |
-    #       dependency-check-nvd-v2
-    #     path: $(Pipeline.Workspace)/dependency-check-data
+    - task: Cache@2
+      displayName: Cache OWASP Dependency-Check NVD data
+      inputs:
+        key: 'dependency-check-nvd-v2 | "$(Build.BuildId)"'
+        restoreKeys: |
+          dependency-check-nvd-v2
+        path: $(Pipeline.Workspace)/dependency-check-data
 
-    # - task: CmdLine@2
-    #   displayName: Clear stale Dependency-Check lock files
-    #   inputs:
-    #     script: |
-    #       find /tmp/dependency-check-data -name "*.lock.db" -delete 2>/dev/null || true
+    - task: CmdLine@2
+      displayName: Clear stale Dependency-Check lock files
+      inputs:
+        script: |
+          find /tmp/dependency-check-data -name "*.lock.db" -delete 2>/dev/null || true
 
-    # - task: CmdLine@2
-    #   displayName: Update NVD database
-    #   continueOnError: true
-    #   condition: always()
-    #   timeoutInMinutes: 300
-    #   inputs:
-    #     script: |
-    #       DATA_DIR=/tmp/dependency-check-data
-    #       LOG_FILE="$DATA_DIR/odc-update.log"
-    #
-    #       update_nvd() {
-    #         docker run --rm \
-    #           -v "$DATA_DIR":/usr/share/dependency-check/data:rw \
-    #           owasp/dependency-check:latest \
-    #           --updateonly \
-    #           --nvdApiKey "$NVD_API_KEY" \
-    #           --nvdValidForHours 24 \
-    #           --nvdApiDelay 4000 \
-    #           --log /usr/share/dependency-check/data/odc-update.log
-    #       }
-    #
-    #       echo "Attempting NVD update..."
-    #       if update_nvd; then
-    #         echo "NVD update succeeded."
-    #       else
-    #         echo "##[warning]NVD update failed. Dumping verbose log to find the real cause (the lock error is often a misleading downstream symptom, not the actual root cause):"
-    #         echo "---------------------------------------------------------------"
-    #         cat "$LOG_FILE" 2>/dev/null || echo "(no log file found)"
-    #         echo "---------------------------------------------------------------"
-    #         echo "##[warning]Purging local NVD data and retrying with a clean rebuild..."
-    #         sudo find "$DATA_DIR" -mindepth 1 -delete
-    #         if update_nvd; then
-    #           echo "NVD update succeeded after clean rebuild."
-    #         else
-    #           echo "##[error]NVD update failed on both attempts. Verbose log from retry:"
-    #           echo "---------------------------------------------------------------"
-    #           cat "$LOG_FILE" 2>/dev/null || echo "(no log file found)"
-    #           echo "---------------------------------------------------------------"
-    #           exit 1
-    #         fi
-    #       fi
-    #   env:
-    #     NVD_API_KEY: $(nvdApiKey)
+    - task: CmdLine@2
+      displayName: Update NVD database
+      continueOnError: true
+      condition: always()
+      timeoutInMinutes: 300
+      inputs:
+        script: |
+          DATA_DIR=/tmp/dependency-check-data
+          LOG_FILE="$DATA_DIR/odc-update.log"
+
+          update_nvd() {
+            docker run --rm \
+              -v "$DATA_DIR":/usr/share/dependency-check/data:rw \
+              owasp/dependency-check:latest \
+              --updateonly \
+              --nvdApiKey "$NVD_API_KEY" \
+              --nvdValidForHours 24 \
+              --nvdApiDelay 4000 \
+              --log /usr/share/dependency-check/data/odc-update.log
+          }
+
+          echo "Attempting NVD update..."
+          if update_nvd; then
+            echo "NVD update succeeded."
+          else
+            echo "##[warning]NVD update failed. Dumping verbose log to find the real cause (the lock error is often a misleading downstream symptom, not the actual root cause):"
+            echo "---------------------------------------------------------------"
+            cat "$LOG_FILE" 2>/dev/null || echo "(no log file found)"
+            echo "---------------------------------------------------------------"
+            echo "##[warning]Purging local NVD data and retrying with a clean rebuild..."
+            sudo find "$DATA_DIR" -mindepth 1 -delete
+            if update_nvd; then
+              echo "NVD update succeeded after clean rebuild."
+            else
+              echo "##[error]NVD update failed on both attempts. Verbose log from retry:"
+              echo "---------------------------------------------------------------"
+              cat "$LOG_FILE" 2>/dev/null || echo "(no log file found)"
+              echo "---------------------------------------------------------------"
+              exit 1
+            fi
+          fi
+      env:
+        NVD_API_KEY: $(nvdApiKey)
 
     # ---- Warn (don't fail the build) if the NVD DB looks suspiciously small,
     # which would mean the update above failed/skipped and results may be stale.
-    # - task: CmdLine@2
-    #   displayName: Sanity-check NVD DB size
-    #   condition: always()
-    #   inputs:
-    #     script: |
-    #       DB_FILE=$(find /tmp/dependency-check-data -name "odc.mv.db" 2>/dev/null | head -n1)
-    #       if [ -z "$DB_FILE" ]; then
-    #         echo "##vso[task.logissue type=warning]NVD database file not found — scan will likely run against an empty DB."
-    #       else
-    #         SIZE_MB=$(du -m "$DB_FILE" | cut -f1)
-    #         echo "NVD DB size: ${SIZE_MB} MB"
-    #         if [ "$SIZE_MB" -lt 50 ]; then
-    #           echo "##vso[task.logissue type=warning]NVD database is only ${SIZE_MB}MB — looks stale/incomplete. Scan results may under-report vulnerabilities."
-    #         fi
-    #       fi
+    - task: CmdLine@2
+      displayName: Sanity-check NVD DB size
+      condition: always()
+      inputs:
+        script: |
+          DB_FILE=$(find /tmp/dependency-check-data -name "odc.mv.db" 2>/dev/null | head -n1)
+          if [ -z "$DB_FILE" ]; then
+            echo "##vso[task.logissue type=warning]NVD database file not found — scan will likely run against an empty DB."
+          else
+            SIZE_MB=$(du -m "$DB_FILE" | cut -f1)
+            echo "NVD DB size: ${SIZE_MB} MB"
+            if [ "$SIZE_MB" -lt 50 ]; then
+              echo "##vso[task.logissue type=warning]NVD database is only ${SIZE_MB}MB — looks stale/incomplete. Scan results may under-report vulnerabilities."
+            fi
+          fi
 
-    # - task: CmdLine@2
-    #   displayName: Sync updated NVD data back for caching
-    #   condition: always()
-    #   inputs:
-    #     script: |
-    #       rm -rf $(Pipeline.Workspace)/dependency-check-data/*
-    #       cp -a /tmp/dependency-check-data/. $(Pipeline.Workspace)/dependency-check-data/
+    - task: CmdLine@2
+      displayName: Sync updated NVD data back for caching
+      condition: always()
+      inputs:
+        script: |
+          rm -rf $(Pipeline.Workspace)/dependency-check-data/*
+          cp -a /tmp/dependency-check-data/. $(Pipeline.Workspace)/dependency-check-data/
 
-    # - task: CmdLine@2
-    #   displayName: Run OWASP Dependency-Check
-    #   condition: always()
-    #   inputs:
-    #     script: |
-    #       docker run --rm \
-    #         -v $(System.DefaultWorkingDirectory):/src:ro \
-    #         -v $(System.DefaultWorkingDirectory)/dependency-check-report:/report:rw \
-    #         -v /tmp/dependency-check-data:/usr/share/dependency-check/data:rw \
-    #         owasp/dependency-check:latest \
-    #         --scan /src \
-    #         --project "SilkRoad ERP" \
-    #         --format HTML \
-    #         --format JSON \
-    #         --format XML \
-    #         --out /report \
-    #         --noupdate \
-    #         --failOnCVSS 11
+    - task: CmdLine@2
+      displayName: Run OWASP Dependency-Check
+      condition: always()
+      inputs:
+        script: |
+          docker run --rm \
+            -v $(System.DefaultWorkingDirectory):/src:ro \
+            -v $(System.DefaultWorkingDirectory)/dependency-check-report:/report:rw \
+            -v /tmp/dependency-check-data:/usr/share/dependency-check/data:rw \
+            owasp/dependency-check:latest \
+            --scan /src \
+            --project "SilkRoad ERP" \
+            --format HTML \
+            --format JSON \
+            --format XML \
+            --out /report \
+            --noupdate \
+            --failOnCVSS 11
 
     # ---- FIX: container runs as root, so files land as root-owned with
     # restrictive perms. Reclaim ownership before publish/upload steps read them.
-    # - task: CmdLine@2
-    #   displayName: Fix OWASP Dependency-Check report permissions
-    #   condition: always()
-    #   inputs:
-    #     script: |
-    #       sudo chown -R $(id -u):$(id -g) $(System.DefaultWorkingDirectory)/dependency-check-report
-    #       sudo chmod -R 755 $(System.DefaultWorkingDirectory)/dependency-check-report
+    - task: CmdLine@2
+      displayName: Fix OWASP Dependency-Check report permissions
+      condition: always()
+      inputs:
+        script: |
+          sudo chown -R $(id -u):$(id -g) $(System.DefaultWorkingDirectory)/dependency-check-report
+          sudo chmod -R 755 $(System.DefaultWorkingDirectory)/dependency-check-report
 
-    # - task: PublishBuildArtifacts@1
-    #   displayName: Publish OWASP Dependency-Check Report
-    #   condition: always()
-    #   inputs:
-    #     pathToPublish: '$(System.DefaultWorkingDirectory)/dependency-check-report'
-    #     artifactName: 'OWASP-DependencyCheck-Report'
+    - task: PublishBuildArtifacts@1
+      displayName: Publish OWASP Dependency-Check Report
+      condition: always()
+      inputs:
+        pathToPublish: '$(System.DefaultWorkingDirectory)/dependency-check-report'
+        artifactName: 'OWASP-DependencyCheck-Report'
 
-    # - task: PublishHtmlReport@1
-    #   displayName: Show OWASP Dependency-Check Tab
-    #   condition: always()
-    #   inputs:
-    #     reportDir: '$(System.DefaultWorkingDirectory)/dependency-check-report'
-    #     tabName: 'OWASP Dependency-Check'
+    - task: PublishHtmlReport@1
+      displayName: Show OWASP Dependency-Check Tab
+      condition: always()
+      inputs:
+        reportDir: '$(System.DefaultWorkingDirectory)/dependency-check-report'
+        tabName: 'OWASP Dependency-Check'
 
-    # - task: CmdLine@2
-    #   displayName: Push OWASP Dependency-Check results to DefectDojo
-    #   condition: always()
-    #   inputs:
-    #     script: |
-    #       HTTP_CODE=$(curl -sS -o /tmp/dd_owasp_response.json -w "%{http_code}" -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
-    #         -H "Authorization: Token $DEFECTDOJO_API_KEY" \
-    #         -F "scan_type=Dependency Check Scan" \
-    #         -F "file=@$(System.DefaultWorkingDirectory)/dependency-check-report/dependency-check-report.xml" \
-    #         -F "product_type_name=SilkRoad ERP" \
-    #         -F "product_name=SilkRoad ERP" \
-    #         -F "engagement_name=SilkRoad Dependencies" \
-    #         -F "test_title=OWASP Dependency-Check" \
-    #         -F "auto_create_context=True" \
-    #         -F "close_old_findings=true" \
-    #         -F "minimum_severity=High")
-    #       echo "DefectDojo response (HTTP $HTTP_CODE):"
-    #       cat /tmp/dd_owasp_response.json
-    #       echo ""
-    #       if [ "$HTTP_CODE" -ge 400 ]; then
-    #         echo "##vso[task.logissue type=error]DefectDojo import (OWASP Dependency-Check) failed with HTTP $HTTP_CODE"
-    #         exit 1
-    #       fi
-    #   env:
-    #     DEFECTDOJO_URL: $(defectDojoUrl)
-    #     DEFECTDOJO_API_KEY: $(defectDojoApiKey)
+    - task: CmdLine@2
+      displayName: Push OWASP Dependency-Check results to DefectDojo
+      condition: always()
+      inputs:
+        script: |
+          HTTP_CODE=$(curl -sS -o /tmp/dd_owasp_response.json -w "%{http_code}" -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
+            -H "Authorization: Token $DEFECTDOJO_API_KEY" \
+            -F "scan_type=Dependency Check Scan" \
+            -F "file=@$(System.DefaultWorkingDirectory)/dependency-check-report/dependency-check-report.xml" \
+            -F "product_type_name=SilkRoad ERP" \
+            -F "product_name=SilkRoad ERP" \
+            -F "engagement_name=SilkRoad Dependencies" \
+            -F "test_title=OWASP Dependency-Check" \
+            -F "auto_create_context=True" \
+            -F "close_old_findings=true" \
+            -F "minimum_severity=High")
+          echo "DefectDojo response (HTTP $HTTP_CODE):"
+          cat /tmp/dd_owasp_response.json
+          echo ""
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            echo "##vso[task.logissue type=error]DefectDojo import (OWASP Dependency-Check) failed with HTTP $HTTP_CODE"
+            exit 1
+          fi
+      env:
+        DEFECTDOJO_URL: $(defectDojoUrl)
+        DEFECTDOJO_API_KEY: $(defectDojoApiKey)
 
     - task: SonarQubePrepare@7
       displayName: SonarQube Prepare
@@ -443,32 +439,32 @@ stages:
         reportDir: '$(System.DefaultWorkingDirectory)/trivy-api-report'
         tabName: 'Trivy API'
 
-    # - task: CmdLine@2
-    #   displayName: Push Trivy API results to DefectDojo
-    #   condition: always()
-    #   inputs:
-    #     script: |
-    #       HTTP_CODE=$(curl -sS -o /tmp/dd_trivy_api_response.json -w "%{http_code}" -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
-    #         -H "Authorization: Token $DEFECTDOJO_API_KEY" \
-    #         -F "scan_type=Trivy Scan" \
-    #         -F "file=@$(System.DefaultWorkingDirectory)/trivy-api-report/trivy-api.json" \
-    #         -F "product_type_name=SilkRoad ERP" \
-    #         -F "product_name=SilkRoad ERP" \
-    #         -F "engagement_name=SilkRoad API" \
-    #         -F "test_title=Trivy - API Image" \
-    #         -F "auto_create_context=True" \
-    #         -F "close_old_findings=true" \
-    #         -F "minimum_severity=High")
-    #       echo "DefectDojo response (HTTP $HTTP_CODE):"
-    #       cat /tmp/dd_trivy_api_response.json
-    #       echo ""
-    #       if [ "$HTTP_CODE" -ge 400 ]; then
-    #         echo "##vso[task.logissue type=error]DefectDojo import (Trivy API) failed with HTTP $HTTP_CODE"
-    #         exit 1
-    #       fi
-    #   env:
-    #     DEFECTDOJO_URL: $(defectDojoUrl)
-    #     DEFECTDOJO_API_KEY: $(defectDojoApiKey)
+    - task: CmdLine@2
+      displayName: Push Trivy API results to DefectDojo
+      condition: always()
+      inputs:
+        script: |
+          HTTP_CODE=$(curl -sS -o /tmp/dd_trivy_api_response.json -w "%{http_code}" -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
+            -H "Authorization: Token $DEFECTDOJO_API_KEY" \
+            -F "scan_type=Trivy Scan" \
+            -F "file=@$(System.DefaultWorkingDirectory)/trivy-api-report/trivy-api.json" \
+            -F "product_type_name=SilkRoad ERP" \
+            -F "product_name=SilkRoad ERP" \
+            -F "engagement_name=SilkRoad API" \
+            -F "test_title=Trivy - API Image" \
+            -F "auto_create_context=True" \
+            -F "close_old_findings=true" \
+            -F "minimum_severity=High")
+          echo "DefectDojo response (HTTP $HTTP_CODE):"
+          cat /tmp/dd_trivy_api_response.json
+          echo ""
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            echo "##vso[task.logissue type=error]DefectDojo import (Trivy API) failed with HTTP $HTTP_CODE"
+            exit 1
+          fi
+      env:
+        DEFECTDOJO_URL: $(defectDojoUrl)
+        DEFECTDOJO_API_KEY: $(defectDojoApiKey)
 
     - task: CmdLine@2
       displayName: Push API image
@@ -559,32 +555,32 @@ stages:
         reportDir: '$(System.DefaultWorkingDirectory)/trivy-web-report'
         tabName: 'Trivy Web'
 
-    # - task: CmdLine@2
-    #   displayName: Push Trivy Web results to DefectDojo
-    #   condition: always()
-    #   inputs:
-    #     script: |
-    #       HTTP_CODE=$(curl -sS -o /tmp/dd_trivy_web_response.json -w "%{http_code}" -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
-    #         -H "Authorization: Token $DEFECTDOJO_API_KEY" \
-    #         -F "scan_type=Trivy Scan" \
-    #         -F "file=@$(System.DefaultWorkingDirectory)/trivy-web-report/trivy-web.json" \
-    #         -F "product_type_name=SilkRoad ERP" \
-    #         -F "product_name=SilkRoad ERP" \
-    #         -F "engagement_name=SilkRoad WebApp" \
-    #         -F "test_title=Trivy - Web Image" \
-    #         -F "auto_create_context=True" \
-    #         -F "close_old_findings=true" \
-    #         -F "minimum_severity=High")
-    #       echo "DefectDojo response (HTTP $HTTP_CODE):"
-    #       cat /tmp/dd_trivy_web_response.json
-    #       echo ""
-    #       if [ "$HTTP_CODE" -ge 400 ]; then
-    #         echo "##vso[task.logissue type=error]DefectDojo import (Trivy Web) failed with HTTP $HTTP_CODE"
-    #         exit 1
-    #       fi
-    #   env:
-    #     DEFECTDOJO_URL: $(defectDojoUrl)
-    #     DEFECTDOJO_API_KEY: $(defectDojoApiKey)
+    - task: CmdLine@2
+      displayName: Push Trivy Web results to DefectDojo
+      condition: always()
+      inputs:
+        script: |
+          HTTP_CODE=$(curl -sS -o /tmp/dd_trivy_web_response.json -w "%{http_code}" -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
+            -H "Authorization: Token $DEFECTDOJO_API_KEY" \
+            -F "scan_type=Trivy Scan" \
+            -F "file=@$(System.DefaultWorkingDirectory)/trivy-web-report/trivy-web.json" \
+            -F "product_type_name=SilkRoad ERP" \
+            -F "product_name=SilkRoad ERP" \
+            -F "engagement_name=SilkRoad WebApp" \
+            -F "test_title=Trivy - Web Image" \
+            -F "auto_create_context=True" \
+            -F "close_old_findings=true" \
+            -F "minimum_severity=High")
+          echo "DefectDojo response (HTTP $HTTP_CODE):"
+          cat /tmp/dd_trivy_web_response.json
+          echo ""
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            echo "##vso[task.logissue type=error]DefectDojo import (Trivy Web) failed with HTTP $HTTP_CODE"
+            exit 1
+          fi
+      env:
+        DEFECTDOJO_URL: $(defectDojoUrl)
+        DEFECTDOJO_API_KEY: $(defectDojoApiKey)
 
     - task: CmdLine@2
       displayName: Push Web image
@@ -666,32 +662,32 @@ stages:
         reportDir: '$(System.DefaultWorkingDirectory)/zap-baseline'
         tabName: 'ZAP Baseline'
 
-    # - task: CmdLine@2
-    #   displayName: Push ZAP Baseline results to DefectDojo
-    #   condition: always()
-    #   inputs:
-    #     script: |
-    #       HTTP_CODE=$(curl -sS -o /tmp/dd_zap_baseline_response.json -w "%{http_code}" -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
-    #         -H "Authorization: Token $DEFECTDOJO_API_KEY" \
-    #         -F "scan_type=ZAP Scan" \
-    #         -F "file=@$(System.DefaultWorkingDirectory)/zap-baseline/zap-baseline.xml" \
-    #         -F "product_type_name=SilkRoad ERP" \
-    #         -F "product_name=SilkRoad ERP" \
-    #         -F "engagement_name=SilkRoad DAST" \
-    #         -F "test_title=ZAP Baseline Scan" \
-    #         -F "auto_create_context=True" \
-    #         -F "close_old_findings=true" \
-    #         -F "minimum_severity=Low")
-    #       echo "DefectDojo response (HTTP $HTTP_CODE):"
-    #       cat /tmp/dd_zap_baseline_response.json
-    #       echo ""
-    #       if [ "$HTTP_CODE" -ge 400 ]; then
-    #         echo "##vso[task.logissue type=error]DefectDojo import (ZAP Baseline) failed with HTTP $HTTP_CODE"
-    #         exit 1
-    #       fi
-    #   env:
-    #     DEFECTDOJO_URL: $(defectDojoUrl)
-    #     DEFECTDOJO_API_KEY: $(defectDojoApiKey)
+    - task: CmdLine@2
+      displayName: Push ZAP Baseline results to DefectDojo
+      condition: always()
+      inputs:
+        script: |
+          HTTP_CODE=$(curl -sS -o /tmp/dd_zap_baseline_response.json -w "%{http_code}" -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
+            -H "Authorization: Token $DEFECTDOJO_API_KEY" \
+            -F "scan_type=ZAP Scan" \
+            -F "file=@$(System.DefaultWorkingDirectory)/zap-baseline/zap-baseline.xml" \
+            -F "product_type_name=SilkRoad ERP" \
+            -F "product_name=SilkRoad ERP" \
+            -F "engagement_name=SilkRoad DAST" \
+            -F "test_title=ZAP Baseline Scan" \
+            -F "auto_create_context=True" \
+            -F "close_old_findings=true" \
+            -F "minimum_severity=Low")
+          echo "DefectDojo response (HTTP $HTTP_CODE):"
+          cat /tmp/dd_zap_baseline_response.json
+          echo ""
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            echo "##vso[task.logissue type=error]DefectDojo import (ZAP Baseline) failed with HTTP $HTTP_CODE"
+            exit 1
+          fi
+      env:
+        DEFECTDOJO_URL: $(defectDojoUrl)
+        DEFECTDOJO_API_KEY: $(defectDojoApiKey)
 
 
 # ============================================================
@@ -812,32 +808,32 @@ stages:
         reportDir: '$(System.DefaultWorkingDirectory)/zap-ajax'
         tabName: 'ZAP AJAX Spider'
 
-    # - task: CmdLine@2
-    #   displayName: Push ZAP AJAX results to DefectDojo
-    #   condition: always()
-    #   inputs:
-    #     script: |
-    #       HTTP_CODE=$(curl -sS -o /tmp/dd_zap_ajax_response.json -w "%{http_code}" -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
-    #         -H "Authorization: Token $DEFECTDOJO_API_KEY" \
-    #         -F "scan_type=ZAP Scan" \
-    #         -F "file=@$(System.DefaultWorkingDirectory)/zap-ajax/zap-ajax.xml" \
-    #         -F "product_type_name=SilkRoad ERP" \
-    #         -F "product_name=SilkRoad ERP" \
-    #         -F "engagement_name=SilkRoad DAST" \
-    #         -F "test_title=ZAP AJAX Spider Scan" \
-    #         -F "auto_create_context=True" \
-    #         -F "close_old_findings=true" \
-    #         -F "minimum_severity=Low")
-    #       echo "DefectDojo response (HTTP $HTTP_CODE):"
-    #       cat /tmp/dd_zap_ajax_response.json
-    #       echo ""
-    #       if [ "$HTTP_CODE" -ge 400 ]; then
-    #         echo "##vso[task.logissue type=error]DefectDojo import (ZAP AJAX) failed with HTTP $HTTP_CODE"
-    #         exit 1
-    #       fi
-    #   env:
-    #     DEFECTDOJO_URL: $(defectDojoUrl)
-    #     DEFECTDOJO_API_KEY: $(defectDojoApiKey)
+    - task: CmdLine@2
+      displayName: Push ZAP AJAX results to DefectDojo
+      condition: always()
+      inputs:
+        script: |
+          HTTP_CODE=$(curl -sS -o /tmp/dd_zap_ajax_response.json -w "%{http_code}" -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
+            -H "Authorization: Token $DEFECTDOJO_API_KEY" \
+            -F "scan_type=ZAP Scan" \
+            -F "file=@$(System.DefaultWorkingDirectory)/zap-ajax/zap-ajax.xml" \
+            -F "product_type_name=SilkRoad ERP" \
+            -F "product_name=SilkRoad ERP" \
+            -F "engagement_name=SilkRoad DAST" \
+            -F "test_title=ZAP AJAX Spider Scan" \
+            -F "auto_create_context=True" \
+            -F "close_old_findings=true" \
+            -F "minimum_severity=Low")
+          echo "DefectDojo response (HTTP $HTTP_CODE):"
+          cat /tmp/dd_zap_ajax_response.json
+          echo ""
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            echo "##vso[task.logissue type=error]DefectDojo import (ZAP AJAX) failed with HTTP $HTTP_CODE"
+            exit 1
+          fi
+      env:
+        DEFECTDOJO_URL: $(defectDojoUrl)
+        DEFECTDOJO_API_KEY: $(defectDojoApiKey)
 
 
 # ============================================================
