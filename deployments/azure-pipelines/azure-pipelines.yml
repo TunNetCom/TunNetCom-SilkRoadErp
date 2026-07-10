@@ -23,8 +23,8 @@ variables:
   value: 'silkroad-webapp-service'
 - name: zapTarget
   value: 'https://silkroad.aion-time.com'
-# - name: defectDojoUrl
-#   value: 'https://defectdojo.aion-time.com'
+- name: defectDojoUrl
+  value: 'https://defectdojo.aion-time.com'
 
 stages:
 
@@ -66,14 +66,6 @@ stages:
     # ============================================================
     # 🛡️ OWASP DEPENDENCY-CHECK (SCA - scans NuGet dependencies
     # against the NVD database, independent of Trivy's image scan)
-    # ------------------------------------------------------------
-    # RE-ENABLED. Ordering fixed: Cache@2 (restore) now runs BEFORE
-    # "Copy cached NVD data to local /tmp". Previously the copy step
-    # ran first, so $(Pipeline.Workspace)/dependency-check-data was
-    # always empty at that point (Cache@2 hadn't restored into it
-    # yet), the copy always hit its "no cache found" branch, and
-    # /tmp started empty every run -> full 364k-record NVD download
-    # (~3 hrs) on every build instead of an incremental update.
     # ============================================================
     - task: CmdLine@2
       displayName: Prepare OWASP Dependency-Check directories
@@ -86,28 +78,9 @@ stages:
           chmod 777 $(Pipeline.Workspace)/dependency-check-data
           chmod 777 /tmp/dependency-check-data
 
-    # Persist the NVD vulnerability database across pipeline runs so most
-    # builds only need an incremental update instead of a full cold pull.
-    # ---- FIX: static cache key (was rotating weekly, which forced a full
-    # 360k-record re-download every week and tripped NVD's 503 throttling).
-    # ODC's own --nvdValidForHours check now governs freshness instead.
-    # ---- FIX v2: BuildId-keyed cache (always a "miss") so a clean DB gets
-    # saved fresh at the end of every successful run. The static key from the
-    # previous fix could restore a corrupted/locked DB forever, since Cache@2
-    # only saves on a miss — a static key that always hits never re-saves,
-    # so any corruption becomes permanent. restoreKeys still lets us pull the
-    # most recent good copy to keep updates incremental.
-    # ---- MUST run before the "Copy cached NVD data to local /tmp" step below,
-    # since that step reads from this restored path.
-    - task: Cache@2
-      displayName: Cache OWASP Dependency-Check NVD data
-      inputs:
-        key: 'dependency-check-nvd-v2 | "$(Build.BuildId)"'
-        restoreKeys: |
-          dependency-check-nvd-v2
-        path: $(Pipeline.Workspace)/dependency-check-data
-
-    # ---- Move cached NVD data to /tmp AFTER Cache@2 has restored it above.
+    # ---- Move cached NVD data to /tmp AFTER Cache@2 has restored it.
+    # Was previously inside "Prepare" above, but that ran before Cache@2
+    # restored the data, so /tmp was always empty → full re-download every run.
     - task: CmdLine@2
       displayName: Copy cached NVD data to local /tmp
       inputs:
@@ -118,6 +91,26 @@ stages:
           else
             echo "No cached NVD data found — will download fresh."
           fi
+
+    # Persist the NVD vulnerability database across pipeline runs so most
+    # builds only need an incremental update instead of a full cold pull.
+    # Cache key rotates weekly so the DB still refreshes regularly.
+    # ---- FIX: static cache key (was rotating weekly, which forced a full
+    # 360k-record re-download every week and tripped NVD's 503 throttling).
+    # ODC's own --nvdValidForHours check now governs freshness instead.
+    # ---- FIX v2: BuildId-keyed cache (always a "miss") so a clean DB gets
+    # saved fresh at the end of every successful run. The static key from the
+    # previous fix could restore a corrupted/locked DB forever, since Cache@2
+    # only saves on a miss — a static key that always hits never re-saves,
+    # so any corruption becomes permanent. restoreKeys still lets us pull the
+    # most recent good copy to keep updates incremental.
+    - task: Cache@2
+      displayName: Cache OWASP Dependency-Check NVD data
+      inputs:
+        key: 'dependency-check-nvd-v2 | "$(Build.BuildId)"'
+        restoreKeys: |
+          dependency-check-nvd-v2
+        path: $(Pipeline.Workspace)/dependency-check-data
 
     - task: CmdLine@2
       displayName: Clear stale Dependency-Check lock files
@@ -238,35 +231,32 @@ stages:
         reportDir: '$(System.DefaultWorkingDirectory)/dependency-check-report'
         tabName: 'OWASP Dependency-Check'
 
-    # ---- DefectDojo push left disabled per earlier request (DefectDojo
-    # reporting is off pipeline-wide). Uncomment + restore the
-    # `defectDojoUrl` variable at the top if you want this wired back up.
-    # - task: CmdLine@2
-    #   displayName: Push OWASP Dependency-Check results to DefectDojo
-    #   condition: always()
-    #   inputs:
-    #     script: |
-    #       HTTP_CODE=$(curl -sS -o /tmp/dd_owasp_response.json -w "%{http_code}" -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
-    #         -H "Authorization: Token $DEFECTDOJO_API_KEY" \
-    #         -F "scan_type=Dependency Check Scan" \
-    #         -F "file=@$(System.DefaultWorkingDirectory)/dependency-check-report/dependency-check-report.xml" \
-    #         -F "product_type_name=SilkRoad ERP" \
-    #         -F "product_name=SilkRoad ERP" \
-    #         -F "engagement_name=SilkRoad Dependencies" \
-    #         -F "test_title=OWASP Dependency-Check" \
-    #         -F "auto_create_context=True" \
-    #         -F "close_old_findings=true" \
-    #         -F "minimum_severity=High")
-    #       echo "DefectDojo response (HTTP $HTTP_CODE):"
-    #       cat /tmp/dd_owasp_response.json
-    #       echo ""
-    #       if [ "$HTTP_CODE" -ge 400 ]; then
-    #         echo "##vso[task.logissue type=error]DefectDojo import (OWASP Dependency-Check) failed with HTTP $HTTP_CODE"
-    #         exit 1
-    #       fi
-    #   env:
-    #     DEFECTDOJO_URL: $(defectDojoUrl)
-    #     DEFECTDOJO_API_KEY: $(defectDojoApiKey)
+    - task: CmdLine@2
+      displayName: Push OWASP Dependency-Check results to DefectDojo
+      condition: always()
+      inputs:
+        script: |
+          HTTP_CODE=$(curl -sS -o /tmp/dd_owasp_response.json -w "%{http_code}" -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
+            -H "Authorization: Token $DEFECTDOJO_API_KEY" \
+            -F "scan_type=Dependency Check Scan" \
+            -F "file=@$(System.DefaultWorkingDirectory)/dependency-check-report/dependency-check-report.xml" \
+            -F "product_type_name=SilkRoad ERP" \
+            -F "product_name=SilkRoad ERP" \
+            -F "engagement_name=SilkRoad Dependencies" \
+            -F "test_title=OWASP Dependency-Check" \
+            -F "auto_create_context=True" \
+            -F "close_old_findings=true" \
+            -F "minimum_severity=High")
+          echo "DefectDojo response (HTTP $HTTP_CODE):"
+          cat /tmp/dd_owasp_response.json
+          echo ""
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            echo "##vso[task.logissue type=error]DefectDojo import (OWASP Dependency-Check) failed with HTTP $HTTP_CODE"
+            exit 1
+          fi
+      env:
+        DEFECTDOJO_URL: $(defectDojoUrl)
+        DEFECTDOJO_API_KEY: $(defectDojoApiKey)
 
     - task: SonarQubePrepare@7
       displayName: SonarQube Prepare
@@ -449,32 +439,32 @@ stages:
         reportDir: '$(System.DefaultWorkingDirectory)/trivy-api-report'
         tabName: 'Trivy API'
 
-    # - task: CmdLine@2
-    #   displayName: Push Trivy API results to DefectDojo
-    #   condition: always()
-    #   inputs:
-    #     script: |
-    #       HTTP_CODE=$(curl -sS -o /tmp/dd_trivy_api_response.json -w "%{http_code}" -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
-    #         -H "Authorization: Token $DEFECTDOJO_API_KEY" \
-    #         -F "scan_type=Trivy Scan" \
-    #         -F "file=@$(System.DefaultWorkingDirectory)/trivy-api-report/trivy-api.json" \
-    #         -F "product_type_name=SilkRoad ERP" \
-    #         -F "product_name=SilkRoad ERP" \
-    #         -F "engagement_name=SilkRoad API" \
-    #         -F "test_title=Trivy - API Image" \
-    #         -F "auto_create_context=True" \
-    #         -F "close_old_findings=true" \
-    #         -F "minimum_severity=High")
-    #       echo "DefectDojo response (HTTP $HTTP_CODE):"
-    #       cat /tmp/dd_trivy_api_response.json
-    #       echo ""
-    #       if [ "$HTTP_CODE" -ge 400 ]; then
-    #         echo "##vso[task.logissue type=error]DefectDojo import (Trivy API) failed with HTTP $HTTP_CODE"
-    #         exit 1
-    #       fi
-    #   env:
-    #     DEFECTDOJO_URL: $(defectDojoUrl)
-    #     DEFECTDOJO_API_KEY: $(defectDojoApiKey)
+    - task: CmdLine@2
+      displayName: Push Trivy API results to DefectDojo
+      condition: always()
+      inputs:
+        script: |
+          HTTP_CODE=$(curl -sS -o /tmp/dd_trivy_api_response.json -w "%{http_code}" -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
+            -H "Authorization: Token $DEFECTDOJO_API_KEY" \
+            -F "scan_type=Trivy Scan" \
+            -F "file=@$(System.DefaultWorkingDirectory)/trivy-api-report/trivy-api.json" \
+            -F "product_type_name=SilkRoad ERP" \
+            -F "product_name=SilkRoad ERP" \
+            -F "engagement_name=SilkRoad API" \
+            -F "test_title=Trivy - API Image" \
+            -F "auto_create_context=True" \
+            -F "close_old_findings=true" \
+            -F "minimum_severity=High")
+          echo "DefectDojo response (HTTP $HTTP_CODE):"
+          cat /tmp/dd_trivy_api_response.json
+          echo ""
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            echo "##vso[task.logissue type=error]DefectDojo import (Trivy API) failed with HTTP $HTTP_CODE"
+            exit 1
+          fi
+      env:
+        DEFECTDOJO_URL: $(defectDojoUrl)
+        DEFECTDOJO_API_KEY: $(defectDojoApiKey)
 
     - task: CmdLine@2
       displayName: Push API image
@@ -565,32 +555,32 @@ stages:
         reportDir: '$(System.DefaultWorkingDirectory)/trivy-web-report'
         tabName: 'Trivy Web'
 
-    # - task: CmdLine@2
-    #   displayName: Push Trivy Web results to DefectDojo
-    #   condition: always()
-    #   inputs:
-    #     script: |
-    #       HTTP_CODE=$(curl -sS -o /tmp/dd_trivy_web_response.json -w "%{http_code}" -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
-    #         -H "Authorization: Token $DEFECTDOJO_API_KEY" \
-    #         -F "scan_type=Trivy Scan" \
-    #         -F "file=@$(System.DefaultWorkingDirectory)/trivy-web-report/trivy-web.json" \
-    #         -F "product_type_name=SilkRoad ERP" \
-    #         -F "product_name=SilkRoad ERP" \
-    #         -F "engagement_name=SilkRoad WebApp" \
-    #         -F "test_title=Trivy - Web Image" \
-    #         -F "auto_create_context=True" \
-    #         -F "close_old_findings=true" \
-    #         -F "minimum_severity=High")
-    #       echo "DefectDojo response (HTTP $HTTP_CODE):"
-    #       cat /tmp/dd_trivy_web_response.json
-    #       echo ""
-    #       if [ "$HTTP_CODE" -ge 400 ]; then
-    #         echo "##vso[task.logissue type=error]DefectDojo import (Trivy Web) failed with HTTP $HTTP_CODE"
-    #         exit 1
-    #       fi
-    #   env:
-    #     DEFECTDOJO_URL: $(defectDojoUrl)
-    #     DEFECTDOJO_API_KEY: $(defectDojoApiKey)
+    - task: CmdLine@2
+      displayName: Push Trivy Web results to DefectDojo
+      condition: always()
+      inputs:
+        script: |
+          HTTP_CODE=$(curl -sS -o /tmp/dd_trivy_web_response.json -w "%{http_code}" -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
+            -H "Authorization: Token $DEFECTDOJO_API_KEY" \
+            -F "scan_type=Trivy Scan" \
+            -F "file=@$(System.DefaultWorkingDirectory)/trivy-web-report/trivy-web.json" \
+            -F "product_type_name=SilkRoad ERP" \
+            -F "product_name=SilkRoad ERP" \
+            -F "engagement_name=SilkRoad WebApp" \
+            -F "test_title=Trivy - Web Image" \
+            -F "auto_create_context=True" \
+            -F "close_old_findings=true" \
+            -F "minimum_severity=High")
+          echo "DefectDojo response (HTTP $HTTP_CODE):"
+          cat /tmp/dd_trivy_web_response.json
+          echo ""
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            echo "##vso[task.logissue type=error]DefectDojo import (Trivy Web) failed with HTTP $HTTP_CODE"
+            exit 1
+          fi
+      env:
+        DEFECTDOJO_URL: $(defectDojoUrl)
+        DEFECTDOJO_API_KEY: $(defectDojoApiKey)
 
     - task: CmdLine@2
       displayName: Push Web image
@@ -672,32 +662,32 @@ stages:
         reportDir: '$(System.DefaultWorkingDirectory)/zap-baseline'
         tabName: 'ZAP Baseline'
 
-    # - task: CmdLine@2
-    #   displayName: Push ZAP Baseline results to DefectDojo
-    #   condition: always()
-    #   inputs:
-    #     script: |
-    #       HTTP_CODE=$(curl -sS -o /tmp/dd_zap_baseline_response.json -w "%{http_code}" -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
-    #         -H "Authorization: Token $DEFECTDOJO_API_KEY" \
-    #         -F "scan_type=ZAP Scan" \
-    #         -F "file=@$(System.DefaultWorkingDirectory)/zap-baseline/zap-baseline.xml" \
-    #         -F "product_type_name=SilkRoad ERP" \
-    #         -F "product_name=SilkRoad ERP" \
-    #         -F "engagement_name=SilkRoad DAST" \
-    #         -F "test_title=ZAP Baseline Scan" \
-    #         -F "auto_create_context=True" \
-    #         -F "close_old_findings=true" \
-    #         -F "minimum_severity=Low")
-    #       echo "DefectDojo response (HTTP $HTTP_CODE):"
-    #       cat /tmp/dd_zap_baseline_response.json
-    #       echo ""
-    #       if [ "$HTTP_CODE" -ge 400 ]; then
-    #         echo "##vso[task.logissue type=error]DefectDojo import (ZAP Baseline) failed with HTTP $HTTP_CODE"
-    #         exit 1
-    #       fi
-    #   env:
-    #     DEFECTDOJO_URL: $(defectDojoUrl)
-    #     DEFECTDOJO_API_KEY: $(defectDojoApiKey)
+    - task: CmdLine@2
+      displayName: Push ZAP Baseline results to DefectDojo
+      condition: always()
+      inputs:
+        script: |
+          HTTP_CODE=$(curl -sS -o /tmp/dd_zap_baseline_response.json -w "%{http_code}" -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
+            -H "Authorization: Token $DEFECTDOJO_API_KEY" \
+            -F "scan_type=ZAP Scan" \
+            -F "file=@$(System.DefaultWorkingDirectory)/zap-baseline/zap-baseline.xml" \
+            -F "product_type_name=SilkRoad ERP" \
+            -F "product_name=SilkRoad ERP" \
+            -F "engagement_name=SilkRoad DAST" \
+            -F "test_title=ZAP Baseline Scan" \
+            -F "auto_create_context=True" \
+            -F "close_old_findings=true" \
+            -F "minimum_severity=Low")
+          echo "DefectDojo response (HTTP $HTTP_CODE):"
+          cat /tmp/dd_zap_baseline_response.json
+          echo ""
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            echo "##vso[task.logissue type=error]DefectDojo import (ZAP Baseline) failed with HTTP $HTTP_CODE"
+            exit 1
+          fi
+      env:
+        DEFECTDOJO_URL: $(defectDojoUrl)
+        DEFECTDOJO_API_KEY: $(defectDojoApiKey)
 
 
 # ============================================================
@@ -818,32 +808,32 @@ stages:
         reportDir: '$(System.DefaultWorkingDirectory)/zap-ajax'
         tabName: 'ZAP AJAX Spider'
 
-    # - task: CmdLine@2
-    #   displayName: Push ZAP AJAX results to DefectDojo
-    #   condition: always()
-    #   inputs:
-    #     script: |
-    #       HTTP_CODE=$(curl -sS -o /tmp/dd_zap_ajax_response.json -w "%{http_code}" -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
-    #         -H "Authorization: Token $DEFECTDOJO_API_KEY" \
-    #         -F "scan_type=ZAP Scan" \
-    #         -F "file=@$(System.DefaultWorkingDirectory)/zap-ajax/zap-ajax.xml" \
-    #         -F "product_type_name=SilkRoad ERP" \
-    #         -F "product_name=SilkRoad ERP" \
-    #         -F "engagement_name=SilkRoad DAST" \
-    #         -F "test_title=ZAP AJAX Spider Scan" \
-    #         -F "auto_create_context=True" \
-    #         -F "close_old_findings=true" \
-    #         -F "minimum_severity=Low")
-    #       echo "DefectDojo response (HTTP $HTTP_CODE):"
-    #       cat /tmp/dd_zap_ajax_response.json
-    #       echo ""
-    #       if [ "$HTTP_CODE" -ge 400 ]; then
-    #         echo "##vso[task.logissue type=error]DefectDojo import (ZAP AJAX) failed with HTTP $HTTP_CODE"
-    #         exit 1
-    #       fi
-    #   env:
-    #     DEFECTDOJO_URL: $(defectDojoUrl)
-    #     DEFECTDOJO_API_KEY: $(defectDojoApiKey)
+    - task: CmdLine@2
+      displayName: Push ZAP AJAX results to DefectDojo
+      condition: always()
+      inputs:
+        script: |
+          HTTP_CODE=$(curl -sS -o /tmp/dd_zap_ajax_response.json -w "%{http_code}" -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
+            -H "Authorization: Token $DEFECTDOJO_API_KEY" \
+            -F "scan_type=ZAP Scan" \
+            -F "file=@$(System.DefaultWorkingDirectory)/zap-ajax/zap-ajax.xml" \
+            -F "product_type_name=SilkRoad ERP" \
+            -F "product_name=SilkRoad ERP" \
+            -F "engagement_name=SilkRoad DAST" \
+            -F "test_title=ZAP AJAX Spider Scan" \
+            -F "auto_create_context=True" \
+            -F "close_old_findings=true" \
+            -F "minimum_severity=Low")
+          echo "DefectDojo response (HTTP $HTTP_CODE):"
+          cat /tmp/dd_zap_ajax_response.json
+          echo ""
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            echo "##vso[task.logissue type=error]DefectDojo import (ZAP AJAX) failed with HTTP $HTTP_CODE"
+            exit 1
+          fi
+      env:
+        DEFECTDOJO_URL: $(defectDojoUrl)
+        DEFECTDOJO_API_KEY: $(defectDojoApiKey)
 
 
 # ============================================================
