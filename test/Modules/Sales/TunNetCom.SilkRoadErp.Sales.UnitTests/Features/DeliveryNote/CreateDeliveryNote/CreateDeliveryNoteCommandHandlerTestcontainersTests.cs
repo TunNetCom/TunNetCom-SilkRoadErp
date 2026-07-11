@@ -101,11 +101,6 @@ public class CreateDeliveryNoteCommandHandlerTestcontainersTests : IClassFixture
             _ = context.SaveChanges();
         }
 
-        var numberGeneratorMock = new Mock<INumberGeneratorService>();
-        _ = numberGeneratorMock
-            .Setup(x => x.GenerateBonDeLivraisonNumberAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(1);
-
         var stockMock = new Mock<IStockCalculationService>();
         _ = stockMock
             .Setup(x => x.CalculateStockAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
@@ -121,13 +116,17 @@ public class CreateDeliveryNoteCommandHandlerTestcontainersTests : IClassFixture
             .Setup(x => x.GetActiveAccountingYearIdAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(accountingYear.Id);
 
-        var logger = new TestLogger<CreateDeliveryNoteCommandHandler>();
+        var numberGeneratorLogger = new TestLogger<NumberGeneratorService>();
+        var numberGeneratorService = new NumberGeneratorService(context, numberGeneratorLogger);
+        var handlerLogger = new TestLogger<CreateDeliveryNoteCommandHandler>();
         var handler = new CreateDeliveryNoteCommandHandler(
             context,
-            logger,
-            numberGeneratorMock.Object,
+            handlerLogger,
+            numberGeneratorService,
             stockMock.Object,
             activeYearMock.Object);
+
+        var expectedNum = 2024 * 100000 + 1;
 
         var command = new CreateDeliveryNoteCommand(
             Date: new DateTime(2024, 6, 15),
@@ -158,13 +157,13 @@ public class CreateDeliveryNoteCommandHandlerTestcontainersTests : IClassFixture
         var result = await handler.Handle(command, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(1, result.Value);
+        Assert.Equal(expectedNum, result.Value);
 
         var saved = await context.BonDeLivraison
             .Include(b => b.LigneBl)
-            .FirstOrDefaultAsync(b => b.Num == 1);
+            .FirstOrDefaultAsync(b => b.Num == expectedNum);
         Assert.NotNull(saved);
-        Assert.Equal(1, saved.Num);
+        Assert.Equal(expectedNum, saved.Num);
         Assert.Equal(accountingYear.Id, saved.AccountingYearId);
         Assert.Equal(100m, saved.TotHTva);
         Assert.Equal(19m, saved.TotTva);

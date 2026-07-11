@@ -5,10 +5,8 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
 using Testcontainers.MsSql;
 using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Authorization;
-using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
 using TunNetCom.SilkRoadErp.Sales.Domain.Entites;
 
 namespace TunNetCom.SilkRoadErp.Sales.FunctionalTests.Infrastructure;
@@ -122,12 +120,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
             _ = services.RemoveAll<IAuthorizationHandler>();
             _ = services.AddSingleton<IAuthorizationHandler, TestPermissionHandler>();
 
-            _ = services.RemoveAll<INumberGeneratorService>();
-            var numberGeneratorMock = new Mock<INumberGeneratorService>();
-            _ = numberGeneratorMock
-                .Setup(x => x.GenerateBonDeLivraisonNumberAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(1);
-            _ = services.AddScoped<INumberGeneratorService>(_ => numberGeneratorMock.Object);
+
         });
     }
 
