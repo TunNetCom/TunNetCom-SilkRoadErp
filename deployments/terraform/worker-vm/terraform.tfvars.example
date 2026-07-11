@@ -1,0 +1,23 @@
+resource_group_name = "Aion_VM_group"
+location            = "francecentral"
+
+vm_name  = "AionWorkerNode"
+vm_size  = "Standard_B2s"
+
+admin_username = "workerMalek"
+# Do NOT commit a real SSH key here. Inject via pipeline variable.
+ssh_public_key = "ssh-rsa AAA... generated-by-azure"
+
+vnet_name             = "AionWorkerNode-vnet"
+vnet_address_space    = "10.0.0.0/16"
+subnet_name           = "default"
+subnet_address_prefix = "10.0.0.0/24"
+
+nsg_name              = "AionWorkerNode-nsg"
+nic_name              = "aionworkernode1"
+allowed_ssh_source_cidr = "*"
+
+assign_public_ip       = true
+shutdown_schedule_name = "shutdown-computevm-aionworkernode"
+shutdown_time          = "1900"
+shutdown_timezone      = "Central European Standard Time"
