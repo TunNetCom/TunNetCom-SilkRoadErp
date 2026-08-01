@@ -1,0 +1,321 @@
+# ============================================================
+# Reusable DAST stages template (ZAP Baseline + ZAP AJAX Spider)
+# ------------------------------------------------------------
+# Two stages that run passive + AJAX-spider scans against a live
+# target and push results to DefectDojo.
+#
+# Include it from any pipeline:
+#
+#   stages:
+#   - template: templates/dast.yml
+#     parameters:
+#       zapTarget: 'https://app.example.com'
+#       defectDojoUrl: $(defectDojoUrl)
+#       defectDojoApiKey: $(defectDojoApiKey)
+#
+# Ordering note: stages run in the order they appear in the final
+# pipeline, so the ZAP AJAX stage automatically follows Baseline.
+# Feature toggles: enableBaseline, enableAjax (both default true).
+# ============================================================
+parameters:
+- name: baselineStageName
+  type: string
+  default: 'ZAP_Baseline'
+- name: baselineStageDisplayName
+  type: string
+  default: 'DAST - ZAP Baseline Scan'
+- name: ajaxStageName
+  type: string
+  default: 'ZAP_AJAX'
+- name: ajaxStageDisplayName
+  type: string
+  default: 'DAST - ZAP AJAX Spider Scan'
+- name: poolImage
+  type: string
+  default: 'ubuntu-latest'
+- name: zapImage
+  type: string
+  default: 'ghcr.io/zaproxy/zaproxy:stable'
+
+- name: zapTarget
+  type: string
+- name: baselineAlertLevel
+  type: string
+  default: 'WARN'
+
+# AJAX spider tuning
+- name: ajaxMaxDuration
+  type: number
+  default: 5
+- name: ajaxMaxCrawlDepth
+  type: number
+  default: 10
+- name: ajaxNumberOfBrowsers
+  type: number
+  default: 2
+- name: ajaxBrowserId
+  type: string
+  default: 'firefox-headless'
+
+# DefectDojo
+- name: defectDojoUrl
+  type: string
+  default: ''
+- name: defectDojoApiKey
+  type: string
+  default: ''
+- name: defectDojoMinSeverity
+  type: string
+  default: 'Low'
+- name: productName
+  type: string
+  default: 'SilkRoad ERP'
+- name: productTypeName
+  type: string
+  default: 'SilkRoad ERP'
+- name: dastEngagementName
+  type: string
+  default: 'SilkRoad DAST'
+
+# Feature toggles
+- name: enableBaseline
+  type: boolean
+  default: true
+- name: enableAjax
+  type: boolean
+  default: true
+
+stages:
+
+# ============================================================
+# ZAP BASELINE
+# ============================================================
+- ${{ if eq(parameters.enableBaseline, true) }}:
+  - stage: ${{ parameters.baselineStageName }}
+    displayName: ${{ parameters.baselineStageDisplayName }}
+    pool:
+      vmImage: ${{ parameters.poolImage }}
+    jobs:
+    - job: ZAPBaselineJob
+      displayName: ZAP Baseline (passive scan)
+      steps:
+
+      - task: CmdLine@2
+        displayName: Prepare ZAP Baseline directory
+        inputs:
+          script: |
+            mkdir -p $(System.DefaultWorkingDirectory)/zap-baseline
+            chmod 777 $(System.DefaultWorkingDirectory)/zap-baseline
+
+      - task: CmdLine@2
+        displayName: Pull ZAP image
+        inputs:
+          script: |
+            docker pull ${{ parameters.zapImage }}
+
+      - task: CmdLine@2
+        displayName: Run ZAP Baseline scan
+        inputs:
+          script: |
+            docker run --rm \
+              -v $(System.DefaultWorkingDirectory)/zap-baseline:/zap/wrk:rw \
+              ${{ parameters.zapImage }} \
+              zap-baseline.py \
+              -t ${{ parameters.zapTarget }} \
+              -r zap-baseline.html \
+              -J zap-baseline.json \
+              -x zap-baseline.xml \
+              -l ${{ parameters.baselineAlertLevel }} \
+              -I
+
+      - task: CmdLine@2
+        displayName: Fix ZAP report permissions
+        condition: always()
+        inputs:
+          script: |
+            sudo chown -R $(id -u):$(id -g) $(System.DefaultWorkingDirectory)/zap-baseline
+            sudo chmod -R 755 $(System.DefaultWorkingDirectory)/zap-baseline
+
+      - task: PublishBuildArtifacts@1
+        displayName: Publish ZAP Baseline Report
+        condition: always()
+        inputs:
+          pathToPublish: '$(System.DefaultWorkingDirectory)/zap-baseline'
+          artifactName: 'ZAP-Baseline-Report'
+
+      - task: PublishHtmlReport@1
+        displayName: Show ZAP Baseline Tab
+        condition: always()
+        inputs:
+          reportDir: '$(System.DefaultWorkingDirectory)/zap-baseline'
+          tabName: 'ZAP Baseline'
+
+      - task: CmdLine@2
+        displayName: Push ZAP Baseline results to DefectDojo
+        condition: always()
+        inputs:
+          script: |
+            HTTP_CODE=$(curl -sS -o /tmp/dd_zap_baseline_response.json -w "%{http_code}" -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
+              -H "Authorization: Token $DEFECTDOJO_API_KEY" \
+              -F "scan_type=ZAP Scan" \
+              -F "file=@$(System.DefaultWorkingDirectory)/zap-baseline/zap-baseline.xml" \
+              -F "product_type_name=${{ parameters.productTypeName }}" \
+              -F "product_name=${{ parameters.productName }}" \
+              -F "engagement_name=${{ parameters.dastEngagementName }}" \
+              -F "test_title=ZAP Baseline Scan" \
+              -F "auto_create_context=True" \
+              -F "close_old_findings=true" \
+              -F "minimum_severity=${{ parameters.defectDojoMinSeverity }}")
+            echo "DefectDojo response (HTTP $HTTP_CODE):"
+            cat /tmp/dd_zap_baseline_response.json
+            echo ""
+            if [ "$HTTP_CODE" -ge 400 ]; then
+              echo "##vso[task.logissue type=error]DefectDojo import (ZAP Baseline) failed with HTTP $HTTP_CODE"
+              exit 1
+            fi
+        env:
+          DEFECTDOJO_URL: ${{ parameters.defectDojoUrl }}
+          DEFECTDOJO_API_KEY: ${{ parameters.defectDojoApiKey }}
+
+# ============================================================
+# ZAP AJAX SPIDER
+# ============================================================
+- ${{ if eq(parameters.enableAjax, true) }}:
+  - stage: ${{ parameters.ajaxStageName }}
+    displayName: ${{ parameters.ajaxStageDisplayName }}
+    pool:
+      vmImage: ${{ parameters.poolImage }}
+    jobs:
+    - job: ZAPAjaxJob
+      displayName: ZAP AJAX Spider (Blazor routes)
+      steps:
+
+      - task: CmdLine@2
+        displayName: Prepare ZAP AJAX directory
+        inputs:
+          script: |
+            mkdir -p $(System.DefaultWorkingDirectory)/zap-ajax
+            chmod 777 $(System.DefaultWorkingDirectory)/zap-ajax
+
+      - task: CmdLine@2
+        displayName: Pull ZAP image
+        inputs:
+          script: |
+            docker pull ${{ parameters.zapImage }}
+
+      - task: CmdLine@2
+        displayName: Generate AJAX plan YAML
+        inputs:
+          script: |
+            cat > $(System.DefaultWorkingDirectory)/zap-ajax/ajax-plan.yaml << 'EOF'
+            env:
+              contexts:
+                - name: silkroad-erp
+                  urls:
+                    - ${{ parameters.zapTarget }}/
+                  excludePaths: []
+
+            parameters:
+              failOnError: false
+              progressToStdout: true
+
+            jobs:
+              - type: spiderAjax
+                parameters:
+                  url: ${{ parameters.zapTarget }}/
+                  maxDuration: ${{ parameters.ajaxMaxDuration }}
+                  maxCrawlDepth: ${{ parameters.ajaxMaxCrawlDepth }}
+                  numberOfBrowsers: ${{ parameters.ajaxNumberOfBrowsers }}
+                  browserId: ${{ parameters.ajaxBrowserId }}
+                  clickDefaultElems: true
+                  clickElemsOnce: true
+                  randomInputs: true
+
+              - type: passiveScan-wait
+                parameters:
+                  maxDuration: 5
+
+              - type: outputSummary
+                parameters:
+                  format: Long
+                  summaryFile: /zap/wrk/zap_out.json
+
+              - type: report
+                parameters:
+                  reportTitle: ZAP AJAX Spider
+                  reportDir: /zap/wrk/
+                  reportFile: zap-ajax.html
+                  template: traditional-html
+
+              - type: report
+                parameters:
+                  reportTitle: ZAP AJAX Spider
+                  reportDir: /zap/wrk/
+                  reportFile: zap-ajax.json
+                  template: traditional-json
+
+              - type: report
+                parameters:
+                  reportTitle: ZAP AJAX Spider
+                  reportDir: /zap/wrk/
+                  reportFile: zap-ajax.xml
+                  template: traditional-xml
+            EOF
+
+      - task: CmdLine@2
+        displayName: Run ZAP AJAX Spider scan
+        inputs:
+          script: |
+            docker run --rm \
+              -v $(System.DefaultWorkingDirectory)/zap-ajax:/zap/wrk:rw \
+              ${{ parameters.zapImage }} \
+              zap.sh -cmd -autorun /zap/wrk/ajax-plan.yaml
+
+      - task: CmdLine@2
+        displayName: Fix ZAP report permissions
+        condition: always()
+        inputs:
+          script: |
+            sudo chown -R $(id -u):$(id -g) $(System.DefaultWorkingDirectory)/zap-ajax
+            sudo chmod -R 755 $(System.DefaultWorkingDirectory)/zap-ajax
+
+      - task: PublishBuildArtifacts@1
+        displayName: Publish ZAP AJAX Report
+        condition: always()
+        inputs:
+          pathToPublish: '$(System.DefaultWorkingDirectory)/zap-ajax'
+          artifactName: 'ZAP-AJAX-Report'
+
+      - task: PublishHtmlReport@1
+        displayName: Show ZAP AJAX Tab
+        condition: always()
+        inputs:
+          reportDir: '$(System.DefaultWorkingDirectory)/zap-ajax'
+          tabName: 'ZAP AJAX Spider'
+
+      - task: CmdLine@2
+        displayName: Push ZAP AJAX results to DefectDojo
+        condition: always()
+        inputs:
+          script: |
+            HTTP_CODE=$(curl -sS -o /tmp/dd_zap_ajax_response.json -w "%{http_code}" -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
+              -H "Authorization: Token $DEFECTDOJO_API_KEY" \
+              -F "scan_type=ZAP Scan" \
+              -F "file=@$(System.DefaultWorkingDirectory)/zap-ajax/zap-ajax.xml" \
+              -F "product_type_name=${{ parameters.productTypeName }}" \
+              -F "product_name=${{ parameters.productName }}" \
+              -F "engagement_name=${{ parameters.dastEngagementName }}" \
+              -F "test_title=ZAP AJAX Spider Scan" \
+              -F "auto_create_context=True" \
+              -F "close_old_findings=true" \
+              -F "minimum_severity=${{ parameters.defectDojoMinSeverity }}")
+            echo "DefectDojo response (HTTP $HTTP_CODE):"
+            cat /tmp/dd_zap_ajax_response.json
+            echo ""
+            if [ "$HTTP_CODE" -ge 400 ]; then
+              echo "##vso[task.logissue type=error]DefectDojo import (ZAP AJAX) failed with HTTP $HTTP_CODE"
+              exit 1
+            fi
+        env:
+          DEFECTDOJO_URL: ${{ parameters.defectDojoUrl }}
+          DEFECTDOJO_API_KEY: ${{ parameters.defectDojoApiKey }}

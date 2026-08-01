@@ -1,0 +1,236 @@
+# ============================================================
+# Reusable Blue/Green deploy stage template
+# ------------------------------------------------------------
+# Detects the active color (blue/green) from the live Service
+# selector, rolls the new build into the idle color, verifies
+# health, then switches traffic and (optionally) reconciles
+# Dapr annotations.
+#
+# Include it from any pipeline:
+#
+#   stages:
+#   - template: templates/blue-green-deploy.yml
+#     parameters:
+#       environmentName: 'myapp-dev'
+#       kubeNamespace: 'myapp-dev'
+#       apiService: 'myapp-api-service'
+#       webService: 'myapp-webapp-service'
+#       dockerRepository: 'myorg/myapp'
+#       apiTag: 'api-$(Build.BuildId)'
+#       webappTag: 'webapp-$(Build.BuildId)'
+#       apiDeploymentName: 'myapp-api'
+#       webDeploymentName: 'myapp-webapp'
+#       apiAppLabelValue: 'myapp-api'
+#       webAppLabelValue: 'myapp-webapp'
+#
+# Manifest layout expected (parameterize to match):
+#   <manifestsDirectory>/<apiServiceManifest>        (svc)
+#   <manifestsDirectory>/<webServiceManifest>        (svc)
+#   <manifestsDirectory>/<apiManifestPrefix>-<color>.yaml
+#   <manifestsDirectory>/<webManifestPrefix>-<color>.yaml
+# Deployments are named <apiDeploymentName>-<color>.
+# ============================================================
+parameters:
+- name: stageName
+  type: string
+  default: 'Deploy'
+- name: stageDisplayName
+  type: string
+  default: 'Blue/Green Deploy'
+- name: environmentName
+  type: string
+- name: agentPoolName
+  type: string
+  default: 'OnPremAgents'
+
+# Cluster / namespace
+- name: kubeNamespace
+  type: string
+  default: 'default'
+- name: apiService
+  type: string
+  default: 'silkroad-api-service'
+- name: webService
+  type: string
+  default: 'silkroad-webapp-service'
+
+# Images
+- name: dockerRepository
+  type: string
+- name: apiTag
+  type: string
+- name: webappTag
+  type: string
+
+# Manifests & resources
+- name: manifestsDirectory
+  type: string
+  default: 'deployments/k8s'
+- name: apiServiceManifest
+  type: string
+  default: 'api-service.yaml'
+- name: webServiceManifest
+  type: string
+  default: 'webapp-service.yaml'
+- name: apiManifestPrefix
+  type: string
+  default: 'api'
+- name: webManifestPrefix
+  type: string
+  default: 'webapp'
+- name: apiDeploymentName
+  type: string
+  default: 'silkroad-api'
+- name: webDeploymentName
+  type: string
+  default: 'silkroad-webapp'
+- name: apiContainerName
+  type: string
+  default: 'api'
+- name: webContainerName
+  type: string
+  default: 'webapp'
+
+# Selector labels used to detect/switch the active color
+- name: colorSelectorLabel
+  type: string
+  default: 'version'
+- name: appLabel
+  type: string
+  default: 'app'
+- name: environmentLabel
+  type: string
+  default: 'environment'
+- name: environmentLabelValue
+  type: string
+  default: 'production'
+- name: apiAppLabelValue
+  type: string
+  default: 'silkroad-api'
+- name: webAppLabelValue
+  type: string
+  default: 'silkroad-webapp'
+
+# Dapr / rollout behavior
+- name: enableDapr
+  type: boolean
+  default: true
+- name: daprAnnotation
+  type: string
+  default: 'dapr.io/enabled'
+- name: rolloutTimeout
+  type: string
+  default: '180s'
+
+stages:
+- stage: ${{ parameters.stageName }}
+  displayName: ${{ parameters.stageDisplayName }}
+  pool:
+    name: ${{ parameters.agentPoolName }}
+  jobs:
+  - deployment: BlueGreenDeploy          # ← deployment job, not job
+    displayName: Deploy to Environment
+    environment: ${{ parameters.environmentName }}
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+
+          - task: CmdLine@2
+            displayName: Detect Active Environment
+            inputs:
+              script: |
+                CURRENT=$(kubectl get svc ${{ parameters.apiService }} -n ${{ parameters.kubeNamespace }} \
+                  -o jsonpath='{.spec.selector.${{ parameters.colorSelectorLabel }}}')
+                echo "Current active version: $CURRENT"
+                if [ "$CURRENT" = "blue" ]; then
+                  echo "##vso[task.setvariable variable=targetColor]green"
+                  echo "##vso[task.setvariable variable=otherColor]blue"
+                else
+                  echo "##vso[task.setvariable variable=targetColor]blue"
+                  echo "##vso[task.setvariable variable=otherColor]green"
+                fi
+
+          - task: CmdLine@2
+            displayName: Validate Image Tags
+            inputs:
+              script: |
+                if [[ -z "${{ parameters.apiTag }}" || "${{ parameters.apiTag }}" == *"PLACEHOLDER"* ]]; then
+                  echo "Invalid apiTag: ${{ parameters.apiTag }}"
+                  exit 1
+                fi
+                if [[ -z "${{ parameters.webappTag }}" || "${{ parameters.webappTag }}" == *"PLACEHOLDER"* ]]; then
+                  echo "Invalid webappTag: ${{ parameters.webappTag }}"
+                  exit 1
+                fi
+                echo "Image tags are valid"
+
+          - task: CmdLine@2
+            displayName: Deploy Target
+            inputs:
+              script: |
+                kubectl apply -f ${{ parameters.manifestsDirectory }}/${{ parameters.apiServiceManifest }}
+                kubectl apply -f ${{ parameters.manifestsDirectory }}/${{ parameters.webServiceManifest }}
+                kubectl apply -f ${{ parameters.manifestsDirectory }}/${{ parameters.apiManifestPrefix }}-$(targetColor).yaml
+                kubectl apply -f ${{ parameters.manifestsDirectory }}/${{ parameters.webManifestPrefix }}-$(targetColor).yaml
+                kubectl set image deployment/${{ parameters.apiDeploymentName }}-$(targetColor) \
+                  ${{ parameters.apiContainerName }}=${{ parameters.dockerRepository }}:${{ parameters.apiTag }} \
+                  -n ${{ parameters.kubeNamespace }}
+                kubectl set image deployment/${{ parameters.webDeploymentName }}-$(targetColor) \
+                  ${{ parameters.webContainerName }}=${{ parameters.dockerRepository }}:${{ parameters.webappTag }} \
+                  -n ${{ parameters.kubeNamespace }}
+
+          - task: CmdLine@2
+            displayName: Wait for Rollout
+            inputs:
+              script: |
+                kubectl rollout status deployment/${{ parameters.apiDeploymentName }}-$(targetColor) \
+                  -n ${{ parameters.kubeNamespace }} --timeout=${{ parameters.rolloutTimeout }}
+                kubectl rollout status deployment/${{ parameters.webDeploymentName }}-$(targetColor) \
+                  -n ${{ parameters.kubeNamespace }} --timeout=${{ parameters.rolloutTimeout }}
+
+          - task: CmdLine@2
+            displayName: Verify Target Health
+            inputs:
+              script: |
+                READY=$(kubectl get pods -n ${{ parameters.kubeNamespace }} \
+                  -l ${{ parameters.colorSelectorLabel }}=$(targetColor) \
+                  --no-headers \
+                  -o custom-columns='READY:.status.containerStatuses[0].ready,PHASE:.status.phase' \
+                  | grep "true.*Running" | wc -l)
+                if [ "$READY" -eq 0 ]; then
+                  echo "No healthy pods. Aborting."
+                  kubectl describe pods -n ${{ parameters.kubeNamespace }} -l ${{ parameters.colorSelectorLabel }}=$(targetColor)
+                  exit 1
+                fi
+                echo "$READY healthy pod(s) found"
+
+          - task: CmdLine@2
+            displayName: Switch Traffic
+            inputs:
+              script: |
+                kubectl patch svc ${{ parameters.apiService }} -n ${{ parameters.kubeNamespace }} \
+                  -p "{\"spec\":{\"selector\":{\"${{ parameters.appLabel }}\":\"${{ parameters.apiAppLabelValue }}\",\"${{ parameters.environmentLabel }}\":\"${{ parameters.environmentLabelValue }}\",\"${{ parameters.colorSelectorLabel }}\":\"$(targetColor)\"}}}"
+                kubectl patch svc ${{ parameters.webService }} -n ${{ parameters.kubeNamespace }} \
+                  -p "{\"spec\":{\"selector\":{\"${{ parameters.appLabel }}\":\"${{ parameters.webAppLabelValue }}\",\"${{ parameters.environmentLabel }}\":\"${{ parameters.environmentLabelValue }}\",\"${{ parameters.colorSelectorLabel }}\":\"$(targetColor)\"}}}"
+
+          - ${{ if eq(parameters.enableDapr, true) }}:
+            - task: CmdLine@2
+              displayName: Fix Dapr Annotations
+              inputs:
+                script: |
+                  kubectl patch deployment ${{ parameters.apiDeploymentName }}-$(targetColor) -n ${{ parameters.kubeNamespace }} \
+                    -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"${{ parameters.daprAnnotation }}\":\"true\"}}}}}"
+                  kubectl patch deployment ${{ parameters.webDeploymentName }}-$(targetColor) -n ${{ parameters.kubeNamespace }} \
+                    -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"${{ parameters.daprAnnotation }}\":\"true\"}}}}}"
+                  kubectl patch deployment ${{ parameters.apiDeploymentName }}-$(otherColor) -n ${{ parameters.kubeNamespace }} \
+                    -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"${{ parameters.daprAnnotation }}\":\"false\"}}}}}"
+                  kubectl patch deployment ${{ parameters.webDeploymentName }}-$(otherColor) -n ${{ parameters.kubeNamespace }} \
+                    -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"${{ parameters.daprAnnotation }}\":\"false\"}}}}}"
+
+          - task: CmdLine@2
+            displayName: Verify Traffic Switch
+            inputs:
+              script: |
+                kubectl get svc ${{ parameters.apiService }} -n ${{ parameters.kubeNamespace }} -o wide
+                kubectl get pods -n ${{ parameters.kubeNamespace }} -l ${{ parameters.colorSelectorLabel }}=$(targetColor)

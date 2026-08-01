@@ -1,0 +1,138 @@
+# ============================================================
+# Reusable "Ensure VM exists" stage template (Terraform IaC)
+# ------------------------------------------------------------
+# Idempotent: checks whether the worker VM already exists and only
+# runs `terraform init/apply` when it is missing. Useful for a
+# self-hosted agent pool backed by an Azure VM that the pipeline
+# provisions on demand.
+#
+# Include it from any pipeline:
+#
+#   stages:
+#   - template: templates/ensure-worker.yml
+#     parameters:
+#       azureSubscription: '<azure service connection>'
+#       sshKey: $(AZURE_WORKER_SSH_KEY)
+#
+# `sshKey` is the public key material (reference it as a secret
+# pipeline variable so the agent resolves it before bash runs).
+# `additionalTfvars` lets you append arbitrary extra terraform.tfvars
+# entries for your module without editing this template.
+# ============================================================
+parameters:
+- name: stageName
+  type: string
+  default: 'EnsureWorker'
+- name: stageDisplayName
+  type: string
+  default: 'Ensure Worker VM exists'
+- name: agentPoolName
+  type: string
+  default: 'OnPremAgents'
+- name: azureSubscription
+  type: string
+
+- name: terraformDirectory
+  type: string
+  default: 'deployments/terraform/worker-vm'
+
+# VM configuration (defaults match the SilkRoad worker module)
+- name: resourceGroupName
+  type: string
+  default: 'Aion_VM_group'
+- name: vmName
+  type: string
+  default: 'AionWorkerNode'
+- name: location
+  type: string
+  default: 'francecentral'
+- name: vmSize
+  type: string
+  default: 'Standard_B2s'
+- name: adminUsername
+  type: string
+  default: 'workerMalek'
+- name: sshKey
+  type: string
+  default: '$(AZURE_WORKER_SSH_KEY)'
+- name: allowedSshSourceCidr
+  type: string
+  default: '*'
+- name: assignPublicIp
+  type: boolean
+  default: true
+- name: additionalTfvars
+  type: string
+  default: |
+    vnet_name               = "AionWorkerNode-vnet"
+    vnet_address_space      = "10.0.0.0/16"
+    subnet_name             = "default"
+    subnet_address_prefix   = "10.0.0.0/24"
+    nsg_name                = "AionWorkerNode-nsg"
+    nic_name                = "aionworkernode1"
+    shutdown_time           = "1900"
+    shutdown_timezone       = "Central European Standard Time"
+
+stages:
+- stage: ${{ parameters.stageName }}
+  displayName: ${{ parameters.stageDisplayName }}
+  pool:
+    name: ${{ parameters.agentPoolName }}
+  jobs:
+  - job: TerraformApply
+    steps:
+
+    - task: CmdLine@2
+      displayName: Install Azure CLI & Terraform
+      inputs:
+        script: |
+          set -e
+          if ! command -v az >/dev/null 2>&1; then
+            curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+          fi
+          az version
+          if ! command -v terraform >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y wget gnupg
+            wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+            echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+            sudo apt-get update -qq
+            sudo apt-get install -y terraform
+          fi
+          terraform -version
+
+    - task: AzureCLI@2
+      displayName: Terraform Init & Apply (worker-vm)
+      inputs:
+        azureSubscription: ${{ parameters.azureSubscription }}
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          set -e
+
+          RESOURCE_GROUP="${{ parameters.resourceGroupName }}"
+          VM_NAME="${{ parameters.vmName }}"
+
+          echo "Checking if VM '$VM_NAME' exists in RG '$RESOURCE_GROUP'..."
+          if az vm show -g "$RESOURCE_GROUP" -n "$VM_NAME" -o none 2>/dev/null; then
+            echo "VM already exists — skipping Terraform."
+            exit 0
+          fi
+
+          echo "VM not found — provisioning via Terraform..."
+          cd ${{ parameters.terraformDirectory }}
+
+          cat > terraform.tfvars <<- EOF
+          resource_group_name     = "${{ parameters.resourceGroupName }}"
+          location                = "${{ parameters.location }}"
+          vm_name                 = "${{ parameters.vmName }}"
+          vm_size                 = "${{ parameters.vmSize }}"
+          admin_username          = "${{ parameters.adminUsername }}"
+          ssh_public_key          = "${{ parameters.sshKey }}"
+          allowed_ssh_source_cidr = "${{ parameters.allowedSshSourceCidr }}"
+          assign_public_ip        = ${{ parameters.assignPublicIp }}
+          ${{ parameters.additionalTfvars }}
+          EOF
+
+          terraform init
+          terraform apply -auto-approve
