@@ -9,6 +9,7 @@ pool:
 
 variables:
 - group: silkroad-prod
+- group: Shared_Dev
 - name: dockerRepository
   value: 'tunnetcom/silkroad'
 - name: apiTag
@@ -23,8 +24,6 @@ variables:
   value: 'silkroad-webapp-service'
 - name: zapTarget
   value: 'https://silkroad.aion-time.com'
-- name: defectDojoUrl
-  value: 'https://defectdojo.aion-time.com'
 
 stages:
 
@@ -161,6 +160,7 @@ stages:
           fi
       env:
         NVD_API_KEY: $(nvdApiKey)
+        DEFECTDOJO_URL: $(DefectDojoUrl)
 
     # ---- Warn (don't fail the build) if the NVD DB looks suspiciously small,
     # which would mean the update above failed/skipped and results may be stale.
@@ -255,7 +255,7 @@ stages:
             exit 1
           fi
       env:
-        DEFECTDOJO_URL: $(defectDojoUrl)
+        DEFECTDOJO_URL: $(DefectDojoUrl)
         DEFECTDOJO_API_KEY: $(defectDojoApiKey)
 
     - task: SonarQubePrepare@7
@@ -463,7 +463,7 @@ stages:
             exit 1
           fi
       env:
-        DEFECTDOJO_URL: $(defectDojoUrl)
+        DEFECTDOJO_URL: $(DefectDojoUrl)
         DEFECTDOJO_API_KEY: $(defectDojoApiKey)
 
     - task: CmdLine@2
@@ -579,7 +579,7 @@ stages:
             exit 1
           fi
       env:
-        DEFECTDOJO_URL: $(defectDojoUrl)
+        DEFECTDOJO_URL: $(DefectDojoUrl)
         DEFECTDOJO_API_KEY: $(defectDojoApiKey)
 
     - task: CmdLine@2
@@ -686,7 +686,7 @@ stages:
             exit 1
           fi
       env:
-        DEFECTDOJO_URL: $(defectDojoUrl)
+        DEFECTDOJO_URL: $(DefectDojoUrl)
         DEFECTDOJO_API_KEY: $(defectDojoApiKey)
 
 
@@ -832,7 +832,7 @@ stages:
             exit 1
           fi
       env:
-        DEFECTDOJO_URL: $(defectDojoUrl)
+        DEFECTDOJO_URL: $(DefectDojoUrl)
         DEFECTDOJO_API_KEY: $(defectDojoApiKey)
 
 
