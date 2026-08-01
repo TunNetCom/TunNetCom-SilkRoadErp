@@ -6,6 +6,12 @@
 # health, then switches traffic and (optionally) reconciles
 # Dapr annotations.
 #
+# Post-deployment verification (enableHealthCheck, default on):
+# hits <healthCheckUrl> after the traffic switch; if it does not
+# return <healthCheckExpectedHttp> within the retry window, the
+# Service selectors are switched back to the previous color
+# (enableAutoRollback, default on) and the job fails.
+#
 # Include it from any pipeline:
 #
 #   stages:
@@ -22,6 +28,7 @@
 #       webDeploymentName: 'myapp-webapp'
 #       apiAppLabelValue: 'myapp-api'
 #       webAppLabelValue: 'myapp-webapp'
+#       healthCheckUrl: 'https://app.example.com/health'
 #
 # Manifest layout expected (parameterize to match):
 #   <manifestsDirectory>/<apiServiceManifest>        (svc)
@@ -121,6 +128,28 @@ parameters:
 - name: rolloutTimeout
   type: string
   default: '180s'
+
+# Post-deployment health check / auto-rollback
+- name: enableHealthCheck
+  type: boolean
+  default: true
+- name: healthCheckUrl
+  type: string
+- name: healthCheckExpectedHttp
+  type: number
+  default: 200
+- name: healthCheckRetries
+  type: number
+  default: 6
+- name: healthCheckDelaySeconds
+  type: number
+  default: 10
+- name: healthCheckTimeoutSeconds
+  type: number
+  default: 30
+- name: enableAutoRollback
+  type: boolean
+  default: true
 
 stages:
 - stage: ${{ parameters.stageName }}
@@ -234,3 +263,93 @@ stages:
               script: |
                 kubectl get svc ${{ parameters.apiService }} -n ${{ parameters.kubeNamespace }} -o wide
                 kubectl get pods -n ${{ parameters.kubeNamespace }} -l ${{ parameters.colorSelectorLabel }}=$(targetColor)
+
+          # ============================================================
+          # ✅ POST-DEPLOYMENT VERIFICATION
+          # Hit the health endpoint (now served by the new color) and
+          # confirm it returns the expected HTTP code. On failure the
+          # next step rolls traffic back to the previous version.
+          # ============================================================
+          - ${{ if eq(parameters.enableHealthCheck, true) }}:
+            - task: CmdLine@2
+              displayName: Verify Post-Deployment Health
+              inputs:
+                script: |
+                  set -e
+                  HEALTH_URL="${{ parameters.healthCheckUrl }}"
+                  EXPECTED=${{ parameters.healthCheckExpectedHttp }}
+                  RETRIES=${{ parameters.healthCheckRetries }}
+                  DELAY=${{ parameters.healthCheckDelaySeconds }}
+                  TIMEOUT=${{ parameters.healthCheckTimeoutSeconds }}
+
+                  echo "Post-deployment health check: $HEALTH_URL (expecting HTTP $EXPECTED)"
+                  HEALTHY="false"
+                  for i in $(seq 1 "$RETRIES"); do
+                    HTTP_CODE=$(curl -sS -o /tmp/health_response.json -w "%{http_code}" --max-time "$TIMEOUT" "$HEALTH_URL" 2>/dev/null || echo "000")
+                    echo "Attempt ${i}/${RETRIES}: HTTP ${HTTP_CODE}"
+                    if [ "$HTTP_CODE" = "$EXPECTED" ]; then
+                      HEALTHY="true"
+                      break
+                    fi
+                    if [ "$i" -lt "$RETRIES" ]; then
+                      echo "Not healthy yet, retrying in ${DELAY}s..."
+                      sleep "$DELAY"
+                    fi
+                  done
+
+                  if [ "$HEALTHY" = "true" ]; then
+                    echo "Health check passed."
+                    echo "Response body:"
+                    cat /tmp/health_response.json 2>/dev/null || true
+                    exit 0
+                  fi
+
+                  echo "##vso[task.logissue type=error]Post-deployment health check FAILED after ${RETRIES} attempts."
+                  echo "##vso[task.setvariable variable=healthCheckFailed]true"
+
+            # ------------------------------------------------------------
+            # ↩️  ROLLBACK ON HEALTH FAILURE
+            # Blue/green makes rollback instant and safe: just switch the
+            # Service selectors back to the previous color, then fail the
+            # job. Dapr annotations are reverted when Dapr is enabled.
+            # If enableAutoRollback is false, only the job is failed and
+            # the broken version is left in place for investigation.
+            # ------------------------------------------------------------
+            - ${{ if and(eq(parameters.enableAutoRollback, true), eq(parameters.enableDapr, true)) }}:
+              - task: CmdLine@2
+                displayName: Revert Dapr Annotations (Rollback)
+                condition: eq(variables['healthCheckFailed'], 'true')
+                inputs:
+                  script: |
+                    kubectl patch deployment ${{ parameters.apiDeploymentName }}-$(otherColor) -n ${{ parameters.kubeNamespace }} \
+                      -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"${{ parameters.daprAnnotation }}\":\"true\"}}}}}"
+                    kubectl patch deployment ${{ parameters.webDeploymentName }}-$(otherColor) -n ${{ parameters.kubeNamespace }} \
+                      -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"${{ parameters.daprAnnotation }}\":\"true\"}}}}}"
+                    kubectl patch deployment ${{ parameters.apiDeploymentName }}-$(targetColor) -n ${{ parameters.kubeNamespace }} \
+                      -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"${{ parameters.daprAnnotation }}\":\"false\"}}}}}"
+                    kubectl patch deployment ${{ parameters.webDeploymentName }}-$(targetColor) -n ${{ parameters.kubeNamespace }} \
+                      -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"${{ parameters.daprAnnotation }}\":\"false\"}}}}}"
+
+            - ${{ if eq(parameters.enableAutoRollback, true) }}:
+              - task: CmdLine@2
+                displayName: Rollback to Previous Version
+                condition: eq(variables['healthCheckFailed'], 'true')
+                inputs:
+                  script: |
+                    echo "Rolling back traffic to $(otherColor) ..."
+                    kubectl patch svc ${{ parameters.apiService }} -n ${{ parameters.kubeNamespace }} \
+                      -p "{\"spec\":{\"selector\":{\"${{ parameters.appLabel }}\":\"${{ parameters.apiAppLabelValue }}\",\"${{ parameters.environmentLabel }}\":\"${{ parameters.environmentLabelValue }}\",\"${{ parameters.colorSelectorLabel }}\":\"$(otherColor)\"}}}"
+                    kubectl patch svc ${{ parameters.webService }} -n ${{ parameters.kubeNamespace }} \
+                      -p "{\"spec\":{\"selector\":{\"${{ parameters.appLabel }}\":\"${{ parameters.webAppLabelValue }}\",\"${{ parameters.environmentLabel }}\":\"${{ parameters.environmentLabelValue }}\",\"${{ parameters.colorSelectorLabel }}\":\"$(otherColor)\"}}}"
+                    echo "Rollback completed. Active version is now $(otherColor)."
+                    echo "##vso[task.logissue type=error]Deployment verification failed — rolled back to $(otherColor)."
+                    exit 1
+
+            - ${{ if eq(parameters.enableAutoRollback, false) }}:
+              - task: CmdLine@2
+                displayName: Fail on Unhealthy Deployment
+                condition: eq(variables['healthCheckFailed'], 'true')
+                inputs:
+                  script: |
+                    echo "##vso[task.logissue type=error]Post-deployment health check failed and auto-rollback is disabled. Investigate $(targetColor) before retrying."
+                    exit 1
