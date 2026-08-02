@@ -32,6 +32,9 @@
 #
 # Feature toggles: enableOwasp, enableSonarQube, enableTests,
 # enableTrivy, enableDockerPush (all default true).
+# NuGet: restores via the repo nuget.config (feedsToUse=config) +
+# NuGetAuthenticate for Azure Artifacts feeds; nugetConfigPath,
+# enableNuGetAuthenticate, nugetServiceConnection params.
 # ============================================================
 parameters:
 - name: stageName
@@ -63,6 +66,17 @@ parameters:
   default:
   - '8.x'
   - '10.x'
+
+# NuGet
+- name: nugetConfigPath
+  type: string
+  default: 'nuget.config'
+- name: enableNuGetAuthenticate
+  type: boolean
+  default: true
+- name: nugetServiceConnection
+  type: string
+  default: ''
 
 # Docker / images
 - name: dockerRegistryServiceConnection
@@ -183,11 +197,20 @@ stages:
           packageType: sdk
           version: ${{ sdk }}
 
+    - ${{ if eq(parameters.enableNuGetAuthenticate, true) }}:
+      - task: NuGetAuthenticate@1
+        displayName: Authenticate NuGet feeds
+        ${{ if not(eq(parameters.nugetServiceConnection, '')) }}:
+          inputs:
+            nuGetServiceConnections: ${{ parameters.nugetServiceConnection }}
+
     - task: DotNetCoreCLI@2
       displayName: Restore NuGet packages
       inputs:
         command: restore
         projects: ${{ parameters.solution }}
+        feedsToUse: 'config'
+        nugetConfigPath: ${{ parameters.nugetConfigPath }}
 
     # ============================================================
     # 🛡️ OWASP DEPENDENCY-CHECK (SCA - scans NuGet dependencies
@@ -414,6 +437,7 @@ stages:
           projects: ${{ parameters.testProjects }}
           publishTestResults: false
           arguments: >-
+            --no-restore
             --logger trx
             --results-directory $(Agent.TempDirectory)
             --configuration ${{ parameters.buildConfiguration }}
