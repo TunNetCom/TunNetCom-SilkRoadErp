@@ -25,7 +25,7 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-  feedName: 'SilkRoadFeed'
+  feedName: 'Silk_Road_ERP/SilkRoadFeed'
   project: 'src/SharedKernel/TunNetCom.SharedKernel.Helpers/TunNetCom.SharedKernel.Helpers.csproj'
   buildConfiguration: 'Release'
 
