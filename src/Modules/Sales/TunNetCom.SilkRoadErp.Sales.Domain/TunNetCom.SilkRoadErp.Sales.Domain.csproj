@@ -18,7 +18,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\SharedKernel\TunNetCom.SilkRoadErp.SharedKernel\TunNetCom.SilkRoadErp.SharedKernel.csproj" />
-    <ProjectReference Include="..\..\..\SharedKernel\TunNetCom.SharedKernel.Helpers\TunNetCom.SharedKernel.Helpers.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="TunNetCom.SharedKernel.Helpers" />
   </ItemGroup>
 
 </Project>

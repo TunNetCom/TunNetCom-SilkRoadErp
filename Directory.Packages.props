@@ -86,6 +86,8 @@
     <PackageVersion Include="Quartz.AspNetCore" Version="3.13.1" />
     <!-- Excel Export -->
     <PackageVersion Include="EPPlus" Version="7.5.2" />
+    <!-- Internal packages -->
+    <PackageVersion Include="TunNetCom.SharedKernel.Helpers" Version="0.0.1" />
     <!-- Aspire -->
     <PackageVersion Include="Aspire.Hosting.AppHost" Version="13.3.4" />
     <PackageVersion Include="Aspire.Hosting.SqlServer" Version="13.1.2" />

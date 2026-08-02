@@ -4,7 +4,7 @@
     <OutputType>Library</OutputType>
     <IsPackable>true</IsPackable>
     <PackageId>TunNetCom.SharedKernel.Helpers</PackageId>
-    <Version>1.0.0</Version>
+    <Version>0.0.1</Version>
     <Authors>TunNetCom</Authors>
     <Company>TunNetCom</Company>
     <Product>TunNetCom SharedKernel Helpers</Product>
