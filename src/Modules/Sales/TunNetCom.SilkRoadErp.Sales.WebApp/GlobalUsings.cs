@@ -8,3 +8,4 @@ global using FluentResults;
 global using Radzen;
 global using Mapster;
 global using TunNetCom.SilkRoadErp.Sales.WebApp.PrintEngine.Infrastructure;
+global using TunNetCom.SharedKernel.Helpers;

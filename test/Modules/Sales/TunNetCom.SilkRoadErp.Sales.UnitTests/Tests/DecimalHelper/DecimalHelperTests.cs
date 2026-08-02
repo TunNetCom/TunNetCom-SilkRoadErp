@@ -2,8 +2,8 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.DecimalHelper;
 
 public class DecimalHelperTests
 {
-    private static decimal RoundAmount(decimal value) => TunNetCom.SilkRoadErp.Sales.Domain.Services.DecimalHelper.RoundAmount(value);
-    private static decimal RoundPercentage(decimal value) => TunNetCom.SilkRoadErp.Sales.Domain.Services.DecimalHelper.RoundPercentage(value);
+    private static decimal RoundAmount(decimal value) => TunNetCom.SharedKernel.Helpers.DecimalHelper.RoundAmount(value);
+    private static decimal RoundPercentage(decimal value) => TunNetCom.SharedKernel.Helpers.DecimalHelper.RoundPercentage(value);
 
     #region RoundAmount
 

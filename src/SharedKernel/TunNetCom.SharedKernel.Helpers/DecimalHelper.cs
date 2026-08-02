@@ -1,4 +1,4 @@
-namespace TunNetCom.SilkRoadErp.Sales.Domain.Services;
+namespace TunNetCom.SharedKernel.Helpers;
 
 /// <summary>
 /// Helper class for decimal rounding operations
@@ -35,4 +35,3 @@ public static class DecimalHelper
         return Math.Round(value, PERCENTAGE_DECIMAL_PLACES, MidpointRounding.AwayFromZero);
     }
 }
-

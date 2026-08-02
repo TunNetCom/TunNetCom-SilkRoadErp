@@ -1,0 +1,87 @@
+# ============================================================
+# SilkRoad ERP - Publish TunNetCom.SharedKernel.Helpers to NuGet
+# ------------------------------------------------------------
+# Packs the shared helpers class library and pushes the .nupkg
+# to the internal Azure Artifacts feed 'SilkRoadFeed'.
+#
+# Version: SemVer derived from the nearest git tag (e.g. v1.2.3).
+#   - no tag  -> 0.0.1
+#   - v1.2.3  -> 1.2.3
+#
+# Runs on every push to main that touches the helpers project.
+# ============================================================
+
+trigger:
+  branches:
+    include:
+    - main
+  paths:
+    include:
+    - src/SharedKernel/TunNetCom.SharedKernel.Helpers/**
+
+pr: none
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  feedName: 'SilkRoadFeed'
+  project: 'src/SharedKernel/TunNetCom.SharedKernel.Helpers/TunNetCom.SharedKernel.Helpers.csproj'
+  buildConfiguration: 'Release'
+
+steps:
+- checkout: self
+  fetchDepth: 0
+
+- task: UseDotNet@2
+  displayName: Install .NET SDK
+  inputs:
+    packageType: sdk
+    version: 10.x
+
+- task: DotNetCoreCLI@2
+  displayName: Restore NuGet packages
+  inputs:
+    command: restore
+    projects: $(project)
+
+- task: CmdLine@2
+  displayName: Compute package version from git tag
+  inputs:
+    script: |
+      TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+      if [ -z "$TAG" ]; then
+        echo "##[warning]No git tag found - defaulting package version to 0.0.1"
+        echo "##vso[task.setvariable variable=PackageVersion]0.0.1"
+      else
+        VERSION=${TAG#v}
+        echo "Package version set to $VERSION"
+        echo "##vso[task.setvariable variable=PackageVersion]$VERSION"
+      fi
+
+- task: DotNetCoreCLI@2
+  displayName: Pack class library
+  inputs:
+    command: pack
+    projects: $(project)
+    arguments: '--configuration $(buildConfiguration) --no-restore --output $(Build.ArtifactStagingDirectory)/packages -p:PackageVersion=$(PackageVersion)'
+    versioningScheme: 'off'
+
+- task: NuGetAuthenticate@1
+  displayName: Authenticate to Azure Artifacts
+
+- task: DotNetCoreCLI@2
+  displayName: Push package to SilkRoadFeed
+  inputs:
+    command: push
+    packagesToPush: '$(Build.ArtifactStagingDirectory)/packages/*.nupkg'
+    nuGetFeedType: internal
+    publishVstsFeed: $(feedName)
+    allowPackageConflicts: true
+
+- task: PublishBuildArtifacts@1
+  displayName: Publish .nupkg artifacts
+  condition: always()
+  inputs:
+    pathToPublish: '$(Build.ArtifactStagingDirectory)/packages'
+    artifactName: 'drop'

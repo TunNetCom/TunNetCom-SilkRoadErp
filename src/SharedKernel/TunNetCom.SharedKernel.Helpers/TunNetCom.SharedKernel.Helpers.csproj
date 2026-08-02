@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <IsPackable>true</IsPackable>
+    <PackageId>TunNetCom.SharedKernel.Helpers</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>TunNetCom</Authors>
+    <Company>TunNetCom</Company>
+    <Product>TunNetCom SharedKernel Helpers</Product>
+    <Description>Shared helpers for TunNetCom applications (decimal rounding, etc.).</Description>
+    <PackageTags>tunnetcom;helpers;decimal;sharedkernel</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/your-org/TunNetCom.SilkRoadErp</RepositoryUrl>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>

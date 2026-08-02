@@ -45,6 +45,7 @@ global using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.OData;
 global using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services;
 global using TunNetCom.SilkRoadErp.Sales.Domain.Entites.Interceptors;
 global using TunNetCom.SilkRoadErp.Sales.Domain.Services;
+global using TunNetCom.SharedKernel.Helpers;
 global using System.Threading.Tasks;
 global using Microsoft.Extensions.Options;
 global using Microsoft.OData.Edm;

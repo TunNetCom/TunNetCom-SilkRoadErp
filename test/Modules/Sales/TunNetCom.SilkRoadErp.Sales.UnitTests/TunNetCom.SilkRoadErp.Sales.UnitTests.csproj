@@ -30,6 +30,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\src\Modules\Sales\TunNetCom.SilkRoadErp.Sales.Api\TunNetCom.SilkRoadErp.Sales.Api.csproj" />
     <ProjectReference Include="..\..\..\..\src\Modules\Sales\TunNetCom.SilkRoadErp.Sales.Domain\TunNetCom.SilkRoadErp.Sales.Domain.csproj" />
+    <ProjectReference Include="..\..\..\..\src\SharedKernel\TunNetCom.SharedKernel.Helpers\TunNetCom.SharedKernel.Helpers.csproj" />
   </ItemGroup>
 
   <ItemGroup>
