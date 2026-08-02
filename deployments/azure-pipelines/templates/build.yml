@@ -1,8 +1,16 @@
 # ============================================================
 # Reusable BUILD stage template
 # ------------------------------------------------------------
-# Restore -> OWASP Dependency-Check (SCA) -> SonarQube ->
-# Build -> Tests (Testcontainers) -> Trivy (API + Web) -> Push
+# Job 1 "BuildSolution" (runs once):
+#   Docker login -> SDKs -> Restore -> OWASP Dependency-Check
+#   (SCA) -> SonarQube Prepare -> Build -> Tests -> Analyze ->
+#   Pre-Docker Disk Cleanup
+#
+# Job 2 "BuildImages" (strategy.matrix: api + web legs run in
+#   parallel on separate agents):
+#   Docker login -> Trivy install -> Build image -> Trivy scan
+#   (HTML + JSON) -> publish reports -> DefectDojo -> Push ->
+#   Cleanup
 #
 # Include it from any pipeline:
 #
@@ -156,7 +164,8 @@ stages:
   pool:
     vmImage: ${{ parameters.poolImage }}
   jobs:
-  - job: BuildPush
+  - job: BuildSolution
+    displayName: Restore, Analyze, Build & Test
     timeoutInMinutes: ${{ parameters.timeoutInMinutes }}
     cancelTimeoutInMinutes: 5
     steps:
@@ -443,6 +452,40 @@ stages:
           docker builder prune -af || true
           df -h
 
+  # ============================================================
+  # JOB 2 (matrix): each leg builds + Trivy-scans + pushes one
+  # image. The two legs (api / web) run on separate agents, so
+  # the image pipeline is parallel instead of sequential.
+  # ============================================================
+  - job: BuildImages
+    displayName: Build, Scan & Push Images
+    dependsOn: BuildSolution
+    timeoutInMinutes: ${{ parameters.timeoutInMinutes }}
+    cancelTimeoutInMinutes: 5
+    strategy:
+      matrix:
+        api:
+          buildName: 'api'
+          imageLabel: 'API'
+          ddEngagementName: 'SilkRoad API'
+          ddTestTitle: 'Trivy - API Image'
+          dockerfilePath: ${{ parameters.apiDockerfilePath }}
+          imageTag: ${{ parameters.apiTag }}
+        web:
+          buildName: 'web'
+          imageLabel: 'Web'
+          ddEngagementName: 'SilkRoad WebApp'
+          ddTestTitle: 'Trivy - Web Image'
+          dockerfilePath: ${{ parameters.webappDockerfilePath }}
+          imageTag: ${{ parameters.webappTag }}
+    steps:
+
+    - task: Docker@2
+      displayName: Docker Login
+      inputs:
+        command: login
+        containerRegistry: ${{ parameters.dockerRegistryServiceConnection }}
+
     # ============================================================
     # 🔒 INSTALL TRIVY
     # ---- FIX: apt-key is deprecated/unreliable on newer Ubuntu images
@@ -480,32 +523,32 @@ stages:
               https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl
 
     # ============================================================
-    # 🔵 API: BUILD → SCAN (Trivy) → PUSH → CLEANUP
+    # BUILD → SCAN (Trivy) → PUSH → CLEANUP (matrix leg)
     # ============================================================
     - task: CmdLine@2
-      displayName: Build API image
+      displayName: Build $(imageLabel) image
       inputs:
         script: |
           docker build --no-cache \
-            -t ${{ parameters.dockerRepository }}:${{ parameters.apiTag }} \
-            -f ${{ parameters.apiDockerfilePath }} ${{ parameters.dockerBuildContext }}
+            -t ${{ parameters.dockerRepository }}:$(imageTag) \
+            -f $(dockerfilePath) ${{ parameters.dockerBuildContext }}
 
     - ${{ if eq(parameters.enableTrivy, true) }}:
       - task: CmdLine@2
-        displayName: Prepare Trivy API report directory
+        displayName: Prepare Trivy $(imageLabel) report directory
         inputs:
           script: |
-            mkdir -p $(System.DefaultWorkingDirectory)/trivy-api-report
-            chmod 777 $(System.DefaultWorkingDirectory)/trivy-api-report
+            mkdir -p $(System.DefaultWorkingDirectory)/trivy-$(buildName)-report
+            chmod 777 $(System.DefaultWorkingDirectory)/trivy-$(buildName)-report
 
       - task: CmdLine@2
-        displayName: Scan API image (Trivy)
+        displayName: Scan $(imageLabel) image (Trivy)
         inputs:
           script: |
-            export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-api
+            export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-$(buildName)
             mkdir -p $TRIVY_CACHE_DIR
 
-            echo "Scanning API image (console)..."
+            echo "Scanning $(imageLabel) image (console)..."
             trivy image \
               --scanners vuln \
               --cache-dir $TRIVY_CACHE_DIR \
@@ -513,9 +556,9 @@ stages:
               --timeout 10m \
               --exit-code 0 \
               --severity ${{ parameters.trivySeverity }} \
-              ${{ parameters.dockerRepository }}:${{ parameters.apiTag }}
+              ${{ parameters.dockerRepository }}:$(imageTag)
 
-            echo "Generating Trivy API HTML report..."
+            echo "Generating Trivy $(imageLabel) HTML report..."
             trivy image \
               --scanners vuln \
               --cache-dir $TRIVY_CACHE_DIR \
@@ -525,10 +568,10 @@ stages:
               --severity ${{ parameters.trivySeverity }} \
               --format template \
               --template "@$(Pipeline.Workspace)/trivy-templates/html.tpl" \
-              -o $(System.DefaultWorkingDirectory)/trivy-api-report/trivy-api.html \
-              ${{ parameters.dockerRepository }}:${{ parameters.apiTag }}
+              -o $(System.DefaultWorkingDirectory)/trivy-$(buildName)-report/trivy-$(buildName).html \
+              ${{ parameters.dockerRepository }}:$(imageTag)
 
-            echo "Generating Trivy API JSON report (for DefectDojo)..."
+            echo "Generating Trivy $(imageLabel) JSON report (for DefectDojo)..."
             trivy image \
               --scanners vuln \
               --cache-dir $TRIVY_CACHE_DIR \
@@ -537,41 +580,41 @@ stages:
               --exit-code 0 \
               --severity ${{ parameters.trivySeverity }} \
               --format json \
-              -o $(System.DefaultWorkingDirectory)/trivy-api-report/trivy-api.json \
-              ${{ parameters.dockerRepository }}:${{ parameters.apiTag }}
+              -o $(System.DefaultWorkingDirectory)/trivy-$(buildName)-report/trivy-$(buildName).json \
+              ${{ parameters.dockerRepository }}:$(imageTag)
 
       - task: PublishBuildArtifacts@1
-        displayName: Publish Trivy API Report
+        displayName: Publish Trivy $(imageLabel) Report
         inputs:
-          pathToPublish: '$(System.DefaultWorkingDirectory)/trivy-api-report'
-          artifactName: 'Trivy-API-Report'
+          pathToPublish: '$(System.DefaultWorkingDirectory)/trivy-$(buildName)-report'
+          artifactName: 'Trivy-$(imageLabel)-Report'
 
       - task: PublishHtmlReport@1
-        displayName: Show Trivy API Tab
+        displayName: Show Trivy $(imageLabel) Tab
         inputs:
-          reportDir: '$(System.DefaultWorkingDirectory)/trivy-api-report'
-          tabName: 'Trivy API'
+          reportDir: '$(System.DefaultWorkingDirectory)/trivy-$(buildName)-report'
+          tabName: 'Trivy $(imageLabel)'
 
       - task: CmdLine@2
-        displayName: Push Trivy API results to DefectDojo
+        displayName: Push Trivy $(imageLabel) results to DefectDojo
         inputs:
           script: |
-            HTTP_CODE=$(curl -sS -o /tmp/dd_trivy_api_response.json -w "%{http_code}" -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
+            HTTP_CODE=$(curl -sS -o /tmp/dd_trivy_$(buildName)_response.json -w "%{http_code}" -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
               -H "Authorization: Token $DEFECTDOJO_API_KEY" \
               -F "scan_type=Trivy Scan" \
-              -F "file=@$(System.DefaultWorkingDirectory)/trivy-api-report/trivy-api.json" \
+              -F "file=@$(System.DefaultWorkingDirectory)/trivy-$(buildName)-report/trivy-$(buildName).json" \
               -F "product_type_name=${{ parameters.productTypeName }}" \
               -F "product_name=${{ parameters.productName }}" \
-              -F "engagement_name=SilkRoad API" \
-              -F "test_title=Trivy - API Image" \
+              -F "engagement_name=$(ddEngagementName)" \
+              -F "test_title=$(ddTestTitle)" \
               -F "auto_create_context=True" \
               -F "close_old_findings=true" \
               -F "minimum_severity=${{ parameters.defectDojoMinSeverity }}")
             echo "DefectDojo response (HTTP $HTTP_CODE):"
-            cat /tmp/dd_trivy_api_response.json
+            cat /tmp/dd_trivy_$(buildName)_response.json
             echo ""
             if [ "$HTTP_CODE" -ge 400 ]; then
-              echo "##vso[task.logissue type=error]DefectDojo import (Trivy API) failed with HTTP $HTTP_CODE"
+              echo "##vso[task.logissue type=error]DefectDojo import (Trivy $(imageLabel)) failed with HTTP $HTTP_CODE"
               exit 1
             fi
         env:
@@ -580,129 +623,16 @@ stages:
 
     - ${{ if eq(parameters.enableDockerPush, true) }}:
       - task: CmdLine@2
-        displayName: Push API image
+        displayName: Push $(imageLabel) image
         inputs:
           script: |
-            docker push ${{ parameters.dockerRepository }}:${{ parameters.apiTag }}
+            docker push ${{ parameters.dockerRepository }}:$(imageTag)
 
     - task: CmdLine@2
-      displayName: Cleanup after API build
+      displayName: Cleanup after $(imageLabel) build
       inputs:
         script: |
           docker system prune -af || true
           docker builder prune -af || true
           df -h
 
-    # ============================================================
-    # 🟢 WEB: BUILD → SCAN (Trivy) → PUSH → CLEANUP
-    # ============================================================
-    - task: CmdLine@2
-      displayName: Build Web image
-      inputs:
-        script: |
-          docker build --no-cache \
-            -t ${{ parameters.dockerRepository }}:${{ parameters.webappTag }} \
-            -f ${{ parameters.webappDockerfilePath }} ${{ parameters.dockerBuildContext }}
-
-    - ${{ if eq(parameters.enableTrivy, true) }}:
-      - task: CmdLine@2
-        displayName: Prepare Trivy Web report directory
-        inputs:
-          script: |
-            mkdir -p $(System.DefaultWorkingDirectory)/trivy-web-report
-            chmod 777 $(System.DefaultWorkingDirectory)/trivy-web-report
-
-      - task: CmdLine@2
-        displayName: Scan Web image (Trivy)
-        inputs:
-          script: |
-            export TRIVY_CACHE_DIR=$(Pipeline.Workspace)/trivy-web
-            mkdir -p $TRIVY_CACHE_DIR
-
-            echo "Scanning Web image (console)..."
-            trivy image \
-              --scanners vuln \
-              --cache-dir $TRIVY_CACHE_DIR \
-              --no-progress \
-              --timeout 10m \
-              --exit-code 0 \
-              --severity ${{ parameters.trivySeverity }} \
-              ${{ parameters.dockerRepository }}:${{ parameters.webappTag }}
-
-            echo "Generating Trivy Web HTML report..."
-            trivy image \
-              --scanners vuln \
-              --cache-dir $TRIVY_CACHE_DIR \
-              --no-progress \
-              --timeout 10m \
-              --exit-code 0 \
-              --severity ${{ parameters.trivySeverity }} \
-              --format template \
-              --template "@$(Pipeline.Workspace)/trivy-templates/html.tpl" \
-              -o $(System.DefaultWorkingDirectory)/trivy-web-report/trivy-web.html \
-              ${{ parameters.dockerRepository }}:${{ parameters.webappTag }}
-
-            echo "Generating Trivy Web JSON report (for DefectDojo)..."
-            trivy image \
-              --scanners vuln \
-              --cache-dir $TRIVY_CACHE_DIR \
-              --no-progress \
-              --timeout 10m \
-              --exit-code 0 \
-              --severity ${{ parameters.trivySeverity }} \
-              --format json \
-              -o $(System.DefaultWorkingDirectory)/trivy-web-report/trivy-web.json \
-              ${{ parameters.dockerRepository }}:${{ parameters.webappTag }}
-
-      - task: PublishBuildArtifacts@1
-        displayName: Publish Trivy Web Report
-        inputs:
-          pathToPublish: '$(System.DefaultWorkingDirectory)/trivy-web-report'
-          artifactName: 'Trivy-Web-Report'
-
-      - task: PublishHtmlReport@1
-        displayName: Show Trivy Web Tab
-        inputs:
-          reportDir: '$(System.DefaultWorkingDirectory)/trivy-web-report'
-          tabName: 'Trivy Web'
-
-      - task: CmdLine@2
-        displayName: Push Trivy Web results to DefectDojo
-        inputs:
-          script: |
-            HTTP_CODE=$(curl -sS -o /tmp/dd_trivy_web_response.json -w "%{http_code}" -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
-              -H "Authorization: Token $DEFECTDOJO_API_KEY" \
-              -F "scan_type=Trivy Scan" \
-              -F "file=@$(System.DefaultWorkingDirectory)/trivy-web-report/trivy-web.json" \
-              -F "product_type_name=${{ parameters.productTypeName }}" \
-              -F "product_name=${{ parameters.productName }}" \
-              -F "engagement_name=SilkRoad WebApp" \
-              -F "test_title=Trivy - Web Image" \
-              -F "auto_create_context=True" \
-              -F "close_old_findings=true" \
-              -F "minimum_severity=${{ parameters.defectDojoMinSeverity }}")
-            echo "DefectDojo response (HTTP $HTTP_CODE):"
-            cat /tmp/dd_trivy_web_response.json
-            echo ""
-            if [ "$HTTP_CODE" -ge 400 ]; then
-              echo "##vso[task.logissue type=error]DefectDojo import (Trivy Web) failed with HTTP $HTTP_CODE"
-              exit 1
-            fi
-        env:
-          DEFECTDOJO_URL: ${{ parameters.defectDojoUrl }}
-          DEFECTDOJO_API_KEY: ${{ parameters.defectDojoApiKey }}
-
-    - ${{ if eq(parameters.enableDockerPush, true) }}:
-      - task: CmdLine@2
-        displayName: Push Web image
-        inputs:
-          script: |
-            docker push ${{ parameters.dockerRepository }}:${{ parameters.webappTag }}
-
-    - task: CmdLine@2
-      displayName: Cleanup after Web build
-      inputs:
-        script: |
-          docker system prune -af || true
-          docker builder prune -af || true
-          df -h
