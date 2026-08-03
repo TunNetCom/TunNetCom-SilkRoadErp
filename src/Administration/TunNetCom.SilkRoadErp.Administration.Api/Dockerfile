@@ -9,12 +9,23 @@ WORKDIR /src
 COPY *.sln ./
 COPY Directory.Build.props ./
 COPY Directory.Packages.props ./
+COPY nuget.config ./
 
 # Copy source
 COPY src/ ./src/
 
+# Azure Artifacts private-feed (SilkRoadFeed) auth for dotnet restore.
+# FEED_ACCESSTOKEN is injected at build time by the pipeline
+# (NuGetAuthenticate task); the artifacts credential provider resolves it.
+# The token never reaches the final runtime image (separate stage).
+ARG FEED_ACCESSTOKEN
+ARG FEED_URL=https://pkgs.dev.azure.com/TunNetCom/Silk_Road_ERP/_packaging/SilkRoadFeed/nuget/v3/index.json
+ARG FEED_USERNAME=docker
+RUN curl -sSL https://raw.githubusercontent.com/Microsoft/artifacts-credprovider/master/helpers/installcredprovider.sh | sh
+
 # Restore and publish API only
-RUN dotnet restore src/Administration/TunNetCom.SilkRoadErp.Administration.Api/TunNetCom.SilkRoadErp.Administration.Api.csproj
+RUN export VSS_NUGET_EXTERNAL_FEED_ENDPOINTS="{\"endpointCredentials\": [{\"endpoint\":\"${FEED_URL}\", \"username\":\"${FEED_USERNAME}\", \"password\":\"${FEED_ACCESSTOKEN}\"}]}" \
+    && dotnet restore src/Administration/TunNetCom.SilkRoadErp.Administration.Api/TunNetCom.SilkRoadErp.Administration.Api.csproj
 RUN dotnet publish src/Administration/TunNetCom.SilkRoadErp.Administration.Api/TunNetCom.SilkRoadErp.Administration.Api.csproj \
     -c Release -o /app/publish /p:UseAppHost=false
 

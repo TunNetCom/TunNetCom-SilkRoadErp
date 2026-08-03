@@ -34,7 +34,10 @@
 # enableTrivy, enableDockerPush (all default true).
 # NuGet: restores via the repo nuget.config (feedsToUse=config) +
 # NuGetAuthenticate for Azure Artifacts feeds; nugetConfigPath,
-# enableNuGetAuthenticate, nugetServiceConnection params.
+# enableNuGetAuthenticate, nugetServiceConnection params. The Docker
+# image builds pass FEED_ACCESSTOKEN/URL/USERNAME build-args so the
+# private SilkRoadFeed resolves inside the containers (Dockerfiles
+# install the Azure Artifacts credential provider).
 # ============================================================
 parameters:
 - name: stageName
@@ -77,6 +80,12 @@ parameters:
 - name: nugetServiceConnection
   type: string
   default: ''
+- name: nugetFeedUrl
+  type: string
+  default: 'https://pkgs.dev.azure.com/TunNetCom/Silk_Road_ERP/_packaging/SilkRoadFeed/nuget/v3/index.json'
+- name: nugetFeedUsername
+  type: string
+  default: 'docker'
 
 # Docker / images
 - name: dockerRegistryServiceConnection
@@ -510,6 +519,13 @@ stages:
         command: login
         containerRegistry: ${{ parameters.dockerRegistryServiceConnection }}
 
+    - ${{ if eq(parameters.enableNuGetAuthenticate, true) }}:
+      - task: NuGetAuthenticate@1
+        displayName: Authenticate NuGet feeds (Docker restore)
+        ${{ if not(eq(parameters.nugetServiceConnection, '')) }}:
+          inputs:
+            nuGetServiceConnections: ${{ parameters.nugetServiceConnection }}
+
     # ============================================================
     # 🔒 INSTALL TRIVY
     # ---- FIX: apt-key is deprecated/unreliable on newer Ubuntu images
@@ -551,11 +567,17 @@ stages:
     # ============================================================
     - task: CmdLine@2
       displayName: Build $(imageLabel) image
+      env:
+        FEED_ACCESSTOKEN: $(VSS_NUGET_ACCESSTOKEN)
       inputs:
         script: |
           docker build --no-cache \
             -t ${{ parameters.dockerRepository }}:$(imageTag) \
-            -f $(dockerfilePath) ${{ parameters.dockerBuildContext }}
+            -f $(dockerfilePath) \
+            --build-arg FEED_ACCESSTOKEN="$FEED_ACCESSTOKEN" \
+            --build-arg FEED_URL=${{ parameters.nugetFeedUrl }} \
+            --build-arg FEED_USERNAME=${{ parameters.nugetFeedUsername }} \
+            ${{ parameters.dockerBuildContext }}
 
     - ${{ if eq(parameters.enableTrivy, true) }}:
       - task: CmdLine@2
