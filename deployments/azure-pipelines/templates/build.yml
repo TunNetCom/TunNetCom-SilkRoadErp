@@ -369,11 +369,11 @@ stages:
             sudo chown -R $(id -u):$(id -g) $(System.DefaultWorkingDirectory)/dependency-check-report
             sudo chmod -R 755 $(System.DefaultWorkingDirectory)/dependency-check-report
 
-      - task: PublishBuildArtifacts@1
+      - task: PublishPipelineArtifact@1
         displayName: Publish OWASP Dependency-Check Report
         condition: always()
         inputs:
-          pathToPublish: '$(System.DefaultWorkingDirectory)/dependency-check-report'
+          targetPath: '$(System.DefaultWorkingDirectory)/dependency-check-report'
           artifactName: 'OWASP-DependencyCheck-Report'
 
       - task: PublishHtmlReport@1
@@ -629,10 +629,10 @@ stages:
               -o $(System.DefaultWorkingDirectory)/trivy-$(buildName)-report/trivy-$(buildName).json \
               ${{ parameters.dockerRepository }}:$(imageTag)
 
-      - task: PublishBuildArtifacts@1
+      - task: PublishPipelineArtifact@1
         displayName: Publish Trivy $(imageLabel) Report
         inputs:
-          pathToPublish: '$(System.DefaultWorkingDirectory)/trivy-$(buildName)-report'
+          targetPath: '$(System.DefaultWorkingDirectory)/trivy-$(buildName)-report'
           artifactName: 'Trivy-$(imageLabel)-Report'
 
       - task: PublishHtmlReport@1

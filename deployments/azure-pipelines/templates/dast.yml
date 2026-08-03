@@ -136,11 +136,11 @@ stages:
             sudo chown -R $(id -u):$(id -g) $(System.DefaultWorkingDirectory)/zap-baseline
             sudo chmod -R 755 $(System.DefaultWorkingDirectory)/zap-baseline
 
-      - task: PublishBuildArtifacts@1
+      - task: PublishPipelineArtifact@1
         displayName: Publish ZAP Baseline Report
         condition: always()
         inputs:
-          pathToPublish: '$(System.DefaultWorkingDirectory)/zap-baseline'
+          targetPath: '$(System.DefaultWorkingDirectory)/zap-baseline'
           artifactName: 'ZAP-Baseline-Report'
 
       - task: PublishHtmlReport@1
@@ -279,11 +279,11 @@ stages:
             sudo chown -R $(id -u):$(id -g) $(System.DefaultWorkingDirectory)/zap-ajax
             sudo chmod -R 755 $(System.DefaultWorkingDirectory)/zap-ajax
 
-      - task: PublishBuildArtifacts@1
+      - task: PublishPipelineArtifact@1
         displayName: Publish ZAP AJAX Report
         condition: always()
         inputs:
-          pathToPublish: '$(System.DefaultWorkingDirectory)/zap-ajax'
+          targetPath: '$(System.DefaultWorkingDirectory)/zap-ajax'
           artifactName: 'ZAP-AJAX-Report'
 
       - task: PublishHtmlReport@1

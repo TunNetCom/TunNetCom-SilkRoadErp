@@ -80,9 +80,9 @@ steps:
     nuGetFeedType: internal
     publishVstsFeed: $(feedName)
 
-- task: PublishBuildArtifacts@1
+- task: PublishPipelineArtifact@1
   displayName: Publish .nupkg artifacts
   condition: always()
   inputs:
-    pathToPublish: '$(Build.ArtifactStagingDirectory)/packages'
+    targetPath: '$(Build.ArtifactStagingDirectory)/packages'
     artifactName: 'drop'
