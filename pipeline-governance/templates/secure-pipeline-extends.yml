@@ -1,0 +1,64 @@
+# ============================================================
+# Pipeline Governance extends template
+# ------------------------------------------------------------
+# Imposes a mandatory compliance gate before the consuming
+# pipeline's stages run. Consumed via `extends`:
+#
+#   extends:
+#     template: ../../pipeline-governance/templates/secure-pipeline-extends.yml
+#     parameters:
+#       sonarProjectKey: '...'
+#       sonarProjectName: '...'
+#       defectDojoUrl: $(DefectDojoUrl)
+#       stages:
+#       - template: templates/<stage>.yml
+#         parameters: { ... }
+#
+# The first emitted stage (MandatoryGovernanceCheck) runs on an
+# agent, validates that the required governance inputs are
+# non-empty (SonarQube project, DefectDojo URL), and fails the
+# pipeline via ##vso[task.logissue type=error] + exit 1 when any
+# is missing. Consumer stages are then injected unchanged; stage
+# chaining makes every consumer stage implicitly depend on this
+# gate.
+#
+# Parameters are passed through the task `env:` block (NOT inlined
+# in the shell script) so that macro syntax such as
+# $(DefectDojoUrl) is resolved by the agent at runtime instead of
+# being parsed by bash as a $(...) command substitution.
+# ============================================================
+parameters:
+- name: stages
+  type: stageList
+  default: []
+- name: sonarProjectKey
+  type: string
+- name: sonarProjectName
+  type: string
+- name: defectDojoUrl
+  type: string
+
+stages:
+- stage: MandatoryGovernanceCheck
+  displayName: Mandatory Governance Check
+  dependsOn: []
+  jobs:
+  - job: ValidateCompliance
+    displayName: Validate Compliance
+    steps:
+    - task: CmdLine@2
+      displayName: Validate Governance Parameters
+      env:
+        SONAR_PROJECT_KEY: ${{ parameters.sonarProjectKey }}
+        SONAR_PROJECT_NAME: ${{ parameters.sonarProjectName }}
+        DEFECTDOJO_URL: ${{ parameters.defectDojoUrl }}
+      inputs:
+        script: |
+          if [ -z "$SONAR_PROJECT_KEY" ] || [ -z "$SONAR_PROJECT_NAME" ] || [ -z "$DEFECTDOJO_URL" ]; then
+            echo "##vso[task.logissue type=error]Mandatory governance parameters are missing: sonarProjectKey, sonarProjectName, defectDojoUrl"
+            exit 1
+          fi
+          echo "Governance parameters validated OK for project '$SONAR_PROJECT_NAME'"
+
+- ${{ each stage in parameters.stages }}:
+  - ${{ stage }}
