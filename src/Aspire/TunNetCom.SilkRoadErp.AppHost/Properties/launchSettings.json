@@ -11,7 +11,9 @@
         "ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL": "https://localhost:21222",
         "ASPIRE_DASHBOARD_OTLP_HTTP_ENDPOINT_URL": "https://localhost:21230",
         "ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL": "https://localhost:22222",
-        "ASPIRE_ALLOW_UNSECURED_TRANSPORT": "false"
+        "ASPIRE_ALLOW_UNSECURED_TRANSPORT": "false",
+        "Logging__LogLevel__Aspire.Hosting": "Debug",
+        "Logging__LogLevel__CommunityToolkit.Aspire.Hosting.Dapr": "Debug"
       }
     },
     "http": {
