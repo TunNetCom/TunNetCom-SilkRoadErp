@@ -64,10 +64,19 @@ extends:
       parameters:
         dockerRegistryServiceConnection: 'TunNetCom_Dockerhub_Connection'
         dockerRepository: $(dockerRepository)
-        apiDockerfilePath: 'src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.Api/Dockerfile'
-        webappDockerfilePath: 'src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.WebApp/Dockerfile'
-        apiTag: $(apiTag)
-        webappTag: $(webappTag)
+        images:
+        - name: api
+          label: API
+          dockerfilePath: 'src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.Api/Dockerfile'
+          imageTag: $(apiTag)
+          ddEngagementName: 'SilkRoad API'
+          ddTestTitle: 'Trivy - API Image'
+        - name: web
+          label: Web
+          dockerfilePath: 'src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.WebApp/Dockerfile'
+          imageTag: $(webappTag)
+          ddEngagementName: 'SilkRoad WebApp'
+          ddTestTitle: 'Trivy - Web Image'
         testProjects: |
           test/TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy.Tests/TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy.Tests.csproj
           test/Modules/Sales/TunNetCom.SilkRoadErp.Sales.UnitTests/TunNetCom.SilkRoadErp.Sales.UnitTests.csproj

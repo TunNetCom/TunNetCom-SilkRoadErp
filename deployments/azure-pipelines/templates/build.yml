@@ -6,8 +6,8 @@
 #   (SCA) -> SonarQube Prepare -> Build -> Tests -> Analyze ->
 #   Pre-Docker Disk Cleanup
 #
-# Job 2 "BuildImages" (strategy.matrix: api + web legs run in
-#   parallel on separate agents):
+# Job 2 "BuildImages" (strategy.matrix: one leg per entry in the
+#   `images` parameter, run in parallel on separate agents):
 #   Docker login -> Trivy install -> Build image -> Trivy scan
 #   (HTML + JSON) -> publish reports -> DefectDojo -> Push ->
 #   Cleanup
@@ -19,10 +19,19 @@
 #     parameters:
 #       dockerRegistryServiceConnection: '<dockerhub service connection>'
 #       dockerRepository: 'myorg/myapp'
-#       apiDockerfilePath: 'src/Api/Dockerfile'
-#       webappDockerfilePath: 'src/WebApp/Dockerfile'
-#       apiTag: 'api-$(Build.BuildId)'
-#       webappTag: 'webapp-$(Build.BuildId)'
+#       images:
+#       - name: api            # one entry per image to build/scan/push
+#         label: API
+#         dockerfilePath: 'src/Api/Dockerfile'
+#         imageTag: 'api-$(Build.BuildId)'
+#         ddEngagementName: 'MyApp API'
+#         ddTestTitle: 'Trivy - API Image'
+#       - name: web
+#         label: Web
+#         dockerfilePath: 'src/WebApp/Dockerfile'
+#         imageTag: 'webapp-$(Build.BuildId)'
+#         ddEngagementName: 'MyApp Web'
+#         ddTestTitle: 'Trivy - Web Image'
 #       sonarProjectKey: '<sonar project key>'
 #       sonarProjectName: '<sonar project name>'
 #       sonarHostUrl: 'https://sonarqube.example.com'
@@ -36,8 +45,9 @@
 # NuGetAuthenticate for Azure Artifacts feeds; nugetConfigPath,
 # enableNuGetAuthenticate, nugetServiceConnection params. The Docker
 # image builds pass FEED_ACCESSTOKEN/URL/USERNAME build-args so the
-# private SilkRoadFeed resolves inside the containers (Dockerfiles
-# install the Azure Artifacts credential provider).
+# private feed resolves inside the containers (Dockerfiles install the
+# Azure Artifacts credential provider). Override nugetFeedUrl per
+# consuming project when it uses a different Azure Artifacts feed.
 # ============================================================
 parameters:
 - name: stageName
@@ -92,14 +102,13 @@ parameters:
   type: string
 - name: dockerRepository
   type: string
-- name: apiDockerfilePath
-  type: string
-- name: webappDockerfilePath
-  type: string
-- name: apiTag
-  type: string
-- name: webappTag
-  type: string
+# Data-driven image list. One entry per image to build/scan/push.
+# Each entry: { name, label, dockerfilePath, imageTag, ddEngagementName, ddTestTitle }
+#   - backend-only: 1 entry
+#   - .NET + Angular: 2 entries (backend + frontend)
+- name: images
+  type: object
+  default: []
 - name: dockerBuildContext
   type: string
   default: '.'
@@ -492,8 +501,8 @@ stages:
 
   # ============================================================
   # JOB 2 (matrix): each leg builds + Trivy-scans + pushes one
-  # image. The two legs (api / web) run on separate agents, so
-  # the image pipeline is parallel instead of sequential.
+  # image. Legs are generated from the `images` parameter and run
+  # in parallel on separate agents.
   # ============================================================
   - job: BuildImages
     displayName: Build, Scan & Push Images
@@ -502,21 +511,15 @@ stages:
     cancelTimeoutInMinutes: 5
     strategy:
       matrix:
-        api:
-          buildName: 'api'
-          imageLabel: 'API'
-          ddEngagementName: 'SilkRoad API'
-          ddTestTitle: 'Trivy - API Image'
-          dockerfilePath: ${{ parameters.apiDockerfilePath }}
-          imageTag: ${{ parameters.apiTag }}
-        web:
-          buildName: 'web'
-          imageLabel: 'Web'
-          ddEngagementName: 'SilkRoad WebApp'
-          ddTestTitle: 'Trivy - Web Image'
-          dockerfilePath: ${{ parameters.webappDockerfilePath }}
-          imageTag: ${{ parameters.webappTag }}
-      maxParallel: 2
+        ${{ each image in parameters.images }}:
+          ${{ image.name }}:
+            buildName: ${{ image.name }}
+            imageLabel: ${{ image.label }}
+            ddEngagementName: ${{ image.ddEngagementName }}
+            ddTestTitle: ${{ image.ddTestTitle }}
+            dockerfilePath: ${{ image.dockerfilePath }}
+            imageTag: ${{ image.imageTag }}
+      maxParallel: ${{ length(parameters.images) }}
     steps:
 
     - task: Docker@2
