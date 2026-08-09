@@ -61,9 +61,6 @@ parameters:
 - name: testProjects
   type: string
   default: '**/*[Tt]est*/*.csproj'
-- name: testFilter
-  type: string
-  default: ''
 - name: testRunSettingsPath
   type: string
   default: 'test.runsettings'
@@ -126,6 +123,9 @@ parameters:
 - name: sonarOpenCoverReportsPath
   type: string
   default: '$(Agent.TempDirectory)/**/coverage.opencover.xml'
+- name: sonarVstestReportsPath
+  type: string
+  default: '$(Agent.TempDirectory)/**/*.trx'
 - name: sonarCpdExclusions
   type: string
   default: '**/*.json,**/*.html'
@@ -425,6 +425,7 @@ stages:
             sonar.host.url=${{ parameters.sonarHostUrl }}
             sonar.exclusions=${{ parameters.sonarExclusions }}
             sonar.cs.opencover.reportsPaths=${{ parameters.sonarOpenCoverReportsPath }}
+            sonar.cs.vstest.reportsPaths=${{ parameters.sonarVstestReportsPath }}
             sonar.cpd.exclusions=${{ parameters.sonarCpdExclusions }}
 
     - task: DotNetCoreCLI@2
@@ -455,7 +456,6 @@ stages:
             --configuration ${{ parameters.buildConfiguration }}
             --collect "XPlat Code Coverage"
             --settings ${{ parameters.testRunSettingsPath }}
-            ${{ parameters.testFilter }}
             --logger "console;verbosity=detailed"
         env:
           TESTCONTAINERS_RYUK_DISABLED: "true"
