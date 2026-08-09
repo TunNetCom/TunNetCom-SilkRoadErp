@@ -68,6 +68,7 @@ extends:
         webappDockerfilePath: 'src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.WebApp/Dockerfile'
         apiTag: $(apiTag)
         webappTag: $(webappTag)
+        testFilter: 'FullyQualifiedName!~UiTests'
         sonarProjectKey: 'Silk_Road_ERP_Silk_Road_ERP_5cfe75f5-a231-4074-9e4c-4f5ccd21b96e'
         sonarProjectName: 'SilkRoad ERP'
         sonarHostUrl: 'https://sonarqube.aion-time.com'

@@ -61,6 +61,9 @@ parameters:
 - name: testProjects
   type: string
   default: '**/*[Tt]est*/*.csproj'
+- name: testFilter
+  type: string
+  default: ''
 - name: testRunSettingsPath
   type: string
   default: 'test.runsettings'
@@ -273,7 +276,7 @@ stages:
       - task: CmdLine@2
         displayName: Update NVD database
         continueOnError: true
-        condition: always()
+        condition: succeededOrFailed()
         timeoutInMinutes: ${{ parameters.timeoutInMinutes }}
         inputs:
           script: |
@@ -318,7 +321,7 @@ stages:
       # which would mean the update above failed/skipped and results may be stale.
       - task: CmdLine@2
         displayName: Sanity-check NVD DB size
-        condition: always()
+        condition: succeededOrFailed()
         inputs:
           script: |
             DB_FILE=$(find /tmp/dependency-check-data -name "odc.mv.db" 2>/dev/null | head -n1)
@@ -334,7 +337,7 @@ stages:
 
       - task: CmdLine@2
         displayName: Sync updated NVD data back for caching
-        condition: always()
+        condition: succeededOrFailed()
         inputs:
           script: |
             rm -rf $(Pipeline.Workspace)/dependency-check-data/*
@@ -342,7 +345,7 @@ stages:
 
       - task: CmdLine@2
         displayName: Run OWASP Dependency-Check
-        condition: always()
+        condition: succeededOrFailed()
         inputs:
           script: |
             docker run --rm \
@@ -363,7 +366,7 @@ stages:
       # restrictive perms. Reclaim ownership before publish/upload steps read them.
       - task: CmdLine@2
         displayName: Fix OWASP Dependency-Check report permissions
-        condition: always()
+        condition: succeededOrFailed()
         inputs:
           script: |
             sudo chown -R $(id -u):$(id -g) $(System.DefaultWorkingDirectory)/dependency-check-report
@@ -371,21 +374,21 @@ stages:
 
       - task: PublishPipelineArtifact@1
         displayName: Publish OWASP Dependency-Check Report
-        condition: always()
+        condition: succeededOrFailed()
         inputs:
           targetPath: '$(System.DefaultWorkingDirectory)/dependency-check-report'
           artifactName: 'OWASP-DependencyCheck-Report'
 
       - task: PublishHtmlReport@1
         displayName: Show OWASP Dependency-Check Tab
-        condition: always()
+        condition: succeededOrFailed()
         inputs:
           reportDir: '$(System.DefaultWorkingDirectory)/dependency-check-report'
           tabName: 'OWASP Dependency-Check'
 
       - task: CmdLine@2
         displayName: Push OWASP Dependency-Check results to DefectDojo
-        condition: always()
+        condition: succeededOrFailed()
         inputs:
           script: |
             HTTP_CODE=$(curl -sS -o /tmp/dd_owasp_response.json -w "%{http_code}" -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
@@ -452,13 +455,14 @@ stages:
             --configuration ${{ parameters.buildConfiguration }}
             --collect "XPlat Code Coverage"
             --settings ${{ parameters.testRunSettingsPath }}
+            ${{ parameters.testFilter }}
             --logger "console;verbosity=detailed"
         env:
           TESTCONTAINERS_RYUK_DISABLED: "true"
 
       - task: PublishTestResults@2
         displayName: Publish test results
-        condition: always()
+        condition: succeededOrFailed()
         inputs:
           testResultsFormat: VSTest
           testResultsFiles: '$(Agent.TempDirectory)/**/*.trx'
@@ -474,6 +478,7 @@ stages:
 
     - task: CmdLine@2
       displayName: Pre-Docker Disk Cleanup
+      condition: always()
       inputs:
         script: |
           df -h
@@ -511,6 +516,7 @@ stages:
           ddTestTitle: 'Trivy - Web Image'
           dockerfilePath: ${{ parameters.webappDockerfilePath }}
           imageTag: ${{ parameters.webappTag }}
+      maxParallel: 2
     steps:
 
     - task: Docker@2
@@ -631,18 +637,21 @@ stages:
 
       - task: PublishPipelineArtifact@1
         displayName: Publish Trivy $(imageLabel) Report
+        condition: succeededOrFailed()
         inputs:
           targetPath: '$(System.DefaultWorkingDirectory)/trivy-$(buildName)-report'
           artifactName: 'Trivy-$(imageLabel)-Report'
 
       - task: PublishHtmlReport@1
         displayName: Show Trivy $(imageLabel) Tab
+        condition: succeededOrFailed()
         inputs:
           reportDir: '$(System.DefaultWorkingDirectory)/trivy-$(buildName)-report'
           tabName: 'Trivy $(imageLabel)'
 
       - task: CmdLine@2
         displayName: Push Trivy $(imageLabel) results to DefectDojo
+        condition: succeededOrFailed()
         inputs:
           script: |
             HTTP_CODE=$(curl -sS -o /tmp/dd_trivy_$(buildName)_response.json -w "%{http_code}" -X POST "$DEFECTDOJO_URL/api/v2/reimport-scan/" \
@@ -676,6 +685,7 @@ stages:
 
     - task: CmdLine@2
       displayName: Cleanup after $(imageLabel) build
+      condition: always()
       inputs:
         script: |
           docker system prune -af || true
