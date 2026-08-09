@@ -423,7 +423,7 @@ stages:
           DEFECTDOJO_API_KEY: ${{ parameters.defectDojoApiKey }}
 
     - ${{ if eq(parameters.enableSonarQube, true) }}:
-      - task: SonarQubePrepare@7
+      - task: SonarQubePrepare@8
         displayName: SonarQube Prepare
         inputs:
           SonarQube: ${{ parameters.sonarConnection }}
@@ -477,10 +477,10 @@ stages:
           testResultsFiles: '$(Agent.TempDirectory)/**/*.trx'
 
     - ${{ if eq(parameters.enableSonarQube, true) }}:
-      - task: SonarQubeAnalyze@7
+      - task: SonarQubeAnalyze@8
         displayName: SonarQube Analyze
 
-      - task: SonarQubePublish@7
+      - task: SonarQubePublish@8
         displayName: SonarQube Publish Quality Gate
         inputs:
           pollingTimeoutSec: '300'
