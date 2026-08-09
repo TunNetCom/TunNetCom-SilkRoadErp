@@ -30,6 +30,9 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\src\Modules\Sales\TunNetCom.SilkRoadErp.Sales.Api\TunNetCom.SilkRoadErp.Sales.Api.csproj" />
     <ProjectReference Include="..\..\..\..\src\Modules\Sales\TunNetCom.SilkRoadErp.Sales.Domain\TunNetCom.SilkRoadErp.Sales.Domain.csproj" />
+    <ProjectReference Include="..\..\..\..\src\SharedKernel\Infrastructure\TunNetCom.SilkRoadErp.Infrastructure.Caching\TunNetCom.SilkRoadErp.Infrastructure.Caching.csproj" />
+    <ProjectReference Include="..\..\..\..\src\SharedKernel\Infrastructure\TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy\TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy.csproj" />
+    <ProjectReference Include="..\..\..\..\src\SharedKernel\TunNetCom.SilkRoadErp.SharedKernel\TunNetCom.SilkRoadErp.SharedKernel.csproj" />
   </ItemGroup>
 
   <ItemGroup>
