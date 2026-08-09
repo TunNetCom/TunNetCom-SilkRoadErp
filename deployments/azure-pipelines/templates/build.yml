@@ -138,7 +138,9 @@ parameters:
 - name: sonarCpdExclusions
   type: string
   default: '**/*.json,**/*.html'
-
+- name: sonarCoverageExclusions
+  type: string
+  default: '**/*.razor,**/*.razor.cs,**/*.cshtml'
 # Security
 - name: nvdApiKey
   type: string
@@ -433,6 +435,7 @@ stages:
           extraProperties: |
             sonar.host.url=${{ parameters.sonarHostUrl }}
             sonar.exclusions=${{ parameters.sonarExclusions }}
+            sonar.coverage.exclusions=${{ parameters.sonarCoverageExclusions }}
             sonar.cs.opencover.reportsPaths=${{ parameters.sonarOpenCoverReportsPath }}
             sonar.cs.vstest.reportsPaths=${{ parameters.sonarVstestReportsPath }}
             sonar.cpd.exclusions=${{ parameters.sonarCpdExclusions }}
