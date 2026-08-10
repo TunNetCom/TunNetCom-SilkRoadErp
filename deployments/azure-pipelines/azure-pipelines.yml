@@ -83,7 +83,7 @@ extends:
         sonarProjectKey: 'Silk_Road_ERP_Silk_Road_ERP_5cfe75f5-a231-4074-9e4c-4f5ccd21b96e'
         sonarProjectName: 'SilkRoad ERP'
         sonarHostUrl: 'https://sonarqube.aion-time.com'
-        sonarCoverageExclusions: '**/*.razor,**/*.razor.cs,**/*.cshtml,src/Administration/TunNetCom.SilkRoadErp.Administration.HttpClients/**,src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.HttpClients/**'
+        sonarCoverageExclusions: '**/*.razor,**/*.razor.cs,**/*.cshtml,src/Administration/TunNetCom.SilkRoadErp.Administration.HttpClients/**,src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.HttpClients/**,src/Aspire/TunNetCom.SilkRoadErp.AppHost/**'
         nvdApiKey: $(nvdApiKey)
         defectDojoUrl: $(defectDojoUrl)
         defectDojoApiKey: $(defectDojoApiKey)
