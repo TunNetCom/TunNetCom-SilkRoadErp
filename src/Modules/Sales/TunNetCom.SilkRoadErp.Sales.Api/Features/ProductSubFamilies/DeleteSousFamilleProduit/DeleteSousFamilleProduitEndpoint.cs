@@ -7,7 +7,7 @@ public class DeleteSousFamilleProduitEndpoint : ICarterModule
     public void AddRoutes(IEndpointRouteBuilder app)
     {
         _ = app.MapDelete("/product-subfamilies/{id}",
-            async Task<Results<NoContent, NotFound, BadRequest<List<IError>>>> (
+            async Task<Results<NoContent, NotFound, BadRequest<IReadOnlyList<IError>>>> (
                 IMediator mediator,
                 int id,
                 CancellationToken cancellationToken) =>

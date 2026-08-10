@@ -3,7 +3,7 @@ public class CreateProviderEndPoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        _ = app.MapPost("/providers", async Task<Results<Created<CreateProviderRequest>, BadRequest<List<IError>>>> (IMediator mediator,
+        _ = app.MapPost("/providers", async Task<Results<Created<CreateProviderRequest>, BadRequest<IReadOnlyList<IError>>>> (IMediator mediator,
             CreateProviderRequest request) =>
         {
             var createProviderCommand = new CreateProviderCommand(

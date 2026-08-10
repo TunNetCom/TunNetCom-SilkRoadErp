@@ -10,7 +10,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Commandes.GetCommandes
         {
             _mediatorMock = new Mock<IMediator>();
         }
-        public record ErrorResponse(string Message, List<IError> Errors);
+        public record ErrorResponse(string Message, IReadOnlyList<IError> Errors);
         private static async Task<IResult> CallHandlerAsync(IMediator mediator, CancellationToken cancellationToken)
         {
             var query = new GetOrdersListQuery();

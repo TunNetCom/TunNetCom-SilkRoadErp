@@ -8,7 +8,7 @@ public class UpdateFamilleProduitEndpoint : ICarterModule
     public void AddRoutes(IEndpointRouteBuilder app)
     {
         _ = app.MapPut("/product-families/{id}",
-            async Task<Results<NoContent, NotFound, BadRequest<List<IError>>>> (
+            async Task<Results<NoContent, NotFound, BadRequest<IReadOnlyList<IError>>>> (
                 IMediator mediator,
                 int id,
                 UpdateFamilleProduitRequest request,

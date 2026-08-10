@@ -1,4 +1,4 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetInvoicesWithIds;
+using TunNetCom.SilkRoadErp.Sales.Api.Features.Invoices.GetInvoicesWithIds;
 using TunNetCom.SilkRoadErp.Sales.Contracts.Invoice;
 namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.GetInvoicesWithIdsTest
 {
@@ -27,7 +27,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.GetInvoicesWithId
                 invoicesIds,
                 CancellationToken.None);
             // Assert
-            var resultUnion = Assert.IsType<Results<Ok<List<InvoiceResponse>>, BadRequest<List<IError>>>>(result);
+            var resultUnion = Assert.IsType<Results<Ok<List<InvoiceResponse>>, BadRequest<IReadOnlyList<IError>>>>(result);
             var okResult = Assert.IsType<Ok<List<InvoiceResponse>>>(result.Result);
             Assert.Equal(2, okResult.Value.Count);
             Assert.Equal(1, okResult.Value[0].Number);
@@ -47,7 +47,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.GetInvoicesWithId
                 invoicesIds,
                 CancellationToken.None);
             // Assert
-            var resultUnion = Assert.IsType<Results<Ok<List<InvoiceResponse>>, BadRequest<List<IError>>>>(result);
+            var resultUnion = Assert.IsType<Results<Ok<List<InvoiceResponse>>, BadRequest<IReadOnlyList<IError>>>>(result);
             var okResult = Assert.IsType<Ok<List<InvoiceResponse>>>(result.Result);
             Assert.Empty(okResult.Value);
         }
@@ -66,8 +66,8 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.GetInvoicesWithId
                 invoicesIds,
                 CancellationToken.None);
             // Assert
-            var resultUnion = Assert.IsType<Results<Ok<List<InvoiceResponse>>, BadRequest<List<IError>>>>(result);
-            var badRequestResult = Assert.IsType<BadRequest<List<IError>>>(result.Result);
+            var resultUnion = Assert.IsType<Results<Ok<List<InvoiceResponse>>, BadRequest<IReadOnlyList<IError>>>>(result);
+            var badRequestResult = Assert.IsType<BadRequest<IReadOnlyList<IError>>>(result.Result);
             _ = Assert.Single(badRequestResult.Value);
             Assert.Equal("Unexpected error", badRequestResult.Value[0].Message);
         }
@@ -75,7 +75,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Invoices.GetInvoicesWithId
 
     public static class GetInvoicesByIdsEndpoint
     {
-        public static async Task<Results<Ok<List<InvoiceResponse>>, BadRequest<List<IError>>>> HandleGetInvoicesByIdsAsync(
+        public static async Task<Results<Ok<List<InvoiceResponse>>, BadRequest<IReadOnlyList<IError>>>> HandleGetInvoicesByIdsAsync(
             IMediator mediator,
             List<int> invoicesIds,
             CancellationToken cancellationToken)

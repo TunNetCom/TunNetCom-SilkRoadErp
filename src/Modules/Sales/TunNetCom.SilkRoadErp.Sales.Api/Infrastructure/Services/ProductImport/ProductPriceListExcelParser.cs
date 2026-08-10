@@ -19,7 +19,7 @@ public class ProductPriceListExcelParser : IProductPriceListExcelParser
 
     public Task<ProductImportPreviewResponse> PreviewAsync(Stream stream, int sheetIndex = 0, int maxPreviewRows = 50, CancellationToken cancellationToken = default)
     {
-        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+        ExcelPackage.License.SetNonCommercialOrganization("TunNetCom");
         var response = new ProductImportPreviewResponse();
 
         using (var package = new ExcelPackage(stream))
@@ -80,7 +80,7 @@ public class ProductPriceListExcelParser : IProductPriceListExcelParser
 
     public Task<IReadOnlyList<ProductImportRowDto>> ParseWithMappingAsync(Stream stream, ProductImportMappingRequest mapping, CancellationToken cancellationToken = default)
     {
-        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+        ExcelPackage.License.SetNonCommercialOrganization("TunNetCom");
         var list = new List<ProductImportRowDto>();
 
         using (var package = new ExcelPackage(stream))

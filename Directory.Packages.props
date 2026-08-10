@@ -6,98 +6,97 @@
   <ItemGroup>
     <!-- API Framework -->
     <PackageVersion Include="Aspire.Hosting.Dapr" Version="9.1.0" />
-    <PackageVersion Include="Aspire.Hosting.RabbitMQ" Version="13.3.4" />
-    <PackageVersion Include="Carter" Version="9.0.0" />
+    <PackageVersion Include="Aspire.Hosting.RabbitMQ" Version="13.4.6" />
+    <PackageVersion Include="Carter" Version="10.0.0" />
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.Dapr" Version="13.0.0" />
-    <PackageVersion Include="Dapr.AspNetCore" Version="1.17.9" />
-    <PackageVersion Include="Dapr.Client" Version="1.17.9" />
-    <PackageVersion Include="Dapr.Extensions.Configuration" Version="1.17.9" />
-    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.AspNetCore.OData" Version="8.2.5" />
+    <PackageVersion Include="Dapr.AspNetCore" Version="1.18.5" />
+    <PackageVersion Include="Dapr.Client" Version="1.18.5" />
+    <PackageVersion Include="Dapr.Extensions.Configuration" Version="1.18.5" />
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.AspNetCore.OData" Version="9.5.0" />
     <!-- Entity Framework Core -->
-    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.10" />
     <!-- MediatR & CQRS -->
-    <PackageVersion Include="MediatR" Version="12.4.1" />
+    <PackageVersion Include="MediatR" Version="14.2.0" />
     <!-- Validation -->
-    <PackageVersion Include="FluentValidation" Version="11.11.0" />
-    <PackageVersion Include="FluentValidation.AspNetCore" Version="11.3.0" />
-    <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
+    <PackageVersion Include="FluentValidation" Version="12.1.1" />
+    <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     <!-- Mapping -->
-    <PackageVersion Include="Mapster" Version="7.4.0" />
+    <PackageVersion Include="Mapster" Version="10.0.11" />
     <!-- Result Pattern -->
-    <PackageVersion Include="FluentResults" Version="3.16.0" />
-    <PackageVersion Include="Microsoft.OpenApi" Version="2.3.0" />
+    <PackageVersion Include="FluentResults" Version="4.0.0" />
+    <PackageVersion Include="Microsoft.OpenApi" Version="2.7.5" />
     <PackageVersion Include="OneOf" Version="3.0.271" />
     <!-- Logging -->
-    <PackageVersion Include="Serilog" Version="4.2.0" />
-    <PackageVersion Include="Serilog.AspNetCore" Version="9.0.0" />
-    <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />
-    <PackageVersion Include="Serilog.Sinks.File" Version="6.0.0" />
-    <PackageVersion Include="Serilog.Sinks.Grafana.Loki" Version="8.3.0" />
+    <PackageVersion Include="Serilog" Version="4.4.0" />
+    <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
+    <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1" />
+    <PackageVersion Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageVersion Include="Serilog.Sinks.Grafana.Loki" Version="9.0.2" />
     <!-- Swagger/OpenAPI -->
-    <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.0.1" />
-    <PackageVersion Include="Swashbuckle.AspNetCore.Annotations" Version="10.0.1" />
-    <PackageVersion Include="Scalar.AspNetCore" Version="1.2.3" />
+    <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.2.3" />
+    <PackageVersion Include="Swashbuckle.AspNetCore.Annotations" Version="10.2.3" />
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.16.18" />
     <!-- JSON -->
-    <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
     <!-- Microsoft Extensions -->
-    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.8" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.3" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.8" />
-    <PackageVersion Include="Microsoft.Extensions.Caching.Abstractions" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.8" />
-    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.3" />
-    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Localization" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.Caching.Abstractions" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.8.0" />
+    <PackageVersion Include="Microsoft.Extensions.Localization" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10" />
     <!-- Authentication -->
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.0" />
-    <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerGen" Version="10.0.1" />
-    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.2.1" />
-    <PackageVersion Include="BCrypt.Net-Next" Version="4.0.3" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.10" />
+    <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerGen" Version="10.2.3" />
+    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.22.0" />
+    <PackageVersion Include="BCrypt.Net-Next" Version="4.2.1" />
     <!-- Blazor UI -->
-    <PackageVersion Include="Blazor.Bootstrap" Version="2.2.0" />
-    <PackageVersion Include="Radzen.Blazor" Version="8.3.2" />
+    <PackageVersion Include="Blazor.Bootstrap" Version="3.5.0" />
+    <PackageVersion Include="Radzen.Blazor" Version="11.2.2" />
     <!-- Testing -->
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
-    <PackageVersion Include="System.Linq.Dynamic.Core" Version="1.6.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
+    <PackageVersion Include="System.Linq.Dynamic.Core" Version="1.7.3" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.abstractions" Version="2.0.3" />
     <PackageVersion Include="xunit.runner.console" Version="2.9.3" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.2" />
-    <PackageVersion Include="FluentAssertions" Version="8.2.0" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <PackageVersion Include="FluentAssertions" Version="8.10.0" />
     <PackageVersion Include="Moq" Version="4.20.72" />
-    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
-    <PackageVersion Include="Testcontainers.MsSql" Version="4.10.0" />
-    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.0" />
+    <PackageVersion Include="coverlet.collector" Version="10.0.1" />
+    <PackageVersion Include="Testcontainers.MsSql" Version="4.13.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.10" />
     <!-- Playwright -->
-    <PackageVersion Include="Microsoft.Playwright" Version="1.51.0" />
+    <PackageVersion Include="Microsoft.Playwright" Version="1.61.0" />
     <!-- Quartz.NET for background jobs -->
-    <PackageVersion Include="Quartz" Version="3.13.1" />
-    <PackageVersion Include="Quartz.AspNetCore" Version="3.13.1" />
+    <PackageVersion Include="Quartz" Version="3.19.1" />
+    <PackageVersion Include="Quartz.AspNetCore" Version="3.19.1" />
     <!-- Excel Export -->
-    <PackageVersion Include="EPPlus" Version="7.5.2" />
+    <PackageVersion Include="EPPlus" Version="8.6.3" />
     <!-- Internal packages -->
     <PackageVersion Include="TunNetCom.SharedKernel.Helpers" Version="0.0.1" />
     <!-- Aspire -->
-    <PackageVersion Include="Aspire.Hosting.AppHost" Version="13.3.4" />
-    <PackageVersion Include="Aspire.Hosting.SqlServer" Version="13.1.2" />
-    <PackageVersion Include="Aspire.Hosting.Redis" Version="13.1.2" />
+    <PackageVersion Include="Aspire.Hosting.AppHost" Version="13.4.6" />
+    <PackageVersion Include="Aspire.Hosting.SqlServer" Version="13.4.6" />
+    <PackageVersion Include="Aspire.Hosting.Redis" Version="13.4.6" />
     <!-- Aspire ServiceDefaults -->
-    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.4.0" />
-    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.0" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.1" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.0" />
+    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.8.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.17.0" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.17.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.17.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.17.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.17.0" />
   </ItemGroup>
 </Project>

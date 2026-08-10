@@ -73,6 +73,6 @@ public static class ResultExtensions
 {
     public static bool IsEntityNotFound<T>(this Result<T> result)
     {
-        return result.IsFailed && result.Errors.Exists(e => e.Message == "not_found");
+        return result.IsFailed && result.Errors.Any(e => e.Message == "not_found");
     }
 }

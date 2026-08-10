@@ -6,7 +6,7 @@ public class UpdateProductEndpoint : ICarterModule
         // Endpoint pour mise à jour par refe (pour compatibilité)
         _ = app.MapPut(
             "/products/{refe}",
-            async Task<Results<NoContent, NotFound, BadRequest<List<IError>>>> (
+            async Task<Results<NoContent, NotFound, BadRequest<IReadOnlyList<IError>>>> (
             IMediator mediator,
             string refe,
             UpdateProductRequest updateProductRequest,
@@ -48,7 +48,7 @@ public class UpdateProductEndpoint : ICarterModule
         // Endpoint pour mise à jour par Id
         _ = app.MapPut(
             "/products/{id:int}",
-            async Task<Results<NoContent, NotFound, BadRequest<List<IError>>>> (
+            async Task<Results<NoContent, NotFound, BadRequest<IReadOnlyList<IError>>>> (
             IMediator mediator,
             int id,
             UpdateProductRequest updateProductRequest,

@@ -39,7 +39,7 @@ public class BankStatementFileParser : IBankStatementFileParser
 
     private async Task<IReadOnlyList<BankStatementRowDto>> ParseExcelAsync(Stream stream, CancellationToken cancellationToken)
     {
-        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+        ExcelPackage.License.SetNonCommercialOrganization("TunNetCom");
         var list = new List<BankStatementRowDto>();
         using (var package = new ExcelPackage(stream))
         {

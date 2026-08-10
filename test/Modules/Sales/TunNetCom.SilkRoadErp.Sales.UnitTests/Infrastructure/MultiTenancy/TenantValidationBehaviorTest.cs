@@ -22,7 +22,7 @@ public class TenantValidationBehaviorTest
 
         var result = await behavior.Handle(
             new TestRequest(),
-            () => { called = true; return Task.FromResult(Unit.Value); },
+            (ct) => { called = true; return Task.FromResult(Unit.Value); },
             CancellationToken.None);
 
         result.Should().Be(Unit.Value);
@@ -39,7 +39,7 @@ public class TenantValidationBehaviorTest
 
         var act = () => behavior.Handle(
             new TestRequest(),
-            () => Task.FromResult(Unit.Value),
+            (ct) => Task.FromResult(Unit.Value),
             CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -66,7 +66,7 @@ public class TenantValidationBehaviorTest
 
         var act = () => behavior.Handle(
             new TestRequest(),
-            () => Task.FromResult(Unit.Value),
+            (ct) => Task.FromResult(Unit.Value),
             CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -93,7 +93,7 @@ public class TenantValidationBehaviorTest
 
         var result = await behavior.Handle(
             new TestRequest(),
-            () => { called = true; return Task.FromResult(Unit.Value); },
+            (ct) => { called = true; return Task.FromResult(Unit.Value); },
             CancellationToken.None);
 
         result.Should().Be(Unit.Value);

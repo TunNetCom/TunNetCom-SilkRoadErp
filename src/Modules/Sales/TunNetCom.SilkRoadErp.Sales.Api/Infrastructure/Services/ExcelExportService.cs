@@ -12,7 +12,7 @@ public class ExcelExportService
     public ExcelExportService(ILogger<ExcelExportService> logger)
     {
         _logger = logger;
-        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+        ExcelPackage.License.SetNonCommercialOrganization("TunNetCom");
     }
 
     public byte[] ExportToExcel<T>(

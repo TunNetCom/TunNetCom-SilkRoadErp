@@ -57,7 +57,7 @@ namespace TunNetCom.SilkRoadErp.Sales.UnitTests.Tests.Commande
     public class ErrorResponse
     {
         public string Message { get; set; } = string.Empty;
-        public List<IError> Errors { get; set; } = new();
+        public IReadOnlyList<IError> Errors { get; set; } = new List<IError>();
     }
 
     public static class GetOrdersListEndpoint
