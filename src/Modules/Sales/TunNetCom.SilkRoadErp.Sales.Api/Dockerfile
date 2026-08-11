@@ -38,7 +38,12 @@ WORKDIR /app
 
 COPY --from=build /app/publish ./
 
+# Playwright's bundled Node executable must be executable
+# by the non-root application user.
+RUN chmod 755 /app/.playwright/node/linux-x64/node
+
 EXPOSE 8080
+
 ENV DOTNET_RUNNING_IN_CONTAINER=true
 ENV DOTNET_USE_POLLING_FILE_WATCHER=true
 ENV ASPNETCORE_URLS=http://+:8080
