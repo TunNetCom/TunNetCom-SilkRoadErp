@@ -22,7 +22,7 @@ RUN dotnet publish src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.WebApp/TunNetCo
     -c Release -o /app/publish /p:UseAppHost=false
 
 # Install Playwright CLI and Chromium OUTSIDE /root
-RUN dotnet tool install --global Microsoft.Playwright.CLI --tool-path /opt/playwright-cli
+RUN dotnet tool install Microsoft.Playwright.CLI --tool-path /opt/playwright-cli
 ENV PATH="$PATH:/opt/playwright-cli"
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/playwright
 WORKDIR /src/src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.WebApp
