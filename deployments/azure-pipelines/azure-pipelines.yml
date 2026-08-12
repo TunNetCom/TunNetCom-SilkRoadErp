@@ -71,6 +71,10 @@ extends:
       parameters:
         dockerRegistryServiceConnection: 'TunNetCom_Dockerhub_Connection'
         dockerRepository: $(dockerRepository)
+        enableNuGetAuthenticate: true
+        nugetConfigPath: 'nuget.config'
+        nugetFeedUrl: 'https://pkgs.dev.azure.com/TunNetCom/Silk_Road_ERP/_packaging/SilkRoadFeed/nuget/v3/index.json'
+        nugetFeedUsername: 'docker'
         images:
         - name: api
           label: API
