@@ -30,6 +30,13 @@ parameters:
   type: string
   default: 'https://silkroad.aion-time.com/health'
 
+resources:
+  repositories:
+  - repository: templates
+    type: git
+    name: CentralHub/CentralHub
+    ref: refs/heads/main
+
 variables:
 - group: silkroad-prod
 - name: dockerRepository
@@ -50,7 +57,7 @@ variables:
   value: 'https://defectdojo.aion-time.com'
 
 extends:
-  template: ../../pipeline-governance/templates/secure-pipeline-extends.yml
+  template: pipeline-governance/templates/secure-pipeline-extends.yml@templates
   parameters:
     sonarProjectKey: 'Silk_Road_ERP_Silk_Road_ERP_5cfe75f5-a231-4074-9e4c-4f5ccd21b96e'
     sonarProjectName: 'SilkRoad ERP'
@@ -60,7 +67,7 @@ extends:
     # ============================================================
     # 1️⃣  BUILD
     # ============================================================
-    - template: templates/build.yml
+    - template: templates/build.yml@templates
       parameters:
         dockerRegistryServiceConnection: 'TunNetCom_Dockerhub_Connection'
         dockerRepository: $(dockerRepository)
@@ -91,7 +98,7 @@ extends:
     # ============================================================
     # 2️⃣  ZAP BASELINE + 3️⃣ ZAP AJAX
     # ============================================================
-    - template: templates/dast.yml
+    - template: templates/dast.yml@templates
       parameters:
         zapTarget: $(zapTarget)
         defectDojoUrl: $(defectDojoUrl)
@@ -100,7 +107,7 @@ extends:
     # ============================================================
     # 4️⃣  ENSURE WORKER VM EXISTS (IaC)
     # ============================================================
-    - template: templates/ensure-worker.yml
+    - template: templates/ensure-worker.yml@templates
       parameters:
         azureSubscription: 'TunNetCom_Azure_Connection'
         sshKey: $(AZURE_WORKER_SSH_KEY)
@@ -108,7 +115,7 @@ extends:
     # ============================================================
     # 5️⃣  DEPLOY TO DEV (Blue/Green)
     # ============================================================
-    - template: templates/blue-green-deploy.yml
+    - template: templates/blue-green-deploy.yml@templates
       parameters:
         environmentName: silkroad-dev
         kubeNamespace: $(kubeNamespace)
