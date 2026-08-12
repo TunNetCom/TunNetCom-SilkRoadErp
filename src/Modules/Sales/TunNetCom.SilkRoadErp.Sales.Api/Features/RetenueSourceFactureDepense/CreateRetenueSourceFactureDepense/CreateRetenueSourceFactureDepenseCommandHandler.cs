@@ -10,7 +10,7 @@ public class CreateRetenueSourceFactureDepenseCommandHandler(
     SalesContext _context,
     ILogger<CreateRetenueSourceFactureDepenseCommandHandler> _logger,
     IMediator _mediator,
-    IDocumentStorageService _documentStorageService,
+    DocumentStorageStrategyResolver _documentStorageService,
     IActiveAccountingYearService _activeAccountingYearService,
     IAccountingYearFinancialParametersService _financialParametersService)
     : IRequestHandler<CreateRetenueSourceFactureDepenseCommand, Result<int>>
@@ -75,7 +75,7 @@ public class CreateRetenueSourceFactureDepenseCommandHandler(
             try
             {
                 var pdfBytes = Convert.FromBase64String(command.PdfContent);
-                pdfStoragePath = await _documentStorageService.SaveAsync(pdfBytes, $"retenue_facture_depense_{command.FactureDepenseId}.pdf", cancellationToken);
+                pdfStoragePath = await _documentStorageService.SaveAsync(pdfBytes, "BlobStorageApi", $"retenue_facture_depense_{command.FactureDepenseId}.pdf", cancellationToken);
             }
             catch (FormatException ex)
             {

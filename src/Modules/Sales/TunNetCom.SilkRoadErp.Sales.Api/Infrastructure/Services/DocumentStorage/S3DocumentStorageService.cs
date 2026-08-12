@@ -6,6 +6,8 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.DocumentStorag
 /// </summary>
 public class S3DocumentStorageService : IDocumentStorageService
 {
+    public string Type => "S3";
+
     private readonly ILogger<S3DocumentStorageService> _logger;
 
     public S3DocumentStorageService(ILogger<S3DocumentStorageService> logger)

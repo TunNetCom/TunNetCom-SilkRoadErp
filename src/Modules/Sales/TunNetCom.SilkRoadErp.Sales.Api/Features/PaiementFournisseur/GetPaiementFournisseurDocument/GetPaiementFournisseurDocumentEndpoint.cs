@@ -13,7 +13,7 @@ public class GetPaiementFournisseurDocumentEndpoint : ICarterModule
 
     public async Task<Results<IResult, NotFound>> HandleGetPaiementFournisseurDocumentAsync(
         SalesContext context,
-        IDocumentStorageService documentStorageService,
+        DocumentStorageStrategyResolver documentStorageService,
         int id,
         CancellationToken cancellationToken)
     {
@@ -28,7 +28,7 @@ public class GetPaiementFournisseurDocumentEndpoint : ICarterModule
 
         try
         {
-            var documentBytes = await documentStorageService.GetAsync(paiement.DocumentStoragePath, cancellationToken);
+            var documentBytes = await documentStorageService.GetAsync(paiement.DocumentStoragePath, "BlobStorageApi", cancellationToken);
             
             // Determine content type based on file extension or default to image/jpeg
             var contentType = "image/jpeg"; // Default

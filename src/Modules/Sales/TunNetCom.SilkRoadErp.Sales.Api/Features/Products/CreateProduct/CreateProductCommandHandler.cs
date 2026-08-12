@@ -1,11 +1,11 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.DocumentStorage;
+using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.DocumentStorage;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Products.CreateProduct;
 
 public class CreateProductCommandHandler(
     SalesContext _context,
     ILogger<CreateProductCommandHandler> _logger,
-    IDocumentStorageService _documentStorageService)
+    DocumentStorageStrategyResolver _documentStorageService)
     : IRequestHandler<CreateProductCommand, Result<string>>
 {
     public async Task<Result<string>> Handle(CreateProductCommand createProductCommand, CancellationToken cancellationToken)
@@ -31,7 +31,7 @@ public class CreateProductCommandHandler(
             try
             {
                 var image1Bytes = Convert.FromBase64String(createProductCommand.Image1Base64);
-                image1StoragePath = await _documentStorageService.SaveAsync(image1Bytes, $"product_{createProductCommand.Refe}_image1.jpg", cancellationToken);
+                image1StoragePath = await _documentStorageService.SaveAsync(image1Bytes, "BlobStorageApi", $"product_{createProductCommand.Refe}_image1.jpg", cancellationToken);
             }
             catch (FormatException ex)
             {
@@ -51,7 +51,7 @@ public class CreateProductCommandHandler(
             try
             {
                 var image2Bytes = Convert.FromBase64String(createProductCommand.Image2Base64);
-                image2StoragePath = await _documentStorageService.SaveAsync(image2Bytes, $"product_{createProductCommand.Refe}_image2.jpg", cancellationToken);
+                image2StoragePath = await _documentStorageService.SaveAsync(image2Bytes, "BlobStorageApi", $"product_{createProductCommand.Refe}_image2.jpg", cancellationToken);
             }
             catch (FormatException ex)
             {
@@ -71,7 +71,7 @@ public class CreateProductCommandHandler(
             try
             {
                 var image3Bytes = Convert.FromBase64String(createProductCommand.Image3Base64);
-                image3StoragePath = await _documentStorageService.SaveAsync(image3Bytes, $"product_{createProductCommand.Refe}_image3.jpg", cancellationToken);
+                image3StoragePath = await _documentStorageService.SaveAsync(image3Bytes, "BlobStorageApi", $"product_{createProductCommand.Refe}_image3.jpg", cancellationToken);
             }
             catch (FormatException ex)
             {

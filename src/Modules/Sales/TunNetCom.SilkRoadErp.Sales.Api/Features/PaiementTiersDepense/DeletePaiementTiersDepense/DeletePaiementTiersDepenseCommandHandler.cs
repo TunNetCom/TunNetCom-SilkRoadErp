@@ -6,7 +6,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.PaiementTiersDepense.DeletePa
 public class DeletePaiementTiersDepenseCommandHandler(
     SalesContext _context,
     ILogger<DeletePaiementTiersDepenseCommandHandler> _logger,
-    IDocumentStorageService _documentStorageService)
+    DocumentStorageStrategyResolver _documentStorageService)
     : IRequestHandler<DeletePaiementTiersDepenseCommand, Result>
 {
     public async Task<Result> Handle(DeletePaiementTiersDepenseCommand command, CancellationToken cancellationToken)
@@ -24,7 +24,7 @@ public class DeletePaiementTiersDepenseCommandHandler(
         {
             try
             {
-                await _documentStorageService.DeleteAsync(entity.DocumentStoragePath, cancellationToken);
+                await _documentStorageService.DeleteAsync(entity.DocumentStoragePath, "BlobStorageApi", cancellationToken);
             }
             catch (Exception ex)
             {

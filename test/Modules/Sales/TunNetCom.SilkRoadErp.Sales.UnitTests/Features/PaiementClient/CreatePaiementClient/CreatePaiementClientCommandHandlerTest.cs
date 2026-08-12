@@ -47,7 +47,10 @@ public class CreatePaiementClientCommandHandlerTest
         using var context = CreateTestContext();
         var logger = Mock.Of<ILogger<CreatePaiementClientCommandHandler>>();
         var storage = new Mock<IDocumentStorageService>();
-        var handler = new CreatePaiementClientCommandHandler(context, logger, storage.Object);
+        storage.SetupGet(s => s.Type).Returns("BlobStorageApi");
+        var documentStorage = new DocumentStorageStrategyResolver(
+            new IDocumentStorageService[] { storage.Object });
+        var handler = new CreatePaiementClientCommandHandler(context, logger, documentStorage);
         var command = BuildValidCommand(clientId: 999);
 
         // Act
@@ -70,7 +73,10 @@ public class CreatePaiementClientCommandHandlerTest
 
         var logger = Mock.Of<ILogger<CreatePaiementClientCommandHandler>>();
         var storage = new Mock<IDocumentStorageService>();
-        var handler = new CreatePaiementClientCommandHandler(context, logger, storage.Object);
+        storage.SetupGet(s => s.Type).Returns("BlobStorageApi");
+        var documentStorage = new DocumentStorageStrategyResolver(
+            new IDocumentStorageService[] { storage.Object });
+        var handler = new CreatePaiementClientCommandHandler(context, logger, documentStorage);
         var command = BuildValidCommand(client.Id);
 
         // Act
@@ -90,7 +96,10 @@ public class CreatePaiementClientCommandHandlerTest
 
         var logger = Mock.Of<ILogger<CreatePaiementClientCommandHandler>>();
         var storage = new Mock<IDocumentStorageService>();
-        var handler = new CreatePaiementClientCommandHandler(context, logger, storage.Object);
+        storage.SetupGet(s => s.Type).Returns("BlobStorageApi");
+        var documentStorage = new DocumentStorageStrategyResolver(
+            new IDocumentStorageService[] { storage.Object });
+        var handler = new CreatePaiementClientCommandHandler(context, logger, documentStorage);
         var command = BuildValidCommand(clientId) with { AccountingYearId = 777 };
 
         // Act
@@ -125,7 +134,10 @@ public class CreatePaiementClientCommandHandlerTest
 
         var logger = Mock.Of<ILogger<CreatePaiementClientCommandHandler>>();
         var storage = new Mock<IDocumentStorageService>();
-        var handler = new CreatePaiementClientCommandHandler(context, logger, storage.Object);
+        storage.SetupGet(s => s.Type).Returns("BlobStorageApi");
+        var documentStorage = new DocumentStorageStrategyResolver(
+            new IDocumentStorageService[] { storage.Object });
+        var handler = new CreatePaiementClientCommandHandler(context, logger, documentStorage);
         var command = BuildValidCommand(clientId) with { NumeroTransactionBancaire = "DUPLICATE_NUM" };
 
         // Act
@@ -145,7 +157,10 @@ public class CreatePaiementClientCommandHandlerTest
 
         var logger = Mock.Of<ILogger<CreatePaiementClientCommandHandler>>();
         var storage = new Mock<IDocumentStorageService>();
-        var handler = new CreatePaiementClientCommandHandler(context, logger, storage.Object);
+        storage.SetupGet(s => s.Type).Returns("BlobStorageApi");
+        var documentStorage = new DocumentStorageStrategyResolver(
+            new IDocumentStorageService[] { storage.Object });
+        var handler = new CreatePaiementClientCommandHandler(context, logger, documentStorage);
         var command = BuildValidCommand(clientId) with { MethodePaiement = "Cash" };
 
         // Act
@@ -165,7 +180,10 @@ public class CreatePaiementClientCommandHandlerTest
 
         var logger = Mock.Of<ILogger<CreatePaiementClientCommandHandler>>();
         var storage = new Mock<IDocumentStorageService>();
-        var handler = new CreatePaiementClientCommandHandler(context, logger, storage.Object);
+        storage.SetupGet(s => s.Type).Returns("BlobStorageApi");
+        var documentStorage = new DocumentStorageStrategyResolver(
+            new IDocumentStorageService[] { storage.Object });
+        var handler = new CreatePaiementClientCommandHandler(context, logger, documentStorage);
         var command = BuildValidCommand(clientId) with
         {
             FactureIds = new List<int> { 1 },
@@ -189,7 +207,10 @@ public class CreatePaiementClientCommandHandlerTest
 
         var logger = Mock.Of<ILogger<CreatePaiementClientCommandHandler>>();
         var storage = new Mock<IDocumentStorageService>();
-        var handler = new CreatePaiementClientCommandHandler(context, logger, storage.Object);
+        storage.SetupGet(s => s.Type).Returns("BlobStorageApi");
+        var documentStorage = new DocumentStorageStrategyResolver(
+            new IDocumentStorageService[] { storage.Object });
+        var handler = new CreatePaiementClientCommandHandler(context, logger, documentStorage);
         var command = BuildValidCommand(clientId) with { FactureIds = new List<int> { 404 } };
 
         // Act
@@ -209,7 +230,10 @@ public class CreatePaiementClientCommandHandlerTest
 
         var logger = Mock.Of<ILogger<CreatePaiementClientCommandHandler>>();
         var storage = new Mock<IDocumentStorageService>();
-        var handler = new CreatePaiementClientCommandHandler(context, logger, storage.Object);
+        storage.SetupGet(s => s.Type).Returns("BlobStorageApi");
+        var documentStorage = new DocumentStorageStrategyResolver(
+            new IDocumentStorageService[] { storage.Object });
+        var handler = new CreatePaiementClientCommandHandler(context, logger, documentStorage);
         var command = BuildValidCommand(clientId) with { BonDeLivraisonIds = new List<int> { 404 } };
 
         // Act
@@ -240,7 +264,10 @@ public class CreatePaiementClientCommandHandlerTest
 
         var logger = Mock.Of<ILogger<CreatePaiementClientCommandHandler>>();
         var storage = new Mock<IDocumentStorageService>();
-        var handler = new CreatePaiementClientCommandHandler(context, logger, storage.Object);
+        storage.SetupGet(s => s.Type).Returns("BlobStorageApi");
+        var documentStorage = new DocumentStorageStrategyResolver(
+            new IDocumentStorageService[] { storage.Object });
+        var handler = new CreatePaiementClientCommandHandler(context, logger, documentStorage);
         var command = BuildValidCommand(clientId) with { BonDeLivraisonIds = new List<int> { bl.Id } };
 
         // Act
@@ -260,7 +287,10 @@ public class CreatePaiementClientCommandHandlerTest
 
         var logger = Mock.Of<ILogger<CreatePaiementClientCommandHandler>>();
         var storage = new Mock<IDocumentStorageService>();
-        var handler = new CreatePaiementClientCommandHandler(context, logger, storage.Object);
+        storage.SetupGet(s => s.Type).Returns("BlobStorageApi");
+        var documentStorage = new DocumentStorageStrategyResolver(
+            new IDocumentStorageService[] { storage.Object });
+        var handler = new CreatePaiementClientCommandHandler(context, logger, documentStorage);
         var command = BuildValidCommand(clientId) with { BanqueId = 888 };
 
         // Act
@@ -280,8 +310,10 @@ public class CreatePaiementClientCommandHandlerTest
 
         var logger = Mock.Of<ILogger<CreatePaiementClientCommandHandler>>();
         var storage = new Mock<IDocumentStorageService>();
+        storage.SetupGet(s => s.Type).Returns("BlobStorageApi");
 
-        var handler = new CreatePaiementClientCommandHandler(context, logger, storage.Object);
+        var handler = new CreatePaiementClientCommandHandler(context, logger, new DocumentStorageStrategyResolver(
+            new IDocumentStorageService[] { storage.Object }));
         var command = BuildValidCommand(clientId) with { DocumentBase64 = "not-base64!!" };
 
         // Act
@@ -302,9 +334,11 @@ public class CreatePaiementClientCommandHandlerTest
 
         var logger = Mock.Of<ILogger<CreatePaiementClientCommandHandler>>();
         var storage = new Mock<IDocumentStorageService>();
+        storage.SetupGet(s => s.Type).Returns("BlobStorageApi");
         _ = storage.Setup(s => s.SaveAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                .ThrowsAsync(new InvalidOperationException("disk full"));
-        var handler = new CreatePaiementClientCommandHandler(context, logger, storage.Object);
+        var handler = new CreatePaiementClientCommandHandler(context, logger, new DocumentStorageStrategyResolver(
+            new IDocumentStorageService[] { storage.Object }));
         var command = BuildValidCommand(clientId) with { DocumentBase64 = Convert.ToBase64String(new byte[] { 1, 2, 3 }) };
 
         // Act
@@ -325,7 +359,10 @@ public class CreatePaiementClientCommandHandlerTest
 
         var logger = Mock.Of<ILogger<CreatePaiementClientCommandHandler>>();
         var storage = new Mock<IDocumentStorageService>();
-        var handler = new CreatePaiementClientCommandHandler(context, logger, storage.Object);
+        storage.SetupGet(s => s.Type).Returns("BlobStorageApi");
+        var documentStorage = new DocumentStorageStrategyResolver(
+            new IDocumentStorageService[] { storage.Object });
+        var handler = new CreatePaiementClientCommandHandler(context, logger, documentStorage);
         var command = BuildValidCommand(clientId);
 
         // Act
@@ -357,7 +394,10 @@ public class CreatePaiementClientCommandHandlerTest
 
         var logger = Mock.Of<ILogger<CreatePaiementClientCommandHandler>>();
         var storage = new Mock<IDocumentStorageService>();
-        var handler = new CreatePaiementClientCommandHandler(context, logger, storage.Object);
+        storage.SetupGet(s => s.Type).Returns("BlobStorageApi");
+        var documentStorage = new DocumentStorageStrategyResolver(
+            new IDocumentStorageService[] { storage.Object });
+        var handler = new CreatePaiementClientCommandHandler(context, logger, documentStorage);
         var command = BuildValidCommand(clientId) with { FactureIds = new List<int> { 7 } };
 
         // Act
@@ -392,7 +432,10 @@ public class CreatePaiementClientCommandHandlerTest
 
         var logger = Mock.Of<ILogger<CreatePaiementClientCommandHandler>>();
         var storage = new Mock<IDocumentStorageService>();
-        var handler = new CreatePaiementClientCommandHandler(context, logger, storage.Object);
+        storage.SetupGet(s => s.Type).Returns("BlobStorageApi");
+        var documentStorage = new DocumentStorageStrategyResolver(
+            new IDocumentStorageService[] { storage.Object });
+        var handler = new CreatePaiementClientCommandHandler(context, logger, documentStorage);
         var command = BuildValidCommand(clientId) with { BonDeLivraisonIds = new List<int> { bl.Id } };
 
         // Act
@@ -417,9 +460,11 @@ public class CreatePaiementClientCommandHandlerTest
 
         var logger = Mock.Of<ILogger<CreatePaiementClientCommandHandler>>();
         var storage = new Mock<IDocumentStorageService>();
+        storage.SetupGet(s => s.Type).Returns("BlobStorageApi");
         _ = storage.Setup(s => s.SaveAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                .ReturnsAsync("stored/path/paiement.bin");
-        var handler = new CreatePaiementClientCommandHandler(context, logger, storage.Object);
+        var handler = new CreatePaiementClientCommandHandler(context, logger, new DocumentStorageStrategyResolver(
+            new IDocumentStorageService[] { storage.Object }));
         var command = BuildValidCommand(clientId) with
         {
             NumeroTransactionBancaire = "TX001",

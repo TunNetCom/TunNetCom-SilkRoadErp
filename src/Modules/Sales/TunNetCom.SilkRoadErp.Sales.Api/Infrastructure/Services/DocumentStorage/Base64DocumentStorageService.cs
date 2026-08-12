@@ -8,6 +8,8 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.DocumentStorag
 /// </summary>
 public class Base64DocumentStorageService : IDocumentStorageService
 {
+    public string Type => "Base64";
+
     private readonly ILogger<Base64DocumentStorageService> _logger;
 
     public Base64DocumentStorageService(ILogger<Base64DocumentStorageService> logger)

@@ -8,7 +8,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.RetenueSourceFournisseur.Upda
 public class UpdateRetenueSourceFournisseurCommandHandler(
     SalesContext _context,
     ILogger<UpdateRetenueSourceFournisseurCommandHandler> _logger,
-    IDocumentStorageService _documentStorageService)
+    DocumentStorageStrategyResolver _documentStorageService)
     : IRequestHandler<UpdateRetenueSourceFournisseurCommand, Result>
 {
     public async Task<Result> Handle(UpdateRetenueSourceFournisseurCommand command, CancellationToken cancellationToken)
@@ -37,7 +37,7 @@ public class UpdateRetenueSourceFournisseurCommandHandler(
                 {
                     try
                     {
-                        await _documentStorageService.DeleteAsync(retenue.PdfStoragePath, cancellationToken);
+                        await _documentStorageService.DeleteAsync(retenue.PdfStoragePath, "BlobStorageApi", cancellationToken);
                     }
                     catch (Exception ex)
                     {
@@ -47,7 +47,7 @@ public class UpdateRetenueSourceFournisseurCommandHandler(
 
                 // Store new PDF
                 var pdfBytes = Convert.FromBase64String(command.PdfContent);
-                retenue.PdfStoragePath = await _documentStorageService.SaveAsync(pdfBytes, $"retenue_fournisseur_{command.NumFactureFournisseur}.pdf", cancellationToken);
+                retenue.PdfStoragePath = await _documentStorageService.SaveAsync(pdfBytes, "BlobStorageApi", $"retenue_fournisseur_{command.NumFactureFournisseur}.pdf", cancellationToken);
                 _logger.LogDebug("PDF updated for RetenueSourceFournisseur FactureFournisseur {NumFactureFournisseur}", command.NumFactureFournisseur);
             }
             catch (FormatException ex)

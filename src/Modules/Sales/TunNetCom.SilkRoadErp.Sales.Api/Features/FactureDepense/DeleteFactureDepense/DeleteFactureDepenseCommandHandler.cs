@@ -7,7 +7,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.FactureDepense.DeleteFactureD
 public class DeleteFactureDepenseCommandHandler(
     SalesContext _context,
     ILogger<DeleteFactureDepenseCommandHandler> _logger,
-    IDocumentStorageService _documentStorageService)
+    DocumentStorageStrategyResolver _documentStorageService)
     : IRequestHandler<DeleteFactureDepenseCommand, Result>
 {
     public async Task<Result> Handle(DeleteFactureDepenseCommand command, CancellationToken cancellationToken)
@@ -31,7 +31,7 @@ public class DeleteFactureDepenseCommandHandler(
         {
             try
             {
-                await _documentStorageService.DeleteAsync(entity.DocumentStoragePath, cancellationToken);
+                await _documentStorageService.DeleteAsync(entity.DocumentStoragePath, "BlobStorageApi", cancellationToken);
             }
             catch (Exception ex)
             {

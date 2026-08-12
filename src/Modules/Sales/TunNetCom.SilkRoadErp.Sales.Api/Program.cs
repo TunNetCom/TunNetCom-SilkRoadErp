@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.Options;
 using Serilog.Sinks.Grafana.Loki;
 using System.Security.Claims;
 using System.Text.Json;
@@ -7,6 +8,7 @@ using TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy;
 using TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy.EfCore;
 using TunNetCom.SilkRoadErp.Infrastructure.MultiTenancy.Middleware;
 using TunNetCom.SilkRoadErp.Sales.Api;
+using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.DocumentStorage;
 using TunNetCom.SilkRoadErp.SharedKernel.Tenancy;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -249,21 +251,22 @@ builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Servic
 // Register PdfListExportService
 builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.PdfListExportService>();
 
-// Register Document Storage Service (configurable via appsettings.json, default: Base64)
-var documentStorageType = builder.Configuration["DocumentStorage:Type"] ?? "Base64";
-switch (documentStorageType)
+// Register Document Storage Service: each provider is registered as a strategy,
+// the resolver delegates to the one matching the requested type at the call site
+builder.Services.Configure<BlobStorageApiOptions>(builder.Configuration.GetSection(BlobStorageApiOptions.SectionName));
+
+builder.Services.AddScoped<IDocumentStorageService, Base64DocumentStorageService>();
+builder.Services.AddScoped<IDocumentStorageService, S3DocumentStorageService>();
+builder.Services.AddScoped<IDocumentStorageService, AzureBlobStorageService>();
+
+builder.Services.AddHttpClient<IDocumentStorageService, BlobStorageApiDocumentStorageService>((sp, client) =>
 {
-    case "S3":
-        builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.DocumentStorage.IDocumentStorageService, TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.DocumentStorage.S3DocumentStorageService>();
-        break;
-    case "AzureBlob":
-        builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.DocumentStorage.IDocumentStorageService, TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.DocumentStorage.AzureBlobStorageService>();
-        break;
-    case "Base64":
-    default:
-        builder.Services.AddScoped<TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.DocumentStorage.IDocumentStorageService, TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.DocumentStorage.Base64DocumentStorageService>();
-        break;
-}
+    var options = sp.GetRequiredService<IOptions<BlobStorageApiOptions>>().Value;
+    client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
+    client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+});
+
+builder.Services.AddScoped<DocumentStorageStrategyResolver>();
 
 // Register JWT and Password services
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();

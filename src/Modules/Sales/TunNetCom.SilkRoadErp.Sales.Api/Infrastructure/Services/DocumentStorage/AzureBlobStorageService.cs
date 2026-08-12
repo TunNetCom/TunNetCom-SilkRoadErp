@@ -6,6 +6,8 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.DocumentStorag
 /// </summary>
 public class AzureBlobStorageService : IDocumentStorageService
 {
+    public string Type => "AzureBlob";
+
     private readonly ILogger<AzureBlobStorageService> _logger;
 
     public AzureBlobStorageService(ILogger<AzureBlobStorageService> logger)

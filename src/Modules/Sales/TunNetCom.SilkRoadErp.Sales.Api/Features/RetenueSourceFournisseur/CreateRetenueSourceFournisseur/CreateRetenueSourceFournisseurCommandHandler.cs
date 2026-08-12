@@ -11,7 +11,7 @@ public class CreateRetenueSourceFournisseurCommandHandler(
     SalesContext _context,
     ILogger<CreateRetenueSourceFournisseurCommandHandler> _logger,
     IMediator _mediator,
-    IDocumentStorageService _documentStorageService,
+    DocumentStorageStrategyResolver _documentStorageService,
     IActiveAccountingYearService _activeAccountingYearService,
     IAccountingYearFinancialParametersService _financialParametersService)
     : IRequestHandler<CreateRetenueSourceFournisseurCommand, Result<int>>
@@ -120,7 +120,7 @@ public class CreateRetenueSourceFournisseurCommandHandler(
             try
             {
                 var pdfBytes = Convert.FromBase64String(command.PdfContent);
-                pdfStoragePath = await _documentStorageService.SaveAsync(pdfBytes, $"retenue_fournisseur_{command.NumFactureFournisseur}.pdf", cancellationToken);
+                pdfStoragePath = await _documentStorageService.SaveAsync(pdfBytes, "BlobStorageApi", $"retenue_fournisseur_{command.NumFactureFournisseur}.pdf", cancellationToken);
                 _logger.LogDebug("PDF stored for RetenueSourceFournisseur FactureFournisseur {NumFactureFournisseur}", command.NumFactureFournisseur);
             }
             catch (FormatException ex)

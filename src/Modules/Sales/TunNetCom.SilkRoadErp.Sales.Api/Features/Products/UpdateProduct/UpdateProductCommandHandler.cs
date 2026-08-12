@@ -1,11 +1,11 @@
-﻿using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.DocumentStorage;
+using TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.DocumentStorage;
 
 namespace TunNetCom.SilkRoadErp.Sales.Api.Features.Products.UpdateProduct;
 
 public class UpdateProductCommandHandler(
     SalesContext _context,
     ILogger<UpdateProductCommandHandler> _logger,
-    IDocumentStorageService _documentStorageService)
+    DocumentStorageStrategyResolver _documentStorageService)
     : IRequestHandler<UpdateProductCommand, Result>
 {
     public async Task<Result> Handle(
@@ -60,7 +60,7 @@ public class UpdateProductCommandHandler(
                 {
                     try
                     {
-                        await _documentStorageService.DeleteAsync(productToUpdate.Image1StoragePath, cancellationToken);
+                        await _documentStorageService.DeleteAsync(productToUpdate.Image1StoragePath, "BlobStorageApi", cancellationToken);
                     }
                     catch (Exception ex)
                     {
@@ -72,7 +72,7 @@ public class UpdateProductCommandHandler(
                 var imageFileName = updateProductCommand.Id.HasValue 
                     ? $"product_{updateProductCommand.Id.Value}_image1.jpg" 
                     : $"product_{updateProductCommand.Refe}_image1.jpg";
-                image1StoragePath = await _documentStorageService.SaveAsync(image1Bytes, imageFileName, cancellationToken);
+                image1StoragePath = await _documentStorageService.SaveAsync(image1Bytes, "BlobStorageApi", imageFileName, cancellationToken);
             }
             catch (FormatException ex)
             {
@@ -96,7 +96,7 @@ public class UpdateProductCommandHandler(
                 {
                     try
                     {
-                        await _documentStorageService.DeleteAsync(productToUpdate.Image2StoragePath, cancellationToken);
+                        await _documentStorageService.DeleteAsync(productToUpdate.Image2StoragePath, "BlobStorageApi", cancellationToken);
                     }
                     catch (Exception ex)
                     {
@@ -108,7 +108,7 @@ public class UpdateProductCommandHandler(
                 var image2FileName = updateProductCommand.Id.HasValue 
                     ? $"product_{updateProductCommand.Id.Value}_image2.jpg" 
                     : $"product_{updateProductCommand.Refe}_image2.jpg";
-                image2StoragePath = await _documentStorageService.SaveAsync(image2Bytes, image2FileName, cancellationToken);
+                image2StoragePath = await _documentStorageService.SaveAsync(image2Bytes, "BlobStorageApi", image2FileName, cancellationToken);
             }
             catch (FormatException ex)
             {
@@ -132,7 +132,7 @@ public class UpdateProductCommandHandler(
                 {
                     try
                     {
-                        await _documentStorageService.DeleteAsync(productToUpdate.Image3StoragePath, cancellationToken);
+                        await _documentStorageService.DeleteAsync(productToUpdate.Image3StoragePath, "BlobStorageApi", cancellationToken);
                     }
                     catch (Exception ex)
                     {
@@ -144,7 +144,7 @@ public class UpdateProductCommandHandler(
                 var image3FileName = updateProductCommand.Id.HasValue 
                     ? $"product_{updateProductCommand.Id.Value}_image3.jpg" 
                     : $"product_{updateProductCommand.Refe}_image3.jpg";
-                image3StoragePath = await _documentStorageService.SaveAsync(image3Bytes, image3FileName, cancellationToken);
+                image3StoragePath = await _documentStorageService.SaveAsync(image3Bytes, "BlobStorageApi", image3FileName, cancellationToken);
             }
             catch (FormatException ex)
             {

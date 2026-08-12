@@ -8,7 +8,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.RetenueSourceClient.UpdateRet
 public class UpdateRetenueSourceClientCommandHandler(
     SalesContext _context,
     ILogger<UpdateRetenueSourceClientCommandHandler> _logger,
-    IDocumentStorageService _documentStorageService)
+    DocumentStorageStrategyResolver _documentStorageService)
     : IRequestHandler<UpdateRetenueSourceClientCommand, Result>
 {
     public async Task<Result> Handle(UpdateRetenueSourceClientCommand command, CancellationToken cancellationToken)
@@ -37,7 +37,7 @@ public class UpdateRetenueSourceClientCommandHandler(
                 {
                     try
                     {
-                        await _documentStorageService.DeleteAsync(retenue.PdfStoragePath, cancellationToken);
+                        await _documentStorageService.DeleteAsync(retenue.PdfStoragePath, "BlobStorageApi", cancellationToken);
                     }
                     catch (Exception ex)
                     {
@@ -47,7 +47,7 @@ public class UpdateRetenueSourceClientCommandHandler(
 
                 // Store new PDF
                 var pdfBytes = Convert.FromBase64String(command.PdfContent);
-                retenue.PdfStoragePath = await _documentStorageService.SaveAsync(pdfBytes, $"retenue_client_{command.NumFacture}.pdf", cancellationToken);
+                retenue.PdfStoragePath = await _documentStorageService.SaveAsync(pdfBytes, "BlobStorageApi", $"retenue_client_{command.NumFacture}.pdf", cancellationToken);
                 _logger.LogDebug("PDF updated for RetenueSourceClient Facture {NumFacture}", command.NumFacture);
             }
             catch (FormatException ex)

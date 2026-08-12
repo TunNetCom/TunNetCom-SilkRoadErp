@@ -15,7 +15,7 @@ public class GetFactureDepenseDocumentEndpoint : ICarterModule
 
     public async Task<Results<IResult, NotFound>> HandleGetFactureDepenseDocumentAsync(
         SalesContext context,
-        IDocumentStorageService documentStorageService,
+        DocumentStorageStrategyResolver documentStorageService,
         int id,
         CancellationToken cancellationToken)
     {
@@ -30,7 +30,7 @@ public class GetFactureDepenseDocumentEndpoint : ICarterModule
 
         try
         {
-            var documentBytes = await documentStorageService.GetAsync(facture.DocumentStoragePath, cancellationToken);
+            var documentBytes = await documentStorageService.GetAsync(facture.DocumentStoragePath, "BlobStorageApi", cancellationToken);
 
             var contentType = "image/jpeg";
             if (facture.DocumentStoragePath.StartsWith("data:application/pdf", StringComparison.OrdinalIgnoreCase) ||
