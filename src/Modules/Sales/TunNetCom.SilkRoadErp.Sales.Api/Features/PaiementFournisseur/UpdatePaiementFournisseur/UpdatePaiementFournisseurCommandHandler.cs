@@ -7,7 +7,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.PaiementFournisseur.UpdatePai
 public class UpdatePaiementFournisseurCommandHandler(
     SalesContext _context,
     ILogger<UpdatePaiementFournisseurCommandHandler> _logger,
-    IDocumentStorageService _documentStorageService)
+    DocumentStorageStrategyResolver _documentStorageService)
     : IRequestHandler<UpdatePaiementFournisseurCommand, Result>
 {
     public async Task<Result> Handle(UpdatePaiementFournisseurCommand command, CancellationToken cancellationToken)
@@ -112,7 +112,7 @@ public class UpdatePaiementFournisseurCommandHandler(
                 {
                     try
                     {
-                        await _documentStorageService.DeleteAsync(paiement.DocumentStoragePath, cancellationToken);
+                        await _documentStorageService.DeleteAsync(paiement.DocumentStoragePath, "BlobStorageApi", cancellationToken);
                     }
                     catch (Exception ex)
                     {
@@ -122,7 +122,7 @@ public class UpdatePaiementFournisseurCommandHandler(
 
                 var documentBytes = Convert.FromBase64String(command.DocumentBase64);
                 var fileName = $"paiement_fournisseur_{command.NumeroTransactionBancaire}_{DateTime.UtcNow:yyyyMMddHHmmss}";
-                documentStoragePath = await _documentStorageService.SaveAsync(documentBytes, fileName, cancellationToken);
+                documentStoragePath = await _documentStorageService.SaveAsync(documentBytes, "BlobStorageApi", fileName, cancellationToken);
             }
             catch (FormatException ex)
             {

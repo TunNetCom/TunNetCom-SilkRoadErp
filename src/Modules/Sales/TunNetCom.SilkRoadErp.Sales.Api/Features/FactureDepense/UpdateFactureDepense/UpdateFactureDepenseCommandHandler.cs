@@ -8,7 +8,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.FactureDepense.UpdateFactureD
 public class UpdateFactureDepenseCommandHandler(
     SalesContext _context,
     ILogger<UpdateFactureDepenseCommandHandler> _logger,
-    IDocumentStorageService _documentStorageService)
+    DocumentStorageStrategyResolver _documentStorageService)
     : IRequestHandler<UpdateFactureDepenseCommand, Result>
 {
     public async Task<Result> Handle(UpdateFactureDepenseCommand command, CancellationToken cancellationToken)
@@ -34,7 +34,7 @@ public class UpdateFactureDepenseCommandHandler(
                 {
                     try
                     {
-                        await _documentStorageService.DeleteAsync(entity.DocumentStoragePath, cancellationToken);
+                        await _documentStorageService.DeleteAsync(entity.DocumentStoragePath, "BlobStorageApi", cancellationToken);
                     }
                     catch (Exception ex)
                     {
@@ -43,7 +43,7 @@ public class UpdateFactureDepenseCommandHandler(
                 }
                 var documentBytes = Convert.FromBase64String(command.DocumentBase64);
                 var fileName = $"facture_depense_{entity.Id}_{DateTime.UtcNow:yyyyMMddHHmmss}";
-                documentStoragePath = await _documentStorageService.SaveAsync(documentBytes, fileName, cancellationToken);
+                documentStoragePath = await _documentStorageService.SaveAsync(documentBytes, "BlobStorageApi", fileName, cancellationToken);
             }
             catch (FormatException ex)
             {

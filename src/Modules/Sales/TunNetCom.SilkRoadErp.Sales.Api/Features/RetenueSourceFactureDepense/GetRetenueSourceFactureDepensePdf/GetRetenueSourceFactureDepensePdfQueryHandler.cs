@@ -8,7 +8,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.RetenueSourceFactureDepense.G
 public class GetRetenueSourceFactureDepensePdfQueryHandler(
     SalesContext _context,
     ILogger<GetRetenueSourceFactureDepensePdfQueryHandler> _logger,
-    IDocumentStorageService _documentStorageService)
+    DocumentStorageStrategyResolver _documentStorageService)
     : IRequestHandler<GetRetenueSourceFactureDepensePdfQuery, Result<byte[]>>
 {
     public async Task<Result<byte[]>> Handle(GetRetenueSourceFactureDepensePdfQuery query, CancellationToken cancellationToken)
@@ -34,7 +34,7 @@ public class GetRetenueSourceFactureDepensePdfQueryHandler(
 
         try
         {
-            var pdfBytes = await _documentStorageService.GetAsync(retenue.PdfStoragePath, cancellationToken);
+            var pdfBytes = await _documentStorageService.GetAsync(retenue.PdfStoragePath, "BlobStorageApi", cancellationToken);
             return Result.Ok(pdfBytes);
         }
         catch (Exception ex)

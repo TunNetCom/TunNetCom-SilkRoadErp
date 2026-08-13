@@ -10,7 +10,7 @@ public class CreateFactureDepenseCommandHandler(
     SalesContext _context,
     ILogger<CreateFactureDepenseCommandHandler> _logger,
     INumberGeneratorService _numberGeneratorService,
-    IDocumentStorageService _documentStorageService)
+    DocumentStorageStrategyResolver _documentStorageService)
     : IRequestHandler<CreateFactureDepenseCommand, Result<int>>
 {
     public async Task<Result<int>> Handle(CreateFactureDepenseCommand command, CancellationToken cancellationToken)
@@ -41,7 +41,7 @@ public class CreateFactureDepenseCommandHandler(
             {
                 var documentBytes = Convert.FromBase64String(command.DocumentBase64);
                 var fileName = $"facture_depense_{DateTime.UtcNow:yyyyMMddHHmmss}";
-                documentStoragePath = await _documentStorageService.SaveAsync(documentBytes, fileName, cancellationToken);
+                documentStoragePath = await _documentStorageService.SaveAsync(documentBytes, "BlobStorageApi", fileName, cancellationToken);
             }
             catch (FormatException ex)
             {

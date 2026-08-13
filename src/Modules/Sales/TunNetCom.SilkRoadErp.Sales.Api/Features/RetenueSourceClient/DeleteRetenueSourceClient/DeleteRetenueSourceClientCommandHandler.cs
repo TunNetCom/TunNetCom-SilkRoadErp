@@ -8,7 +8,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.RetenueSourceClient.DeleteRet
 public class DeleteRetenueSourceClientCommandHandler(
     SalesContext _context,
     ILogger<DeleteRetenueSourceClientCommandHandler> _logger,
-    IDocumentStorageService _documentStorageService)
+    DocumentStorageStrategyResolver _documentStorageService)
     : IRequestHandler<DeleteRetenueSourceClientCommand, Result>
 {
     public async Task<Result> Handle(DeleteRetenueSourceClientCommand command, CancellationToken cancellationToken)
@@ -29,7 +29,7 @@ public class DeleteRetenueSourceClientCommandHandler(
         {
             try
             {
-                await _documentStorageService.DeleteAsync(retenue.PdfStoragePath, cancellationToken);
+                await _documentStorageService.DeleteAsync(retenue.PdfStoragePath, "BlobStorageApi", cancellationToken);
             }
             catch (Exception ex)
             {

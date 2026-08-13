@@ -7,7 +7,7 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Features.PaiementClient.CreatePaiement
 public class CreatePaiementClientCommandHandler(
     SalesContext _context,
     ILogger<CreatePaiementClientCommandHandler> _logger,
-    IDocumentStorageService _documentStorageService)
+    DocumentStorageStrategyResolver _documentStorageService)
     : IRequestHandler<CreatePaiementClientCommand, Result<int>>
 {
     public async Task<Result<int>> Handle(CreatePaiementClientCommand command, CancellationToken cancellationToken)
@@ -115,7 +115,7 @@ public class CreatePaiementClientCommandHandler(
             {
                 var documentBytes = Convert.FromBase64String(command.DocumentBase64);
                 var fileName = $"paiement_client_{command.NumeroTransactionBancaire}_{DateTime.UtcNow:yyyyMMddHHmmss}";
-                documentStoragePath = await _documentStorageService.SaveAsync(documentBytes, fileName, cancellationToken);
+                documentStoragePath = await _documentStorageService.SaveAsync(documentBytes, "BlobStorageApi", fileName, cancellationToken);
             }
             catch (FormatException ex)
             {

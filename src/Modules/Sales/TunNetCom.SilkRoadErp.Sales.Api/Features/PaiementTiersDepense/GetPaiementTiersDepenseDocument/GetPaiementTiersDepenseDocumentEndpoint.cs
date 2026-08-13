@@ -15,7 +15,7 @@ public class GetPaiementTiersDepenseDocumentEndpoint : ICarterModule
 
     public async Task<Results<IResult, NotFound>> HandleGetPaiementTiersDepenseDocumentAsync(
         SalesContext context,
-        IDocumentStorageService documentStorageService,
+        DocumentStorageStrategyResolver documentStorageService,
         int id,
         CancellationToken cancellationToken)
     {
@@ -30,7 +30,7 @@ public class GetPaiementTiersDepenseDocumentEndpoint : ICarterModule
 
         try
         {
-            var documentBytes = await documentStorageService.GetAsync(paiement.DocumentStoragePath, cancellationToken);
+            var documentBytes = await documentStorageService.GetAsync(paiement.DocumentStoragePath, "BlobStorageApi", cancellationToken);
 
             var contentType = "image/jpeg";
             if (paiement.DocumentStoragePath.StartsWith("data:application/pdf", StringComparison.OrdinalIgnoreCase) ||

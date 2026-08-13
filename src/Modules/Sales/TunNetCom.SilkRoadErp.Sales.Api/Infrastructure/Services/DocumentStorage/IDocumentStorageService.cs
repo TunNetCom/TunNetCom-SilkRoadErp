@@ -7,6 +7,11 @@ namespace TunNetCom.SilkRoadErp.Sales.Api.Infrastructure.Services.DocumentStorag
 public interface IDocumentStorageService
 {
     /// <summary>
+    /// Identifiant du type de stockage (ex : "Base64", "S3", "AzureBlob", "BlobStorageApi")
+    /// </summary>
+    string Type { get; }
+
+    /// <summary>
     /// Sauvegarde un document et retourne le chemin/identifiant de stockage
     /// </summary>
     /// <param name="content">Contenu du document en bytes</param>

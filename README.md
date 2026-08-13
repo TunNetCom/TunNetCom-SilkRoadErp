@@ -174,6 +174,33 @@ cd src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.Api
 dotnet ef database update --project ../TunNetCom.SilkRoadErp.Sales.Domain
 ```
 
+### Document storage
+
+Documents (payments, product images, retention PDFs) are stored through `IDocumentStorageService`. All implementations are registered as strategies in the Sales API; `DocumentStorageStrategyResolver` delegates each call to the implementation matching the requested type (e.g. `"BlobStorageApi"` passed at the call site):
+
+| Type | Storage |
+|------|---------|
+| `Base64` (default) | Content stored as Base64 in the database |
+| `S3` | AWS S3 (placeholder, not yet implemented) |
+| `AzureBlob` | Azure Blob Storage (placeholder, not yet implemented) |
+| `BlobStorageApi` | Uploaded to the [BlobStorage API](https://github.com/TunNetCom/BlobStorage) (MinIO) via its `storage/{bucket}` upload/download/delete endpoints |
+
+To use `BlobStorageApi` locally:
+
+1. Run the BlobStorage API and its MinIO server (see the BlobStorage project README), and create the bucket, e.g. `POST /buckets` with `{ "name": "silk-road-erp" }`.
+2. Configure the Sales API (`appsettings.Development.json`):
+
+```json
+"DocumentStorage": {
+  "Type": "BlobStorageApi",
+  "BaseUrl": "http://localhost:5000",
+  "Bucket": "silk-road-erp",
+  "Folder": "documents"
+}
+```
+
+Existing values stored as Base64 in the database remain readable (no migration required); they are decoded locally by the `BlobStorageApi` implementation.
+
 ## Contributing
 
 1. Fork the repository.
