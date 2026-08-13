@@ -375,15 +375,15 @@
                 // Load existing images
                 if (!string.IsNullOrEmpty(product.Image1StoragePath))
                 {
-                    image1Preview = $"data:image/jpeg;base64,{product.Image1StoragePath}";
+                    image1Preview = $"{product.Image1StoragePath}";
                 }
                 if (!string.IsNullOrEmpty(product.Image2StoragePath))
                 {
-                    image2Preview = $"data:image/jpeg;base64,{product.Image2StoragePath}";
+                    image2Preview = $"{product.Image2StoragePath}";
                 }
                 if (!string.IsNullOrEmpty(product.Image3StoragePath))
                 {
-                    image3Preview = $"data:image/jpeg;base64,{product.Image3StoragePath}";
+                    image3Preview = $"{product.Image3StoragePath}";
                 }
             }
             else

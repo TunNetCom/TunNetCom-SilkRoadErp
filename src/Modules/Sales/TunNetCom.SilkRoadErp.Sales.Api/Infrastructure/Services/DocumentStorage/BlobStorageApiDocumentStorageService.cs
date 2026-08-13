@@ -69,8 +69,11 @@ public class BlobStorageApiDocumentStorageService : IDocumentStorageService
         }
 
         var key = (await response.Content.ReadAsStringAsync(cancellationToken)).Trim().Trim('"');
+
+        //temporary hardcoded public URL
+        var fullpublicFile = "https://s3.aion-time.com/silk-road-erp";
         _logger.LogDebug("Document uploaded to BlobStorage API with key {Key}", key);
-        return key;
+        return $"{fullpublicFile}/{key}";
     }
 
     public async Task<byte[]> GetAsync(string storagePath, CancellationToken cancellationToken = default)
