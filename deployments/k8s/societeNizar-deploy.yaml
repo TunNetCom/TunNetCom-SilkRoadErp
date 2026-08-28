@@ -55,9 +55,9 @@ spec:
         - name: ASPNETCORE_URLS
           value: "http://+:8080"
         - name: FRONTEND_URL
-          value: "https://societenizar.aion-time.com"
+          value: "https://societenizarcloud.aion-time.com"
         - name: BACKEND_URL
-          value: "https://apisociete.aion-time.com"
+          value: "https://apisocietecloud.aion-time.com"
         - name: ConnectionStrings__DefaultConnection
           valueFrom:
             secretKeyRef:
@@ -199,11 +199,11 @@ metadata:
 spec:
   tls:
   - hosts:
-    - societenizar.aion-time.com
-    - apisociete.aion-time.com
+    - societenizarcloud.aion-time.com
+    - apisocietecloud.aion-time.com
     secretName: silkroad-societe-tls
   rules:
-  - host: societenizar.aion-time.com
+  - host: societenizarcloud.aion-time.com
     http:
       paths:
       - path: /
@@ -213,7 +213,7 @@ spec:
             name: silkroad-webapp-service-societe
             port:
               number: 8080
-  - host: apisociete.aion-time.com
+  - host: apisocietecloud.aion-time.com
     http:
       paths:
       - path: /

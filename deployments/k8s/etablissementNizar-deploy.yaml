@@ -195,11 +195,11 @@ metadata:
 spec:
   tls:
   - hosts:
-    - etablissementnizar.aion-time.com
-    - apietablissementnizar.aion-time.com
+    - etablissementnizarcloud.aion-time.com
+    - apietablissementnizarcloud.aion-time.com
     secretName: silkroad-etablissement-tls
   rules:
-  - host: etablissementnizar.aion-time.com
+  - host: etablissementnizarcloud.aion-time.com
     http:
       paths:
       - path: /
@@ -209,7 +209,7 @@ spec:
             name: silkroad-webapp-service-nizar
             port:
               number: 8080
-  - host: apietablissementnizar.aion-time.com
+  - host: apietablissementnizarcloud.aion-time.com
     http:
       paths:
       - path: /
