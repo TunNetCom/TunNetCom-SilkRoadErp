@@ -62,11 +62,11 @@ spec:
 
         resources:
           requests:
-            memory: "1Gi"
-            cpu: "1000m"
+            memory: "256Mi"
+            cpu: "250m"
           limits:
-            memory: "2Gi"
-            cpu: "2000m"
+            memory: "512Mi"
+            cpu: "500m"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -133,11 +133,11 @@ spec:
 
         resources:
           requests:
-            memory: "1Gi"
-            cpu: "1000m"
+            memory: "256Mi"
+            cpu: "250m"
           limits:
-            memory: "2Gi"
-            cpu: "2000m"
+            memory: "512Mi"
+            cpu: "500m"
 ---
 # --- Services (needed for Ingress) ---
 apiVersion: v1
