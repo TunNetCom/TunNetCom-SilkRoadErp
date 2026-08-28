@@ -7,14 +7,14 @@ pr: none
 pool:
   name: OnPremAgents
   demands:
-    - Agent.Name -equals nizar-server
+    - Agent.Name -equals nizarVps
 
 variables:
 - group: silkroad-prod
 - name: connectionString
   value: $(Connection_String_EtablissementNizar)
 - name: kubeNamespace
-  value: silkroad-prod-nizar
+  value: silkroad-nizar
 - name: deploymentApiName
   value: silkroad-api-nizar
 - name: deploymentWebappName
@@ -33,4 +33,7 @@ stages:
       deploymentApiName: $(deploymentApiName)
       deploymentWebappName: $(deploymentWebappName)
       manifestPath: $(manifestPath)
+      dockerRepository: 'tunnetcom/silkroad'
+      apiImageTag: 'api-1689'
+      webappImageTag: 'webapp-1689'
       forceImagePullPatch: false
