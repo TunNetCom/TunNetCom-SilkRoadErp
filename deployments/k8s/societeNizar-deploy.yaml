@@ -6,7 +6,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: silkroad-api-societe
-  namespace: silkroad-prod-societe
+  namespace: silkroad-nizar
   labels:
     app: silkroad-api-societe
     environment: production
@@ -76,7 +76,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: silkroad-webapp-societe
-  namespace: silkroad-prod-societe
+  namespace: silkroad-nizar
 spec:
   replicas: 1
   strategy:

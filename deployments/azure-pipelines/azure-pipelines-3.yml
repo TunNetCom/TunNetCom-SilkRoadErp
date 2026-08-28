@@ -20,7 +20,7 @@ variables:
 - name: deploymentWebappName
   value: silkroad-webapp-nizar
 - name: manifestPath
-  value: src/deployments/etablissementNizar-deploy.yaml
+  value: deployments/k8s/etablissementNizar-deploy.yaml
 
 stages:
 - stage: Deploy

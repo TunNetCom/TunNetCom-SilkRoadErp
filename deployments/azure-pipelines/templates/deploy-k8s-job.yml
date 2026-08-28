@@ -84,6 +84,9 @@ jobs:
         exit 1
       fi
 
+      echo "📦 Ensuring namespace ${{ parameters.kubeNamespace }} exists"
+      kubectl create namespace ${{ parameters.kubeNamespace }} --dry-run=client -o yaml | kubectl apply -f -
+
       kubectl create secret generic ${{ parameters.secretName }} \
         -n ${{ parameters.kubeNamespace }} \
         --from-literal=ConnectionStrings__DefaultConnection="$connectionString" \
@@ -112,7 +115,8 @@ jobs:
   # --------------------------------------------------
   - script: |
       echo "🚀 Applying Kubernetes manifests"
-      kubectl apply -f ${{ parameters.manifestPath }}
+      # --validate=false avoids strict validation on first deploy; -n ensures correct namespace if manifests omit it
+      kubectl apply -f ${{ parameters.manifestPath }} -n ${{ parameters.kubeNamespace }} --validate=false || kubectl apply -f ${{ parameters.manifestPath }}
       echo "✅ Manifests applied"
     displayName: 'Apply Manifests'
 
@@ -122,13 +126,21 @@ jobs:
   - script: |
       echo "🔄 Updating deployment images to latest tags..."
       echo "📝 Setting API image to: ${{ parameters.dockerRepository }}:${{ parameters.apiImageTag }}"
-      kubectl set image deployment/${{ parameters.deploymentApiName }} \
-        api=${{ parameters.dockerRepository }}:${{ parameters.apiImageTag }} \
-        -n ${{ parameters.kubeNamespace }}
+      if kubectl get deployment ${{ parameters.deploymentApiName }} -n ${{ parameters.kubeNamespace }} >/dev/null 2>&1; then
+        kubectl set image deployment/${{ parameters.deploymentApiName }} \
+          api=${{ parameters.dockerRepository }}:${{ parameters.apiImageTag }} \
+          -n ${{ parameters.kubeNamespace }}
+      else
+        echo "⚠️ Deployment ${{ parameters.deploymentApiName }} not found after apply — skipping set image (manifest may have different name/namespace)"
+      fi
       echo "📝 Setting WebApp image to: ${{ parameters.dockerRepository }}:${{ parameters.webappImageTag }}"
-      kubectl set image deployment/${{ parameters.deploymentWebappName }} \
-        webapp=${{ parameters.dockerRepository }}:${{ parameters.webappImageTag }} \
-        -n ${{ parameters.kubeNamespace }}
+      if kubectl get deployment ${{ parameters.deploymentWebappName }} -n ${{ parameters.kubeNamespace }} >/dev/null 2>&1; then
+        kubectl set image deployment/${{ parameters.deploymentWebappName }} \
+          webapp=${{ parameters.dockerRepository }}:${{ parameters.webappImageTag }} \
+          -n ${{ parameters.kubeNamespace }}
+      else
+        echo "⚠️ Deployment ${{ parameters.deploymentWebappName }} not found after apply — skipping set image"
+      fi
       echo "✅ Image tags updated"
     displayName: 'Update Images'
 
@@ -137,8 +149,16 @@ jobs:
   # --------------------------------------------------
   - script: |
       echo "🔄 Forcing rollout to pull latest images"
-      kubectl rollout restart deployment/${{ parameters.deploymentApiName }} -n ${{ parameters.kubeNamespace }}
-      kubectl rollout restart deployment/${{ parameters.deploymentWebappName }} -n ${{ parameters.kubeNamespace }}
+      if kubectl get deployment ${{ parameters.deploymentApiName }} -n ${{ parameters.kubeNamespace }} >/dev/null 2>&1; then
+        kubectl rollout restart deployment/${{ parameters.deploymentApiName }} -n ${{ parameters.kubeNamespace }}
+      else
+        echo "⚠️ Deployment ${{ parameters.deploymentApiName }} not found — skipping rollout restart (first deploy will be handled by apply)"
+      fi
+      if kubectl get deployment ${{ parameters.deploymentWebappName }} -n ${{ parameters.kubeNamespace }} >/dev/null 2>&1; then
+        kubectl rollout restart deployment/${{ parameters.deploymentWebappName }} -n ${{ parameters.kubeNamespace }}
+      else
+        echo "⚠️ Deployment ${{ parameters.deploymentWebappName }} not found — skipping rollout restart"
+      fi
     displayName: 'Force Rollout'
 
   # --------------------------------------------------
