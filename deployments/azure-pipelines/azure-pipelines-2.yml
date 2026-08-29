@@ -36,4 +36,5 @@ stages:
       dockerRepository: 'tunnetcom/silkroad'
       apiImageTag: 'api-1966'
       webappImageTag: 'webapp-1966'
+      secretName: 'silkroad-connection-secret-societe'
       forceImagePullPatch: false

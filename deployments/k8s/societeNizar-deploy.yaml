@@ -61,7 +61,7 @@ spec:
         - name: ConnectionStrings__DefaultConnection
           valueFrom:
             secretKeyRef:
-              name: silkroad-connection-secret
+              name: silkroad-connection-secret-societe
               key: ConnectionStrings__DefaultConnection
 
         resources:
