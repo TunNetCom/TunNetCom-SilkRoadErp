@@ -34,6 +34,6 @@ stages:
       deploymentWebappName: $(deploymentWebappName)
       manifestPath: $(manifestPath)
       dockerRepository: 'tunnetcom/silkroad'
-      apiImageTag: 'api-1841'
-      webappImageTag: 'webapp-1841'
+      apiImageTag: 'api-1966'
+      webappImageTag: 'webapp-1966'
       forceImagePullPatch: false
