@@ -24,18 +24,19 @@ public class GetCustomerQueryHandler(
             })
             .AsQueryable();
 
-        if (!string.IsNullOrEmpty(getCustomerQuery.SearchKeyword))
+        if (!string.IsNullOrWhiteSpace(getCustomerQuery.SearchKeyword))
         {
-            clientsQuery = clientsQuery.AsNoTracking().Where(
-                c => c.Id.ToString().Contains(getCustomerQuery.SearchKeyword)
-                || c.Name.Contains(getCustomerQuery.SearchKeyword)
-                || c.Tel.Contains(getCustomerQuery.SearchKeyword)
-                || c.Adresse.Contains(getCustomerQuery.SearchKeyword)
-                || c.Matricule.Contains(getCustomerQuery.SearchKeyword)
-                || c.Code.Contains(getCustomerQuery.SearchKeyword)
-                || c.CodeCat.Contains(getCustomerQuery.SearchKeyword)
-                || c.EtbSec.Contains(getCustomerQuery.SearchKeyword)
-                || c.Mail.Contains(getCustomerQuery.SearchKeyword));
+            var keyword = getCustomerQuery.SearchKeyword.Trim();
+            clientsQuery = clientsQuery.Where(
+                c => c.Id.ToString().Contains(keyword)
+                || (c.Name != null && c.Name.Contains(keyword))
+                || (c.Tel != null && c.Tel.Contains(keyword))
+                || (c.Adresse != null && c.Adresse.Contains(keyword))
+                || (c.Matricule != null && c.Matricule.Contains(keyword))
+                || (c.Code != null && c.Code.Contains(keyword))
+                || (c.CodeCat != null && c.CodeCat.Contains(keyword))
+                || (c.EtbSec != null && c.EtbSec.Contains(keyword))
+                || (c.Mail != null && c.Mail.Contains(keyword)));
         }
 
         var pagedCustomers = await PagedList<CustomerResponse>.ToPagedListAsync(

@@ -380,12 +380,12 @@ using (IServiceScope scope = app.Services.CreateScope())
         await dbContext.Database.MigrateAsync();
         logger.LogInformation("Migrations appliquées avec succès.");
         
-        // Seed database if tables are empty (permissions/rôles mis à jour à chaque démarrage)
-        logger.LogInformation("=== DÉBUT DU PROCESSUS DE SEEDING ===");
-        var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
-        logger.LogInformation("Appel du seeder...");
-        await seeder.SeedAsync(dbContext);
-        logger.LogInformation("=== FIN DU PROCESSUS DE SEEDING ===");
+        // Seed database - DISABLED for production (enable temporarily to reseed, then disable again)
+        // logger.LogInformation("=== DÉBUT DU PROCESSUS DE SEEDING ===");
+        // var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
+        // logger.LogInformation("Appel du seeder...");
+        // await seeder.SeedAsync(dbContext);
+        // logger.LogInformation("=== FIN DU PROCESSUS DE SEEDING ===");
     }
     catch (Exception ex)
     {

@@ -221,25 +221,46 @@
             {
                 PageNumber = paging.PageNumber,
                 PageSize = paging.PageSize,
-                SearchKeyword = searchKeyword ?? args.Filter,
+                SearchKeyword = string.IsNullOrWhiteSpace(searchKeyword) ? args.Filter : searchKeyword,
             };
 
         isLoadingCustomers = true;
         await Task.Yield();
 
-        var result = await customerService.GetAsync(parameters, cancellationTokenSource.Token);
-        customers = result?.Items ?? new List<CustomerResponse>();
-        totalCustomers = result?.TotalCount ?? 0;
-
-        isLoadingCustomers = false;
-        await InvokeAsync(StateHasChanged);
+        try
+        {
+            var result = await customerService.GetAsync(parameters, cancellationTokenSource.Token);
+            customers = result?.Items ?? new List<CustomerResponse>();
+            totalCustomers = result?.TotalCount ?? 0;
+        }
+        catch (OperationCanceledException)
+        {
+            // ignore cancellation
+        }
+        catch (Exception ex)
+        {
+            customers = new List<CustomerResponse>();
+            totalCustomers = 0;
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Erreur",
+                Detail = $"Impossible de charger les clients: {ex.Message}",
+                Duration = NotificationDuration
+            });
+        }
+        finally
+        {
+            isLoadingCustomers = false;
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (firstRender && customerGrid != null)
         {
-            await customerGrid.Reload();
+            try { await customerGrid.Reload(); } catch { /* handled in LoadCustomerData */ }
         }
     }
 
