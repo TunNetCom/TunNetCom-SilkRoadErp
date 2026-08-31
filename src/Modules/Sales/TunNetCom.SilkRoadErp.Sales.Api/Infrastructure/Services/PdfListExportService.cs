@@ -226,6 +226,20 @@ public class PdfListExportService
             if (_playwrightInstalled)
                 return;
 
+            // Chromium is pre-installed in the image at PLAYWRIGHT_BROWSERS_PATH.
+            // Skip the install step entirely when the browser executable already exists,
+            // otherwise concurrent exports pile up on the semaphore and time out.
+            var browsersPath = Environment.GetEnvironmentVariable("PLAYWRIGHT_BROWSERS_PATH");
+            var chromeExists = !string.IsNullOrEmpty(browsersPath)
+                && Directory.Exists(browsersPath)
+                && Directory.EnumerateFiles(browsersPath, "chrome", SearchOption.AllDirectories).Any();
+            if (chromeExists)
+            {
+                _logger.LogInformation("Playwright Chromium already installed at {BrowsersPath}, skipping install", browsersPath);
+                _playwrightInstalled = true;
+                return;
+            }
+
             _logger.LogInformation("Installing Playwright browsers...");
             var exitCode = Microsoft.Playwright.Program.Main(new[] { "install", "chromium" });
             if (exitCode != 0)
