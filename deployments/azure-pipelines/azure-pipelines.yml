@@ -2,7 +2,7 @@
 # SilkRoad CI/CD Pipeline - BLUE/GREEN + SECURITY + SONARQUBE
 # ============================================================
 # Stages: Governance Gate -> Build (+Trivy) -> ZAP Baseline ->
-# ZAP AJAX -> Ensure Worker VM -> Blue/Green Deploy
+# ZAP AJAX -> Blue/Green Deploy
 # ------------------------------------------------------------
 # This file extends pipeline-governance/templates/secure-pipeline-extends.yml
 # (@repo root). The governance extends template emits a mandatory
@@ -17,7 +17,6 @@
 # deployments/azure-pipelines/templates/:
 #   templates/build.yml              (Build/SonarQube/OWASP/Trivy/push)
 #   templates/dast.yml              (ZAP Baseline + AJAX Spider)
-#   templates/ensure-worker.yml     (Terraform worker VM IaC)
 #   templates/blue-green-deploy.yml (Blue/Green deploy)
 # ============================================================
 
@@ -29,6 +28,13 @@ parameters:
   displayName: Post-deployment health check URL
   type: string
   default: 'https://silkroad.aion-time.com/health'
+
+resources:
+  repositories:
+  - repository: templates
+    type: git
+    name: CentralHub/CentralHub
+    ref: refs/heads/master
 
 variables:
 - group: silkroad-prod
@@ -50,7 +56,7 @@ variables:
   value: 'https://defectdojo.aion-time.com'
 
 extends:
-  template: ../../pipeline-governance/templates/secure-pipeline-extends.yml
+  template: pipeline-governance/templates/secure-pipeline-extends.yml@templates
   parameters:
     sonarProjectKey: 'Silk_Road_ERP_Silk_Road_ERP_5cfe75f5-a231-4074-9e4c-4f5ccd21b96e'
     sonarProjectName: 'SilkRoad ERP'
@@ -60,10 +66,14 @@ extends:
     # ============================================================
     # 1️⃣  BUILD
     # ============================================================
-    - template: templates/build.yml
+    - template: templates/build.yml@templates
       parameters:
         dockerRegistryServiceConnection: 'TunNetCom_Dockerhub_Connection'
         dockerRepository: $(dockerRepository)
+        enableNuGetAuthenticate: true
+        nugetConfigPath: 'nuget.config'
+        nugetFeedUrl: 'https://pkgs.dev.azure.com/TunNetCom/Silk_Road_ERP/_packaging/SilkRoadFeed/nuget/v3/index.json'
+        nugetFeedUsername: 'docker'
         images:
         - name: api
           label: API
@@ -91,24 +101,16 @@ extends:
     # ============================================================
     # 2️⃣  ZAP BASELINE + 3️⃣ ZAP AJAX
     # ============================================================
-    - template: templates/dast.yml
+    - template: templates/dast.yml@templates
       parameters:
         zapTarget: $(zapTarget)
         defectDojoUrl: $(defectDojoUrl)
         defectDojoApiKey: $(defectDojoApiKey)
 
     # ============================================================
-    # 4️⃣  ENSURE WORKER VM EXISTS (IaC)
+    # 4️⃣  DEPLOY TO DEV (Blue/Green)
     # ============================================================
-    - template: templates/ensure-worker.yml
-      parameters:
-        azureSubscription: 'TunNetCom_Azure_Connection'
-        sshKey: $(AZURE_WORKER_SSH_KEY)
-
-    # ============================================================
-    # 5️⃣  DEPLOY TO DEV (Blue/Green)
-    # ============================================================
-    - template: templates/blue-green-deploy.yml
+    - template: templates/blue-green-deploy.yml@templates
       parameters:
         environmentName: silkroad-dev
         kubeNamespace: $(kubeNamespace)
