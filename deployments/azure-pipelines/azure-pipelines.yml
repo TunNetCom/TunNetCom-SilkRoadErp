@@ -72,10 +72,10 @@ extends:
         enableSonarQube: false
         enableOwasp: false
         enableTrivy: false
-        enableNuGetAuthenticate: true
-        nugetConfigPath: 'nuget.config'
-        nugetFeedUrl: 'https://pkgs.dev.azure.com/TunNetCom/Silk_Road_ERP/_packaging/SilkRoadFeed/nuget/v3/index.json'
-        nugetFeedUsername: 'docker'
+        enableNuGetAuthenticate: false
+        nugetConfigPath: ''
+        nugetFeedUrl: ''
+        nugetFeedUsername: ''
         images:
         - name: api
           label: API
