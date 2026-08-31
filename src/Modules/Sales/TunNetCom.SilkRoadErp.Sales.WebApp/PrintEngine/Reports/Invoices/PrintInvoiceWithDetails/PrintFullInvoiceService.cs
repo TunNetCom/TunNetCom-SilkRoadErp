@@ -17,7 +17,14 @@ public class PrintFullInvoiceService(
     bool isDuplicata = false,
     bool includeHeader = true)
     {
-        var invoiceResponse = await _invoicesService.GetFullInvoiceByIdAsync(invoiceId, cancellationToken);
+        var idResult = await _invoicesService.GetInvoiceIdByNumberAsync(invoiceId, cancellationToken);
+
+        if (idResult.IsFailed)
+        {
+            return Result.Fail("invoice_not_found");
+        }
+
+        var invoiceResponse = await _invoicesService.GetFullInvoiceByIdAsync(idResult.Value, cancellationToken);
 
         if (invoiceResponse.IsFailed)
         {
