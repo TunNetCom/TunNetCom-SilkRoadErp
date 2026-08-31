@@ -25,7 +25,7 @@ RUN curl -sSL https://raw.githubusercontent.com/Microsoft/artifacts-credprovider
 
 # Restore and publish API only
 RUN export VSS_NUGET_EXTERNAL_FEED_ENDPOINTS="{\"endpointCredentials\": [{\"endpoint\":\"${FEED_URL}\", \"username\":\"${FEED_USERNAME}\", \"password\":\"${FEED_ACCESSTOKEN}\"}]}" \
-    && dotnet restore src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.Api/TunNetCom.SilkRoadErp.Sales.Api.csproj
+    && dotnet restore src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.Api/TunNetCom.SilkRoadErp.Sales.Api.csproj --ignore-failed-sources
 RUN dotnet publish src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.Api/TunNetCom.SilkRoadErp.Sales.Api.csproj \
     -c Release -o /app/publish /p:UseAppHost=false
 
