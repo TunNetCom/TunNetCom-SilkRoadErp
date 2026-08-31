@@ -34,7 +34,7 @@ stages:
       manifestPath: $(manifestPath)
       stageDisplayName: Deploy to Societe Nizar Kubernetes
       dockerRepository: 'tunnetcom/silkroad'
-      apiImageTag: 'latest-api'
-      webappImageTag: 'latest-webapp'
+      apiImageTag: 'api-2129'
+      webappImageTag: 'webapp-2129'
       secretName: 'silkroad-connection-secret-societe'
       forceImagePullPatch: false
