@@ -32,6 +32,10 @@ spec:
         runAsUser: 1000
         fsGroup: 1000
 
+      volumes:
+        - name: tmp
+          emptyDir: {}
+
       containers:
       - name: api
         image: tunnetcom/silkroad:latest-api
@@ -45,6 +49,10 @@ spec:
             drop:
               - ALL
 
+        volumeMounts:
+          - name: tmp
+            mountPath: /tmp
+
         ports:
         - containerPort: 8080
         - containerPort: 8081
@@ -54,6 +62,10 @@ spec:
           value: "Production"
         - name: ASPNETCORE_URLS
           value: "http://+:8080"
+        - name: PLAYWRIGHT_BROWSERS_PATH
+          value: "/opt/playwright"
+        - name: HOME
+          value: "/tmp"
         - name: FRONTEND_URL
           value: "https://societenizarcloud.aion-time.com"
         - name: BACKEND_URL

@@ -29,6 +29,22 @@ RUN export VSS_NUGET_EXTERNAL_FEED_ENDPOINTS="{\"endpointCredentials\": [{\"endp
 RUN dotnet publish src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.Api/TunNetCom.SilkRoadErp.Sales.Api.csproj \
     -c Release -o /app/publish /p:UseAppHost=false
 
+# Playwright's bundled Node executable must be executable
+# by the non-root application user.
+RUN chmod 755 /app/publish/.playwright/node/linux-x64/node
+
+# Install Playwright CLI and Chromium outside /root
+RUN dotnet tool install Microsoft.Playwright.CLI --tool-path /opt/playwright-cli
+
+ENV PATH="$PATH:/opt/playwright-cli"
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/playwright
+
+WORKDIR /src/src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.Api
+
+RUN playwright install chromium
+
+RUN chmod -R a+rX /opt/playwright /opt/playwright-cli
+
 # ==================================================================
 # Stage 2: Runtime
 # ==================================================================
@@ -38,9 +54,36 @@ WORKDIR /app
 
 COPY --from=build /app/publish ./
 
-# Playwright's bundled Node executable must be executable
-# by the non-root application user.
-RUN chmod 755 /app/.playwright/node/linux-x64/node
+COPY --from=build /opt/playwright-cli /opt/playwright-cli
+COPY --from=build /opt/playwright /opt/playwright
+
+ENV PATH="$PATH:/opt/playwright-cli"
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/playwright
+
+RUN chmod -R 755 /app/.playwright 2>/dev/null || true && chmod -R a+rX /opt/playwright 2>/dev/null || true
+
+RUN apt-get update && apt-get install -y \
+    libglib2.0-0t64 \
+    libnss3 \
+    libnspr4 \
+    libdbus-1-3 \
+    libatk1.0-0t64 \
+    libatk-bridge2.0-0t64 \
+    libcups2t64 \
+    libx11-6 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxext6 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libxcb1 \
+    libxkbcommon0 \
+    libpango-1.0-0 \
+    libcairo2 \
+    libasound2t64 \
+    libatspi2.0-0t64 \
+    && rm -rf /var/lib/apt/lists/*
 
 EXPOSE 8080
 
