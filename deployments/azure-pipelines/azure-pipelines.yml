@@ -70,6 +70,7 @@ extends:
       parameters:
         dockerRegistryServiceConnection: 'TunNetCom_Dockerhub_Connection'
         dockerRepository: $(dockerRepository)
+        enableSonarQube: false
         enableNuGetAuthenticate: true
         nugetConfigPath: 'nuget.config'
         nugetFeedUrl: 'https://pkgs.dev.azure.com/TunNetCom/Silk_Road_ERP/_packaging/SilkRoadFeed/nuget/v3/index.json'
