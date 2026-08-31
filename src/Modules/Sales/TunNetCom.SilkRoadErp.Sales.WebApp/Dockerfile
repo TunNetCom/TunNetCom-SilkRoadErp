@@ -61,6 +61,8 @@ COPY --from=build /opt/playwright /opt/playwright
 ENV PATH="$PATH:/opt/playwright-cli"
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/playwright
 
+RUN chmod -R 755 /app/.playwright 2>/dev/null || true && chmod -R a+rX /opt/playwright 2>/dev/null || true
+
 RUN apt-get update && apt-get install -y \
     libglib2.0-0t64 \
     libnss3 \

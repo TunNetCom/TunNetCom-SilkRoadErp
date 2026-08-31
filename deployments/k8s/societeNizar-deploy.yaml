@@ -109,9 +109,9 @@ spec:
         image: tunnetcom/silkroad:latest-webapp
         imagePullPolicy: Always
 
-        # ✅ Container-level security
+        # ✅ Container-level security (readOnlyRootFilesystem disabled for Playwright)
         securityContext:
-          readOnlyRootFilesystem: true
+          readOnlyRootFilesystem: false
           allowPrivilegeEscalation: false
           capabilities:
             drop:
