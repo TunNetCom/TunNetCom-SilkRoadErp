@@ -34,7 +34,7 @@ stages:
       deploymentWebappName: $(deploymentWebappName)
       manifestPath: $(manifestPath)
       dockerRepository: 'tunnetcom/silkroad'
-      apiImageTag: 'api-2137'
-      webappImageTag: 'webapp-2137'
+      apiImageTag: 'api-2142'
+      webappImageTag: 'webapp-2142'
       secretName: 'silkroad-connection-secret-etablissement'
       forceImagePullPatch: false
