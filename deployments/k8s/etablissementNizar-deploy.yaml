@@ -4,38 +4,35 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: silkroad-webapp-nizar
-  namespace: silkroad-prod-nizar
+  name: silkroad-api-nizar
+  namespace: silkroad-nizar
+  labels:
+    app: silkroad-api-nizar
+    environment: production
+    tier: backend
 spec:
   replicas: 1
   strategy:
     type: Recreate
   selector:
     matchLabels:
-      app: silkroad-webapp-nizar
+      app: silkroad-api-nizar
       environment: production
   template:
     metadata:
       labels:
-        app: silkroad-webapp-nizar
+        app: silkroad-api-nizar
         environment: production
-        tier: frontend
+        tier: backend
     spec:
       # ✅ Pod-level security
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
         fsGroup: 1000
-
-      volumes:
-        - name: dataprotection-keys
-          emptyDir: {}
-        - name: tmp
-          emptyDir: {}
-
       containers:
-      - name: webapp
-        image: tunnetcom/silkroad:latest-webapp
+      - name: api
+        image: tunnetcom/silkroad:latest-api
         imagePullPolicy: Always
 
         # ✅ Container-level security
@@ -46,37 +43,36 @@ spec:
             drop:
               - ALL
 
-        volumeMounts:
-          # ✅ FIX: no /root anymore
-          - name: dataprotection-keys
-            mountPath: /home/app/.aspnet/DataProtection-Keys
-          - name: tmp
-            mountPath: /tmp
-
         ports:
         - containerPort: 8080
+        - containerPort: 8081
 
         env:
         - name: ASPNETCORE_ENVIRONMENT
           value: "Production"
         - name: ASPNETCORE_URLS
           value: "http://+:8080"
-        - name: ApiSettings__BaseUrl
-          value: "http://silkroad-api-service-nizar:8080"
+        - name: ConnectionStrings__DefaultConnection
+          valueFrom:
+            secretKeyRef:
+              name: silkroad-connection-secret-etablissement
+              key: ConnectionStrings__DefaultConnection
+        - name: EF_MIGRATE_ON_STARTUP
+          value: "false"
 
         resources:
           requests:
-            memory: "1Gi"
-            cpu: "1000m"
+            memory: "256Mi"
+            cpu: "250m"
           limits:
-            memory: "2Gi"
-            cpu: "2000m"
+            memory: "512Mi"
+            cpu: "500m"
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: silkroad-webapp-nizar
-  namespace: silkroad-prod-nizar
+  namespace: silkroad-nizar
 spec:
   replicas: 1
   strategy:
@@ -137,8 +133,89 @@ spec:
 
         resources:
           requests:
-            memory: "1Gi"
-            cpu: "1000m"
+            memory: "256Mi"
+            cpu: "250m"
           limits:
-            memory: "2Gi"
-            cpu: "2000m"
+            memory: "512Mi"
+            cpu: "500m"
+---
+# --- Services (needed for Ingress) ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: silkroad-api-service-nizar
+  namespace: silkroad-nizar
+spec:
+  selector:
+    app: silkroad-api-nizar
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: silkroad-webapp-service-nizar
+  namespace: silkroad-nizar
+spec:
+  selector:
+    app: silkroad-webapp-nizar
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+---
+# --- ClusterIssuer for Let's Encrypt prod (Traefik + cert-manager) ---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod-etablissement
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: etablissementnizarcloud@aion-time.com
+    privateKeySecretRef:
+      name: letsencrypt-prod-etablissement
+    solvers:
+    - http01:
+        ingress:
+          class: traefik
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: silkroad-etablissement
+  namespace: silkroad-nizar
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod-etablissement
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  tls:
+  - hosts:
+    - etablissementnizarcloud.aion-time.com
+    - apietablissementnizarcloud.aion-time.com
+    secretName: silkroad-etablissement-tls
+  rules:
+  - host: etablissementnizarcloud.aion-time.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: silkroad-webapp-service-nizar
+            port:
+              number: 8080
+  - host: apietablissementnizarcloud.aion-time.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: silkroad-api-service-nizar
+            port:
+              number: 8080
