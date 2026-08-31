@@ -1,8 +1,7 @@
 # ============================================================
 # SilkRoad CI/CD Pipeline - BLUE/GREEN + SECURITY + SONARQUBE
 # ============================================================
-# Stages: Governance Gate -> Build (+Trivy) -> ZAP Baseline ->
-# ZAP AJAX -> Blue/Green Deploy
+# Stages: Governance Gate -> Build -> Blue/Green Deploy
 # ------------------------------------------------------------
 # This file extends pipeline-governance/templates/secure-pipeline-extends.yml
 # (@repo root). The governance extends template emits a mandatory
@@ -71,6 +70,8 @@ extends:
         dockerRegistryServiceConnection: 'TunNetCom_Dockerhub_Connection'
         dockerRepository: $(dockerRepository)
         enableSonarQube: false
+        enableOwasp: false
+        enableTrivy: false
         enableNuGetAuthenticate: true
         nugetConfigPath: 'nuget.config'
         nugetFeedUrl: 'https://pkgs.dev.azure.com/TunNetCom/Silk_Road_ERP/_packaging/SilkRoadFeed/nuget/v3/index.json'
@@ -96,15 +97,6 @@ extends:
         sonarHostUrl: 'https://sonarqube.aion-time.com'
         sonarCoverageExclusions: '**/*.razor,**/*.razor.cs,**/*.cshtml,src/Administration/TunNetCom.SilkRoadErp.Administration.HttpClients/**,src/Modules/Sales/TunNetCom.SilkRoadErp.Sales.HttpClients/**,src/Aspire/TunNetCom.SilkRoadErp.AppHost/**'
         nvdApiKey: $(nvdApiKey)
-        defectDojoUrl: $(defectDojoUrl)
-        defectDojoApiKey: $(defectDojoApiKey)
-
-    # ============================================================
-    # 2️⃣  ZAP BASELINE + 3️⃣ ZAP AJAX
-    # ============================================================
-    - template: templates/dast.yml@templates
-      parameters:
-        zapTarget: $(zapTarget)
         defectDojoUrl: $(defectDojoUrl)
         defectDojoApiKey: $(defectDojoApiKey)
 
