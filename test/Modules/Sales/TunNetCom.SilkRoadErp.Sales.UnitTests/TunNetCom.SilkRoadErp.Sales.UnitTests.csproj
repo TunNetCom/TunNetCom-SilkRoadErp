@@ -36,7 +36,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="TunNetCom.SharedKernel.Helpers" />
+    <ProjectReference Include="..\..\..\..\src\SharedKernel\TunNetCom.SharedKernel.Helpers\TunNetCom.SharedKernel.Helpers.csproj" />
   </ItemGroup>
 
   <ItemGroup>
